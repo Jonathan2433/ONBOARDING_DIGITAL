@@ -97,7 +97,9 @@ Sept stories, huit sous-étapes, un commit par sous-étape.
 | S7 | `US005` | Inventaire du prototype : 29 contenus, les 2 parcours d'onboarding relevés (44 tâches), exclusions |
 | S8 | — | Contrôles de sortie prouvés, checklist `G1`, verrouillage du lot |
 
-**Volumétrie :** 44 fichiers versionnés, 39 documents Markdown, ~18 000 lignes.
+**Volumétrie à la clôture du LOT 0 :** **45 fichiers versionnés, 40 documents Markdown**,
+~18 000 lignes. Le chiffre de 44/39 initialement inscrit ici omettait `CLAUDE.md` lui-même,
+ajouté par le commit qui portait la phrase.
 
 ## 4.1 Les séquences d'identifiants — à respecter absolument
 
@@ -106,7 +108,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` décisions de projet | `001`–`417` **réservés**, `418`–`448` en usage | **`DEC-449`** |
+| `DEC-nnn` décisions de projet | `001`–`417` **réservés**, `418`–`449` en usage | **`DEC-450`** |
 | `RIGHTS-nnn` | `001`–`025` | `RIGHTS-026` |
 | `DATA-nnn` | `001`–`018` | `DATA-019` |
 | `ROAD-nnn` | `001`–`012` | `ROAD-013` |
@@ -331,37 +333,66 @@ Décision de Jonathan (`DEC-418`), risque accepté (`ROAD-RSK-026`). **`.gitigno
 suivre `node_modules/`, `data/`, `volumes/`, `backups/` — mais n'empêche pas iCloud de les
 synchroniser.** C'est `QO-109`, à trancher **au LOT 1 avant de créer le premier volume Docker**.
 
-## 6.8 Outillage GitHub absent
+## 6.8 Outillage GitHub — résolu le 27/07/2026
 
-`gh` n'est **pas installé** et aucun connecteur GitHub n'est disponible dans la session. Je n'ai
-donc pas pu créer les étiquettes, les milestones, ni la protection de branche. Les commandes
-prêtes à l'emploi sont dans
-[`traceabilite-github.md`](docs/operations/traceabilite-github.md) §5. C'est `ECART-010`,
-`QO-107` et `QO-108` — **prérequis du LOT 1**.
+> **Ce piège n'en est plus un.** Il est conservé parce que la manière dont il a été levé compte.
 
-Le caractère privé du dépôt n'est pas vérifiable techniquement : un accès anonyme retourne
-HTTP 404, ce qui est le comportement d'un dépôt privé **comme** d'un dépôt inexistant. C'est la
-confirmation de Jonathan qui fait preuve.
+`gh` **est installé**, en version 2.96.0, mais **pas par Homebrew** : `/opt/homebrew` appartient à
+l'utilisateur `admin`, pas à `jonathan.dupau`, et `brew install` échoue faute de droits. Le
+correctif `sudo chown` exige le mot de passe de Jonathan.
+
+Le binaire officiel a donc été posé dans **`~/.local/bin/gh`**, empreinte SHA-256 vérifiée contre
+celle publiée par `cli/cli`. **Ce répertoire n'est pas dans le `PATH`** : appelle-le par son
+chemin complet, ou fais `export PATH="$HOME/.local/bin:$PATH"` en tête de commande.
+
+L'authentification appartient à Jonathan — jeton `gho_…`, portées `gist`, `read:org`, `repo`,
+`workflow`. **N'entre jamais d'identifiants à sa place, et n'extrais jamais le jeton du trousseau
+macOS** pour t'en servir ailleurs : `git` sait s'en servir seul, et `gh` a le sien.
+
+Conséquence : `ECART-010` est clos, `QO-107` et `QO-108` sont closes. 13 étiquettes, 15 milestones,
+1 epic et 8 stories existent, et `main` comme `develop` sont protégées.
+
+Le caractère privé du dépôt, longtemps réputé « non vérifiable techniquement », **est désormais
+prouvé** : `gh api repos/:owner/:repo --jq .private` retourne `true`. L'ancien raisonnement — un
+404 anonyme ne distingue pas un dépôt privé d'un dépôt inexistant — reste juste, il est
+simplement devenu inutile.
 
 ## 6.9 Contexte machine
 
 Apple M5, **16 Gio de RAM**, 564 Gio libres, FileVault actif, Docker 29.5.3, Compose v5.1.4,
 identité Git `jonathan <jonathan.dupau24@gmail.com>` (`DEC-424`).
 
-Les 16 Gio sont une contrainte réelle : trois environnements × 8 services ≈ 24 conteneurs.
-C'est `ROAD-RSK-027`, à arbitrer au LOT 1.
+**Le chiffre qui compte n'est pas 16 Gio.** Docker Desktop ne se voit allouer que **7,75 Gio**,
+soit la moitié de la machine — `docker info --format '{{.MemTotal}}'`. Et ce budget n'est pas
+libre : un projet tiers sans rapport avec eXalt, `observatoire-ecom-studio`, y tournait en
+permanence pour **~1,93 Gio**, soit un quart du total. Marge réelle pour les 8 services du
+LOT 1 : **~5,8 Gio**.
+
+`ROAD-RSK-027` a été réécrit sur ces mesures et traité par `DEC-440` : un seul environnement à
+la fois, limites mémoire par service, projet tiers arrêté pendant le LOT 1. **Vérifie l'état de
+ce projet tiers avant de démarrer la stack en `T2`** — et demande avant de l'arrêter, il ne nous
+appartient pas.
 
 ---
 
 # 7. Ce qui reste ouvert
 
-## 7.1 Prérequis avant d'ouvrir le LOT 1
+## 7.1 Prérequis avant d'ouvrir le LOT 1 — **les 3 sont levés**
 
-| # | Prérequis | Références |
-|---:|---|---|
-| 1 | Traçabilité GitHub et protection de `main` | `ECART-010`, `QO-107`, `QO-108` |
-| 2 | Atténuations iCloud, **avant** création des volumes | `QO-109`, `ROAD-RSK-026` |
-| 3 | Exécution non simultanée des trois environnements | `ROAD-RSK-027`, `QO-085` |
+Traités en sous-étape `T0`, le 27/07/2026, hors lot. Voir
+[`compte-rendu-t0-lot-1.md`](docs/operations/compte-rendu-t0-lot-1.md).
+
+| # | Prérequis | Références | Levé par |
+|---:|---|---|---|
+| 1 | Traçabilité GitHub et protection de `main` | `ECART-010`, `QO-107`, `QO-108` | `DEC-449`. Rejet du push direct **prouvé** (`GH006`) |
+| 2 | Atténuations iCloud, **avant** création des volumes | `QO-109`, `ROAD-RSK-026` | `DEC-439`, `DEC-447` |
+| 3 | Exécution non simultanée des trois environnements | `ROAD-RSK-027`, `QO-085` | `DEC-440` |
+
+**Régime de contribution en vigueur depuis :** `main` et `develop` sont protégées avec
+`enforce_admins`. **Aucun commit direct n'est plus possible**, y compris documentaire, y compris
+pour Jonathan. Toute modification passe par une branche et une pull request vers `develop`.
+
+Les 7 choix techniques de la fiche §9.2 sont tranchés : `DEC-441` à `DEC-447`.
 
 ## 7.2 Écarts ouverts
 
@@ -369,13 +400,15 @@ C'est `ROAD-RSK-027`, à arbitrer au LOT 1.
 |---|---|---|
 | `ECART-005` | Schéma CSV initial livré ; le définitif relève de `QO-096` | LOT 9 |
 | `ECART-006` | `.env.example` en v0.1, à compléter | **LOT 1** |
-| `ECART-010` | Traçabilité GitHub non mise en place | **LOT 1** |
 | `ECART-012` | `intercontrat` imposé à une direction générale : cohérent techniquement, trompeur à l'écran | LOT 2, avant LOT 5 |
 | `ECART-013` | Les 5 tâches communes du prototype ont des identifiants différents. **Reprendre cette numérotation ferait échouer `MVP-L07-US007`** | **LOT 7** |
 | `ECART-014` | Le prototype dit « Représentant de cercle », les documents disent « Booster » | LOT 6 |
 | `ECART-015` | Le prototype ne fournit **ni** descriptions de cercles **ni** liens internes | LOT 6 |
 
 `ECART-009` et `ECART-011` sont **acceptés** : connus, documentés, non corrigés.
+
+`ECART-010` et `ECART-016` sont **clos** — traçabilité GitHub posée, et affirmation erronée sur
+l'état de publication rectifiée. **6 écarts ouverts** sur 16.
 
 ## 7.3 Ce que le prototype ne contient pas
 
@@ -402,6 +435,7 @@ le produit, Tess pour l'éditorial, Diane pour les parcours. **Aucun n'est publi
 ├── README.md                    ← état d'avancement, règles, structure
 ├── CONTRIBUTING.md              ← circuit de contribution, Ready et Done
 ├── .env.example                 ← 74 variables, aucun secret
+├── .gitattributes               ← normalisation des fins de ligne
 ├── .gitignore                   ← barrière : secrets, CSV, médias, volumes
 ├── .github/                     ← gabarits PR et issues
 └── docs/

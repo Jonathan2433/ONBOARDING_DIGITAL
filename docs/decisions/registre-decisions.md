@@ -18,7 +18,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Total repris** | **85** | |
 | Décisions de réalisation `DEC-418+` | 21 | Validées le 27/07/2026 |
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
-| **Total** | **116** | |
+| Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
+| **Total** | **117** | |
 
 ---
 
@@ -73,7 +74,35 @@ tranche les 7 choix techniques de §9.2, qu'aucun document validé ne fixait.
 | `DEC-447` | Les données d'état utilisent **exclusivement des volumes Docker nommés**. **Aucun bind mount** de donnée d'état vers le dépôt : ni `./data`, ni `./volumes`, ni `./backups`. Les bind mounts de code source pour le rechargement à chaud restent autorisés. | Les volumes nommés résident dans l'image disque de la VM, hors iCloud, sans aucune action. Un bind mount de données dans le dépôt est précisément le geste qui ramènerait `ROAD-RSK-026` sur des fichiers de base ouverts en écriture. | Validée |
 | `DEC-448` | La traçabilité GitHub — branche `develop`, protection de `main` et de `develop`, 13 étiquettes prescrites, 15 milestones, epic et stories du LOT 1 — est mise en place **par Jonathan dans l'interface GitHub**. | `gh` n'est pas installé et aucun connecteur GitHub n'est disponible en session : la vérification a été refaite le 27/07/2026 et confirme le constat de `ECART-010`. La protection de branche n'est de toute façon posable que par le propriétaire du dépôt. Répond à `QO-108`. La mise en place effective clora `ECART-010` et `QO-107`. | Validée |
 
-**Prochain identifiant libre : `DEC-449`.**
+## 1.2 Mise en place effective de la traçabilité GitHub
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-449` | **Remplace `DEC-448`.** La traçabilité GitHub n'a pas été posée dans l'interface web comme `DEC-448` le prévoyait, mais **par `gh` en ligne de commande**, selon le partage de rôles suivant : Jonathan a créé la branche `develop` et **authentifié `gh` lui-même** ; l'agent a installé le binaire et exécuté les créations. `gh` **2.96.0** est installé dans **`~/.local/bin/gh`**, hors Homebrew — `/opt/homebrew` appartient à l'utilisateur `admin` et `brew install` échoue faute de droits, le correctif `sudo chown` exigeant un mot de passe. Le binaire provient de la publication officielle `cli/cli`, **empreinte SHA-256 vérifiée** contre celle publiée par le projet. Livré : 13 étiquettes, 15 milestones avec `G0` fermée, l'epic `#1` et les 8 stories `#2` à `#9`, et la protection de `main` **et** `develop`. | `DEC-448` décrivait une intention, pas ce qui a eu lieu. Les conventions interdisent de modifier une décision validée en silence : elle est remplacée par une nouvelle décision qui la référence (`CONTRIBUTING.md` §8). La ligne que l'agent n'a pas franchie est l'authentification : il n'entre pas d'identifiants à la place de Jonathan et n'extrait pas le jeton du trousseau macOS. | Validée |
+
+**Protection appliquée à `main` et `develop`**, conforme à `DEC-429` :
+
+| Réglage | Valeur appliquée |
+|---|---|
+| Pull request obligatoire | Activée |
+| Approbations requises | **0** — GitHub interdit l'auto-approbation, `QO-094` |
+| `enforce_admins` | **Activé** — sans quoi le propriétaire contournerait la règle et le contrôle ne prouverait rien |
+| Push forcés, suppressions | Rejetés |
+| Historique linéaire, résolution des conversations | Exigés |
+| Contrôles d'intégration obligatoires | **Aucun pour l'instant** — à ajouter en `T6`, quand la CI existera |
+
+**Preuve d'effectivité**, et non simple constat de réglage : une tentative de push direct d'un
+commit vide sur `main` puis sur `develop` a été **rejetée** par le serveur avec
+`GH006 — Protected branch update failed … Changes must be made through a pull request`. Témoin
+positif : le même push vers une branche neuve non protégée a **réussi**, ce qui établit que le
+test sait distinguer un succès d'un échec.
+
+**Conséquence de régime, applicable immédiatement.** `enforce_admins` vaut aussi pour Jonathan :
+plus aucun commit direct sur `main` ni `develop`, **y compris documentaire**. `DEC-427` ne
+faisait entrer le circuit en vigueur qu'au premier commit de code du LOT 1 ; il s'applique en
+pratique dès maintenant, ce qui est plus strict et va dans le sens du cadrage.
+
+**Prochain identifiant libre : `DEC-450`.**
 
 ---
 
@@ -233,7 +262,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-BACK` | 5 | 5 |
 | `DEC-418+` | 21 | 21 |
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
-| **Total** | **116** | **116** |
+| `DEC-449` — mise en place GitHub | 1 | 1 |
+| **Total** | **117** | **117** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
