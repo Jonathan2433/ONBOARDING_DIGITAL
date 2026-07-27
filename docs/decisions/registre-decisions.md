@@ -16,8 +16,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Décisions de backlog `BACKLOG` | 10 | Validées le 25/07/2026 |
 | Arbitrages `ARB-*` | 20 | Validés le 25/07/2026 |
 | **Total repris** | **85** | |
-| Décisions de réalisation `DEC-418+` | 19 | Validées le 27/07/2026 |
-| **Total** | **104** | |
+| Décisions de réalisation `DEC-418+` | 20 | Validées le 27/07/2026 |
+| **Total** | **105** | |
 
 ---
 
@@ -49,7 +49,9 @@ Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S6.
 
 | `DEC-436` | Création de la séquence `CONT-nnn` pour les éléments de contenu éditorial inventoriés. Chaque élément porte un identifiant stable, un propriétaire de relecture et un statut parmi `à relire`, `validé`, `à réécrire`, `écarté`. | L'inventaire du prototype doit être référençable story par story au LOT 6 et au LOT 7. Sans identifiant, un contenu relu ne peut pas être relié à sa validation ni à sa publication. Même motif que `DEC-431` pour les écarts et les dépendances. | Validée |
 
-**Prochain identifiant libre : `DEC-437`.**
+| `DEC-437` | La story `MVP-L00-US005`, priorité `P1`, est **validée au statut `à relire`**. Les 29 contenus inventoriés sont tracés et attribués à Léa, Tess et Diane ; leur relecture est portée au LOT 6, story `MVP-L06-US007`. La porte `G0` peut être franchie sans attendre cette relecture. | Option (a) retenue par Jonathan le 27/07/2026, parmi les trois possibles. La relecture dépend de trois personnes et n'est pas réalisable dans le LOT 0. La priorité `P1` autorise cet arbitrage explicite (`ARB-BACK-001`), et l'exigence n'est pas perdue puisque chaque élément porte un propriétaire et un statut. | Validée |
+
+**Prochain identifiant libre : `DEC-438`.**
 
 ---
 
@@ -207,8 +209,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-DATA` | 5 | 5 |
 | `ARB-ROAD` | 5 | 5 |
 | `ARB-BACK` | 5 | 5 |
-| `DEC-418+` | 19 | 19 |
-| **Total** | **104** | **104** |
+| `DEC-418+` | 20 | 20 |
+| **Total** | **105** | **105** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `436` en usage | `DEC-437` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `437` en usage | `DEC-438` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -125,7 +125,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 
 | Porte | Moment | Validation obligatoire | État |
 |---|---|---|---|
-| `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **En cours** |
+| `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Prête à valider** |
 | `G1` | Fin du socle local | Stack, CI et images validées | Planifiée |
 | `G2` | Fin du modèle implémenté | Contraintes et isolation validées | Planifiée |
 | `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
@@ -156,5 +156,5 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 | S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | **Validée** par Jonathan le 27 juillet 2026 |
 | S5 | Modèles de configuration sans secrets | `MVP-L00-US007` | **Validée** par Jonathan le 27 juillet 2026 |
 | S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | **Validée** par Jonathan le 27 juillet 2026 |
-| S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | En cours |
-| S8 | Contrôles de sortie et préparation de la porte `G0` | — | À faire |
+| S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | **Validée** par Jonathan le 27 juillet 2026, statut `à relire` (`DEC-437`) |
+| S8 | Contrôles de sortie et préparation de la porte `G0` | — | Contrôles exécutés, **validation `G0` en attente** |

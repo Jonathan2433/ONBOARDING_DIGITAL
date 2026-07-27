@@ -15,8 +15,8 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Élément | Valeur |
 |---|---|
 | Lot ouvert | **LOT 0 — Référentiel projet et préparation** |
-| Porte de validation en cours | **G0** — « Jonathan confirme les documents et conventions » |
-| Sous-étape en cours | S1 — dépôt, arborescence documentaire et barrières de sécurité |
+| Porte de validation en cours | **G0** — « Jonathan confirme les documents et conventions » — [checklist](docs/operations/checklist-validation-G0.md) |
+| Sous-étape en cours | S8 — contrôles de sortie, **validation `G0` en attente** |
 | Lots suivants | `Planned` — aucun travail anticipé autorisé |
 
 Aucun code applicatif n'existe encore : le LOT 0 est exclusivement documentaire et
@@ -87,17 +87,23 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 ```text
 .
 ├── README.md                  ← ce fichier
+├── CONTRIBUTING.md            ← règles de contribution, définitions de Ready et de Done
+├── .env.example               ← modèle de configuration, sans aucun secret
 ├── .gitignore                 ← barrière contre secrets et données réelles
 ├── .gitattributes             ← normalisation des fins de ligne
+├── .github/                   ← gabarits de pull request et d'issues
 └── docs/
-    ├── product/               ← cahier des charges, matrice des droits, roadmap, backlog, contenus
-    ├── architecture/          ← modèle de données, schéma CSV, décisions d'architecture
+    ├── product/               ← cahier des charges, matrice des droits, roadmap, backlog
+    │   └── contenus/          ← inventaire du prototype, parcours d'onboarding relevés
+    ├── architecture/          ← modèle de données
+    │   └── donnees/           ← schéma CSV, codes d'erreur, listes contrôlées, exemple fictif
     ├── decisions/             ← registre des décisions, registre des écarts
-    ├── operations/            ← conventions, registres risques / questions / dépendances, exploitation
+    ├── operations/            ← conventions, registres, politique de secrets, contrôles de sortie
     └── prototype/             ← prototype historique, non versionné, non réutilisable
 ```
 
-Les répertoires applicatifs seront créés au LOT 1, après validation de `G0`.
+Les répertoires applicatifs `apps/`, `packages/` et `infra/` seront créés au LOT 1, après
+validation de `G0`.
 
 ---
 
@@ -111,6 +117,28 @@ Voir [`docs/prototype/README.md`](docs/prototype/README.md).
 
 ## 7. Configuration
 
-La configuration passe exclusivement par des variables d'environnement.
-Le fichier `.env` local n'est jamais versionné ; un `.env.example` documenté et sans
-aucune valeur réelle sera livré dans la sous-étape S5 du LOT 0.
+La configuration passe exclusivement par des variables d'environnement. Le fichier `.env`
+local n'est **jamais** versionné.
+
+- [`.env.example`](.env.example) — modèle documenté en version 0.1, 74 variables, aucune valeur
+  réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
+- [`docs/operations/politique-configuration-et-secrets.md`](docs/operations/politique-configuration-et-secrets.md)
+  — séparation des trois environnements, garde-fous de démarrage, rotation, conduite à tenir en
+  cas de fuite.
+
+---
+
+## 8. Suivi du projet
+
+| Registre | Entrées |
+|---|---:|
+| [Décisions](docs/decisions/registre-decisions.md) | 105 |
+| [Écarts](docs/decisions/registre-ecarts.md) | 15 |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 34 |
+| [Risques](docs/operations/registre-risques.md) | 28 |
+| [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
+| [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |
+
+Preuves de sortie du lot en cours :
+[contrôles](docs/operations/controles-sortie-lot-0.md) et
+[checklist `G0`](docs/operations/checklist-validation-G0.md).
