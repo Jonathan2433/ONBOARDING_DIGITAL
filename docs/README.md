@@ -73,16 +73,17 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `435` en usage | `DEC-436` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `436` en usage | `DEC-437` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `012` | `ECART-013` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `015` | `ECART-016` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `110` | `QO-111` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `028` | `ROAD-RSK-029` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
+| `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
 | `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — | backlog validé |
 | `Gn` | Portes de validation | `G0` à `G14` | — | roadmap validée |
 
@@ -154,6 +155,6 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 | S3 | Conventions Git, versions et contribution | `MVP-L00-US003` | **Validée** par Jonathan le 27 juillet 2026 |
 | S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | **Validée** par Jonathan le 27 juillet 2026 |
 | S5 | Modèles de configuration sans secrets | `MVP-L00-US007` | **Validée** par Jonathan le 27 juillet 2026 |
-| S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | En cours |
-| S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | À faire |
+| S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | **Validée** par Jonathan le 27 juillet 2026 |
+| S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | En cours |
 | S8 | Contrôles de sortie et préparation de la porte `G0` | — | À faire |

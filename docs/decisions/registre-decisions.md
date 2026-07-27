@@ -16,8 +16,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Décisions de backlog `BACKLOG` | 10 | Validées le 25/07/2026 |
 | Arbitrages `ARB-*` | 20 | Validés le 25/07/2026 |
 | **Total repris** | **85** | |
-| Décisions de réalisation `DEC-418+` | 18 | Validées le 27/07/2026 |
-| **Total** | **103** | |
+| Décisions de réalisation `DEC-418+` | 19 | Validées le 27/07/2026 |
+| **Total** | **104** | |
 
 ---
 
@@ -47,7 +47,9 @@ Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S6.
 | `DEC-434` | Le schéma du CSV définit des **champs logiques** `F01` à `F19`, indépendants de tout intitulé de colonne. Les en-têtes du fichier réel sont associées à ces champs par un **profil de correspondance versionné**, enregistré avec le lot d'import aux côtés de l'empreinte et du séparateur. | La nomenclature des en-têtes est en suspens (`QO-110`), la source de données n'étant pas connue. Ce découplage est de toute façon nécessaire : les en-têtes du fichier réel ne correspondront pas à des intitulés inventés à l'avance. | Validée |
 | `DEC-435` | Imputation des anomalies portant sur plusieurs lignes. **Doublon d'identifiant** : la première occurrence du fichier est retenue, les suivantes seules sont rejetées. **Conflit d'attribution métier** — Booster, responsables de bureau : toutes les lignes du groupe sont rejetées, aucune n'est retenue. **Homonymie** : les deux lignes attendent une décision. **Rapprochement de client** : seule la ligne portant la variante non reconnue est signalée. | Sans ces règles, une ligne correcte serait rejetée par ricochet. Désigner un Booster par l'ordre d'apparition dans un fichier serait une décision métier arbitraire ; conserver la première occurrence d'un e-mail est en revanche déterministe et tracé. | Validée |
 
-**Prochain identifiant libre : `DEC-436`.**
+| `DEC-436` | Création de la séquence `CONT-nnn` pour les éléments de contenu éditorial inventoriés. Chaque élément porte un identifiant stable, un propriétaire de relecture et un statut parmi `à relire`, `validé`, `à réécrire`, `écarté`. | L'inventaire du prototype doit être référençable story par story au LOT 6 et au LOT 7. Sans identifiant, un contenu relu ne peut pas être relié à sa validation ni à sa publication. Même motif que `DEC-431` pour les écarts et les dépendances. | Validée |
+
+**Prochain identifiant libre : `DEC-437`.**
 
 ---
 
@@ -205,8 +207,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-DATA` | 5 | 5 |
 | `ARB-ROAD` | 5 | 5 |
 | `ARB-BACK` | 5 | 5 |
-| `DEC-418+` | 18 | 18 |
-| **Total** | **103** | **103** |
+| `DEC-418+` | 19 | 19 |
+| **Total** | **104** | **104** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

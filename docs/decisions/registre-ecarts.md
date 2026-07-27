@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 12 | 4 | 6 | 2 |
+| Total 15 | 7 | 6 | 2 |
 
 ---
 
@@ -30,8 +30,11 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | Ouvert |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
 | `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
+| `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
+| `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
+| `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
 
-**Prochain identifiant libre : `ECART-013`.**
+**Prochain identifiant libre : `ECART-016`.**
 
 ---
 
@@ -178,3 +181,39 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Ne pas modifier le modèle de données, qui est validé. Deux pistes à arbitrer avec Léa : soit l'affichage du statut est conditionné par la catégorie professionnelle, la situation restant `intercontrat` en base ; soit une troisième valeur est ajoutée à l'énumération, ce qui exige une décision et une nouvelle version du modèle. La première piste est moins coûteuse et ne touche pas au socle. |
 | Résolution | Ouvert. À clarifier avec Léa et l'ESM, **au plus tard au LOT 2** lors de l'implémentation de `professional_status_assignment`, et avant le LOT 5 qui affiche le statut au trombinoscope. |
+
+## `ECART-013` — Identifiants de tâches non stables entre les deux parcours
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, sous-étape S7 |
+| Source | Relevé des parcours du prototype, contre `DATA-007`, cahier §10.4 et `MVP-L07-US007` |
+| Constat | Cinq tâches ont un libellé **identique** dans les deux parcours, mais des identifiants **différents** : `ic_a1` contre `m_a1`, `ic_m1_1` contre `m_m1_5`, et ainsi de suite. |
+| Impact | Reprendre cette numérotation ferait échouer une exigence centrale du LOT 7 : lors d'un changement mission ↔ intercontrat, les tâches communes déjà terminées doivent être **conservées** grâce à un identifiant fonctionnel immuable. Avec des identifiants distincts, un collaborateur perdrait la complétion de ces cinq tâches. |
+| Bloquant | Non pour `G0`. **Structurant pour le LOT 7.** |
+| Recommandation | Au LOT 7, attribuer à chaque tâche commune **un seul** code de référence partagé dans `onboarding_task_reference`, réutilisé par les deux modèles. Ne pas transposer la numérotation du prototype. |
+| Résolution | Ouvert. Traitement au LOT 7, story `MVP-L07-US003`. |
+
+## `ECART-014` — Divergence de terminologie sur le responsable de cercle
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, sous-étape S7 |
+| Source | Relevé des parcours du prototype, contre la matrice §3 et `RIGHTS-007` |
+| Constat | Le prototype emploie « **Représentant de cercle** », trois fois dans les parcours d'onboarding. Le terme « **Booster** », retenu par tous les documents validés, n'apparaît **nulle part** dans le prototype. |
+| Impact | Faible techniquement, réel pour l'utilisateur : deux vocabulaires concurrents désigneraient la même responsabilité, dans un produit dont la finalité est précisément de faire comprendre l'organisation. |
+| Bloquant | Non |
+| Recommandation | Retenir la terminologie validée, « Booster », et corriger les libellés relevés lors de la relecture. Si Tess ou Léa préfèrent « Représentant de cercle », c'est un changement de vocabulaire à arbitrer formellement, avec mise à jour de la matrice et du modèle. |
+| Résolution | Ouvert. À trancher lors de la relecture de l'inventaire, au plus tard au LOT 6. |
+
+## `ECART-015` — Le prototype ne fournit ni descriptions de cercles ni liens internes
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, sous-étape S7 |
+| Source | Cahier des charges §2.2 et §12.1, qui annoncent que le prototype fournit « textes de présentation, descriptions de cercles, descriptions de bureaux et liens internes » |
+| Constat | Après retrait des chaînes Base64 et analyse des 194 566 caractères de texte réel : les descriptions de **bureaux** existent bien, au nombre de trois. En revanche **aucune description de cercle** n'existe, les huit cercles ne portant qu'une couleur et une variante d'icône ; et **aucun lien interne** n'existe, les sept URL du fichier étant quatre dépendances CDN, une police web et deux exemples fictifs placés dans des commentaires. Le terme « Hub » n'apparaît pas une seule fois. |
+| Impact | Le LOT 6 devra **rédiger** les huit descriptions de cercle au lieu de les reprendre, et les trois liens internes devront être fournis par Léa ou Tess. Aucun impact sur le LOT 0. |
+| Bloquant | Non |
+| Recommandation | Ne pas attendre du prototype ce qu'il ne contient pas. Prévoir la rédaction des huit descriptions de cercle dans la charge du LOT 6, et la saisie des liens en configuration d'entité. |
+| Résolution | Ouvert. Documenté dans l'inventaire et dans le document des liens internes. |

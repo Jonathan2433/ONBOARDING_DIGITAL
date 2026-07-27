@@ -147,15 +147,17 @@ référentiel ; toute modification ultérieure passe par les rôles autorisés, 
 
 Trois bureaux initiaux, **entièrement configurables** (cahier §10.3).
 
-| Code | Nom |
-|---|---|
-| `BDS` | BDS |
-| `BDE` | BDE |
-| `BDG` | BDG |
+| Code | Nom court | Intitulé complet relevé dans le prototype | Statut |
+|---|---|---|---|
+| `BDS` | BDS | Bureau Des Sports | `à relire` |
+| `BDE` | BDE | Bureau des Exaltés | `à relire` |
+| `BDG` | BDG | Bureau De Gaming | `à relire` |
 
-Les documents validés ne développent pas l'intitulé complet de ces sigles. Ils seront
-renseignés par Tess et Diane lors de la reprise des contenus éditoriaux (LOT 6,
-`MVP-L06-US003` et `MVP-L06-US007`). Je ne les invente pas ici.
+Aucun document validé ne développe ces sigles. Les intitulés complets ci-dessus ont été
+**relevés dans le prototype** en sous-étape S7 et sont au statut `à relire` : ils ne sont pas
+validés. Voir [inventaire des contenus, `CONT-012` à `CONT-014`](../../product/contenus/inventaire-prototype.md).
+
+Leur validation appartient à Tess (LOT 6, `MVP-L06-US003` et `MVP-L06-US007`).
 
 ---
 
