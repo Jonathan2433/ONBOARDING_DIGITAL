@@ -1,0 +1,129 @@
+# .gitignore — eXalt Onboarding Digital
+#
+# Ce fichier est une barriere de securite, pas une simple commodite.
+# Il applique les regles validees suivantes :
+#   - roadmap, refus des raccourcis structurants : aucun secret dans Git
+#   - roadmap, LOT 0, critere de sortie n.4 : aucun fichier reel de collaborateurs n'est versionne
+#   - cahier des charges 19.1 : aucun media dans le depot Git
+#   - cahier des charges 20.3 : .env local non versionne, .env.example sans secret
+#   - backlog 12 : une porte ne peut pas etre validee si un secret ou une donnee reelle a ete versionne
+#
+# Toute levee d'une regle ci-dessous exige une decision explicite et tracee.
+
+# ─────────────────────────────────────────────────────────────
+# Secrets et configuration locale
+# ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+secrets/
+*.secret
+credentials*.json
+
+# ─────────────────────────────────────────────────────────────
+# Donnees reelles de collaborateurs
+# Les CSV sont interdits, sauf les exemples explicitement fictifs
+# du schema d'import (LOT 0, US004).
+# ─────────────────────────────────────────────────────────────
+*.csv
+!docs/architecture/donnees/exemples/*.csv
+*.tsv
+*.xlsx
+*.xls
+*.numbers
+
+# ─────────────────────────────────────────────────────────────
+# Prototype historique
+# docs/prototype/V1.html est conserve sur disque pour historisation
+# mais n'est pas versionne : il contient des donnees personnelles
+# reelles (noms, photos, clients) et un mot de passe administrateur
+# en clair. Voir docs/prototype/README.md.
+# ─────────────────────────────────────────────────────────────
+docs/prototype/V1.html
+
+# ─────────────────────────────────────────────────────────────
+# Medias
+# ─────────────────────────────────────────────────────────────
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+*.mp3
+*.wav
+uploads/
+media/
+
+# ─────────────────────────────────────────────────────────────
+# Donnees locales, volumes et sauvegardes
+# ─────────────────────────────────────────────────────────────
+data/
+volumes/
+backups/
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+*.tar.gz
+restic-repo/
+
+# ─────────────────────────────────────────────────────────────
+# Dependances et caches (utiles a partir du LOT 1)
+# ─────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.yarn/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage
+coverage/
+
+# ─────────────────────────────────────────────────────────────
+# Artefacts de construction
+# ─────────────────────────────────────────────────────────────
+dist/
+build/
+.vite/
+*.egg-info/
+playwright-report/
+test-results/
+
+# ─────────────────────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# ─────────────────────────────────────────────────────────────
+# Environnement de developpement
+# ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+.claude/
+
+# ─────────────────────────────────────────────────────────────
+# macOS et iCloud Drive
+# ─────────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.icloud
+*.icloud

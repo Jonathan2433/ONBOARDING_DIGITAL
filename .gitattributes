@@ -1,0 +1,50 @@
+# .gitattributes — eXalt Onboarding Digital
+#
+# Normalisation des fins de ligne : le developpement demarre sur macOS
+# (Apple Silicon M5) et les images cibles sont linux/arm64 et linux/amd64.
+# Les fichiers texte sont stockes en LF dans le depot pour eviter tout
+# diff parasite entre plateformes.
+
+* text=auto eol=lf
+
+# ─── Documentation et configuration ───
+*.md        text eol=lf
+*.txt       text eol=lf
+*.json      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.toml      text eol=lf
+*.ini       text eol=lf
+*.example   text eol=lf
+
+# ─── Code (a partir du LOT 1) ───
+*.py        text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.sql       text eol=lf
+*.sh        text eol=lf diff=bash
+Dockerfile  text eol=lf
+Caddyfile   text eol=lf
+
+# ─── Donnees ───
+*.csv       text eol=lf
+
+# ─── Binaires : jamais de normalisation ni de diff textuel ───
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.webp      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+*.mp4       binary
+*.mov       binary
+*.webm      binary
