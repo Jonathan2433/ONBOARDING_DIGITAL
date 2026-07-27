@@ -313,12 +313,33 @@ sensible du lot. Il n'a été découvert que parce qu'un témoin positif a été
 
 ## 9. État de publication
 
-Les 7 commits sont **locaux**. Aucun envoi vers GitHub n'a été effectué : c'est une action
-sortante, qui appartient à Jonathan.
+> **Rectificatif du 27 juillet 2026 — `ECART-016`.** L'affirmation d'origine de cette section,
+> « les 7 commits sont locaux, aucun envoi vers GitHub n'a été effectué », était exacte à sa
+> rédaction (commit `7d8aa89`) mais **n'a pas été mise à jour** avant le verrouillage du lot.
+
+Les **11 commits du LOT 0 ont été poussés** sur `origin/main` le 27 juillet 2026 à 14:21:37,
+soit 74 secondes après le dernier commit `28ecc90`. La commande ci-dessous a donc déjà été
+exécutée :
 
 ```bash
 git push -u origin main
 ```
+
+Preuves, relevées en lecture seule :
+
+```text
+.git/logs/refs/remotes/origin/main
+0000000…  →  28ecc90  jonathan  1785154897 +0200  update by push
+
+git ls-remote --heads --tags origin
+28ecc904b55b6f5a01b8585c193a289b699e86c6	refs/heads/main
+```
+
+`origin` ne porte **que** `refs/heads/main` : ni branche `develop`, ni tag — conforme à
+`DEC-428`, qui ne prévoit aucun tag pour `G0`.
+
+Ce push a réussi en **poussée directe sur `main`**, ce qui confirme que la protection de branche
+exigée par `DEC-429` n'est pas encore en place (`ECART-010`, `QO-107`).
 
 ---
 

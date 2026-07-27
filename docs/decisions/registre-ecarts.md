@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 15 | 7 | 6 | 2 |
+| Total 16 | 7 | 7 | 2 |
 
 ---
 
@@ -33,8 +33,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
+| `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
 
-**Prochain identifiant libre : `ECART-016`.**
+**Prochain identifiant libre : `ECART-017`.**
 
 ---
 
@@ -217,3 +218,17 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Ne pas attendre du prototype ce qu'il ne contient pas. Prévoir la rédaction des huit descriptions de cercle dans la charge du LOT 6, et la saisie des liens en configuration d'entité. |
 | Résolution | Ouvert. Documenté dans l'inventaire et dans le document des liens internes. |
+
+## `ECART-016` — La documentation de clôture affirme à tort que les commits sont locaux
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, prise en charge par l'agent suivant, avant ouverture du LOT 1 |
+| Source | `CLAUDE.md` §1 et §10 ; `docs/operations/controles-sortie-lot-0.md` §9 |
+| Constat | Trois emplacements affirment que les commits du LOT 0 sont **locaux** et qu'aucun envoi vers GitHub n'a été effectué. Le journal de références `.git/logs/refs/remotes/origin/main` enregistre `0000000… → 28ecc90 … update by push` à l'horodatage `1785154897 +0200`, soit le **27 juillet 2026 à 14:21:37**, 74 secondes après le dernier commit. `git ls-remote --heads --tags origin` confirme côté serveur que `origin` porte `refs/heads/main` à `28ecc90`. `main` est à `0 ahead / 0 behind` d'`origin/main`. **Les 11 commits sont publiés.** |
+| Impact | Deux impacts distincts. **Opérationnel :** la convention de rapport du projet impose de fournir la commande de retour arrière de chaque sous-étape, `git reset --hard <commit précédent>`. Sur un commit déjà poussé, cette commande n'est pas applicable — la remise en cohérence exigerait un push forcé, interdit par les conventions Git §6. Un agent se fiant à la passation proposerait un retour arrière irréalisable. **Traçabilité :** l'affirmation figurait dans un document de contrôle de sortie, c'est-à-dire dans une preuve de porte. |
+| Cause | L'affirmation était **exacte à sa rédaction**, en sous-étape S8, commit `7d8aa89`. Le push est intervenu après. Ni `CLAUDE.md`, rédigé au commit suivant, ni le document de contrôles n'ont été relus après l'envoi. Défaut de mise à jour, non défaut de contrôle. |
+| Bloquant | Non. La porte `G0` reste valablement franchie : le contenu poussé est celui qui a été validé, et les contrôles de sortie eux-mêmes demeurent exacts. |
+| Recommandation | Rectifier les trois emplacements, et inscrire dans la passation la règle de vérification préalable `git status -sb` avant d'annoncer tout point de retour. |
+| Résolution | **Clos** le 27 juillet 2026. `CLAUDE.md` §1 et §10 et `controles-sortie-lot-0.md` §9 rectifiés, preuves de push versées au document de contrôles. |
+| Constat associé | Le push a réussi **en poussée directe sur `main`**, ce qui prouve que la protection exigée par `DEC-429` n'est pas en place. Suivi par `ECART-010`, `QO-107` et `QO-108`, prérequis du LOT 1. |

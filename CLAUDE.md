@@ -19,8 +19,9 @@ Ce document dit **où en est le projet**, **ce qui a été fait**, **comment il 
 | Lot suivant | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1` |
 | État du LOT 1 | **NON OUVERT.** Plan prêt : [`docs/operations/fiche-lot-1.md`](docs/operations/fiche-lot-1.md) |
 | Code applicatif | **Aucun.** Le LOT 0 est exclusivement documentaire |
-| Commits | 11, **tous locaux** — rien n'a été poussé sur GitHub |
+| Commits | 11, **tous poussés** sur `origin/main` le 27/07/2026 à 14:21:37 (`ECART-016`) |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL`, privé, compte personnel de Jonathan |
+| Conséquence | Un commit poussé **ne peut plus** être annulé par `git reset --hard` : le push forcé est interdit (conventions §6) |
 
 **Première chose à vérifier :** le LOT 1 a-t-il été **explicitement ouvert** par Jonathan ? Si
 non, tu ne touches à rien du LOT 1. Tu peux répondre à des questions, affiner le plan, corriger
@@ -111,7 +112,7 @@ comblé.
 | `ROAD-nnn` | `001`–`012` | `ROAD-013` |
 | `BACKLOG-nnn` | `001`–`010` | `BACKLOG-011` |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK` | `-001`–`-005` chacun | `-006` |
-| `ECART-nnn` écarts | `001`–`015` | **`ECART-016`** |
+| `ECART-nnn` écarts | `001`–`016` | **`ECART-017`** |
 | `QO-nnn` questions | `072`–`105` avec **5 trous**, puis `106`–`110` | **`QO-111`** |
 | `ROAD-RSK-nnn` risques | `001`–`028` | **`ROAD-RSK-029`** |
 | `DEP-nnn` dépendances | `001`–`017` | **`DEP-018`** |
@@ -448,7 +449,10 @@ Jonathan valide vite et lit sérieusement. Ce qui a bien fonctionné avec lui :
   sécurité inopérant ;
 - distinguer nettement **ce qui est prouvé** de **ce qui est recommandé** ;
 - lui donner à chaque fois la commande de publication **et** celle de retour arrière ;
-- ne jamais pousser sur GitHub sans son accord : les 11 commits sont encore locaux.
+- ne jamais pousser sur GitHub sans son accord. **Les 11 commits du LOT 0 ont été poussés** le
+  27/07/2026 à 14:21:37 : à partir de là, seul un commit **non encore poussé** peut être annulé
+  par `git reset --hard`. Vérifie systématiquement avec `git status -sb` avant d'annoncer un
+  point de retour (`ECART-016`).
 
 Le projet a une exigence de traçabilité inhabituellement élevée : 106 décisions identifiées pour
 un lot documentaire. Ce n'est pas de la bureaucratie, c'est ce qui permettra, au LOT 9, de
