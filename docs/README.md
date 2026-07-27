@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `449` en usage | `DEC-450` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `450` en usage | `DEC-451` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -126,7 +126,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | Porte | Moment | Validation obligatoire | État |
 |---|---|---|---|
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
-| `G1` | Fin du socle local | Stack, CI et images validées | Planifiée |
+| `G1` | Fin du socle local | Stack, CI et images validées | **Porte courante** — LOT 1 ouvert le 27/07/2026 (`DEC-450`) |
 | `G2` | Fin du modèle implémenté | Contraintes et isolation validées | Planifiée |
 | `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
 | `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
@@ -158,3 +158,29 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 | S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | **Validée** par Jonathan le 27 juillet 2026 |
 | S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | **Validée** par Jonathan le 27 juillet 2026, statut `à relire` (`DEC-437`) |
 | S8 | Contrôles de sortie et préparation de la porte `G0` | — | **Validée**. Porte `G0` franchie le 27 juillet 2026 (`DEC-438`) |
+
+---
+
+## 8. Avancement du LOT 1 — **lot ouvert**, porte `G1`
+
+Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
+[`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
+[`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
+
+| Sous-étape | Objet | Story | Issue | État |
+|---|---|---|---|---|
+| `T0` | Prérequis et arbitrages techniques | — | — | **Terminée** hors lot. 3 prérequis levés, 7 choix tranchés (`DEC-439`–`DEC-447`) |
+| `T1` | Squelette du monorepo, outillage, versions épinglées | `MVP-L01-US001` | `#2` | **À faire** |
+| `T2` | Compose développement, 8 services sains | `MVP-L01-US002` | `#3` | Planifiée |
+| `T3` | API FastAPI, 3 healthchecks, migration initiale | `MVP-L01-US003` | `#4` | Planifiée |
+| `T4` | Journalisation JSON corrélée | `MVP-L01-US004` | `#5` | Planifiée |
+| `T5` | Frontend Vite, page de statut | `MVP-L01-US002`, `US003` | `#3`, `#4` | Planifiée |
+| `T6` | CI GitHub Actions, 3 échecs volontaires prouvés | `MVP-L01-US005` | `#6` | Planifiée |
+| `T7` | Images multiarchitecture, GHCR privé | `MVP-L01-US006` | `#7` | Planifiée |
+| `T8` | Environnement de recette isolé | `MVP-L01-US002` | `#3` | Planifiée |
+| `T9` | Documentation d'exploitation locale | `MVP-L01-US008` | `#9` | Planifiée |
+| `T10` | Design system et contrat API | `MVP-L01-US007` (`P1`) | `#8` | Planifiée |
+| `T11` | Contrôles de sortie et porte `G1` | — | — | Planifiée |
+
+Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic `#1`, stories `#2`
+à `#9`. **`main` et `develop` sont protégées** — toute modification passe par une pull request.

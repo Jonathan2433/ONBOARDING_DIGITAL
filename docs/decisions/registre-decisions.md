@@ -19,7 +19,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Décisions de réalisation `DEC-418+` | 21 | Validées le 27/07/2026 |
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
-| **Total** | **117** | |
+| Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
+| **Total** | **118** | |
 
 ---
 
@@ -102,7 +103,22 @@ plus aucun commit direct sur `main` ni `develop`, **y compris documentaire**. `D
 faisait entrer le circuit en vigueur qu'au premier commit de code du LOT 1 ; il s'applique en
 pratique dès maintenant, ce qui est plus strict et va dans le sens du cadrage.
 
-**Prochain identifiant libre : `DEC-450`.**
+## 1.3 Ouverture du LOT 1
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-450` | **Jonathan ouvre le LOT 1 — « Monorepo, qualité et environnement local »** le 27 juillet 2026. Les stories `MVP-L01-US001` à `US008` peuvent passer à `Ready` puis `In progress`. Le travail démarre à la sous-étape **`T1`**, story `MVP-L01-US001`, issue `#2`. Les LOTS 2 à 14 restent `Planned` : aucune de leurs stories ne peut être entamée. | Les 3 prérequis bloquants de la fiche §9.1 sont levés et prouvés, les 7 choix techniques de §9.2 sont tranchés (`DEC-439` à `DEC-447`), et la traçabilité GitHub est en place avec protection effective des branches (`DEC-449`). Les conditions de `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006` sont donc réunies. | Validée |
+
+**Conséquences immédiates**
+
+- `DEC-427` prend effet au premier commit de code : **branche + pull request obligatoires**. En
+  pratique le régime s'applique déjà à tout, `enforce_admins` étant actif depuis `DEC-449`.
+- La porte `G1` devient la porte courante. Le tag `v0.1.0` sera posé sur `main` à sa validation
+  (`DEC-428`).
+- `ECART-006` — `.env.example` en v0.1 — doit être clos dans ce lot.
+- `QO-085` recevra sa mesure en charge une fois les 8 services démarrés.
+
+**Prochain identifiant libre : `DEC-451`.**
 
 ---
 
@@ -263,7 +279,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-418+` | 21 | 21 |
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
 | `DEC-449` — mise en place GitHub | 1 | 1 |
-| **Total** | **117** | **117** |
+| `DEC-450` — ouverture du LOT 1 | 1 | 1 |
+| **Total** | **118** | **118** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
