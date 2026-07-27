@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documents de cadrage validés
+    url: https://github.com/Jonathan2433/ONBOARDING_DIGITAL/tree/main/docs
+    about: Cahier des charges, matrice des droits, modèle de données, roadmap et backlog. À consulter avant d'ouvrir une issue.
+  - name: Règles de contribution
+    url: https://github.com/Jonathan2433/ONBOARDING_DIGITAL/blob/main/CONTRIBUTING.md
+    about: Circuit de contribution, définitions de Ready et de Done, règles de sécurité et de données.
