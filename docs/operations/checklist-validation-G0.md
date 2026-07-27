@@ -3,6 +3,7 @@
 **Pour :** Jonathan
 **Lot :** 0 — Référentiel projet et préparation
 **Date :** 27 juillet 2026
+**Issue :** porte `G0` **validée** par Jonathan le 27 juillet 2026 — décision `DEC-438`
 **Preuves détaillées :** [controles-sortie-lot-0.md](controles-sortie-lot-0.md)
 
 Cette checklist tient sur une page. C'est la mesure du risque `ROAD-RSK-010`, « Jonathan devient
@@ -18,7 +19,7 @@ un goulot de validation ».
 | ☐ | Chaque décision possède un identifiant stable | 104 décisions, 0 doublon, 0 absence, 89 libellés vérifiés au caractère près | ✅ |
 | ☐ | Les responsabilités produit et techniques sont identifiées | `responsabilites-projet.md`, 8 domaines du cahier §5.1 | ✅ |
 | ☐ | Aucun fichier réel de collaborateurs n'est versionné | 128 patronymes du prototype confrontés au dépôt : 0 présent. 7 commits scannés, 0 secret | ✅ |
-| ☐ | **Jonathan valide le référentiel** | — | **à toi** |
+| ☑ | **Jonathan valide le référentiel** | `DEC-438`, 27 juillet 2026 | ✅ |
 
 ---
 
@@ -51,7 +52,7 @@ au statut `à relire`, la relecture étant portée au LOT 6.
 | ☐ | Comportement mobile et clavier utilisable | sans objet |
 | ☐ | Démonstration conforme aux critères de la roadmap | ✅ preuve documentaire |
 | ☐ | Documentation minimale présente | ✅ 36 documents |
-| ☐ | Validation explicite de Jonathan | **à toi** |
+| ☑ | Validation explicite de Jonathan | ✅ |
 
 Les quatre « sans objet » le sont parce que le LOT 0 ne produit **aucun code**, aucune interface
 et aucune migration. Ces critères s'appliqueront dès le LOT 1.

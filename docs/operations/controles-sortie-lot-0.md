@@ -3,7 +3,7 @@
 **Produit en :** LOT 0, sous-étape S8
 **Date d'exécution :** 27 juillet 2026
 **Porte :** `G0` — « Fin du référentiel : Jonathan confirme les documents et conventions »
-**Statut :** contrôles exécutés, **validation de Jonathan en attente**
+**Statut :** contrôles exécutés — **porte `G0` validée par Jonathan le 27 juillet 2026** (`DEC-438`)
 
 Ce document apporte la preuve, commande par commande et sortie par sortie, que les critères de
 sortie du LOT 0 sont satisfaits. Il est réexécutable.
@@ -20,7 +20,7 @@ Source : roadmap, LOT 0, section « Critères de sortie ».
 | 2 | Chaque décision possède un identifiant stable | **Satisfait** |
 | 3 | Les responsabilités produit et techniques sont identifiées | **Satisfait** |
 | 4 | Aucun fichier réel de collaborateurs n'est versionné | **Satisfait** |
-| 5 | Jonathan valide le référentiel | **En attente** |
+| 5 | Jonathan valide le référentiel | **Satisfait** — 27 juillet 2026, `DEC-438` |
 
 ---
 
@@ -266,7 +266,7 @@ Une porte ne peut pas être validée si l'un de ces neuf points est en échec.
 | Un comportement mobile ou clavier essentiel est inutilisable | **Sans objet** | Aucune interface au LOT 0 |
 | La démonstration ne correspond pas aux critères de la roadmap | **Non** | La roadmap n'exige pas de démonstration exécutable pour le LOT 0 ; la preuve est documentaire et figure dans ce document |
 | La documentation minimale de reprise ou d'exploitation manque | **Non** | 36 documents Markdown versionnés, dont conventions, politique de configuration et registres |
-| Jonathan n'a pas donné sa validation explicite | **En attente** | Objet de la porte `G0` |
+| Jonathan n'a pas donné sa validation explicite | **Non** | Validation donnée le 27 juillet 2026, `DEC-438` |
 
 ---
 

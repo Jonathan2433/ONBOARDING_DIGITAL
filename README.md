@@ -14,14 +14,15 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lot ouvert | **LOT 0 — Référentiel projet et préparation** |
-| Porte de validation en cours | **G0** — « Jonathan confirme les documents et conventions » — [checklist](docs/operations/checklist-validation-G0.md) |
-| Sous-étape en cours | S8 — contrôles de sortie, **validation `G0` en attente** |
-| Lots suivants | `Planned` — aucun travail anticipé autorisé |
+| Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
+| Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
+| Lot suivant | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`. **Non ouvert** : en attente d'ouverture explicite de Jonathan |
+| Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 
 Aucun code applicatif n'existe encore : le LOT 0 est exclusivement documentaire et
 décisionnel. Le monorepo (`apps/web`, `apps/api`, `apps/worker`, `packages/*`, `infra/`)
-appartient au **LOT 1** et ne doit pas être amorcé avant validation de la porte `G0`.
+appartient au **LOT 1** et ne doit pas être amorcé avant l'ouverture explicite de ce lot par
+Jonathan (`ROAD-003`, `ARB-BACK-003`, `BACKLOG-006`).
 
 ---
 
@@ -132,7 +133,7 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 105 |
+| [Décisions](docs/decisions/registre-decisions.md) | 106 |
 | [Écarts](docs/decisions/registre-ecarts.md) | 15 |
 | [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 34 |
 | [Risques](docs/operations/registre-risques.md) | 28 |
