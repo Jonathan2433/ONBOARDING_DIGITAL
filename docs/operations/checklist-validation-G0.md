@@ -16,9 +16,9 @@ un goulot de validation ».
 | | Critère | Preuve | État |
 |:--:|---|---|:--:|
 | ☐ | Les documents de cadrage sont présents dans le dépôt | 5 empreintes SHA-256 identiques aux valeurs d'avant travaux ; 4 sous-dossiers conformes | ✅ |
-| ☐ | Chaque décision possède un identifiant stable | 104 décisions, 0 doublon, 0 absence, 89 libellés vérifiés au caractère près | ✅ |
+| ☐ | Chaque décision possède un identifiant stable | 106 décisions, 0 doublon, 0 absence, 89 libellés vérifiés au caractère près | ✅ |
 | ☐ | Les responsabilités produit et techniques sont identifiées | `responsabilites-projet.md`, 8 domaines du cahier §5.1 | ✅ |
-| ☐ | Aucun fichier réel de collaborateurs n'est versionné | 128 patronymes du prototype confrontés au dépôt : 0 présent. 7 commits scannés, 0 secret | ✅ |
+| ☐ | Aucun fichier réel de collaborateurs n'est versionné | 128 patronymes du prototype confrontés au dépôt : 0 présent. Historique scanné, 0 secret | ✅ |
 | ☑ | **Jonathan valide le référentiel** | `DEC-438`, 27 juillet 2026 | ✅ |
 
 ---
@@ -51,7 +51,7 @@ au statut `à relire`, la relecture étant portée au LOT 6.
 | ☐ | Aucune anomalie bloquante ou critique ouverte | ✅ |
 | ☐ | Comportement mobile et clavier utilisable | sans objet |
 | ☐ | Démonstration conforme aux critères de la roadmap | ✅ preuve documentaire |
-| ☐ | Documentation minimale présente | ✅ 36 documents |
+| ☐ | Documentation minimale présente | ✅ 38 documents |
 | ☑ | Validation explicite de Jonathan | ✅ |
 
 Les quatre « sans objet » le sont parce que le LOT 0 ne produit **aucun code**, aucune interface
@@ -63,7 +63,7 @@ et aucune migration. Ces critères s'appliqueront dès le LOT 1.
 
 En validant `G0`, tu confirmes :
 
-1. **les 19 décisions `DEC-418` à `DEC-436`** deviennent la référence opposable du projet ;
+1. **les 21 décisions `DEC-418` à `DEC-438`** deviennent la référence opposable du projet ;
 2. **les conventions Git, de versions et de contribution** s'appliqueront dès le LOT 1 ;
 3. **le schéma initial du CSV** en version `1.0-initiale` est le contrat d'entrée des données ;
 4. **la politique de configuration et de secrets** encadre les trois environnements ;
@@ -99,7 +99,7 @@ Ce ne sont pas des conditions de `G0`, mais des prérequis du lot suivant.
 
 ## 7. Publication
 
-Les 7 commits sont **locaux**. Rien n'a été envoyé sur GitHub.
+Les 9 commits du lot sont **locaux**. Rien n'a été envoyé sur GitHub.
 
 ```bash
 git push -u origin main
@@ -107,13 +107,13 @@ git push -u origin main
 
 ---
 
-## 8. Décision
+## 8. Décision prise
 
-| Décision | Effet |
-|---|---|
-| **Je valide `G0`** | Le LOT 0 est verrouillé. Je peux préparer le plan du LOT 1, **sans l'exécuter** |
-| **Je valide `G0` avec réserves** | Précise lesquelles ; elles sont enregistrées au registre des écarts avant verrouillage |
-| **Je ne valide pas** | Précise ce qui manque ; le LOT 0 reste ouvert et je corrige |
+**Porte `G0` validée par Jonathan le 27 juillet 2026**, sans réserve. Décision `DEC-438`.
 
-Aucun travail du LOT 1 ne commencera avant ta validation explicite (`ROAD-003`,
-`ARB-BACK-003`, `BACKLOG-006`).
+Le LOT 0 est terminé et **verrouillé**. Le plan du LOT 1 peut être préparé ; aucun travail du
+LOT 1 ne commence avant l'ouverture explicite de ce lot (`ROAD-003`, `ARB-BACK-003`,
+`BACKLOG-006`).
+
+Aucun tag de version n'est posé : `DEC-428` prévoit que `G0` ne produit aucune version, le
+LOT 0 ne livrant aucun exécutable.
