@@ -148,9 +148,20 @@ alimente le registre des décisions créé en sous-étape S4.
 
 | Autre séquence | Source | Étendue |
 |---|---|---|
-| `QO-072` à `QO-105` | Cahier des charges, section 32 | 34 questions, dont 17 bloquantes |
+| `QO-072` à `QO-105` | Cahier des charges, section 32 | **29 questions** présentes, dont 17 bloquantes |
 | `ROAD-RSK-001` à `ROAD-RSK-012` | Roadmap, section 14 | 12 risques identifiés |
 | Risques du cahier, section 33 | Cahier des charges | 12 risques **sans identifiant** |
+
+> **Correction apportée en sous-étape S4.** Cette ligne indiquait initialement « 34 questions ».
+> Le recomptage automatique des identifiants établit qu'il y en a **29**. La plage `QO-072` à
+> `QO-105` couvre 34 numéros, mais cinq sont absents du corpus : `QO-075`, `QO-079`, `QO-080`,
+> `QO-082`, `QO-090`. La valeur initiale confondait l'étendue de la plage et le nombre
+> d'entrées réelles. Le décompte de 17 questions bloquantes était exact. Écart consigné en
+> `ECART-011`.
+>
+> ```bash
+> grep -o 'QO-[0-9]\{3\}' docs/product/CAHIER_DES_CHARGES_EXALT_BORDEAUX.md | sort -u | wc -l
+> ```
 
 **Écart `ECART-004` :** les cinq documents référencent des décisions `DEC-001` à `DEC-417`
 issues des ateliers de cadrage, mais la table correspondante n'est présente dans aucun

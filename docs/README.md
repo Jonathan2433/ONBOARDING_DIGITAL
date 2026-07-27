@@ -41,8 +41,8 @@ présent index et du registre des décisions.
 |---|---|---|
 | [`product/`](product/README.md) | Cahier des charges, matrice des droits, roadmap, backlog, contenus éditoriaux | Léa (produit), Tess et Diane (contenus) |
 | [`architecture/`](architecture/README.md) | Modèle de données, schéma du CSV collaborateurs, listes contrôlées, décisions d'architecture | Jonathan |
-| `decisions/` | Registre des décisions, registre des écarts | Jonathan |
-| `operations/` | Conventions Git et versions, traçabilité GitHub, registres des risques, des questions ouvertes et des dépendances externes, politique de configuration et de secrets, contrôles de sortie | Jonathan |
+| [`decisions/`](decisions/README.md) | Registre des décisions, registre des écarts | Jonathan |
+| `operations/` | Conventions Git et versions, traçabilité GitHub, registres des risques, des questions ouvertes et des dépendances externes, responsabilités, politique de configuration et de secrets, contrôles de sortie | Jonathan |
 | [`prototype/`](prototype/README.md) | Prototype historique, conservé pour historisation, non versionné, non réutilisable | — |
 
 ---
@@ -71,20 +71,24 @@ Procédure d'évolution, cahier des charges section 35 :
 Les identifiants ne sont **jamais** réutilisés. Toute nouvelle entrée poursuit la séquence
 existante.
 
-| Séquence | Objet | Étendue constatée | Prochain identifiant libre |
-|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `DEC-001` à `DEC-417` réservés (voir ci-dessous) ; `DEC-418+` en usage | suivant le registre |
-| `RIGHTS-nnn` | Décisions de droits | `RIGHTS-001` à `RIGHTS-025` | `RIGHTS-026` |
-| `DATA-nnn` | Décisions de modèle | `DATA-001` à `DATA-018` | `DATA-019` |
-| `ROAD-nnn` | Décisions de roadmap | `ROAD-001` à `ROAD-012` | `ROAD-013` |
-| `BACKLOG-nnn` | Décisions de backlog | `BACKLOG-001` à `BACKLOG-010` | `BACKLOG-011` |
-| `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` |
-| `QO-nnn` | Questions ouvertes | `QO-072` à `QO-105` | `QO-106` |
-| `ROAD-RSK-nnn` | Risques | `ROAD-RSK-001` à `ROAD-RSK-012` | `ROAD-RSK-013` |
-| `ECART-nnn` | Écarts entre l'existant et les documents | séquence créée par le projet | suivant le registre |
-| `DEP-nnn` | Dépendances externes | séquence créée par le projet | suivant le registre |
-| `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — |
-| `Gn` | Portes de validation | `G0` à `G14` | — |
+| Séquence | Objet | Étendue | Prochain libre | Registre |
+|---|---|---|---|---|
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `431` en usage | `DEC-432` | [décisions](decisions/registre-decisions.md) |
+| `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
+| `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
+| `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
+| `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
+| `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
+| `ECART-nnn` | Écarts | `001` à `011` | `ECART-012` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `109` | `QO-110` | [questions](operations/registre-questions-ouvertes.md) |
+| `ROAD-RSK-nnn` | Risques | `001` à `028` | `ROAD-RSK-029` | [risques](operations/registre-risques.md) |
+| `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
+| `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — | backlog validé |
+| `Gn` | Portes de validation | `G0` à `G14` | — | roadmap validée |
+
+Trous conservés et jamais comblés : `QO-075`, `QO-079`, `QO-080`, `QO-082`, `QO-090`
+(`ECART-011`). Les règles de tenue figurent dans
+[`decisions/README.md`](decisions/README.md).
 
 ### Traitement de la référence `DEC-001` à `DEC-417`
 
@@ -146,9 +150,9 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 | Sous-étape | Objet | Story | État |
 |---|---|---|---|
 | S1 | Dépôt, arborescence documentaire, barrières de sécurité | `MVP-L00-US001` | **Validée** par Jonathan le 27 juillet 2026 |
-| S2 | Versionnement des documents validés | `MVP-L00-US002` | En cours |
-| S3 | Conventions Git, versions et contribution | `MVP-L00-US003` | À faire |
-| S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | À faire |
+| S2 | Versionnement des documents validés | `MVP-L00-US002` | **Validée** par Jonathan le 27 juillet 2026 |
+| S3 | Conventions Git, versions et contribution | `MVP-L00-US003` | **Validée** par Jonathan le 27 juillet 2026 |
+| S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | En cours |
 | S5 | Modèles de configuration sans secrets | `MVP-L00-US007` | À faire |
 | S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | À faire |
 | S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | À faire |
