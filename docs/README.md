@@ -152,8 +152,8 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 | S1 | Dépôt, arborescence documentaire, barrières de sécurité | `MVP-L00-US001` | **Validée** par Jonathan le 27 juillet 2026 |
 | S2 | Versionnement des documents validés | `MVP-L00-US002` | **Validée** par Jonathan le 27 juillet 2026 |
 | S3 | Conventions Git, versions et contribution | `MVP-L00-US003` | **Validée** par Jonathan le 27 juillet 2026 |
-| S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | En cours |
-| S5 | Modèles de configuration sans secrets | `MVP-L00-US007` | À faire |
+| S4 | Registres décisions, risques, questions, dépendances, écarts | `MVP-L00-US006` | **Validée** par Jonathan le 27 juillet 2026 |
+| S5 | Modèles de configuration sans secrets | `MVP-L00-US007` | En cours |
 | S6 | Schéma initial du CSV collaborateurs | `MVP-L00-US004` | À faire |
 | S7 | Inventaire des contenus du prototype | `MVP-L00-US005` (`P1`) | À faire |
 | S8 | Contrôles de sortie et préparation de la porte `G0` | — | À faire |
