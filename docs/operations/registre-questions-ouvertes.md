@@ -8,13 +8,14 @@
 |---|---:|---:|
 | Bloquantes avant données réelles ou production générale | 17 | 0 |
 | Non bloquantes pour le développement | 12 | 1 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 5 | 2 |
-| **Total** | **34** | **3** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 5 | 3 |
+| **Total** | **34** | **4** |
 
-**31 questions restent ouvertes.** Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
-(moteur Docker constaté), `QO-108` (moyen de mise en place GitHub, `DEC-448`), `QO-109`
-(atténuations iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa
-réponse et sa date de clôture ; elle n'est jamais retirée du registre.
+**30 questions restent ouvertes.** Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
+(moteur Docker constaté), `QO-107` (protection de branche possible, prouvée, `DEC-449`),
+`QO-108` (moyen de mise en place GitHub, `DEC-448` puis `DEC-449`), `QO-109` (atténuations
+iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa réponse et sa
+date de clôture ; elle n'est jamais retirée du registre.
 
 **Prochain identifiant libre : `QO-111`.**
 
@@ -112,8 +113,8 @@ GitHub interdisant l'auto-approbation.
 | ID | Question | Responsable | Bloque | Statut |
 |---|---|---|---|---|
 | `QO-106` | Retient-on les compléments d'étiquettes GitHub proposés — familles `type`, `gravité` et `état` ? Ils ne sont pas prescrits par les documents validés. | Jonathan | Non. Confort de suivi. | Ouverte |
-| `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | Ouverte |
-| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026** par `DEC-448` : mise en place **par Jonathan dans l'interface GitHub**. Constat reconfirmé en `T0` — `gh` absent, aucun connecteur en session. L'accès Git distant est en revanche authentifié et opérationnel |
+| `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | **Close le 27/07/2026 par l'affirmative.** Le plan autorise la protection classique sur ce dépôt privé personnel : `main` et `develop` sont protégées avec `enforce_admins`, et le rejet du push direct est prouvé (`GH006`). **Le repli `pre-push` devient sans objet.** `DEC-449` |
+| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026.** Réponse initiale `DEC-448` — mise en place dans l'interface par Jonathan. **Réponse effective `DEC-449`, qui remplace `DEC-448`** : installation du binaire `gh` 2.96.0 dans `~/.local/bin` par l'agent, Homebrew étant inutilisable, puis authentification par Jonathan et exécution par `gh` |
 | `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. Était à trancher au LOT 1, avant création des volumes. | **Close le 27/07/2026**, sous-étape `T0`, par `DEC-439` et `DEC-447` |
 | `QO-110` | Quelle nomenclature et quelle langue pour les en-têtes du CSV collaborateurs ? Jonathan n'a pas encore de visibilité sur la source de données réelle. Traitement retenu en attendant : le schéma définit des champs logiques `F01` à `F19` et un profil de correspondance versionné associe les en-têtes réelles (`DEC-434`). Un profil provisoire, non normatif, est utilisé dans le jeu d'exemple. | Jonathan / ESM | Non pour `G0`. Rattachée à `QO-096`, **bloquante avant l'import réel** au LOT 9. | Ouverte |
 

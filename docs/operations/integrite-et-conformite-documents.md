@@ -173,10 +173,12 @@ ultérieur sans conflit d'identifiant, et les nouvelles décisions démarrent à
 
 ## 6. Limites connues de ces contrôles
 
-- Le caractère privé du dépôt distant n'est pas vérifiable depuis cette machine : `gh`
-  n'est pas installé et aucun connecteur GitHub n'est disponible. Un accès anonyme à l'URL
-  du dépôt retourne HTTP 404, comportement attendu d'un dépôt privé, mais également d'un
-  dépôt inexistant. Jonathan a confirmé le 27 juillet 2026 que le dépôt est privé ; cette
-  confirmation constitue la preuve retenue.
+- ~~Le caractère privé du dépôt distant n'est pas vérifiable depuis cette machine.~~
+  **Limite levée le 27 juillet 2026**, en sous-étape `T0` du LOT 1. Le raisonnement d'origine
+  restait juste — un accès anonyme retourne HTTP 404, comportement d'un dépôt privé **comme**
+  d'un dépôt inexistant, et seule la confirmation de Jonathan faisait alors preuve. Depuis
+  l'installation de `gh` (`DEC-449`), la vérification est directe et technique :
+  `gh api repos/:owner/:repo --jq .private` retourne **`true`**. Le caractère privé du dépôt
+  est désormais **prouvé**, non plus seulement attesté.
 - Les contrôles portent sur la conformité et l'intégrité, non sur la justesse métier du
   contenu, qui relève des validations de Léa, Tess et Diane selon leurs périmètres.

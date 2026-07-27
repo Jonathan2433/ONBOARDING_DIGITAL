@@ -97,7 +97,7 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 
 | Sous-étape | Objet | Stories | Critère de validation |
 |---|---|---|---|
-| **T0** | Prérequis et arbitrages techniques. **Aucune écriture.** | — | Jonathan a répondu aux 3 prérequis bloquants et aux 7 choix techniques |
+| ~~**T0**~~ | Prérequis et arbitrages techniques. **Aucune écriture.** ✅ **Faite le 27/07/2026, hors lot** | — | ✅ Jonathan a répondu aux 3 prérequis bloquants et aux 7 choix techniques. Voir [`compte-rendu-t0-lot-1.md`](compte-rendu-t0-lot-1.md) |
 | **T1** | Squelette du monorepo, outillage, versions épinglées | `US001` | L'arborescence des 7 répertoires existe ; lint, formatage et typage s'exécutent à vide sans erreur |
 | **T2** | Docker Compose développement : les 8 services démarrent et sont sains | `US002` | Une seule commande démarre tout ; les 8 services sont `healthy` ; arrêt et redémarrage sans perte de volume |
 | **T3** | API FastAPI minimale, 3 healthchecks, migration Alembic initiale | `US003` | Les 3 endpoints répondent ; `ready` vérifie réellement PostgreSQL, Redis et MinIO ; la migration s'applique sur base vide et se rejoue |
@@ -198,7 +198,12 @@ Contrôles obligatoires, modèle §28 :
 - application sur une **base vide** ;
 - rejeu depuis l'état précédent ;
 - `downgrade` puis `upgrade` compatible ;
-- **aucune création automatique de table** : `DB_AUTO_CREATE=false` (cahier §16.2) ;
+- **aucune création automatique de table** : `DB_AUTO_CREATE=false`. Attention à la source —
+  le cahier §16.2 énonce le **principe**, « aucune création automatique de tables **en
+  production** », et ne contient nulle part la chaîne `DB_AUTO_CREATE` ; ce nom de variable
+  vient de [`.env.example`](../../.env.example) L104, produit au LOT 0. Le LOT 1 applique la
+  contrainte **dans tous les environnements**, ce qui est plus strict que le cahier et
+  correspond à la valeur par défaut déjà livrée ;
 - exécution sur **PostgreSQL réel**, jamais SQLite.
 
 Toute table métier créée dans ce lot serait une anticipation du LOT 2 et devrait être refusée.
@@ -209,7 +214,7 @@ Toute table métier créée dans ce lot serait une anticipation du LOT 2 et devr
 
 | Catégorie | Contenu | Story |
 |---|---|---|
-| Unitaires API | Lecture et validation de la configuration ; **les 7 garde-fous de démarrage** de `.env.example` refusent bien de démarrer | `US002` |
+| Unitaires API | Lecture et validation de la configuration ; **les 11 garde-fous de démarrage** de [`politique-configuration-et-secrets.md`](politique-configuration-et-secrets.md) §6 refusent bien de démarrer — **4 applicables à tous les environnements** (variable obligatoire absente, `CHANGE_ME_*` résiduel, valeur typée invalide, `LOG_FORMAT` autre que `json`) et **7 propres à `APP_ENV=production`**, à éprouver en forçant cette valeur en test | `US002` |
 | Intégration PostgreSQL réel | Connexion, application de la migration, rejeu. **Aucune dépendance à SQLite** | `US003` |
 | API | Les 3 healthchecks ; `ready` en échec quand une dépendance est absente ; format d'erreur du cahier §18.3 avec identifiant de corrélation | `US003` |
 | Journalisation | Présence du `correlation_id` en requête **et** en job ; **absence de secret, de jeton et de magic link** dans la sortie | `US004` |
@@ -247,12 +252,12 @@ la démonstration que la CI **bloque** une erreur de lint, de test et de secret.
 
 | Risque | Impact sur ce lot | Traitement |
 |---|---|---|
-| `ROAD-RSK-026` Dépôt et volumes dans iCloud Drive | **Bloquant avant T2.** La synchronisation peut corrompre un volume PostgreSQL ou un `node_modules` | Trancher `QO-109` **avant** de créer le premier volume. `.gitignore` ne protège pas d'iCloud |
-| `ROAD-RSK-027` 16 Gio de mémoire vive | Élevé dès T8, deux environnements coexistant | Ne pas exécuter dev et recette simultanément ; limites mémoire par service ; arbitrage en T0 |
+| `ROAD-RSK-026` Dépôt et volumes dans iCloud Drive | ~~Bloquant avant T2.~~ **Traité en `T0`.** Le périmètre réel s'est révélé plus étroit : les volumes nommés sont déjà hors iCloud | `DEC-447` volumes nommés exclusivement, `DEC-439` exclusion de `node_modules` et du cache. `QO-109` close |
+| `ROAD-RSK-027` ~~16 Gio~~ **7,75 Gio** de mémoire allouée à Docker | **Plus contraint qu'estimé.** Docker ne dispose que de la moitié des 16 Gio, et un projet tiers en occupait 25 % | `DEC-440` : un seul environnement à la fois, limites mémoire par service, projet tiers arrêté pendant le lot. `T8` prouve la **séparation**, pas la simultanéité |
 | `ROAD-RSK-015` Secret intégré au code | La mesure devient effective en T6 avec Gitleaks | Jusqu'à T6, contrôles manuels de chaque commit |
 | `ROAD-RSK-011` Lot technique sans résultat visible | Moyen | La page de statut de T5 est la réponse : elle rend le socle démontrable |
 | `ROAD-RSK-002` Réouverture d'un lot validé | Moyen | Le LOT 1 fixe l'outillage de tout le projet : un mauvais choix en T1 coûte cher plus tard |
-| Nouveau | Le premier commit de code déclenche le circuit branche + PR (`DEC-427`) et la protection de `main` (`DEC-429`) | Les prérequis 1 et 2 doivent être traités **avant** l'ouverture du lot, pas pendant |
+| ~~Nouveau~~ **Traité** | Le premier commit de code déclenche le circuit branche + PR (`DEC-427`) et la protection de `main` (`DEC-429`) | Prérequis traités en `T0`, avant l'ouverture. `main` et `develop` sont protégées avec `enforce_admins`, rejet du push direct **prouvé** par `GH006`. Le circuit s'applique désormais à **toute** modification, y compris documentaire |
 
 ---
 
@@ -260,28 +265,29 @@ la démonstration que la CI **bloque** une erreur de lint, de test et de secret.
 
 ### 9.1 Prérequis bloquants, hérités du LOT 0
 
-À traiter **avant** l'ouverture du lot.
+> **✅ Les 3 prérequis sont levés** en sous-étape `T0`, le 27 juillet 2026, **avant l'ouverture
+> du lot**. Voir [`compte-rendu-t0-lot-1.md`](compte-rendu-t0-lot-1.md).
 
-| # | Prérequis | Références | Pourquoi bloquant |
-|---:|---|---|---|
-| 1 | Mettre en place la traçabilité GitHub : 13 étiquettes, 15 milestones, protection de `main`. `gh` n'est pas installé et aucun connecteur GitHub n'est disponible | `ECART-010`, `QO-107`, `QO-108` | `DEC-427` fait entrer le circuit PR en vigueur dès le premier commit de code. Sans protection ni issues, `BACKLOG-010` n'est pas respecté |
-| 2 | Décider des atténuations iCloud pour les volumes Docker et les dépendances | `QO-109`, `ROAD-RSK-026` | Un volume PostgreSQL créé dans un dossier synchronisé est un risque de corruption. Déplacer après coup coûte plus cher |
-| 3 | Arbitrer l'exécution non simultanée des environnements | `ROAD-RSK-027`, `QO-085` | Détermine la conception des fichiers Compose et des limites mémoire |
+| # | Prérequis | Références | Pourquoi bloquant | État |
+|---:|---|---|---|---|
+| 1 | Mettre en place la traçabilité GitHub : 13 étiquettes, 15 milestones, protection de `main`. `gh` n'est pas installé et aucun connecteur GitHub n'est disponible | `ECART-010`, `QO-107`, `QO-108` | `DEC-427` fait entrer le circuit PR en vigueur dès le premier commit de code. Sans protection ni issues, `BACKLOG-010` n'est pas respecté | **Levé.** `gh` 2.96.0 installé hors Homebrew, authentifié par Jonathan. 13 étiquettes, 15 milestones, epic `#1`, stories `#2`–`#9`. `main` et `develop` protégées, `enforce_admins` actif, **rejet du push direct prouvé** (`GH006`). `DEC-449`. `ECART-010`, `QO-107` et `QO-108` clos |
+| 2 | Décider des atténuations iCloud pour les volumes Docker et les dépendances | `QO-109`, `ROAD-RSK-026` | Un volume PostgreSQL créé dans un dossier synchronisé est un risque de corruption. Déplacer après coup coûte plus cher | **Levé.** Mesure : les volumes nommés sont déjà hors iCloud, l'image disque de la VM Docker résidant sous `~/Library/Containers/`. Restaient `node_modules` et le cache. `DEC-439`, `DEC-447`. `QO-109` close |
+| 3 | Arbitrer l'exécution non simultanée des environnements | `ROAD-RSK-027`, `QO-085` | Détermine la conception des fichiers Compose et des limites mémoire | **Levé.** Docker ne dispose que de **7,75 Gio**, dont un quart occupé par un projet tiers. Un seul environnement à la fois ; projet tiers arrêté pendant le lot. `DEC-440`. `ROAD-RSK-027` réécrit |
 
 ### 9.2 Choix techniques non tranchés par les documents validés
 
-Aucun document du corpus ne les fixe. Ils seront présentés en **T0** avec une recommandation
-argumentée, et ne seront adoptés qu'après validation.
+Aucun document du corpus ne les fixe. Ils ont été présentés en **`T0`** avec une recommandation
+argumentée. **Les 7 sont tranchés et validés** par Jonathan le 27 juillet 2026.
 
-| # | Choix | Contrainte connue |
-|---:|---|---|
-| 1 | Gestionnaire de paquets JavaScript et outillage monorepo | Aucune dépendance essentielle à un CDN public (roadmap §2.3) |
-| 2 | `mypy` **ou** `pyright` | Le cahier §23.5 cite les deux sans trancher |
-| 3 | Versions épinglées de Python, Node et PostgreSQL | Interdiction de `latest` seul en production (cahier §23.3) |
-| 4 | Organisation des fichiers Compose pour trois environnements | Volumes, bases, buckets, réseaux, ports et secrets distincts (cahier §22.2) |
-| 5 | Nommage et étiquetage des images GHCR | Version exacte et empreinte de commit obligatoires (`DEC-428`) |
-| 6 | HTTPS local par Caddy | Aucun domaine public nécessaire en phase locale (cahier §22.2) |
-| 7 | Emplacement physique des volumes Docker | Dépend du prérequis 2 |
+| # | Choix | Contrainte connue | Décision retenue |
+|---:|---|---|---|
+| 1 | Gestionnaire de paquets JavaScript et outillage monorepo | Aucune dépendance essentielle à un CDN public (roadmap §2.3) | **`pnpm` workspaces**, store hors iCloud, aucun orchestrateur de tâches — `DEC-441` |
+| 2 | `mypy` **ou** `pyright` | Le cahier §23.5 cite les deux sans trancher | **`mypy` strict**, dans l'environnement `uv` — `DEC-442` |
+| 3 | Versions épinglées de Python, Node et PostgreSQL | Interdiction de `latest` seul en production (cahier §23.3) | **Python 3.12 · Node 24 LTS · PostgreSQL 17**, épinglage par empreinte `sha256` — `DEC-443` |
+| 4 | Organisation des fichiers Compose pour trois environnements | Volumes, bases, buckets, réseaux, ports et secrets distincts (cahier §22.2) | **Base + surcouches**, `COMPOSE_PROJECT_NAME` distinct par environnement — `DEC-444` |
+| 5 | Nommage et étiquetage des images GHCR | Version exacte et empreinte de commit obligatoires (`DEC-428`) | **`ghcr.io/jonathan2433/onboarding-digital/{api,web,worker}`** — `DEC-445` |
+| 6 | HTTPS local par Caddy | Aucun domaine public nécessaire en phase locale (cahier §22.2) | **`tls internal`** sur `app.` et `api.onboarding.localhost` — `DEC-446` |
+| 7 | Emplacement physique des volumes Docker | Dépend du prérequis 2 | **Volumes nommés exclusivement**, aucun bind mount de donnée d'état — `DEC-447` |
 
 Le cahier §23.5 propose par ailleurs `uv`, Ruff, Pytest, pytest-cov, Alembic, Gitleaks,
 pip-audit, Trivy, Vitest, Playwright et axe comme **outils candidats**. Je les retiendrai sauf
@@ -292,7 +298,7 @@ objection, ces choix étant déjà inscrits au cadrage.
 | Question | Apport attendu du LOT 1 |
 |---|---|
 | `QO-085` RAM et disque du Mac M5 | Mesure réelle en charge, une fois les 8 services démarrés |
-| `QO-086` Docker Desktop ou moteur alternatif | Constaté : Docker 29.5.3, Compose v5.1.4 — à confirmer par Jonathan |
+| ~~`QO-086`~~ Docker Desktop ou moteur alternatif | **Close en `T0`** : Docker Desktop 29.5.3, Compose v5.1.4, pilote `overlayfs`, `aarch64`, **7,75 Gio alloués**. Aucun moteur alternatif |
 | `QO-084` PostgreSQL RLS immédiat ou différé | À trancher au LOT 2, mais la migration initiale peut préparer le terrain |
 
 ---

@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 16 | 7 | 7 | 2 |
+| Total 16 | 6 | 8 | 2 |
 
 ---
 
@@ -27,7 +27,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-007` | 12 risques du cahier §33 sans identifiant | Non | **Clos** |
 | `ECART-008` | Aucune séquence pour les écarts et les dépendances | Non | **Clos** |
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
-| `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | Ouvert |
+| `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
 | `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
 | `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
@@ -157,7 +157,8 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Aucune traçabilité story ↔ issue ↔ pull request n'est possible aujourd'hui. Or elle est exigée dès le LOT 1. |
 | Bloquant | Non pour la porte `G0`. **Prérequis du LOT 1.** |
 | Recommandation | Installer `gh` ou effectuer la mise en place dans l'interface GitHub. Les commandes prêtes à l'emploi figurent dans [traçabilité GitHub §5](../operations/traceabilite-github.md). |
-| Résolution | Ouvert. Suivi par `QO-107` et `QO-108`. |
+| Résolution | **Clos** le 27 juillet 2026, en sous-étape `T0`, par `DEC-449`. `gh` 2.96.0 installé dans `~/.local/bin` — Homebrew inutilisable, ses répertoires appartenant à l'utilisateur `admin` — et authentifié par Jonathan. **Livré :** 13 étiquettes conformes en nom et couleur, 15 milestones `G0` à `G14` avec `G0` fermée, l'epic `#1` et les 8 stories `#2` à `#9` toutes rattachées à `G1`, et la protection de `main` et `develop`. Le rejet du push direct est **prouvé** (`GH006`), avec témoin positif sur branche non protégée. `QO-107` et `QO-108` closes. |
+| Reste ouvert par ailleurs | Les 104 issues des LOTS 2 à 14 ne sont **pas** créées : elles le seront lot par lot, quand chaque fiche existera. Les familles d'étiquettes complémentaires de `QO-106` ne sont pas créées, n'étant pas prescrites. Les 9 étiquettes GitHub par défaut subsistent. |
 
 ## `ECART-011` — Cinq questions absentes de la plage `QO-072` à `QO-105`
 
