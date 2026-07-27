@@ -516,10 +516,6 @@ sont **clos**.
 
 ## 8.3 Points en attente de décision de Jonathan
 
-- **`AGENTS.md`** — copie de `CLAUDE.md` apparue à la racine le 27/07 à 15:02, **non créée par
-  l'agent**, non suivie par Git, figée à un état intermédiaire. Deux passations concurrentes
-  divergeraient dès le commit suivant. **Si elle est encore là, signale-le : un futur agent
-  pourrait la lire à la place de ce document.**
 - Les **9 étiquettes GitHub par défaut** (`bug`, `enhancement`, `good first issue`…) subsistent.
 - Les **104 issues** des LOTS 2 à 14 ne sont pas créées.
 
@@ -612,6 +608,7 @@ secret ». **Il faut prouver l'échec, pas seulement le succès.**
 ```text
 .
 ├── CLAUDE.md                    ← ce document
+├── AGENTS.md                    → lien symbolique vers CLAUDE.md, NON VERSIONNÉ
 ├── README.md                    ← état d'avancement, règles, structure
 ├── CONTRIBUTING.md              ← circuit de contribution, Ready et Done
 ├── .env.example                 ← 74 variables, aucun secret

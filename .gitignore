@@ -127,3 +127,13 @@ pnpm-debug.log*
 .fseventsd
 .icloud
 *.icloud
+
+# ─────────────────────────────────────────────────────────────
+# Outillage d'agent
+# ─────────────────────────────────────────────────────────────
+# AGENTS.md est un LIEN SYMBOLIQUE vers CLAUDE.md, pose localement pour que les
+# harnais qui cherchent ce nom lisent la vraie passation. Il n'est pas versionne :
+# une copie versionnee redeviendrait une seconde source de verite, divergente des
+# le commit suivant. Si le fichier disparait, le recreer par :
+#     ln -sf CLAUDE.md AGENTS.md
+AGENTS.md
