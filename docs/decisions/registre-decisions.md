@@ -17,7 +17,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Arbitrages `ARB-*` | 20 | Validés le 25/07/2026 |
 | **Total repris** | **85** | |
 | Décisions de réalisation `DEC-418+` | 21 | Validées le 27/07/2026 |
-| **Total** | **106** | |
+| Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
+| **Total** | **116** | |
 
 ---
 
@@ -53,7 +54,26 @@ Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S8.
 
 | `DEC-438` | **Jonathan valide la porte `G0` le 27 juillet 2026.** Le LOT 0 est terminé et **verrouillé**. Les 105 décisions du registre, les conventions Git et de versions, le schéma CSV `1.0-initiale`, la politique de configuration et de secrets, et l'état des 5 registres deviennent la référence opposable du projet. | Cinquième critère de sortie du LOT 0 satisfait. Les quatre autres étaient prouvés par les contrôles de la sous-étape S8. Conformément à `ROAD-003` et `ARB-BACK-003`, le plan du LOT 1 peut désormais être préparé, mais aucun travail du LOT 1 ne commence avant son ouverture explicite. | Validée |
 
-**Prochain identifiant libre : `DEC-439`.**
+## 1.1 Arbitrages techniques du LOT 1 — sous-étape `T0`
+
+Validés par Jonathan le 27 juillet 2026, **avant l'ouverture du LOT 1**. `T0` ne produit aucun
+code : elle lève les 3 prérequis de la [fiche du LOT 1](../operations/fiche-lot-1.md) §9.1 et
+tranche les 7 choix techniques de §9.2, qu'aucun document validé ne fixait.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-439` | Les répertoires `node_modules/` et le cache de paquets sont **exclus de la synchronisation iCloud**. Le dépôt lui-même **reste** dans iCloud Drive. Le store `pnpm` est placé hors du dossier synchronisé. | Mesure du 27/07/2026 : les volumes Docker nommés résident déjà dans l'image disque de la VM, sous `~/Library/Containers/`, **hors iCloud**. Le risque `ROAD-RSK-026` ne portait donc réellement que sur les dépendances. Exclure les seuls artefacts lourds préserve `DEC-418` sans la rouvrir. Clôt `QO-109`. | Validée |
+| `DEC-440` | Les trois environnements ne sont **jamais exécutés simultanément**. Des limites mémoire sont fixées par service. Le projet tiers `observatoire-ecom-studio` est **arrêté pendant la durée du LOT 1**. | Mesure du 27/07/2026 : Docker Desktop ne dispose que de **7,75 Gio** sur les 16 Gio de la machine, et le projet tiers en consommait **~1,93 Gio**, soit 25 % du budget, dont 1,77 Gio pour son seul worker. Le cahier §22.2 exige des ressources **distinctes** entre environnements, il n'exige nulle part leur simultanéité. Voir `ROAD-RSK-027` réécrit. | Validée |
+| `DEC-441` | Le monorepo JavaScript utilise **`pnpm` workspaces**. Aucun orchestrateur de tâches — ni Turborepo, ni Nx — n'est introduit au LOT 1 : le `Makefile` tient ce rôle. | Store partagé et arborescence non aplatie : nettement moins de fichiers à exclure d'iCloud, et dépendances fantômes impossibles dans un monorepo à 5 paquets. Cohérent avec `DEC-439`, qui sort le store du dossier synchronisé. Un orchestrateur apporterait un cache dont le socle n'a pas encore l'usage. | Validée |
+| `DEC-442` | Le vérificateur de types Python est **`mypy`, en mode strict**. | Le cahier §23.5 cite `mypy` **ou** `pyright` sans trancher. `mypy` s'installe dans le même environnement `uv` que le reste de l'API : une seule chaîne d'outils, un seul verrouillage de versions, comportement identique en local et en intégration continue. `pyright` imposerait Node dans le job Python et dans l'image API. SQLAlchemy 2.x étant nativement typé, aucun greffon n'est requis. | Validée |
+| `DEC-443` | Versions épinglées du socle : **Python 3.12**, **Node 24 LTS**, **PostgreSQL 17**. L'épinglage se fait en `majeur.mineur` dans les fichiers de version et **par empreinte `sha256`** dans les `Dockerfile`. | Maturité de l'écosystème FastAPI, SQLAlchemy et Dramatiq pour Python 3.12. Node 24 correspond à la version installée (24.16.0) et évite d'entretenir deux chaînes. PostgreSQL 17 par prudence sur un socle qui portera 14 lots (`ROAD-RSK-002`). L'épinglage par empreinte va au-delà de l'interdiction de `latest` seul du cahier §23.3. | Validée |
+| `DEC-444` | Les fichiers Compose sont organisés en un `docker-compose.base.yml` assemblé par surcouches `.dev.yml` et `.recette.yml`, avec un `COMPOSE_PROJECT_NAME` distinct par environnement : `onboarding-dev`, `onboarding-recette`, `onboarding-prod-local`. | Noms littéraux du cahier §22.2. Le nom de projet sépare automatiquement volumes et réseaux ; base, bucket, ports et `--env-file` sont distingués explicitement. Les 7 séparations exigées par §22.2 sont ainsi couvertes sans duplication de définition. | Validée |
+| `DEC-445` | Les images sont publiées sous **`ghcr.io/jonathan2433/onboarding-digital/{api,web,worker}`**, étiquetées `:0.1.0` (version exacte, **seule** référence de déploiement), `:sha-<court>` et `:develop` pour la recette. Labels OCI `revision`, `version` et `source` obligatoires ; consommation **par empreinte** en production temporaire. | GHCR impose des chemins en minuscules alors que le dépôt s'appelle `ONBOARDING_DIGITAL` : le tiret est retenu contre l'underscore, plus conforme aux usages OCI. Conforme à `DEC-428` et aux conventions §4.1. | Validée |
+| `DEC-446` | Le HTTPS local est assuré par **Caddy en `tls internal`**, sur les hôtes `app.onboarding.localhost` et `api.onboarding.localhost`. | macOS résout `.localhost` vers 127.0.0.1 sans modifier `/etc/hosts`, et l'autorité interne de Caddy évite toute dépendance externe — conforme au cahier §22.2, « aucun domaine public n'est nécessaire ». Motif déterminant : les cookies `Secure` et `SameSite` du LOT 3 ne peuvent pas être éprouvés en HTTP clair ; les découvrir après la porte `G1` serait le scénario de réouverture de `ROAD-RSK-002`. La racine Caddy devra être approuvée une fois dans le trousseau macOS. | Validée |
+| `DEC-447` | Les données d'état utilisent **exclusivement des volumes Docker nommés**. **Aucun bind mount** de donnée d'état vers le dépôt : ni `./data`, ni `./volumes`, ni `./backups`. Les bind mounts de code source pour le rechargement à chaud restent autorisés. | Les volumes nommés résident dans l'image disque de la VM, hors iCloud, sans aucune action. Un bind mount de données dans le dépôt est précisément le geste qui ramènerait `ROAD-RSK-026` sur des fichiers de base ouverts en écriture. | Validée |
+| `DEC-448` | La traçabilité GitHub — branche `develop`, protection de `main` et de `develop`, 13 étiquettes prescrites, 15 milestones, epic et stories du LOT 1 — est mise en place **par Jonathan dans l'interface GitHub**. | `gh` n'est pas installé et aucun connecteur GitHub n'est disponible en session : la vérification a été refaite le 27/07/2026 et confirme le constat de `ECART-010`. La protection de branche n'est de toute façon posable que par le propriétaire du dépôt. Répond à `QO-108`. La mise en place effective clora `ECART-010` et `QO-107`. | Validée |
+
+**Prochain identifiant libre : `DEC-449`.**
 
 ---
 
@@ -212,7 +232,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-ROAD` | 5 | 5 |
 | `ARB-BACK` | 5 | 5 |
 | `DEC-418+` | 21 | 21 |
-| **Total** | **106** | **106** |
+| `DEC-439+` — arbitrages `T0` | 10 | 10 |
+| **Total** | **116** | **116** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

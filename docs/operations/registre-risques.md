@@ -84,18 +84,21 @@ Leur libellé et leur impact sont inchangés.
 | Description | Le dépôt réside dans iCloud Drive par `DEC-418`. La synchronisation peut corrompre `.git`, provoquer des conflits, ou évincer des fichiers du disque local. À partir du LOT 1, `node_modules/`, les volumes Docker et les sauvegardes se trouveront dans une arborescence synchronisée. |
 | Impact | Élevé sur les LOTS 1, 12 et 13. |
 | Mesures en place | `.gitignore` empêche Git de suivre `node_modules/`, `data/`, `volumes/`, `backups/`. **Cela n'empêche pas iCloud de les synchroniser.** |
-| Mesure à définir | Placer les volumes Docker et les dépendances hors du dossier synchronisé, ou recourir à un mécanisme d'exclusion iCloud. À trancher **au LOT 1, avant la création des volumes**. |
-| Statut | **Accepté** par `DEC-418`, atténuations à définir. Suivi par `QO-109`. |
+| **Mesure du 27/07/2026, sous-étape `T0`** | Le périmètre réel du risque est **plus étroit qu'annoncé**. `docker info` rapporte `Docker Root Dir : /var/lib/docker`, à l'intérieur de la machine virtuelle Docker Desktop, dont l'image disque de 28 Go réside sous `~/Library/Containers/com.docker.docker/Data/vms` — **hors iCloud Drive**. Tout **volume Docker nommé est donc déjà hors iCloud**, sans aucune action. Le risque ne portait réellement que sur `node_modules/`, le cache de paquets, et sur d'éventuels bind mounts de données vers le dépôt. |
+| Atténuations retenues | `DEC-439` : `node_modules/` et le cache de paquets exclus de la synchronisation iCloud, store `pnpm` placé hors du dossier synchronisé, le dépôt restant dans iCloud. `DEC-447` : volumes nommés exclusivement, **aucun bind mount de donnée d'état** vers `./data`, `./volumes` ou `./backups` — c'est le seul geste qui ramènerait le risque sur les données. |
+| Risque résiduel | La synchronisation de `.git` lui-même demeure, inchangée depuis `DEC-418`. Conflits et éviction de fichiers restent possibles sur le dépôt, non sur les données de service. |
+| Statut | **Accepté** par `DEC-418`, **atténué** par `DEC-439` et `DEC-447`. `QO-109` close. |
 
 ## `ROAD-RSK-027` — Mémoire vive insuffisante pour trois environnements simultanés
 
 | Champ | Valeur |
 |---|---|
-| Constaté le | 27 juillet 2026 |
-| Description | La machine dispose de **16 Gio** de mémoire vive. Chaque environnement compte environ huit services : PostgreSQL, Redis, MinIO, Caddy, API, worker, web, Mailpit. Trois environnements séparés sont exigés — développement, recette, production temporaire — soit environ 24 conteneurs si tous tournaient ensemble. |
-| Impact | Élevé sur les LOTS 1, 12 et 13 : lenteur, échecs de démarrage, tests de charge non représentatifs. |
-| Mesures | Ne pas exécuter les trois stacks simultanément ; dimensionner les limites mémoire par service ; réserver la mesure de performance à un environnement exécuté seul. |
-| Statut | Actif. Alimente `QO-085`. **À arbitrer au LOT 1**, hors périmètre du LOT 0. |
+| Constaté le | 27 juillet 2026. **Réévalué le 27 juillet 2026** en sous-étape `T0`, sur mesures directes |
+| Description d'origine | La machine dispose de **16 Gio** de mémoire vive. Chaque environnement compte environ huit services : PostgreSQL, Redis, MinIO, Caddy, API, worker, web, Mailpit. Trois environnements séparés sont exigés — développement, recette, production temporaire — soit environ 24 conteneurs si tous tournaient ensemble. |
+| **Correction des prémisses** | Les deux prémisses d'origine étaient inexactes, dans le sens **défavorable**. **Premièrement**, le plafond réel n'est pas 16 Gio : `docker info` rapporte **7,75 Gio** alloués à la machine virtuelle Docker Desktop, soit la moitié de la mémoire physique. **Deuxièmement**, ce budget n'est pas libre : un projet tiers sans rapport avec eXalt, `observatoire-ecom-studio`, y exécutait **5 conteneurs depuis 5 jours** pour **~1,93 Gio**, soit **25 % du budget Docker**, dont 1,77 Gio pour son seul worker. La marge réellement disponible pour les 8 services du LOT 1 était donc d'environ **5,8 Gio**, et non de 16. |
+| Impact | Élevé sur les LOTS 1, 12 et 13 : lenteur, échecs de démarrage, tests de charge non représentatifs. La coexistence de deux stacks complètes, envisagée en sous-étape `T8`, est **hors d'atteinte** sans intervention. |
+| Mesures | `DEC-440` : les trois environnements ne sont jamais exécutés simultanément ; limites mémoire fixées par service ; mesure de performance réservée à un environnement exécuté seul ; **`observatoire-ecom-studio` arrêté pendant la durée du LOT 1**, ce qui porte le budget disponible à ~7,7 Gio pour une stack. La sous-étape `T8` prouve la **séparation** des environnements par démarrages **successifs** : le cahier §22.2 exige des ressources distinctes, il n'exige nulle part la simultanéité. |
+| Statut | **Actif, traité** par `DEC-440`. Alimente `QO-085` d'un élément de réponse chiffré. |
 
 ## `ROAD-RSK-028` — Statut ambigu de la source de vérité prévalente
 

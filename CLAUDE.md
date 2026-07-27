@@ -106,7 +106,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` décisions de projet | `001`–`417` **réservés**, `418`–`438` en usage | **`DEC-439`** |
+| `DEC-nnn` décisions de projet | `001`–`417` **réservés**, `418`–`448` en usage | **`DEC-449`** |
 | `RIGHTS-nnn` | `001`–`025` | `RIGHTS-026` |
 | `DATA-nnn` | `001`–`018` | `DATA-019` |
 | `ROAD-nnn` | `001`–`012` | `ROAD-013` |

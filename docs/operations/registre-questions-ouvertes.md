@@ -4,12 +4,17 @@
 **Dernière mise à jour :** 27 juillet 2026
 **Source reprise :** cahier des charges §32
 
-| Catégorie | Nombre |
-|---|---:|
-| Bloquantes avant données réelles ou production générale | 17 |
-| Non bloquantes pour le développement | 12 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 5 |
-| **Total** | **34** |
+| Catégorie | Nombre | Dont closes |
+|---|---:|---:|
+| Bloquantes avant données réelles ou production générale | 17 | 0 |
+| Non bloquantes pour le développement | 12 | 1 |
+| Ouvertes par la réalisation, à partir de `QO-106` | 5 | 2 |
+| **Total** | **34** | **3** |
+
+**31 questions restent ouvertes.** Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
+(moteur Docker constaté), `QO-108` (moyen de mise en place GitHub, `DEC-448`), `QO-109`
+(atténuations iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa
+réponse et sa date de clôture ; elle n'est jamais retirée du registre.
 
 **Prochain identifiant libre : `QO-111`.**
 
@@ -58,8 +63,24 @@ Mesures relevées en lecture seule sur la machine de développement le 27 juille
 | Docker | 29.5.3, Compose v5.1.4 |
 
 Ces constats **alimentent** la question, ils ne la ferment pas : la décision d'exploitation
-appartient à Jonathan. Les 16 Gio de mémoire vive constituent une contrainte réelle pour
-faire tourner trois environnements Docker simultanément — voir `ROAD-RSK-027`.
+appartient à Jonathan.
+
+### Mesures complémentaires du 27 juillet 2026, sous-étape `T0`
+
+Les 16 Gio de la machine **ne sont pas le plafond applicable**. Mesures directes :
+
+| Grandeur | Valeur mesurée | Source |
+|---|---|---|
+| Mémoire allouée à la VM Docker | **7,75 Gio**, soit la moitié de la machine | `docker info --format '{{.MemTotal}}'` |
+| Conteneurs tiers actifs au moment de la mesure | **5**, projet `observatoire-ecom-studio`, actifs depuis 5 jours | `docker ps` |
+| Mémoire occupée par ces conteneurs | **~1,93 Gio, soit 25 % du budget Docker**, dont 1,77 Gio pour le seul worker | `docker stats --no-stream` |
+| Marge restante pour les 8 services du LOT 1 | **~5,8 Gio** | déduction |
+| Image disque de la VM Docker | 28 Go, sous `~/Library/Containers/`, **hors iCloud** | `du -sh` |
+
+Ces éléments **ne closent pas** `QO-085` : le dimensionnement définitif reste à confirmer par
+Jonathan une fois les 8 services démarrés et mesurés en charge. Ils ont en revanche conduit à
+réécrire `ROAD-RSK-027`, dont les deux prémisses étaient inexactes, et à la décision `DEC-440`
+— exécution non simultanée et arrêt du projet tiers pendant le LOT 1.
 
 ---
 
@@ -68,7 +89,7 @@ faire tourner trois environnements Docker simultanément — voir `ROAD-RSK-027`
 | ID | Question | Responsable | Échéance utile | Statut |
 |---|---|---|---|---|
 | `QO-084` | Introduction immédiate ou différée de PostgreSQL RLS | Architecture | LOT 2 | Ouverte |
-| `QO-086` | Installation actuelle de Docker Desktop ou moteur alternatif | Jonathan | LOT 1 | **Constatée, à confirmer** |
+| `QO-086` | Installation actuelle de Docker Desktop ou moteur alternatif | Jonathan | LOT 1 | **Close le 27/07/2026**, sous-étape `T0` : Docker Desktop 29.5.3, Compose v5.1.4, pilote `overlayfs`, `aarch64`. Aucun moteur alternatif |
 | `QO-089` | Confirmation du RTO de quatre heures | Exploitation | LOT 13 | Ouverte |
 | `QO-091` | Supervision du Mac par Tailscale ou moniteurs Push | Jonathan | LOT 13 | Ouverte |
 | `QO-092` | Destination des signalements de bugs | Jonathan / eXalt | LOT 10 | Ouverte |
@@ -92,8 +113,8 @@ GitHub interdisant l'auto-approbation.
 |---|---|---|---|---|
 | `QO-106` | Retient-on les compléments d'étiquettes GitHub proposés — familles `type`, `gravité` et `état` ? Ils ne sont pas prescrits par les documents validés. | Jonathan | Non. Confort de suivi. | Ouverte |
 | `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | Ouverte |
-| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | Ouverte |
-| `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. **À trancher au LOT 1**, avant création des volumes. | Ouverte |
+| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026** par `DEC-448` : mise en place **par Jonathan dans l'interface GitHub**. Constat reconfirmé en `T0` — `gh` absent, aucun connecteur en session. L'accès Git distant est en revanche authentifié et opérationnel |
+| `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. Était à trancher au LOT 1, avant création des volumes. | **Close le 27/07/2026**, sous-étape `T0`, par `DEC-439` et `DEC-447` |
 | `QO-110` | Quelle nomenclature et quelle langue pour les en-têtes du CSV collaborateurs ? Jonathan n'a pas encore de visibilité sur la source de données réelle. Traitement retenu en attendant : le schéma définit des champs logiques `F01` à `F19` et un profil de correspondance versionné associe les en-têtes réelles (`DEC-434`). Un profil provisoire, non normatif, est utilisé dans le jeu d'exemple. | Jonathan / ESM | Non pour `G0`. Rattachée à `QO-096`, **bloquante avant l'import réel** au LOT 9. | Ouverte |
 
 ---
