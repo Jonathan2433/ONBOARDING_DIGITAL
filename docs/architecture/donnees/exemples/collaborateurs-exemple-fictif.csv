@@ -1,0 +1,18 @@
+email;nom;prenom;nom_usage;entite;date_arrivee;date_depart;categorie_professionnelle;presentation_courte;fun_fact;metier;situation;client;cercle_principal;cercles_secondaires;email_dsm;responsabilites_framework;roles_techniques;autorisation_photo
+alpha.exemple@exalt-company.com;EXEMPLE;Alpha;;BORDEAUX;2026-03-02;;consultant;Profil fictif de jeu de test.;Collectionne les cas limites;Data Analyst;mission;Client Fictif Un;DATA;;delta.exemple@exalt-company.com;;;oui
+bravo.exemple@exalt-company.com;EXEMPLE;Bravo;;BORDEAUX;2026-01-12;;consultant;Profil fictif en intercontrat.;;Product Owner;intercontrat;;FORGE;;delta.exemple@exalt-company.com;;;non
+delta.exemple@exalt-company.com;EXEMPLE;Delta;;BORDEAUX;2023-05-15;;consultant;Profil fictif cumulant plusieurs responsabilites, sans guillemets necessaires.;;Engineering Manager;mission;Client Fictif Deux;PRODUIT;DATA|DESIGN;charlie.exemple@exalt-company.com;DSM|BOOSTER:DATA|OFFICE_MANAGER:BDE;;oui
+charlie.exemple@exalt-company.com;EXEMPLE;Charlie;;BORDEAUX;2024-09-01;;dg;Profil fictif de direction generale.;;Direction generale;intercontrat;;;;;;ENTITY_ADMIN;oui
+echo.exemple@exalt-company.com;EXEMPLE;Echo;;BORDEAUX;2026-12-01;;consultant;;;Developpeur;mission;Client Fictif Un;IT;;delta.exemple@exalt-company.com;;;
+foxtrot.exemple@exalt-company.com;EXEMPLE;Foxtrot;;BORDEAUX;2022-02-01;2025-11-30;consultant;Profil fictif deja parti.;;Developpeur;intercontrat;;SHIELD;;delta.exemple@exalt-company.com;;;non
+golf.exemple@exalt-company.com;EXEMPLE;Golf;;BORDEAUX;2025-06-02;;consultant;Profil fictif dont le client doit etre rapproche.;;Data Analyst;mission;Client Fictif 1;DATA;;delta.exemple@exalt-company.com;;;oui
+hotel.exemple@exalt-company.com;EXEMPLE;Golf;;BORDEAUX;2025-09-15;;consultant;Homonyme fictif volontaire.;;Product Owner;intercontrat;;PROJET;;delta.exemple@exalt-company.com;;;inconnu
+;EXEMPLE;India;;BORDEAUX;2025-04-01;;consultant;Profil fictif sans adresse e-mail.;;Developpeur;mission;Client Fictif Deux;FORGE;;delta.exemple@exalt-company.com;;;oui
+juliett.exemple@exalt-company.com;EXEMPLE;Juliett;;BORDEAUX;2025-04-01;;consultant;Profil fictif en mission sans client.;;Developpeur;mission;;IT;;delta.exemple@exalt-company.com;;;oui
+kilo.exemple@exalt-company.com;EXEMPLE;Kilo;;BORDEAUX;2025-04-01;;consultant;Profil fictif en intercontrat avec un client.;;Developpeur;intercontrat;Client Fictif Un;IT;;delta.exemple@exalt-company.com;;;oui
+alpha.exemple@exalt-company.com;EXEMPLE;Lima;;BORDEAUX;2025-04-01;;consultant;Profil fictif en doublon d'adresse e-mail.;;Developpeur;mission;Client Fictif Un;DESIGN;;delta.exemple@exalt-company.com;;;oui
+mike.exemple@fournisseur-externe.example;EXEMPLE;Mike;;BORDEAUX;2025-04-01;;consultant;Profil fictif hors domaine autorise.;;Developpeur;mission;Client Fictif Un;CHANGE;;delta.exemple@exalt-company.com;;;oui
+november.exemple@exalt-company.com;EXEMPLE;November;;BORDEAUX;2025-04-01;;consultant;Profil fictif de consultant actif sans DSM.;;Developpeur;mission;Client Fictif Un;PROJET;;;;;oui
+oscar.exemple@exalt-company.com;EXEMPLE;Oscar;;BORDEAUX;2025-04-01;;consultant;Profil fictif second Booster du meme cercle.;;Developpeur;mission;Client Fictif Un;SHIELD;;delta.exemple@exalt-company.com;BOOSTER:SHIELD;;oui
+papa.exemple@exalt-company.com;EXEMPLE;Papa;;BORDEAUX;02/03/2026;;consultant;Profil fictif avec une date mal formatee.;;Developpeur;mission;Client Fictif Un;IT;;delta.exemple@exalt-company.com;;;oui
+quebec.exemple@exalt-company.com;EXEMPLE;Quebec;;BORDEAUX;2025-04-01;;consultant;Profil fictif demandant un role interdit a l'import.;;Developpeur;mission;Client Fictif Un;SHIELD;;delta.exemple@exalt-company.com;BOOSTER:SHIELD;SUPER_ADMIN;oui

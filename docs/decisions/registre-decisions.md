@@ -16,14 +16,14 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Décisions de backlog `BACKLOG` | 10 | Validées le 25/07/2026 |
 | Arbitrages `ARB-*` | 20 | Validés le 25/07/2026 |
 | **Total repris** | **85** | |
-| Décisions de réalisation `DEC-418+` | 14 | Validées le 27/07/2026 |
-| **Total** | **99** | |
+| Décisions de réalisation `DEC-418+` | 18 | Validées le 27/07/2026 |
+| **Total** | **103** | |
 
 ---
 
 # 1. Décisions de réalisation — `DEC-418` et suivantes
 
-Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S4.
+Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S6.
 
 | ID | Décision | Motif | Statut |
 |---|---|---|---|
@@ -42,7 +42,12 @@ Toutes validées par Jonathan le 27 juillet 2026, lot 0, sous-étapes S1 à S4.
 | `DEC-430` | Les 12 risques du cahier des charges §33, jusqu'ici sans identifiant, deviennent `ROAD-RSK-013` à `ROAD-RSK-024`, sans modification de leur libellé. Les risques nouveaux démarrent à `ROAD-RSK-025`. | Un registre sans identifiant est inexploitable et non référençable dans une pull request. Une seule séquence de risques pour tout le projet. | Validée |
 | `DEC-431` | Création des séquences `ECART-nnn` pour les écarts et `DEP-nnn` pour les dépendances externes. | `MVP-L00-US006` exige un registre de dépendances portant responsable, échéance, impact, statut et caractère bloquant. Une dépendance n'est ni une question ni un risque. | Validée |
 
-**Prochain identifiant libre : `DEC-432`.**
+| `DEC-432` | Le CSV collaborateurs utilise le séparateur `;` et l'encodage UTF-8. La virgule est tolérée si elle est détectée de façon non ambiguë, et le séparateur retenu est consigné au rapport d'import. Un BOM est retiré à la lecture et jamais propagé. | Les noms et présentations contiennent des virgules, pas des points-virgules : le besoin de guillemets et donc le risque de saisie diminuent. C'est aussi le format produit nativement par Excel en locale française. | Validée |
+| `DEC-433` | Le CSV porte un champ `autorisation_photo` à trois valeurs `oui`, `non`, `inconnu`, avec **`inconnu` par défaut**. Sans autorisation active, aucune photo n'est publiée et l'avatar neutre est utilisé. | Le cahier §21.2 exige une autorisation explicite. `non` et `inconnu` produisent le même affichage mais se distinguent au registre, distinction nécessaire au traitement de `QO-098`. | Validée |
+| `DEC-434` | Le schéma du CSV définit des **champs logiques** `F01` à `F19`, indépendants de tout intitulé de colonne. Les en-têtes du fichier réel sont associées à ces champs par un **profil de correspondance versionné**, enregistré avec le lot d'import aux côtés de l'empreinte et du séparateur. | La nomenclature des en-têtes est en suspens (`QO-110`), la source de données n'étant pas connue. Ce découplage est de toute façon nécessaire : les en-têtes du fichier réel ne correspondront pas à des intitulés inventés à l'avance. | Validée |
+| `DEC-435` | Imputation des anomalies portant sur plusieurs lignes. **Doublon d'identifiant** : la première occurrence du fichier est retenue, les suivantes seules sont rejetées. **Conflit d'attribution métier** — Booster, responsables de bureau : toutes les lignes du groupe sont rejetées, aucune n'est retenue. **Homonymie** : les deux lignes attendent une décision. **Rapprochement de client** : seule la ligne portant la variante non reconnue est signalée. | Sans ces règles, une ligne correcte serait rejetée par ricochet. Désigner un Booster par l'ordre d'apparition dans un fichier serait une décision métier arbitraire ; conserver la première occurrence d'un e-mail est en revanche déterministe et tracé. | Validée |
+
+**Prochain identifiant libre : `DEC-436`.**
 
 ---
 
@@ -200,8 +205,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-DATA` | 5 | 5 |
 | `ARB-ROAD` | 5 | 5 |
 | `ARB-BACK` | 5 | 5 |
-| `DEC-418+` | 14 | 14 |
-| **Total** | **99** | **99** |
+| `DEC-418+` | 18 | 18 |
+| **Total** | **103** | **103** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

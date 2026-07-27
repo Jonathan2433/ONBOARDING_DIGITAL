@@ -8,10 +8,10 @@
 |---|---:|
 | Bloquantes avant données réelles ou production générale | 17 |
 | Non bloquantes pour le développement | 12 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 4 |
-| **Total** | **33** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 5 |
+| **Total** | **34** |
 
-**Prochain identifiant libre : `QO-110`.**
+**Prochain identifiant libre : `QO-111`.**
 
 > **Trous conservés dans la séquence.** La plage `QO-072` à `QO-105` couvre 34 numéros mais
 > seules **29** questions sont présentes dans le corpus. Absentes : `QO-075`, `QO-079`,
@@ -94,6 +94,7 @@ GitHub interdisant l'auto-approbation.
 | `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | Ouverte |
 | `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | Ouverte |
 | `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. **À trancher au LOT 1**, avant création des volumes. | Ouverte |
+| `QO-110` | Quelle nomenclature et quelle langue pour les en-têtes du CSV collaborateurs ? Jonathan n'a pas encore de visibilité sur la source de données réelle. Traitement retenu en attendant : le schéma définit des champs logiques `F01` à `F19` et un profil de correspondance versionné associe les en-têtes réelles (`DEC-434`). Un profil provisoire, non normatif, est utilisé dans le jeu d'exemple. | Jonathan / ESM | Non pour `G0`. Rattachée à `QO-096`, **bloquante avant l'import réel** au LOT 9. | Ouverte |
 
 ---
 

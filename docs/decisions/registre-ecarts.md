@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 11 | 3 | 6 | 2 |
+| Total 12 | 4 | 6 | 2 |
 
 ---
 
@@ -29,8 +29,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | Ouvert |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
+| `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
 
-**Prochain identifiant libre : `ECART-012`.**
+**Prochain identifiant libre : `ECART-013`.**
 
 ---
 
@@ -92,7 +93,7 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Aucun, à condition de ne pas confondre les deux. Le risque serait de déclarer `QO-096` close en livrant le schéma initial. |
 | Bloquant | Non |
 | Recommandation | Livrer le schéma en **v1.0 initiale**, explicitement versionné, et laisser `QO-096` ouverte. |
-| Résolution | Ouvert. Traitement prévu en sous-étape S6. |
+| Résolution | **Traité** en sous-étape S6 : schéma livré en version `1.0-initiale`, statut « initial » inscrit en tête du document. `QO-096` demeure **ouverte** et n'est pas déclarée close. L'écart reste ouvert jusqu'à la livraison du schéma définitif. |
 
 ## `ECART-006` — Contenu de `.env.example` dépendant du LOT 1
 
@@ -165,3 +166,15 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Ne pas combler les trous, conformément aux règles de numérotation. Si les comptes rendus d'ateliers sont retrouvés, vérifier le contenu de ces cinq entrées à ce moment-là. |
 | Résolution | **Accepté**, écart connu et documenté. Les trous sont conservés et signalés dans le registre des questions ouvertes. |
+
+## `ECART-012` — La valeur `intercontrat` est imposée à une direction générale
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, sous-étape S6, en construisant le jeu d'exemple |
+| Source | Modèle de données §6.5 : `professional_status_assignment.status` vaut `mission` ou `intercontrat`, une seule situation active par appartenance |
+| Constat | Le champ de situation professionnelle est obligatoire pour **toute** personne et n'offre que deux valeurs. Pour une catégorie `dg`, ou pour une personne dont l'activité n'est pas une mission client, `intercontrat` est la seule valeur possible. Or ce terme désigne, dans le langage métier, un consultant en attente de mission. |
+| Impact | Aucun impact technique : les contraintes restent cohérentes, `intercontrat` interdisant un client actif. L'impact est **fonctionnel et éditorial** : le trombinoscope afficherait « intercontrat » sur une fiche de direction générale, ce qui serait lu comme une erreur par les collaborateurs. |
+| Bloquant | Non |
+| Recommandation | Ne pas modifier le modèle de données, qui est validé. Deux pistes à arbitrer avec Léa : soit l'affichage du statut est conditionné par la catégorie professionnelle, la situation restant `intercontrat` en base ; soit une troisième valeur est ajoutée à l'énumération, ce qui exige une décision et une nouvelle version du modèle. La première piste est moins coûteuse et ne touche pas au socle. |
+| Résolution | Ouvert. À clarifier avec Léa et l'ESM, **au plus tard au LOT 2** lors de l'implémentation de `professional_status_assignment`, et avant le LOT 5 qui affiche le statut au trombinoscope. |
