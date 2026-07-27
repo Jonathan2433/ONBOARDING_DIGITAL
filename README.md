@@ -18,6 +18,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | Lot suivant | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`. **Non ouvert** : en attente d'ouverture explicite de Jonathan |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
 Aucun code applicatif n'existe encore : le LOT 0 est exclusivement documentaire et
 décisionnel. Le monorepo (`apps/web`, `apps/api`, `apps/worker`, `packages/*`, `infra/`)
@@ -88,6 +89,7 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 ```text
 .
 ├── README.md                  ← ce fichier
+├── CLAUDE.md                  ← passation : état, méthode de travail, pièges de l'environnement
 ├── CONTRIBUTING.md            ← règles de contribution, définitions de Ready et de Done
 ├── .env.example               ← modèle de configuration, sans aucun secret
 ├── .gitignore                 ← barrière contre secrets et données réelles
