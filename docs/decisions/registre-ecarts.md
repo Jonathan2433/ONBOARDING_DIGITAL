@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 19 | 6 | 11 | 2 |
+| Total 19 | 5 | 12 | 2 |
 
 ---
 
@@ -23,7 +23,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-003` | Le document prévalent portait le statut « soumis à validation finale » | Non | **Clos** |
 | `ECART-004` | Registre `DEC-001` à `DEC-417` absent du corpus | Oui, pour la clôture de `US002` | **Clos** |
 | `ECART-005` | Schéma CSV initial attendu au LOT 0 alors que le schéma définitif reste ouvert | Non | Ouvert |
-| `ECART-006` | Contenu de `.env.example` dépendant du LOT 1 | Non | Ouvert |
+| `ECART-006` | Contenu de `.env.example` dépendant du LOT 1 | Non | **Clos** |
 | `ECART-007` | 12 risques du cahier §33 sans identifiant | Non | **Clos** |
 | `ECART-008` | Aucune séquence pour les écarts et les dépendances | Non | **Clos** |
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
@@ -114,6 +114,7 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Livrer une **v0.1** couvrant les variables déductibles des décisions déjà validées, avec placeholders explicites et statut « à compléter au LOT 1 ». |
 | Résolution | Ouvert. Traitement prévu en sous-étape S5. |
+| Résolution | **Clos** le 28 juillet 2026, sous-étape `T3`. `.env.example` passe en **v1.0**. La sous-étape `T2` avait montré que les 74 variables du LOT 0 couvraient exactement les besoins de Compose ; `T3` y ajoute la seule variable manquante, **`APP_REVISION`**, exposée par `/health/version` et par le label OCI `revision` de `DEC-445`. Les 7 variables en `CHANGE_ME` sont inchangées, et `DEC-461` en génère cinq localement. |
 
 ## `ECART-007` — 12 risques du cahier §33 sans identifiant
 

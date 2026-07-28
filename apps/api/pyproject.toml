@@ -14,7 +14,16 @@ name = "onboarding-api"
 version = "0.1.0"
 description = "eXalt Onboarding Digital - API FastAPI (squelette, LOT 1 T1)."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "alembic>=1.18.5",
+    "boto3>=1.43.57",
+    "fastapi>=0.140.7",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.14.2",
+    "redis>=8.0.1",
+    "sqlalchemy>=2.0.51",
+    "uvicorn[standard]>=0.51.0",
+]
 
 [build-system]
 requires = ["hatchling"]

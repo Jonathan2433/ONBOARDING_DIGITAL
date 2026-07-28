@@ -181,13 +181,17 @@ services:
   # ---------------------------------------------------------------------------
   #  api — FastAPI (cahier 15.1, 16.1)
   #
-  #  ETAT A T2 : aucun code applicatif. Le conteneur reste debout et son
-  #  healthcheck verifie que le paquet `app` est IMPORTABLE dans l'image — un
-  #  controle qui echoue reellement si la construction ou l'installation des
-  #  dependances est cassee. Les endpoints /health/live, /health/ready et
-  #  /health/version, avec la verification effective de PostgreSQL, Redis et
-  #  MinIO, arrivent en T3 : c'est la que le healthcheck deviendra un appel
-  #  HTTP. Arbitrage de Jonathan du 28/07/2026.
+  #  DEPUIS T3 : le healthcheck interroge `/health/ready`, qui sonde REELLEMENT
+  #  PostgreSQL, Redis et MinIO et repond 503 si l'une manque. C'est le controle
+  #  le plus exigeant disponible, et il echoue vraiment.
+  #
+  #  `ready` et non `live` : Compose ne redemarre pas un conteneur au seul motif
+  #  qu'il est `unhealthy`, donc aucun risque de boucle de redemarrage sur une
+  #  panne de base. En revanche `depends_on: service_healthy` attend alors que
+  #  l'API soit reellement capable de servir avant de demarrer Caddy.
+  #
+  #  urllib et non curl : l'image python:slim ne fournit pas curl, et l'ajouter
+  #  pour un healthcheck augmenterait la surface d'audit de Trivy sans motif.
   # ---------------------------------------------------------------------------
   api:
     build:
@@ -217,11 +221,16 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       DB_AUTO_CREATE: ${DB_AUTO_CREATE}
     healthcheck:
-      test: ['CMD', 'python', '-c', 'import app; import sys; sys.exit(0)']
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request,sys;
+          r=urllib.request.urlopen('http://127.0.0.1:8000/health/ready',timeout=5);
+          sys.exit(0 if r.status==200 else 1)"
       interval: 10s
-      timeout: 5s
+      timeout: 8s
       retries: 6
-      start_period: 10s
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
@@ -234,8 +243,10 @@ services:
   # ---------------------------------------------------------------------------
   #  worker — Dramatiq (cahier 15.1, 16.4)
   #
-  #  ETAT A T2 : voir le service api. Le demarrage Dramatiq et la declaration
-  #  des sept files validees arrivent en T3 et T4.
+  #  DEPUIS T3 : le worker execute reellement Dramatiq et declare les sept files
+  #  du cahier §16.4. Le healthcheck interroge le courtier Redis a travers le
+  #  courtier du worker : il echoue si la connexion est perdue, ce qu'un simple
+  #  « le processus tourne » ne detecterait pas.
   # ---------------------------------------------------------------------------
   worker:
     build:
@@ -260,11 +271,15 @@ services:
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
     healthcheck:
-      test: ['CMD', 'python', '-c', 'import worker; import sys; sys.exit(0)']
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "from worker.main import courtier;
+          courtier.client.ping()"
       interval: 10s
-      timeout: 5s
+      timeout: 8s
       retries: 6
-      start_period: 10s
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy

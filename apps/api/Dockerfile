@@ -61,9 +61,17 @@ RUN useradd --create-home --uid 10001 onboarding \
     && chown -R onboarding:onboarding /app /opt/venv
 USER onboarding
 
-# T2 : le conteneur reste debout pour prouver que l'image se construit et que
-# ses dependances sont resolues. Le healthcheck, declare dans le fichier
-# Compose, verifie que le paquet `app` est importable — un controle qui peut
-# reellement echouer si l'image est cassee.
-# T3 remplacera cette commande par uvicorn.
-CMD ["sleep", "infinity"]
+EXPOSE 8000
+
+# `--factory` : uvicorn appelle `creer_application()` lui-meme. L'application
+# n'est PAS construite a l'import du module, sinon importer `app.main` lirait
+# l'environnement et la collecte des tests echouerait faute de variables.
+#
+# Si la configuration est invalide, `ConfigurationInvalide` remonte ici et le
+# conteneur s'arrete en nommant la variable fautive : c'est le refus de demarrer
+# qu'exige le cahier §20.3. Un demarrage en mode degrade serait pire.
+#
+# 0.0.0.0 dans le conteneur uniquement : le service n'est pas publie sur l'hote,
+# seul Caddy le joint par le reseau interne (cahier §22.2).
+CMD ["uvicorn", "app.main:creer_application", "--factory", \
+     "--host", "0.0.0.0", "--port", "8000"]

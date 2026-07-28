@@ -74,7 +74,7 @@ SERVICES := db redis minio mailpit caddy api worker web
 .PHONY: help tools versions tree icloud-exclude icloud-verify install \
         lint format format-check typecheck test check clean clean-deps \
         env up down destroy ps logs health ports minio-bucket stack-check \
-        persistence-test
+        persistence-test migrate migrate-status test-unit test-integration api-check
 
 # ---------------------------------------------------------------------------
 
@@ -290,6 +290,34 @@ ports: ## Verifier qu'aucun service n'ecoute ailleurs que sur la boucle locale
 	@sh infra/scripts/verifier-ports.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 stack-check: health ports ## Controler la stack : sante des 8 services et publication des ports
+
+# --workdir : alembic.ini reside dans apps/api, et `script_location` y est
+# relatif. Lance depuis /app, alembic repond « No 'script_location' key found ».
+migrate: ## Appliquer les migrations Alembic sur la base de developpement
+	$(DC_DEV) exec -T --workdir /app/apps/api api alembic upgrade head
+	@$(MAKE) --no-print-directory migrate-status
+
+migrate-status: ## Afficher la revision appliquee
+	@$(DC_DEV) exec -T --workdir /app/apps/api api alembic current
+
+api-check: ## Interroger les trois endpoints de sante et lire leurs codes
+	@sh infra/scripts/verifier-sante.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+test-unit: ## Tests sans dependance externe
+	$(UV) run pytest -m "not integration"
+
+test-integration: ## Tests exigeant la stack REELLE. Echoue si elle est absente
+	@$(MAKE) --no-print-directory health >/dev/null 2>&1 || { \
+		echo "  ECHEC : la stack n'est pas saine. Lancer make up."; \
+		echo "          Ces tests ne doivent PAS etre ignores en silence :"; \
+		echo "          un test ignore n'est pas un test qui passe."; \
+		exit 1; }
+	$(UV) run pytest -m integration
+	@# Un test ignore ne prouve rien : on verifie qu'il en a bien execute.
+	@n=$$($(UV) run pytest -m integration -q 2>/dev/null | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+'); \
+	if [ -z "$$n" ] || [ "$$n" -eq 0 ]; then \
+		echo "  ECHEC : aucun test d'integration execute, le controle ne prouve rien"; exit 1; \
+	else echo "  $$n tests d'integration reellement executes"; fi
 
 persistence-test: ## Prouver que les volumes survivent a un arret/redemarrage
 	@echo "==> Releve des empreintes avant arret"
