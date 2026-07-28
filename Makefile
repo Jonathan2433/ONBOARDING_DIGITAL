@@ -74,7 +74,8 @@ SERVICES := db redis minio mailpit caddy api worker web
 .PHONY: help tools versions tree icloud-exclude icloud-verify install \
         lint format format-check typecheck test check clean clean-deps \
         env up down destroy ps logs health ports minio-bucket stack-check \
-        persistence-test migrate migrate-status test-unit test-integration api-check
+        persistence-test migrate migrate-status test-unit test-integration api-check \
+        web-check caddy-reload
 
 # ---------------------------------------------------------------------------
 
@@ -236,6 +237,7 @@ up: env ## Demarrer la stack de developpement : les 8 services
 	$(DC_DEV) build
 	@echo "==> Demarrage, avec attente de l'etat sain"
 	$(DC_DEV) up --detach --wait
+	@$(MAKE) --no-print-directory caddy-reload
 	@$(MAKE) --no-print-directory minio-bucket
 	@echo
 	@$(MAKE) --no-print-directory health
@@ -271,6 +273,16 @@ minio-bucket: ## Creer le bucket MinIO (idempotent, ARB-ROAD-002)
 	@# stat sort en erreur si le bucket est absent, ce qui rend le controle
 	@# capable d'echouer reellement.
 
+# Caddy NE SURVEILLE PAS son fichier de configuration, et Compose ne recree pas
+# le conteneur quand seul le CONTENU du fichier monte change. Sans ce
+# rechargement, une modification du Caddyfile reste sans effet et la stack sert
+# une configuration perimee en paraissant parfaitement saine — defaut trouve en
+# T5. `caddy reload` est idempotent : il ne fait rien si rien n'a change.
+caddy-reload: ## Recharger la configuration de Caddy (idempotent)
+	@$(DC_DEV) exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null \
+		&& echo "  ok        configuration Caddy rechargee depuis le fichier monte" \
+		|| { echo "  ECHEC     rechargement de Caddy : configuration invalide ou service absent"; exit 1; }
+
 health: ## Verifier que les 8 services sont sains (echoue sinon)
 	@manque=0; \
 	for s in $(SERVICES); do \
@@ -302,6 +314,11 @@ migrate-status: ## Afficher la revision appliquee
 
 api-check: ## Interroger les trois endpoints de sante et lire leurs codes
 	@sh infra/scripts/verifier-sante.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+# Ce controle passe par Caddy en HTTPS, depuis l'hote : c'est le chemin d'un
+# navigateur, et le seul qui eprouve le mandatement de meme origine (DEC-470).
+web-check: ## Controler la page de statut telle qu'un navigateur la voit
+	@sh infra/scripts/verifier-page-statut.sh
 
 test-unit: ## Tests sans dependance externe
 	$(UV) run pytest -m "not integration"

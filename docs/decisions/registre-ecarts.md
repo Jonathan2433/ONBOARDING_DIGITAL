@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 19 | 5 | 12 | 2 |
+| Total 21 | 5 | 14 | 2 |
 
 ---
 
@@ -36,10 +36,11 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
 | `ECART-017` | La documentation du LOT 1 est restée dans son état d'avant l'ouverture | Non | **Clos** |
 | `ECART-018` | La fiche du LOT 1 annonce 8 contrôles d'intégration là où le cahier §23.1 en énumère 11 | Non pour `G1`, structurant pour `T6` | **Clos** |
-
 | `ECART-019` | La passation annonce 9 placeholders `CHANGE_ME_*` dans `.env.example`, il y en a 7 | Non | **Clos** |
+| `ECART-020` | La fiche du LOT 1 rattache `T5` à la story `US003`, dont la page de statut ne complète aucun critère | Non pour `G1`, structurant pour la traçabilité | **Clos** |
+| `ECART-021` | Quatre nombres du corpus ne sont pas dérivés de leur source : tests, masquage, commits, lignes, et le prochain identifiant de décision | Non | **Clos** |
 
-**Prochain identifiant libre : `ECART-020`.**
+**Prochain identifiant libre : `ECART-022`.**
 
 ---
 
@@ -277,3 +278,29 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Rectifier la passation, et **dériver le nombre du fichier** plutôt que de le recopier. En `T3`, le test du garde-fou doit lire la liste des variables `CHANGE_ME_*` depuis `.env.example` au lieu d'en coder le nombre en dur : c'est la seule forme qui ne se périme pas. |
 | Résolution | **Clos** le 28 juillet 2026. `CLAUDE.md` §5.6 rectifié à 7, avec la liste. La distinction entre les 7 variables et les 2 mentions en commentaire est explicitée. |
+
+## `ECART-020` — La fiche du LOT 1 rattache `T5` à une story que la page de statut ne complète pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, à la prise en charge de la sous-étape `T5` du LOT 1 |
+| Source | [`fiche-lot-1.md`](../operations/fiche-lot-1.md) §3 ; backlog `EPIC MVP-L01` ; roadmap LOT 1 |
+| Constat | La fiche §3 rattache `T5` aux stories **`MVP-L01-US002` et `MVP-L01-US003`**, dont les issues `#3` et `#4` étaient closes. Or le critère de `US003` est littéralement « chaque endpoint retourne un statut explicite ; readiness vérifie les dépendances nécessaires ; la version correspond au build » : il est **intégralement satisfait depuis `T3`**, et la page de statut n'y ajoute rien. La « page web de statut » ne figure nulle part dans un critère de story : elle appartient à la **démonstration attendue** du LOT 1 dans la roadmap. Le rattachement à `US002` est en revanche fondé, son critère nommant `web` parmi les huit services devant démarrer avec une commande — or le conteneur démarrait en `sleep infinity` et le navigateur recevait un **502**. La fiche §6 ne rattache d'ailleurs sa ligne « Frontend » qu'à **`US002`** : la fiche se contredit d'un paragraphe à l'autre. |
+| Impact | Faible sur le code, réel sur la traçabilité. Rattacher un travail à une story déjà satisfaite dilue la preuve : à la porte `G1`, on ne saurait plus dire quel critère la page démontre. C'est aussi ce qui aurait conduit à rouvrir une issue sans motif. |
+| Cause | La fiche a été rédigée avant `T3` : à ce moment-là, les endpoints de santé et leur consommation par une page semblaient un même travail. La séparation est apparue quand `T3` a livré les trois endpoints, complets et éprouvés, sans aucun écran. |
+| Bloquant | Non pour `G1`, structurant pour la traçabilité de la démonstration |
+| Recommandation | Rattacher `T5` à **`US002` seule**, cohérent avec la fiche §6, et tracer la page de statut comme élément 2 de la démonstration attendue. Laisser `#4` close. |
+| Résolution | **Clos** le 28 juillet 2026. Arbitrage de Jonathan, rendu sur les trois options présentées : **rouvrir l'issue `#3`**, livrer `T5` sous `US002`, la refermer à la fusion. `#4` reste close. La fiche §3 est rectifiée. |
+
+## `ECART-021` — Quatre nombres du corpus ne sont pas dérivés de leur source
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T5` du LOT 1 |
+| Source | [`compte-rendu-t4-lot-1.md`](../operations/compte-rendu-t4-lot-1.md) §2 et §6 ; [`docs/README.md`](../README.md) §8 ; `CLAUDE.md` §1 ; [`registre-decisions.md`](registre-decisions.md) |
+| Constat | **1. Nombre de tests.** Le compte rendu de `T4` §6 et `docs/README.md` §8 annoncent **131 tests**. `pytest` en collecte **139**, prouvé par `pytest -m integration` : « 8 selected, 131 deselected ». Le compte des **unitaires** a été pris pour le total ; il manque les 8 tests d'intégration. `CLAUDE.md` §1 — « 139 : 131 unitaires, 8 d'intégration » — est le seul juste. Les **3 tests Vitest** n'étaient comptés nulle part.<br>**2. Tests de masquage.** Le compte rendu de `T4` §1 et §2 et la fiche §3 annoncent « **30 tests** » de masquage et de format. `packages/observabilite` collecte **52 cas** — 16 en journalisation, 36 en masquage — pour **21 fonctions**. Aucune lecture ne donne 30.<br>**3. Commits et lignes.** `CLAUDE.md` §1 annonce `develop` à **19 commits**, en avance de **6**, et **30 487 lignes**. La mesure donne **20**, **+7** et **30 566**. Recalculé au commit précédent `0178b43`, on retrouve exactement 30 487 : le document se décrit dans son état **d'avant son propre commit**. Même classe que le constat `B-3` de `T0`.<br>**4. Prochain identifiant de décision.** Le registre des décisions portait « **Prochain identifiant libre : `DEC-451`** » alors que `DEC-469` était en usage — **19 décisions de retard**. Le marqueur, ainsi que le bloc « ce que `T1` a délibérément écarté », étaient restés à la fin de la section 1, après le tableau de `T4`, les sous-étapes suivantes ayant inséré leurs tableaux avant eux. |
+| Impact | Faible pour les trois premiers, **réel pour le quatrième** : un agent qui se fie au registre plutôt qu'à l'index de `docs/README.md` créerait `DEC-451`, en collision avec 19 décisions existantes. Un identifiant réutilisé est précisément ce que la règle de tenue interdit. Pour les trois premiers, l'effet est la confiance dans le corpus : un décompte de tests faux empêche de voir qu'une suite a régressé. |
+| Cause | Même classe que `ECART-018` et `ECART-019` : des nombres **recopiés** plutôt que dérivés de la source. Le quatrième s'y ajoute d'un mécanisme différent — un bloc de fin de section qui n'a pas suivi l'insertion des sections suivantes. |
+| Bloquant | Non |
+| Recommandation | Corriger les quatre. Et pour ne pas les recréer : **`T6` doit ajouter à la CI un contrôle qui dérive ces nombres de la source et échoue s'ils divergent** de ce que la documentation affirme. C'est le même garde-fou que celui recommandé pour les cinq empreintes SHA-256 par `ROAD-RSK-029` — un contrôle qui recalcule plutôt qu'un humain qui relit. |
+| Résolution | **Clos** le 28 juillet 2026. Les quatre nombres sont rectifiés, le bloc de `T1` est replacé dans sa sous-étape, et le marqueur d'identifiant libre est porté à `DEC-474`. La recommandation de contrôle de CI est reportée à `T6`. |

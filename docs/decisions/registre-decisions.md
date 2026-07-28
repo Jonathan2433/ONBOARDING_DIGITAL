@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -24,7 +24,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-466+`, sous-étape `T4` | 4 | Validées le 28/07/2026 |
-| **Total** | **137** | |
+| Réalisation du LOT 1 `DEC-470+`, sous-étape `T5` | 4 | Soumises le 28/07/2026 |
+| **Total** | **141** | |
 
 ---
 
@@ -141,6 +142,19 @@ Décisions prises pendant la réalisation du squelette du monorepo, story
 |---|---|---|---|
 | `DEC-457` | **`DEC-453` est maintenue en l'état** après l'incident iCloud du 27/07/2026 : marquage par attribut étendu, reposé automatiquement par le `postinstall`, contrôlé par `make icloud-verify` exécuté en début de session et intégré à `make check`. **`DEC-418` n'est pas rouverte** et `node_modules` reste dans l'arborescence synchronisée. La copie de conflit `node_modules 2` est supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. | Jonathan a tranché sur présentation des mesures, entre trois issues : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir l'emplacement du dépôt. La deuxième option est provable là où l'attribut ne l'est pas, mais pnpm remplace parfois un lien symbolique par un vrai répertoire à l'installation — elle déplacerait le risque sans le supprimer, au prix d'une demi-sous-étape avant `T2`. La troisième dépasse le périmètre du LOT 1 et relève du confort de travail de Jonathan. L'essentiel du volume — 338 Mio de store `pnpm`, de cache et de Python gérés par `uv` — est déjà hors dépôt par construction. | Validée |
 
+**Ce que `T1` a délibérément écarté**
+
+- `storeDir` et `engineStrict` dans un `.npmrc` : **pnpm 11 ne lit plus ces clés depuis
+  `.npmrc`**. Vérifié le 27/07/2026, `pnpm config get store-dir` y renvoyait `undefined` et
+  pnpm retombait silencieusement sur son défaut. Les réglages sont dans `pnpm-workspace.yaml`.
+- `--passWithNoTests` sur `packages/ui` et `packages/contracts` : une suite vide qui « passe »
+  est le contrôle qui ne peut pas échouer. Un test réel a été écrit dans chaque paquet.
+- `QO-085` recevra sa mesure en charge une fois les 8 services démarrés.
+
+*Ce bloc figurait par erreur à la fin de la section 1, après le tableau de `T4`, et son marqueur
+« prochain identifiant libre » y annonçait `DEC-451` alors que `DEC-469` était en usage —
+19 décisions de retard. Replacé dans sa sous-étape au titre de `ECART-021`.*
+
 ## 1.5 Réalisation du LOT 1 — sous-étape `T2`
 
 Décisions prises pendant la mise en place de la stack Docker de développement, story
@@ -177,16 +191,32 @@ Décisions prises pendant la mise en place de la journalisation JSON corrélée,
 | `DEC-468` | Le champ `resultat` du §28.1 prend **trois** valeurs et non deux : **`succes`** pour 2xx et 3xx, **`refus`** pour 4xx, **`echec`** pour 5xx. Seul `echec` est journalisé au niveau `error`. | La première version n'en avait que deux, et annonçait `resultat=succes` à côté d'un `code_erreur=http_404` : contradictoire à la lecture, et ambigu à l'agrégation — on ne savait plus si `succes` comptait les refus. La distinction dit **où est la faute** : `refus` chez l'appelant, `echec` chez nous. Journaliser un 404 au niveau `error` ferait par ailleurs sonner une alerte à chaque adresse mal tapée. | Validée |
 | `DEC-469` | **Ne sont jamais journalisés** : la chaîne de requête HTTP, les arguments d'un job — seul leur nombre l'est —, les traces d'exception — seul le type l'est —, le journal d'accès d'uvicorn, et les journaux de `httpx`, `botocore` et `urllib3`, réduits aux avertissements. | Le §28.2 interdit le magic link complet : la chaîne de requête le porterait, et ne pas l'écrire du tout est la parade la plus sûre. Les arguments d'un job porteront une adresse e-mail, un identifiant de personne ou un jeton. Une trace d'exception contient les variables locales, donc des secrets. Le journal d'accès d'uvicorn, mesuré sur les journaux réels, double la ligne applicative **sans aucun des dix champs**, journalise les sondes de santé toutes les dix secondes — **8 640 lignes par jour et par service** — et écrit le chemin brut avec sa chaîne de requête. `httpx` et `botocore` écrivent des URL complètes, dont des URL signées. | Validée |
 
-**Ce que `T1` a délibérément écarté**
+## 1.8 Réalisation du LOT 1 — sous-étape `T5`
 
-- `storeDir` et `engineStrict` dans un `.npmrc` : **pnpm 11 ne lit plus ces clés depuis
-  `.npmrc`**. Vérifié le 27/07/2026, `pnpm config get store-dir` y renvoyait `undefined` et
-  pnpm retombait silencieusement sur son défaut. Les réglages sont dans `pnpm-workspace.yaml`.
-- `--passWithNoTests` sur `packages/ui` et `packages/contracts` : une suite vide qui « passe »
-  est le contrôle qui ne peut pas échouer. Un test réel a été écrit dans chaque paquet.
-- `QO-085` recevra sa mesure en charge une fois les 8 services démarrés.
+Décisions prises pendant la réalisation de la page de statut, story `MVP-L01-US002`,
+issue `#3`. Soumises à Jonathan le 28 juillet 2026.
 
-**Prochain identifiant libre : `DEC-451`.**
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-470` | **La page et l'API partagent une seule origine.** Le bloc `app.onboarding.localhost` du `Caddyfile` mandate `/health/*` et `/api/*` vers `api:8000`, le reste vers `web:5173`. Aucun CORS n'est ajouté à l'API, et aucun renvoi n'est configuré dans le serveur de développement Vite. `VITE_API_BASE_URL` reste à `/api/v1` et n'est **pas** employée pour les endpoints de santé, hors préfixe par `DEC-465`. | La page est servie sur `app.onboarding.localhost` et l'API sur `api.onboarding.localhost` : deux origines pour un navigateur, et l'API n'a **aucun CORS** — mesuré, 0 occurrence. Trois montages étaient possibles. CORS ajouterait une surface de sécurité permanente et compliquerait les cookies `Secure` et `SameSite` du LOT 3, or c'est précisément pour pouvoir les éprouver que `DEC-446` impose HTTPS local. Un renvoi par Vite disparaîtrait dès qu'une image de production sert un artefact statique, donc à refaire en `T7`. Le mandatement par Caddy ne modifie pas l'API, laisse l'en-tête `X-Request-ID` lisible par la page sans `Access-Control-Expose-Headers`, et survit à la recette comme à la production. **`CLAUDE.md` §9.3 affirmait « `Caddyfile` inchangé » : c'était faux**, aucune route n'y menait à l'API. | Validée |
+| `DEC-471` | Les tests de la page emploient **Testing Library** sur l'environnement **`jsdom`**, déclaré dans `vite.config.ts`. Deux dépendances de développement sont ajoutées : `@testing-library/react` et `@testing-library/dom` — pair explicite depuis la version 16 — et `jsdom`. | Testing Library est **prescrite** par le cahier §17.1 et par la fiche §6 : ce n'est pas un choix nouveau. En revanche aucun document ne tranche l'environnement DOM. `jsdom` est l'implémentation de référence, celle que documente Testing Library, et la seule dont le comportement sur `navigator.onLine` et sur le presse-papiers est stable — les deux mécanismes que la page doit éprouver. `restoreMocks` et `unstubGlobals` sont activés : un test qui laisse fuir son bouchon fait passer ou échouer le suivant pour une raison invisible. | Validée |
+| `DEC-472` | Le `Caddyfile` est monté par **son répertoire** — `../caddy:/etc/caddy:ro` — et non plus par le fichier seul, et **`make up` recharge explicitement Caddy** par la cible `caddy-reload`. | Un bind mount de fichier unique épingle l'**inode**. La plupart des éditeurs n'écrivent pas en place : ils écrivent un temporaire puis renomment, produisant un inode neuf. Le conteneur continue alors de pointer vers l'ancien inode supprimé : `ls` affiche encore l'entrée, mais toute ouverture répond « No such file or directory ». **Mesure du 28/07/2026 : le conteneur voyait un `Caddyfile` de 1 573 octets quand l'hôte en portait 2 844**, et Caddy servait une configuration périmée en paraissant parfaitement sain. Monter le répertoire résout la classe entière, le chemin étant résolu à chaque ouverture. Le rechargement traite le second volet du même défaut : Caddy ne surveille pas son fichier, et Compose ne recrée pas le conteneur quand seul le contenu du fichier monté change. Reste de la **configuration en lecture seule**, donc conforme à `DEC-447`. | Validée |
+| `DEC-473` | Un **`.dockerignore`** exclut du contexte de construction `node_modules`, `.venv`, les caches d'outillage, `.git`, `docs/prototype`, les copies de conflit iCloud et **`.env`**. | Sans lui, `COPY apps/web ./apps/web` recopie le `node_modules` de l'**hôte** par-dessus celui que `pnpm install` construit dans l'image. Mesure du 28/07/2026 : l'hôte résout `@rolldown/binding-darwin-arm64`, `lightningcss-darwin-arm64` et `@typescript/typescript-darwin-arm64` ; l'image résout les variantes `linux-arm64-musl`. Les deux arborescences ne sont pas interchangeables. Le défaut n'était **pas actif** — les liens de `apps/web/node_modules` sont relatifs et pointent vers le magasin `.pnpm` du conteneur — mais **latent** : un `node_modules` d'hôte désynchronisé du verrou produirait des liens vers des chemins absents, et l'échec surviendrait au démarrage, pas à la construction. L'exclusion de `.env` est une barrière supplémentaire : aucun `Dockerfile` ne le copie aujourd'hui, et un secret gravé dans une couche d'image y reste. **Ce fichier ne résout pas `ROAD-RSK-030`** : la réduction de l'image `web` exige un `Dockerfile` multi-étapes, en `T7`. | Validée |
+
+**Ce que `T5` a délibérément écarté**
+
+- **`axe`** et tout audit d'accessibilité outillé : `jsx-a11y` couvre le lint JSX, et l'audit
+  automatisé du cahier §14.2 relève de `T10` et de l'audit du LOT 12. Le dire vaut mieux que le
+  laisser croire.
+- **React Router** : `DEC-456` ne l'installe pas avant le LOT 4, et le LOT 1 n'a qu'une page.
+- **Zod** : la validation des deux formes de réponse est écrite à la main, pour la même raison.
+- **Un bind mount du code source** vers le conteneur `web` : `DEC-447` reste intact, les
+  modifications passent par le `make up` qui reconstruit. Le rechargement à chaud n'est exigé
+  par aucun critère du lot.
+- **Toute couleur de marque** : `packages/ui` est vide jusqu'à `T10` et la charte relève de
+  `DEP-006`. Poser une palette approximative créerait la dette que `US007` cherche à éviter.
+
+**Prochain identifiant libre : `DEC-474`.**
 
 ---
 
@@ -352,7 +382,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
 | `DEC-466+` — réalisation du LOT 1, `T4` | 4 | 4 |
-| **Total** | **137** | **137** |
+| `DEC-470+` — réalisation du LOT 1, `T5` | 4 | 4 |
+| **Total** | **141** | **141** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

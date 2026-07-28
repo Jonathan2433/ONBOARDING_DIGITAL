@@ -1,17 +1,17 @@
 # Registre des risques
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
 **Sources reprises :** roadmap §14 et cahier des charges §33
 
 | Origine | Identifiants | Nombre |
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `030` | 6 |
-| **Total** | | **30** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `031` | 7 |
+| **Total** | | **31** |
 
-**Prochain identifiant libre : `ROAD-RSK-031`.**
+**Prochain identifiant libre : `ROAD-RSK-032`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -138,7 +138,22 @@ Leur libellé et leur impact sont inchangés.
 | Cause | Choix assumé de `T2`, dont le critère porte sur le démarrage et la santé des services, non sur la taille des images. Un `Dockerfile` multi-étapes séparant construction et exécution relève de `T7`, qui possède la publication GHCR. |
 | Mesure | Aucune à `T2`, volontairement — la corriger ici anticiperait `T7`. **`T7` doit produire une image d'exécution multi-étapes** : construction avec l'outillage complet, exécution avec le seul artefact statique servi. L'ordre de grandeur attendu est celui d'`api`, sinon moins. |
 | Contrôle proposé pour `T7` | Faire échouer la construction si l'image d'exécution dépasse un plafond déclaré. Un contrôle de taille qui n'échoue pas ne sert à rien. |
-| Statut | **Ouvert.** À traiter en `T7`, story `MVP-L01-US006`. |
+| Réévaluation du 28/07/2026, sous-étape `T5` | **Le risque s'est aggravé, et c'est `T5` qui l'a aggravé.** L'image passe de **924 Mio à 1,02 Gio** : `T5` ajoute `jsdom`, `@testing-library/react` et `@testing-library/dom` aux dépendances de développement, indispensables aux tests de la page et prescrits par le cahier §17.1, et le `Dockerfile` mono-étape les embarque tous. Le `.dockerignore` de `DEC-473` **ne compense pas** : il retire du contexte le `node_modules` de l'hôte, qui n'était constitué que de liens symboliques, donc quasiment sans poids. Les 100 Mio supplémentaires sont bien installés dans l'image. Mesure : `api` et `worker` restent à 662 Mio. |
+| Statut | **Ouvert et aggravé.** À traiter en `T7`, story `MVP-L01-US006`. La cible d'exécution devra installer les dépendances **de production seulement** et ne servir que l'artefact construit. |
+
+---
+
+## `ROAD-RSK-031` — Le service `web` exécute un serveur de développement, y compris hors développement
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T5` du LOT 1 |
+| Description | Le `Dockerfile` de `apps/web` a pour commande `node ./node_modules/vite/bin/vite.js`, soit le **serveur de développement** Vite : transformation à la demande, aucun empaquetage, aucune minification, module de rechargement à chaud actif. Cette commande vit dans l'image, donc dans le service `web` de `docker-compose.base.yml`, que **toutes** les surcouches d'environnement héritent. |
+| Impact | Nul en développement, où c'est le comportement voulu. **Réel à partir de `T8`** : l'environnement de recette servirait un artefact différent de celui de la production, ce qui vide la recette de sa valeur — le cahier §22.2 exige des environnements séparés, et recetter autre chose que ce qui sera déployé est pire qu'une séparation imparfaite. Réel aussi en production temporaire au LOT 13 : un serveur de développement n'a ni les performances, ni la surface d'attaque réduite d'un artefact statique. |
+| Cause | `T5` doit rendre la page visible, et le critère de la fiche §3 porte sur l'affichage de l'état réel, pas sur le mode de service. Produire dès maintenant une cible d'exécution multi-étapes anticiperait `T7`, qui possède la construction des images. |
+| Mesure | Aucune à `T5`, volontairement, et **c'est dit plutôt que laissé croire**. `T7` doit introduire un `Dockerfile` multi-étapes avec **deux cibles nommées** : une de développement conservant le serveur Vite, une d'exécution servant l'artefact de `vite build`. `T8` doit alors sélectionner explicitement la cible d'exécution dans la surcouche de recette. Traite le même défaut que `ROAD-RSK-030` par le même moyen. |
+| Contrôle proposé pour `T8` | Vérifier que la page servie en recette ne porte **aucune** référence à `/@vite/client` — présente en développement, absente d'un artefact construit. Un contrôle qui distingue les deux modes, et non un contrôle qui vérifie seulement que la page répond. |
+| Statut | **Ouvert.** À traiter en `T7`, contrôlé en `T8`. |
 
 ---
 

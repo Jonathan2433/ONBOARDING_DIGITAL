@@ -14,9 +14,8 @@
 # trousseau macOS. C'est une action de Jonathan : elle demande son mot de
 # passe, l'agent ne la fait pas a sa place.
 #
-# ETAT A T2 : les services web et api n'ecoutent encore sur aucun port — leur
-# code applicatif arrive en T5 et T3. Caddy est donc sain et sa configuration
-# valide, mais le mandatement renverra 502 jusque-la. C'est attendu.
+# ETAT A T5 : les deux services ecoutent. La page de statut est servie sur
+# app.onboarding.localhost, et l'API sur api.onboarding.localhost.
 
 {
 	# Autorite de certification interne, aucune dependance externe.
@@ -36,7 +35,41 @@
 
 app.onboarding.localhost {
 	tls internal
-	reverse_proxy web:5173
+
+	# DEC-470 — LA PAGE ET L'API PARTAGENT UNE SEULE ORIGINE.
+	#
+	# La page est servie ici, l'API vit sur api.onboarding.localhost : ce sont
+	# deux origines distinctes pour un navigateur. Trois montages etaient
+	# possibles, et celui-ci est retenu :
+	#
+	#   - CORS sur l'API : ajoute une surface de securite permanente, et
+	#     compliquerait les cookies Secure et SameSite du LOT 3 — or c'est
+	#     precisement pour pouvoir les eprouver que DEC-446 impose HTTPS local ;
+	#   - renvoi par le serveur de developpement Vite : disparait des qu'une
+	#     image de production sert un artefact statique, donc a refaire en T7 ;
+	#   - mandatement par Caddy, ici : le navigateur ne voit qu'une origine,
+	#     l'API n'est pas modifiee, l'en-tete X-Request-ID reste lisible par la
+	#     page sans Access-Control-Expose-Headers, et le montage survit a la
+	#     recette comme a la production.
+	#
+	# Les blocs `handle` sont mutuellement exclusifs : le premier qui correspond
+	# traite la requete. L'ordre compte donc, et le fourre-tout vient en dernier.
+
+	# Endpoints d'exploitation, volontairement hors du prefixe versionne
+	# (DEC-465).
+	handle /health/* {
+		reverse_proxy api:8000
+	}
+
+	# Contrat versionne. Vide au LOT 1, son contenu arrive au LOT 2.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Tout le reste : la page et ses ressources.
+	handle {
+		reverse_proxy web:5173
+	}
 }
 
 api.onboarding.localhost {

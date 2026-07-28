@@ -186,7 +186,21 @@ services:
   caddy:
     image: caddy:2.11-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
     volumes:
-      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # LE REPERTOIRE, ET NON LE FICHIER SEUL. Corrige un defaut trouve en T5.
+      #
+      # Un bind mount de fichier unique epingle l'INODE. La plupart des editeurs
+      # n'ecrivent pas en place : ils ecrivent un fichier temporaire puis le
+      # renomment, ce qui produit un inode neuf. Le conteneur continue alors de
+      # pointer vers l'ancien inode, desormais supprime : `ls` affiche encore
+      # l'entree, mais toute ouverture repond « No such file or directory ».
+      # Mesure du 28/07/2026 : le conteneur voyait un Caddyfile de 1 573 octets
+      # quand l'hote en portait 2 844, et Caddy servait donc une configuration
+      # perimee sans qu'aucun controle ne le signale.
+      #
+      # Monter le repertoire resout la classe entiere : le chemin est resolu a
+      # chaque ouverture. Reste de la CONFIGURATION en lecture seule, donc
+      # conforme a DEC-447, qui n'interdit que les bind mounts de donnee d'etat.
+      - ../caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
     healthcheck:
@@ -321,10 +335,9 @@ services:
   # ---------------------------------------------------------------------------
   #  web — frontend React et Vite (cahier 17.1)
   #
-  #  ETAT A T2 : outillage seul. Il n'existe ni index.html, ni point d'entree
-  #  React — ils appartiennent a T5, avec la page de statut. Le healthcheck
-  #  verifie que Vite est resolvable dans l'image : il echoue si l'installation
-  #  depuis le verrou est incomplete.
+  #  ETAT A T5 : le serveur Vite sert la page de statut, mandatee par Caddy sur
+  #  app.onboarding.localhost. Le port 5173 n'est PAS publie sur l'hote : seul
+  #  Caddy le joint par le reseau interne (DEC-460).
   # ---------------------------------------------------------------------------
   web:
     build:
@@ -333,18 +346,21 @@ services:
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     healthcheck:
-      # accessSync leve une exception si le chemin est absent : le processus
-      # sort alors en 1. Pas de ternaire — « ? » et « : » non quotes feraient
-      # lire a YAML une cle complexe au lieu d'une chaine.
+      # T5 : un VRAI appel HTTP, et non plus la simple presence de Vite sur le
+      # disque. Meme raison que `DEC-465` pour l'API : un healthcheck qui ne
+      # sonde que l'installation reste vert alors que le service ne sert rien.
+      # Celui-ci echoue si le serveur n'ecoute pas, s'il repond autre que 2xx,
+      # ou si `index.html` est introuvable. Eprouve en pointant volontairement
+      # un mauvais port : le conteneur passe `unhealthy`.
       test:
         [
           'CMD-SHELL',
-          'node -e "require(''node:fs'').accessSync(''/app/apps/web/node_modules/vite'')"',
+          'node -e "fetch(''http://127.0.0.1:5173/'').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})"',
         ]
       interval: 10s
       timeout: 5s
       retries: 6
-      start_period: 10s
+      start_period: 15s
     logging: *journalisation
     restart: unless-stopped
 

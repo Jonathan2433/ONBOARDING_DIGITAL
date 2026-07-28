@@ -73,15 +73,15 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `469` en usage | `DEC-470` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `473` en usage | `DEC-474` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `019` | `ECART-020` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `021` | `ECART-022` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `113` | `QO-114` | [questions](operations/registre-questions-ouvertes.md) |
-| `ROAD-RSK-nnn` | Risques | `001` à `030` | `ROAD-RSK-031` | [risques](operations/registre-risques.md) |
+| `ROAD-RSK-nnn` | Risques | `001` à `031` | `ROAD-RSK-032` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
 | `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — | backlog validé |
@@ -167,7 +167,7 @@ Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
-[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md).
+[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md) · [`T5`](operations/compte-rendu-t5-lot-1.md).
 
 | Sous-étape | Objet | Story | Issue | État |
 |---|---|---|---|---|
@@ -175,8 +175,8 @@ Comptes rendus de sous-étape :
 | `T1` | Squelette du monorepo, outillage, versions épinglées | `MVP-L01-US001` | `#2` | **Terminée** les 27 et 28/07/2026. 7 répertoires, chaîne de qualité Python et TypeScript, versions épinglées. `DEC-451`–`DEC-457`, `ECART-017` et `ECART-018` clos, `ROAD-RSK-029` ouvert, `ROAD-RSK-026` matérialisé puis résiduel accepté |
 | `T2` | Compose développement, 8 services sains | `MVP-L01-US002` | `#3` | **Terminée** le 28/07/2026. Les 8 services sains par une commande, volumes prouvés persistants. `DEC-458`–`DEC-461`, `ECART-019` clos, `ROAD-RSK-030` et `QO-111` ouverts |
 | `T3` | API FastAPI, 3 healthchecks, migration initiale | `MVP-L01-US003` | `#4` | **Terminée** le 28/07/2026. 3 endpoints, 11 garde-fous testés, migration `0001` sur PostgreSQL réel, 61 tests. `DEC-462`–`DEC-465`, `ECART-006` clos, `QO-112` ouverte |
-| `T4` | Journalisation JSON corrélée | `MVP-L01-US004` | `#5` | **Terminée** le 28/07/2026. Les 10 champs du cahier §28.1, 3 barrières de masquage, corrélation requête **et** job, rotation sur les 8 services. 131 tests. `DEC-466`–`DEC-469`, `QO-113` ouverte |
-| `T5` | Frontend Vite, page de statut | `MVP-L01-US002`, `US003` | `#3`, `#4` | Planifiée |
+| `T4` | Journalisation JSON corrélée | `MVP-L01-US004` | `#5` | **Terminée** le 28/07/2026. Les 10 champs du cahier §28.1, 3 barrières de masquage, corrélation requête **et** job, rotation sur les 8 services. **139 tests** — corrigé de 131 au titre de `ECART-021`. `DEC-466`–`DEC-469`, `QO-113` ouverte |
+| `T5` | Frontend Vite, page de statut | `MVP-L01-US002` | `#3` | **Terminée** le 28/07/2026. Page servie par Caddy, état réel des 3 dépendances éprouvé **en arrêtant Redis**, version du build, 5 états, 25 tests Vitest et Testing Library. `DEC-470`–`DEC-473`, `ECART-020` et `ECART-021` clos, `ROAD-RSK-031` ouvert, `ROAD-RSK-030` aggravé, `QO-085` mesurée |
 | `T6` | CI GitHub Actions, 3 échecs volontaires prouvés | `MVP-L01-US005` | `#6` | Planifiée |
 | `T7` | Images multiarchitecture, GHCR privé | `MVP-L01-US006` | `#7` | Planifiée |
 | `T8` | Environnement de recette isolé | `MVP-L01-US002` | `#3` | Planifiée |

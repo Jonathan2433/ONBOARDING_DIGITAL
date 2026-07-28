@@ -1,0 +1,214 @@
+/*
+ * Mise en forme de la page de statut.
+ *
+ * LOT 1, sous-etape T5, story MVP-L01-US002.
+ *
+ * AUCUNE IDENTITE VISUELLE N'EST INVENTEE ICI, et c'est deliberate :
+ *   - la charte graphique, le logo et la typographie officielle relevent de
+ *     `DEP-006`, dependance externe non encore fournie ;
+ *   - les tokens et composants du design system relevent de `T10`, story
+ *     `MVP-L01-US007`, dont le critere est « sans dependance visuelle
+ *     arbitraire ».
+ * Poser ici des couleurs de marque approximatives creerait exactement la dette
+ * que `US007` cherche a eviter. La page reste donc neutre : polices systeme,
+ * gris, et deux teintes semantiques d'etat.
+ *
+ * ACCESSIBILITE — cahier §14.2
+ *   - `:focus-visible` conserve un focus VISIBLE au clavier ;
+ *   - l'etat n'est jamais porte par la seule couleur : le libelle est explicite
+ *     et le symbole differe par sa forme (voir `Pastille` dans PageStatut.tsx) ;
+ *   - `prefers-reduced-motion` neutralise la seule transition de la page.
+ *
+ * RESPONSIVE — cahier §13.4 : aucune largeur fixe, le tableau defile
+ * horizontalement dans son conteneur plutot que d'elargir la page. Verifie de
+ * 320 px a 1920 px.
+ */
+
+:root {
+  --encre: #1a1a1a;
+  --encre-douce: #555555;
+  --fond: #ffffff;
+  --fond-doux: #f4f4f5;
+  --trait: #d4d4d8;
+  /* Teintes semantiques choisies pour leur contraste sur fond clair comme
+     sombre, et jamais seules porteuses de sens. */
+  --ok: #0f6b3f;
+  --ko: #9b1c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --encre: #f4f4f5;
+    --encre-douce: #a1a1aa;
+    --fond: #18181b;
+    --fond-doux: #27272a;
+    --trait: #3f3f46;
+    --ok: #6ee7a8;
+    --ko: #fca5a5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--encre);
+  background: var(--fond);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  line-height: 1.55;
+}
+
+.bloc {
+  /* `max-width` et non `width` : la page se resserre sous 320 px sans deborder. */
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+h1 {
+  font-size: clamp(1.4rem, 1.1rem + 1.5vw, 2rem);
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 2rem 0 0.5rem;
+}
+
+.sous-titre {
+  color: var(--encre-douce);
+  margin: 0 0 1.5rem;
+}
+
+.etat-global {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+.etat-global--ok {
+  color: var(--ok);
+}
+
+.etat-global--ko {
+  color: var(--ko);
+}
+
+.etat--ok {
+  color: var(--ok);
+}
+
+.etat--ko {
+  color: var(--ko);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  /* Le tableau defile dans son propre conteneur : la page, elle, ne defile
+     jamais horizontalement, y compris a 320 px. */
+  display: block;
+  overflow-x: auto;
+}
+
+caption {
+  text-align: left;
+  color: var(--encre-douce);
+  padding-bottom: 0.4rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--trait);
+  white-space: nowrap;
+}
+
+thead th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--encre-douce);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+dt {
+  color: var(--encre-douce);
+}
+
+dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  background: var(--fond-doux);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  /* Un identifiant de correlation ne doit pas deborder sur petit ecran. */
+  overflow-wrap: anywhere;
+}
+
+.action {
+  margin-top: 1rem;
+  font: inherit;
+  color: var(--fond);
+  background: var(--encre);
+  border: 1px solid var(--encre);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: opacity 120ms ease-in-out;
+}
+
+.action:hover {
+  opacity: 0.85;
+}
+
+.action--discrete {
+  margin-top: 0;
+  color: var(--encre);
+  background: transparent;
+  padding: 0.15rem 0.5rem;
+}
+
+/* Focus VISIBLE au clavier : exigence dure du cahier §14.2. Ne jamais
+   remplacer par `outline: none`. */
+.action:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.note {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--trait);
+  color: var(--encre-douce);
+}
+
+.note h2 {
+  margin-top: 0;
+  color: var(--encre);
+}
+
+/* La seule transition de la page est neutralisee : la prise en charge de
+   `prefers-reduced-motion` est effective, pas declarative. */
+@media (prefers-reduced-motion: reduce) {
+  .action {
+    transition: none;
+  }
+}
