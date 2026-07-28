@@ -11,6 +11,11 @@
 >
 > *Le bandeau de non-ouverture qui figurait ici jusqu'au 27/07/2026 était devenu faux après
 > `DEC-450`. Corrigé au titre de `ECART-017`.*
+>
+> *Le §3 rattachait `T5` aux stories `US002` **et** `US003`. `US003` est intégralement satisfaite
+> depuis `T3` et la page de statut ne complète aucun de ses critères ; le §6 ci-dessous ne
+> rattachait d'ailleurs sa ligne « Frontend » qu'à `US002`. Rattachement corrigé à `US002` seule
+> au titre de `ECART-020`, sur arbitrage de Jonathan.*
 
 **Porte de validation :** `G1` — « Stack, CI et images validées »
 **Tag posé à la validation :** `v0.1.0` (`DEC-428`)
@@ -108,7 +113,7 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 | ~~**T2**~~ | Docker Compose développement : les 8 services démarrent et sont sains. ✅ **Faite le 28/07/2026** | `US002` | ✅ `make up` démarre tout ; les 8 services sont `healthy` ; `make persistence-test` prouve la survie des 5 volumes, **et échoue quand un volume est réellement supprimé**. Décisions `DEC-458` à `DEC-461` |
 | ~~**T3**~~ | API FastAPI minimale, 3 healthchecks, migration Alembic initiale. ✅ **Faite le 28/07/2026** | `US003` | ✅ Les 3 endpoints répondent à travers Caddy ; `ready` sonde réellement les 3 dépendances et **répond 503 quand Redis est arrêté pour de vrai** ; la migration s'applique sur base vide, se rejoue, et s'annule. `DEC-462` à `DEC-465` |
 | ~~**T4**~~ | Journalisation JSON corrélée, API et worker. ✅ **Faite le 28/07/2026** | `US004` | ✅ Les 10 champs du cahier §28.1 dans les journaux **réels** des conteneurs ; corrélation en requête **et** en job, propagée à travers Caddy ; **3 barrières** de masquage, 30 tests ; rotation sur les 8 services. `DEC-466` à `DEC-469` |
-| **T5** | Frontend Vite : page de statut consommant les healthchecks | `US002`, `US003` | La page affiche l'état réel des services et la version ; TypeScript strict sans erreur |
+| ~~**T5**~~ | Frontend Vite : page de statut consommant les healthchecks. ✅ **Faite le 28/07/2026** | `US002` | ✅ La page affiche l'état réel des trois dépendances sondées et la version du build, **éprouvé en arrêtant réellement Redis** — 503, `redis indisponible`, motif `ConnectionError` ; TypeScript strict sans erreur ; 25 tests Vitest et Testing Library sur les cinq états. `DEC-470` à `DEC-473` |
 | **T6** | CI GitHub Actions : **11 contrôles** du cahier §23.1, dont **3 échecs volontaires prouvés** | `US005` | Les 11 contrôles sont exécutés ; le pipeline passe ; et il **échoue effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement |
 | **T7** | Images multiarchitecture et publication GHCR privé | `US006` | Une même version immuable fonctionne sur `arm64` et `amd64` ; l'accès au registre est authentifié ; aucune référence à `latest` seul |
 | **T8** | Environnement de recette isolé | `US002` | Volumes, base, bucket, réseau, ports et secrets distincts du développement ; Mailpit exclusif |
@@ -224,7 +229,7 @@ Toute table métier créée dans ce lot serait une anticipation du LOT 2 et devr
 | Intégration PostgreSQL réel | Connexion, application de la migration, rejeu. **Aucune dépendance à SQLite** | `US003` |
 | API | Les 3 healthchecks ; `ready` en échec quand une dépendance est absente ; format d'erreur du cahier §18.3 avec identifiant de corrélation | `US003` |
 | Journalisation | Présence du `correlation_id` en requête **et** en job ; **absence de secret, de jeton et de magic link** dans la sortie | `US004` |
-| Frontend | Vitest et Testing Library sur la page de statut ; état de chargement, état d'erreur, état hors connexion | `US002` |
+| Frontend | Vitest et Testing Library sur la page de statut ; état de chargement, état d'erreur, état hors connexion. ✅ **Fait en `T5`** : les trois états, **plus** l'état nominal et l'état **dégradé** — un 503 porte le diagnostic et n'est pas une erreur | `US002` |
 | CI, échecs volontaires | Une erreur de lint, une erreur de test et un secret introduits volontairement **doivent bloquer** le pipeline | `US005` |
 | Images | La même version immuable démarre sur `arm64` et sur `amd64` | `US006` |
 | Reprise | Arrêt puis redémarrage de la stack **sans perte de volume** | `US002` |

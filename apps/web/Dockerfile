@@ -12,10 +12,11 @@
 #   La racine du depot : pnpm-lock.yaml et pnpm-workspace.yaml y resident, et
 #   apps/web depend des paquets packages/ui et packages/contracts.
 #
-# ETAT A T2
-#   Outillage seul. Il n'existe ni index.html, ni point d'entree React : ils
-#   appartiennent a T5, avec la page de statut. L'image prouve que les
-#   dependances du workspace s'installent depuis le verrou.
+# ETAT A T5
+#   L'image sert la page de statut par le serveur de developpement Vite. La
+#   construction d'un artefact statique et la reduction de l'image — elle
+#   embarque encore ESLint, Prettier et Vitest, `ROAD-RSK-030` — relevent de T7,
+#   par un Dockerfile multi-etapes.
 
 FROM node:24.16-alpine@sha256:21f403ab171f2dc89bad4dd69d7721bfd15f084ccb46cdd225f31f2bc59b5c9a
 
@@ -56,9 +57,22 @@ COPY apps/web ./apps/web
 RUN chown -R node:node /app
 USER node
 
-# T2 : le conteneur reste debout pour prouver que l'image se construit et que
-# les dependances du workspace sont installees. Le healthcheck, declare dans le
-# fichier Compose, verifie que Vite est resolvable — un controle qui echoue si
-# l'installation est incomplete.
-# T5 remplacera cette commande par le serveur Vite.
-CMD ["sleep", "infinity"]
+# Vite cherche `vite.config.ts` dans le repertoire courant.
+WORKDIR /app/apps/web
+
+# Documentaire : le port n'est PAS publie sur l'hote. Seul Caddy joint ce
+# service, par le reseau interne (cahier §22.2, DEC-460). Les 7 publications
+# de `make ports` restent inchangees.
+EXPOSE 5173
+
+# `node ./node_modules/vite/bin/vite.js` et non `pnpm run dev` : cela evite de
+# faire dependre le demarrage du conteneur de corepack, qui peut vouloir
+# telecharger pnpm a la premiere invocation sous l'utilisateur non privilegie.
+# Un point d'entree qui depend du reseau n'est pas un point d'entree.
+#
+# L'ecoute et le port viennent de `vite.config.ts`, source unique : `host`
+# 0.0.0.0 — un serveur lie a la boucle locale du conteneur ne serait joignable
+# par personne — `strictPort` pour echouer bruyamment plutot que de glisser sur
+# un autre port que Caddy ne mandate pas, et `allowedHosts` sans quoi Vite 8
+# refuse l'en-tete `Host: app.onboarding.localhost`.
+CMD ["node", "./node_modules/vite/bin/vite.js"]

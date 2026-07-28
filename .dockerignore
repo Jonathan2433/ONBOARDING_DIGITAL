@@ -1,0 +1,60 @@
+# ============================================================================
+#  Exclusions du contexte de construction Docker.
+#
+#  LOT 1, sous-etape T5, story MVP-L01-US002.
+#
+#  POURQUOI CE FICHIER N'EXISTAIT PAS, ET POURQUOI IL MANQUAIT
+#    Jusqu'a T5, aucune image n'avait besoin d'executer le code copie : les
+#    conteneurs applicatifs attendaient. Le defaut etait donc invisible.
+#
+#    Sans ce fichier, `COPY apps/web ./apps/web` recopie le `node_modules` de
+#    l'HOTE par-dessus celui que `pnpm install` vient de construire dans
+#    l'image. Mesure du 28/07/2026 : l'hote resout
+#    `@rolldown/binding-darwin-arm64`, `lightningcss-darwin-arm64` et
+#    `@typescript/typescript-darwin-arm64` ; l'image, elle, resout les variantes
+#    `linux-arm64-musl`. Les deux arborescences ne sont pas interchangeables.
+#
+#    Le defaut n'etait pas ACTIF : les liens de `apps/web/node_modules` sont
+#    relatifs et pointent vers le magasin `.pnpm` du conteneur, donc vers les
+#    binaires Linux. Il etait LATENT : un `node_modules` d'hote desynchronise du
+#    verrou produirait dans l'image des liens vers des chemins absents, et
+#    l'echec surviendrait au demarrage, pas a la construction.
+#
+#  CE QUE CE FICHIER NE FAIT PAS
+#    Il ne resout pas `ROAD-RSK-030`. L'image `web` embarque toujours ESLint,
+#    Prettier, Vitest et le serveur de developpement : la reduire exige un
+#    `Dockerfile` multi-etapes, et c'est la sous-etape T7.
+# ============================================================================
+
+# Dependances : chaque image installe les siennes depuis le verrou.
+**/node_modules
+.venv
+
+# Caches d'outillage, jamais utiles dans une image.
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.vite
+**/dist
+**/coverage
+
+# Historique et outillage de depot.
+.git
+.github
+.idea
+**/.DS_Store
+
+# `.env` porte des secrets locaux reels. Aucun Dockerfile ne le copie, et cette
+# exclusion garantit qu'une modification future ne pourra pas le faire par
+# inadvertance : un secret grave dans une couche d'image y reste.
+.env
+
+# Prototype historique : 2,83 Mo dont 2,64 Mo de Base64, jamais reutilise
+# comme code.
+docs/prototype
+
+# Copies de conflit iCloud — le nom d'origine suivi d'une espace et d'un
+# chiffre. Meme motif que dans .gitignore, .prettierignore, Ruff et ESLint.
+**/* [0-9]
+**/* [0-9][0-9]

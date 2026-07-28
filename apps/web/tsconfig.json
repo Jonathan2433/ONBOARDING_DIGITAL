@@ -1,8 +1,15 @@
 {
+  "_commentaire": [
+    "LOT 1, sous-etape T5 : `types: [vite/client]` est necessaire des lors que",
+    "le code importe une feuille de style. Sans lui, `import './styles.css'`",
+    "echoue en « Cannot find module », et c'est `tsc --noEmit` qui le signale.",
+    "Le mode strict vient de tsconfig.base.json et n'est pas relache ici."
+  ],
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
   "include": ["src", "vite.config.ts"]
 }

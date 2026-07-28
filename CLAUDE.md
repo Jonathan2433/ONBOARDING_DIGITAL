@@ -2,7 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T5`**
+**Mis à jour le :** 28 juillet 2026, à la sortie de la sous-étape **`T5`** — §1, §4.7, §4.8, §5.3,
+§5.6, §5.7, §7, §8, §9, §10 et §11 rectifiés **sur mesures**. **Une affirmation de ce document
+s'est révélée fausse en `T5` : voir §9.0.**
+**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T6`**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -17,19 +20,24 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** — les cinq validées par Jonathan |
-| **Prochaine action** | **`T5`** — frontend Vite, page de statut. Stories `MVP-L01-US002` et `US003`, issues [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3) et [#4](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/4) |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** |
+| **Prochaine action** | **`T6`** — CI GitHub Actions, **le test le plus important du lot**. Story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6) |
 | Stories `Done` | **4 sur 8** : `US001`, `US002`, `US003`, `US004`. Issues `#2` à `#5` closes |
 | Stories restantes | `US005` CI · `US006` images GHCR · `US007` design system (`P1`) · `US008` documentation |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
-| Branches | `main` 13 commits · `develop` **19 commits**, en avance de **6**. **Les deux protégées** |
-| Volumétrie | **128 fichiers suivis** — 51 Markdown, 31 Python, 7 TypeScript — **30 487 lignes** |
-| Tests | **139** : 131 unitaires, 8 d'intégration sur services réels |
-| Registres | **137 décisions** · 19 écarts (5 ouverts) · 37 questions (33 ouvertes) · 30 risques |
+| Branches | `main` 13 commits · `develop` **21 commits** après la fusion de `T5`. **Les deux protégées** |
+| Volumétrie | **139 fichiers suivis** — 52 Markdown, 31 Python, 7 TypeScript, **6 TSX** — **33 330 lignes** |
+| Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
+| Registres | **141 décisions** · 21 écarts (5 ouverts) · 37 questions (33 ouvertes) · 31 risques |
 
-**La plateforme démarre et répond.** `make up` lève les huit services, l'API sert ses trois
-endpoints de santé à travers Caddy en HTTPS, la migration initiale s'applique, et les journaux
-sortent en JSON corrélé. Il n'existe **aucun écran** ni **aucune donnée métier**.
+> **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
+> étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser — ce document se
+> décrit forcément dans son état **d'avant son propre commit**.
+
+**La plateforme démarre, répond, et s'affiche.** `make up` lève les huit services, l'API sert ses
+trois endpoints de santé à travers Caddy en HTTPS, la migration initiale s'applique, les journaux
+sortent en JSON corrélé, et **la page de statut affiche l'état réel des dépendances** sur
+`app.onboarding.localhost`. Il n'existe **aucun écran métier** ni **aucune donnée métier**.
 
 **Le régime de contribution est contraignant.** `main` et `develop` sont protégées avec
 `enforce_admins` : **aucun commit direct**, y compris documentaire, y compris pour Jonathan.
@@ -71,9 +79,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, 5 barrées |
-| **Comment a-t-on fait `T1` à `T4` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4}-lot-1.md`** |
-| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **137 décisions** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **6 barrées** |
+| **Comment a-t-on fait `T1` à `T5` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5}-lot-1.md`** |
+| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **141 décisions** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
 
 Les cinq documents de cadrage sont **immuables**. Intégrité prouvée par empreinte SHA-256 dans
@@ -139,9 +147,25 @@ en job** : elle traverse Caddy, revient dans la réponse, et **voyage dans le me
 dupliqué — deux filtres de masquage finissent par diverger, et le jour où l'un oublie un motif
 la fuite est silencieuse.
 
-## 4.7 Les décisions qui contraignent ton travail quotidien
+## 4.7 `T5` — page de statut
 
-Les 137 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+La page est servie sur `app.onboarding.localhost`. Elle affiche les **trois** dépendances que
+l'API sonde, la version du build, et **dit sur elle-même** que le worker, Mailpit et Caddy ne
+sont pas sondés — plutôt que de laisser croire à un tableau de bord des huit services.
+**Cinq états** et non trois : chargement, nominal, **dégradé**, erreur, hors connexion.
+
+**Comment :** un 503 de `/health/ready` porte **la même forme JSON** qu'un 200. Le lire comme une
+erreur réseau jetterait le diagnostic au moment où il devient utile — le client accepte donc 200
+**et** 503 pour `ready`, 200 seul pour `version`. Le critère « affiche l'état réel » a été éprouvé
+en **arrêtant réellement Redis** : 503, `redis indisponible`, motif `ConnectionError`.
+
+**Et un contrôle qui n'existait pas :** `eslint-plugin-jsx-a11y`, motif déterminant de `DEC-451`,
+n'avait jamais eu un seul fichier JSX à examiner — il n'existait aucun `.tsx` dans ce dépôt.
+Éprouvé par témoin négatif, il examine et il **sait échouer**.
+
+## 4.8 Les décisions qui contraignent ton travail quotidien
+
+Les 141 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -171,18 +195,22 @@ Les 137 sont dans `docs/decisions/registre-decisions.md`. Celles que tu applique
 | `DEC-467` | Rotation par le pilote `json-file`. **La conservation 30 jours n'est PAS couverte** |
 | `DEC-468` | `resultat` prend **trois** valeurs : `succes`, `refus`, `echec` |
 | `DEC-469` | **Jamais journalisés** : chaîne de requête, arguments de job, traces, accès uvicorn |
+| `DEC-470` | **Page et API sur une SEULE origine**, mandatée par Caddy. Ni CORS, ni proxy Vite |
+| `DEC-471` | Testing Library sur **`jsdom`**. `restoreMocks` et `unstubGlobals` actifs |
+| `DEC-472` | Le `Caddyfile` est monté **par son répertoire**, et `make up` **recharge** Caddy |
+| `DEC-473` | **`.dockerignore`** : `node_modules`, `.venv`, caches, `.git`, `docs/prototype`, `.env` |
 
-## 4.8 Les séquences d'identifiants — à respecter absolument
+## 4.9 Les séquences d'identifiants — à respecter absolument
 
 Un identifiant n'est **jamais** réutilisé, **jamais** renuméroté, et un trou n'est **jamais**
 comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`469` en usage | **`DEC-470`** |
-| `ECART-nnn` | `001`–`019` | **`ECART-020`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`473` en usage | **`DEC-474`** |
+| `ECART-nnn` | `001`–`021` | **`ECART-022`** |
 | `QO-nnn` | `072`–`113`, **5 trous** | **`QO-114`** |
-| `ROAD-RSK-nnn` | `001`–`030` | **`ROAD-RSK-031`** |
+| `ROAD-RSK-nnn` | `001`–`031` | **`ROAD-RSK-032`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
 
@@ -227,19 +255,23 @@ identifiant.**
 > `T2`. MinIO vient de **quay.io**, Mailpit de **ghcr.io** : leurs registres de publication, non
 > limités. Si une inspection d'image échoue, **lis l'erreur** avant de conclure à une absence.
 
-## 5.3 Les 31 cibles du `Makefile`
+## 5.3 Les 33 cibles du `Makefile`
 
 ```text
 Environnement   tools versions tree icloud-exclude icloud-verify install
 Qualité         lint format format-check typecheck test test-unit test-integration check
 Stack           env up down destroy ps logs health ports minio-bucket stack-check
-                persistence-test
+                persistence-test caddy-reload
 API             migrate migrate-status api-check
+Frontend        web-check
 Nettoyage       clean clean-deps
 Aide            help
 ```
 
 `make check` = qualité complète. `make stack-check` = santé des 8 services + ports.
+`make web-check` = la page vue **comme un navigateur la voit**, à travers Caddy en HTTPS.
+`make caddy-reload` est appelée par `make up` : **Caddy ne surveille pas son fichier**, et sans
+rechargement il sert une configuration périmée en paraissant sain (`DEC-472`, défaut `T5-2`).
 **`make help` est la source de vérité**, pas cette liste.
 
 ## 5.4 Variables de `.env.example` — **v1.0**, `ECART-006` clos
@@ -281,16 +313,30 @@ obligatoire absente, `CHANGE_ME` résiduel, valeur typée invalide, `LOG_FORMAT`
 ## 5.6 Hôtes locaux et HTTPS
 
 ```text
-app.onboarding.localhost   → 127.0.0.1   (frontend, 502 jusqu'à T5)
-api.onboarding.localhost   → 127.0.0.1   (API, opérationnelle)
+app.onboarding.localhost   → 127.0.0.1   page de statut, OPERATIONNELLE depuis T5
+                                         + /health/* et /api/* mandates vers l'API (DEC-470)
+api.onboarding.localhost   → 127.0.0.1   API, operationnelle depuis T3
 ```
 
 macOS les résout **sans toucher à `/etc/hosts`** — vérifié, 0 occurrence dans le fichier.
 
-> **⚠️ La racine de l'autorité interne de Caddy n'est PAS approuvée dans le trousseau macOS.**
-> Tous les contrôles passent par `curl -k`. **C'est l'action de Jonathan**, elle demande son mot
-> de passe. En `T5`, la page s'affichera dans un navigateur : l'avertissement de certificat
-> deviendra visible. **Demande-lui avant de préparer la démonstration.**
+**Depuis `T5`, la page et l'API partagent une origine** (`DEC-470`) : le bloc
+`app.onboarding.localhost` mandate `/health/*` et `/api/*` vers `api:8000`, le reste vers
+`web:5173`. Le frontend appelle donc `/health/ready` **en relatif**, sans CORS. Ne remets pas ce
+montage en cause sans lire `DEC-470` : il existe pour que les cookies `Secure` et `SameSite` du
+LOT 3 soient éprouvables.
+
+> **⚠️ La racine de l'autorité interne de Caddy n'est TOUJOURS PAS approuvée dans le trousseau
+> macOS.** Mesuré le 28/07/2026 : `security verify-cert` sort en **1**, `CSSMERR_TP_NOT_TRUSTED`,
+> et 0 entrée « Caddy » dans le trousseau système alors que le même filtre y trouve 4 entrées
+> « Apple » — témoin positif, donc le zéro est un vrai zéro. Tous les contrôles passent par
+> `curl -k`. **Conséquence concrète depuis `T5` : un navigateur refuse la connexion**, la page
+> n'a donc jamais été vue dans un moteur de rendu réel. **C'est l'action de Jonathan**, elle
+> demande son mot de passe :
+>
+> ```bash
+> docker cp onboarding-dev-caddy-1:/data/caddy/pki/authorities/local/root.crt /tmp/caddy-onboarding-root.crt && sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/caddy-onboarding-root.crt
+> ```
 
 ## 5.7 Contrainte mémoire
 
@@ -298,9 +344,16 @@ macOS les résout **sans toucher à `/etc/hosts`** — vérifié, 0 occurrence d
 |---|---|
 | RAM machine | 16 Gio |
 | **RAM allouée à Docker** | **7,75 Gio** |
-| Les 8 services au repos | **146 Mio, 2 %** — mais `web` est encore un placeholder |
+| Les 8 services, **code applicatif en marche** | **389 Mio, 5,0 %** — mesuré en `T5` |
+| Pour mémoire, les mêmes au repos en `T2` | 146 Mio, 2 % — `api`, `worker` et `web` attendaient |
+| Le service le plus sollicité | `api`, à **9,0 %** de sa limite de 1 024 Mio |
 | Limites déclarées | 6 144 Mio au total, **effectivement appliquées** |
+| Images | `web` **1,02 Gio** — `ROAD-RSK-030` **aggravé** · `api` et `worker` 662 Mio |
 | Projet tiers `observatoire-ecom-studio` | **arrêté** par `docker compose stop`, volumes intacts |
+
+**La marge est confortable pour UN environnement**, et c'est tout ce qui est prouvé. `DEC-440`
+n'autorise qu'un environnement à la fois ; la mesure de deux stacks simultanées relève de `T8`,
+et c'est là que `QO-085` pourra se clore.
 
 **Remise en route du projet tiers, quand le LOT 1 sera fini :**
 
@@ -377,17 +430,29 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**34 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **24 pendant `T1` à `T4`**. Ils sont
+**42 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **32 pendant `T1` à `T5`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
 
 > **Un contrôle qui ne peut pas échouer ne prouve rien. Un contrôle dont on ne lit pas le code
 > de sortie ne prouve rien non plus. Un contrôle qui n'annonce pas combien d'éléments il a
-> examinés peut toujours n'en avoir examiné qu'un.**
+> examinés peut toujours n'en avoir examiné qu'un. Et un contrôle dont l'échec produirait la
+> même observation que le succès ne prouve rien, quel que soit le nombre d'éléments comptés.**
 
-La troisième proposition est l'apport de ce lot. La parade est mécanique : **compter, et
-confronter le compte à un attendu.**
+Les troisième et quatrième propositions sont l'apport de ce lot. Parades, toutes deux mécaniques :
+**compter, et confronter le compte à un attendu** ; puis **se demander quelle valeur produirait
+l'échec**.
+
+La quatrième vient de `T5-6`. Mon contrôle annonçait « 7 modules sur 7 résolus » et avait bien
+examiné 7 modules — mais il concluait sur un **code HTTP 200**, or Vite répond 200 avec
+`index.html` pour tout chemin inconnu : un module absent aurait donné la même observation. La
+parade du lot était respectée, et le contrôle ne prouvait rien. Corrigé en discriminant sur le
+**type MIME**. Même mécanisme que `T2-5`, où un Mailpit vide et un volume effacé donnaient tous
+deux `{"total":0}`.
+
+**C'est le témoin négatif qui les révèle** : quand il **passe** alors qu'il devait échouer, ce
+n'est pas le témoin qui est mauvais, c'est le contrôle qui ne discrimine pas.
 
 ## 7.1 iCloud : le risque s'est matérialisé
 
@@ -518,17 +583,31 @@ qui recalcule les cinq empreintes et échoue si l'une diffère.**
 | `defineConfig` de `vite` connaît la clé `test` | **Non**, avec Vitest 4 → `vitest/config` |
 | `bash` est disponible dans une image Node | **Non**, `node:alpine` n'a que `sh` |
 | L'image MinIO contient `grep` | **Non** → `mc stat`, pas `mc ls \| grep` |
+| Vite sert le dev server sur toutes les interfaces | **Non**, défaut `localhost` → `server.host` à `0.0.0.0`, sinon injoignable en conteneur |
+| Vite accepte n'importe quel en-tête `Host` | **Non**, Vite 8 installe un contrôle d'hôte dès que le serveur n'est pas lui-même en HTTPS → `server.allowedHosts` |
+| Vite renvoie 404 sur un chemin inconnu | **Non**, il renvoie **200 + `index.html`** → discrimine sur le type MIME, jamais sur le code |
+| `@testing-library/dom` vient avec `@testing-library/react` | **Non** depuis la v16, c'est un **pair** à installer explicitement |
 
 **Inspecte les exports réels avant de les utiliser**, ne te fie pas à ta mémoire d'une API.
 
 ## 7.11 Vérifier ce que la documentation affirme
 
-Ce lot a corrigé **quatre** affirmations fausses du corpus, toutes des nombres non dérivés de la
-source : le bandeau « LOT 1 non ouvert » après son ouverture (`ECART-017`), « 8 contrôles de
-CI » là où le cahier en énumère **11** (`ECART-018`), « 9 placeholders `CHANGE_ME` » là où il y
-en a **7** (`ECART-019`), et les décisions de `T0` bornées à `DEC-447` au lieu de `DEC-449`.
+Ce lot a corrigé **huit** affirmations fausses du corpus, presque toutes des nombres non dérivés
+de la source : le bandeau « LOT 1 non ouvert » après son ouverture (`ECART-017`), « 8 contrôles
+de CI » là où le cahier en énumère **11** (`ECART-018`), « 9 placeholders `CHANGE_ME` » là où il y
+en a **7** (`ECART-019`), les décisions de `T0` bornées à `DEC-447` au lieu de `DEC-449`, et les
+quatre de `ECART-021` : **131 tests au lieu de 139** dans deux documents, « 30 tests » de masquage
+non reproductible, les compteurs de commits et de lignes de ce document, et un **« prochain
+identifiant libre : `DEC-451` »** dans le registre des décisions alors que `DEC-469` était en
+usage — **19 décisions de retard**, donc une collision garantie pour qui s'y fierait.
+
+Une affirmation fausse qui n'était pas un nombre, et celle-là a coûté du temps :
+**`CLAUDE.md` §9.3 affirmait « `Caddyfile` inchangé : le mandatement existe déjà »**, alors
+qu'aucune route n'y menait à l'API. Voir §9.0.
 
 **Vérifie l'état réel par `git`, `gh` et les mesures. Et dérive les nombres de la source.**
+`T6` doit poser en CI un contrôle qui les recalcule et échoue s'ils divergent — recommandation de
+`ECART-021`, à joindre à celle de `ROAD-RSK-029` sur les cinq empreintes SHA-256.
 
 ## 7.12 Outils macOS différents de GNU
 
@@ -554,11 +633,42 @@ du dépôt.
 **n'entre jamais d'identifiants à sa place** — `gh auth login`, mot de passe `sudo`, approbation
 de la racine Caddy dans le trousseau sont **ses** actions.
 
+## 7.15 Un service peut être sain et servir une configuration périmée
+
+Trois pièges découverts en `T5`, tous les trois **silencieux** : rien n'échouait, tout paraissait
+correct.
+
+**1. Un bind mount de FICHIER unique épingle l'inode.** La plupart des éditeurs n'écrivent pas en
+place : ils écrivent un temporaire puis renomment, ce qui produit un inode neuf. Le conteneur
+continue de pointer vers l'ancien, désormais supprimé — `ls` affiche encore l'entrée, mais toute
+ouverture répond « No such file or directory ». Mesure : le conteneur voyait un `Caddyfile` de
+**1 573 octets** quand l'hôte en portait **2 844**, et Caddy servait donc une configuration
+périmée **en étant `healthy`**, son API d'administration répondant très bien — sur l'ancienne
+configuration.
+
+```yaml
+- ../caddy:/etc/caddy:ro      # le REPERTOIRE : le chemin est resolu a chaque ouverture
+- ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro   # le FICHIER : epingle l'inode, ne fais plus ca
+```
+
+**2. Compose ne recrée pas un conteneur quand seul le CONTENU du fichier monté change, et Caddy ne
+surveille pas son fichier.** `make up` appelle donc `caddy-reload`. Si tu modifies le `Caddyfile`
+et que rien ne change, c'est là qu'il faut regarder.
+
+**3. Aucun `.dockerignore` n'existait avant `T5`.** `COPY apps/web ./apps/web` recopiait le
+`node_modules` de l'**hôte** par-dessus celui de l'image. Non actif — les liens sont relatifs et
+pointent vers le magasin du conteneur — mais l'hôte résout `darwin-arm64` là où l'image résout
+`linux-arm64-musl`. Le défaut est resté invisible tant qu'aucune image n'avait besoin
+d'**exécuter** le code copié.
+
+**La leçon commune :** un healthcheck qui interroge un service ne dit rien de la **configuration**
+que ce service a chargée. Compare toujours l'état chargé au fichier présent.
+
 ---
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — 5 ouverts sur 19
+## 8.1 Écarts — 5 ouverts sur 21
 
 | ID | Objet | Échéance |
 |---|---|---|
@@ -574,7 +684,7 @@ de la racine Caddy dans le trousseau sont **ses** actions.
 
 | ID | Objet | Quand |
 |---|---|---|
-| `QO-085` | RAM et disque du Mac M5 | **Mesure après `T5`**, quand `web` travaillera vraiment |
+| `QO-085` | RAM et disque du Mac M5. **Mesurée en charge réelle en `T5` : 389 Mio, 5,0 %.** Ce qui manque pour clore : deux environnements simultanés | **`T8`** |
 | `QO-111` | **Fournisseur de collation PostgreSQL.** Ne se change pas sans recréer le cluster | LOT 2 |
 | `QO-112` | **Liste des extensions PostgreSQL.** `CREATE EXTENSION` exige des droits élevés | LOT 2 |
 | `QO-113` | **Conservation calendaire des journaux.** `json-file` borne par la taille | LOT 13 |
@@ -587,7 +697,8 @@ de la racine Caddy dans le trousseau sont **ses** actions.
 |---|---|
 | `ROAD-RSK-026` | iCloud — **matérialisé**, résiduel accepté par `DEC-457`. `make icloud-verify` |
 | `ROAD-RSK-029` | Un formateur peut réécrire les documents immuables. **Garde-fou de CI à poser en `T6`** |
-| `ROAD-RSK-030` | Image `web` de **924 Mio** : elle embarque ESLint, Prettier, Vitest. **À corriger en `T7`** par un `Dockerfile` multi-étapes |
+| `ROAD-RSK-030` | Image `web` de **1,02 Gio** — **aggravé par `T5`**, qui y a ajouté `jsdom` et Testing Library. **À corriger en `T7`** par un `Dockerfile` multi-étapes installant les dépendances **de production seulement** |
+| `ROAD-RSK-031` | **Nouveau.** Le service `web` exécute le **serveur de développement** Vite, et toutes les surcouches en héritent. La recette servirait donc un artefact différent de la production. Deux cibles nommées en `T7`, sélection explicite en `T8` |
 | `ROAD-RSK-015` | Secret intégré au code — la mesure devient effective en `T6` avec Gitleaks |
 
 ## 8.4 Contenus en attente de relecture
@@ -597,67 +708,84 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T5`
+# 9. Par où commencer : `T6`
+
+## 9.0 Ce que `T5` a démenti dans ce document
+
+Le §9.3 de la version précédente affirmait : « **`Caddyfile` inchangé : le mandatement existe
+déjà.** » C'était faux, et cela aurait bloqué la sous-étape sans qu'on comprenne pourquoi. Le bloc
+`app.onboarding.localhost` renvoyait **tout** vers `web:5173` ; `VITE_API_BASE_URL` étant un
+chemin **relatif**, la page appelait Vite et non l'API. L'API n'avait par ailleurs **aucun CORS**.
+
+**La leçon dépasse ce cas :** ce document décrit un état vérifié à une date. Une affirmation
+d'architecture n'est pas une mesure. **Vérifie-la avant de bâtir dessus** — surtout quand elle
+t'annonce que tu n'as rien à faire.
 
 ## 9.1 Objet
 
-**Frontend Vite : page de statut consommant les healthchecks.** Stories `MVP-L01-US002` et
-`MVP-L01-US003`, issues `#3` et `#4` — **déjà closes**, `T5` complète leur démonstration.
+**CI GitHub Actions : les 11 contrôles du cahier §23.1, dont 3 échecs volontaires prouvés.**
+Story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6).
 
-**Critère de la fiche §3 :** « La page affiche l'état réel des services et la version ;
-TypeScript strict sans erreur. »
+**Critère de la fiche §3 :** « Les 11 contrôles sont exécutés ; le pipeline passe ; et il **échoue
+effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement. »
 
-**Critère du backlog, `US002` :** la démonstration attendue par la roadmap comprend une « page
-web de statut ».
+**C'est le test le plus important du lot.** La roadmap exige que la CI **bloque**. Il faut donc
+prouver l'échec, pas seulement le succès.
 
-## 9.2 Ce qui est déjà là
+## 9.2 Les 11 contrôles, énumérés — et non comptés
+
+Le cahier §23.1, littéralement. L'énumération est ce qui empêche l'omission (`ECART-018`) :
+
+```text
+formatage · lint · typage · tests unitaires · tests d'intégration PostgreSQL
+tests API · tests frontend · contrôle Alembic · détection de secrets
+audit de dépendances · construction des images
+```
+
+## 9.3 Ce qui est déjà là pour te servir
 
 | Élément | État |
 |---|---|
-| `/health/ready` | Répond 200 avec les **trois dépendances détaillées**, 503 si l'une manque |
-| `/health/version` | Répond `version`, `revision`, `environnement` |
-| `apps/web` | Outillage seul : React 19, Vite 8, Vitest 4, TypeScript 7, `tsconfig` strict |
-| `VITE_API_BASE_URL` | `/api/v1` dans `.env.example` |
-| Caddy | `app.onboarding.localhost` → `web:5173`. **502 aujourd'hui** |
-| Service `web` | Démarre, healthcheck sur la résolution de Vite. `CMD` encore `sleep infinity` |
+| `Makefile` | **33 cibles**, point d'entrée unique. Conçu depuis `T1` pour devenir celui de la CI |
+| Qualité | `make check` : `versions tree icloud-verify format-check lint typecheck test` |
+| Tests | **139 pytest** dont 8 d'intégration exigeant la stack réelle, **27 Vitest** dont 25 sur la page |
+| Contrôles de stack | `stack-check`, `api-check`, **`web-check`**, `persistence-test` |
+| Contrôles requis sur les branches | **0** — `gh api …/branches/main/protection` le confirme. C'est `T6` qui les posera |
+| `.github/workflows/` | **N'existe pas encore.** `.github/` ne porte que les gabarits d'issue et de PR |
 
-## 9.3 Ce que `T5` doit produire, à mon avis
+## 9.4 Les pièges propres à `T6`
 
-**C'est une recommandation, pas une décision.** Vérifie-la contre la fiche et le backlog.
-
-- `index.html`, `src/main.tsx`, `src/App.tsx`, `src/pages/StatusPage.tsx` ;
-- un appel aux **deux** endpoints, avec les trois états exigés par le cahier §17.4 et la fiche
-  §6 : **chargement**, **erreur**, **hors connexion** ;
-- le `CMD` du `Dockerfile` web passe de `sleep infinity` à `vite --host`, et le healthcheck
-  Compose devient un vrai appel HTTP — comme `DEC-459` l'a fait pour `api` en `T3` ;
-- tests **Vitest et Testing Library** sur les trois états ;
-- `Caddyfile` inchangé : le mandatement existe déjà.
-
-## 9.4 Les pièges propres à `T5`
-
-1. **La racine Caddy n'est pas approuvée.** La page s'affichera avec un avertissement de
-   certificat. **Demande à Jonathan de l'approuver avant la démonstration** — c'est son mot de
-   passe, pas ton action.
-2. **`VITE_API_BASE_URL` vaut `/api/v1`**, un chemin relatif. Les endpoints de santé sont
-   **hors** de ce préfixe, volontairement (`DEC-465`). La page doit appeler `/health/ready`, pas
-   `/api/v1/health/ready`.
-3. **`web` n'écoute pas encore.** Tant que le `CMD` reste `sleep infinity`, Caddy renverra 502
-   quoi que tu écrives dans `src/`.
-4. **`ROAD-RSK-030`** : ne cherche pas à réduire l'image web ici, c'est `T7`.
-5. **Aucun écran métier.** Une page de statut n'est pas un portail. Le LOT 4 possède la
-   navigation.
+1. **`make icloud-verify` fait partie de `make check`, et il n'a aucun sens sur un exécuteur
+   GitHub.** Le script sort en 0 hors macOS, mais vérifie-le plutôt que de le supposer — sinon la
+   CI échouera sur un contrôle qui ne la concerne pas.
+2. **Les 8 tests d'intégration exigent PostgreSQL, Redis et MinIO réels.** `make test-integration`
+   refuse de s'exécuter si la stack n'est pas saine, **et c'est voulu** : « un test ignoré n'est
+   pas un test qui passe ». En CI il faudra des services, pas un contournement.
+3. **`pnpm peers check` sort en 1** : `eslint-plugin-jsx-a11y@6.10.2` déclare ESLint `^3..^9`
+   alors qu'ESLint 10.8.0 est installé. Le greffon **fonctionne**, prouvé par témoin négatif en
+   `T5`. À trancher : corriger, tolérer explicitement, ou ne pas contrôler les pairs.
+4. **`ROAD-RSK-029` et `ECART-021`** recommandent deux contrôles de CI supplémentaires : recalculer
+   les **cinq empreintes SHA-256** des documents immuables, et **dériver de la source** les nombres
+   que la documentation affirme. Les deux sont des recommandations, pas des décisions.
+5. **Aucun secret dans un workflow.** Le `GITHUB_TOKEN` suffit à `T6` ; GHCR est `T7`.
+6. **Le témoin de détection de secrets doit être un secret PLAUSIBLE**, pas une chaîne bidon :
+   c'est la leçon de `T4-1`, où un test bâti sur des exemples de documentation laissait passer le
+   format réellement produit par le projet.
 
 ## 9.5 Les 7 critères de sortie de la porte `G1`
 
 | | Critère | État |
 |:--:|---|---|
-| ☑ | Tous les services démarrent sur le Mac M5 | **fait en `T2`** |
+| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, et **`web` sert vraiment** depuis `T5` |
 | ☐ | Les images multiarchitectures sont construites | `T7` |
-| ☑ | **Aucun secret réel n'est présent** | contrôlé à chaque sous-étape |
+| ☑ | **Aucun secret réel n'est présent** | contrôlé à chaque sous-étape, avec témoin positif |
 | ☑ | Une migration Alembic vide ou initiale s'exécute | **fait en `T3`** |
 | ☑ | Les logs possèdent un identifiant de corrélation | **fait en `T4`** |
 | ☐ | **La CI bloque volontairement une erreur de lint, de test et de secret** | **`T6`, le test le plus important du lot** |
 | ☐ | Jonathan valide le socle | `T11` |
+
+La démonstration attendue par la roadmap est satisfaite à **5 sur 6** : seul le pipeline CI
+manque.
 
 À la validation, le tag **`v0.1.0`** est posé sur `main` (`DEC-428`).
 
@@ -678,8 +806,9 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 .
 ├── CLAUDE.md                    ← ce document. AGENTS.md est un lien symbolique, NON VERSIONNÉ
 ├── README.md · CONTRIBUTING.md
-├── Makefile                     ← 31 cibles, point d'entrée unique (DEC-441)
+├── Makefile                     ← 33 cibles, point d'entrée unique (DEC-441)
 ├── .env.example                 ← v1.0, 78 variables, aucun secret
+├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
 ├── .node-version · .python-version
 ├── package.json · pnpm-workspace.yaml    ← pnpm épinglé, store hors iCloud
 ├── pyproject.toml               ← workspace uv, Ruff, mypy strict, pytest
@@ -687,19 +816,22 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 ├── apps/
 │   ├── api/      app/{configuration,health,shared}, alembic/, tests/, Dockerfile
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
-│   └── web/      src/, vite.config.ts, Dockerfile      ← page de statut en T5
+│   └── web/      index.html, vite.config.ts, Dockerfile   ← serveur Vite depuis T5
+│       └── src/  main.tsx · App.tsx · FrontiereErreur.tsx · styles.css
+│                 api/sante.ts          ← client des 2 endpoints, 200 ET 503
+│                 pages/PageStatut.tsx  ← les 5 états
 ├── packages/
 │   ├── observabilite/    journal JSON, masquage, corrélation (DEC-466)
 │   ├── ui/               design system        ← tokens en T10
 │   └── contracts/        contrat API partagé  ← génération en T10
 ├── infra/
 │   ├── compose/  base + surcouche dev        ← surcouche recette en T8
-│   ├── caddy/    Caddyfile, tls internal
-│   └── scripts/  exclure-icloud · verifier-{ports,persistance,sante}
+│   ├── caddy/    Caddyfile — monté PAR SON RÉPERTOIRE (DEC-472), tls internal
+│   └── scripts/  exclure-icloud · verifier-{ports,persistance,sante,page-statut}
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 137 décisions, 19 écarts
-    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T4, registres
+    ├── decisions/                   ← 141 décisions, 21 écarts
+    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T5, registres
 ```
 
 `.github/workflows/` n'existe pas encore : c'est `T6`.
@@ -716,10 +848,11 @@ git status -sb
 gh issue list --milestone G1 --state all
 
 make icloud-verify        # PAS une formalite : voir §7.1
-make check                # qualite complete
-make up                   # les 8 services
+make check                # qualite complete : 139 pytest + 27 Vitest
+make up                   # les 8 services, ET recharge Caddy (DEC-472)
 make stack-check          # sante + ports
 make api-check            # les 3 endpoints
+make web-check            # la page vue comme un navigateur la voit
 make test-integration     # 8 tests sur services reels
 ```
 
@@ -729,18 +862,24 @@ ce lot.
 1. Lire ce document.
 2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
 3. Lire [`fiche-lot-1.md`](docs/operations/fiche-lot-1.md) : la sous-étape en cours.
-4. Lire le **compte rendu de la sous-étape précédente** — `T4` — pour savoir ce qui a été laissé
+4. Lire le **compte rendu de la sous-étape précédente** — `T5` — pour savoir ce qui a été laissé
    ouvert.
-5. Vérifier l'état réel par `git`, `gh` et les mesures, **pas par ce que la doc affirme**.
+5. Vérifier l'état réel par `git`, `gh` et les mesures, **pas par ce que la doc affirme**. §9.0
+   donne un exemple récent où ce document se trompait sur l'architecture.
 6. Exécuter **une** sous-étape, contrôler, rapporter, attendre la validation.
 
 Contrôle d'hygiène utile à tout moment :
 
 ```bash
-git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # doit ne montrer que le CSV fictif
+git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # 2 attendus, voir ci-dessous
 git ls-files | grep -c 'V1.html'                          # doit valoir 0
 git status --short                                        # doit être vide
 ```
+
+Le premier montre **deux** fichiers, et les deux sont légitimes : le CSV explicitement fictif, et
+**`apps/web/index.html`**, point d'entrée imposé par Vite depuis `T5`. Le filtre visait le
+prototype ; `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html`. **Toute troisième
+entrée est une anomalie.**
 
 ---
 
@@ -750,9 +889,10 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  34 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
-  filtre de masquage, et les quatre fois où j'ai lu le code de sortie d'un `grep` en croyant lire
-  celui d'une commande ;
+  42 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  filtre de masquage, et les **cinq** fois où j'ai lu le code de sortie d'un `grep` en croyant lire
+  celui d'une commande. En `T5`, **cinq défauts sur huit étaient dans mes contrôles**, pas dans le
+  livrable — c'est la forme la plus insidieuse : on croit avoir prouvé ;
 - distinguer nettement **ce qui est prouvé** de **ce qui est recommandé** ;
 - dire ce qui **n'est pas** couvert, plutôt que de le laisser croire. La conservation de 30 jours
   des journaux n'est pas faite, et `QO-113` le dit ;
@@ -761,7 +901,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 137 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 141 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

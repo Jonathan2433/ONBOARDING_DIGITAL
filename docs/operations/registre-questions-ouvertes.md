@@ -1,7 +1,7 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
@@ -44,7 +44,7 @@ de données réelles, soit l'ouverture générale.
 | `QO-078` | Modalités d'effacement dans les sauvegardes | Architecture / RGPD | Production générale | Ouverte |
 | `QO-081` | Hébergement permanent de production | Jonathan / eXalt | Production générale, LOT 14 | Ouverte |
 | `QO-083` | Emplacement de sauvegarde local | Jonathan | LOT 13 | Ouverte |
-| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **Mesurée, à confirmer** |
+| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **Mesurée en charge réelle en `T5` — 389 Mio, 5,0 % du budget.** Reste ouverte : le dimensionnement de deux environnements simultanés relève de `T8`. Voir §1.1 |
 | `QO-087` | SSD externe de sauvegarde | Jonathan | LOT 13 | Ouverte |
 | `QO-088` | Destination chiffrée hors site | Jonathan / eXalt | Production générale | Ouverte |
 | `QO-096` | Schéma définitif des colonnes du CSV | Jonathan / ESM | Données réelles, LOT 9 | Ouverte |
@@ -145,6 +145,47 @@ Empreinte disque des images construites, à comparer aux 276 Mio de dépendances
 | `onboarding-dev-web` | **924 Mio** — voir `ROAD-RSK-030` |
 | `onboarding-dev-api` | 284 Mio |
 | `onboarding-dev-worker` | 284 Mio |
+
+### Mesures du 28 juillet 2026, sous-étape `T5` — la stack travaille réellement
+
+C'est **la mesure que `T2` annonçait**, et elle vaut celle-là : uvicorn sert, Dramatiq consomme
+son courtier, Vite transforme et sert la page de statut. Aucun service n'exécute plus un
+processus d'attente.
+
+| Service | `T2` — processus d'attente | `T5` — code applicatif en marche | Limite appliquée |
+|---|---:|---:|---:|
+| api | 672 Kio | **92,55 Mio** | 1 024 Mio |
+| minio | 84,96 Mio | 90,25 Mio | 1 024 Mio |
+| web | 556 Kio | **80,67 Mio** | 1 024 Mio |
+| worker | 672 Kio | **42,25 Mio** | 1 024 Mio |
+| db | 19,35 Mio | 36,77 Mio | 1 024 Mio |
+| mailpit | 13,25 Mio | 18,78 Mio | 256 Mio |
+| caddy | 15,36 Mio | 16,84 Mio | 256 Mio |
+| redis | 10,71 Mio | 11,19 Mio | 512 Mio |
+| **Total** | **146 Mio, 2 %** | **389 Mio, soit 5,0 % du budget** | 6 144 Mio déclarés |
+
+Les trois services applicatifs passent d'environ **2 Mio à 215 Mio** : c'est le facteur qui
+manquait. Aucune limite n'est approchée — la plus sollicitée est `api`, à **9,0 %** de la sienne.
+
+**Réponse au volet RAM :** une stack complète en fonctionnement consomme **5,0 %** des 7,75 Gio
+alloués à Docker. Même en supposant une croissance d'un ordre de grandeur avec les données du
+LOT 2 et la chaîne média du LOT 11, la marge reste confortable pour **un** environnement.
+
+> **`QO-085` n'est pas close pour autant, et voici précisément ce qui manque.** La question porte
+> sur le dimensionnement de la machine, et `DEC-440` n'autorise qu'**un environnement à la fois**
+> — arbitrage pris justement parce que le budget paraissait contraint. La mesure qui permettrait
+> de trancher est celle de `T8` : deux stacks complètes, développement et recette, avec leurs
+> volumes distincts. `T8` prouvera la **séparation** par démarrages successifs, non la
+> simultanéité ; si Jonathan souhaite un jour les faire coexister, c'est là que la mesure devra
+> être faite. **Recommandation : clore `QO-085` à `T8`, pas avant.**
+
+Empreinte disque des images après `T5` :
+
+| Image | `T2` | `T5` | Motif de l'écart |
+|---|---:|---:|---|
+| `onboarding-dev-web` | 924 Mio | **1,02 Gio** | `jsdom` et Testing Library, ajoutés par `DEC-471`. Voir `ROAD-RSK-030`, **aggravé** |
+| `onboarding-dev-api` | 284 Mio | 662 Mio | Dépendances applicatives réelles installées depuis `T3` |
+| `onboarding-dev-worker` | 284 Mio | 662 Mio | Idem |
 
 ---
 
