@@ -20,8 +20,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
-| Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 6 | Validées le 27/07/2026 |
-| **Total** | **124** | |
+| Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
+| **Total** | **125** | |
 
 ---
 
@@ -131,6 +131,12 @@ Décisions prises pendant la réalisation du squelette du monorepo, story
 | `DEC-454` | **Le Markdown est exclu de tout formatage automatique**, aussi bien de Ruff (`extend-exclude`) que de Prettier (`.prettierignore`). | Mesure du 27/07/2026 : sans cette exclusion, Prettier **réécrivait les cinq documents de cadrage immuables**, ajoutant 54 661 octets au seul cahier des charges, soit +21,7 %. La preuve d'intégrité SHA-256 de [`integrite-et-conformite-documents.md`](../operations/integrite-et-conformite-documents.md) — et avec elle la porte `G0` — en aurait été invalidée. Ruff formate lui aussi les blocs de code embarqués dans le Markdown : il voyait 41 documents au lieu de 4 fichiers Python. Voir `ROAD-RSK-029`. | Validée |
 | `DEC-455` | Les deux projets Python sont réunis dans un **workspace `uv` unique déclaré à la racine**, membres `apps/api` et `apps/worker`, avec un seul `uv.lock`, un seul `.venv` et une seule configuration Ruff, mypy et pytest portée par le `pyproject.toml` racine. | Symétrique de `pnpm-workspace.yaml` côté JavaScript, et cohérent avec `DEC-441`. Un seul environnement virtuel signifie un seul répertoire à soustraire à iCloud, un seul verrou à auditer en CI, et une seule source pour les règles de qualité. Les fichiers `tests/__init__.py` ont été écartés : ils créaient deux paquets homonymes `tests` que mypy et pytest refusent tous les deux. | Validée |
 | `DEC-456` | Outillage posé à `T1` : **`uv` 0.11.32** depuis l'archive officielle `astral-sh/uv`, **empreinte SHA-256 vérifiée**, installée dans `~/.local/bin` ; **`pnpm` 11.17.0** par `corepack`, épinglé par le champ `packageManager` **avec empreinte d'intégrité** ; **CPython 3.12.13** géré par `uv`. Les bibliothèques du cahier §17.1 sans usage avant le LOT 4 — React Router, TanStack Query, React Hook Form, Zod, Radix UI — **ne sont pas installées**. | Même procédure que `gh` en `T0` (`DEC-449`) : Homebrew reste inutilisable, `/opt/homebrew` appartenant à l'utilisateur `admin`. `corepack` était déjà présent avec Node 24 : aucun binaire tiers supplémentaire n'a été téléchargé pour `pnpm`. Le Python système 3.9.6 n'est pas touché. Installer cinq bibliothèques sans usage ajouterait une surface d'audit de dépendances sans contrepartie, alors que le LOT 1 met justement `pip-audit` et Trivy en place. | Validée |
+
+**Décision prise le 28 juillet 2026, après matérialisation du risque `ROAD-RSK-026`**
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-457` | **`DEC-453` est maintenue en l'état** après l'incident iCloud du 27/07/2026 : marquage par attribut étendu, reposé automatiquement par le `postinstall`, contrôlé par `make icloud-verify` exécuté en début de session et intégré à `make check`. **`DEC-418` n'est pas rouverte** et `node_modules` reste dans l'arborescence synchronisée. La copie de conflit `node_modules 2` est supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. | Jonathan a tranché sur présentation des mesures, entre trois issues : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir l'emplacement du dépôt. La deuxième option est provable là où l'attribut ne l'est pas, mais pnpm remplace parfois un lien symbolique par un vrai répertoire à l'installation — elle déplacerait le risque sans le supprimer, au prix d'une demi-sous-étape avant `T2`. La troisième dépasse le périmètre du LOT 1 et relève du confort de travail de Jonathan. L'essentiel du volume — 338 Mio de store `pnpm`, de cache et de Python gérés par `uv` — est déjà hors dépôt par construction. | Validée |
 
 **Ce que `T1` a délibérément écarté**
 
@@ -303,8 +309,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
 | `DEC-449` — mise en place GitHub | 1 | 1 |
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
-| `DEC-451+` — réalisation du LOT 1, `T1` | 6 | 6 |
-| **Total** | **124** | **124** |
+| `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
+| **Total** | **125** | **125** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

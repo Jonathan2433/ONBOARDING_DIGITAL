@@ -148,11 +148,20 @@ d'une espace et d'un chiffre. Le motif `* [0-9]` est désormais exclu dans `.git
 `.prettierignore`, `[tool.ruff] extend-exclude` et `eslint.config.js`, et **`make icloud-verify`
 échoue si une telle copie existe**.
 
-**Ce qui reste à trancher, et qui appartient à Jonathan** : la copie `node_modules 2` n'a pas
-été supprimée — elle est la pièce à conviction, et elle se trouve dans son iCloud. Au-delà, la
-question touche `DEC-418`, l'emplacement du dépôt. Trois issues sont possibles : maintenir le
-marquage au mieux avec `make icloud-verify` exécuté en début de session ; sortir physiquement
-`node_modules` et `.venv` de l'arborescence synchronisée ; ou rouvrir l'emplacement du dépôt.
+**Arbitrage de Jonathan, rendu le 28/07/2026 sur présentation des mesures** — `DEC-457`. Trois
+issues lui étaient soumises : maintenir le marquage avec vérificateur, sortir physiquement
+`node_modules` et `.venv` de l'arborescence synchronisée, ou rouvrir `DEC-418`.
+
+**Retenu : maintenir `DEC-453` en l'état**, marquage reposé automatiquement par le
+`postinstall` et contrôlé par `make icloud-verify`, exécuté en début de session et intégré à
+`make check`. `DEC-418` n'est pas rouverte. Le risque résiduel est **accepté en connaissance
+de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera,
+il ne l'empêchera pas.
+
+La copie `node_modules 2` a été **supprimée** le 28/07/2026 après cet arbitrage — duplicata
+figé, non suivi par Git, régénérable par `pnpm install`. Les preuves de l'incident restent
+intégralement consignées ici et dans `ROAD-RSK-026`. `make check` est depuis **vert sur la
+totalité de ses maillons, code 0**.
 
 ---
 
@@ -176,12 +185,12 @@ comptés : c'est l'énumération qui empêche une omission.
 | | |
 |---|---|
 | Sous-étape | **`T1` terminée.** Story `MVP-L01-US001` prête pour validation |
-| Décisions ajoutées | `DEC-451` à `DEC-456`. Prochaine libre : **`DEC-457`** |
+| Décisions ajoutées | `DEC-451` à `DEC-457`. Prochaine libre : **`DEC-458`** |
 | Écarts | `ECART-017` et `ECART-018` ouverts **et clos**. Prochain libre : **`ECART-019`** |
 | Risques | `ROAD-RSK-029` ouvert. `ROAD-RSK-026` **matérialisé**, atténuation à revoir. Prochain libre : **`ROAD-RSK-030`** |
 | Questions | `QO-085` complétée du volet disque, **non close**. Prochaine libre : `QO-111` |
 | Dépendances | Aucune ajoutée. Prochaine libre : `DEP-018` |
-| `make check` | **Vert sur tous les maillons de qualité.** Échoue sur le seul point `icloud-verify`, qui signale la copie de conflit — comportement voulu, non régression |
+| `make check` | **Vert en totalité, code 0**, y compris `icloud-verify`, après suppression de la copie de conflit (`DEC-457`) |
 | Sous-étape suivante | **`T2`** — Compose développement, 8 services sains, story `MVP-L01-US002`, issue `#3` |
 
 **Point d'attention pour `T2`.** Le projet Docker tiers `observatoire-ecom-studio` est

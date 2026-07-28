@@ -176,7 +176,7 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 124 |
+| [Décisions](docs/decisions/registre-decisions.md) | 125 |
 | [Écarts](docs/decisions/registre-ecarts.md) | 18 — 6 ouverts, 10 clos, 2 acceptés |
 | [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 34 — 30 ouvertes |
 | [Risques](docs/operations/registre-risques.md) | 29 |

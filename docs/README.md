@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `456` en usage | `DEC-457` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `457` en usage | `DEC-458` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -172,7 +172,7 @@ Comptes rendus de sous-étape :
 | Sous-étape | Objet | Story | Issue | État |
 |---|---|---|---|---|
 | `T0` | Prérequis et arbitrages techniques | — | — | **Terminée** hors lot. 3 prérequis levés, 7 choix tranchés (`DEC-439`–`DEC-449`, dont `DEC-449` qui remplace `DEC-448`) |
-| `T1` | Squelette du monorepo, outillage, versions épinglées | `MVP-L01-US001` | `#2` | **Terminée** le 27/07/2026. 7 répertoires, chaîne de qualité Python et TypeScript, versions épinglées. `DEC-451`–`DEC-456`, `ECART-017` et `ECART-018` clos, `ROAD-RSK-029` ouvert |
+| `T1` | Squelette du monorepo, outillage, versions épinglées | `MVP-L01-US001` | `#2` | **Terminée** les 27 et 28/07/2026. 7 répertoires, chaîne de qualité Python et TypeScript, versions épinglées. `DEC-451`–`DEC-457`, `ECART-017` et `ECART-018` clos, `ROAD-RSK-029` ouvert, `ROAD-RSK-026` matérialisé puis résiduel accepté |
 | `T2` | Compose développement, 8 services sains | `MVP-L01-US002` | `#3` | Planifiée |
 | `T3` | API FastAPI, 3 healthchecks, migration initiale | `MVP-L01-US003` | `#4` | Planifiée |
 | `T4` | Journalisation JSON corrélée | `MVP-L01-US004` | `#5` | Planifiée |

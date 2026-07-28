@@ -639,7 +639,15 @@ git switch develop && git pull
 git log --oneline -5
 git status -sb
 gh issue list --milestone G1
+make icloud-verify        # depuis T1 : iCloud a deja duplique node_modules une fois
 ```
+
+> **`make icloud-verify` en début de session n'est pas une formalité.** Le 27/07/2026, iCloud
+> a produit une copie de conflit `node_modules 2` de 11 066 fichiers et effacé l'attribut
+> d'exclusion de l'original, en moins de sept heures et sans aucune action de session. C'est
+> ce contrôle qui l'a détecté. Risque résiduel accepté par `DEC-457` ; incident détaillé dans
+> [`compte-rendu-t1-lot-1.md`](docs/operations/compte-rendu-t1-lot-1.md) §4 et
+> `ROAD-RSK-026`.
 
 1. Lire ce document.
 2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
