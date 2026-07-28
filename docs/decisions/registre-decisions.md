@@ -21,7 +21,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
-| **Total** | **125** | |
+| Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
+| **Total** | **129** | |
 
 ---
 
@@ -137,6 +138,18 @@ Décisions prises pendant la réalisation du squelette du monorepo, story
 | ID | Décision | Motif | Statut |
 |---|---|---|---|
 | `DEC-457` | **`DEC-453` est maintenue en l'état** après l'incident iCloud du 27/07/2026 : marquage par attribut étendu, reposé automatiquement par le `postinstall`, contrôlé par `make icloud-verify` exécuté en début de session et intégré à `make check`. **`DEC-418` n'est pas rouverte** et `node_modules` reste dans l'arborescence synchronisée. La copie de conflit `node_modules 2` est supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. | Jonathan a tranché sur présentation des mesures, entre trois issues : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir l'emplacement du dépôt. La deuxième option est provable là où l'attribut ne l'est pas, mais pnpm remplace parfois un lien symbolique par un vrai répertoire à l'installation — elle déplacerait le risque sans le supprimer, au prix d'une demi-sous-étape avant `T2`. La troisième dépasse le périmètre du LOT 1 et relève du confort de travail de Jonathan. L'essentiel du volume — 338 Mio de store `pnpm`, de cache et de Python gérés par `uv` — est déjà hors dépôt par construction. | Validée |
+
+## 1.5 Réalisation du LOT 1 — sous-étape `T2`
+
+Décisions prises pendant la mise en place de la stack Docker de développement, story
+`MVP-L01-US002`, issue `#3`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-458` | **Versions et registres des images non fixés par `DEC-443`** : Redis **8.4-alpine**, MinIO **`RELEASE.2025-09-07T16-13-09Z`** servi depuis **quay.io**, Mailpit **v1.30** servi depuis **ghcr.io**, Caddy **2.11-alpine**. PostgreSQL 17.7 en image **Debian** et non Alpine ; Python 3.12 en **`slim`** et non Alpine. Les huit images sont référencées par tag **et** empreinte `sha256`, toutes vérifiées `linux/amd64` **et** `linux/arm64`. | `DEC-443` n'épinglait que Python, Node et PostgreSQL : les quatre autres versions n'étaient fixées par aucun document. **PostgreSQL en Debian** parce qu'Alpine repose sur musl, dont la gestion des locales est réduite : ce socle portera un trombinoscope de noms français accentués et les index de recherche du cahier §26.1, et la collation ne se change pas sans recréer le cluster. **Python en `slim`** parce que de nombreuses roues n'existent pas en musl, ce qui forcerait une compilation depuis les sources. **quay.io et ghcr.io** parce que ce sont les registres de publication de MinIO et de Mailpit, et que la limite de débit anonyme de Docker Hub a réellement fait échouer une inspection pendant cette sous-étape (défaut `T2-1`). | Validée |
+| `DEC-459` | À `T2`, le healthcheck de `api`, `worker` et `web` porte sur le **processus et l'image**, non sur un appel HTTP : il vérifie que le paquet applicatif est importable, ou que Vite est résolvable. Les endpoints `/health/live`, `/health/ready` et `/health/version`, avec la vérification effective de PostgreSQL, Redis et MinIO, relèvent entièrement de `T3`. | Le critère de `T2` exige que les trois services soient sains, alors que `T3` livre l'application : à `T2`, il n'y a rien à sonder en HTTP. Arbitrage de Jonathan entre cette lecture et l'avance d'une API minimale. Retenue parce qu'elle ne vide ni `T3` ni `T5` de leur substance, et parce que le contrôle reste **capable d'échouer** — une image cassée ou une installation incomplète le font sortir en erreur. | Validée |
+| `DEC-460` | Toutes les publications de ports sont liées **explicitement à `127.0.0.1`**. Le contrôle `make ports` compare les publications **déclarées** dans la configuration Compose et les publications **réelles** du moteur, et **échoue si les deux nombres ne concordent pas**. | Le cahier §22.2 pose que PostgreSQL, Redis, MinIO et Mailpit ne sont jamais exposés publiquement. Sans préfixe explicite, Docker publie sur **toutes** les interfaces et contourne le pare-feu de macOS : le défaut est silencieux. La comparaison des deux vues vient du défaut `T2-4`, où le contrôle affirmait « aucune exposition » en n'ayant examiné que 5 publications sur 7. | Validée |
+| `DEC-461` | `make env` crée le `.env` local depuis `.env.example` et **génère aléatoirement 5 secrets de services locaux** sur 48 caractères — `APP_SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_PASSWORD` — plus un identifiant MinIO lisible. **`IMPORT_SOURCE_RETENTION_DAYS` et `UPTIME_KUMA_PUSH_URL` restent en `CHANGE_ME`**, et la cible le dit explicitement. | `.env` n'est pas versionné : générer des secrets forts localement n'enfreint aucune règle et supprime la tentation d'un mot de passe faible réutilisé. Les deux variables laissées en `CHANGE_ME` ne sont pas des oublis : la première relève de `QO-100`, bloquante, la seconde d'une supervision externe du LOT 13. Les afficher à la création évite qu'un futur contributeur les remplisse au hasard. | Validée |
 
 **Ce que `T1` a délibérément écarté**
 
@@ -310,7 +323,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-449` — mise en place GitHub | 1 | 1 |
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
-| **Total** | **125** | **125** |
+| `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
+| **Total** | **129** | **129** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

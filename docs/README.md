@@ -73,15 +73,15 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `457` en usage | `DEC-458` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `461` en usage | `DEC-462` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `018` | `ECART-019` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `110` | `QO-111` | [questions](operations/registre-questions-ouvertes.md) |
-| `ROAD-RSK-nnn` | Risques | `001` à `029` | `ROAD-RSK-030` | [risques](operations/registre-risques.md) |
+| `ECART-nnn` | Écarts | `001` à `019` | `ECART-020` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `111` | `QO-112` | [questions](operations/registre-questions-ouvertes.md) |
+| `ROAD-RSK-nnn` | Risques | `001` à `030` | `ROAD-RSK-031` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
 | `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — | backlog validé |
@@ -167,13 +167,13 @@ Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
-[`T1`](operations/compte-rendu-t1-lot-1.md).
+[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md).
 
 | Sous-étape | Objet | Story | Issue | État |
 |---|---|---|---|---|
 | `T0` | Prérequis et arbitrages techniques | — | — | **Terminée** hors lot. 3 prérequis levés, 7 choix tranchés (`DEC-439`–`DEC-449`, dont `DEC-449` qui remplace `DEC-448`) |
 | `T1` | Squelette du monorepo, outillage, versions épinglées | `MVP-L01-US001` | `#2` | **Terminée** les 27 et 28/07/2026. 7 répertoires, chaîne de qualité Python et TypeScript, versions épinglées. `DEC-451`–`DEC-457`, `ECART-017` et `ECART-018` clos, `ROAD-RSK-029` ouvert, `ROAD-RSK-026` matérialisé puis résiduel accepté |
-| `T2` | Compose développement, 8 services sains | `MVP-L01-US002` | `#3` | Planifiée |
+| `T2` | Compose développement, 8 services sains | `MVP-L01-US002` | `#3` | **Terminée** le 28/07/2026. Les 8 services sains par une commande, volumes prouvés persistants. `DEC-458`–`DEC-461`, `ECART-019` clos, `ROAD-RSK-030` et `QO-111` ouverts |
 | `T3` | API FastAPI, 3 healthchecks, migration initiale | `MVP-L01-US003` | `#4` | Planifiée |
 | `T4` | Journalisation JSON corrélée | `MVP-L01-US004` | `#5` | Planifiée |
 | `T5` | Frontend Vite, page de statut | `MVP-L01-US002`, `US003` | `#3`, `#4` | Planifiée |

@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T1` **faite** — squelette du monorepo, story `MVP-L01-US001`, issue [#2](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/2). Suivante : `T2`, stack Docker |
+| Sous-étape en cours | `T2` **faite** — stack Docker locale, story `MVP-L01-US002`, issue [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3). Suivante : `T3`, API et healthchecks |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
@@ -176,10 +176,10 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 125 |
-| [Écarts](docs/decisions/registre-ecarts.md) | 18 — 6 ouverts, 10 clos, 2 acceptés |
-| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 34 — 30 ouvertes |
-| [Risques](docs/operations/registre-risques.md) | 29 |
+| [Décisions](docs/decisions/registre-decisions.md) | 129 |
+| [Écarts](docs/decisions/registre-ecarts.md) | 19 — 6 ouverts, 11 clos, 2 acceptés |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 35 — 31 ouvertes |
+| [Risques](docs/operations/registre-risques.md) | 30 |
 | [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
 | [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |
 
