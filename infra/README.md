@@ -7,23 +7,58 @@
 
 ## 1. État actuel
 
-Seul [`scripts/`](scripts/) est peuplé. Les fichiers Compose, la configuration
-Caddy et les initialisations PostgreSQL et MinIO arrivent en `T2`.
-
-## 2. Contenu prévu
+La stack de **développement** est complète depuis `T2` : `make up` démarre les huit services et
+les attend sains. La surcouche de **recette** arrive en `T8`.
 
 ```text
 infra/
 ├── scripts/
-│   └── exclure-icloud.sh        ← T1. Applique DEC-439
-├── compose/                     ← T2, T8
-│   ├── docker-compose.base.yml
-│   ├── docker-compose.dev.yml
-│   └── docker-compose.recette.yml
-├── caddy/Caddyfile              ← T2. tls internal (DEC-446)
-├── postgres/init/               ← T2
-└── minio/                       ← T2
+│   ├── exclure-icloud.sh          ← T1. Applique DEC-439 et DEC-453
+│   ├── verifier-ports.sh          ← T2. Applique DEC-460
+│   └── verifier-persistance.sh    ← T2. Prouve la survie des volumes
+├── compose/
+│   ├── docker-compose.base.yml    ← T2. Les 8 services, volumes, réseau, santé
+│   ├── docker-compose.dev.yml     ← T2. Surcouche onboarding-dev
+│   └── docker-compose.recette.yml ← T8
+└── caddy/
+    └── Caddyfile                  ← T2. tls internal (DEC-446)
 ```
+
+Ni `postgres/init/` ni `minio/` n'existent, et c'est délibéré. Les extensions PostgreSQL
+relèvent de la **migration `0001_initial`** en `T3`, pas d'un script d'initialisation : le
+cahier §16.2 veut des migrations explicites, et une extension créée par `initdb` échapperait à
+Alembic. Le bucket MinIO est créé par `make minio-bucket`, cible idempotente appelée par
+`make up`.
+
+## 2. Commandes
+
+```bash
+make env               # creer le .env local, secrets generes (DEC-461)
+make up                # construire, demarrer, attendre sain, creer le bucket, controler
+make ps                # etat des conteneurs
+make logs              # suivre les journaux
+make stack-check       # sante des 8 services + publication des ports
+make persistence-test  # prouver que les volumes survivent a un redemarrage
+make down              # arreter — LES VOLUMES SONT CONSERVES
+make destroy           # arreter ET supprimer les volumes (demande confirmation)
+```
+
+### Ports publiés, tous sur `127.0.0.1` uniquement
+
+| Service | Port hôte | Usage |
+|---|---:|---|
+| caddy | 80, 443 | `app.onboarding.localhost`, `api.onboarding.localhost` |
+| db | 5432 | `psql` depuis la machine |
+| redis | 6379 | `redis-cli` depuis la machine |
+| minio | 9000, 9001 | API S3, console web |
+| mailpit | 8025 | interface web des e-mails capturés |
+
+`make ports` **échoue** si l'un de ces ports est publié ailleurs que sur la boucle locale, ou
+si les publications déclarées et réelles ne concordent pas.
+
+> **La racine de l'autorité interne de Caddy doit être approuvée une fois dans le trousseau
+> macOS.** C'est une action de Jonathan : elle demande son mot de passe. Sans elle, un client
+> strict refuse le certificat de `app.onboarding.localhost`.
 
 ## 3. Décisions qui contraignent ce répertoire
 

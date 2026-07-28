@@ -8,10 +8,10 @@
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `029` | 5 |
-| **Total** | | **29** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `030` | 6 |
+| **Total** | | **30** |
 
-**Prochain identifiant libre : `ROAD-RSK-030`.**
+**Prochain identifiant libre : `ROAD-RSK-031`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -127,6 +127,18 @@ Leur libellé et leur impact sont inchangés.
 | Mesures | `DEC-454` : le Markdown est exclu de Ruff (`extend-exclude`) **et** de Prettier (`.prettierignore`), avec le motif inscrit dans les deux fichiers pour qu'un futur contributeur ne lève pas l'exclusion par méconnaissance. Contrôle de non-régression exécuté à `T1` : les 5 empreintes sont conformes, avec témoin négatif. |
 | Risque résiduel | Réel. Tout outil ajouté plus tard — markdownlint, un formateur en CI, un greffon d'éditeur, un correcteur automatique de pull request — rouvrirait le risque. **Recommandation pour `T6` :** ajouter à la CI un contrôle qui recalcule les cinq empreintes et échoue si l'une diffère. C'est le seul garde-fou qui ne dépende pas de la configuration d'un outil particulier. |
 | Statut | **Actif, traité** par `DEC-454`. Garde-fou de CI à poser en `T6`. |
+
+## `ROAD-RSK-030` — L'image `web` embarque son outillage de développement
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T2` du LOT 1 |
+| Description | L'image `onboarding-dev-web` pèse **924 Mio**, contre 284 Mio pour `api` et `worker`. Son `Dockerfile` installe le workspace `pnpm` **complet** : ESLint et ses greffons, Prettier, `typescript-eslint`, Vitest, les types React — soit tout l'outillage de qualité, dont une image d'exécution n'a aucun besoin. |
+| Impact | Nul en développement, **réel à partir de `T7`**. Le cahier §22.3 exige des images `linux/arm64` **et** `linux/amd64` publiées dans GHCR : une image de 924 Mio est publiée deux fois, téléchargée à chaque déploiement, et analysée par Trivy à chaque exécution de la CI. Elle augmente aussi la surface d'audit de `pip-audit` et de Trivy sans contrepartie : chaque dépendance de développement embarquée est une vulnérabilité potentielle à trier. |
+| Cause | Choix assumé de `T2`, dont le critère porte sur le démarrage et la santé des services, non sur la taille des images. Un `Dockerfile` multi-étapes séparant construction et exécution relève de `T7`, qui possède la publication GHCR. |
+| Mesure | Aucune à `T2`, volontairement — la corriger ici anticiperait `T7`. **`T7` doit produire une image d'exécution multi-étapes** : construction avec l'outillage complet, exécution avec le seul artefact statique servi. L'ordre de grandeur attendu est celui d'`api`, sinon moins. |
+| Contrôle proposé pour `T7` | Faire échouer la construction si l'image d'exécution dépasse un plafond déclaré. Un contrôle de taille qui n'échoue pas ne sert à rien. |
+| Statut | **Ouvert.** À traiter en `T7`, story `MVP-L01-US006`. |
 
 ---
 

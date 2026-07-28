@@ -47,8 +47,34 @@ ICLOUD_EXCLUS := \
 # Les sept repertoires imposes par le cahier des charges 15.3.
 REPERTOIRES := apps/web apps/api apps/worker packages/ui packages/contracts infra docs
 
+# ---------------------------------------------------------------------------
+#  Compose (DEC-444). Le fichier de base ne se lance jamais seul : il est
+#  toujours assemble avec une surcouche d'environnement.
+#
+#  --env-file est donne en chemin absolu : les fichiers -f resident dans
+#  infra/compose/, ce qui deplace le repertoire de projet de Compose. Un
+#  chemin relatif serait resolu depuis un endroit inattendu.
+# ---------------------------------------------------------------------------
+#  ATTENTION AUX ESPACES. Le depot reside sous ~/Library/Mobile Documents/ :
+#  $(CURDIR) contient une espace. Toute expansion de ENV_FILE doit etre citee,
+#  faute de quoi docker compose recoit « /Users/.../Library/Mobile » et
+#  repond « couldn't find env file ». Ce piege a deja fait echouer les cibles
+#  health et minio-bucket pendant cette sous-etape.
+COMPOSE_DIR   := infra/compose
+ENV_FILE      := $(CURDIR)/.env
+COMPOSE_FILES_NUS := $(COMPOSE_DIR)/docker-compose.base.yml \
+                     $(COMPOSE_DIR)/docker-compose.dev.yml
+COMPOSE_FILES     := -f $(COMPOSE_DIR)/docker-compose.base.yml \
+                     -f $(COMPOSE_DIR)/docker-compose.dev.yml
+DC_DEV        := docker compose --env-file "$(ENV_FILE)" $(COMPOSE_FILES)
+
+# Les huit services attendus sains (cahier 15.4).
+SERVICES := db redis minio mailpit caddy api worker web
+
 .PHONY: help tools versions tree icloud-exclude icloud-verify install \
-        lint format format-check typecheck test check clean clean-deps
+        lint format format-check typecheck test check clean clean-deps \
+        env up down destroy ps logs health ports minio-bucket stack-check \
+        persistence-test
 
 # ---------------------------------------------------------------------------
 
@@ -109,7 +135,7 @@ tree: ## Verifier la presence des 7 repertoires du cahier 15.3
 # ---------------------------------------------------------------------------
 
 icloud-exclude: ## Exclure dependances et caches de la synchronisation iCloud
-	@bash infra/scripts/exclure-icloud.sh
+	@sh infra/scripts/exclure-icloud.sh
 
 icloud-verify: ## Verifier que l'exclusion iCloud est bien posee (echoue sinon)
 	@manque=0; \
@@ -181,6 +207,99 @@ test: ## Executer les tests (pytest et Vitest)
 check: versions tree icloud-verify format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
+
+# ---------------------------------------------------------------------------
+#  Stack Docker locale (T2)
+# ---------------------------------------------------------------------------
+
+env: ## Creer .env depuis .env.example, avec des secrets locaux generes
+	@if [ -f "$(ENV_FILE)" ]; then \
+		echo "  $(ENV_FILE) existe deja : inchange"; \
+	else \
+		cp .env.example "$(ENV_FILE)"; \
+		for v in APP_SECRET_KEY POSTGRES_PASSWORD REDIS_PASSWORD MINIO_ROOT_PASSWORD; do \
+			s=$$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48); \
+			sed -i '' "s|^$$v=CHANGE_ME.*|$$v=$$s|" "$(ENV_FILE)"; \
+		done; \
+		sed -i '' "s|^MINIO_ROOT_USER=CHANGE_ME.*|MINIO_ROOT_USER=onboarding-dev-admin|" "$(ENV_FILE)"; \
+		echo "  $(ENV_FILE) cree depuis .env.example"; \
+		echo "  5 secrets de services locaux generes aleatoirement, 48 caracteres"; \
+		echo "  .env n'est PAS versionne : .gitignore le refuse (verifie)"; \
+		echo; \
+		echo "  RESTENT volontairement en CHANGE_ME, et ce n'est pas un oubli :"; \
+		echo "    IMPORT_SOURCE_RETENTION_DAYS  -> sa valeur releve de QO-100, bloquante"; \
+		echo "    UPTIME_KUMA_PUSH_URL          -> supervision externe, LOT 13"; \
+	fi
+
+up: env ## Demarrer la stack de developpement : les 8 services
+	@echo "==> Construction des images api, worker et web"
+	$(DC_DEV) build
+	@echo "==> Demarrage, avec attente de l'etat sain"
+	$(DC_DEV) up --detach --wait
+	@$(MAKE) --no-print-directory minio-bucket
+	@echo
+	@$(MAKE) --no-print-directory health
+	@$(MAKE) --no-print-directory ports
+
+down: ## Arreter la stack. LES VOLUMES SONT CONSERVES
+	$(DC_DEV) down
+
+destroy: ## Arreter la stack ET SUPPRIMER LES VOLUMES (destructif)
+	@echo "  Cette cible supprime les volumes de donnees de onboarding-dev,"
+	@echo "  y compris caddy-data, qui porte l'autorite de certification interne."
+	@echo "  Sa perte obligera a reapprouver la racine dans le trousseau macOS,"
+	@echo "  ce qui demande le mot de passe de Jonathan."
+	@printf "  Taper exactement DETRUIRE pour confirmer : "
+	@read reponse; [ "$$reponse" = "DETRUIRE" ] || { echo "  annule"; exit 1; }
+	$(DC_DEV) down --volumes
+
+ps: ## Etat des conteneurs
+	@$(DC_DEV) ps
+
+logs: ## Suivre les journaux de la stack
+	@$(DC_DEV) logs --follow --tail 80
+
+minio-bucket: ## Creer le bucket MinIO (idempotent, ARB-ROAD-002)
+	@bucket=$$(grep -E '^MINIO_BUCKET=' "$(ENV_FILE)" | cut -d= -f2); \
+	$(DC_DEV) exec -T minio sh -c \
+		"mc alias set local http://127.0.0.1:9000 \"\$$MINIO_ROOT_USER\" \"\$$MINIO_ROOT_PASSWORD\" >/dev/null \
+		 && mc mb --ignore-existing local/$$bucket >/dev/null \
+		 && mc stat local/$$bucket >/dev/null" \
+		&& echo "  ok        bucket MinIO $$bucket present" \
+		|| { echo "  ECHEC     bucket MinIO $$bucket"; exit 1; }
+	@# `mc stat` et non `mc ls | grep` : l'image MinIO ne fournit pas grep.
+	@# stat sort en erreur si le bucket est absent, ce qui rend le controle
+	@# capable d'echouer reellement.
+
+health: ## Verifier que les 8 services sont sains (echoue sinon)
+	@manque=0; \
+	for s in $(SERVICES); do \
+		cid=$$($(DC_DEV) ps -q $$s 2>/dev/null); \
+		if [ -z "$$cid" ]; then echo "  ABSENT    $$s"; manque=1; continue; fi; \
+		etat=$$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}sans-healthcheck{{end}}' "$$cid"); \
+		if [ "$$etat" = "healthy" ]; then \
+			echo "  sain      $$s"; \
+		else \
+			echo "  PAS SAIN  $$s ($$etat)"; manque=1; \
+		fi; \
+	done; \
+	if [ $$manque -eq 0 ]; then echo "  --> les 8 services sont sains"; fi; \
+	exit $$manque
+
+ports: ## Verifier qu'aucun service n'ecoute ailleurs que sur la boucle locale
+	@sh infra/scripts/verifier-ports.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+stack-check: health ports ## Controler la stack : sante des 8 services et publication des ports
+
+persistence-test: ## Prouver que les volumes survivent a un arret/redemarrage
+	@echo "==> Releve des empreintes avant arret"
+	@sh infra/scripts/verifier-persistance.sh capture "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+	@echo "==> Arret, volumes conserves"
+	@$(DC_DEV) down >/dev/null 2>&1
+	@echo "==> Redemarrage"
+	@$(DC_DEV) up --detach --wait >/dev/null 2>&1
+	@echo "==> Comparaison"
+	@sh infra/scripts/verifier-persistance.sh compare "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 # ---------------------------------------------------------------------------
 #  Nettoyage

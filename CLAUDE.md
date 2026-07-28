@@ -224,7 +224,13 @@ action de Jonathan, elle demande son mot de passe.**
 
 ## 5.6 Variables de `.env.example` v0.1
 
-74 variables, aucun secret, 9 placeholders `CHANGE_ME_*`. Les principales :
+74 variables, aucun secret, **7** variables en `CHANGE_ME_*` (`ECART-019` : la chaîne apparaît
+9 fois, mais deux occurrences sont des commentaires — compte le motif
+`^[A-Z_][A-Z0-9_]*=CHANGE_ME`, pas la chaîne). Les sept : `APP_SECRET_KEY`,
+`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`,
+`IMPORT_SOURCE_RETENTION_DAYS`, `UPTIME_KUMA_PUSH_URL`. Depuis `T2`, `make env` génère les cinq
+premières localement et laisse les deux dernières en `CHANGE_ME` (`DEC-461`). Les principales
+variables :
 
 | Variable | Valeur par défaut |
 |---|---|

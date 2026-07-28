@@ -1,0 +1,45 @@
+# Caddyfile — eXalt Onboarding Digital, environnement local
+#
+# LOT 1, sous-etape T2, story MVP-L01-US002. Decision DEC-446.
+#
+# HTTPS local par autorite interne. Motifs :
+#   - le cahier des charges 22.2 pose qu'aucun domaine public n'est necessaire
+#     pendant la phase locale ;
+#   - macOS resout *.localhost vers 127.0.0.1 sans modifier /etc/hosts ;
+#   - motif determinant : les cookies Secure et SameSite du LOT 3 ne peuvent
+#     pas etre eprouves en HTTP clair. Les decouvrir apres la porte G1 serait
+#     le scenario de reouverture que signale ROAD-RSK-002.
+#
+# La racine de l'autorite interne doit etre approuvee UNE FOIS dans le
+# trousseau macOS. C'est une action de Jonathan : elle demande son mot de
+# passe, l'agent ne la fait pas a sa place.
+#
+# ETAT A T2 : les services web et api n'ecoutent encore sur aucun port — leur
+# code applicatif arrive en T5 et T3. Caddy est donc sain et sa configuration
+# valide, mais le mandatement renverra 502 jusque-la. C'est attendu.
+
+{
+	# Autorite de certification interne, aucune dependance externe.
+	local_certs
+
+	# API d'administration, sur la boucle locale du conteneur uniquement.
+	# Elle sert au healthcheck : interroger l'API d'administration est un
+	# controle qui echoue reellement si Caddy est mal configure.
+	admin localhost:2019
+
+	# Journalisation JSON. Le format est impose par le cahier 28.1 ; la
+	# correlation applicative arrive en T4.
+	log {
+		format json
+	}
+}
+
+app.onboarding.localhost {
+	tls internal
+	reverse_proxy web:5173
+}
+
+api.onboarding.localhost {
+	tls internal
+	reverse_proxy api:8000
+}

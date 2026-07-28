@@ -9,7 +9,7 @@
     "node": ">=24.16.0 <25"
   },
   "scripts": {
-    "postinstall": "bash infra/scripts/exclure-icloud.sh",
+    "postinstall": "sh infra/scripts/exclure-icloud.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

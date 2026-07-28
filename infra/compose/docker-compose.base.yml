@@ -1,0 +1,329 @@
+# ============================================================================
+#  Definition commune des huit services — eXalt Onboarding Digital
+#
+#  LOT 1, sous-etape T2, story MVP-L01-US002. Decision DEC-444.
+#
+#  Ce fichier ne se lance JAMAIS seul : il est assemble avec une surcouche
+#  d'environnement, `docker-compose.dev.yml` ou `docker-compose.recette.yml`.
+#  Passer par le Makefile, qui compose les deux et fournit le bon --env-file.
+#
+#  Compose v5 : aucune cle `version:`, elle est obsolete depuis longtemps.
+#
+#  REGLES QUI NE SE NEGOCIENT PAS DANS CE FICHIER
+#
+#  DEC-443 et cahier 23.3 — chaque image est referencee par tag de version ET
+#    par empreinte sha256. Aucune reference a `latest`, seule ou non. Les huit
+#    empreintes ont ete relevees le 28/07/2026 et verifiees multi-architecture,
+#    linux/amd64 ET linux/arm64, comme l'exige le cahier 22.3.
+#
+#  DEC-447 — les donnees d'etat vivent EXCLUSIVEMENT dans des volumes nommes.
+#    Aucun bind mount de donnee vers le depot : ni ./data, ni ./volumes, ni
+#    ./backups. Le depot reside dans iCloud Drive (DEC-418) et un fichier de
+#    base ouvert en ecriture dans un dossier synchronise est le geste qui
+#    ramenerait ROAD-RSK-026 sur les donnees. Les bind mounts de CONFIGURATION
+#    en lecture seule restent autorises : le Caddyfile en est un.
+#
+#  Cahier 22.2 — PostgreSQL, Redis, MinIO et Mailpit ne sont jamais exposes
+#    publiquement. Leurs ports sont publies par la surcouche d'environnement
+#    et uniquement sur 127.0.0.1 : joignables depuis cette machine, par aucune
+#    autre. Le controle `make ports` le verifie.
+#
+#  DEC-440 — un seul environnement a la fois, limites memoire par service.
+#    Docker ne dispose que de 7,75 Gio sur cette machine.
+# ============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  #  db — PostgreSQL 17 (DEC-443)
+  #
+  #  Image Debian et non Alpine : Alpine repose sur musl, dont la gestion des
+  #  locales est reduite. Ce socle portera un trombinoscope de noms francais
+  #  accentues et les index de recherche du cahier 26.1 ; la collation n'est
+  #  pas un detail cosmetique et ne se change pas apres coup sans recreer le
+  #  cluster. Le choix du fournisseur de collation lui-meme releve du LOT 2 :
+  #  voir QO-111, volontairement laissee ouverte plutot que tranchee ici.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:17.7@sha256:2006493727bd5277eece187319af1ef82b4cf82cf4fc1ed00da0775b646ac2a4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready interroge reellement le serveur : le controle echoue si
+      # l'instance n'accepte pas encore de connexion.
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -q']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  redis — file de messages de Dramatiq (cahier 15.1, 16.4)
+  #
+  #  appendonly : sans persistance, le critere « les volumes survivent au
+  #  redemarrage » ne serait pas verifiable sur ce service.
+  #  requirepass : REDIS_PASSWORD est defini dans .env.example ; un Redis sans
+  #  mot de passe serait un ecart a la politique de secrets.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:8.4-alpine@sha256:bd4a0d37e7cd830117ffec9329052b4a1887afa060c265e1768f82b177ff6f43
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --requirepass
+      - ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  minio — stockage objet compatible S3 (cahier 15.1, 19.1)
+  #
+  #  ARB-ROAD-002 impose d'AMORCER le stockage des le LOT 1 : le service doit
+  #  demarrer et etre sain. La chaine media — etats, empreintes, quarantaine,
+  #  variantes — reste au LOT 11. Amorcer n'est pas implementer.
+  #
+  #  Image servie depuis quay.io et non depuis Docker Hub : c'est le registre
+  #  de publication de MinIO, et Docker Hub applique une limite de debit
+  #  anonyme qui a deja fait echouer une inspection pendant cette sous-etape.
+  # ---------------------------------------------------------------------------
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_REGION: ${MINIO_REGION}
+      # Le serveur MinIO n'a pas besoin du nom de bucket. Le client `mc`,
+      # fourni par la meme image, si : toute commande d'exploitation lancee
+      # dans ce conteneur — creation du bucket, depot d'un objet, diagnostic —
+      # peut alors s'ecrire sans que l'operateur ait a retrouver le nom. T9
+      # documentera ces commandes.
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'mc ready local']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  mailpit — capture des e-mails en developpement et recette (cahier 16.5)
+  #
+  #  AUCUN e-mail reel ne sort de cet environnement. Le cahier 16.5 et le
+  #  critere de sortie du LOT 13 en font une exigence, pas une commodite.
+  #
+  #  Image servie depuis GHCR, pour la meme raison que MinIO depuis quay.io.
+  # ---------------------------------------------------------------------------
+  mailpit:
+    image: ghcr.io/axllent/mailpit:v1.30@sha256:7f33095f80e901f6ad08028f06ca284aa58fe84942be5496008d041d3b9f4d4d
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_BIND_ADDR: '0.0.0.0:1025'
+      MP_UI_BIND_ADDR: '0.0.0.0:8025'
+      MP_MAX_MESSAGES: '5000'
+    volumes:
+      - mailpit-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:8025/livez']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  caddy — mandataire inverse et HTTPS local (DEC-446)
+  #
+  #  Le Caddyfile est monte en LECTURE SEULE : c'est de la configuration, pas
+  #  une donnee d'etat. DEC-447 l'autorise explicitement.
+  #  Le volume caddy-data porte l'autorite de certification interne : le
+  #  perdre obligerait a reapprouver la racine dans le trousseau macOS, ce qui
+  #  demande le mot de passe de Jonathan. Il ne se supprime pas a la legere.
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2.11-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    healthcheck:
+      # L'API d'administration repond si et seulement si la configuration a
+      # ete chargee : le controle echoue reellement sur un Caddyfile invalide.
+      test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:2019/config/']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  api — FastAPI (cahier 15.1, 16.1)
+  #
+  #  ETAT A T2 : aucun code applicatif. Le conteneur reste debout et son
+  #  healthcheck verifie que le paquet `app` est IMPORTABLE dans l'image — un
+  #  controle qui echoue reellement si la construction ou l'installation des
+  #  dependances est cassee. Les endpoints /health/live, /health/ready et
+  #  /health/version, avec la verification effective de PostgreSQL, Redis et
+  #  MinIO, arrivent en T3 : c'est la que le healthcheck deviendra un appel
+  #  HTTP. Arbitrage de Jonathan du 28/07/2026.
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      # Contexte a la racine du depot : les dependances sont resolues par le
+      # workspace uv, dont uv.lock est le verrou (DEC-455).
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_FORMAT: ${LOG_FORMAT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_REGION: ${MINIO_REGION}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      DB_AUTO_CREATE: ${DB_AUTO_CREATE}
+    healthcheck:
+      test: ['CMD', 'python', '-c', 'import app; import sys; sys.exit(0)']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  worker — Dramatiq (cahier 15.1, 16.4)
+  #
+  #  ETAT A T2 : voir le service api. Le demarrage Dramatiq et la declaration
+  #  des sept files validees arrivent en T3 et T4.
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_FORMAT: ${LOG_FORMAT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+    healthcheck:
+      test: ['CMD', 'python', '-c', 'import worker; import sys; sys.exit(0)']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  #  web — frontend React et Vite (cahier 17.1)
+  #
+  #  ETAT A T2 : outillage seul. Il n'existe ni index.html, ni point d'entree
+  #  React — ils appartiennent a T5, avec la page de statut. Le healthcheck
+  #  verifie que Vite est resolvable dans l'image : il echoue si l'installation
+  #  depuis le verrou est incomplete.
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    healthcheck:
+      # accessSync leve une exception si le chemin est absent : le processus
+      # sort alors en 1. Pas de ternaire — « ? » et « : » non quotes feraient
+      # lire a YAML une cle complexe au lieu d'une chaine.
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "require(''node:fs'').accessSync(''/app/apps/web/node_modules/vite'')"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+
+# ----------------------------------------------------------------------------
+#  Volumes nommes exclusivement (DEC-447).
+#
+#  Ils resident dans l'image disque de la machine virtuelle Docker, sous
+#  ~/Library/Containers/, donc HORS iCloud Drive, sans aucune action.
+#  Le prefixe de projet — onboarding-dev, onboarding-recette,
+#  onboarding-prod-local — les separe automatiquement d'un environnement a
+#  l'autre : c'est deux des sept separations exigees par le cahier 22.2.
+# ----------------------------------------------------------------------------
+volumes:
+  db-data:
+  redis-data:
+  minio-data:
+  mailpit-data:
+  caddy-data:
+  caddy-config:
+
+# ----------------------------------------------------------------------------
+#  Reseau interne. Comme les volumes, il est prefixe par le nom de projet et
+#  donc distinct par environnement (cahier 22.2).
+# ----------------------------------------------------------------------------
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME}-net

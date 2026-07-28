@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 18 | 6 | 10 | 2 |
+| Total 19 | 6 | 11 | 2 |
 
 ---
 
@@ -37,7 +37,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-017` | La documentation du LOT 1 est restée dans son état d'avant l'ouverture | Non | **Clos** |
 | `ECART-018` | La fiche du LOT 1 annonce 8 contrôles d'intégration là où le cahier §23.1 en énumère 11 | Non pour `G1`, structurant pour `T6` | **Clos** |
 
-**Prochain identifiant libre : `ECART-019`.**
+| `ECART-019` | La passation annonce 9 placeholders `CHANGE_ME_*` dans `.env.example`, il y en a 7 | Non | **Clos** |
+
+**Prochain identifiant libre : `ECART-020`.**
 
 ---
 
@@ -261,3 +263,16 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non pour `G1`. Aurait été bloquant pour la validité de `T6`. |
 | Recommandation | Porter le nombre à 11 dans la fiche et **énumérer les onze**, plutôt que d'en donner le seul décompte : c'est l'énumération, non le nombre, qui empêche une omission. Rappeler que la roadmap et le backlog en listent 7, et que le cahier prévaut (règle de préséance). |
 | Résolution | **Clos** le 27 juillet 2026. Fiche §3 et §4.1 rectifiées, les onze contrôles énumérés depuis le cahier. Arbitrage de Jonathan : correction dans la pull request de `T1`. |
+
+## `ECART-019` — Le nombre de placeholders `CHANGE_ME_*` annoncé ne correspond pas au fichier
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T2` du LOT 1 |
+| Source | `CLAUDE.md` §5.6 ; `.env.example` |
+| Constat | La passation annonce « 74 variables, aucun secret, **9** placeholders `CHANGE_ME_*` ». Le fichier contient **9 occurrences de la chaîne** mais seulement **7 variables** dont la valeur est un `CHANGE_ME_*` : `APP_SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `IMPORT_SOURCE_RETENTION_DAYS`, `UPTIME_KUMA_PUSH_URL`. Les deux occurrences restantes sont des **commentaires** — le mode d'emploi en tête de fichier, et la description du garde-fou en §352. Le nombre de variables est bien de 74, il est exact. |
+| Impact | Faible mais réel, et il n'est **pas cosmétique**. Le premier des 11 garde-fous de démarrage exige qu'aucune variable ne vaille encore `CHANGE_ME_*` ; son test, à écrire en `T3`, doit énumérer les variables réellement concernées. Un test bâti sur « il y en a 9 » chercherait deux variables qui n'existent pas, ou compterait des commentaires. |
+| Cause | **Défaut de contrôle, pas défaut de livrable** : le nombre a été obtenu par un `grep -c` sur la chaîne, et non sur les affectations. Même classe que `ECART-018` — 8 contrôles annoncés contre 11 — et que le défaut `B-5` de `T0`. Le comptage a été refait ici sur le motif `^[A-Z_][A-Z0-9_]*=CHANGE_ME`. |
+| Bloquant | Non |
+| Recommandation | Rectifier la passation, et **dériver le nombre du fichier** plutôt que de le recopier. En `T3`, le test du garde-fou doit lire la liste des variables `CHANGE_ME_*` depuis `.env.example` au lieu d'en coder le nombre en dur : c'est la seule forme qui ne se périme pas. |
+| Résolution | **Clos** le 28 juillet 2026. `CLAUDE.md` §5.6 rectifié à 7, avec la liste. La distinction entre les 7 variables et les 2 mentions en commentaire est explicitée. |
