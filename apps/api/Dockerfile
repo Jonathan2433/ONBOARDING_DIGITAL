@@ -45,12 +45,17 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY apps/api/pyproject.toml ./apps/api/
 COPY apps/worker/pyproject.toml ./apps/worker/
+# Le troisieme membre du workspace uv, ajoute en T4 : sans lui, `uv sync`
+# repond « Failed to determine installation plan », le verrou mentionnant un
+# membre absent du contexte de construction.
+COPY packages/observabilite/pyproject.toml ./packages/observabilite/
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-workspace
 
 COPY apps/api ./apps/api
 COPY apps/worker ./apps/worker
+COPY packages/observabilite ./packages/observabilite
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev

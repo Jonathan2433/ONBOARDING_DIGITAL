@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T3` **faite** — API, 3 healthchecks, migration initiale, story `MVP-L01-US003`, issue [#4](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/4). Suivante : `T4`, journalisation JSON corrélée |
+| Sous-étape en cours | `T4` **faite** — journalisation JSON corrélée, story `MVP-L01-US004`, issue [#5](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/5). Suivante : `T5`, page de statut |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
@@ -130,6 +130,7 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 │   ├── worker/                ← worker Dramatiq, les 7 files declarees
 │   └── web/                   ← frontend React/Vite  — outillage, page de statut en T5
 ├── packages/
+│   ├── observabilite/         ← journal JSON, masquage, corrélation (DEC-466)
 │   ├── ui/                    ← design system        — coquille, tokens en T10
 │   └── contracts/             ← contrat API partagé  — coquille, génération en T10
 ├── infra/
@@ -181,9 +182,9 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 133 |
+| [Décisions](docs/decisions/registre-decisions.md) | 137 |
 | [Écarts](docs/decisions/registre-ecarts.md) | 19 — 5 ouverts, 12 clos, 2 acceptés |
-| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 36 — 32 ouvertes |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 37 — 33 ouvertes |
 | [Risques](docs/operations/registre-risques.md) | 30 |
 | [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
 | [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |

@@ -32,6 +32,28 @@
 #    Docker ne dispose que de 7,75 Gio sur cette machine.
 # ============================================================================
 
+# ----------------------------------------------------------------------------
+#  Rotation des journaux — cahier §28.3, « rotation et limite de taille
+#  obligatoires ».
+#
+#  Les processus ecrivent sur stdout ; aucun n'ouvre de fichier. C'est le pilote
+#  de journalisation de Docker qui collecte et rotate. Ecrire dans un fichier a
+#  l'interieur d'un conteneur produirait une donnee d'etat que `DEC-447` interdit
+#  de sortir par un bind mount, et que personne ne rotaterait.
+#
+#  CE QUE CECI COUVRE, ET CE QUE CELA NE COUVRE PAS
+#    Couvert : la limite de taille et la rotation, exigees explicitement.
+#    Non couvert : la conservation de 30 jours du §28.3. Le pilote `json-file`
+#    borne par la TAILLE, jamais par la duree. La conservation calendaire suppose
+#    une collecte centralisee, qui appartient au LOT 13. `LOG_RETENTION_DAYS`
+#    porte l'intention. Voir `QO-113`.
+# ----------------------------------------------------------------------------
+x-journalisation: &journalisation
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: '${LOG_MAX_FILES:-5}'
+
 services:
   # ---------------------------------------------------------------------------
   #  db — PostgreSQL 17 (DEC-443)
@@ -59,6 +81,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -87,6 +110,7 @@ services:
       start_period: 10s
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -121,6 +145,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 15s
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -146,6 +171,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -176,6 +202,7 @@ services:
         condition: service_healthy
       web:
         condition: service_healthy
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -238,6 +265,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -287,6 +315,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    logging: *journalisation
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -316,6 +345,7 @@ services:
       timeout: 5s
       retries: 6
       start_period: 10s
+    logging: *journalisation
     restart: unless-stopped
 
 # ----------------------------------------------------------------------------

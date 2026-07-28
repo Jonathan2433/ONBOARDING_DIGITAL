@@ -17,17 +17,19 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "onboarding-api",
     "onboarding-worker",
+    "onboarding-observabilite",
 ]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["apps/api", "apps/worker"]
+members = ["apps/api", "apps/worker", "packages/observabilite"]
 
 [tool.uv.sources]
 onboarding-api = { workspace = true }
 onboarding-worker = { workspace = true }
+onboarding-observabilite = { workspace = true }
 
 # ----------------------------------------------------------------------------
 #  Ruff - formatage et lint Python (cahier des charges 23.5)
@@ -71,7 +73,7 @@ ignore = [
 "**/tests/**" = ["S101", "S105", "S106"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "worker"]
+known-first-party = ["app", "worker", "observabilite"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -87,7 +89,7 @@ warn_unreachable = true
 warn_unused_configs = true
 show_error_codes = true
 pretty = true
-files = ["apps/api", "apps/worker"]
+files = ["apps/api", "apps/worker", "packages/observabilite"]
 exclude = ['(^|/)\.venv/', '(^|/)node_modules/']
 
 # Derogation CIBLEE, et non desactivation globale du mode strict.
@@ -110,7 +112,11 @@ disallow_untyped_calls = false
 # ----------------------------------------------------------------------------
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["apps/api/tests", "apps/worker/tests"]
+testpaths = [
+    "apps/api/tests",
+    "apps/worker/tests",
+    "packages/observabilite/tests",
+]
 addopts = "-ra --strict-markers --strict-config"
 
 [dependency-groups]

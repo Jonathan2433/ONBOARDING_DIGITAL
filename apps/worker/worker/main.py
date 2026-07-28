@@ -23,6 +23,9 @@ import os
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 
+from observabilite import configurer_journalisation
+from worker.journal import CorrelationEtJournal
+
 # Les sept files du cahier §16.4. La liste est lue dans l'environnement pour
 # rester alignee sur `.env.example`, mais l'ordre et le contenu par defaut sont
 # ceux du cahier : une file oubliee ferait disparaitre des messages en silence.
@@ -55,12 +58,26 @@ def url_redis() -> str:
 
 
 def creer_courtier() -> RedisBroker:
-    """Declarer le courtier Redis et ses sept files."""
+    """Declarer le courtier Redis, ses sept files et la correlation."""
     courtier = RedisBroker(url=url_redis())
+    # La correlation est ajoutee AVANT la declaration des files : le middleware
+    # doit etre en place avant qu'un seul message puisse etre traite.
+    courtier.add_middleware(CorrelationEtJournal())
     for file in files_declarees():
         courtier.declare_queue(file)
     return courtier
 
+
+# La journalisation est installee a l'import : dramatiq est lance par sa propre
+# ligne de commande, il n'y a pas de fabrique ou l'installer. Les valeurs
+# viennent de l'environnement, comme cote API.
+configurer_journalisation(
+    service="worker",
+    environnement=os.environ.get("APP_ENV", "development"),
+    version=os.environ.get("APP_VERSION", "0.0.0-dev"),
+    niveau=os.environ.get("LOG_LEVEL", "info"),
+    format_demande=os.environ.get("LOG_FORMAT", "json"),
+)
 
 courtier = creer_courtier()
 dramatiq.set_broker(courtier)
