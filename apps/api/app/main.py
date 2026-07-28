@@ -15,6 +15,7 @@ CE QUE CE MODULE NE FAIT PAS, ET NE DOIT PAS FAIRE AU LOT 1
 
 from __future__ import annotations
 
+import time
 from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, FastAPI, Request, Response
@@ -32,6 +33,8 @@ from app.shared.errors import (
     gerer_erreur_inattendue,
     gerer_erreur_validation,
 )
+from app.shared.journal import journaliser_requete
+from observabilite import configurer_journalisation
 
 
 def creer_application(parametres: Parametres | None = None) -> FastAPI:
@@ -42,6 +45,18 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     sans toucher a l'environnement du processus.
     """
     config = parametres or parametres_en_cache()
+
+    # La journalisation est installee AVANT tout le reste : une erreur survenant
+    # pendant l'assemblage doit deja sortir au format JSON du cahier §28.1.
+    # `LOG_FORMAT` est deja valide par le garde-fou de configuration ; l'appel
+    # ci-dessous echouerait de toute facon sur une autre valeur.
+    configurer_journalisation(
+        service="api",
+        environnement=config.APP_ENV,
+        version=config.APP_VERSION,
+        niveau=config.LOG_LEVEL,
+        format_demande=config.LOG_FORMAT,
+    )
 
     # La documentation interactive est INTERDITE en production (cahier §18.1).
     # Le garde-fou de configuration refuse deja de demarrer si
@@ -62,18 +77,25 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     application.state.parametres = config
 
     @application.middleware("http")
-    async def correlation(
+    async def correlation_et_journal(
         requete: Request, appel_suivant: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        """Attacher un identifiant de correlation a chaque requete.
+        """Attacher un identifiant de correlation, puis journaliser la requete.
 
-        Une valeur fournie par l'appelant est reprise, sinon elle est
-        engendree. Elle est renvoyee dans l'en-tete de reponse pour que le
-        client puisse la citer dans un signalement.
+        L'identifiant est fixe AVANT l'appel suivant, pour que toute ligne de
+        journal emise pendant le traitement le porte deja — y compris celles des
+        gestionnaires d'erreur.
+
+        Une valeur fournie par l'appelant est reprise, ce qui permet de suivre
+        une trace a travers plusieurs services ; sinon elle est engendree. Elle
+        est renvoyee dans l'en-tete de reponse pour que le client puisse la citer
+        dans un signalement.
         """
         identifiant = definir_correlation(requete.headers.get(EN_TETE_CORRELATION))
+        debut = time.monotonic()
         reponse = await appel_suivant(requete)
         reponse.headers[EN_TETE_CORRELATION] = identifiant
+        journaliser_requete(requete, reponse, debut)
         return reponse
 
     # Un format d'erreur unique, quelle que soit l'origine de l'echec

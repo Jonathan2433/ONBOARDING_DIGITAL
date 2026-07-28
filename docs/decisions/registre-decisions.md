@@ -23,7 +23,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
-| **Total** | **133** | |
+| Réalisation du LOT 1 `DEC-466+`, sous-étape `T4` | 4 | Validées le 28/07/2026 |
+| **Total** | **137** | |
 
 ---
 
@@ -163,6 +164,18 @@ initiale, story `MVP-L01-US003`, issue `#4`. Validées par Jonathan le 28 juille
 | `DEC-463` | **La migration `0001_initial` est vide.** Elle n'active aucune extension PostgreSQL. La liste des extensions sera établie au **LOT 2**, avec les tables et les index de recherche. Question ouverte `QO-112`. | La fiche §5 annonçait « les extensions strictement nécessaires », mais **aucun document du corpus n'en nomme une seule** — zéro occurrence de `pg_trgm`, `unaccent`, `citext`, `pgcrypto`, `uuid-ossp` dans le cahier comme dans le modèle, témoin positif du même filtre à quatre occurrences de `SQLAlchemy`. Le modèle §3 impose des UUID, mais `gen_random_uuid()` est intégré à PostgreSQL depuis la version 13 ; le modèle §26.1 laisse la recherche tolérante explicitement ouverte, et ses index arrivent à la migration 16. La roadmap autorise littéralement « une migration Alembic **vide ou initiale** ». Choisir une liste aurait été inventer une décision, et une extension activée se retire moins facilement qu'elle ne s'ajoute. Arbitrage de Jonathan sur les trois issues possibles. | Validée |
 | `DEC-464` | Le garde-fou « aucune variable ne vaut encore `CHANGE_ME_*` » porte sur les variables que **l'API déclare**, non sur l'ensemble de `.env.example`. | Appliqué littéralement à tout le fichier, il empêcherait l'API de démarrer aujourd'hui : `IMPORT_SOURCE_RETENTION_DAYS` reste en `CHANGE_ME` parce que sa valeur relève de `QO-100`, bloquante, et `UPTIME_KUMA_PUSH_URL` parce qu'elle appartient au LOT 13. Aucune n'est utilisée par un code existant. Le jour où le LOT 9 ajoutera la première à sa configuration, `QO-100` devra être tranchée — c'est l'effet recherché, et il vaut mieux qu'un garde-fou contourné. | Validée |
 | `DEC-465` | Les healthchecks Compose deviennent des contrôles applicatifs réels : `api` interroge **`/health/ready`**, qui sonde effectivement PostgreSQL, Redis et MinIO ; `worker` teste la connexion à son **courtier Redis**. Les endpoints de santé restent **hors du préfixe `/api/v1`**. | `ready` et non `live` parce que Compose ne redémarre pas un conteneur au seul motif qu'il est `unhealthy` : aucun risque de boucle de redémarrage, et `depends_on: service_healthy` attend alors que l'API soit réellement capable de servir. Preuve d'effectivité : **Redis arrêté pour de vrai**, `ready` répond **503** avec `redis indisponible`, tandis que `live` reste à 200 — la sonde discrimine par dépendance. Les endpoints restent hors du préfixe versionné parce qu'ils relèvent de l'exploitation : l'adresse que sonde un orchestrateur ne doit pas bouger avec les versions de l'API. | Validée |
+
+## 1.7 Réalisation du LOT 1 — sous-étape `T4`
+
+Décisions prises pendant la mise en place de la journalisation JSON corrélée, story
+`MVP-L01-US004`, issue `#5`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-466` | La journalisation, le masquage des secrets et l'identifiant de corrélation vivent dans un **paquet Python partagé, `packages/observabilite`**, membre du workspace `uv`, dont dépendent l'API **et** le worker. Le module de corrélation, créé dans `apps/api/app/shared/` en `T3`, y déménage ; l'ancien emplacement n'est plus qu'un réexport sans logique. | Le cahier §28.1 impose le même format aux deux applications et le §28.2 la même interdiction de fuite. **Dupliquer le filtre de masquage aurait été la pire option** : deux filtres divergent, et le jour où l'un oublie un motif, la fuite est silencieuse. Une seule implémentation, deux consommateurs, une seule suite de tests. `packages/` est l'un des sept répertoires du cahier §15.3, qui ne le réserve pas au JavaScript ; `pnpm-workspace.yaml` liste ses membres explicitement, ce paquet Python n'y entre donc pas par accident. | Validée |
+| `DEC-467` | **La rotation des journaux est assurée par le pilote `json-file` de Docker**, avec `max-size` et `max-file`, sur les huit services. Les processus écrivent sur `stdout` et n'ouvrent aucun fichier. | Le §28.3 exige « rotation et limite de taille obligatoires ». Écrire dans un fichier à l'intérieur d'un conteneur produirait une donnée d'état que `DEC-447` interdit de sortir par un bind mount, et que personne ne rotaterait. **Ce que cette décision ne couvre pas, et il faut le dire** : le §28.3 demande aussi une conservation de 30 jours, or `json-file` borne par la taille et jamais par la durée. La conservation calendaire suppose une collecte centralisée, qui appartient au LOT 13. `LOG_RETENTION_DAYS` porte l'intention. Voir `QO-113`. | Validée |
+| `DEC-468` | Le champ `resultat` du §28.1 prend **trois** valeurs et non deux : **`succes`** pour 2xx et 3xx, **`refus`** pour 4xx, **`echec`** pour 5xx. Seul `echec` est journalisé au niveau `error`. | La première version n'en avait que deux, et annonçait `resultat=succes` à côté d'un `code_erreur=http_404` : contradictoire à la lecture, et ambigu à l'agrégation — on ne savait plus si `succes` comptait les refus. La distinction dit **où est la faute** : `refus` chez l'appelant, `echec` chez nous. Journaliser un 404 au niveau `error` ferait par ailleurs sonner une alerte à chaque adresse mal tapée. | Validée |
+| `DEC-469` | **Ne sont jamais journalisés** : la chaîne de requête HTTP, les arguments d'un job — seul leur nombre l'est —, les traces d'exception — seul le type l'est —, le journal d'accès d'uvicorn, et les journaux de `httpx`, `botocore` et `urllib3`, réduits aux avertissements. | Le §28.2 interdit le magic link complet : la chaîne de requête le porterait, et ne pas l'écrire du tout est la parade la plus sûre. Les arguments d'un job porteront une adresse e-mail, un identifiant de personne ou un jeton. Une trace d'exception contient les variables locales, donc des secrets. Le journal d'accès d'uvicorn, mesuré sur les journaux réels, double la ligne applicative **sans aucun des dix champs**, journalise les sondes de santé toutes les dix secondes — **8 640 lignes par jour et par service** — et écrit le chemin brut avec sa chaîne de requête. `httpx` et `botocore` écrivent des URL complètes, dont des URL signées. | Validée |
 
 **Ce que `T1` a délibérément écarté**
 
@@ -338,7 +351,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
-| **Total** | **133** | **133** |
+| `DEC-466+` — réalisation du LOT 1, `T4` | 4 | 4 |
+| **Total** | **137** | **137** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

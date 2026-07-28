@@ -6,6 +6,7 @@ requires-python = "==3.12.*"
 members = [
     "onboarding-api",
     "onboarding-digital",
+    "onboarding-observabilite",
     "onboarding-worker",
 ]
 
@@ -417,6 +418,7 @@ dependencies = [
     { name = "alembic" },
     { name = "boto3" },
     { name = "fastapi" },
+    { name = "onboarding-observabilite" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "redis" },
@@ -429,6 +431,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "boto3", specifier = ">=1.43.57" },
     { name = "fastapi", specifier = ">=0.140.7" },
+    { name = "onboarding-observabilite", editable = "packages/observabilite" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "redis", specifier = ">=8.0.1" },
@@ -442,6 +445,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "onboarding-api" },
+    { name = "onboarding-observabilite" },
     { name = "onboarding-worker" },
 ]
 
@@ -458,6 +462,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "onboarding-api", editable = "apps/api" },
+    { name = "onboarding-observabilite", editable = "packages/observabilite" },
     { name = "onboarding-worker", editable = "apps/worker" },
 ]
 
@@ -472,11 +477,17 @@ dev = [
 ]
 
 [[package]]
+name = "onboarding-observabilite"
+version = "0.1.0"
+source = { editable = "packages/observabilite" }
+
+[[package]]
 name = "onboarding-worker"
 version = "0.1.0"
 source = { editable = "apps/worker" }
 dependencies = [
     { name = "dramatiq", extra = ["redis"] },
+    { name = "onboarding-observabilite" },
     { name = "psycopg", extra = ["binary"] },
     { name = "redis" },
     { name = "sqlalchemy" },
@@ -485,6 +496,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dramatiq", extras = ["redis"], specifier = ">=2.2.0" },
+    { name = "onboarding-observabilite", editable = "packages/observabilite" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "redis", specifier = ">=8.0.1" },
     { name = "sqlalchemy", specifier = ">=2.0.51" },
