@@ -7,17 +7,32 @@
 
 ## 1. État actuel
 
-**Squelette et outillage seuls.** Ce paquet ne contient aucun code applicatif.
-`app/__init__.py` n'expose qu'une version.
+**L'API démarre et répond** depuis `T3`. Elle expose les trois endpoints de santé du cahier
+§18.7, valide sa configuration au démarrage par **11 garde-fous**, porte le format d'erreur
+unique du §18.3 avec identifiant de corrélation, et sa migration `0001_initial` s'applique.
+
+**Aucune route métier, aucune table, aucune authentification.**
+
+```bash
+make migrate     # appliquer la migration
+make api-check   # interroger /health/live, /health/ready et /health/version
+```
+
+| Endpoint | Ce qu'il fait |
+|---|---|
+| `/health/live` | Vivacité du processus. **Ne sonde aucune dépendance**, volontairement |
+| `/health/ready` | Sonde réellement PostgreSQL, Redis et MinIO. **503** si l'une manque |
+| `/health/version` | Version et empreinte de commit, injectées à la construction en `T7` |
+| `/api/v1/` | Racine du contrat versionné, vide au LOT 1 |
 
 ## 2. Ce qui arrive, et quand
 
 | Contenu | Sous-étape | Story |
 |---|---|---|
-| Application FastAPI, lecture et validation de la configuration, **11 garde-fous de démarrage** | `T3` | `MVP-L01-US003` |
-| Endpoints de santé `live`, `ready`, `version` (cahier §18.7) | `T3` | `MVP-L01-US003` |
-| Migration Alembic `0001_initial` — **extensions PostgreSQL seules** | `T3` | `MVP-L01-US003` |
-| Journalisation JSON avec `correlation_id` (cahier §28.1) | `T4` | `MVP-L01-US004` |
+| ~~Application FastAPI, configuration, **11 garde-fous**~~ | ✅ `T3` | `MVP-L01-US003` |
+| ~~Endpoints `live`, `ready`, `version` (cahier §18.7)~~ | ✅ `T3` | `MVP-L01-US003` |
+| ~~Migration `0001_initial`~~ — **vide**, voir `DEC-463` et `QO-112` | ✅ `T3` | `MVP-L01-US003` |
+| Journalisation JSON consommant le `correlation_id` (cahier §28.1) | `T4` | `MVP-L01-US004` |
 | `Dockerfile` multiarchitecture | `T2`, `T7` | `MVP-L01-US002`, `US006` |
 | Modules métier de `app/` (cahier §16.1) | **LOT 2 et suivants** | — |
 

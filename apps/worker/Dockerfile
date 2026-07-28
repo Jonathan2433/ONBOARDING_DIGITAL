@@ -44,6 +44,7 @@ RUN useradd --create-home --uid 10001 onboarding \
     && chown -R onboarding:onboarding /app /opt/venv
 USER onboarding
 
-# T2 : voir apps/api/Dockerfile. Le healthcheck du fichier Compose verifie que
-# le paquet `worker` est importable. T3 remplacera cette commande par dramatiq.
-CMD ["sleep", "infinity"]
+# Le nombre de fils vient de WORKER_CONCURRENCY (`.env.example`), avec 2 par
+# defaut. Un seul processus : la machine ne dispose que de 7,75 Gio pour Docker
+# (DEC-440), et le parallelisme utile viendra du LOT 11.
+CMD ["sh", "-c", "dramatiq worker.main --processes 1 --threads ${WORKER_CONCURRENCY:-2}"]

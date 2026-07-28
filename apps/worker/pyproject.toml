@@ -14,7 +14,12 @@ name = "onboarding-worker"
 version = "0.1.0"
 description = "eXalt Onboarding Digital - worker Dramatiq (squelette, LOT 1 T1)."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "dramatiq[redis]>=2.2.0",
+    "psycopg[binary]>=3.3.4",
+    "redis>=8.0.1",
+    "sqlalchemy>=2.0.51",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -17,25 +17,28 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T2` **faite** — stack Docker locale, story `MVP-L01-US002`, issue [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3). Suivante : `T3`, API et healthchecks |
+| Sous-étape en cours | `T3` **faite** — API, 3 healthchecks, migration initiale, story `MVP-L01-US003`, issue [#4](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/4). Suivante : `T4`, journalisation JSON corrélée |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
-Le LOT 1 a écrit les premières lignes de code du projet. À l'issue de `T1`, le dépôt porte le
-**squelette exécutable** du monorepo — les sept répertoires du cahier §15.3, la chaîne de
-qualité Python et TypeScript, et les versions épinglées — mais **aucune application** : ni
-FastAPI, ni page web, ni stack Docker. Voir [`docs/README.md`](docs/README.md) §8 pour
-l'avancement des douze sous-étapes.
+À l'issue de `T3`, la plateforme **démarre et répond**. Les huit services du cahier §15.4
+tournent en local, l'API expose ses trois endpoints de santé à travers Caddy en HTTPS, et la
+migration initiale s'applique. Il n'existe toujours **aucun écran ni aucune donnée métier** :
+la page de statut arrive en `T5`, le modèle de données au LOT 2. Voir
+[`docs/README.md`](docs/README.md) §8 pour l'avancement des douze sous-étapes.
 
 ### Démarrer sur une machine propre
 
 ```bash
 make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
-make check      # tout verifier : versions, arborescence, iCloud, format, lint, types, tests
+make check      # qualite : versions, arborescence, iCloud, format, lint, types, tests
+make up         # demarrer les 8 services et attendre qu'ils soient sains
+make migrate    # appliquer la migration Alembic
+make api-check  # interroger les trois endpoints de sante
 ```
 
-`make help` liste les quinze cibles disponibles.
+`make help` liste toutes les cibles.
 
 ---
 
@@ -123,14 +126,16 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 ├── .prettierignore            ← Markdown exclu : protège les documents immuables (DEC-454)
 ├── .github/                   ← gabarits de pull request et d'issues
 ├── apps/
-│   ├── api/                   ← API FastAPI          — squelette, application en T3
-│   ├── worker/                ← worker Dramatiq      — squelette, démarrage en T3
+│   ├── api/                   ← API FastAPI, 3 healthchecks, migration Alembic
+│   ├── worker/                ← worker Dramatiq, les 7 files declarees
 │   └── web/                   ← frontend React/Vite  — outillage, page de statut en T5
 ├── packages/
 │   ├── ui/                    ← design system        — coquille, tokens en T10
 │   └── contracts/             ← contrat API partagé  — coquille, génération en T10
 ├── infra/
-│   └── scripts/               ← exclure-icloud.sh (DEC-453). Compose et Caddy en T2
+│   ├── compose/               ← base + surcouche dev, les 8 services (DEC-444)
+│   ├── caddy/                 ← Caddyfile, tls internal (DEC-446)
+│   └── scripts/               ← exclusion iCloud, verification ports, sante, persistance
 └── docs/
     ├── product/               ← cahier des charges, matrice des droits, roadmap, backlog
     │   └── contenus/          ← inventaire du prototype, parcours d'onboarding relevés
@@ -176,9 +181,9 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 129 |
-| [Écarts](docs/decisions/registre-ecarts.md) | 19 — 6 ouverts, 11 clos, 2 acceptés |
-| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 35 — 31 ouvertes |
+| [Décisions](docs/decisions/registre-decisions.md) | 133 |
+| [Écarts](docs/decisions/registre-ecarts.md) | 19 — 5 ouverts, 12 clos, 2 acceptés |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 36 — 32 ouvertes |
 | [Risques](docs/operations/registre-risques.md) | 30 |
 | [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
 | [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |

@@ -7,13 +7,18 @@
 
 ## 1. État actuel
 
-**Squelette et outillage seuls.** Ce paquet ne contient aucun code applicatif.
+**Le worker démarre** depuis `T3` : il se connecte à Redis et **déclare les sept files** du
+cahier §16.4. Son healthcheck teste la connexion au courtier, et non le simple fait que le
+processus tourne.
+
+**Aucun acteur métier n'est déclaré** — un test dédié le vérifie, et échoue si du code métier
+est ajouté trop tôt.
 
 ## 2. Ce qui arrive, et quand
 
 | Contenu | Sous-étape | Story |
 |---|---|---|
-| Démarrage Dramatiq, déclaration des **7 files** validées | `T3` | `MVP-L01-US003` |
+| ~~Démarrage Dramatiq, déclaration des **7 files**~~ | ✅ `T3` | `MVP-L01-US003` |
 | Journalisation JSON avec `correlation_id` en job | `T4` | `MVP-L01-US004` |
 | `Dockerfile` multiarchitecture | `T2`, `T7` | `MVP-L01-US002`, `US006` |
 | Persistance des jobs en PostgreSQL, outbox transactionnelle, idempotence, tâches planifiées | **LOT 11** | `MVP-L11-US001`, `US002` |

@@ -64,7 +64,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # assert est l'outil normal d'un test : S101 n'a pas de sens dans tests/.
-"**/tests/**" = ["S101"]
+# S105 et S106 signalent des valeurs ressemblant a des mots de passe ecrites en
+# dur. Un test des garde-fous de configuration DOIT en contenir : c'est son
+# objet meme de verifier qu'une valeur secrete n'apparait pas dans un message.
+# Ces valeurs sont inertes et n'ouvrent aucun acces.
+"**/tests/**" = ["S101", "S105", "S106"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "worker"]
@@ -86,6 +90,21 @@ pretty = true
 files = ["apps/api", "apps/worker"]
 exclude = ['(^|/)\.venv/', '(^|/)node_modules/']
 
+# Derogation CIBLEE, et non desactivation globale du mode strict.
+#
+# dramatiq ne publie ni stubs ni marqueur py.typed : mypy considere donc tout
+# appel a son API comme non type. La derogation porte sur ce module SEUL, et
+# uniquement sur `disallow_untyped_calls` — le reste du mode strict continue de
+# s'appliquer a notre code. boto3, lui, dispose de stubs officiels
+# (`boto3-stubs`) : ils sont installes plutot que de faire taire l'erreur.
+[[tool.mypy.overrides]]
+module = ["dramatiq.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["worker.main"]
+disallow_untyped_calls = false
+
 # ----------------------------------------------------------------------------
 #  pytest
 # ----------------------------------------------------------------------------
@@ -96,6 +115,8 @@ addopts = "-ra --strict-markers --strict-config"
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[s3]>=1.43.57",
+    "httpx>=0.28.1",
     "mypy>=2.3.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",

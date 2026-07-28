@@ -22,7 +22,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
-| **Total** | **129** | |
+| Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
+| **Total** | **133** | |
 
 ---
 
@@ -150,6 +151,18 @@ Décisions prises pendant la mise en place de la stack Docker de développement,
 | `DEC-459` | À `T2`, le healthcheck de `api`, `worker` et `web` porte sur le **processus et l'image**, non sur un appel HTTP : il vérifie que le paquet applicatif est importable, ou que Vite est résolvable. Les endpoints `/health/live`, `/health/ready` et `/health/version`, avec la vérification effective de PostgreSQL, Redis et MinIO, relèvent entièrement de `T3`. | Le critère de `T2` exige que les trois services soient sains, alors que `T3` livre l'application : à `T2`, il n'y a rien à sonder en HTTP. Arbitrage de Jonathan entre cette lecture et l'avance d'une API minimale. Retenue parce qu'elle ne vide ni `T3` ni `T5` de leur substance, et parce que le contrôle reste **capable d'échouer** — une image cassée ou une installation incomplète le font sortir en erreur. | Validée |
 | `DEC-460` | Toutes les publications de ports sont liées **explicitement à `127.0.0.1`**. Le contrôle `make ports` compare les publications **déclarées** dans la configuration Compose et les publications **réelles** du moteur, et **échoue si les deux nombres ne concordent pas**. | Le cahier §22.2 pose que PostgreSQL, Redis, MinIO et Mailpit ne sont jamais exposés publiquement. Sans préfixe explicite, Docker publie sur **toutes** les interfaces et contourne le pare-feu de macOS : le défaut est silencieux. La comparaison des deux vues vient du défaut `T2-4`, où le contrôle affirmait « aucune exposition » en n'ayant examiné que 5 publications sur 7. | Validée |
 | `DEC-461` | `make env` crée le `.env` local depuis `.env.example` et **génère aléatoirement 5 secrets de services locaux** sur 48 caractères — `APP_SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_PASSWORD` — plus un identifiant MinIO lisible. **`IMPORT_SOURCE_RETENTION_DAYS` et `UPTIME_KUMA_PUSH_URL` restent en `CHANGE_ME`**, et la cible le dit explicitement. | `.env` n'est pas versionné : générer des secrets forts localement n'enfreint aucune règle et supprime la tentation d'un mot de passe faible réutilisé. Les deux variables laissées en `CHANGE_ME` ne sont pas des oublis : la première relève de `QO-100`, bloquante, la seconde d'une supervision externe du LOT 13. Les afficher à la création évite qu'un futur contributeur les remplisse au hasard. | Validée |
+
+## 1.6 Réalisation du LOT 1 — sous-étape `T3`
+
+Décisions prises pendant la mise en place de l'API, des trois healthchecks et de la migration
+initiale, story `MVP-L01-US003`, issue `#4`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-462` | L'API est **synchrone** : SQLAlchemy en mode classique et FastAPI servant les routes par son pool de fils. L'application n'est **pas** construite à l'import : `uvicorn` est lancé avec **`--factory`**, et la configuration est portée par **`app.state`**, non par un cache global. | Aucun document n'impose l'asynchrone, et le cahier §25.1 dimensionne le produit pour environ 500 collaborateurs : le pool de fils suffit très largement. Le mode synchrone évite la double chaîne de pilotes, les sessions asynchrones et les pièges de mélange que le LOT 2 paierait cher. **La fabrique et `app.state` viennent d'un défaut réel** : la première version se terminait par `application = creer_application()`, ce qui faisait échouer la simple collecte des tests, et les routes lisaient un cache global, ce qui rendait intestable le cas « `ready` doit répondre 503 ». Un livrable difficile à tester est un livrable qu'on finit par ne pas tester. | Validée |
+| `DEC-463` | **La migration `0001_initial` est vide.** Elle n'active aucune extension PostgreSQL. La liste des extensions sera établie au **LOT 2**, avec les tables et les index de recherche. Question ouverte `QO-112`. | La fiche §5 annonçait « les extensions strictement nécessaires », mais **aucun document du corpus n'en nomme une seule** — zéro occurrence de `pg_trgm`, `unaccent`, `citext`, `pgcrypto`, `uuid-ossp` dans le cahier comme dans le modèle, témoin positif du même filtre à quatre occurrences de `SQLAlchemy`. Le modèle §3 impose des UUID, mais `gen_random_uuid()` est intégré à PostgreSQL depuis la version 13 ; le modèle §26.1 laisse la recherche tolérante explicitement ouverte, et ses index arrivent à la migration 16. La roadmap autorise littéralement « une migration Alembic **vide ou initiale** ». Choisir une liste aurait été inventer une décision, et une extension activée se retire moins facilement qu'elle ne s'ajoute. Arbitrage de Jonathan sur les trois issues possibles. | Validée |
+| `DEC-464` | Le garde-fou « aucune variable ne vaut encore `CHANGE_ME_*` » porte sur les variables que **l'API déclare**, non sur l'ensemble de `.env.example`. | Appliqué littéralement à tout le fichier, il empêcherait l'API de démarrer aujourd'hui : `IMPORT_SOURCE_RETENTION_DAYS` reste en `CHANGE_ME` parce que sa valeur relève de `QO-100`, bloquante, et `UPTIME_KUMA_PUSH_URL` parce qu'elle appartient au LOT 13. Aucune n'est utilisée par un code existant. Le jour où le LOT 9 ajoutera la première à sa configuration, `QO-100` devra être tranchée — c'est l'effet recherché, et il vaut mieux qu'un garde-fou contourné. | Validée |
+| `DEC-465` | Les healthchecks Compose deviennent des contrôles applicatifs réels : `api` interroge **`/health/ready`**, qui sonde effectivement PostgreSQL, Redis et MinIO ; `worker` teste la connexion à son **courtier Redis**. Les endpoints de santé restent **hors du préfixe `/api/v1`**. | `ready` et non `live` parce que Compose ne redémarre pas un conteneur au seul motif qu'il est `unhealthy` : aucun risque de boucle de redémarrage, et `depends_on: service_healthy` attend alors que l'API soit réellement capable de servir. Preuve d'effectivité : **Redis arrêté pour de vrai**, `ready` répond **503** avec `redis indisponible`, tandis que `live` reste à 200 — la sonde discrimine par dépendance. Les endpoints restent hors du préfixe versionné parce qu'ils relèvent de l'exploitation : l'adresse que sonde un orchestrateur ne doit pas bouger avec les versions de l'API. | Validée |
 
 **Ce que `T1` a délibérément écarté**
 
@@ -324,7 +337,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
-| **Total** | **129** | **129** |
+| `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
+| **Total** | **133** | **133** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
