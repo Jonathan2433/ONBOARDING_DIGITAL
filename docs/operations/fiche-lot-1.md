@@ -1,10 +1,16 @@
 # Fiche de lot — LOT 1 : Monorepo, qualité et environnement local
 
-> **⚠️ LE LOT 1 N'EST PAS OUVERT.**
-> Cette fiche est un **plan préparé**, produit après la validation de la porte `G0`
-> (`DEC-438`). Conformément à `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006`, aucun travail du
-> LOT 1 ne commence avant son **ouverture explicite par Jonathan**. Aucune story de ce lot ne
-> peut passer à `Ready` ou `In progress` d'ici là.
+> **✅ LE LOT 1 EST OUVERT** depuis le 27 juillet 2026, décision `DEC-450`.
+> Cette fiche a d'abord été un plan préparé, produit après la validation de la porte `G0`
+> (`DEC-438`). Les 3 prérequis bloquants du §9.1 et les 7 choix techniques du §9.2 sont levés
+> et tranchés en sous-étape `T0` : les conditions de `ROAD-003`, `ARB-BACK-003` et
+> `BACKLOG-006` sont réunies, et les stories `MVP-L01-US001` à `US008` peuvent passer à
+> `Ready` puis `In progress`.
+>
+> Les **LOTS 2 à 14 restent `Planned`** : aucune de leurs stories ne peut être entamée.
+>
+> *Le bandeau de non-ouverture qui figurait ici jusqu'au 27/07/2026 était devenu faux après
+> `DEC-450`. Corrigé au titre de `ECART-017`.*
 
 **Porte de validation :** `G1` — « Stack, CI et images validées »
 **Tag posé à la validation :** `v0.1.0` (`DEC-428`)
@@ -33,7 +39,7 @@
 | Images `linux/arm64` et `linux/amd64` | Cahier §22.3 |
 | Healthchecks `live`, `ready`, `version` | Cahier §18.7 |
 | Logs JSON avec corrélation | Cahier §28.1 |
-| CI : formatage, lint, types, tests, migrations, secrets, vulnérabilités | Cahier §23.1 |
+| CI : **11 contrôles**, énumérés au §4.3 ci-dessous | Cahier §23.1 |
 | Publication de premières images techniques dans GHCR privé | Roadmap LOT 1 |
 
 ### 1.3 Périmètre exclu
@@ -98,12 +104,12 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 | Sous-étape | Objet | Stories | Critère de validation |
 |---|---|---|---|
 | ~~**T0**~~ | Prérequis et arbitrages techniques. **Aucune écriture.** ✅ **Faite le 27/07/2026, hors lot** | — | ✅ Jonathan a répondu aux 3 prérequis bloquants et aux 7 choix techniques. Voir [`compte-rendu-t0-lot-1.md`](compte-rendu-t0-lot-1.md) |
-| **T1** | Squelette du monorepo, outillage, versions épinglées | `US001` | L'arborescence des 7 répertoires existe ; lint, formatage et typage s'exécutent à vide sans erreur |
+| ~~**T1**~~ | Squelette du monorepo, outillage, versions épinglées. ✅ **Faite le 27/07/2026** | `US001` | ✅ Les 7 répertoires existent ; lint, formatage, typage et tests s'exécutent sans erreur, et **chacun des 10 maillons sait échouer** — témoins négatifs vérifiés. Décisions `DEC-451` à `DEC-456` |
 | **T2** | Docker Compose développement : les 8 services démarrent et sont sains | `US002` | Une seule commande démarre tout ; les 8 services sont `healthy` ; arrêt et redémarrage sans perte de volume |
 | **T3** | API FastAPI minimale, 3 healthchecks, migration Alembic initiale | `US003` | Les 3 endpoints répondent ; `ready` vérifie réellement PostgreSQL, Redis et MinIO ; la migration s'applique sur base vide et se rejoue |
 | **T4** | Journalisation JSON corrélée, API et worker | `US004` | Chaque requête et chaque job portent un `correlation_id` ; aucun secret journalisé ; rotation configurable |
 | **T5** | Frontend Vite : page de statut consommant les healthchecks | `US002`, `US003` | La page affiche l'état réel des services et la version ; TypeScript strict sans erreur |
-| **T6** | CI GitHub Actions : 8 contrôles, dont **3 échecs volontaires prouvés** | `US005` | Le pipeline passe ; et il **échoue effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement |
+| **T6** | CI GitHub Actions : **11 contrôles** du cahier §23.1, dont **3 échecs volontaires prouvés** | `US005` | Les 11 contrôles sont exécutés ; le pipeline passe ; et il **échoue effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement |
 | **T7** | Images multiarchitecture et publication GHCR privé | `US006` | Une même version immuable fonctionne sur `arm64` et `amd64` ; l'accès au registre est authentifié ; aucune référence à `latest` seul |
 | **T8** | Environnement de recette isolé | `US002` | Volumes, base, bucket, réseau, ports et secrets distincts du développement ; Mailpit exclusif |
 | **T9** | Documentation d'exploitation locale | `US008` | Les procédures fonctionnent **depuis une machine propre** ; ports, volumes et commandes de diagnostic identifiés |
@@ -161,7 +167,7 @@ infra/
 └── minio/
 
 .github/workflows/
-├── ci.yml                             ← 8 contrôles du cahier §23.1
+├── ci.yml                             ← 11 contrôles du cahier §23.1
 └── images.yml                         ← Buildx multiarchitecture, GHCR
 
 Makefile                               ← la « commande documentée » de la démonstration

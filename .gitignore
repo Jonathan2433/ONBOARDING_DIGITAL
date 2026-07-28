@@ -100,6 +100,11 @@ build/
 *.egg-info/
 playwright-report/
 test-results/
+*.tsbuildinfo
+
+# Les fichiers de verrouillage sont VERSIONNES, volontairement : pnpm-lock.yaml
+# et uv.lock sont ce qui rend une installation reproductible d'une machine a
+# l'autre et en integration continue. Ne les ajoutez pas ici.
 
 # ─────────────────────────────────────────────────────────────
 # Logs
@@ -127,6 +132,14 @@ pnpm-debug.log*
 .fseventsd
 .icloud
 *.icloud
+
+# COPIES DE CONFLIT iCLOUD. Constatees le 27/07/2026 en sous-etape T1 : iCloud
+# a produit un repertoire « node_modules 2 » de 178 Mio et 11 066 fichiers,
+# duplicata fige de node_modules. Le nom d'une copie de conflit est le nom
+# d'origine suivi d'une espace et d'un chiffre. Ces copies ne doivent jamais
+# etre versionnees, ni traitees par un outil. Voir ROAD-RSK-026.
+* [0-9]
+* [0-9][0-9]
 
 # ─────────────────────────────────────────────────────────────
 # Outillage d'agent

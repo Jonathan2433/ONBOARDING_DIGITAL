@@ -83,6 +83,32 @@ Jonathan une fois les 8 services démarrés et mesurés en charge. Ils ont en re
 réécrire `ROAD-RSK-027`, dont les deux prémisses étaient inexactes, et à la décision `DEC-440`
 — exécution non simultanée et arrêt du projet tiers pendant le LOT 1.
 
+### Mesures complémentaires du 27 juillet 2026, sous-étape `T1` — empreinte disque de l'outillage
+
+Le volet **disque** de `QO-085` n'avait encore aucune mesure. Le squelette du monorepo en
+fournit une première, avant toute image Docker.
+
+| Emplacement | Taille | Fichiers | Dans iCloud ? |
+|---|---:|---:|---|
+| `node_modules` racine | 178 Mio | 11 066 | Non — exclu par `DEC-453` |
+| `.venv` racine | 98 Mio | 2 176 | Non — exclu par `DEC-453` |
+| `node_modules` des 3 espaces de travail | 40 Kio | 10 | Non — exclus par `DEC-453` |
+| **Sous-total dans le dépôt** | **276 Mio** | **13 252** | **Exclu de la synchronisation** |
+| Store `pnpm`, `~/.local/share/pnpm/store` | 166 Mio | — | Non, hors dépôt (`DEC-439`) |
+| Cache `uv`, `~/.cache/uv` | 103 Mio | — | Non, hors dépôt |
+| CPython 3.12.13 géré par `uv` | 69 Mio | — | Non, hors dépôt |
+| **Total outillage** | **~614 Mio** | — | — |
+
+Deux enseignements pour la suite du lot :
+
+1. **13 252 fichiers** sont soustraits à iCloud dans le seul dépôt, pour un socle qui ne
+   contient encore **aucune dépendance applicative** — ni FastAPI, ni SQLAlchemy, ni Alembic,
+   ni les cinq bibliothèques frontend du cahier §17.1. Le chiffre croîtra nettement aux
+   sous-étapes `T3` et `T5`.
+2. L'espace disque n'est pas le facteur limitant : 563 Gio restent libres. **La mémoire l'est**,
+   avec 7,75 Gio pour Docker. La mesure en charge attendue par `QO-085` reste donc à faire en
+   `T2`, une fois les 8 services démarrés.
+
 ---
 
 # 2. Non bloquantes pour commencer le développement

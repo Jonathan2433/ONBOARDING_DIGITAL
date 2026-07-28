@@ -20,7 +20,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
-| **Total** | **118** | |
+| Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 6 | Validées le 27/07/2026 |
+| **Total** | **124** | |
 
 ---
 
@@ -116,6 +117,28 @@ pratique dès maintenant, ce qui est plus strict et va dans le sens du cadrage.
 - La porte `G1` devient la porte courante. Le tag `v0.1.0` sera posé sur `main` à sa validation
   (`DEC-428`).
 - `ECART-006` — `.env.example` en v0.1 — doit être clos dans ce lot.
+
+## 1.4 Réalisation du LOT 1 — sous-étape `T1`
+
+Décisions prises pendant la réalisation du squelette du monorepo, story
+`MVP-L01-US001`, issue `#2`. Les six sont validées par Jonathan le 27 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-451` | Le lint et le formatage JavaScript et TypeScript sont assurés par **ESLint** en « flat config » et **Prettier**, `eslint-config-prettier` désactivant les règles en conflit. La vérification de types reste à `tsc --noEmit`, avec la configuration stricte de `tsconfig.base.json`. | Aucun document du corpus ne tranchait : le cahier §17.1 et §23.5 ne nomment aucun linter JavaScript. Motif déterminant : **`eslint-plugin-jsx-a11y`**, sans équivalent de profondeur ailleurs, alors que le cahier §14 fait de l'accessibilité une exigence dure auditée au LOT 12. Découvrir au LOT 12 qu'on ne peut pas la linter serait le scénario de réouverture de `ROAD-RSK-002`. | Validée |
+| `DEC-452` | Le critère « les répertoires sont **exécutables** » de `MVP-L01-US001` s'entend, à `T1`, comme : chaque espace de travail s'installe, se lint, se type-vérifie et exécute au moins un test réel, avec un code de sortie 0. **Aucune application n'écoute de port** à ce stade. | Le critère du backlog et celui de la fiche §3 — « lint, formatage et typage s'exécutent **à vide** sans erreur » — ne disent pas la même chose. Cette lecture est la seule compatible avec le fait que `T3` possède l'API, `T5` le frontend et `T2` la stack Docker. La retenir évite de vider trois sous-étapes de leur substance. | Validée |
+| `DEC-453` | L'exclusion iCloud de `DEC-439` est mise en œuvre par l'attribut étendu **`com.apple.fileprovider.ignore#P = 1`**, posé par [`infra/scripts/exclure-icloud.sh`](../../infra/scripts/exclure-icloud.sh), appelé **à la fois** par `make icloud-exclude` et par le `postinstall` de `package.json`. La cible `make icloud-verify` échoue si un répertoire n'est pas marqué. | Mesure du 27/07/2026 : **`pnpm install` supprime et recrée les `node_modules`**, ce qui efface l'attribut ; `uv` réutilise le `.venv` et le préserve. Une cible de `Makefile` seule n'aurait protégé que les installations lancées par `make`. **Ce qui est prouvé** : l'attribut est posé, relu, et son absence détectée. **Ce qui ne l'est pas** : le respect effectif par iCloud — convention documentée par Apple, qu'aucun outil de cette machine ne permet de vérifier. `brctl` ne couvre pas les chemins CloudDocs et renvoie 0 sur erreur. **L'attribut n'est pas durable** : voir l'incident du 27/07 consigné en `ROAD-RSK-026`. La cible `icloud-verify` détecte aussi les copies de conflit iCloud. | Validée |
+| `DEC-454` | **Le Markdown est exclu de tout formatage automatique**, aussi bien de Ruff (`extend-exclude`) que de Prettier (`.prettierignore`). | Mesure du 27/07/2026 : sans cette exclusion, Prettier **réécrivait les cinq documents de cadrage immuables**, ajoutant 54 661 octets au seul cahier des charges, soit +21,7 %. La preuve d'intégrité SHA-256 de [`integrite-et-conformite-documents.md`](../operations/integrite-et-conformite-documents.md) — et avec elle la porte `G0` — en aurait été invalidée. Ruff formate lui aussi les blocs de code embarqués dans le Markdown : il voyait 41 documents au lieu de 4 fichiers Python. Voir `ROAD-RSK-029`. | Validée |
+| `DEC-455` | Les deux projets Python sont réunis dans un **workspace `uv` unique déclaré à la racine**, membres `apps/api` et `apps/worker`, avec un seul `uv.lock`, un seul `.venv` et une seule configuration Ruff, mypy et pytest portée par le `pyproject.toml` racine. | Symétrique de `pnpm-workspace.yaml` côté JavaScript, et cohérent avec `DEC-441`. Un seul environnement virtuel signifie un seul répertoire à soustraire à iCloud, un seul verrou à auditer en CI, et une seule source pour les règles de qualité. Les fichiers `tests/__init__.py` ont été écartés : ils créaient deux paquets homonymes `tests` que mypy et pytest refusent tous les deux. | Validée |
+| `DEC-456` | Outillage posé à `T1` : **`uv` 0.11.32** depuis l'archive officielle `astral-sh/uv`, **empreinte SHA-256 vérifiée**, installée dans `~/.local/bin` ; **`pnpm` 11.17.0** par `corepack`, épinglé par le champ `packageManager` **avec empreinte d'intégrité** ; **CPython 3.12.13** géré par `uv`. Les bibliothèques du cahier §17.1 sans usage avant le LOT 4 — React Router, TanStack Query, React Hook Form, Zod, Radix UI — **ne sont pas installées**. | Même procédure que `gh` en `T0` (`DEC-449`) : Homebrew reste inutilisable, `/opt/homebrew` appartenant à l'utilisateur `admin`. `corepack` était déjà présent avec Node 24 : aucun binaire tiers supplémentaire n'a été téléchargé pour `pnpm`. Le Python système 3.9.6 n'est pas touché. Installer cinq bibliothèques sans usage ajouterait une surface d'audit de dépendances sans contrepartie, alors que le LOT 1 met justement `pip-audit` et Trivy en place. | Validée |
+
+**Ce que `T1` a délibérément écarté**
+
+- `storeDir` et `engineStrict` dans un `.npmrc` : **pnpm 11 ne lit plus ces clés depuis
+  `.npmrc`**. Vérifié le 27/07/2026, `pnpm config get store-dir` y renvoyait `undefined` et
+  pnpm retombait silencieusement sur son défaut. Les réglages sont dans `pnpm-workspace.yaml`.
+- `--passWithNoTests` sur `packages/ui` et `packages/contracts` : une suite vide qui « passe »
+  est le contrôle qui ne peut pas échouer. Un test réel a été écrit dans chaque paquet.
 - `QO-085` recevra sa mesure en charge une fois les 8 services démarrés.
 
 **Prochain identifiant libre : `DEC-451`.**
@@ -280,7 +303,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
 | `DEC-449` — mise en place GitHub | 1 | 1 |
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
-| **Total** | **118** | **118** |
+| `DEC-451+` — réalisation du LOT 1, `T1` | 6 | 6 |
+| **Total** | **124** | **124** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

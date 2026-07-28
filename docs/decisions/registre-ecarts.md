@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 16 | 6 | 8 | 2 |
+| Total 18 | 6 | 10 | 2 |
 
 ---
 
@@ -34,8 +34,10 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
 | `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
+| `ECART-017` | La documentation du LOT 1 est restée dans son état d'avant l'ouverture | Non | **Clos** |
+| `ECART-018` | La fiche du LOT 1 annonce 8 contrôles d'intégration là où le cahier §23.1 en énumère 11 | Non pour `G1`, structurant pour `T6` | **Clos** |
 
-**Prochain identifiant libre : `ECART-017`.**
+**Prochain identifiant libre : `ECART-019`.**
 
 ---
 
@@ -233,3 +235,29 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Rectifier les trois emplacements, et inscrire dans la passation la règle de vérification préalable `git status -sb` avant d'annoncer tout point de retour. |
 | Résolution | **Clos** le 27 juillet 2026. `CLAUDE.md` §1 et §10 et `controles-sortie-lot-0.md` §9 rectifiés, preuves de push versées au document de contrôles. |
 | Constat associé | Le push a réussi **en poussée directe sur `main`**, ce qui prouve que la protection exigée par `DEC-429` n'est pas en place. Suivi par `ECART-010`, `QO-107` et `QO-108`, prérequis du LOT 1. |
+
+## `ECART-017` — La documentation du LOT 1 est restée dans son état d'avant l'ouverture
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, prise en charge de la sous-étape `T1` |
+| Source | `docs/operations/fiche-lot-1.md` L3 à L7 ; `docs/README.md` §8, ligne de la sous-étape `T0` |
+| Constat | Deux inexactitudes, de même origine. **(a)** La fiche du LOT 1 portait toujours en tête l'avertissement « ⚠️ **LE LOT 1 N'EST PAS OUVERT** », alors que `DEC-450` l'a ouvert le 27/07/2026 et que `docs/README.md` §8 est intitulé « Avancement du LOT 1 — **lot ouvert** ». Deux documents du même corpus se contredisaient frontalement. **(b)** L'index attribuait à `T0` les décisions `DEC-439`–`DEC-447`, alors que `T0` a produit `DEC-439` à `DEC-449` — le compte rendu de `T0` §5 en fait foi, et `DEC-449` y remplace `DEC-448`. |
+| Impact | Faible sur le travail, réel sur la confiance dans le corpus. La fiche est le premier document que lit un agent prenant le lot en charge : un avertissement de non-ouverture en tête est exactement l'information qu'il applique sans la vérifier. Le bornage `DEC-439`–`DEC-447` masquait deux décisions dont l'une, `DEC-449`, décrit la mise en place GitHub. |
+| Cause | Défaut de mise à jour, non défaut de contrôle. La fiche a été rédigée **avant** l'ouverture et n'a pas été relue après `DEC-450` ; le bornage de l'index a été écrit alors que `T0` comptait sept arbitrages, avant l'ajout de `DEC-448` et `DEC-449`. Même classe que `ECART-016`. |
+| Bloquant | Non |
+| Recommandation | Rectifier les deux emplacements dans la pull request de `T1`, et non plus tard : un corpus qui se contredit perd sa valeur de source de vérité. |
+| Résolution | **Clos** le 27 juillet 2026. Bandeau de la fiche remplacé par l'état réel du lot ; bornage de l'index porté à `DEC-439`–`DEC-449`. Arbitrage de Jonathan : correction dans la pull request de `T1`. |
+
+## `ECART-018` — La fiche du LOT 1 annonce 8 contrôles d'intégration, le cahier en énumère 11
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, prise en charge de la sous-étape `T1` |
+| Source | `docs/operations/fiche-lot-1.md` §3 sous-étape `T6`, et §4.1 ; cahier des charges §23.1 |
+| Constat | La fiche annonce « **8 contrôles** du cahier §23.1 » à deux endroits. Le cahier §23.1 en énumère **11** : formatage, lint, typage, tests unitaires, tests d'intégration PostgreSQL, tests API, tests frontend, contrôle Alembic, détection de secrets, audit de dépendances, construction des images. La roadmap et le backlog en listent, eux, **7** — formatage, lint, types, tests, migrations, secrets, vulnérabilités. **Aucune source du corpus ne donne 8.** |
+| Impact | **Structurant pour `T6`.** Le nombre annoncé détermine ce que la CI doit exécuter et ce que la porte `G1` contrôlera. Trois contrôles du cahier — tests API, tests frontend, construction des images — n'apparaissent dans aucun des deux décomptes inférieurs et auraient pu être omis. Aucun impact sur `T1`, qui ne crée pas de workflow. |
+| Cause | Défaut de contrôle, pas défaut de livrable : le nombre n'a pas été obtenu par comptage dans la source. **Même classe exactement que le défaut `B-5` de `T0`**, où la fiche annonçait 7 garde-fous de démarrage là où la politique de configuration en définit 11, et retenait qui plus est les mauvais. |
+| Bloquant | Non pour `G1`. Aurait été bloquant pour la validité de `T6`. |
+| Recommandation | Porter le nombre à 11 dans la fiche et **énumérer les onze**, plutôt que d'en donner le seul décompte : c'est l'énumération, non le nombre, qui empêche une omission. Rappeler que la roadmap et le backlog en listent 7, et que le cahier prévaut (règle de préséance). |
+| Résolution | **Clos** le 27 juillet 2026. Fiche §3 et §4.1 rectifiées, les onze contrôles énumérés depuis le cahier. Arbitrage de Jonathan : correction dans la pull request de `T1`. |
