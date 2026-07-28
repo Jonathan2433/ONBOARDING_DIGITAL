@@ -38,7 +38,7 @@ make migrate    # appliquer la migration Alembic
 make api-check  # interroger les trois endpoints de sante
 ```
 
-`make help` liste toutes les cibles.
+`make help` liste les 31 cibles.
 
 ---
 
@@ -170,7 +170,7 @@ Voir [`docs/prototype/README.md`](docs/prototype/README.md).
 La configuration passe exclusivement par des variables d'environnement. Le fichier `.env`
 local n'est **jamais** versionné.
 
-- [`.env.example`](.env.example) — modèle documenté en version 0.1, 74 variables, aucune valeur
+- [`.env.example`](.env.example) — modèle documenté en **version 1.0**, 78 variables, aucune valeur
   réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
 - [`docs/operations/politique-configuration-et-secrets.md`](docs/operations/politique-configuration-et-secrets.md)
   — séparation des trois environnements, garde-fous de démarrage, rotation, conduite à tenir en
