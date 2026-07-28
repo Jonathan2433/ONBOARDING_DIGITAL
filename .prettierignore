@@ -1,0 +1,51 @@
+# .prettierignore — eXalt Onboarding Digital
+#
+# LOT 1, sous-etape T1, story MVP-L01-US001.
+
+# ─────────────────────────────────────────────────────────────
+#  MARKDOWN : EXCLU EN TOTALITE. Ce n'est pas une commodite.
+#
+#  1. Les CINQ documents de cadrage sont IMMUABLES et leur integrite est
+#     prouvee par empreinte SHA-256 dans
+#     docs/operations/integrite-et-conformite-documents.md. Tout reformatage,
+#     meme cosmetique, invaliderait cette preuve et, avec elle, la porte G0.
+#  2. Les 36 autres Markdown sont des registres et des comptes rendus dont
+#     les tableaux sont alignes a la main. Les reformater produirait un diff
+#     massif sans aucune valeur, et rendrait illisible toute revue ulterieure.
+#
+#  Ruff applique la meme exclusion, pour la meme raison : voir le commentaire
+#  de [tool.ruff] extend-exclude dans pyproject.toml.
+# ─────────────────────────────────────────────────────────────
+*.md
+
+# ─────────────────────────────────────────────────────────────
+#  Dependances, caches et artefacts
+# ─────────────────────────────────────────────────────────────
+node_modules/
+.venv/
+dist/
+build/
+coverage/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# ─────────────────────────────────────────────────────────────
+#  Verrous : generes, jamais edites a la main
+# ─────────────────────────────────────────────────────────────
+pnpm-lock.yaml
+uv.lock
+
+# ─────────────────────────────────────────────────────────────
+#  Prototype historique, non versionne et non reutilisable
+# ─────────────────────────────────────────────────────────────
+docs/prototype/
+
+# ─────────────────────────────────────────────────────────────
+#  Copies de conflit iCloud : « <nom> 2 », « <nom> 3 »...
+#  Constatees le 27/07/2026 : un « node_modules 2 » de 11 066 fichiers
+#  faisait passer `prettier --check .` de 0 a 179 secondes, et le faisait
+#  echouer. Voir ROAD-RSK-026.
+# ─────────────────────────────────────────────────────────────
+* [0-9]/
+* [0-9][0-9]/

@@ -1,0 +1,28 @@
+# ============================================================================
+#  Espaces de travail et reglages pnpm (DEC-441)
+#  LOT 1, sous-etape T1, story MVP-L01-US001.
+#
+#  Les reglages storeDir et engineStrict figurent ICI et non dans un .npmrc :
+#  pnpm 11 ne lit plus ces cles depuis .npmrc. Verifie le 27/07/2026 -
+#  `pnpm config get store-dir` y renvoyait `undefined` et pnpm retombait
+#  silencieusement sur son defaut macOS ~/Library/pnpm/store.
+# ============================================================================
+
+# apps/api et apps/worker sont des projets Python : ils relevent du workspace
+# uv declare dans pyproject.toml, pas de pnpm. Les lister ici n'aurait aucun
+# effet et laisserait croire a une gestion unifiee qui n'existe pas.
+#
+# Aucun orchestrateur de taches n'est introduit : le Makefile tient ce role.
+packages:
+  - apps/web
+  - packages/ui
+  - packages/contracts
+
+# DEC-439 : le store pnpm reside HORS du dossier synchronise iCloud. Le depot
+# vit sous ~/Library/Mobile Documents/ ; ce chemin n'y est pas. La valeur est
+# declaree explicitement pour qu'elle ne puisse pas deriver avec le defaut.
+storeDir: ${HOME}/.local/share/pnpm/store
+
+# DEC-443 epingle Node 24 LTS. Sans ce reglage, le champ "engines" de
+# package.json ne serait qu'un avertissement.
+engineStrict: true

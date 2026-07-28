@@ -23,12 +23,19 @@
 *.tsx       text eol=lf
 *.js        text eol=lf
 *.jsx       text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
 *.css       text eol=lf
 *.html      text eol=lf
 *.sql       text eol=lf
 *.sh        text eol=lf diff=bash
 Dockerfile  text eol=lf
 Caddyfile   text eol=lf
+Makefile    text eol=lf
+
+# ─── Verrous : versionnes, mais generes. Reduire le bruit en revue ───
+pnpm-lock.yaml  text eol=lf linguist-generated=true -diff
+uv.lock         text eol=lf linguist-generated=true -diff
 
 # ─── Donnees ───
 *.csv       text eol=lf

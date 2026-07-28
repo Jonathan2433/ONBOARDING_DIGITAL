@@ -1,0 +1,103 @@
+# ============================================================================
+#  eXalt Onboarding Digital - racine du workspace Python
+#
+#  LOT 1, sous-etape T1, story MVP-L01-US001.
+#  Decisions applicables : DEC-442 (mypy strict), DEC-443 (Python 3.12).
+#
+#  Ce fichier n'est pas un paquet installable : il agrege les deux projets
+#  apps/api et apps/worker dans un unique environnement uv, et porte la
+#  configuration partagee de Ruff, mypy et pytest.
+# ============================================================================
+
+[project]
+name = "onboarding-digital"
+version = "0.1.0"
+description = "eXalt Onboarding Digital - racine du workspace Python (uv)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "onboarding-api",
+    "onboarding-worker",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "apps/worker"]
+
+[tool.uv.sources]
+onboarding-api = { workspace = true }
+onboarding-worker = { workspace = true }
+
+# ----------------------------------------------------------------------------
+#  Ruff - formatage et lint Python (cahier des charges 23.5)
+# ----------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# *.md est exclu volontairement. Ruff formate les blocs de code Python
+# embarques dans le Markdown : sans cette exclusion, il traiterait les 41
+# documents du depot, dont les CINQ documents de cadrage IMMUABLES dont
+# l'integrite est prouvee par empreinte SHA-256
+# (docs/operations/integrite-et-conformite-documents.md). Un reformatage
+# silencieux invaliderait cette preuve.
+# « * [0-9] » ecarte les copies de conflit iCloud, du type « node_modules 2 ».
+extend-exclude = [".venv", "node_modules", "*.md", "* [0-9]", "* [0-9][0-9]"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle, erreurs
+    "W",    # pycodestyle, avertissements
+    "F",    # pyflakes
+    "I",    # isort, ordre des imports
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "S",    # flake8-bandit, securite
+    "ANN",  # annotations de type obligatoires
+    "C4",   # comprehensions
+    "SIM",  # simplifications
+    "RUF",  # regles propres a Ruff
+]
+ignore = [
+    "ANN401",  # Any explicite tolere lorsqu'il est justifie
+]
+
+[tool.ruff.lint.per-file-ignores]
+# assert est l'outil normal d'un test : S101 n'a pas de sens dans tests/.
+"**/tests/**" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "worker"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ----------------------------------------------------------------------------
+#  mypy - mode strict (DEC-442)
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+files = ["apps/api", "apps/worker"]
+exclude = ['(^|/)\.venv/', '(^|/)node_modules/']
+
+# ----------------------------------------------------------------------------
+#  pytest
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["apps/api/tests", "apps/worker/tests"]
+addopts = "-ra --strict-markers --strict-config"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.0",
+]

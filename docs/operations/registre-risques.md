@@ -8,10 +8,10 @@
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `028` | 4 |
-| **Total** | | **28** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `029` | 5 |
+| **Total** | | **29** |
 
-**Prochain identifiant libre : `ROAD-RSK-029`.**
+**Prochain identifiant libre : `ROAD-RSK-030`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -86,8 +86,14 @@ Leur libellé et leur impact sont inchangés.
 | Mesures en place | `.gitignore` empêche Git de suivre `node_modules/`, `data/`, `volumes/`, `backups/`. **Cela n'empêche pas iCloud de les synchroniser.** |
 | **Mesure du 27/07/2026, sous-étape `T0`** | Le périmètre réel du risque est **plus étroit qu'annoncé**. `docker info` rapporte `Docker Root Dir : /var/lib/docker`, à l'intérieur de la machine virtuelle Docker Desktop, dont l'image disque de 28 Go réside sous `~/Library/Containers/com.docker.docker/Data/vms` — **hors iCloud Drive**. Tout **volume Docker nommé est donc déjà hors iCloud**, sans aucune action. Le risque ne portait réellement que sur `node_modules/`, le cache de paquets, et sur d'éventuels bind mounts de données vers le dépôt. |
 | Atténuations retenues | `DEC-439` : `node_modules/` et le cache de paquets exclus de la synchronisation iCloud, store `pnpm` placé hors du dossier synchronisé, le dépôt restant dans iCloud. `DEC-447` : volumes nommés exclusivement, **aucun bind mount de donnée d'état** vers `./data`, `./volumes` ou `./backups` — c'est le seul geste qui ramènerait le risque sur les données. |
-| Risque résiduel | La synchronisation de `.git` lui-même demeure, inchangée depuis `DEC-418`. Conflits et éviction de fichiers restent possibles sur le dépôt, non sur les données de service. |
-| Statut | **Accepté** par `DEC-418`, **atténué** par `DEC-439` et `DEC-447`. `QO-109` close. |
+| **Mise en œuvre du 27/07/2026, sous-étape `T1`** | `DEC-453`. L'exclusion passe par l'attribut étendu `com.apple.fileprovider.ignore#P`. **Défaut découvert en posant la mesure : `pnpm install` supprime et recrée les `node_modules`, ce qui efface l'attribut** ; `uv` réutilise le `.venv` et le préserve. Une cible de `Makefile` seule n'aurait donc protégé que les installations lancées par `make`. Le marquage est confié à [`infra/scripts/exclure-icloud.sh`](../../infra/scripts/exclure-icloud.sh), appelé par `make icloud-exclude` **et** par le `postinstall` de `package.json`, que pnpm exécute après chaque installation. La cible `make icloud-verify` échoue si un répertoire n'est pas marqué : c'est elle qui a détecté l'effacement. |
+| Volumétrie soustraite à iCloud, mesurée à `T1` | **276 Mio et 13 252 fichiers** dans le dépôt : `node_modules` 178 Mio / 11 066 fichiers, `.venv` 98 Mio / 2 176 fichiers, plus 40 Kio dans les trois `node_modules` d'espaces de travail. Hors dépôt et donc hors iCloud par construction : store `pnpm` 166 Mio, cache `uv` 103 Mio, CPython géré par `uv` 69 Mio. |
+| **⚠ RISQUE MATÉRIALISÉ le 27/07/2026, constaté en `T1`** | **Ce risque n'est plus théorique.** Chronologie établie sur les horodatages d'inode, non sur des suppositions : **17:21:19** — création d'un répertoire `node_modules 2`, copie de conflit iCloud de 178 Mio et 11 066 fichiers, quelques minutes après la première pose de l'attribut d'exclusion ; **23:30:28 et 23:30:30** — les deux répertoires subissent un changement de métadonnées d'inode, sans qu'aucune action de session ne l'explique ; **au matin du 28/07** — la copie `node_modules 2` **porte** l'attribut d'exclusion, l'original `node_modules` l'a **perdu**, tous ses attributs étendus ayant disparu. Effets mesurés : `prettier --check .` passait de moins d'une seconde à **179 secondes** et échouait, en parcourant les 11 066 fichiers du duplicata. |
+| Ce qu'il faut en retenir | **(1)** L'attribut d'exclusion **n'est pas durable dans le temps** : il ne suffit pas de le poser, il faut le vérifier. **(2)** Sa pose sur un répertoire qu'iCloud suit déjà a coïncidé avec la duplication — le mécanisme exact n'est pas établi et ne doit pas être affirmé, mais la corrélation temporelle est nette. **(3)** C'est `make icloud-verify` qui a détecté l'anomalie, pas un contrôle manuel : un vérificateur qui échoue est ce qui distingue une atténuation d'une intention. |
+| Atténuations complétées en `T1` | Le nom d'une copie de conflit iCloud est le nom d'origine suivi d'une espace et d'un chiffre. Le motif `* [0-9]` est désormais exclu dans `.gitignore`, `.prettierignore`, `[tool.ruff] extend-exclude` et `eslint.config.js`, et **`make icloud-verify` échoue si une telle copie existe**. |
+| Risque résiduel | Trois éléments. **(a)** La synchronisation de `.git` lui-même demeure, inchangée depuis `DEC-418`. **(b)** Le respect effectif de l'attribut par iCloud n'est **pas prouvé localement** : convention documentée par Apple, qu'aucun outil de cette machine ne permet de vérifier — `brctl` ne couvre pas les chemins CloudDocs et renvoie 0 sur erreur. **(c)** **Nouveau et le plus sérieux :** l'atténuation s'est révélée non durable en moins de sept heures, et la duplication qu'elle devait prévenir s'est produite. Un `node_modules` dans l'arborescence synchronisée reste exposé. |
+| Arbitrage rendu le 28/07/2026 | `DEC-457`. Trois issues avaient été soumises à Jonathan : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir `DEC-418`. **Retenu : maintenir l'atténuation en l'état**, avec `make icloud-verify` exécuté en début de session et intégré à `make check`. `DEC-418` n'est pas rouverte. La copie `node_modules 2` a été supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. |
+| Statut | **Accepté** par `DEC-418`, **atténué** par `DEC-439`, `DEC-447` et `DEC-453`, **matérialisé le 27/07/2026**, **résiduel accepté** par `DEC-457`. `QO-109` close. À revoir à chaque porte. |
 
 ## `ROAD-RSK-027` — Mémoire vive insuffisante pour trois environnements simultanés
 
@@ -110,6 +116,17 @@ Leur libellé et leur impact sont inchangés.
 | Mesure | Validation explicite enregistrée sans modification du fichier. |
 | Statut | **Clos** par `DEC-423`, le 27 juillet 2026. |
 | Écart associé | `ECART-003` |
+
+## `ROAD-RSK-029` — Un outil de formatage réécrit les documents de cadrage immuables
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, sous-étape `T1` du LOT 1 |
+| Description | Les outils de formatage installés au LOT 1 traitent le Markdown par défaut. **Mesuré, non supposé :** exécuté sans exclusion, Prettier signalait les **cinq documents de cadrage immuables** comme à reformater, et la réécriture du seul cahier des charges lui ajoutait **54 661 octets**, soit **+21,7 %** — de 251 489 à 306 150 octets. Ruff, de son côté, voyait **41 fichiers Markdown** au lieu des 4 fichiers Python du dépôt, parce qu'il formate les blocs de code embarqués. |
+| Impact | **Critique sur la traçabilité.** L'intégrité des cinq documents est prouvée par empreinte SHA-256 dans [`integrite-et-conformite-documents.md`](integrite-et-conformite-documents.md), et cette preuve est un élément de la porte `G0` franchie le 27/07/2026. Un reformatage automatique, y compris purement cosmétique, invaliderait les cinq empreintes d'un seul commit — sans qu'aucun contrôle existant ne le signale, puisque le contenu resterait sémantiquement identique. |
+| Mesures | `DEC-454` : le Markdown est exclu de Ruff (`extend-exclude`) **et** de Prettier (`.prettierignore`), avec le motif inscrit dans les deux fichiers pour qu'un futur contributeur ne lève pas l'exclusion par méconnaissance. Contrôle de non-régression exécuté à `T1` : les 5 empreintes sont conformes, avec témoin négatif. |
+| Risque résiduel | Réel. Tout outil ajouté plus tard — markdownlint, un formateur en CI, un greffon d'éditeur, un correcteur automatique de pull request — rouvrirait le risque. **Recommandation pour `T6` :** ajouter à la CI un contrôle qui recalcule les cinq empreintes et échoue si l'une diffère. C'est le seul garde-fou qui ne dépende pas de la configuration d'un outil particulier. |
+| Statut | **Actif, traité** par `DEC-454`. Garde-fou de CI à poser en `T6`. |
 
 ---
 

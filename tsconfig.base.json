@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_commentaire": [
+    "Configuration TypeScript partagee du monorepo.",
+    "LOT 1, sous-etape T1, story MVP-L01-US001.",
+    "Le cahier des charges 17.1 exige TypeScript strict : c'est cette",
+    "configuration, appliquee par 'tsc --noEmit', qui porte l'exigence.",
+    "forceConsistentCasingInFileNames n'est pas decoratif : le systeme de",
+    "fichiers de la machine de developpement est insensible a la casse."
+  ],
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true,
+
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "noEmit": true
+  }
+}

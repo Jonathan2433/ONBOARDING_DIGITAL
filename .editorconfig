@@ -1,0 +1,26 @@
+# .editorconfig — eXalt Onboarding Digital
+# LOT 1, sous-etape T1, story MVP-L01-US001.
+#
+# Complete .gitattributes, qui normalise les fins de ligne a l'ecriture dans
+# Git : ce fichier les normalise dans l'editeur, avant meme le commit.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.md]
+# Deux espaces en fin de ligne sont un retour a la ligne significatif.
+trim_trailing_whitespace = false
+
+[Makefile]
+# make exige des tabulations reelles en tete de recette.
+indent_style = tab
