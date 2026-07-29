@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -24,8 +24,9 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-466+`, sous-étape `T4` | 4 | Validées le 28/07/2026 |
-| Réalisation du LOT 1 `DEC-470+`, sous-étape `T5` | 4 | Soumises le 28/07/2026 |
-| **Total** | **141** | |
+| Réalisation du LOT 1 `DEC-470+`, sous-étape `T5` | 4 | Validées le 28/07/2026 |
+| Réalisation du LOT 1 `DEC-474+`, sous-étape `T6` | 4 | Soumises le 29/07/2026 |
+| **Total** | **145** | |
 
 ---
 
@@ -95,7 +96,7 @@ tranche les 7 choix techniques de §9.2, qu'aucun document validé ne fixait.
 | `enforce_admins` | **Activé** — sans quoi le propriétaire contournerait la règle et le contrôle ne prouverait rien |
 | Push forcés, suppressions | Rejetés |
 | Historique linéaire, résolution des conversations | Exigés |
-| Contrôles d'intégration obligatoires | **Aucun pour l'instant** — à ajouter en `T6`, quand la CI existera |
+| Contrôles d'intégration obligatoires | **Posés en `T6`** le 29/07/2026 : contexte unique « Porte de l integration continue », `strict` actif, sur `develop` **et** `main`. Voir `DEC-476` |
 
 **Preuve d'effectivité**, et non simple constat de réglage : une tentative de push direct d'un
 commit vide sur `main` puis sur `develop` a été **rejetée** par le serveur avec
@@ -216,7 +217,19 @@ issue `#3`. Soumises à Jonathan le 28 juillet 2026.
 - **Toute couleur de marque** : `packages/ui` est vide jusqu'à `T10` et la charte relève de
   `DEP-006`. Poser une palette approximative créerait la dette que `US007` cherche à éviter.
 
-**Prochain identifiant libre : `DEC-474`.**
+## 1.9 Réalisation du LOT 1 — sous-étape `T6`
+
+Décisions prises pendant la mise en place de l'intégration continue, story
+`MVP-L01-US005`, issue `#6`. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-474` | L'audit de dépendances **tolère un avis nommé et un seul**, `GHSA-mh99-v99m-4gvg`, déclaré dans `pnpm-workspace.yaml`. Ce n'est **pas** un abaissement de seuil : tout autre avis, de toute sévérité, continue de faire échouer `make audit` et donc l'intégration continue. | `brace-expansion` ≤ 5.0.7, déni de service, sévérité **haute**, atteint par `eslint-plugin-jsx-a11y > minimatch@3.1.5`. **Le correctif évident est exclu par la mesure** : la dernière version publiée de la ligne 1.x **est** 1.1.16, il n'existe donc aucun correctif dans cette ligne ; et forcer 5.0.8 casserait le lint, car son export CommonJS est un **objet** portant `.expand`, non une fonction appelable, alors que `minimatch@3.1.5` fait `expand(motif)` — mesuré le 29/07/2026, « m is not a function ». On aurait remplacé un déni de service théorique par la neutralisation certaine d'ESLint, donc de `eslint-plugin-jsx-a11y`, motif déterminant de `DEC-451`. La dépendance est transitive et **de développement seulement** : elle s'exécute au lint, sur nos propres motifs de fichiers, et n'entre dans aucun artefact livré. Éprouvé par témoin : un identifiant bidon à la place du vrai fait de nouveau échouer l'audit. La sortie affiche « 1 high (**1 ignored**) » : la tolérance reste visible, non silencieuse. Voir `ROAD-RSK-032`. | Validée |
+| `DEC-475` | Le workflow se découpe en **deux tâches** — « qualité » sans aucun service, « stack » avec les huit — et une troisième, **« porte »**, qui récapitule et conclut. Chaque action GitHub est référencée par **empreinte de commit**, jamais par étiquette, et Gitleaks est téléchargé puis **vérifié par empreinte SHA-256** avant exécution. | Deux tâches parce que le retour qualité ne doit pas attendre la construction des images : mesuré à 1 min 08 contre 1 min 57. Une porte unique parce que c'est **ce contexte** que la protection de branche exige : ajouter ou renommer une tâche ne demande alors aucun réglage côté GitHub, et aucune tâche ne peut disparaître sans que la porte le voie. L'épinglage par empreinte prolonge `DEC-443` pour les images et `DEC-456` pour l'outillage : une étiquette se déplace, une empreinte non. Vérifier l'empreinte d'un binaire **de sécurité** avant de l'exécuter n'est pas une précaution excessive, c'est la cohérence minimale. | Validée |
+| `DEC-476` | Les contrôles d'intégration deviennent **obligatoires sur `develop` ET sur `main`**, avec `strict` actif — la branche doit être à jour avant fusion. Le contexte exigé est **« Porte de l integration continue »**, seul. | Les conventions Git §2 le prévoyaient « au LOT 1, quand la CI existe ». Arbitrage de Jonathan sur trois options présentées. Sans cela, le critère de sortie de la roadmap — « la CI **bloque** volontairement une erreur de lint, de test et de secret » — ne serait satisfait que par la démonstration, pas par le réglage : un workflow rouge qui laisse fusionner ne bloque rien. Effet à connaître : `enforce_admins` étant actif, la règle s'applique aussi à Jonathan. Si un contrôle se bloque pour une cause extérieure, c'est à lui de désactiver temporairement le réglage. Les huit réglages précédents ont été **reconduits à l'identique** dans le même appel, l'API remplaçant l'objet entier. | Validée |
+| `DEC-477` | `make up` démarre en **deux temps** : d'abord `db`, `redis`, `minio` et `mailpit` avec attente de l'état sain, **puis la création du bucket MinIO**, puis les services applicatifs. | La sonde `ready` de l'API fait un `head_bucket` : tant que le bucket n'existe pas elle répond 503, le conteneur `api` n'est donc jamais `healthy`, et `up --wait` échoue sur « dependency failed to start ». Or le bucket n'était créé qu'**après** cette attente. Le défaut n'a jamais pu paraître en local, le volume `minio-data` survivant à `make down` : il s'est montré au **premier démarrage sur une machine neuve**, l'exécuteur d'intégration continue. Reproduit localement en supprimant le seul volume MinIO — `caddy-data` préservé pour ne pas invalider l'approbation de la racine dans le trousseau — puis corrigé et revérifié depuis le même état. **`T8` devra reproduire cet ordre** dans la surcouche de recette. | Validée |
+
+**Prochain identifiant libre : `DEC-478`.**
 
 ---
 
@@ -383,7 +396,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
 | `DEC-466+` — réalisation du LOT 1, `T4` | 4 | 4 |
 | `DEC-470+` — réalisation du LOT 1, `T5` | 4 | 4 |
-| **Total** | **141** | **141** |
+| `DEC-474+` — réalisation du LOT 1, `T6` | 4 | 4 |
+| **Total** | **145** | **145** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

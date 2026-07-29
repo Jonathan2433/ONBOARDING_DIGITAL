@@ -1,17 +1,17 @@
 # Registre des risques
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
 **Sources reprises :** roadmap §14 et cahier des charges §33
 
 | Origine | Identifiants | Nombre |
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `031` | 7 |
-| **Total** | | **31** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `032` | 8 |
+| **Total** | | **32** |
 
-**Prochain identifiant libre : `ROAD-RSK-032`.**
+**Prochain identifiant libre : `ROAD-RSK-033`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -154,6 +154,20 @@ Leur libellé et leur impact sont inchangés.
 | Mesure | Aucune à `T5`, volontairement, et **c'est dit plutôt que laissé croire**. `T7` doit introduire un `Dockerfile` multi-étapes avec **deux cibles nommées** : une de développement conservant le serveur Vite, une d'exécution servant l'artefact de `vite build`. `T8` doit alors sélectionner explicitement la cible d'exécution dans la surcouche de recette. Traite le même défaut que `ROAD-RSK-030` par le même moyen. |
 | Contrôle proposé pour `T8` | Vérifier que la page servie en recette ne porte **aucune** référence à `/@vite/client` — présente en développement, absente d'un artefact construit. Un contrôle qui distingue les deux modes, et non un contrôle qui vérifie seulement que la page répond. |
 | Statut | **Ouvert.** À traiter en `T7`, contrôlé en `T8`. |
+
+---
+
+## `ROAD-RSK-032` — Une vulnérabilité haute subsiste dans une dépendance de développement, sans correctif applicable
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, sous-étape `T6` du LOT 1, par le contrôle 10 du cahier §23.1 lui-même |
+| Description | `GHSA-mh99-v99m-4gvg` — `brace-expansion` ≤ 5.0.7, déni de service par expansion non bornée provoquant un arrêt du processus faute de mémoire. **Sévérité haute.** Chemin : `eslint-plugin-jsx-a11y > minimatch@3.1.5 > brace-expansion@1.1.16`. |
+| Impact réel, et il faut le mesurer plutôt que le supposer | **Faible.** La dépendance est **transitive** et **de développement seulement** : elle s'exécute pendant `eslint`, sur les motifs de fichiers que **nous** écrivons dans `eslint.config.js`, et n'entre dans **aucun artefact livré** — ni l'image `api`, ni `worker`, ni le futur artefact statique de `web`. Le déclencheur du déni de service serait un motif d'expansion hostile ; il n'y en a pas, et il n'y en aura pas sans qu'un humain l'écrive dans la configuration du lint. |
+| Pourquoi ce n'est pas corrigé — **mesuré, pas supposé** | Deux mesures du 29/07/2026 ferment les deux issues évidentes. **1.** La dernière version publiée de la ligne 1.x **est** `1.1.16`, celle qui est installée : il n'existe **aucun correctif** dans cette ligne, seulement en `5.0.8`. **2.** Forcer `5.0.8` **casserait le lint** : son export CommonJS est un **objet** portant `.expand`, et non une fonction appelable, alors que `minimatch@3.1.5` fait `expand(motif)` — vérifié en installant la version et en l'appelant, « m is not a function ». On remplacerait donc un déni de service théorique par la neutralisation **certaine** d'ESLint, et avec lui de `eslint-plugin-jsx-a11y`, motif déterminant de `DEC-451` et seul garde-fou d'accessibilité automatisé du projet. |
+| Mesure retenue | **Tolérance nommée et étroite** (`DEC-474`) : `auditConfig.ignoreGhsas` dans `pnpm-workspace.yaml`, cet avis et lui seul. Tout autre avis, de toute sévérité, continue de faire échouer `make audit` et donc l'intégration continue — éprouvé par témoin, un identifiant bidon fait rééchouer l'audit. La sortie affiche « 1 high (**1 ignored**) » : la tolérance est **visible** dans chaque exécution, jamais silencieuse. |
+| Déclencheur de réévaluation | La mise à jour d'`eslint-plugin-jsx-a11y` vers un `minimatch` moderne. **Le même greffon déclare déjà ESLint `^3 || … || ^9` alors que nous exécutons ESLint 10** : sa mise à jour est à surveiller pour les deux motifs à la fois. Retirer alors la tolérance et vérifier que `make audit` reste vert sans elle. |
+| Statut | **Ouvert, résiduel accepté en connaissance de cause.** À réévaluer à chaque lot, et au plus tard à la porte `G12`, recette transverse. |
 
 ---
 

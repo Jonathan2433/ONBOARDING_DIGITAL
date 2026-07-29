@@ -151,6 +151,12 @@ describe('etat nominal', () => {
     for (const absent of ['worker Dramatiq', 'Mailpit', 'Caddy']) {
       expect(texte).toContain(absent);
     }
+    // L'enumeration ouvre une phrase : elle doit donc commencer par une
+    // majuscule. Ce test manquait en `T5`, et le defaut n'a ete vu qu'en lisant
+    // la page rendue dans un navigateur : `toContain` est insensible a la
+    // casse initiale de la phrase qui porte le mot cherche.
+    expect(texte).toContain('Le worker Dramatiq, Mailpit et Caddy ne sont pas sondés');
+    expect(texte).not.toContain('. le worker Dramatiq');
   });
 });
 

@@ -1,17 +1,17 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
 |---|---:|---:|
 | Bloquantes avant données réelles ou production générale | 17 | 0 |
 | Non bloquantes pour le développement | 12 | 1 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 8 | 3 |
-| **Total** | **37** | **4** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 9 | 3 |
+| **Total** | **38** | **4** |
 
-**33 questions restent ouvertes.** Ouvertes le 28 juillet 2026 : `QO-111` en `T2`
+**34 questions restent ouvertes.** Ouvertes le 28 juillet 2026 : `QO-111` en `T2`
 (fournisseur de collation PostgreSQL) et `QO-112` en `T3` (liste des extensions
 PostgreSQL), les deux à trancher au **LOT 2** avec le modèle de données ; `QO-113` en `T4`
 (conservation calendaire des journaux), à trancher au **LOT 13**. Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
@@ -20,7 +20,7 @@ PostgreSQL), les deux à trancher au **LOT 2** avec le modèle de données ; `QO
 iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa réponse et sa
 date de clôture ; elle n'est jamais retirée du registre.
 
-**Prochain identifiant libre : `QO-114`.**
+**Prochain identifiant libre : `QO-115`.**
 
 > **Trous conservés dans la séquence.** La plage `QO-072` à `QO-105` couvre 34 numéros mais
 > seules **29** questions sont présentes dans le corpus. Absentes : `QO-075`, `QO-079`,
@@ -217,6 +217,7 @@ GitHub interdisant l'auto-approbation.
 | ID | Question | Responsable | Bloque | Statut |
 |---|---|---|---|---|
 | `QO-106` | Retient-on les compléments d'étiquettes GitHub proposés — familles `type`, `gravité` et `état` ? Ils ne sont pas prescrits par les documents validés. | Jonathan | Non. Confort de suivi. | Ouverte |
+| `QO-114` | **Les droits d'administration sont-ils nécessaires à la production temporaire locale du LOT 13, et si oui qui les accorde ?** Mesure du 29/07/2026 : `id -Gn` ne place `jonathan.dupau` dans **aucun** groupe `admin`, et `sudo` répond « is not in the sudoers file ». Le LOT 13 prévoit `restic`, Uptime Kuma, des services au démarrage et une rotation de journaux hors Docker — plusieurs réclament habituellement des droits élevés. Ce qui a déjà été contourné sans eux : outillage dans `~/.local/bin`, ports 80 et 443 publiés par Docker Desktop, `*.onboarding.localhost` résolu sans toucher à `/etc/hosts`, et l'approbation de la racine Caddy faite dans le trousseau **de session**. | Jonathan / DSI | **LOT 13, à instruire avant** | Ouverte |
 | `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | **Close le 27/07/2026 par l'affirmative.** Le plan autorise la protection classique sur ce dépôt privé personnel : `main` et `develop` sont protégées avec `enforce_admins`, et le rejet du push direct est prouvé (`GH006`). **Le repli `pre-push` devient sans objet.** `DEC-449` |
 | `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026.** Réponse initiale `DEC-448` — mise en place dans l'interface par Jonathan. **Réponse effective `DEC-449`, qui remplace `DEC-448`** : installation du binaire `gh` 2.96.0 dans `~/.local/bin` par l'agent, Homebrew étant inutilisable, puis authentification par Jonathan et exécution par `gh` |
 | `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. Était à trancher au LOT 1, avant création des volumes. | **Close le 27/07/2026**, sous-étape `T0`, par `DEC-439` et `DEC-447` |

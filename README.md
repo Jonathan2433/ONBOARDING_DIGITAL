@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T5` **faite** — page de statut, story `MVP-L01-US002`, issue [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3). Suivante : `T6`, intégration continue |
+| Sous-étape en cours | `T6` **faite** — intégration continue, story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6). Suivante : `T7`, images multiarchitecture |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
@@ -40,11 +40,12 @@ make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page de statut a travers Caddy
 ```
 
-`make help` liste les 33 cibles.
+`make help` liste les 37 cibles.
 
-> **Un avertissement de certificat s'affichera** en ouvrant `https://app.onboarding.localhost`
-> dans un navigateur : la racine de l'autorité interne de Caddy n'est pas approuvée dans le
-> trousseau macOS. La commande d'approbation figure dans [`CLAUDE.md`](CLAUDE.md) §5.6.
+> **La racine de l'autorité interne de Caddy est approuvée** dans le trousseau de session depuis
+> le 29 juillet 2026 : `https://app.onboarding.localhost` s'ouvre sans avertissement. Si le volume
+> `caddy-data` est détruit, une nouvelle racine est engendrée et l'approbation doit être refaite —
+> la commande, **sans `sudo`**, figure dans [`CLAUDE.md`](CLAUDE.md) §5.6.
 
 ---
 
@@ -131,7 +132,8 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 ├── .prettierrc.json           ← Prettier
 ├── .prettierignore            ← Markdown exclu : protège les documents immuables (DEC-454)
 ├── .dockerignore              ← contexte de construction : deps, caches, .env (DEC-473)
-├── .github/                   ← gabarits de pull request et d'issues
+├── .github/                   ← gabarits, et workflows/ci.yml : les 11 controles (T6)
+├── .gitleaks.toml             ← detection de secrets, regles propres au projet (T6)
 ├── apps/
 │   ├── api/                   ← API FastAPI, 3 healthchecks, migration Alembic
 │   ├── worker/                ← worker Dramatiq, les 7 files declarees
@@ -189,10 +191,10 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 141 |
+| [Décisions](docs/decisions/registre-decisions.md) | 145 |
 | [Écarts](docs/decisions/registre-ecarts.md) | 21 — 5 ouverts, 14 clos, 2 acceptés |
-| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 37 — 33 ouvertes |
-| [Risques](docs/operations/registre-risques.md) | 31 |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 38 — 34 ouvertes |
+| [Risques](docs/operations/registre-risques.md) | 32 |
 | [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
 | [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |
 
