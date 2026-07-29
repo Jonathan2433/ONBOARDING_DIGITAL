@@ -234,6 +234,53 @@ jobs:
       - name: Recuperer le depot
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # ----------------------------------------------------------------------
+      #  AVANT toute authentification : le registre EXIGE-T-IL des identifiants ?
+      #
+      #  Le critere de la story dit « l'acces au registre est authentifie ». Se
+      #  connecter puis tirer prouve que l'authentification FONCTIONNE ; cela ne
+      #  prouve pas que le registre la REQUIERT, ni que le paquet est prive.
+      #
+      #  Et « le tirage anonyme a echoue » serait indistinguable de « l'image
+      #  n'existe pas » — c'est exactement le piege T2-1, ou un 429 masque etait
+      #  lu comme une absence. Le controle exige donc DEUX choses :
+      #    1. l'echec anonyme, ET un motif d'AUTORISATION dans le message ;
+      #    2. la reussite authentifiee sur LA MEME reference, a l'etape suivante,
+      #       qui prouve que l'image existe bel et bien.
+      #  Les deux ensemble discriminent. Aucun des deux seul ne prouve rien.
+      # ----------------------------------------------------------------------
+      - name: Le registre exige-t-il des identifiants ? (anonyme, doit ECHOUER)
+        run: |
+          set -uo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            reference="${base}/${service}@${paire#*=}"
+            sortie=$(docker buildx imagetools inspect --raw "${reference}" 2>&1)
+            code=$?
+            echo "  ${service} : code=${code}"
+            if [ "${code}" -eq 0 ]; then
+              echo "  ECHEC : ${reference} est lisible SANS authentification." >&2
+              echo "          Le paquet GHCR n'est pas prive. Cahier 22.3." >&2
+              exit 1
+            fi
+            # Le motif doit parler d'AUTORISATION, pas d'autre chose.
+            if ! printf '%s' "${sortie}" | grep -qiE 'unauthor|denied|401|403|insufficient_scope|authentication'; then
+              echo "  ECHEC : l'acces anonyme echoue, mais pour un motif qui n'est PAS" >&2
+              echo "          une question d'autorisation. Le controle ne prouverait rien :" >&2
+              printf '          %s\n' "${sortie}" >&2
+              exit 1
+            fi
+            echo "    ok  refus d'autorisation, et non une absence"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
+
       - name: Installer QEMU
         if: matrix.plateforme == 'linux/arm64'
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -246,6 +293,26 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Et AVEC identifiants, la meme reference est lisible (doit REUSSIR)
+        # Le second sens du controle ci-dessus. C'est lui qui prouve que l'echec
+        # anonyme portait bien sur une image EXISTANTE.
+        run: |
+          set -euo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            reference="${base}/${service}@${paire#*=}"
+            docker buildx imagetools inspect --raw "${reference}" > /dev/null
+            echo "    ok  ${service} lisible APRES authentification"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
 
       - name: Dire quelle architecture est NATIVE sur cet executeur
         run: |
@@ -280,8 +347,18 @@ jobs:
             cible=""
             if [ "${service}" = "web" ]; then cible="execution"; fi
             docker pull --platform "${{ matrix.plateforme }}" "${reference}"
+            # --version et --revision : le controle compare l'identite LUE dans
+            # l'image a celle que la CONSTRUCTION a declaree, et non a « different
+            # du defaut ». Motif mesure : sur une branche de travail comme sur
+            # `develop`, il n'existe AUCUNE version — DEC-428 les jalonne sur les
+            # tags — et le workflow publie honnetement `0.0.0-dev`. La valeur
+            # injectee EST le defaut, et « different du defaut » etait donc une
+            # assertion qu'une situation legitime ne peut pas satisfaire.
+            # Execution 30442686377 : le controle a echoue sur une image correcte.
             python3 infra/scripts/verifier-images.py fonctionnel \
               "${service}" "${reference}" \
+              --version "${{ needs.publier.outputs.version }}" \
+              --revision "${{ needs.publier.outputs.revision }}" \
               --plateforme "${{ matrix.plateforme }}" \
               ${cible:+--cible} ${cible}
             examinees=$((examinees + 1))

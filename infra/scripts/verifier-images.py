@@ -40,7 +40,8 @@ USAGE
     verifier-images.py manifeste <etiquette> [--metadonnees <fichier.json>]
     verifier-images.py registre  <reference@sha256:...>
     verifier-images.py taille    <etiquette> <service> <plafond_mio>
-    verifier-images.py fonctionnel <service> <etiquette> <plateforme>
+    verifier-images.py fonctionnel <service> <etiquette> --version V --revision R
+                                   [--plateforme P] [--cible C]
     verifier-images.py environnement
 """
 
@@ -689,8 +690,16 @@ def machine_dans_le_conteneur(
     return lancer("docker", "run", "--rm", "--platform", plateforme, etiquette, *commande)
 
 
-def attendre_http(url: str, essais: int = 40, delai: float = 0.5) -> tuple[int | None, str]:
-    """Interroger jusqu'a obtenir une reponse HTTP, code inclus meme sur 4xx/5xx."""
+def attendre_http(url: str, essais: int = 150, delai: float = 1.0) -> tuple[int | None, str]:
+    """Interroger jusqu'a obtenir une reponse HTTP, code inclus meme sur 4xx/5xx.
+
+    LE BUDGET EST GENEREUX PARCE QUE L'EMULATION EST LENTE, et il ne coute rien
+    quand tout va vite : la boucle rend la main des la premiere reponse. Sous
+    QEMU, le demarrage d'uvicorn prend un ordre de grandeur de plus qu'en natif.
+    Un budget calibre sur le natif ferait echouer le controle pour une raison qui
+    n'a rien a voir avec l'image — et le diagnostic couterait cher, l'echec
+    ressemblant a « le conteneur ne repond pas ».
+    """
     dernier = ""
     for _ in range(essais):
         try:
@@ -781,7 +790,51 @@ def refus_de_demarrer(journal: Journal, etiquette: str, plateforme: str) -> None
     )
 
 
-def fonctionnel_api(journal: Journal, etiquette: str, plateforme: str, port: int) -> None:
+class Attendus:
+    """Version et revision que la CONSTRUCTION a declarees.
+
+    POURQUOI ON COMPARE A UNE VALEUR ATTENDUE, ET NON A « DIFFERENT DU DEFAUT »
+        La premiere version de ces controles exigeait que la version lue differe
+        de `0.0.0-dev`. Mesure du 29/07/2026, execution 30442686377 : le controle
+        a ECHOUE sur une image parfaitement correcte.
+
+        Motif : `DEC-428` jalonne les versions sur les portes et les pose en TAGS.
+        Sur une branche de travail comme sur `develop`, il n'existe donc AUCUNE
+        version, et le workflow publie honnetement `0.0.0-dev`. La valeur injectee
+        EST le defaut. « Different du defaut » etait donc une assertion qu'une
+        situation legitime ne peut pas satisfaire — le defaut T5-6 pris a l'envers :
+        un succes qui produit la meme observation qu'un echec.
+
+        La revision, elle, est toujours significative : c'est l'empreinte du
+        commit. C'est elle qui prouvait deja que le mecanisme fonctionne —
+        `revision='b07f46c'`, et non `inconnue`.
+
+        Comparer a l'attendu est **plus fort** que comparer au defaut : cela
+        prouve que l'image porte LA version avec laquelle elle a ete construite,
+        et non seulement UNE version non nulle.
+
+        Les attendus sont OBLIGATOIRES. En leur absence le controle echoue, au
+        lieu de se degrader en silence en une assertion plus faible.
+    """
+
+    def __init__(self, version: str | None, revision: str | None) -> None:
+        self.version = version
+        self.revision = revision
+
+    def valides(self, journal: Journal) -> bool:
+        if self.version and self.revision:
+            return True
+        journal.echec(
+            "les valeurs ATTENDUES de version et de revision ne sont pas fournies : "
+            "passer --version et --revision. Sans elles ce controle se degraderait "
+            "en une assertion plus faible, en silence"
+        )
+        return False
+
+
+def fonctionnel_api(
+    journal: Journal, etiquette: str, plateforme: str, port: int, attendus: Attendus
+) -> None:
     refus_de_demarrer(journal, etiquette, plateforme)
 
     nom = f"t7-verif-api-{plateforme.replace('/', '-')}"
@@ -815,20 +868,18 @@ def fonctionnel_api(journal: Journal, etiquette: str, plateforme: str, port: int
         statut, corps = attendre_http(f"http://127.0.0.1:{port}/health/version")
         charge = json.loads(corps) if statut == 200 else {}
         journal.exiger(statut == 200, f"{plateforme} : /health/version -> {statut}")
-        # LE CONTROLE DISCRIMINANT DE L'INJECTION DE VERSION.
-        # Une image qui demarre mais dont la version vaut encore `0.0.0-dev` /
-        # `inconnue` prouverait l'execution et RIEN de l'injection : l'echec
-        # produirait la meme observation que le succes. On exige donc que les
-        # valeurs DIFFERENT des defauts.
+        # LE CONTROLE DISCRIMINANT DE L'INJECTION : la valeur lue est-elle CELLE
+        # que la construction a declaree ? Voir la classe `Attendus` pour le
+        # motif — comparer au defaut echouait sur une image correcte.
         journal.exiger(
-            charge.get("version") not in (None, "", "0.0.0-dev"),
-            f"{plateforme} : la version est INJECTEE et non le defaut "
-            f"(version={charge.get('version')!r})",
+            charge.get("version") == attendus.version,
+            f"{plateforme} : /health/version rend la version DE LA CONSTRUCTION "
+            f"(lu {charge.get('version')!r}, attendu {attendus.version!r})",
         )
         journal.exiger(
-            charge.get("revision") not in (None, "", "inconnue"),
-            f"{plateforme} : la revision est INJECTEE et non le defaut "
-            f"(revision={charge.get('revision')!r})",
+            charge.get("revision") == attendus.revision,
+            f"{plateforme} : /health/version rend la revision DE LA CONSTRUCTION "
+            f"(lu {charge.get('revision')!r}, attendu {attendus.revision!r})",
         )
 
         # `ready` SANS dependances : 503 avec les trois dependances NOMMEES
@@ -859,7 +910,9 @@ def fonctionnel_api(journal: Journal, etiquette: str, plateforme: str, port: int
         lancer("docker", "rm", "--force", nom)
 
 
-def fonctionnel_worker(journal: Journal, etiquette: str, plateforme: str) -> None:
+def fonctionnel_worker(
+    journal: Journal, etiquette: str, plateforme: str, attendus: Attendus
+) -> None:
     """Le worker « fonctionne » : il ping son courtier et declare ses 7 files.
 
     C'est le bar du healthcheck que le projet emploie deja depuis T3 —
@@ -940,12 +993,14 @@ def fonctionnel_worker(journal: Journal, etiquette: str, plateforme: str) -> Non
             f"attendu {MACHINE_ATTENDUE[plateforme]!r}",
         )
         journal.exiger(
-            version not in ("", "None", "0.0.0-dev"),
-            f"{plateforme} : APP_VERSION injectee ({version!r})",
+            version == attendus.version,
+            f"{plateforme} : APP_VERSION est celle DE LA CONSTRUCTION "
+            f"(lu {version!r}, attendu {attendus.version!r})",
         )
         journal.exiger(
-            revision not in ("", "None", "inconnue"),
-            f"{plateforme} : APP_REVISION injectee ({revision!r})",
+            revision == attendus.revision,
+            f"{plateforme} : APP_REVISION est celle DE LA CONSTRUCTION "
+            f"(lu {revision!r}, attendu {attendus.revision!r})",
         )
         journal.exiger(
             files == str(FILES_ATTENDUES),
@@ -1023,19 +1078,27 @@ def fonctionnel_web(
         lancer("docker", "rm", "--force", nom)
 
 
-def commande_fonctionnel(service: str, etiquette: str, plateformes: list[str], cible: str) -> int:
+def commande_fonctionnel(
+    service: str, etiquette: str, plateformes: list[str], cible: str, attendus: Attendus
+) -> int:
     print()
     print(f"  Controle FONCTIONNEL de `{service}` — {etiquette}")
     print("  Le critere dit « fonctionne », pas « est construite » : les conteneurs sont LANCES.")
+    print(f"  Identite attendue : version={attendus.version!r} revision={attendus.revision!r}")
     print()
     journal = Journal()
+    # `web` ne porte pas d'identite lisible a l'execution : l'artefact statique
+    # n'expose ni endpoint ni variable d'environnement. Ses etiquettes OCI sont
+    # verifiees par la commande `manifeste`.
+    if service in ("api", "worker") and not attendus.valides(journal):
+        return journal.conclure(f"identite attendue de `{service}` non fournie")
     port = {"api": 18901, "web": 18902}.get(service, 0)
     for plateforme in plateformes:
         if service == "api":
-            fonctionnel_api(journal, etiquette, plateforme, port)
+            fonctionnel_api(journal, etiquette, plateforme, port, attendus)
             port += 1
         elif service == "worker":
-            fonctionnel_worker(journal, etiquette, plateforme)
+            fonctionnel_worker(journal, etiquette, plateforme, attendus)
         elif service == "web":
             fonctionnel_web(journal, etiquette, plateforme, port, cible=cible)
             port += 1
@@ -1073,7 +1136,11 @@ def main(argv: list[str]) -> int:
         plateformes = list(PLATEFORMES_ATTENDUES)
         if "--plateforme" in argv:
             plateformes = [argv[argv.index("--plateforme") + 1]]
-        return commande_fonctionnel(service, etiquette, plateformes, cible)
+        attendus = Attendus(
+            argv[argv.index("--version") + 1] if "--version" in argv else None,
+            argv[argv.index("--revision") + 1] if "--revision" in argv else None,
+        )
+        return commande_fonctionnel(service, etiquette, plateformes, cible, attendus)
     print(f"commande inconnue : {commande}")
     print(__doc__)
     return 2

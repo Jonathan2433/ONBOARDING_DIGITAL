@@ -379,6 +379,7 @@ images-verify: ## Lancer les 3 images sur les 2 architectures et prouver qu'elle
 		service=$${spec%%:*}; reste=$${spec#*:}; cible=$${reste%%:*}; \
 		python3 infra/scripts/verifier-images.py fonctionnel \
 			$$service $(ETIQUETTE_LOCALE)/$$service:multiarch \
+			--version "$(VERSION_IMAGE)" --revision "$(REVISION_IMAGE)" \
 			$${cible:+--cible} $$cible || echec=1; \
 		examinees=$$((examinees + 1)); \
 	done; \
