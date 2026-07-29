@@ -261,13 +261,30 @@ env: ## Creer .env depuis .env.example, avec des secrets locaux generes
 		echo "    UPTIME_KUMA_PUSH_URL          -> supervision externe, LOT 13"; \
 	fi
 
+# DEMARRAGE EN DEUX TEMPS, et l'ordre n'est pas cosmetique.
+#
+# La sonde `ready` de l'API fait un `head_bucket` sur le bucket MinIO. Tant que
+# le bucket n'existe pas, elle repond 503, donc le conteneur `api` n'est jamais
+# `healthy`, donc `up --wait` echoue sur « dependency failed to start ».
+#
+# Ce defaut n'a jamais paru en local : le volume `minio-data` survit a
+# `make down`, et le bucket y etait donc deja. Il s'est montre au PREMIER
+# demarrage sur une machine neuve — l'executeur d'integration continue, le
+# 29/07/2026 — et il aurait fait echouer le critere de T9, « les procedures
+# fonctionnent depuis une machine propre ». Reproduit localement en supprimant
+# le seul volume minio : `minio indisponible, motif=RuntimeError`.
+#
+# Le bucket est donc cree APRES que MinIO soit sain, mais AVANT que l'API ne
+# doive l'etre.
 up: env ## Demarrer la stack de developpement : les 8 services
 	@echo "==> Construction des images api, worker et web"
 	$(DC_DEV) build
-	@echo "==> Demarrage, avec attente de l'etat sain"
+	@echo "==> Demarrage des services d'infrastructure"
+	$(DC_DEV) up --detach --wait db redis minio mailpit
+	@$(MAKE) --no-print-directory minio-bucket
+	@echo "==> Demarrage des services applicatifs"
 	$(DC_DEV) up --detach --wait
 	@$(MAKE) --no-print-directory caddy-reload
-	@$(MAKE) --no-print-directory minio-bucket
 	@echo
 	@$(MAKE) --no-print-directory health
 	@$(MAKE) --no-print-directory ports
