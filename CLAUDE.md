@@ -778,7 +778,7 @@ supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seu
 | ID | Objet |
 |---|---|
 | `ROAD-RSK-026` | iCloud — **matérialisé**, résiduel accepté par `DEC-457`. `make icloud-verify` |
-| `ROAD-RSK-029` | Un formateur peut réécrire les documents immuables. **Garde-fou de CI à poser en `T6`** |
+| `ROAD-RSK-029` | Un formateur peut réécrire les documents immuables. **Garde-fou posé en `T6`** : `make docs-check` recalcule les 5 empreintes à chaque pull request. Le risque reste ouvert — tout outil ajouté plus tard le rouvrirait — mais il est désormais **détecté** |
 | `ROAD-RSK-030` | Image `web` de **1,02 Gio** — **aggravé par `T5`**, qui y a ajouté `jsdom` et Testing Library. **À corriger en `T7`** par un `Dockerfile` multi-étapes installant les dépendances **de production seulement** |
 | `ROAD-RSK-031` | **Nouveau.** Le service `web` exécute le **serveur de développement** Vite, et toutes les surcouches en héritent. La recette servirait donc un artefact différent de la production. Deux cibles nommées en `T7`, sélection explicite en `T8` |
 | `ROAD-RSK-015` | Secret intégré au code — **mesure effective depuis `T6`** : Gitleaks sur chaque pull request, historique compris, avec des règles taillées sur les formats de ce projet |
@@ -885,7 +885,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 .
 ├── CLAUDE.md                    ← ce document. AGENTS.md est un lien symbolique, NON VERSIONNÉ
 ├── README.md · CONTRIBUTING.md
-├── Makefile                     ← 33 cibles, point d'entrée unique (DEC-441)
+├── Makefile                     ← 37 cibles, point d'entrée unique ET celui de la CI
 ├── .env.example                 ← v1.0, 78 variables, aucun secret
 ├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
 ├── .gitleaks.toml               ← regles taillees sur les formats de CE projet (T6)
@@ -911,7 +911,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  verifier-documentation.py  ← empreintes + sequences (T6)
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 141 décisions, 21 écarts
+    ├── decisions/                   ← 145 décisions, 21 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T5, registres
 ```
 
@@ -980,7 +980,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  42 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  50 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
   filtre de masquage, et les **cinq** fois où j'ai lu le code de sortie d'un `grep` en croyant lire
   celui d'une commande. En `T5`, **cinq défauts sur huit étaient dans mes contrôles**, pas dans le
   livrable — c'est la forme la plus insidieuse : on croit avoir prouvé. En `T6`, j'ai rejoué une
