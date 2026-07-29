@@ -61,7 +61,7 @@ on:
   # branche de T7 — meme besoin et meme reponse que la pull request jetable de
   # T6 — puis ce declencheur a ete RETIRE par ce commit. L'execution qui fait
   # foi est la 30453563474 : cinq taches vertes, porte comprise, sur le commit
-  # 90cdb14 de cette branche.
+  # 18cd131 de cette branche.
   workflow_dispatch:
 
 permissions:

@@ -217,8 +217,31 @@ simplement démarré, routes non montées, répondrait 404.
 | Liste blanche Gitleaks des empreintes | 64 hexadécimaux **sans** préfixe `sha256:` | **toujours détecté** — la liste blanche n'a rien affaibli |
 | Gitleaks, témoin positif | les 5 secrets réels de `.env` | **5 sur 5 détectés** |
 
-**Le tirage anonyme du registre** est le douzième, mais il vit dans la chaîne d'intégration et non en
-local : voir §5.4.
+### 5.4 Sur les images RÉELLEMENT PUBLIÉES — exécution [30453563474](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30453563474)
+
+**Cinq tâches vertes, porte comprise**, sur le commit `18cd131` de cette branche. C'est
+l'exécution qui fait foi.
+
+| Tâche | Résultat |
+|---|---|
+| `publier` | 3 images, `mediaType` d'index, **2 plateformes chacune**. Durées 160 s, 9 s, 117 s |
+| `verifier` `linux/amd64`, **natif** | **18 contrôles, 0 échec** — `api` 9, `worker` 5, `web` 4 |
+| `verifier` `linux/arm64`, **émulé** | **18 contrôles, 0 échec** — mêmes contrôles, `uname -m` = `aarch64` |
+| `analyser` (Trivy) | vert — **0 `CRITICAL` corrigeable** sur les trois images publiées |
+| `porte` | verte |
+| **De bout en bout** | **6 min 55** |
+
+**Le registre exige l'authentification, prouvé dans les deux sens sur les deux exécuteurs.** Tirage
+anonyme : **code 1 avec un motif d'autorisation** pour les trois images — et non une simple absence,
+ce qui est le piège `T2-1`. Puis tirage authentifié : **3/3 lisibles**. Les images sont référencées
+par **empreinte de liste de manifestes** transmise par la tâche de publication, jamais par étiquette :
+les deux tâches de la matrice ciblent donc, de façon vérifiable, **le même artefact**.
+
+**Comment la preuve a été obtenue avant la fusion.** `workflow_dispatch` ne suffisait pas : mesuré,
+`gh workflow run` répond **`HTTP 404: workflow images.yml not found on the default branch`** —
+GitHub exige qu'il existe sur la branche par défaut, or ce fichier n'atteindra `main` qu'à la porte
+`G1`. Un déclencheur **temporaire** nommant la seule branche de `T7` a donc été posé, puis **retiré**
+une fois la preuve obtenue. Même besoin et même réponse que la pull request jetable de `T6`.
 
 ### 5.3 Non-régression — la stack de développement n'a pas bougé
 
