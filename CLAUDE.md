@@ -25,15 +25,23 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Stories `Done` | **5 sur 8** : `US001` à `US005`. Issues `#2` à `#6` closes |
 | Stories restantes | `US006` images GHCR · `US007` design system (`P1`) · `US008` documentation |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
-| Branches | `main` 13 commits · `develop` **22 commits** après la fusion de `T6`. **Les deux protégées, et la CI y est désormais BLOQUANTE** |
+| Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **143 fichiers suivis** — 53 Markdown, 32 Python, 7 TypeScript, 6 TSX, **4 YAML** — **34 726 lignes** |
 | Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | Registres | **145 décisions** · 21 écarts (5 ouverts) · 38 questions (34 ouvertes) · 32 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
-> étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser — ce document se
-> décrit forcément dans son état **d'avant son propre commit**.
+> étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
+>
+> **Et un nombre a été retiré de ce tableau plutôt que corrigé : le compte de commits.** Il a été
+> faux trois fois de suite, pour une raison structurelle et non par négligence — un document qui
+> est lui-même commité se décrit dans son état **d'avant son propre commit**. Le corriger une
+> quatrième fois l'aurait rendu faux une quatrième fois. Un nombre qu'on ne peut pas tenir, on ne
+> l'affirme pas : on donne la commande qui le calcule. Les autres grandeurs de ce tableau sont
+> vérifiées exactes à la sortie de `T6`, et `make docs-check` couvre désormais les séquences
+> d'identifiants et les empreintes — mais **pas** les nombres cités en prose, qui restent à la
+> charge du lecteur.
 
 **La plateforme démarre, répond, et s'affiche.** `make up` lève les huit services, l'API sert ses
 trois endpoints de santé à travers Caddy en HTTPS, la migration initiale s'applique, les journaux
