@@ -17,11 +17,12 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T6` **faite** — intégration continue, story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6). Suivante : `T7`, images multiarchitecture |
+| Sous-étape en cours | `T7` **faite** — images multiarchitecture publiées dans GHCR privé, story `MVP-L01-US006`, issue [#7](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/7). Suivante : `T8`, environnement de recette isolé |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
-À l'issue de `T5`, la plateforme **démarre, répond et s'affiche**. Les huit services du cahier
+À l'issue de `T7`, la plateforme **démarre, répond, s'affiche, et elle est empaquetée** : les trois
+images sont publiables en multiarchitecture dans GHCR privé, avec leur version gravée dedans. Les huit services du cahier
 §15.4 tournent en local, l'API expose ses trois endpoints de santé à travers Caddy en HTTPS, la
 migration initiale s'applique, et une **page de statut** affiche sur `app.onboarding.localhost`
 l'état réel des trois dépendances sondées ainsi que la version du build. Il n'existe toujours
@@ -40,7 +41,7 @@ make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page de statut a travers Caddy
 ```
 
-`make help` liste les 37 cibles.
+`make help` liste les 44 cibles.
 
 > **La racine de l'autorité interne de Caddy est approuvée** dans le trousseau de session depuis
 > le 29 juillet 2026 : `https://app.onboarding.localhost` s'ouvre sans avertissement. Si le volume
@@ -132,12 +133,14 @@ Ces règles sont issues des documents validés. Elles s'appliquent à chaque lot
 ├── .prettierrc.json           ← Prettier
 ├── .prettierignore            ← Markdown exclu : protège les documents immuables (DEC-454)
 ├── .dockerignore              ← contexte de construction : deps, caches, .env (DEC-473)
-├── .github/                   ← gabarits, et workflows/ci.yml : les 11 controles (T6)
+├── .github/                   ← gabarits, workflows/ci.yml : les 11 controles (T6)
+│                                 workflows/images.yml : multiarchitecture + GHCR (T7)
 ├── .gitleaks.toml             ← detection de secrets, regles propres au projet (T6)
 ├── apps/
 │   ├── api/                   ← API FastAPI, 3 healthchecks, migration Alembic
 │   ├── worker/                ← worker Dramatiq, les 7 files declarees
 │   └── web/                   ← frontend React/Vite — page de statut, 5 etats (T5)
+│                                 Dockerfile a DEUX cibles depuis T7 (DEC-479)
 ├── packages/
 │   ├── observabilite/         ← journal JSON, masquage, corrélation (DEC-466)
 │   ├── ui/                    ← design system        — coquille, tokens en T10
@@ -179,7 +182,7 @@ Voir [`docs/prototype/README.md`](docs/prototype/README.md).
 La configuration passe exclusivement par des variables d'environnement. Le fichier `.env`
 local n'est **jamais** versionné.
 
-- [`.env.example`](.env.example) — modèle documenté en **version 1.0**, 78 variables, aucune valeur
+- [`.env.example`](.env.example) — modèle documenté en **version 1.1**, 77 variables, aucune valeur
   réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
 - [`docs/operations/politique-configuration-et-secrets.md`](docs/operations/politique-configuration-et-secrets.md)
   — séparation des trois environnements, garde-fous de démarrage, rotation, conduite à tenir en

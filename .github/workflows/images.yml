@@ -1,0 +1,519 @@
+# ============================================================================
+#  Images multiarchitecture et publication dans GHCR prive.
+#
+#  LOT 1, sous-etape T7, story MVP-L01-US006. Decisions DEC-478 a DEC-481.
+#
+#  CE QUE LE CAHIER DES CHARGES DEMANDE, ET OU
+#    22.3  « Les images doivent fonctionner sur linux/arm64 pour le Mac M5 et
+#            linux/amd64 pour un futur serveur x86. Les images sont construites
+#            avec Buildx et publiees dans GHCR prive. »
+#    23.2  une fusion sur `develop` construit les images, LES PUBLIE dans GHCR,
+#            et deploie la recette locale ;
+#    23.3  un tag versionne declenche controles complets, BUILD MULTIARCHITECTURE,
+#            publication GHCR, validation manuelle et deploiement local ;
+#    23.1  « Aucun deploiement ne part d'une pull request. » Ce workflow ne
+#            s'execute donc PAS sur les pull requests.
+#
+#  UN ECART DE LECTURE, TRANCHE PAR JONATHAN — DEC-478
+#    Le 23.2 ne dit pas « multiarchitecture », seul le 23.3 le dit. Lu a la
+#    lettre, publier mono-architecture sur `develop` et multiarchitecture au tag
+#    suffirait. Retenu : MULTIARCHITECTURE DANS LES DEUX CAS, pour que la recette
+#    de T8 recette exactement ce que la production deploiera. Une recette qui
+#    exerce un autre artefact que la production ne recette rien.
+#
+#  CE QUE CE WORKFLOW NE FAIT PAS, ET IL FAUT LE DIRE
+#    Il NE DEPLOIE PAS la recette locale, que le 23.2 mentionne pourtant. Mesure
+#    du 29/07/2026 : `gh api repos/.../actions/runners` renvoie
+#    `total_count: 0` — il n'existe aucun executeur auto-heberge, et un
+#    executeur GitHub ne peut pas atteindre le Mac de Jonathan. La recette est
+#    donc lancee a la main par une surcouche Compose, en T8. C'est ECART-022.
+#
+#  PERMISSIONS — LES PREMIERES PERMISSIONS D'ECRITURE DU PROJET
+#    `packages: write`, et rien de plus. Le GITHUB_TOKEN du workflow suffit pour
+#    GHCR sur ce depot : AUCUN SECRET DE DEPOT N'A ETE CREE, et `gh secret list`
+#    reste vide. Un jeton personnel aurait ajoute un secret a faire tourner sans
+#    aucune necessite prouvee.
+#
+#  EPINGLAGE — DEC-475, meme discipline que ci.yml
+#    Chaque action est referencee par EMPREINTE DE COMMIT, jamais par etiquette :
+#    une etiquette se deplace, une empreinte non. `make images-check` echoue si
+#    l'une ne l'est pas.
+#
+#  LE MAKEFILE RESTE LE POINT D'ENTREE
+#    Aucune commande buildx n'est ecrite ici : le workflow appelle `make`. Ce
+#    qu'il execute, Jonathan peut le rejouer a l'identique sur sa machine.
+# ============================================================================
+
+name: Images multiarchitecture
+
+on:
+  push:
+    branches: [develop]
+    tags: ['v*']
+  # Deviendra utilisable des que ce fichier atteindra `main`, a la porte G1.
+  #
+  # POURQUOI IL N'A PAS SERVI A PROUVER T7, et c'est mesure : `gh workflow run`
+  # repond « HTTP 404: workflow images.yml not found on the default branch ».
+  # GitHub exige qu'un `workflow_dispatch` existe sur la branche PAR DEFAUT avant
+  # de pouvoir etre declenche, or ce fichier n'atteindra `main` qu'a la porte G1.
+  #
+  # La preuve a donc ete obtenue par un declencheur TEMPORAIRE nommant la seule
+  # branche de T7 — meme besoin et meme reponse que la pull request jetable de
+  # T6 — puis ce declencheur a ete RETIRE par ce commit. L'execution qui fait
+  # foi est la 30453563474 : cinq taches vertes, porte comprise, sur le commit
+  # 18cd131 de cette branche.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # --------------------------------------------------------------------------
+  #  Tache 1 — construire les deux architectures et publier.
+  # --------------------------------------------------------------------------
+  publier:
+    name: Construire et publier
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      etiquette: ${{ steps.identite.outputs.etiquette }}
+      version: ${{ steps.identite.outputs.version }}
+      revision: ${{ steps.identite.outputs.revision }}
+      # LES EMPREINTES DE LISTE DE MANIFESTES, transmises aux taches suivantes.
+      #
+      # Les taches de verification ciblent CES empreintes et non une etiquette.
+      # C'est ce qui rend la preuve portee sur « une MEME version immuable » :
+      # entre deux taches d'une matrice, une etiquette peut se deplacer — une
+      # autre execution du workflow pourrait la reaffecter — une empreinte non.
+      empreinte_api: ${{ steps.empreintes.outputs.api }}
+      empreinte_worker: ${{ steps.empreintes.outputs.worker }}
+      empreinte_web: ${{ steps.empreintes.outputs.web }}
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Etablir l'identite du build
+        id: identite
+        # ETIQUETTES, conventions 4.1 :
+        #   `sha-<empreinte>`  toujours, pour la tracabilite et le rejeu ;
+        #   `develop`          sur la branche d'integration, recette seule ;
+        #   `<version exacte>` sur un tag, seule reference autorisee en
+        #                      production temporaire et generale.
+        # `latest` n'est JAMAIS publie — arbitrage de Jonathan, plus strict que
+        # les conventions 4.1 qui le tolerent en developpement. Une etiquette qui
+        # existe finit par etre employee, et aucun consommateur n'en a besoin.
+        # `make images-check` echoue si le mot apparait ici.
+        run: |
+          set -euo pipefail
+          revision=$(git rev-parse --short HEAD)
+          etiquettes="sha-${revision}"
+          version="0.0.0-dev"
+          case "${GITHUB_REF}" in
+            refs/tags/v*)
+              version="${GITHUB_REF#refs/tags/v}"
+              etiquettes="${etiquettes} ${version}"
+              ;;
+            refs/heads/develop)
+              etiquettes="${etiquettes} develop"
+              ;;
+            *)
+              # workflow_dispatch depuis une branche de travail : seule
+              # l'etiquette d'empreinte est publiee. Rien ne doit pouvoir se
+              # faire passer pour la recette.
+              ;;
+          esac
+          echo "etiquette=${etiquettes}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "revision=${revision}" >> "$GITHUB_OUTPUT"
+          echo "  reference   : ${GITHUB_REF}"
+          echo "  etiquettes  : ${etiquettes}"
+          echo "  version     : ${version}"
+          echo "  revision    : ${revision}"
+
+      - name: Installer QEMU pour l'architecture croisee
+        # L'executeur est x86_64 : construire `linux/arm64` y demande une
+        # emulation. C'est le symetrique exact de ce que fait le Mac de Jonathan
+        # pour `linux/amd64`.
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+        with:
+          platforms: arm64
+
+      - name: Installer un constructeur buildx
+        # Le pilote `docker` par defaut ne construit PAS de liste de manifestes
+        # sans magasin containerd. Le pilote `docker-container` le fait toujours,
+        # quel que soit l'executeur : c'est le choix sur lequel on ne parie pas.
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: S'authentifier aupres de GHCR
+        # « l'acces au registre est authentifie » — critere litteral de la story
+        # MVP-L01-US006. GITHUB_TOKEN, pas de secret de depot.
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Controles statiques d'epinglage et d'etiquetage
+        run: make images-check
+
+      - name: Publier les trois images pour les deux architectures
+        run: |
+          make images-push \
+            ETIQUETTES="${{ steps.identite.outputs.etiquette }}" \
+            VERSION_IMAGE="${{ steps.identite.outputs.version }}" \
+            REVISION_IMAGE="${{ steps.identite.outputs.revision }}"
+
+      - name: Relever les empreintes de liste de manifestes
+        id: empreintes
+        # Les empreintes viennent du --metadata-file de buildx, donc de la
+        # PUBLICATION elle-meme, et non d'une interrogation ulterieure du
+        # registre : c'est l'artefact pousse, pas ce que l'etiquette designe
+        # maintenant.
+        run: |
+          set -euo pipefail
+          fichier="${TMPDIR:-/tmp}/onboarding-images-t7/empreintes.txt"
+          test -s "${fichier}"
+          relevees=0
+          while IFS=' ' read -r service empreinte; do
+            test -n "${service}" || continue
+            case "${empreinte}" in sha256:*) ;; *) echo "empreinte invalide : ${empreinte}" >&2; exit 1;; esac
+            echo "${service}=${empreinte}" >> "$GITHUB_OUTPUT"
+            echo "  ${service} : ${empreinte}"
+            relevees=$((relevees + 1))
+          done < "${fichier}"
+          echo "  empreintes attendues : 3   relevees : ${relevees}"
+          test "${relevees}" -eq 3
+
+      - name: Manifestes publies — deux plateformes par image
+        run: |
+          set -euo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ steps.empreintes.outputs.api }}" \
+            "worker=${{ steps.empreintes.outputs.worker }}" \
+            "web=${{ steps.empreintes.outputs.web }}"; do
+            service="${paire%%=*}"
+            empreinte="${paire#*=}"
+            python3 infra/scripts/verifier-images.py registre "${base}/${service}@${empreinte}"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
+
+  # --------------------------------------------------------------------------
+  #  Tache 2 — LANCER les images publiees. Le critere dit « fonctionne ».
+  #
+  #  amd64 est NATIF ici : l'executeur GitHub est x86_64. C'est la seule des deux
+  #  architectures dont le fonctionnement natif soit prouve sur l'image PUBLIEE.
+  #  arm64 est EMULE, et c'est dit explicitement dans le nom de la tache : la
+  #  distinction n'est pas un detail, et Jonathan a arbitre de s'en tenir la
+  #  plutot que d'authentifier une machine locale au registre.
+  # --------------------------------------------------------------------------
+  verifier:
+    name: Lancer les images publiees (amd64 natif, arm64 emule)
+    runs-on: ubuntu-latest
+    needs: publier
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        plateforme: [linux/amd64, linux/arm64]
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # ----------------------------------------------------------------------
+      #  AVANT toute authentification : le registre EXIGE-T-IL des identifiants ?
+      #
+      #  Le critere de la story dit « l'acces au registre est authentifie ». Se
+      #  connecter puis tirer prouve que l'authentification FONCTIONNE ; cela ne
+      #  prouve pas que le registre la REQUIERT, ni que le paquet est prive.
+      #
+      #  Et « le tirage anonyme a echoue » serait indistinguable de « l'image
+      #  n'existe pas » — c'est exactement le piege T2-1, ou un 429 masque etait
+      #  lu comme une absence. Le controle exige donc DEUX choses :
+      #    1. l'echec anonyme, ET un motif d'AUTORISATION dans le message ;
+      #    2. la reussite authentifiee sur LA MEME reference, a l'etape suivante,
+      #       qui prouve que l'image existe bel et bien.
+      #  Les deux ensemble discriminent. Aucun des deux seul ne prouve rien.
+      # ----------------------------------------------------------------------
+      - name: Le registre exige-t-il des identifiants ? (anonyme, doit ECHOUER)
+        run: |
+          set -uo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            reference="${base}/${service}@${paire#*=}"
+            # `&& code=0 || code=$?` ET NON `cmd ; code=$?`, et c'est le point
+            # critique de cette etape.
+            #
+            # GitHub invoque le shell en `/usr/bin/bash -e {0}` — visible dans le
+            # journal de chaque etape. Le `-e` est donc DEJA actif, et
+            # `set -uo pipefail` ne le retire pas. Un `cmd ; code=$?` fait sortir
+            # bash a l'echec de `cmd`, AVANT la lecture du code : l'etape echouait
+            # sans produire une seule ligne de sortie. Mesure du 29/07/2026,
+            # execution 30450427925.
+            #
+            # Or c'est un controle dont l'ECHEC de la commande est le resultat
+            # ATTENDU. La forme ci-dessous soustrait cette commande, et elle
+            # seule, au `-e`.
+            #
+            # SIXIEME occurrence de la famille du code de sortie sur ce projet,
+            # apres T0-1, T2-4, T3-6, T4-3 et T5-5 — et la premiere dans un
+            # workflow.
+            sortie=$(docker buildx imagetools inspect --raw "${reference}" 2>&1) && code=0 || code=$?
+            echo "  ${service} : code=${code}"
+            if [ "${code}" -eq 0 ]; then
+              echo "  ECHEC : ${reference} est lisible SANS authentification." >&2
+              echo "          Le paquet GHCR n'est pas prive. Cahier 22.3." >&2
+              exit 1
+            fi
+            # Le motif doit parler d'AUTORISATION, pas d'autre chose.
+            if ! printf '%s' "${sortie}" | grep -qiE 'unauthor|denied|401|403|insufficient_scope|authentication'; then
+              echo "  ECHEC : l'acces anonyme echoue, mais pour un motif qui n'est PAS" >&2
+              echo "          une question d'autorisation. Le controle ne prouverait rien :" >&2
+              printf '          %s\n' "${sortie}" >&2
+              exit 1
+            fi
+            echo "    ok  refus d'autorisation, et non une absence"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
+
+      - name: Installer QEMU
+        if: matrix.plateforme == 'linux/arm64'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+        with:
+          platforms: arm64
+
+      - name: S'authentifier aupres de GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Et AVEC identifiants, la meme reference est lisible (doit REUSSIR)
+        # Le second sens du controle ci-dessus. C'est lui qui prouve que l'echec
+        # anonyme portait bien sur une image EXISTANTE.
+        run: |
+          set -euo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            reference="${base}/${service}@${paire#*=}"
+            docker buildx imagetools inspect --raw "${reference}" > /dev/null
+            echo "    ok  ${service} lisible APRES authentification"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
+
+      - name: Dire quelle architecture est NATIVE sur cet executeur
+        run: |
+          set -euo pipefail
+          echo "  uname -m de l'executeur : $(uname -m)"
+          echo "  plateforme eprouvee     : ${{ matrix.plateforme }}"
+          if [ "${{ matrix.plateforme }}" = "linux/amd64" ]; then
+            echo "  --> execution NATIVE"
+          else
+            echo "  --> execution EMULEE par QEMU. Elle prouve que l'image demarre"
+            echo "      et repond ; elle ne prouve pas le comportement natif."
+          fi
+
+      - name: Lancer les trois images et prouver qu'elles fonctionnent
+        # Les images sont referencees par EMPREINTE de liste de manifestes,
+        # transmise par la tache `publier`, et jamais par etiquette : c'est ce
+        # qui rend la preuve portee sur « une MEME version immuable ». Les deux
+        # taches de cette matrice ciblent donc, de facon verifiable, le meme
+        # artefact.
+        run: |
+          set -euo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            empreinte="${paire#*=}"
+            reference="${base}/${service}@${empreinte}"
+            echo "  ${service} : ${empreinte}"
+            cible=""
+            if [ "${service}" = "web" ]; then cible="execution"; fi
+            docker pull --platform "${{ matrix.plateforme }}" "${reference}"
+            # --version et --revision : le controle compare l'identite LUE dans
+            # l'image a celle que la CONSTRUCTION a declaree, et non a « different
+            # du defaut ». Motif mesure : sur une branche de travail comme sur
+            # `develop`, il n'existe AUCUNE version — DEC-428 les jalonne sur les
+            # tags — et le workflow publie honnetement `0.0.0-dev`. La valeur
+            # injectee EST le defaut, et « different du defaut » etait donc une
+            # assertion qu'une situation legitime ne peut pas satisfaire.
+            # Execution 30442686377 : le controle a echoue sur une image correcte.
+            python3 infra/scripts/verifier-images.py fonctionnel \
+              "${service}" "${reference}" \
+              --version "${{ needs.publier.outputs.version }}" \
+              --revision "${{ needs.publier.outputs.revision }}" \
+              --plateforme "${{ matrix.plateforme }}" \
+              ${cible:+--cible} ${cible}
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   examinees : ${examinees}"
+          test "${examinees}" -eq 3
+
+  # --------------------------------------------------------------------------
+  #  Tache 3 — Trivy sur les images PUBLIEES.
+  #
+  #  MESURE AVANT DECISION — c'est la lecon T6-7, et elle a servi ici.
+  #  Mesures du 29/07/2026, plateforme linux/arm64 :
+  #
+  #    python:3.12-slim   4 CRITICAL, 19 HIGH, 176 au total, 0 CORRIGEABLE
+  #    image api          4 CRITICAL, 19 HIGH, 176 au total  <- identique a sa base
+  #    caddy:2.11-alpine  0 CRITICAL, 10 HIGH,  27 au total
+  #    image web execution 0 CRITICAL, 10 HIGH, 27 au total  <- identique a sa base
+  #
+  #  DEUX CONSEQUENCES, ET ELLES COMMANDENT LE REGLAGE CI-DESSOUS :
+  #
+  #  1. NOS COUCHES N'AJOUTENT AUCUNE VULNERABILITE. Les totaux des images sont
+  #     EXACTEMENT ceux de leurs images de base officielles. Tout vient de
+  #     Debian trixie et d'Alpine, rien de nous.
+  #
+  #  2. BLOQUER SUR `HIGH` RENDRAIT LA CI DEFINITIVEMENT ROUGE, SANS REMEDE.
+  #     `python:3.12-slim` porte 23 avis HIGH ou CRITICAL dont AUCUN n'a de
+  #     version corrective publiee — quatre CRITICAL dans `perl-base`, le reste
+  #     dans util-linux, gzip et ncurses. Le seul « correctif » serait d'abandonner
+  #     Debian slim, que DEC-443 et T2 ont choisi pour un motif mesure : les roues
+  #     Python n'existent pas en musl. Un controle qui exige l'impossible finit
+  #     desactive, et un controle desactive ne prouve rien.
+  #
+  #  REGLAGE RETENU, soumis a Jonathan : BLOQUANT sur CRITICAL CORRIGEABLE,
+  #  RAPPORTEUR sur tout le reste.
+  #    - il est VERT aujourd'hui : 0 CRITICAL corrigeable sur les trois images ;
+  #    - il PEUT echouer, et ce n'est pas une supposition : l'image `web` d'AVANT
+  #      T7 en portait exactement un, `tar 7.5.13 -> 7.5.19` dans le npm embarque
+  #      par node. C'est le temoin negatif, et il vient d'une image reelle ;
+  #    - le compte complet est AFFICHE a chaque execution, donc visible et jamais
+  #      silencieux — meme principe que la tolerance visible de DEC-474.
+  # --------------------------------------------------------------------------
+  analyser:
+    name: Trivy sur les images publiees
+    runs-on: ubuntu-latest
+    needs: publier
+    timeout-minutes: 20
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: S'authentifier aupres de GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Installer Trivy, empreinte SHA-256 verifiee
+        # Meme discipline que `gh` en T0, `uv` en T1 et Gitleaks en T6 : un outil
+        # de securite installe sans verification d'empreinte est une contradiction.
+        env:
+          TRIVY_VERSION: '0.72.0'
+          # Empreinte relevee le 29/07/2026 dans le fichier de sommes publie par
+          # aquasecurity/trivy pour cette version exacte, et EPINGLEE ici. Meme
+          # forme que GITLEAKS_SHA256 dans ci.yml : la valeur attendue est
+          # inscrite dans le depot, elle n'est pas relue au telechargement.
+          #
+          # Pourquoi ne pas lire le fichier de sommes a l'execution : il est
+          # servi par le meme hote que l'archive. Qui remplacerait l'une
+          # remplacerait l'autre, et la verification ne vaudrait plus rien.
+          TRIVY_SHA256: 'bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea'
+        run: |
+          set -euo pipefail
+          archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl --fail --silent --show-error --location -o "$archive" \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archive}"
+          echo "${TRIVY_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "$archive" trivy
+          ./trivy --version
+
+      - name: Analyser les trois images, et bloquer sur CRITICAL corrigeable
+        run: |
+          set -euo pipefail
+          base="ghcr.io/jonathan2433/onboarding-digital"
+          examinees=0
+          for paire in \
+            "api=${{ needs.publier.outputs.empreinte_api }}" \
+            "worker=${{ needs.publier.outputs.empreinte_worker }}" \
+            "web=${{ needs.publier.outputs.empreinte_web }}"; do
+            service="${paire%%=*}"
+            reference="${base}/${service}@${paire#*=}"
+            echo "::group::${service}"
+            # 1. RAPPORT COMPLET, non bloquant. Le compte est visible a chaque
+            #    execution : une tolerance silencieuse n'est pas une tolerance.
+            ./trivy image --quiet --scanners vuln --exit-code 0 \
+              --severity CRITICAL,HIGH,MEDIUM,LOW --format table "${reference}"
+            # 2. PORTE BLOQUANTE, etroite : CRITICAL, et seulement s'il existe
+            #    une version corrective. `--ignore-unfixed` n'abaisse pas le
+            #    seuil, il retire ce qu'aucune action ne peut corriger.
+            ./trivy image --quiet --scanners vuln --exit-code 1 \
+              --severity CRITICAL --ignore-unfixed --format table "${reference}"
+            echo "::endgroup::"
+            examinees=$((examinees + 1))
+          done
+          echo "  images attendues : 3   analysees : ${examinees}"
+          test "${examinees}" -eq 3
+
+  # --------------------------------------------------------------------------
+  #  Porte unique. Meme motif que DEC-475 pour ci.yml : c'est un contexte unique
+  #  qui conclut, de sorte qu'ajouter ou renommer une tache ne demande aucun
+  #  reglage cote GitHub, et qu'aucune tache ne puisse disparaitre sans que la
+  #  porte le voie.
+  # --------------------------------------------------------------------------
+  porte:
+    name: Porte des images multiarchitecture
+    runs-on: ubuntu-latest
+    needs: [publier, verifier, analyser]
+    if: always()
+    steps:
+      - name: Recapituler et conclure
+        env:
+          RESULTAT_PUBLIER: ${{ needs.publier.result }}
+          RESULTAT_VERIFIER: ${{ needs.verifier.result }}
+          RESULTAT_ANALYSER: ${{ needs.analyser.result }}
+          ETIQUETTES: ${{ needs.publier.outputs.etiquette }}
+        run: |
+          set -euo pipefail
+          echo "  Images multiarchitecture — cahier 22.3, 23.2 et 23.3"
+          echo "    plateformes : linux/amd64 et linux/arm64"
+          echo "    etiquettes  : ${ETIQUETTES}"
+          echo "    registre    : ghcr.io/jonathan2433/onboarding-digital (prive)"
+          echo
+          echo "  publier  : ${RESULTAT_PUBLIER}"
+          echo "  verifier : ${RESULTAT_VERIFIER}"
+          echo "  analyser : ${RESULTAT_ANALYSER}"
+          echo
+          attendues=3
+          reussies=0
+          [ "${RESULTAT_PUBLIER}" = "success" ] && reussies=$((reussies + 1))
+          [ "${RESULTAT_VERIFIER}" = "success" ] && reussies=$((reussies + 1))
+          [ "${RESULTAT_ANALYSER}" = "success" ] && reussies=$((reussies + 1))
+          echo "  taches attendues : ${attendues}   reussies : ${reussies}"
+          if [ "${reussies}" -ne "${attendues}" ]; then
+            echo "  ECHEC : les images ne sont pas publiees et eprouvees" >&2
+            exit 1
+          fi
+          echo "  --> les trois images sont publiees, lancees sur les deux"
+          echo "      architectures, et analysees"

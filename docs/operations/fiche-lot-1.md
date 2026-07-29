@@ -115,11 +115,32 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 | ~~**T4**~~ | Journalisation JSON corrélée, API et worker. ✅ **Faite le 28/07/2026** | `US004` | ✅ Les 10 champs du cahier §28.1 dans les journaux **réels** des conteneurs ; corrélation en requête **et** en job, propagée à travers Caddy ; **3 barrières** de masquage, 30 tests ; rotation sur les 8 services. `DEC-466` à `DEC-469` |
 | ~~**T5**~~ | Frontend Vite : page de statut consommant les healthchecks. ✅ **Faite le 28/07/2026** | `US002` | ✅ La page affiche l'état réel des trois dépendances sondées et la version du build, **éprouvé en arrêtant réellement Redis** — 503, `redis indisponible`, motif `ConnectionError` ; TypeScript strict sans erreur ; 25 tests Vitest et Testing Library sur les cinq états. `DEC-470` à `DEC-473` |
 | ~~**T6**~~ | CI GitHub Actions : **11 contrôles** du cahier §23.1, dont **3 échecs volontaires prouvés**. ✅ **Faite le 29/07/2026** | `US005` | ✅ Les 11 contrôles sont exécutés et le pipeline passe ; il **échoue effectivement** sur les trois défauts introduits **un par un**, chacun bloquant la fusion — `mergeStateStatus: BLOCKED`. La CI est rendue **obligatoire** sur `develop` et `main`. `DEC-474` à `DEC-477` |
-| **T7** | Images multiarchitecture et publication GHCR privé | `US006` | Une même version immuable fonctionne sur `arm64` et `amd64` ; l'accès au registre est authentifié ; aucune référence à `latest` seul |
+| ~~**T7**~~ | Images multiarchitecture et publication GHCR privé. ✅ **Faite le 29/07/2026** | `US006` | ✅ Une **même liste de manifestes** porte `linux/amd64` et `linux/arm64`, et les trois images sont **lancées** sur les deux — 39 contrôles fonctionnels, 0 échec, dont le refus de démarrer du §20.3 éprouvé **sur l'image**. `latest` n'est publié nulle part. L'accès au registre est authentifié par le `GITHUB_TOKEN`, **sans aucun secret de dépôt**. Image `web` de **1,02 Gio à 84,9 Mo**. `DEC-478` à `DEC-482`. **Réserve à lever en `T8` :** `arm64` n'est prouvé qu'**émulé** sur l'image publiée — voir §3.1 |
 | **T8** | Environnement de recette isolé | `US002` | Volumes, base, bucket, réseau, ports et secrets distincts du développement ; Mailpit exclusif |
 | **T9** | Documentation d'exploitation locale | `US008` | Les procédures fonctionnent **depuis une machine propre** ; ports, volumes et commandes de diagnostic identifiés |
 | **T10** | Design system minimal et contrat API partagé | `US007` (`P1`) | Tokens et composants de base sans dépendance visuelle arbitraire ; contrat généré et partagé |
 | **T11** | Contrôles de sortie et préparation de la porte `G1` | — | Les 7 critères de sortie sont prouvés ; checklist remise à Jonathan |
+
+### 3.1 Ce que `T7` prouve nativement, et ce qu'il ne prouve qu'émulé
+
+Le critère de `US006` dit qu'« une même version immuable **fonctionne** sur Apple Silicon et
+AMD64 ». Il est satisfait, mais **pas de la même façon sur les deux architectures**, et cela doit
+être dit plutôt que laissé croire.
+
+| Architecture | Sur l'image **publiée** dans GHCR | Sur une liste de manifestes **construite localement** |
+|---|---|---|
+| `linux/amd64` | **natif** — exécuteur GitHub `x86_64`, `uname -m` lu dans le conteneur | émulé sur le Mac |
+| `linux/arm64` | **émulé** par QEMU sur l'exécuteur | **natif** — le Mac M5 est `aarch64` |
+
+**Arbitrage de Jonathan du 29/07/2026 :** ne pas authentifier la machine locale au registre. Le
+jeton `gh` de cette machine n'a ni `read:packages` ni `write:packages` — mesuré, `403` — et
+l'ajout du droit relève de ses identifiants. Conséquence assumée : l'exécution **native sur
+Apple Silicon** porte sur une liste de manifestes construite localement, dont l'empreinte
+**diffère** de celle publiée. Les deux empreintes sont nommées dans le compte rendu de `T7`.
+
+`T8` peut lever la réserve sans nouveau droit : la surcouche de recette tire les images publiées
+sur cette machine même — c'est-à-dire nativement en `arm64` — dès lors que Jonathan aura fait un
+`docker login ghcr.io`, ou en construisant localement la même définition.
 
 ---
 

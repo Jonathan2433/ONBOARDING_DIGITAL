@@ -240,7 +240,19 @@ services:
       # workspace uv, dont uv.lock est le verrou (DEC-455).
       context: ../..
       dockerfile: apps/api/Dockerfile
+      # T7, DEC-480 — identite du build gravee dans l'image. Les valeurs par
+      # defaut de `.env.example` sont conservees en local ; l'integration
+      # continue passe la version et l'empreinte du commit reels.
+      args:
+        APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+        APP_REVISION: ${APP_REVISION:-inconnue}
     environment:
+      # T7 — ces deux variables n'etaient PAS transmises avant cette sous-etape.
+      # `/health/version` renvoyait donc les valeurs par defaut de settings.py,
+      # et le critere de MVP-L01-US003 « la version correspond au build »
+      # n'etait pas satisfait : il etait non contredit, faute de build identifie.
+      APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+      APP_REVISION: ${APP_REVISION:-inconnue}
       APP_ENV: ${APP_ENV}
       LOG_FORMAT: ${LOG_FORMAT}
       LOG_LEVEL: ${LOG_LEVEL}
@@ -294,7 +306,15 @@ services:
     build:
       context: ../..
       dockerfile: apps/worker/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+        APP_REVISION: ${APP_REVISION:-inconnue}
     environment:
+      # T7 — le worker ecrit APP_VERSION dans le champ `version` des dix champs
+      # du cahier 28.1. Elle n'etait pas transmise : chaque ligne de journal du
+      # worker affirmait `0.0.0-dev` quelle que soit l'image en execution.
+      APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+      APP_REVISION: ${APP_REVISION:-inconnue}
       APP_ENV: ${APP_ENV}
       LOG_FORMAT: ${LOG_FORMAT}
       LOG_LEVEL: ${LOG_LEVEL}
@@ -338,11 +358,21 @@ services:
   #  ETAT A T5 : le serveur Vite sert la page de statut, mandatee par Caddy sur
   #  app.onboarding.localhost. Le port 5173 n'est PAS publie sur l'hote : seul
   #  Caddy le joint par le reseau interne (DEC-460).
+  #
+  #  DEPUIS T7 : l'image porte DEUX CIBLES nommees (DEC-479), `developpement` et
+  #  `execution`. AUCUNE N'EST CHOISIE ICI : c'est la surcouche d'environnement
+  #  qui la selectionne, explicitement, et `make images-check` echoue si une
+  #  surcouche omet de le faire. Un defaut de selection serait silencieux — le
+  #  defaut de Docker est la DERNIERE etape du Dockerfile, soit `execution`, ce
+  #  qui priverait le developpement du rechargement a chaud sans rien signaler.
   # ---------------------------------------------------------------------------
   web:
     build:
       context: ../..
       dockerfile: apps/web/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+        APP_REVISION: ${APP_REVISION:-inconnue}
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     healthcheck:
@@ -352,11 +382,14 @@ services:
       # Celui-ci echoue si le serveur n'ecoute pas, s'il repond autre que 2xx,
       # ou si `index.html` est introuvable. Eprouve en pointant volontairement
       # un mauvais port : le conteneur passe `unhealthy`.
-      test:
-        [
-          'CMD-SHELL',
-          'node -e "fetch(''http://127.0.0.1:5173/'').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})"',
-        ]
+      #
+      # T7 : `wget` de busybox et non plus `node -e`. Motif : la cible
+      # `execution` ne contient PAS Node — c'est tout l'objet de DEC-479 — et un
+      # healthcheck qui depend de l'outillage d'une seule cible echouerait sur
+      # l'autre, pour une raison qui n'a rien a voir avec la sante du service.
+      # Les deux cibles sont Alpine, donc les deux fournissent busybox wget.
+      # C'est la meme forme que celle deja employee par mailpit et caddy.
+      test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:5173/']
       interval: 10s
       timeout: 5s
       retries: 6

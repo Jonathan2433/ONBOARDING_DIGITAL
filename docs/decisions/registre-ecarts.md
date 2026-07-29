@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 28 juillet 2026, sous-étape `T5` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T7` du LOT 1
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 21 | 5 | 14 | 2 |
+| Total 22 | 5 | 15 | 2 |
 
 ---
 
@@ -39,8 +39,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-019` | La passation annonce 9 placeholders `CHANGE_ME_*` dans `.env.example`, il y en a 7 | Non | **Clos** |
 | `ECART-020` | La fiche du LOT 1 rattache `T5` à la story `US003`, dont la page de statut ne complète aucun critère | Non pour `G1`, structurant pour la traçabilité | **Clos** |
 | `ECART-021` | Quatre nombres du corpus ne sont pas dérivés de leur source : tests, masquage, commits, lignes, et le prochain identifiant de décision | Non | **Clos** |
+| `ECART-022` | Quatre affirmations du corpus non dérivées de leur source, **et un fichier de configuration qui déclare deux fois la même variable** | Non pour `G1` | **Clos** |
 
-**Prochain identifiant libre : `ECART-022`.**
+**Prochain identifiant libre : `ECART-023`.**
 
 ---
 
@@ -304,3 +305,16 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Corriger les quatre. Et pour ne pas les recréer : **`T6` doit ajouter à la CI un contrôle qui dérive ces nombres de la source et échoue s'ils divergent** de ce que la documentation affirme. C'est le même garde-fou que celui recommandé pour les cinq empreintes SHA-256 par `ROAD-RSK-029` — un contrôle qui recalcule plutôt qu'un humain qui relit. |
 | Résolution | **Clos** le 28 juillet 2026. Les quatre nombres sont rectifiés, le bloc de `T1` est replacé dans sa sous-étape, et le marqueur d'identifiant libre est porté à `DEC-474`. La recommandation de contrôle de CI est reportée à `T6`. |
+
+## `ECART-022` — Quatre affirmations non dérivées de leur source, et une variable déclarée deux fois
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, prise en charge de la sous-étape `T7` du LOT 1 |
+| Source | `CLAUDE.md` §1, §5.4 et §9.2 ; [`.env.example`](../../.env.example) ; cahier des charges §23.2 |
+| Constat | **Cinq constats, dont quatre partagent une propriété : une affirmation que la source contredit.**<br>**1. `.env.example` déclarait `APP_REVISION` deux fois**, aux lignes 53 et 357, dans des blocs **strictement identiques** — même commentaire, même valeur, vérifié octet pour octet. Le fichier comptait donc **78 affectations pour 77 noms distincts**, là où `CLAUDE.md` §5.4 annonce « 78 variables ». La seconde déclaration se trouvait de surcroît dans la section « FRONTEND », où elle n'a rien à faire : elle n'est pas préfixée `VITE_` et n'est pas exposée au navigateur.<br>**2. `CLAUDE.md` §1 annonce « 4 YAML ».** Le dépôt en portait **6** : 4 `.yml` et 2 `.yaml`. Le compte n'avait retenu qu'une des deux extensions.<br>**3. `CLAUDE.md` §9.2 affirme « Les 3 `Dockerfile` sont mono-étape ».** Mesure : `api` et `worker` en comptaient **deux `FROM`** chacun, `web` un seul. Le fond était juste — aucun n'avait de séparation construction/exécution — l'affirmation non.<br>**4. Le cahier §23.2 exige qu'une fusion sur `develop` « déploie la recette locale ».** Mesure du 29/07/2026 : `gh api repos/.../actions/runners` renvoie **`total_count: 0`**, il n'existe aucun exécuteur auto-hébergé, et un exécuteur GitHub ne peut pas atteindre le Mac de Jonathan. Ce volet du §23.2 **n'est pas atteignable** par l'intégration continue dans le montage actuel.<br>**5. Conséquence mesurée du constat 1, et la plus sérieuse.** `make env` est **idempotent** : si `.env` existe, il n'y touche pas. Une variable ajoutée à `.env.example` **après** la première création du `.env` n'y arrive donc jamais. Le `.env` de cette machine comptait **74 affectations contre 78** : manquaient `APP_REVISION`, ajoutée en `T3`, ainsi que `LOG_MAX_SIZE` et `LOG_MAX_FILES`, ajoutées en `T4`. |
+| Impact | **Le cinquième constat a un effet réel et mesuré.** Compose substituait une **chaîne vide** à `${APP_REVISION}`, faute de valeur par défaut : l'image de développement a été construite avec `APP_REVISION=""`, et `/health/version` renvoyait une révision vide. `LOG_MAX_SIZE` et `LOG_MAX_FILES` ont, elles, un défaut dans Compose — `${LOG_MAX_SIZE:-10m}` : la rotation de `T4` fonctionnait donc **par le défaut, pas par `.env`**, ce qui est correct mais n'est pas ce que le compte rendu de `T4` laissait entendre. Le quatrième constat porte sur une exigence du cahier qu'il faut déclarer non couverte plutôt que laisser croire. Les trois premiers n'ont aucun effet technique, et l'effet réel est la confiance dans le corpus. |
+| Cause | **Une seule pour les quatre premiers, et c'est la classe que `ECART-021` avait déjà nommée** : un nombre ou une affirmation **recopiés** au lieu d'être dérivés de la source. Le cinquième a une cause différente et instructive : une cible idempotente **par conception** ne peut pas réconcilier, et rien ne le vérifiait. `make docs-check`, posé en `T6`, couvre les empreintes et les séquences d'identifiants — pas les nombres cités en prose, ce que le compte rendu de `T6` §3 disait explicitement. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Corriger les cinq. Et surtout **poser le contrôle qui manque** : `make env-check` compare les noms déclarés par `.env.example` à ceux de `.env`, nomme les manquants, et **refuse aussi tout doublon dans le modèle**. C'est la parade générale — `make env` ne peut pas corriger, mais quelque chose doit s'en apercevoir. |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T7`. Le doublon est retiré, `.env.example` passe en **v1.1** avec 77 variables et 77 noms distincts. Les trois variables manquantes sont ajoutées au `.env` local, valeurs reprises du modèle, aucune n'étant un secret. Compose emploie désormais des valeurs par défaut explicites — `${APP_VERSION:-0.0.0-dev}`, `${APP_REVISION:-inconnue}` — pour qu'une variable absente dégrade honnêtement au lieu de valoir la chaîne vide. **`make env-check` est créée**, appelée par `make env` et par `make check`. Les affirmations de `CLAUDE.md` §1 et §9.2 sont rectifiées. Le volet non atteignable du §23.2 est déclaré dans l'en-tête de [`images.yml`](../../.github/workflows/images.yml) et dans le compte rendu de `T7` : la recette de `T8` sera lancée à la main. |
