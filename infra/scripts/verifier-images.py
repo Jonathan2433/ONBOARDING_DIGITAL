@@ -983,6 +983,23 @@ def fonctionnel_worker(
             f"{plateforme} : le Redis jetable repond PONG "
             f"({'apres ' + str(pret) + ' tentative(s)' if pret else 'JAMAIS en 120 s'})",
         ):
+            # UN CONTROLE QUI ECHOUE DOIT DIRE POURQUOI, surtout quand la cause
+            # est dans une dependance qu'il a LUI-MEME demarree. La premiere
+            # version se contentait de « JAMAIS en 120 s » : impossible de
+            # distinguer un Redis lent d'un Redis mort. C'est la lecon de `T7-1`,
+            # ou un message masque avait envoye le diagnostic dans le fosse.
+            code, sortie = lancer(
+                "docker",
+                "inspect",
+                nom_redis,
+                "--format",
+                "{{.State.Status}} code={{.State.ExitCode}} oom={{.State.OOMKilled}}",
+            )
+            journal.info(f"etat du conteneur Redis : {sortie.strip()[:120]}")
+            code, sortie = lancer("docker", "logs", "--tail", "20", nom_redis)
+            for ligne in sortie.strip().split("\n")[-20:]:
+                if ligne.strip():
+                    print(f"      redis | {ligne.strip()[:140]}")
             return
         sonde = (
             "import os, platform;"
