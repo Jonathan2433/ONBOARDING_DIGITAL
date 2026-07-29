@@ -124,6 +124,7 @@ dev = [
     "boto3-stubs[s3]>=1.43.57",
     "httpx>=0.28.1",
     "mypy>=2.3.0",
+    "pip-audit>=2.9.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.16.0",

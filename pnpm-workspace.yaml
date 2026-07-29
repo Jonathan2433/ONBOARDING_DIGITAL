@@ -26,3 +26,36 @@ storeDir: ${HOME}/.local/share/pnpm/store
 # DEC-443 epingle Node 24 LTS. Sans ce reglage, le champ "engines" de
 # package.json ne serait qu'un avertissement.
 engineStrict: true
+
+# ============================================================================
+#  Audit de dependances — DEC-474, ROAD-RSK-032, sous-etape T6.
+#
+#  TOLERANCE NOMMEE ET ETROITE, et non un abaissement du seuil. Tout autre
+#  avis, de toute severite, continue de faire echouer `make audit` et donc
+#  l'integration continue. Eprouve par temoin : un identifiant bidon a la place
+#  de celui-ci fait de nouveau echouer l'audit.
+#
+#  GHSA-mh99-v99m-4gvg — brace-expansion <= 5.0.7, deni de service par
+#  expansion non bornee. Severite haute. Chemin :
+#  eslint-plugin-jsx-a11y > minimatch@3.1.5 > brace-expansion@1.1.16.
+#
+#  POURQUOI ON NE LE CORRIGE PAS, ET C'EST MESURE, PAS SUPPOSE
+#    - la derniere version publiee de la ligne 1.x EST 1.1.16 : il n'existe
+#      aucun correctif dans cette ligne, seulement en 5.0.8 ;
+#    - forcer 5.0.8 casserait le lint. Mesure du 29/07/2026 : l'export
+#      CommonJS de brace-expansion 5.0.8 est un OBJET portant `.expand`, non
+#      une fonction appelable, alors que minimatch@3.1.5 fait `expand(motif)`.
+#      Le correctif produirait donc « expand is not a function » et
+#      neutraliserait ESLint — donc `eslint-plugin-jsx-a11y`, motif determinant
+#      de DEC-451 ;
+#    - la dependance est transitive et de DEVELOPPEMENT seulement : elle
+#      s'execute au lint, sur nos propres motifs de fichiers, et n'entre dans
+#      aucun artefact livre.
+#
+#  A RETIRER des que eslint-plugin-jsx-a11y quittera minimatch@3. Le meme
+#  greffon declare deja ESLint ^3..^9 alors que nous executons ESLint 10 : sa
+#  mise a jour est a surveiller pour les deux motifs a la fois.
+# ============================================================================
+auditConfig:
+  ignoreGhsas:
+    - GHSA-mh99-v99m-4gvg

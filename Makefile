@@ -75,7 +75,7 @@ SERVICES := db redis minio mailpit caddy api worker web
         lint format format-check typecheck test check clean clean-deps \
         env up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
-        web-check caddy-reload
+        web-check caddy-reload docs-check audit alembic-check test-frontend
 
 # ---------------------------------------------------------------------------
 
@@ -205,7 +205,27 @@ test: ## Executer les tests (pytest et Vitest)
 	@echo "==> Vitest"
 	$(PNPM) run test
 
-check: versions tree icloud-verify format-check lint typecheck test ## Tout verifier
+# Controle 7 des onze du cahier 23.1, « tests frontend ». Cible distincte parce
+# que l'integration continue l'execute SANS la stack Docker, alors que `make
+# test` lance aussi les 8 tests d'integration, qui exigent des services reels.
+test-frontend: ## Tests frontend seuls (Vitest, sans dependance externe)
+	$(PNPM) run test
+
+# Rend effectives les deux recommandations du lot : ROAD-RSK-029, un formateur
+# peut reecrire les documents immuables sans qu'aucun controle ne le signale, et
+# ECART-021, quatre nombres du corpus n'etaient pas derives de leur source.
+docs-check: ## Verifier l'integrite des documents immuables et les sequences d'identifiants
+	@python3 infra/scripts/verifier-documentation.py
+
+# Controle 10 des onze du cahier 23.1. La tolerance d'un avis nomme est declaree
+# dans pnpm-workspace.yaml, avec son motif mesure : voir DEC-474.
+audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
+	@echo "==> pip-audit"
+	$(UV) run pip-audit --progress-spinner off
+	@echo "==> pnpm audit"
+	$(PNPM) audit
+
+check: versions tree icloud-verify docs-check format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -213,6 +233,12 @@ check: versions tree icloud-verify format-check lint typecheck test ## Tout veri
 #  Stack Docker locale (T2)
 # ---------------------------------------------------------------------------
 
+# `sed` PORTABLE, et ce n'est pas un detail de style. La forme BSD `sed -i ''`
+# de macOS fait echouer GNU sed, qui lit le script comme un nom de fichier :
+# mesure du 29/07/2026 sur GNU sed 4.9, « can't read s|^APP_SECRET_KEY... »,
+# code 2. Cette cible est appelee par `make up`, donc par l'integration
+# continue sur un executeur Linux : la forme BSD y cassait toute la tache.
+# Le fichier temporaire est couvert par `.env.*` dans .gitignore.
 env: ## Creer .env depuis .env.example, avec des secrets locaux generes
 	@if [ -f "$(ENV_FILE)" ]; then \
 		echo "  $(ENV_FILE) existe deja : inchange"; \
@@ -220,11 +246,14 @@ env: ## Creer .env depuis .env.example, avec des secrets locaux generes
 		cp .env.example "$(ENV_FILE)"; \
 		for v in APP_SECRET_KEY POSTGRES_PASSWORD REDIS_PASSWORD MINIO_ROOT_PASSWORD; do \
 			s=$$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48); \
-			sed -i '' "s|^$$v=CHANGE_ME.*|$$v=$$s|" "$(ENV_FILE)"; \
+			sed "s|^$$v=CHANGE_ME.*|$$v=$$s|" "$(ENV_FILE)" > "$(ENV_FILE).tmp" \
+				&& mv "$(ENV_FILE).tmp" "$(ENV_FILE)"; \
 		done; \
-		sed -i '' "s|^MINIO_ROOT_USER=CHANGE_ME.*|MINIO_ROOT_USER=onboarding-dev-admin|" "$(ENV_FILE)"; \
+		sed "s|^MINIO_ROOT_USER=CHANGE_ME.*|MINIO_ROOT_USER=onboarding-dev-admin|" "$(ENV_FILE)" > "$(ENV_FILE).tmp" \
+			&& mv "$(ENV_FILE).tmp" "$(ENV_FILE)"; \
 		echo "  $(ENV_FILE) cree depuis .env.example"; \
-		echo "  5 secrets de services locaux generes aleatoirement, 48 caracteres"; \
+		echo "  4 secrets engendres aleatoirement sur 48 caracteres, et un"; \
+		echo "  MINIO_ROOT_USER lisible : cinq variables renseignees en tout"; \
 		echo "  .env n'est PAS versionne : .gitignore le refuse (verifie)"; \
 		echo; \
 		echo "  RESTENT volontairement en CHANGE_ME, et ce n'est pas un oubli :"; \
@@ -311,6 +340,26 @@ migrate: ## Appliquer les migrations Alembic sur la base de developpement
 
 migrate-status: ## Afficher la revision appliquee
 	@$(DC_DEV) exec -T --workdir /app/apps/api api alembic current
+
+# Controle 8 des onze du cahier 23.1, et il verifie autre chose que `migrate` :
+# qu'il existe EXACTEMENT UNE tete de migration. Deux tetes signifient une
+# chaine divergente — deux branches ayant chacune ajoute une revision sur le
+# meme parent. `alembic upgrade head` echouerait alors avec « The script
+# directory has multiple heads », mais seulement le jour ou quelqu'un migre.
+# Mieux vaut l'apprendre en integration continue.
+alembic-check: ## Verifier qu'il existe exactement une tete de migration
+	@sortie=$$($(DC_DEV) exec -T --workdir /app/apps/api api alembic heads 2>&1); \
+	code=$$?; \
+	if [ $$code -ne 0 ]; then \
+		echo "  ECHEC     alembic heads a echoue :"; echo "$$sortie"; exit 1; \
+	fi; \
+	n=$$(printf '%s\n' "$$sortie" | grep -c '(head)'); \
+	printf '%s\n' "$$sortie" | sed 's/^/    /'; \
+	echo "  tetes attendues : 1   trouvees : $$n"; \
+	if [ "$$n" -ne 1 ]; then \
+		echo "  ECHEC     chaine de migration divergente ou vide"; exit 1; \
+	fi; \
+	echo "  --> une seule tete de migration, la chaine est lineaire"
 
 api-check: ## Interroger les trois endpoints de sante et lire leurs codes
 	@sh infra/scripts/verifier-sante.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
