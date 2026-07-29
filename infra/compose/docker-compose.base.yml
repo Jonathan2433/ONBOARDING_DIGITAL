@@ -185,6 +185,22 @@ services:
   # ---------------------------------------------------------------------------
   caddy:
     image: caddy:2.11-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    environment:
+      # T8 — LES ADRESSES DE SITE, SUBSTITUEES DANS LE CADDYFILE.
+      #
+      # Un seul Caddyfile sert les deux environnements : il porte
+      # `{$CADDY_SITE_APP:app.onboarding.localhost}`. Dupliquer le fichier
+      # aurait duplique le mandatement de meme origine de DEC-470, donc une
+      # regle de securite — voir l'en-tete du Caddyfile.
+      #
+      # CES DEUX LIGNES SONT INDISPENSABLES, et pas seulement documentaires :
+      # la substitution lit l'environnement du PROCESSUS Caddy. Les variables du
+      # fichier --env-file ne servent qu'a la substitution dans ce YAML ; elles
+      # n'entrent pas dans le conteneur. Sans `environment:`, le Caddyfile
+      # retomberait silencieusement sur ses defauts et la recette servirait les
+      # hotes du developpement.
+      CADDY_SITE_APP: ${CADDY_SITE_APP:-app.onboarding.localhost}
+      CADDY_SITE_API: ${CADDY_SITE_API:-api.onboarding.localhost}
     volumes:
       # LE REPERTOIRE, ET NON LE FICHIER SEUL. Corrige un defaut trouve en T5.
       #

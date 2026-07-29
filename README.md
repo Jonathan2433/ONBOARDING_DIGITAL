@@ -17,15 +17,18 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T7` **faite** — images multiarchitecture publiées dans GHCR privé, story `MVP-L01-US006`, issue [#7](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/7). Suivante : `T8`, environnement de recette isolé |
+| Sous-étape en cours | `T8` **faite** — environnement de recette isolé, story `MVP-L01-US002`, issue [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3). Suivante : `T9`, documentation d'exploitation locale |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
-À l'issue de `T7`, la plateforme **démarre, répond, s'affiche, et elle est empaquetée** : les trois
-images sont publiables en multiarchitecture dans GHCR privé, avec leur version gravée dedans. Les huit services du cahier
-§15.4 tournent en local, l'API expose ses trois endpoints de santé à travers Caddy en HTTPS, la
-migration initiale s'applique, et une **page de statut** affiche sur `app.onboarding.localhost`
-l'état réel des trois dépendances sondées ainsi que la version du build. Il n'existe toujours
+À l'issue de `T8`, la plateforme **démarre, répond, s'affiche, elle est empaquetée, et elle existe
+en DEUX environnements isolés**. Les huit services du cahier §15.4 tournent en développement, huit
+autres en **recette** — sur les images **publiées dans GHCR**, épinglées par empreinte — et les
+**sept** séparations exigées par le cahier §22.2 sont prouvées sur l'état réel : projet Docker, base
+PostgreSQL, bucket MinIO, volumes, secrets, réseau et ports. L'API expose ses trois endpoints de
+santé à travers Caddy en HTTPS dans les deux, la migration initiale s'applique dans les deux, et une
+**page de statut** affiche l'état réel des trois dépendances sondées sur
+`app.onboarding.localhost` comme sur `app.recette.onboarding.localhost`. Il n'existe toujours
 **aucun écran métier ni aucune donnée métier** : le modèle de données arrive au LOT 2. Voir
 [`docs/README.md`](docs/README.md) §8 pour l'avancement des douze sous-étapes.
 
@@ -41,7 +44,18 @@ make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page de statut a travers Caddy
 ```
 
-`make help` liste les 44 cibles.
+**Et la recette, depuis `T8`.** Elle tire les images publiées, donc elle exige un
+`docker login ghcr.io` — sans quoi elle **refuse de démarrer** plutôt que de se rabattre sur une
+construction locale :
+
+```bash
+make up-recette        # les 8 services de recette, sur les images PUBLIEES
+make recette-check     # sante, ports, coherence de .env.recette, et les 7 separations
+make down-recette      # arret, volumes conserves
+```
+
+Les cibles de stack acceptent `ENVIRONNEMENT=recette` ; `make up-recette` en est l'alias.
+`make help` liste les 50 cibles.
 
 > **La racine de l'autorité interne de Caddy est approuvée** dans le trousseau de session depuis
 > le 29 juillet 2026 : `https://app.onboarding.localhost` s'ouvre sans avertissement. Si le volume
@@ -182,7 +196,7 @@ Voir [`docs/prototype/README.md`](docs/prototype/README.md).
 La configuration passe exclusivement par des variables d'environnement. Le fichier `.env`
 local n'est **jamais** versionné.
 
-- [`.env.example`](.env.example) — modèle documenté en **version 1.1**, 77 variables, aucune valeur
+- [`.env.example`](.env.example) — modèle documenté en **version 1.2**, 79 variables, aucune valeur
   réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
 - [`docs/operations/politique-configuration-et-secrets.md`](docs/operations/politique-configuration-et-secrets.md)
   — séparation des trois environnements, garde-fous de démarrage, rotation, conduite à tenir en

@@ -116,7 +116,7 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 | ~~**T5**~~ | Frontend Vite : page de statut consommant les healthchecks. ✅ **Faite le 28/07/2026** | `US002` | ✅ La page affiche l'état réel des trois dépendances sondées et la version du build, **éprouvé en arrêtant réellement Redis** — 503, `redis indisponible`, motif `ConnectionError` ; TypeScript strict sans erreur ; 25 tests Vitest et Testing Library sur les cinq états. `DEC-470` à `DEC-473` |
 | ~~**T6**~~ | CI GitHub Actions : **11 contrôles** du cahier §23.1, dont **3 échecs volontaires prouvés**. ✅ **Faite le 29/07/2026** | `US005` | ✅ Les 11 contrôles sont exécutés et le pipeline passe ; il **échoue effectivement** sur les trois défauts introduits **un par un**, chacun bloquant la fusion — `mergeStateStatus: BLOCKED`. La CI est rendue **obligatoire** sur `develop` et `main`. `DEC-474` à `DEC-477` |
 | ~~**T7**~~ | Images multiarchitecture et publication GHCR privé. ✅ **Faite le 29/07/2026** | `US006` | ✅ Une **même liste de manifestes** porte `linux/amd64` et `linux/arm64`, et les trois images sont **lancées** sur les deux — 39 contrôles fonctionnels, 0 échec, dont le refus de démarrer du §20.3 éprouvé **sur l'image**. `latest` n'est publié nulle part. L'accès au registre est authentifié par le `GITHUB_TOKEN`, **sans aucun secret de dépôt**. Image `web` de **1,02 Gio à 84,9 Mo**. `DEC-478` à `DEC-482`. **Réserve à lever en `T8` :** `arm64` n'est prouvé qu'**émulé** sur l'image publiée — voir §3.1 |
-| **T8** | Environnement de recette isolé | `US002` | Volumes, base, bucket, réseau, ports et secrets distincts du développement ; Mailpit exclusif |
+| ~~**T8**~~ | Environnement de recette isolé. ✅ **Faite le 29/07/2026** | `US002` | ✅ Les **SEPT** séparations du cahier §22.2 — **projet Docker**, base PostgreSQL, bucket MinIO, volumes, secrets, réseau, ports — prouvées sur l'**état réel** des deux environnements : **57 contrôles, 0 échec**. La recette exécute les **images publiées épinglées par empreinte**, et `arm64` y est **natif** — la réserve du §3.1 est **levée**. `DEC-483` à `DEC-488`. *Le critère écrit ici jusqu'au 29/07/2026 n'énumérait que **six** séparations — « projet Docker distinct » manquait — et empruntait « Mailpit exclusif » à `MVP-L11-US003`, donc au LOT 11, ainsi qu'un critère de sortie du LOT 13. Rectifié au titre de `ECART-023` ; voir le compte rendu §4 pour ce que le LOT 1 prouve de Mailpit et ce qui ne lui appartient pas.* |
 | **T9** | Documentation d'exploitation locale | `US008` | Les procédures fonctionnent **depuis une machine propre** ; ports, volumes et commandes de diagnostic identifiés |
 | **T10** | Design system minimal et contrat API partagé | `US007` (`P1`) | Tokens et composants de base sans dépendance visuelle arbitraire ; contrat généré et partagé |
 | **T11** | Contrôles de sortie et préparation de la porte `G1` | — | Les 7 critères de sortie sont prouvés ; checklist remise à Jonathan |
@@ -138,9 +138,29 @@ l'ajout du droit relève de ses identifiants. Conséquence assumée : l'exécuti
 Apple Silicon** porte sur une liste de manifestes construite localement, dont l'empreinte
 **diffère** de celle publiée. Les deux empreintes sont nommées dans le compte rendu de `T7`.
 
-`T8` peut lever la réserve sans nouveau droit : la surcouche de recette tire les images publiées
-sur cette machine même — c'est-à-dire nativement en `arm64` — dès lors que Jonathan aura fait un
-`docker login ghcr.io`, ou en construisant localement la même définition.
+> **✅ LA RÉSERVE EST LEVÉE depuis le 29 juillet 2026, sous-étape `T8`.**
+>
+> Jonathan a élargi le jeton de `gh` à **`read:packages`** — lecture seule, aucune écriture, aucun
+> secret de dépôt créé — puis authentifié Docker au registre. C'est `DEC-483`, et cette décision
+> **renverse explicitement l'arbitrage ci-dessus**, dont le motif était de ne pas toucher au jeton.
+> Motif du renversement : sans authentification la recette ne peut pas tirer les images publiées,
+> donc elle exercerait une construction locale — or `DEC-478` pose qu'« une recette qui exerce un
+> autre artefact que la production ne recette rien ».
+>
+> **Mesure du 29/07/2026, sur l'image PUBLIÉE, tirée sur ce Mac :** hôte `arm64`, et `uname -m`
+> lu **dans** les trois conteneurs → **`aarch64`, 3 sur 3**. C'est la méthode de `T7` : lire une
+> valeur que l'autre architecture ne pourrait pas produire, plutôt que de conclure sur « le
+> conteneur a démarré », qui donnerait la même observation sur les deux.
+>
+> **Le tableau ci-dessus reste exact pour `T7`. Il se lit désormais ainsi :**
+>
+> | Architecture | Sur l'image **publiée** dans GHCR |
+> |---|---|
+> | `linux/amd64` | **natif**, exécuteur GitHub `x86_64` — depuis `T7` |
+> | `linux/arm64` | **natif**, ce Mac M5 en `aarch64` — depuis `T8` |
+>
+> Les deux architectures sont donc prouvées **nativement sur le même artefact publié**, ce qui est
+> strictement plus fort que ce que `T7` pouvait établir.
 
 ---
 

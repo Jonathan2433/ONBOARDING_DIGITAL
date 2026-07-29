@@ -61,12 +61,81 @@ REPERTOIRES := apps/web apps/api apps/worker packages/ui packages/contracts infr
 #  repond « couldn't find env file ». Ce piege a deja fait echouer les cibles
 #  health et minio-bucket pendant cette sous-etape.
 COMPOSE_DIR   := infra/compose
-ENV_FILE      := $(CURDIR)/.env
-COMPOSE_FILES_NUS := $(COMPOSE_DIR)/docker-compose.base.yml \
-                     $(COMPOSE_DIR)/docker-compose.dev.yml
-COMPOSE_FILES     := -f $(COMPOSE_DIR)/docker-compose.base.yml \
-                     -f $(COMPOSE_DIR)/docker-compose.dev.yml
-DC_DEV        := docker compose --env-file "$(ENV_FILE)" $(COMPOSE_FILES)
+
+# ---------------------------------------------------------------------------
+#  T8 — TOUTES LES CIBLES DE STACK SONT PARAMETREES PAR L'ENVIRONNEMENT.
+#
+#      make up                          le developpement, par defaut
+#      make up ENVIRONNEMENT=recette    la recette
+#      make up-recette                  alias equivalent, plus court
+#
+#  POURQUOI PARAMETRER PLUTOT QUE DUPLIQUER. La solution paresseuse aurait ete
+#  d'ecrire quinze cibles `*-recette` portant chacune une copie de la recette de
+#  son homologue. Deux copies d'une meme logique divergent, et la divergence est
+#  silencieuse : c'est le motif de DEC-466 pour le masquage, celui de ECART-022
+#  pour les modeles de configuration, et celui que T7 §2.3 a suivi en NE
+#  dupliquant pas le Caddyfile. Les seuls alias `*-recette` de ce fichier
+#  delèguent — ils ne portent aucune logique propre.
+#
+#  LE RISQUE DE CE CHOIX EST LA REGRESSION SUR `dev`, et il est nomme. Ces
+#  quinze cibles n'avaient jamais tourne que dans un seul etat. C'est exactement
+#  la classe des defauts T6-1 et T6-2 : `make env` employait la forme BSD de
+#  `sed` et `make up` n'avait jamais fonctionne sur une machine propre, faute
+#  d'avoir jamais tourne ailleurs. La parade a ete de RELEVER les codes de sortie
+#  des onze controles AVANT la premiere modification, et de les confronter apres.
+# ---------------------------------------------------------------------------
+ENVIRONNEMENT ?= dev
+
+SURCOUCHE_COMPOSE := $(COMPOSE_DIR)/docker-compose.$(ENVIRONNEMENT).yml
+
+# UN NOM D'ENVIRONNEMENT FAUTIF DOIT ECHOUER TOUT DE SUITE, ET LE DIRE.
+# Sans ce garde-fou, `make up ENVIRONNEMENT=recete` passerait a Compose un `-f`
+# vers un fichier absent, et l'erreur parlerait d'un chemin, pas d'une faute de
+# frappe. Le controle est evalue a la lecture du Makefile, donc avant toute
+# action : rien ne peut avoir demarre a moitie.
+ifeq ($(wildcard $(SURCOUCHE_COMPOSE)),)
+$(error ENVIRONNEMENT=$(ENVIRONNEMENT) inconnu : $(SURCOUCHE_COMPOSE) n'existe pas. \
+Environnements disponibles : $(patsubst $(COMPOSE_DIR)/docker-compose.%.yml,%, \
+$(filter-out $(COMPOSE_DIR)/docker-compose.base.yml, \
+$(wildcard $(COMPOSE_DIR)/docker-compose.*.yml))))
+endif
+
+# Le developpement garde `.env` tout court : le suffixe ne serait qu'une gene
+# pour l'environnement employe cent fois par jour, et tout le corpus le nomme
+# ainsi depuis T2. Les autres environnements prennent `.env.<nom>`, deja couvert
+# par `.env.*` dans .gitignore — VERIFIE par `git check-ignore`, non suppose.
+ifeq ($(ENVIRONNEMENT),dev)
+SUFFIXE_ENV :=
+else
+SUFFIXE_ENV := .$(ENVIRONNEMENT)
+endif
+ENV_FILE := $(CURDIR)/.env$(SUFFIXE_ENV)
+
+# Le calque de differences, s'il existe. Le developpement n'en a pas : c'est lui
+# que `.env.example` decrit.
+CALQUE_ENV := $(wildcard $(COMPOSE_DIR)/differences-$(ENVIRONNEMENT).env)
+
+COMPOSE_FILES_NUS := $(COMPOSE_DIR)/docker-compose.base.yml $(SURCOUCHE_COMPOSE)
+COMPOSE_FILES     := -f $(COMPOSE_DIR)/docker-compose.base.yml -f $(SURCOUCHE_COMPOSE)
+DC                := docker compose --env-file "$(ENV_FILE)" $(COMPOSE_FILES)
+
+# LE DEVELOPPEMENT CONSTRUIT, LA RECETTE TIRE — ET REFUSE DE CONSTRUIRE.
+#
+# La surcouche de recette epingle les images publiees par empreinte, mais le
+# fichier de base declare aussi `build:` pour les trois services applicatifs.
+# Compose accepte les deux ensemble : si l'image tiree manquait, `up`
+# CONSTRUIRAIT localement et la recette exercerait un artefact different de
+# celui que la production deploiera — en paraissant parfaitement saine. DEC-478
+# dit l'inverse : « une recette qui exerce un autre artefact ne recette rien ».
+#
+# `--no-build` transforme donc ce detournement silencieux en echec bruyant.
+ifeq ($(ENVIRONNEMENT),dev)
+PREPARER_IMAGES := build
+DRAPEAUX_UP     :=
+else
+PREPARER_IMAGES := pull
+DRAPEAUX_UP     := --no-build
+endif
 
 # Les huit services attendus sains (cahier 15.4).
 SERVICES := db redis minio mailpit caddy api worker web
@@ -141,7 +210,9 @@ ETIQUETTE_LOCALE := onboarding-local
         env env-check up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
         web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
-        images-check images-build images-inspect images-verify images-push
+        images-check images-build images-inspect images-verify images-push \
+        images-pin separations-check \
+        up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
 
@@ -439,34 +510,39 @@ images-push: ## Publier les 3 images multiarchitecture dans GHCR (CI, ETIQUETTES
 #  Stack Docker locale (T2)
 # ---------------------------------------------------------------------------
 
-# `sed` PORTABLE, et ce n'est pas un detail de style. La forme BSD `sed -i ''`
-# de macOS fait echouer GNU sed, qui lit le script comme un nom de fichier :
-# mesure du 29/07/2026 sur GNU sed 4.9, « can't read s|^APP_SECRET_KEY... »,
-# code 2. Cette cible est appelee par `make up`, donc par l'integration
-# continue sur un executeur Linux : la forme BSD y cassait toute la tache.
-# Le fichier temporaire est couvert par `.env.*` dans .gitignore.
-env: ## Creer .env depuis .env.example, avec des secrets locaux generes
-	@if [ -f "$(ENV_FILE)" ]; then \
-		echo "  $(ENV_FILE) existe deja : inchange"; \
-	else \
-		cp .env.example "$(ENV_FILE)"; \
-		for v in APP_SECRET_KEY POSTGRES_PASSWORD REDIS_PASSWORD MINIO_ROOT_PASSWORD; do \
-			s=$$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48); \
-			sed "s|^$$v=CHANGE_ME.*|$$v=$$s|" "$(ENV_FILE)" > "$(ENV_FILE).tmp" \
-				&& mv "$(ENV_FILE).tmp" "$(ENV_FILE)"; \
-		done; \
-		sed "s|^MINIO_ROOT_USER=CHANGE_ME.*|MINIO_ROOT_USER=onboarding-dev-admin|" "$(ENV_FILE)" > "$(ENV_FILE).tmp" \
-			&& mv "$(ENV_FILE).tmp" "$(ENV_FILE)"; \
-		echo "  $(ENV_FILE) cree depuis .env.example"; \
-		echo "  4 secrets engendres aleatoirement sur 48 caracteres, et un"; \
-		echo "  MINIO_ROOT_USER lisible : cinq variables renseignees en tout"; \
-		echo "  .env n'est PAS versionne : .gitignore le refuse (verifie)"; \
-		echo; \
-		echo "  RESTENT volontairement en CHANGE_ME, et ce n'est pas un oubli :"; \
-		echo "    IMPORT_SOURCE_RETENTION_DAYS  -> sa valeur releve de QO-100, bloquante"; \
-		echo "    UPTIME_KUMA_PUSH_URL          -> supervision externe, LOT 13"; \
-	fi
-	@$(MAKE) --no-print-directory env-check
+# T8 — LE TRAVAIL EST PASSE DU SHELL A PYTHON, et pour trois raisons mesurees.
+#
+# La version de T2 etait `cp` puis cinq substitutions `sed`. Elle suffisait pour
+# UN environnement et une valeur en dur, `MINIO_ROOT_USER=onboarding-dev-admin`.
+# T8 doit engendrer un SECOND fichier avec une vingtaine de valeurs differentes,
+# et le shell y devient dangereux :
+#
+#   1. LE DELIMITEUR DE `sed`. La forme employee etait `s|^NOM=.*|NOM=valeur|`.
+#      Une valeur contenant `|` casse la substitution ; une valeur contenant `&`
+#      est reinjectee par sed comme la chaine appariee. Le calque de recette
+#      porte deja une URL.
+#   2. LA PORTABILITE. `sed -i ''` de BSD fait echouer GNU sed, qui lit le script
+#      comme un nom de fichier — mesure du 29/07/2026, GNU sed 4.9, code 2. C'est
+#      le defaut T6-1 : cette cible est appelee par `make up`, donc par
+#      l'integration continue sur un executeur Linux, ou la forme BSD cassait
+#      TOUTE la tache. Le script Python ne modifie jamais en place.
+#   3. UNE SUBSTITUTION SUR UN NOM ABSENT NE FAIT RIEN, EN SILENCE. `sed` sort en
+#      0 sans rien changer. Un calque nommant `POSTGRES_DBB` aurait donc laisse la
+#      recette partager la base du developpement, et la separation 2 sur 7 aurait
+#      ete perdue sans un mot. `composer-env.py` REFUSE de continuer dans ce cas —
+#      et il l'a effectivement attrape pendant l'ecriture de T8, sur CADDY_SITE_APP
+#      et CADDY_SITE_API, que j'avais mises au calque sans les declarer au modele.
+#
+# Le chemin de CREATION est desormais eprouve, ce qu'il n'avait jamais ete sur
+# cette machine : `.env` existait depuis T2, donc la cible n'y faisait rien.
+# Quatre temoins negatifs : idempotence, nom inconnu, doublon, ligne malformee.
+env: ## Creer le fichier d'environnement, avec des secrets locaux engendres
+	@python3 infra/scripts/composer-env.py \
+		--modele .env.example \
+		--cible "$(ENV_FILE)" \
+		--environnement $(ENVIRONNEMENT) \
+		$(if $(CALQUE_ENV),--calque $(CALQUE_ENV),)
+	@$(MAKE) --no-print-directory env-check ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 # T7, ECART-022 — LA PARADE A UN DEFAUT QUE `make env` NE PEUT PAS CORRIGER.
 #
@@ -489,8 +565,12 @@ env: ## Creer .env depuis .env.example, avec des secrets locaux generes
 # Ce controle compte les deux fichiers et NOMME les manquantes. Il ne modifie
 # rien : ajouter automatiquement des lignes a un fichier de secrets serait pire
 # que le defaut.
-env-check: ## Verifier que .env declare toutes les variables de .env.example
-	@python3 infra/scripts/verifier-images.py environnement
+# T8 — LE FICHIER EXAMINE SUIT L'ENVIRONNEMENT, et il devait le suivre. Il y a
+# desormais deux fichiers d'environnement ; un controle qui n'aurait regarde que
+# `.env` aurait laisse `.env.recette` deriver exactement comme ECART-022 l'a
+# montre, c'est-a-dire en silence et pendant deux sous-etapes.
+env-check: ## Verifier que le fichier d'environnement declare toutes les variables du modele
+	@python3 infra/scripts/verifier-images.py environnement --fichier ".env$(SUFFIXE_ENV)"
 
 # DEMARRAGE EN DEUX TEMPS, et l'ordre n'est pas cosmetique.
 #
@@ -507,40 +587,51 @@ env-check: ## Verifier que .env declare toutes les variables de .env.example
 #
 # Le bucket est donc cree APRES que MinIO soit sain, mais AVANT que l'API ne
 # doive l'etre.
-up: env ## Demarrer la stack de developpement : les 8 services
-	@echo "==> Construction des images api, worker et web"
-	$(DC_DEV) build
+#
+# T8 — CET ORDRE EST CONSERVE A L'IDENTIQUE POUR LA RECETTE, et c'est le point.
+# Le volume `minio-data` de la recette n'existe pas au premier demarrage : la
+# condition qui a fait echouer l'executeur neuf le 29/07/2026 est exactement
+# celle du premier `make up-recette`. Eprouve, et pas seulement herite.
+up: env ## Demarrer la stack : les 8 services (ENVIRONNEMENT=dev par defaut)
+	@echo "==> Images de $(ENVIRONNEMENT) : $(PREPARER_IMAGES)"
+	$(DC) $(PREPARER_IMAGES)
 	@echo "==> Demarrage des services d'infrastructure"
-	$(DC_DEV) up --detach --wait db redis minio mailpit
-	@$(MAKE) --no-print-directory minio-bucket
+	$(DC) up --detach --wait $(DRAPEAUX_UP) db redis minio mailpit
+	@$(MAKE) --no-print-directory minio-bucket ENVIRONNEMENT=$(ENVIRONNEMENT)
 	@echo "==> Demarrage des services applicatifs"
-	$(DC_DEV) up --detach --wait
-	@$(MAKE) --no-print-directory caddy-reload
+	$(DC) up --detach --wait $(DRAPEAUX_UP)
+	@$(MAKE) --no-print-directory caddy-reload ENVIRONNEMENT=$(ENVIRONNEMENT)
 	@echo
-	@$(MAKE) --no-print-directory health
-	@$(MAKE) --no-print-directory ports
+	@$(MAKE) --no-print-directory health ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory ports ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 down: ## Arreter la stack. LES VOLUMES SONT CONSERVES
-	$(DC_DEV) down
+	$(DC) down
 
+# LE NOM DU PROJET EST LU DANS LE FICHIER D'ENVIRONNEMENT, jamais ecrit en dur.
+# La version de T2 annoncait « les volumes de onboarding-dev » : sur la recette,
+# elle aurait donc demande a Jonathan de confirmer la destruction d'un projet qui
+# n'est pas celui qu'elle allait detruire. Un message de confirmation qui nomme le
+# mauvais objet est pire qu'une absence de message.
 destroy: ## Arreter la stack ET SUPPRIMER LES VOLUMES (destructif)
-	@echo "  Cette cible supprime les volumes de donnees de onboarding-dev,"
-	@echo "  y compris caddy-data, qui porte l'autorite de certification interne."
-	@echo "  Sa perte obligera a reapprouver la racine dans le trousseau macOS,"
-	@echo "  ce qui demande le mot de passe de Jonathan."
-	@printf "  Taper exactement DETRUIRE pour confirmer : "
-	@read reponse; [ "$$reponse" = "DETRUIRE" ] || { echo "  annule"; exit 1; }
-	$(DC_DEV) down --volumes
+	@projet=$$(grep -E '^COMPOSE_PROJECT_NAME=' "$(ENV_FILE)" | cut -d= -f2); \
+	echo "  Cette cible supprime les volumes de donnees de $$projet,"; \
+	echo "  y compris caddy-data, qui porte l'autorite de certification interne."; \
+	echo "  Sa perte obligera a reapprouver la racine dans le trousseau macOS,"; \
+	echo "  ce qui demande le mot de passe de Jonathan."; \
+	printf "  Taper exactement DETRUIRE pour confirmer : "; \
+	read reponse; [ "$$reponse" = "DETRUIRE" ] || { echo "  annule"; exit 1; }
+	$(DC) down --volumes
 
 ps: ## Etat des conteneurs
-	@$(DC_DEV) ps
+	@$(DC) ps
 
 logs: ## Suivre les journaux de la stack
-	@$(DC_DEV) logs --follow --tail 80
+	@$(DC) logs --follow --tail 80
 
 minio-bucket: ## Creer le bucket MinIO (idempotent, ARB-ROAD-002)
 	@bucket=$$(grep -E '^MINIO_BUCKET=' "$(ENV_FILE)" | cut -d= -f2); \
-	$(DC_DEV) exec -T minio sh -c \
+	$(DC) exec -T minio sh -c \
 		"mc alias set local http://127.0.0.1:9000 \"\$$MINIO_ROOT_USER\" \"\$$MINIO_ROOT_PASSWORD\" >/dev/null \
 		 && mc mb --ignore-existing local/$$bucket >/dev/null \
 		 && mc stat local/$$bucket >/dev/null" \
@@ -576,7 +667,7 @@ minio-bucket: ## Creer le bucket MinIO (idempotent, ARB-ROAD-002)
 #    configuration chargee au demarrage.
 caddy-reload: ## Recharger la configuration de Caddy (idempotent, et compare hote/conteneur)
 	@empreinte_hote=$$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" infra/caddy/Caddyfile); \
-	sortie=$$($(DC_DEV) exec -T caddy sha256sum /etc/caddy/Caddyfile 2>&1); \
+	sortie=$$($(DC) exec -T caddy sha256sum /etc/caddy/Caddyfile 2>&1); \
 	code=$$?; \
 	if [ $$code -ne 0 ]; then \
 		echo "  ECHEC     le conteneur caddy ne voit PAS /etc/caddy/Caddyfile"; \
@@ -597,7 +688,7 @@ caddy-reload: ## Recharger la configuration de Caddy (idempotent, et compare hot
 		exit 1; \
 	fi; \
 	echo "  ok        le conteneur voit le MEME Caddyfile que l'hote ($$(printf '%s' "$$empreinte_hote" | cut -c1-16)...)"; \
-	sortie=$$($(DC_DEV) exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1); \
+	sortie=$$($(DC) exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1); \
 	code=$$?; \
 	if [ $$code -ne 0 ]; then \
 		echo "  ECHEC     rechargement de Caddy, code $$code :"; \
@@ -611,13 +702,13 @@ caddy-reload: ## Recharger la configuration de Caddy (idempotent, et compare hot
 # --no-deps : ne touche pas aux sept autres services, qui n'ont rien a se voir
 # redemarrer pour un probleme de montage propre a Caddy.
 caddy-recreate: ## Recreer le conteneur Caddy (repare un montage lie perime)
-	$(DC_DEV) up --detach --force-recreate --no-deps caddy
-	@$(MAKE) --no-print-directory caddy-reload
+	$(DC) up --detach --force-recreate --no-deps caddy
+	@$(MAKE) --no-print-directory caddy-reload ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 health: ## Verifier que les 8 services sont sains (echoue sinon)
 	@manque=0; \
 	for s in $(SERVICES); do \
-		cid=$$($(DC_DEV) ps -q $$s 2>/dev/null); \
+		cid=$$($(DC) ps -q $$s 2>/dev/null); \
 		if [ -z "$$cid" ]; then echo "  ABSENT    $$s"; manque=1; continue; fi; \
 		etat=$$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}sans-healthcheck{{end}}' "$$cid"); \
 		if [ "$$etat" = "healthy" ]; then \
@@ -637,11 +728,11 @@ stack-check: health ports ## Controler la stack : sante des 8 services et public
 # --workdir : alembic.ini reside dans apps/api, et `script_location` y est
 # relatif. Lance depuis /app, alembic repond « No 'script_location' key found ».
 migrate: ## Appliquer les migrations Alembic sur la base de developpement
-	$(DC_DEV) exec -T --workdir /app/apps/api api alembic upgrade head
-	@$(MAKE) --no-print-directory migrate-status
+	$(DC) exec -T --workdir /app/apps/api api alembic upgrade head
+	@$(MAKE) --no-print-directory migrate-status ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 migrate-status: ## Afficher la revision appliquee
-	@$(DC_DEV) exec -T --workdir /app/apps/api api alembic current
+	@$(DC) exec -T --workdir /app/apps/api api alembic current
 
 # Controle 8 des onze du cahier 23.1, et il verifie autre chose que `migrate` :
 # qu'il existe EXACTEMENT UNE tete de migration. Deux tetes signifient une
@@ -650,7 +741,7 @@ migrate-status: ## Afficher la revision appliquee
 # directory has multiple heads », mais seulement le jour ou quelqu'un migre.
 # Mieux vaut l'apprendre en integration continue.
 alembic-check: ## Verifier qu'il existe exactement une tete de migration
-	@sortie=$$($(DC_DEV) exec -T --workdir /app/apps/api api alembic heads 2>&1); \
+	@sortie=$$($(DC) exec -T --workdir /app/apps/api api alembic heads 2>&1); \
 	code=$$?; \
 	if [ $$code -ne 0 ]; then \
 		echo "  ECHEC     alembic heads a echoue :"; echo "$$sortie"; exit 1; \
@@ -675,7 +766,7 @@ test-unit: ## Tests sans dependance externe
 	$(UV) run pytest -m "not integration"
 
 test-integration: ## Tests exigeant la stack REELLE. Echoue si elle est absente
-	@$(MAKE) --no-print-directory health >/dev/null 2>&1 || { \
+	@$(MAKE) --no-print-directory health ENVIRONNEMENT=$(ENVIRONNEMENT) >/dev/null 2>&1 || { \
 		echo "  ECHEC : la stack n'est pas saine. Lancer make up."; \
 		echo "          Ces tests ne doivent PAS etre ignores en silence :"; \
 		echo "          un test ignore n'est pas un test qui passe."; \
@@ -691,11 +782,59 @@ persistence-test: ## Prouver que les volumes survivent a un arret/redemarrage
 	@echo "==> Releve des empreintes avant arret"
 	@sh infra/scripts/verifier-persistance.sh capture "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 	@echo "==> Arret, volumes conserves"
-	@$(DC_DEV) down >/dev/null 2>&1
+	@$(DC) down >/dev/null 2>&1
 	@echo "==> Redemarrage"
-	@$(DC_DEV) up --detach --wait >/dev/null 2>&1
+	@$(DC) up --detach --wait >/dev/null 2>&1
 	@echo "==> Comparaison"
 	@sh infra/scripts/verifier-persistance.sh compare "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+# ---------------------------------------------------------------------------
+#  Environnement de recette isole (T8, MVP-L01-US002)
+# ---------------------------------------------------------------------------
+
+# LES SEPT SEPARATIONS DU CAHIER 22.2, VERIFIEES SUR L'ETAT REEL.
+#
+# Ce controle exige que les DEUX environnements soient joignables : il compare
+# les projets, les bases, les buckets, les volumes, les secrets, les reseaux et
+# les ports. Il ne lit pas les fichiers .env pour conclure — une variable
+# declaree n'est pas une base servie.
+separations-check: ## Prouver les 7 separations du cahier 22.2 entre dev et recette
+	@python3 infra/scripts/verifier-separations.py
+
+# EPINGLER LA RECETTE SUR LA DERNIERE PUBLICATION REUSSIE, SANS COMMIT.
+#
+# Les empreintes par defaut de `docker-compose.recette.yml` sont celles d'un
+# build donne, et elles vieillissent. Cette cible les DERIVE de la source — les
+# journaux de la tache `publier` du workflow, qui les tient elle-meme du
+# --metadata-file de buildx — et les ecrit dans le fichier d'environnement de la
+# recette. Elle n'invente rien et ne transcrit rien de memoire : c'est l'interdit
+# de T7-9.
+#
+# Figer un nouveau pointeur DURABLEMENT reste un commit sur la surcouche, et
+# c'est voulu : changer l'artefact que l'on recette est un acte delibere.
+images-pin: ## Epingler la recette sur la derniere publication reussie (sans commit)
+	@python3 infra/scripts/epingler-images.py --fichier-env ".env.recette"
+
+# ---------------------------------------------------------------------------
+#  Alias de commodite. Ils DELEGUENT et ne portent aucune logique propre : une
+#  seconde copie d'une recette divergerait de la premiere, en silence.
+# ---------------------------------------------------------------------------
+up-recette: ## Demarrer la recette (alias de up ENVIRONNEMENT=recette)
+	@$(MAKE) --no-print-directory up ENVIRONNEMENT=recette
+
+down-recette: ## Arreter la recette, volumes conserves
+	@$(MAKE) --no-print-directory down ENVIRONNEMENT=recette
+
+stack-check-recette: ## Sante et ports de la recette
+	@$(MAKE) --no-print-directory stack-check ENVIRONNEMENT=recette
+
+# LE CONTROLE COMPLET DE LA RECETTE, dans l'ordre ou il a du sens : la stack est
+# saine, son environnement est coherent avec le modele, puis les sept
+# separations sont prouvees contre le developpement.
+recette-check: ## Controler la recette de bout en bout, separations comprises
+	@$(MAKE) --no-print-directory stack-check ENVIRONNEMENT=recette
+	@$(MAKE) --no-print-directory env-check ENVIRONNEMENT=recette
+	@$(MAKE) --no-print-directory separations-check
 
 # ---------------------------------------------------------------------------
 #  Nettoyage

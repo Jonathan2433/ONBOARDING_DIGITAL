@@ -1,0 +1,149 @@
+# ============================================================================
+#  Surcouche de l'environnement de RECETTE
+#
+#  LOT 1, sous-etape T8, story MVP-L01-US002. Decisions DEC-444, DEC-478,
+#  DEC-479, DEC-483 a DEC-486.
+#
+#  Projet Compose : onboarding-recette, fixe par COMPOSE_PROJECT_NAME dans
+#  .env.recette. Ce fichier ne se lance jamais seul : il complete
+#  docker-compose.base.yml. Passer par le Makefile :
+#
+#      make up ENVIRONNEMENT=recette      ou, equivalent :  make up-recette
+#
+#  CE QUI SEPARE CET ENVIRONNEMENT DU DEVELOPPEMENT — cahier 22.2, SEPT points
+#
+#    1. projet Docker      COMPOSE_PROJECT_NAME=onboarding-recette
+#    2. base PostgreSQL    POSTGRES_DB=onboarding_recette
+#    3. bucket MinIO       MINIO_BUCKET=onboarding-recette-media
+#    4. volumes            AUTOMATIQUE : Compose les prefixe du nom de projet
+#    5. secrets            ENGENDRES a la creation de .env.recette
+#    6. reseau             AUTOMATIQUE : onboarding-recette-net
+#    7. ports              les sept publications ci-dessous
+#
+#    Les cinq premieres et la sixieme viennent du calque
+#    `differences-recette.env` ; seuls les ports sont declares ici, parce qu'un
+#    port est une publication et non une variable d'application.
+#
+#    La fiche du lot 3 n'en enumere que SIX — « projet Docker distinct » y
+#    manque. C'est ECART-023, meme classe que ECART-018. Les sept sont comptees
+#    sur le cahier, et `make separations-check` les verifie une par une sur
+#    l'etat REEL des deux environnements, jamais sur la lecture d'un .env.
+#
+#  CE QUE CETTE SURCOUCHE FAIT DE PLUS QUE CELLE DU DEVELOPPEMENT
+#
+#    Elle EPINGLE LES IMAGES PUBLIEES. Le developpement construit ; la recette
+#    execute l'artefact que la production deploiera. C'est l'intention litterale
+#    de DEC-478 : « pour que la recette de T8 recette exactement ce que la
+#    production deploiera. Une recette qui exerce un autre artefact que la
+#    production ne recette rien. »
+# ============================================================================
+
+services:
+  db:
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT}:5432'
+    mem_limit: 1g
+
+  redis:
+    ports:
+      - '127.0.0.1:${REDIS_HOST_PORT}:6379'
+    mem_limit: 512m
+
+  minio:
+    ports:
+      - '127.0.0.1:${MINIO_HOST_PORT}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_HOST_PORT}:9001'
+    mem_limit: 1g
+
+  mailpit:
+    ports:
+      - '127.0.0.1:${MAILPIT_HOST_PORT}:8025'
+    mem_limit: 256m
+
+  caddy:
+    ports:
+      - '127.0.0.1:${CADDY_HTTP_HOST_PORT}:80'
+      - '127.0.0.1:${CADDY_HTTPS_HOST_PORT}:443'
+    mem_limit: 256m
+
+  # ---------------------------------------------------------------------------
+  #  LES TROIS IMAGES APPLICATIVES, EPINGLEES PAR EMPREINTE DE LISTE DE
+  #  MANIFESTES.
+  #
+  #  POURQUOI UNE EMPREINTE ET NON L'ETIQUETTE `develop`
+  #
+  #    DEC-481 destine bien `develop` a « la recette locale seulement », et on
+  #    pourrait donc l'employer ici. Deux raisons de ne pas le faire :
+  #
+  #    1. `make images-check` EXIGE `@sha256:` sur toute reference d'image des
+  #       fichiers suivis (DEC-443, cahier 23.3). Le controle attendait deja
+  #       cette surcouche, et il a raison : une etiquette se deplace.
+  #    2. le critere de la story dit « une meme version IMMUABLE fonctionne ».
+  #       `develop` designe un artefact different a chaque fusion ; une empreinte
+  #       en designe UN. Recetter une cible mouvante n'est pas recetter.
+  #
+  #  LES TROIS EMPREINTES SONT MESUREES, PAS TRANSCRITES DE MEMOIRE.
+  #
+  #    Source : execution 30458611741 du workflow `Images multiarchitecture`,
+  #    commit 3d4080a de `develop`, tache `publier`, etape « Relever les
+  #    empreintes » — qui les tient elle-meme du --metadata-file de buildx, donc
+  #    du constructeur. Cette etape imprime « empreintes attendues : 3
+  #    relevees : 3 ».
+  #
+  #    L'interdit de T7-9 est explicite sur ce point : ne jamais ecrire une
+  #    empreinte qu'on n'a pas relevee. Une valeur plausible dans un fichier
+  #    versionne donne l'apparence d'une verification la ou il n'y en a aucune.
+  #
+  #  POURQUOI UNE VALEUR PAR DEFAUT SUBSTITUABLE, ET NON L'EMPREINTE SEULE
+  #
+  #    `${IMAGE_API:-<empreinte>}` permet de deplacer le pointeur sans commit :
+  #    `make images-pin` derive les empreintes de la derniere publication reussie
+  #    et les ecrit dans `.env.recette`. Figer un nouveau pointeur DURABLEMENT
+  #    reste un commit, et c'est voulu : changer l'artefact recette est un acte
+  #    delibere.
+  #
+  #    Le defaut inscrit ici est une vraie empreinte relevee : le controle
+  #    statique porte donc sur une valeur reelle. Et parce qu'un contrôle
+  #    statique ne peut rien dire de la substitution, `make separations-check`
+  #    verifie EN PLUS que la reference EFFECTIVEMENT assemblee est epinglee, et
+  #    que le conteneur en marche tourne bien sur elle.
+  #
+  #  `build:` RESTE HERITE DE LA BASE, ET C'EST UN RISQUE QU'IL FAUT NOMMER
+  #
+  #    Le fichier de base declare `build:` pour ces trois services. Compose
+  #    accepte `image:` ET `build:` ensemble : si l'image est absente localement,
+  #    `up` CONSTRUIRAIT au lieu de tirer, et la recette exercerait un artefact
+  #    local en paraissant parfaitement saine. C'est exactement la classe de
+  #    defaut silencieux de DEC-479.
+  #
+  #    Parade, en deux temps :
+  #      - `make up ENVIRONNEMENT=recette` tire d'abord, puis lance avec
+  #        `--no-build` : une image absente fait ECHOUER le demarrage, bruyamment,
+  #        au lieu de le detourner ;
+  #      - `make separations-check` lit l'empreinte de l'image REELLEMENT en
+  #        execution et la compare a celle demandee.
+  # ---------------------------------------------------------------------------
+  api:
+    image: ${IMAGE_API:-ghcr.io/jonathan2433/onboarding-digital/api@sha256:81d4be5fbab7ebf88c4613aad7d37b6de374e1f0006669e25c12a9929fc7081e}
+    mem_limit: 1g
+
+  worker:
+    image: ${IMAGE_WORKER:-ghcr.io/jonathan2433/onboarding-digital/worker@sha256:378189e118301e51dcfc555fed23b6aa65347bd5c7896dd61dbea5e8b23e237a}
+    mem_limit: 1g
+
+  web:
+    image: ${IMAGE_WEB:-ghcr.io/jonathan2433/onboarding-digital/web@sha256:a6b656421246cbfb991d81c8ac6db17bd262b0f7fff6750c33ac67841cfae222}
+    # T7, DEC-479 — SELECTION EXPLICITE DE LA CIBLE, et elle est OBLIGATOIRE.
+    #
+    # L'empreinte ci-dessus designe deja la cible `execution` : le workflow ne
+    # publie que celle-la. Cette ligne ne sert donc pas au tirage — elle sert au
+    # REPLI par construction locale, et elle est exigee par `make images-check`,
+    # qui echoue si une surcouche ne nomme aucune cible.
+    #
+    # Sans elle, une construction locale de repli prendrait la DERNIERE etape du
+    # Dockerfile. Cela donne `execution`, donc le bon resultat par accident : le
+    # controle existe justement pour que ce ne soit pas un accident. Le
+    # developpement, lui, aurait perdu son rechargement a chaud en restant sain.
+    build:
+      target: execution
+    mem_limit: 1g

@@ -2,10 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T7`** — §1, §4, §5, §7, §8,
+**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T8`** — §1, §4, §5, §7, §8,
 §9, §10 et §11 rectifiés **sur mesures**. **Cinq affirmations de ce document se sont révélées
 fausses : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T8`**
+**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T9`**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** · **`T6`** · **`T7`** |
-| **Prochaine action** | **`T8`** — environnement de recette isolé. Story `MVP-L01-US002`, issue [#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3), **à rouvrir** |
-| Stories `Done` | **6 sur 8** : `US001` à `US006`. Issues `#2` à `#7` closes |
-| Stories restantes | `US007` design system (`P1`) · `US008` documentation. **`US002` rouverte pour `T8`** |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** · **`T6`** · **`T7`** · **`T8`** |
+| **Prochaine action** | **`T9`** — documentation d'exploitation locale. Story `MVP-L01-US008`, issue [#9](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/9), **déjà ouverte** |
+| Stories `Done` | **6 sur 8** : `US001` à `US006`. `US002` a reçu `T2`, `T5` **et `T8`** |
+| Stories restantes | `US007` design system (`P1`) · `US008` documentation, **`T9`** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
+| Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest**. Inchangé depuis `T7` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
-| **Images** | **3 images multiarchitecture** `linux/amd64` + `linux/arm64`, publiées dans GHCR privé, **lancées sur les deux** — 39 contrôles fonctionnels. `web` : **84,9 Mo** |
-| Registres | **150 décisions** · 22 écarts (5 ouverts) · 38 questions (34 ouvertes) · 33 risques |
+| **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
+| Registres | **156 décisions** · 23 écarts (5 ouverts) · 38 questions (**33 ouvertes**) · **34 risques** |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -55,12 +55,13 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 > cités en prose, qui restent à la charge du lecteur. **Ne rétablis aucun compte de fichiers sans
 > poser d'abord le contrôle qui le dérive.**
 
-**La plateforme démarre, répond, s'affiche, et elle est désormais empaquetée.** `make up` lève les
-huit services, l'API sert ses trois endpoints de santé à travers Caddy en HTTPS, la migration
-initiale s'applique, les journaux sortent en JSON corrélé, la page de statut affiche l'état réel
-des dépendances sur `app.onboarding.localhost`, et **les trois images sont publiables en
-multiarchitecture dans GHCR privé, avec leur version gravée dedans**. Il n'existe **aucun écran
-métier** ni **aucune donnée métier**.
+**La plateforme démarre, répond, s'affiche, elle est empaquetée, et elle existe désormais en DEUX
+environnements isolés.** `make up` lève les huit services du développement, `make up-recette` lève
+les huit de la recette **sur les images publiées**, et les **sept** séparations du cahier §22.2 sont
+prouvées sur l'état réel — 57 contrôles, 0 échec. L'API sert ses trois endpoints de santé à travers
+Caddy en HTTPS dans les deux, la migration initiale s'applique dans les deux, les journaux sortent en
+JSON corrélé, et la page de statut est servie sur `app.onboarding.localhost` et
+`app.recette.onboarding.localhost`. Il n'existe **aucun écran métier** ni **aucune donnée métier**.
 
 **Le régime de contribution est contraignant.** `main` et `develop` sont protégées avec
 `enforce_admins` : **aucun commit direct**, y compris documentaire, y compris pour Jonathan.
@@ -102,9 +103,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **8 barrées** |
-| **Comment a-t-on fait `T1` à `T7` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5,6,7}-lot-1.md`** |
-| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **150 décisions** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **9 barrées** |
+| **Comment a-t-on fait `T1` à `T8` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5,6,7,8}-lot-1.md`** |
+| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **156 décisions**, et `make docs-check` en **dérive désormais les totaux** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
 
 Les cinq documents de cadrage sont **immuables**. Intégrité prouvée par empreinte SHA-256 dans
@@ -236,9 +237,41 @@ vulnérabilité**, les totaux sont exactement ceux des images de base.
 > n'a pas `read:packages`, et Jonathan a arbitré de ne pas l'ajouter. Sur l'image publiée, `amd64`
 > est natif et `arm64` est **émulé**. Les deux empreintes sont nommées au compte rendu.
 
+## 4.10 `T8` — environnement de recette isolé, sur les images publiées
+
+**Les SEPT séparations du cahier §22.2, et la fiche n'en énumérait que six.** Le critère écrit dans
+la fiche omettait « projet Docker distinct » — celle qui **produit** les volumes et le réseau
+distincts, Compose les préfixant du nom de projet. C'est `ECART-023`, exactement la classe de
+`ECART-018`. **Compte-les sur le cahier, jamais sur une fiche.**
+
+**Comment :** chaque séparation est lue sur l'**état réel**, jamais sur un fichier `.env` — une
+variable déclarée n'est pas une base servie, et `T7-8` l'avait montré. Deux séparations exigeaient
+mieux qu'une comparaison de noms : la base et le bucket de l'autre environnement doivent être
+**ABSENTS**, parce que deux noms distincts dans deux services qui partageraient un volume donneraient
+la même observation. **57 contrôles, 0 échec, et le vérificateur compte les séparations examinées.**
+
+**La recette exécute l'artefact PUBLIÉ, épinglé par empreinte** (`DEC-486`). Le fichier de base
+déclare `build:` : sans garde-fou, une image absente ferait construire localement et la recette
+exercerait un autre artefact **en paraissant saine**. `--no-build` rend l'échec bruyant — éprouvé
+avant l'authentification : `unauthorized`, **0 conteneur démarré, 0 construction de repli**.
+
+**La réserve `arm64` de la fiche §3.1 est LEVÉE.** Jonathan a élargi son jeton à `read:packages`
+(`DEC-483`, qui renverse l'arbitrage de `T7`), la recette tire l'image publiée sur ce Mac, et
+`uname -m` y rend **`aarch64` 3 fois sur 3**. Les deux architectures sont désormais natives **sur le
+même artefact**.
+
+**Et un constat que le critère ne visait pas.** Mon contrôle d'isolement réseau a échoué sur un
+livrable conforme. Diagnostic avant correction : **publier un port perce l'isolement inter-réseaux
+de Docker** — mesuré sur un **même conteneur**, `mailpit:8025` publié est joignable depuis la
+recette, `mailpit:1025` non publié ne l'est pas. La règle `ACCEPT` d'un port publié précède les
+règles `DOCKER-ISOLATION`. **Ce qui protège est la cinquième séparation, les secrets** : avec le mot
+de passe de la recette, la base de dev **refuse**. `ROAD-RSK-034`, et vois §7.20.
+
+---
+
 ## 4.10 Les décisions qui contraignent ton travail quotidien
 
-Les 150 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 156 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -289,10 +322,10 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`482` en usage | **`DEC-483`** |
-| `ECART-nnn` | `001`–`022` | **`ECART-023`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`488` en usage | **`DEC-489`** |
+| `ECART-nnn` | `001`–`023` | **`ECART-024`** |
 | `QO-nnn` | `072`–`114`, **5 trous** | **`QO-115`** |
-| `ROAD-RSK-nnn` | `001`–`033` | **`ROAD-RSK-034`** |
+| `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
 
@@ -339,7 +372,7 @@ réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 > `T2`. MinIO vient de **quay.io**, Mailpit de **ghcr.io** : leurs registres de publication, non
 > limités. Si une inspection d'image échoue, **lis l'erreur** avant de conclure à une absence.
 
-## 5.3 Les 44 cibles du `Makefile`
+## 5.3 Les 50 cibles du `Makefile`, et le paramètre qui les commande
 
 ```text
 Environnement   tools versions tree icloud-exclude icloud-verify install
@@ -349,10 +382,30 @@ Stack           env env-check up down destroy ps logs health ports minio-bucket
                 stack-check persistence-test caddy-reload caddy-recreate
 API             migrate migrate-status api-check alembic-check
 Frontend        web-check test-frontend
-Images (T7)     images-check images-build images-inspect images-verify images-push
+Images          images-check images-build images-inspect images-verify images-push
+                images-pin                                            ← T8
+Recette (T8)    separations-check up-recette down-recette
+                stack-check-recette recette-check
 Nettoyage       clean clean-deps
 Aide            help
 ```
+
+> **DEPUIS `T8`, LES 15 CIBLES DE STACK SONT PARAMÉTRÉES PAR `ENVIRONNEMENT`**, dont `dev` est le
+> défaut. `make up` reste `make up` ; `make up ENVIRONNEMENT=recette` lève la recette, et
+> `make up-recette` en est l'alias. Les alias **délèguent** et ne portent aucune logique propre :
+> deux copies d'une même recette divergent en silence, c'est `ECART-022` et `DEC-466`.
+>
+> **Un nom d'environnement fautif échoue à la LECTURE du `Makefile`**, avant toute action, et la
+> liste des noms valides est **dérivée du disque** : `ENVIRONNEMENT=recete` répond
+> « Environnements disponibles : dev recette ».
+>
+> `.env` sert le développement, `.env.recette` la recette — **déjà couvert par `.env.*` dans
+> `.gitignore`, vérifié par `git check-ignore`**. Le modèle reste **unique**, `.env.example`, plus un
+> **calque de différences versionné** par environnement : un second modèle de 79 variables
+> divergerait.
+>
+> **`make separations-check` exige que les DEUX stacks tournent.** C'est une exception bornée à
+> `DEC-440`, motivée : l'épreuve d'isolement réseau serait sans valeur si la cible était arrêtée.
 
 `make check` = qualité complète. `make stack-check` = santé des 8 services + ports.
 `make web-check` = la page vue **comme un navigateur la voit**, à travers Caddy en HTTPS.
@@ -374,9 +427,9 @@ variables manquaient depuis `T3` et `T4` (`ECART-022`).
 **`make caddy-recreate` est le remède au piège du §7.17.** Elle recrée le seul conteneur Caddy pour
 lui faire re-résoudre son montage lié.
 
-## 5.4 Variables de `.env.example` — **v1.1**, `ECART-006` et `ECART-022` clos
+## 5.4 Variables de `.env.example` — **v1.2**, `ECART-006` et `ECART-022` clos
 
-**77 variables, 77 noms distincts, aucun secret.** **7** valent `CHANGE_ME` (`ECART-019` : la chaîne
+**79 variables, 79 noms distincts, aucun secret.** `T8` a ajouté `CADDY_SITE_APP` et `CADDY_SITE_API`. **7** valent `CHANGE_ME` (`ECART-019` : la chaîne
 apparaît 9 fois, mais deux occurrences sont des commentaires — compte le motif
 `^[A-Z_][A-Z0-9_]*=CHANGE_ME`).
 
@@ -609,7 +662,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**63 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **53 pendant `T1` à `T7`**. Ils sont
+**69 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **59 pendant `T1` à `T8`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -706,7 +759,7 @@ chemin Compose contient une espace.
 > celui d'un autre maillon. Le piège n'y **existe pas**. Quand une classe d'erreur résiste à la
 > vigilance, change d'outil au lieu de promettre d'être plus attentif.
 
-## 7.3 Le code de sortie — **6 occurrences**, et la dernière est d'un autre type
+## 7.3 Le code de sortie — **7 occurrences**, et la dernière est d'un autre type
 
 ```bash
 sortie=$(commande 2>&1); code=$?          # correct... SAUF sous `set -e`
@@ -1002,6 +1055,43 @@ Les sous-étapes précédentes le faisaient déjà sans que ce soit écrit. **C'
 jusqu'à `T11`**, pas un incident — et le commentaire de fermeture est le bon endroit pour cocher les
 critères d'acceptation avec leurs preuves, ce que le backlog §11 exige.
 
+## 7.20 Un contrôle qui échoue sur un livrable conforme : ne l'affaiblis pas
+
+**Découvert en `T8`, et c'est la leçon la plus utile de cette sous-étape.** Mon contrôle
+d'isolement réseau exigeait que la base du développement soit injoignable depuis la recette. Il a
+échoué. Le livrable était pourtant conforme au cahier.
+
+**J'ai diagnostiqué avant de corriger** — leçon `T7-13` — et l'épreuve décisive a porté sur un
+**même conteneur**, ce qui élimine toute cause propre à un service :
+
+| Cible | Publié sur l'hôte ? | Depuis la recette |
+|---|---|---|
+| `dev mailpit 172.20.0.4:8025` | **oui** | **JOIGNABLE** |
+| `dev mailpit 172.20.0.4:1025` | non | `TimeoutError` |
+
+**Docker installe pour chaque port publié une règle `ACCEPT` dans la chaîne `FORWARD`, et elle
+précède ses règles `DOCKER-ISOLATION`.** Le paquet est accepté avant que l'isolement n'ait la
+parole. Le préfixe `127.0.0.1` de `DEC-460` protège du réseau local et du pare-feu de macOS ; il ne
+protège **pas** d'un autre réseau Docker de la même machine.
+
+**Le cahier §22.2 exige un « réseau distinct », pas l'inatteignabilité mutuelle.** Mon contrôle
+exigeait donc plus que le critère. Trois réactions possibles, et une seule est bonne :
+
+- le **supprimer** — on perd l'information ;
+- l'**affaiblir** en le faisant porter sur les noms de réseau — il ne prouverait plus rien ;
+- **le faire dire le vrai**, ce qui a été retenu.
+
+> **La règle, sans jargon :** fais-lui **exiger** ce qui est exigible — noms, sous-réseaux, DNS, et
+> les ports **non publiés** ; **rapporter visiblement** ce qui ne l'est pas, en le nommant ; et
+> **exiger la barrière** qui rend le résiduel acceptable. Ici c'est la cinquième séparation : avec
+> le mot de passe de la recette, la base de dev **refuse**. Une barrière qui rend un résiduel
+> acceptable doit être un **contrôle**, jamais une affirmation.
+
+C'est le parti de `DEC-482` pour Trivy, transposé. **Et le taire aurait été le pire choix** : le
+contrôle aurait annoncé « 7 séparations prouvées » en laissant croire davantage que ce qui est vrai.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — 5 ouverts sur 22
@@ -1014,6 +1104,8 @@ critères d'acceptation avec leurs preuves, ce que le backlog §11 exige.
 | `ECART-014` | « Représentant de cercle » contre « Booster » | LOT 6 |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
 
+`ECART-023` est ouvert et clos en **`T8`** — la fiche énumérait six des sept séparations du cahier §22.2, et empruntait « Mailpit exclusif » aux LOTS 11 et 13.
+
 `ECART-006` est **clos** en `T3`, et `ECART-022` en **`T7`** : `.env.example` est en **v1.1**,
 77 variables, 77 noms distincts. `ECART-022` couvrait cinq constats d'une même classe — un nombre
 ou une affirmation non dérivés de leur source — dont le plus sérieux n'était pas documentaire :
@@ -1024,7 +1116,7 @@ ou une affirmation non dérivés de leur source — dont le plus sérieux n'éta
 
 | ID | Objet | Quand |
 |---|---|---|
-| `QO-085` | RAM et disque du Mac M5. **Remesurée en `T7` : 483 à 494 Mio, 6,1 à 6,2 %** — c'était 389 Mio en `T5`. Ce qui manque pour clore : deux environnements simultanés | **`T8`** |
+| ~~`QO-085`~~ | **CLOSE en `T8`.** Deux stacks **simultanées** mesurées : **836,6 Mio pour seize services, 10,5 %** des 7 936 Mio. `DEC-440` reste en vigueur — mesurer la simultanéité ne l'autorise pas | close |
 | `QO-111` | **Fournisseur de collation PostgreSQL.** Ne se change pas sans recréer le cluster | LOT 2 |
 | `QO-112` | **Liste des extensions PostgreSQL.** `CREATE EXTENSION` exige des droits élevés | LOT 2 |
 | `QO-113` | **Conservation calendaire des journaux.** `json-file` borne par la taille | LOT 13 |
@@ -1042,7 +1134,8 @@ ou une affirmation non dérivés de leur source — dont le plus sérieux n'éta
 | ~~`ROAD-RSK-031`~~ | **CLOS en `T7`.** Deux cibles nommées. **`T8` doit encore SÉLECTIONNER `execution`** dans la surcouche de recette — `make images-check` échoue si elle ne nomme aucune cible |
 | `ROAD-RSK-015` | Secret intégré au code — **mesure effective depuis `T6`** : Gitleaks sur chaque pull request, historique compris, avec des règles taillées sur les formats de ce projet |
 | `ROAD-RSK-032` | Avis `GHSA-mh99-v99m-4gvg`, sévérité haute, dans une dépendance **de développement** de `jsx-a11y`. **Aucun correctif applicable** : la 1.x n'en a pas, et la 5.x casse le lint — mesuré. Tolérance nommée, `DEC-474` |
-| `ROAD-RSK-033` | **Nouveau.** Les images publiées héritent des vulnérabilités de leurs bases : `python:3.12-slim` porte **23 avis `HIGH`/`CRITICAL` dont AUCUN corrigeable**. **Nos couches n'en ajoutent aucune.** Résiduel accepté par `DEC-482`, à réévaluer **avant le LOT 13** |
+| `ROAD-RSK-033` | Les images publiées héritent des vulnérabilités de leurs bases : `python:3.12-slim` porte **23 avis `HIGH`/`CRITICAL` dont AUCUN corrigeable**. **Nos couches n'en ajoutent aucune.** Résiduel accepté par `DEC-482`, à réévaluer **avant le LOT 13** |
+| `ROAD-RSK-034` | **Nouveau, et mesuré en `T8`.** **Publier un port perce l'isolement inter-réseaux de Docker** : la règle `ACCEPT` d'un port publié précède les règles `DOCKER-ISOLATION`. Les **7** ports publiés du développement sont joignables depuis la recette, et une connexion à sa base **aboutit**. Le cahier §22.2 exige un réseau **distinct**, ce qui est acquis — pas l'inatteignabilité. **La barrière effective est la cinquième séparation, les secrets**, et `make separations-check` en fait une **exigence** : avec le mot de passe de la recette, la base de dev **refuse**. Résiduel accepté au LOT 1, **à réévaluer avant le LOT 13**, où la production locale portera des données réelles |
 
 ## 8.4 Contenus en attente de relecture
 
@@ -1051,7 +1144,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T8`
+# 9. Par où commencer : `T9`
 
 ## 9.0 Ce que les sous-étapes précédentes ont démenti dans ce document
 
@@ -1069,75 +1162,87 @@ fait, jamais mesurée.**
 4. `T7` : « **Les 3 `Dockerfile` sont mono-étape.** » `api` et `worker` en comptaient **deux
    `FROM`** chacun. Le fond était juste, l'affirmation non.
 5. `T7` : « **78 variables** » dans `.env.example`. Il y en avait **77**, l'une étant déclarée
-   deux fois. Et le `.env` de la machine en comptait **74** : trois variables ajoutées en `T3` et
-   `T4` n'y étaient jamais arrivées, ce que rien ne vérifiait (`ECART-022`).
+   deux fois. Et le `.env` de la machine en comptait **74** (`ECART-022`).
 
-**La leçon dépasse ces cinq cas.** Ce document décrit un état vérifié à une date. **Vérifie avant
-de bâtir dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande
-toute prête.** Et quand tu trouves un nombre faux, **cherche tous ceux qui partagent sa
-propriété** : trois passes ont été nécessaires pour refermer celle-ci.
+> **`T8` n'a pas démenti ce document — il a démenti la FICHE DU LOT, et deux fois.** Le critère de
+> `T8` énumérait **six** des **sept** séparations du cahier §22.2, et empruntait « Mailpit
+> exclusif » à `MVP-L11-US003`, donc au LOT 11, plus un critère de sortie du LOT 13. C'est
+> `ECART-023`, et c'est la classe de `ECART-018`. **La leçon s'élargit donc : ce n'est pas seulement
+> cette passation qui vieillit, c'est tout document dérivé d'un autre.** Compte sur la source.
+>
+> **`T8` a aussi démenti une de MES attentes, ce qui est différent d'une erreur du corpus.**
+> J'attendais que deux réseaux Docker distincts soient mutuellement inatteignables. Ils ne le sont
+> pas sur les ports publiés — mesuré. Voir §7.20 : le remède n'est pas d'affaiblir le contrôle.
+
+**La leçon dépasse ces cas.** Ce document décrit un état vérifié à une date. **Vérifie avant de
+bâtir dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande toute
+prête.** Et quand tu trouves un nombre faux, **cherche tous ceux qui partagent sa propriété** :
+`T8` en a trouvé un de plus, les totaux du registre des décisions, restés à **145** quand le corps
+en déclarait **150**. `DEC-488` pose le contrôle qui les dérive désormais.
 
 ## 9.1 Objet
 
-**Environnement de recette isolé.** Story `MVP-L01-US002`, issue
-[#3](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/3) — **à rouvrir**, comme `T5`
-l'avait fait, cette story portant déjà `T2` et `T5`.
+**Documentation d'exploitation locale.** Story `MVP-L01-US008`, issue
+[#9](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/9) — **déjà ouverte**, rien à
+rouvrir.
 
-**Critère de la fiche §3 :** « Volumes, base, bucket, réseau, ports et secrets distincts du
-développement ; Mailpit exclusif. »
+**Critère de la fiche §3 :** « Les procédures fonctionnent **depuis une machine propre** ; ports,
+volumes et commandes de diagnostic identifiés. »
 
-Le cahier §22.2 énumère **sept** séparations : projet Docker, base PostgreSQL, bucket MinIO,
-volumes, secrets, réseau, ports. Le critère de la fiche n'en nomme que six — **`ECART-018` est
-exactement de cette classe, une énumération tronquée**. Compte-les sur le cahier, pas sur la fiche.
+**Critère du backlog, littéral :** « Les procédures fonctionnent depuis une machine propre et
+identifient les ports, volumes et commandes utiles. »
+
+Les deux concordent, pour une fois. **Mais le périmètre a doublé depuis que la fiche a été écrite :**
+il y a désormais **deux** environnements, **quatorze** publications de ports et **douze** volumes.
+Compte-les, ne les recopie pas.
 
 ## 9.2 Ce qui est déjà là pour te servir
 
 | Élément | État |
 |---|---|
-| Compose | **Base + surcouche `dev`.** `DEC-444` prévoit la surcouche `recette` ; elle **n'existe pas** |
-| Images | **3 images multiarchitecture publiables**, avec **deux cibles** pour `web`. `T8` doit **sélectionner `execution`** |
-| Contrôle de sélection | `make images-check` **échoue** si une surcouche ne nomme aucune cible de construction. Il t'attend |
-| `Makefile` | **44 cibles.** Les cibles de stack sont câblées sur `DC_DEV` — **elles ne connaissent que la surcouche `dev`**. Voir §9.3 |
-| Ordre de démarrage | **`DEC-477`** : bucket MinIO créé **avant** que l'API doive être saine. À reproduire |
-| Mémoire | **483 à 494 Mio pour une stack, 6,1 à 6,2 %** des 7,75 Gio — deux mesures du 29/07/2026 à trente minutes d'intervalle. L'écart est la variance normale du service `web`, pas une imprécision de méthode. `QO-085` se ferme ici |
-| Approbation Caddy | La racine de `onboarding-dev` est approuvée. **La recette engendrera sa PROPRE racine**, dans son propre volume `caddy-data` |
+| Environnements | **deux**, `dev` et `recette`, prouvés séparés sur les 7 points du cahier §22.2 |
+| `Makefile` | **50 cibles**, paramétrées par `ENVIRONNEMENT`. `make help` est la source de vérité |
+| Contrôles rejouables | `stack-check` · `api-check` · `web-check` · `alembic-check` · `persistence-test` · `separations-check` · `recette-check` · `env-check` · `images-pin` |
+| Machine propre | **déjà éprouvé deux fois** : l'exécuteur neuf de `T6`, et le premier `make up-recette` de `T8` sur des volumes inexistants |
+| Ordre de démarrage | `DEC-477`, **avec son témoin négatif** : bucket avant que l'API doive être saine |
+| Un défaut à documenter | **`T8-4`** : après un démarrage interrompu, `make up` échoue une fois puis répare au second appel. Diagnostiqué, reproductible, **non corrigé** — c'est une procédure à écrire |
 
-## 9.3 Les pièges propres à `T8`
+## 9.3 Les pièges propres à `T9`
 
-1. **Le `Makefile` ne sait parler qu'à `dev`.** `DC_DEV` est en dur dans une vingtaine de cibles.
-   Les rendre paramétrables est le vrai travail de `T8`, et c'est là que se cachent les régressions :
-   toute cible que tu généralises doit être **rejouée sur `dev`** pour prouver qu'elle n'a pas
-   bougé. C'est exactement la classe `T6-1` et `T6-2` — un outillage qui n'a jamais tourné que dans
-   un seul état n'est pas éprouvé.
-2. **`DEC-440` n'autorise qu'un environnement à la fois.** `T8` prouve la **séparation** par
-   démarrages **successifs**, pas la simultanéité. Mais `QO-085` demande la mesure de **deux
-   stacks simultanées** : ce sont deux choses différentes, et il faudra dire laquelle est prouvée.
-   Budget mesuré : ~490 Mio par stack, donc deux stacks tiennent — mais les **ports** ne peuvent pas
-   être identiques, et c'est l'une des sept séparations.
-3. **Les ports de la recette doivent être distincts ET sur `127.0.0.1`.** `make ports` compare
-   déclarées et réelles ; il faudra qu'il examine la bonne surcouche.
-4. **Mailpit exclusif** : le critère l'exige, et le cahier §16.5 en fait une exigence de sécurité.
-   Aucun e-mail réel ne sort. À prouver, pas à affirmer.
-5. **La racine de Caddy de la recette ne sera pas approuvée**, et c'est normal. Tes contrôles
-   doivent rester en `curl -k` : ils ne doivent pas dépendre d'une action humaine.
-6. **Tu peux lever la réserve de `arm64` natif** (§4.9) : la recette tire l'image publiée **sur
-   cette machine**, donc nativement en `aarch64`. Cela demande un `docker login ghcr.io` de
-   Jonathan — **son action**, sans `sudo`. Propose-le, ne le fais pas à sa place.
+1. **« Depuis une machine propre » ne veut pas dire `make destroy`.** Cette cible supprime
+   `caddy-data`, donc l'autorité de certification interne, et Jonathan devrait réapprouver la racine
+   dans son trousseau. Pour éprouver un démarrage à froid, supprime **le seul volume utile** — c'est
+   ce que `T6` et `T8` ont fait.
+2. **Ne documente pas de mémoire.** La fiche §2.1 dit pourquoi `US008` devait passer avant la CI :
+   « documenter le lancement pendant qu'on vient de l'éprouver produit une documentation juste ;
+   documenter après, de mémoire, produit une documentation fausse. » L'ordre a changé, le motif non.
+   **Exécute chaque procédure que tu écris, et cite sa sortie réelle.**
+3. **Compte les ports et les volumes sur la source.** `make ports` les énumère par environnement,
+   `docker volume ls --filter label=com.docker.compose.project=…` de même. Toute liste recopiée est
+   un `ECART-021` en puissance.
+4. **La racine de Caddy de la recette n'est pas approuvée**, et c'est normal. Documente-le : un
+   navigateur avertira sur `https://app.recette.onboarding.localhost:8443`. Tes contrôles restent
+   en `curl -k`.
+5. **`make images-pin` fait partie de l'exploitation**, et son effet est local et non versionné.
+   Dis quand l'employer et ce qu'il ne fait pas.
+6. **`ROAD-RSK-034` doit apparaître dans la documentation d'exploitation** : un opérateur qui lance
+   les deux environnements doit savoir que les ports publiés de l'un sont joignables depuis l'autre,
+   et que ce sont les secrets distincts qui protègent.
 
 ## 9.4 Les 7 critères de sortie de la porte `G1`
 
 | | Critère | État |
 |:--:|---|---|
-| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, et **aussi sur une machine propre** depuis `T6` |
-| ☑ | **Les images multiarchitectures sont construites** | **`T7` — et elles sont LANCÉES sur les deux architectures** |
-| ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin. **`T7` n'a créé aucun secret de dépôt** |
-| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request |
+| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, sur une machine propre depuis `T6`, **et en recette depuis `T8`** |
+| ☑ | **Les images multiarchitectures sont construites** | **`T7` — lancées sur les deux, et `arm64` NATIF sur l'image publiée depuis `T8`** |
+| ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin. **Ni `T7` ni `T8` n'ont créé de secret de dépôt** |
+| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur la base de recette depuis `T8`** |
 | ☑ | Les logs possèdent un identifiant de corrélation | `T4` |
 | ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
 | ☐ | Jonathan valide le socle | `T11` |
 
-**Les six critères techniques sont acquis.** Restent `T8` recette, `T9` documentation, `T10` design
-system (`P1`), `T11` porte. À la validation, le tag **`v0.1.0`** est posé sur `main` (`DEC-428`).
+**Les six critères techniques sont acquis.** Restent `T9` documentation, `T10` design system
+(`P1`), `T11` porte. À la validation, le tag **`v0.1.0`** est posé sur `main` (`DEC-428`).
 
 > **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
 > de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
@@ -1159,8 +1264,8 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 .
 ├── CLAUDE.md                    ← ce document. AGENTS.md est un lien symbolique, NON VERSIONNÉ
 ├── README.md · CONTRIBUTING.md
-├── Makefile                     ← 44 cibles, point d'entrée unique ET celui des DEUX workflows
-├── .env.example                 ← v1.1, 77 variables, aucun secret (ECART-022)
+├── Makefile                     ← 50 cibles, paramétrées par ENVIRONNEMENT (T8, DEC-485)
+├── .env.example                 ← v1.2, 79 variables, aucun secret (ECART-022)
 ├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
 ├── .gitleaks.toml               ← regles taillees sur les formats de CE projet (T6)
 ├── .node-version · .python-version
@@ -1181,18 +1286,24 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │   ├── ui/               design system        ← tokens en T10
 │   └── contracts/        contrat API partagé  ← génération en T10
 ├── infra/
-│   ├── compose/  base + surcouche dev        ← surcouche recette en T8
+│   ├── compose/  base + surcouches dev ET recette (T8)
 │   │             la surcouche NOMME sa cible de construction (DEC-479)
+│   │             differences-recette.env  ← calque VERSIONNÉ, aucun secret
 │   ├── caddy/    Caddyfile — monté PAR SON RÉPERTOIRE (DEC-472), tls internal
 │   └── scripts/  exclure-icloud · verifier-{ports,persistance,sante,page-statut}
-│                  verifier-documentation.py  ← empreintes + sequences (T6)
-│                  verifier-images.py         ← 6 sous-commandes, TOUS les
-│                                                controles de T7. En Python, et
-│                                                le motif est en §7.2
+│                  verifier-documentation.py  ← empreintes, sequences, ET
+│                                                totaux DÉRIVÉS (T8, DEC-488)
+│                  verifier-images.py         ← 6 sous-commandes, controles de T7
+│                  verifier-separations.py    ← les 7 separations du cahier 22.2,
+│                                                l'artefact en marche, l'archi,
+│                                                Mailpit, QO-085          (T8)
+│                  composer-env.py            ← modele + calque + secrets (T8)
+│                  epingler-images.py         ← make images-pin           (T8)
+│                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 150 décisions, 22 écarts
-    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T7, registres
+    ├── decisions/                   ← 156 décisions, 23 écarts
+    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T8, registres
 ```
 
 `.github/` porte les gabarits d'issue et de pull request, et **deux workflows** :
@@ -1228,7 +1339,27 @@ make test-integration     # 8 tests sur services reels
 make images-check         # statique, aucun Docker requis
 make images-build         # 3 images x 2 architectures, en local, puis manifestes et tailles
 make images-verify        # LANCE les conteneurs sur les 2 architectures
+
+# RECETTE, depuis T8. Elle TIRE les images publiees : `docker login ghcr.io` requis.
+make up-recette           # les 8 services de recette, sur les images PUBLIEES
+make recette-check        # sante, ports, coherence du .env, puis les 7 separations
+make separations-check    # EXIGE que les DEUX stacks tournent (exception a DEC-440)
+make images-pin           # deplace le pointeur d'images sans commit, derive de la publication
+make down-recette         # arret, volumes conserves
 ```
+
+> **La recette ne demarre pas sans authentification au registre, et c'est voulu.** Si `make
+> up-recette` repond `unauthorized`, ce n'est pas une panne : c'est le garde-fou de `DEC-486` qui
+> refuse de se rabattre sur une construction locale. Le remede est un `docker login ghcr.io` de
+> Jonathan — **son action** :
+>
+> ```bash
+> ~/.local/bin/gh auth token | docker login ghcr.io -u Jonathan2433 --password-stdin
+> ```
+>
+> **Et si `make up-recette` echoue une fois sur `dependency failed to start` apres un demarrage
+> interrompu, rejoue-le** : c'est le defaut `T8-4`, diagnostique et non corrige. Compose evalue le
+> verdict PERIME d'un conteneur laisse `unhealthy` au lieu d'attendre l'intervalle de sonde suivant.
 
 **Et regarde l'integration continue**, qui existe depuis `T6` et qui **bloque** :
 
@@ -1243,8 +1374,9 @@ ce lot.
 1. Lire ce document.
 2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
 3. Lire [`fiche-lot-1.md`](docs/operations/fiche-lot-1.md) : la sous-étape en cours.
-4. Lire le **compte rendu de la sous-étape précédente** — `T7` — pour savoir ce qui a été laissé
-   ouvert. Son §3 dit ce qui n'est **pas** couvert, et son §7 les quatre recommandations.
+4. Lire le **compte rendu de la sous-étape précédente** — `T8` — pour savoir ce qui a été laissé
+   ouvert. Son §3 dit ce qui n'est **pas** couvert, son §6 les six défauts, et son §7 les cinq
+   recommandations.
 5. Vérifier l'état réel par `git`, `gh` et les mesures, **pas par ce que la doc affirme**. §9.0
    donne un exemple récent où ce document se trompait sur l'architecture.
 6. Exécuter **une** sous-étape, contrôler, rapporter, attendre la validation.
@@ -1286,7 +1418,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 150 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 156 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
