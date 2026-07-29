@@ -1,0 +1,120 @@
+# ============================================================================
+#  Detection de secrets — Gitleaks.
+#
+#  LOT 1, sous-etape T6, story MVP-L01-US005. Controle 9 des onze du cahier
+#  des charges 23.1. Traite `ROAD-RSK-015`, secret integre au code, dont la
+#  mesure ne devenait effective qu'ici.
+#
+#  POURQUOI DES REGLES PROPRES AU PROJET, EN PLUS DES REGLES PAR DEFAUT
+#    C'est la lecon du defaut `T4-1`. Le filtre de masquage des journaux avait
+#    un trou : son motif d'URL de connexion exigeait un nom d'utilisateur, et
+#    laissait donc passer `redis://:motdepasse@redis:6379/0` — EXACTEMENT le
+#    format que produit `Parametres.url_redis()`, donc le secret le plus
+#    susceptible d'apparaitre. Le trou avait ete trouve parce que le test
+#    enumerait les formes reellement produites par ce projet, et non des
+#    exemples de documentation.
+#
+#    La meme discipline s'applique ici : les regles ci-dessous nomment les
+#    variables que l'API declare et les formes d'URL que sa configuration
+#    fabrique, plutot que de s'en remettre a la seule entropie.
+#
+#  CE QUE LA LISTE BLANCHE COUVRE, ET POURQUOI ELLE EST ETROITE
+#    Un seul fichier y figure, et c'est celui dont la RAISON D'ETRE est de
+#    contenir de faux secrets : la suite qui prouve que le masquage fonctionne.
+#    Aucun repertoire entier n'est exclu — exclure `docs/` aurait aveugle le
+#    scanner sur un secret colle dans un compte rendu, ce qui est un scenario
+#    plausible.
+# ============================================================================
+
+title = "eXalt Onboarding Digital"
+
+[extend]
+# Les regles par defaut de Gitleaks sont conservees : elles couvrent les jetons
+# des fournisseurs connus, que nos regles propres ne dupliquent pas.
+useDefault = true
+
+# ----------------------------------------------------------------------------
+#  Regle 1 — URL de connexion portant des identifiants.
+#
+#  Le nom d'utilisateur est OPTIONNEL, et c'est tout l'enjeu : `redis://` en
+#  produit sans. Un motif qui l'exigerait rouvrirait le trou de `T4-1`.
+# ----------------------------------------------------------------------------
+[[rules]]
+id = "onboarding-url-avec-identifiants"
+description = "URL de connexion portant un mot de passe (PostgreSQL, Redis, MinIO, SMTP)"
+regex = '''(?i)\b(postgresql|postgres|redis|rediss|amqp|amqps|smtp|smtps|s3|https?)://[^\s:/@]*:[^\s@/'"]{4,}@'''
+tags = ["onboarding", "url", "identifiants"]
+
+[[rules.allowlists]]
+description = "Gabarits d'interpolation et mots de passe factices"
+
+# `regexTarget = "match"` n'est PAS un detail : par defaut une liste blanche de
+# regle est comparee au SECRET CAPTURE seul, jamais a la ligne. Des motifs
+# ecrits sur l'URL entiere ne correspondaient donc a rien, et les neuf faux
+# positifs subsistaient. Constate le 29/07/2026.
+regexTarget = "match"
+
+regexes = [
+  # Gabarits d'interpolation : `redis://:{self.REDIS_PASSWORD}@` dans
+  # settings.py, `redis://:{mot_de_passe}@` dans le worker. Une interpolation
+  # n'est pas une valeur : c'est le code qui FABRIQUE l'URL.
+  '''://[^\s@]*:\{[^}]*\}@''',
+  '''://[^\s@]*:\$\{[^}]*\}@''',
+  # Valeurs factices employees par les tests et citees par la documentation.
+  '''(?i)://[^\s@]*:(motdepasse|password|passwd|secret|user|pass|utilisateur|valeur-de-test|temoin|changeme|change_me|xxx+|\*+|…|\.\.\.)@''',
+]
+
+# ----------------------------------------------------------------------------
+#  Regle 2 — valeur reelle affectee a une variable de configuration sensible.
+#
+#  Les sept variables nommees ici sont celles que `.env.example` livre en
+#  `CHANGE_ME`, cinq d'entre elles etant engendrees localement par `make env`.
+#  Une valeur qui n'est PAS un `CHANGE_ME` et qui depasse seize caracteres est
+#  un secret reel, donc une fuite.
+# ----------------------------------------------------------------------------
+[[rules]]
+id = "onboarding-secret-de-configuration"
+description = "Valeur reelle affectee a une variable de configuration sensible du projet"
+regex = '''(?m)^\s*(APP_SECRET_KEY|POSTGRES_PASSWORD|REDIS_PASSWORD|MINIO_ROOT_PASSWORD|MINIO_ROOT_USER|SMTP_PASSWORD|UPTIME_KUMA_PUSH_URL)\s*[:=]\s*['"]?([^\s'"#]{16,})['"]?'''
+secretGroup = 2
+tags = ["onboarding", "configuration"]
+
+[[rules.allowlists]]
+description = "Espaces reserves, renvois de variables et valeurs de test"
+
+# Ici la cible par defaut convient : c'est bien la VALEUR affectee qu'on juge.
+regexes = [
+  '''CHANGE_ME''',
+  # Un identifiant Python en minuscules n'est pas un secret, c'est un RENVOI
+  # vers une variable. Constate sur `POSTGRES_PASSWORD=mot_de_passe_temoin`
+  # dans apps/api/tests/test_configuration.py, ou la valeur reelle est definie
+  # plus haut et n'est pas affectee a la variable de configuration.
+  '''^[a-z][a-z0-9_]*$''',
+  # Interpolations et references d'environnement.
+  '''^\{[^}]*\}$''',
+  '''\$\{[A-Za-z_][A-Za-z0-9_]*\}''',
+  '''^os\.environ''',
+  # Valeurs explicitement factices.
+  '''(?i)(motdepasse|temoin|exemple|example|placeholder|valeur-de-test|<[^>]+>|\.\.\.|…)''',
+]
+
+# ----------------------------------------------------------------------------
+#  Liste blanche globale.
+# ----------------------------------------------------------------------------
+[allowlist]
+description = "Faux secrets dont la presence est le sujet meme du test"
+
+paths = [
+  # Ce fichier EST le catalogue des formes sensibles que le masquage doit
+  # attraper : cle PEM, jeton GitHub, cle AWS, JWT, URL de connexion, en-tete
+  # Bearer, magic link. Tous synthetiques, aucun exploitable. Constate le
+  # 29/07/2026 : la regle `generic-api-key` par defaut se declenche sur son
+  # magic link de test, `?token=abc123def456`.
+  '''packages/observabilite/tests/test_masquage\.py''',
+]
+
+regexes = [
+  # `.env.example` ne contient que des espaces reserves, par construction, et
+  # un garde-fou de demarrage refuse de demarrer si l'un subsiste en usage.
+  '''CHANGE_ME''',
+]

@@ -1,0 +1,264 @@
+# ============================================================================
+#  Integration continue — les onze controles du cahier des charges 23.1.
+#
+#  LOT 1, sous-etape T6, story MVP-L01-US005.
+#
+#  LES ONZE CONTROLES, ENUMERES ET NON COMPTES
+#    C'est l'enumeration qui empeche l'omission : la fiche du lot annoncait
+#    « 8 controles » la ou le cahier en enumere onze, et tests API, tests
+#    frontend et construction des images n'apparaissaient dans aucun decompte
+#    inferieur. C'est l'ecart ECART-018.
+#
+#      1  formatage                         -> make format-check   tache qualite
+#      2  lint                              -> make lint           tache qualite
+#      3  typage                            -> make typecheck      tache qualite
+#      4  tests unitaires                   -> make test-unit      tache qualite
+#      5  tests d'integration PostgreSQL    -> make test-integration   tache stack
+#      6  tests API                         -> make api-check          tache stack
+#      7  tests frontend                    -> make test-frontend  tache qualite
+#      8  controle Alembic                  -> make migrate + alembic-check  stack
+#      9  detection de secrets              -> gitleaks            tache qualite
+#     10  audit de dependances              -> make audit          tache qualite
+#     11  construction des images           -> make up             tache stack
+#
+#  DEUX CONTROLES EN PLUS, recommandes par le lot et devenus effectifs ici :
+#    make docs-check recalcule les cinq empreintes SHA-256 des documents
+#    immuables (ROAD-RSK-029) et confronte les marqueurs d'identifiant libre au
+#    maximum reellement en usage (ECART-021).
+#
+#  CE QUI N'EST PAS COUVERT ICI, ET IL FAUT LE DIRE
+#    - `make persistence-test` : la survie des volumes a un redemarrage est
+#      eprouvee a chaque sous-etape en local, mais coute deux cycles complets de
+#      la stack. Elle n'entre pas dans les onze controles du cahier ;
+#    - Trivy : l'analyse des images publiees releve de T7, qui possede GHCR ;
+#    - `pnpm peers check` : hors des onze, et il echouerait sur
+#      eslint-plugin-jsx-a11y, dont T5 a prouve par temoin qu'il fonctionne
+#      malgre une declaration de compatibilite ESLint perimee.
+#
+#  EPINGLAGE — meme discipline que DEC-443 pour les images et DEC-456 pour
+#  l'outillage. Chaque action est referencee par EMPREINTE DE COMMIT, jamais par
+#  etiquette : une etiquette se deplace, une empreinte non. Gitleaks est
+#  telecharge et son empreinte SHA-256 verifiee avant execution, comme l'ont ete
+#  `gh` en T0 et `uv` en T1.
+# ============================================================================
+
+name: Integration continue
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Lecture seule. Aucun secret n'est necessaire a T6 : la publication dans GHCR,
+# qui en demandera, appartient a T7.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: '8.30.1'
+  # Empreinte publiee par le projet gitleaks pour cette version exacte.
+  GITLEAKS_SHA256: '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb'
+
+jobs:
+  # --------------------------------------------------------------------------
+  #  Tache 1 — qualite et securite. Aucun service, aucun Docker : le retour
+  #  arrive vite, sans attendre la construction des images.
+  # --------------------------------------------------------------------------
+  qualite:
+    name: Qualite et securite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Recuperer le depot avec son historique
+        # fetch-depth 0 : Gitleaks doit examiner l'HISTORIQUE, pas seulement
+        # l'etat courant. Un secret retire au commit suivant reste dans les
+        # objets Git, donc reste une fuite.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Installer uv, qui provisionne Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Installer Node a la version epinglee
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Activer pnpm par corepack
+        # Meme mecanisme qu'en local : la version exacte et son empreinte
+        # d'integrite sont lues dans le champ packageManager (DEC-456).
+        run: corepack enable pnpm
+
+      - name: Installer les dependances depuis les verrous
+        # --frozen / --frozen-lockfile : l'installation ECHOUE si un verrou ne
+        # correspond pas aux manifestes, au lieu de le reecrire en silence.
+        run: |
+          uv sync --frozen
+          pnpm install --frozen-lockfile
+
+      - name: Versions epinglees et arborescence du cahier 15.3
+        run: |
+          make versions
+          make tree
+
+      - name: Documents immuables et sequences d'identifiants
+        run: make docs-check
+
+      - name: 1 · Formatage
+        run: make format-check
+
+      - name: 2 · Lint
+        run: make lint
+
+      - name: 3 · Typage
+        run: make typecheck
+
+      - name: 4 · Tests unitaires
+        run: make test-unit
+
+      - name: 7 · Tests frontend
+        run: make test-frontend
+
+      - name: 9 · Detection de secrets
+        # Telechargement puis VERIFICATION D'EMPREINTE avant execution. Un
+        # binaire de securite installe sans verification est une contradiction.
+        # `--exit-code 1` rend l'echec effectif ; `--redact` empeche qu'un
+        # secret detecte soit recopie en clair dans les journaux publics de
+        # l'execution, ce qui l'aggraverait.
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --fail --silent --show-error --location --output "$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "$archive" gitleaks
+          ./gitleaks version
+          ./gitleaks git --no-banner --redact --exit-code 1 --config .gitleaks.toml .
+
+      - name: 10 · Audit de dependances
+        run: make audit
+
+  # --------------------------------------------------------------------------
+  #  Tache 2 — stack reelle. Les huit services demarrent pour de vrai : les
+  #  tests d'integration REFUSENT de s'executer sans eux, et c'est voulu — un
+  #  test ignore n'est pas un test qui passe.
+  # --------------------------------------------------------------------------
+  stack:
+    name: Stack reelle, migrations et images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resoudre les hotes locaux du projet
+        # LINUX NE RESOUT PAS les sous-domaines de `.localhost`, contrairement a
+        # macOS. Mesure du 29/07/2026 dans un conteneur Linux reel :
+        # `app.onboarding.localhost` -> gaierror, « No address associated with
+        # hostname », alors que `localhost` seul se resout. Sans ces deux
+        # lignes, `api-check` et `web-check` echoueraient faute de resolution de
+        # nom, et non par defaut du livrable. Le controle ci-dessous echoue si
+        # la resolution ne fonctionne pas : il ne se contente pas d'ecrire.
+        run: |
+          set -euo pipefail
+          sudo tee -a /etc/hosts >/dev/null <<'FIN'
+          127.0.0.1 app.onboarding.localhost
+          127.0.0.1 api.onboarding.localhost
+          FIN
+          getent hosts app.onboarding.localhost
+          getent hosts api.onboarding.localhost
+
+      - name: Installer uv, qui provisionne Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Installer les dependances Python depuis le verrou
+        # Les 8 tests d'integration s'executent sur l'hote et joignent les
+        # services publies sur 127.0.0.1 par la surcouche de developpement.
+        run: uv sync --frozen
+
+      - name: 11 · Construction des images et demarrage des huit services
+        # `make up` construit api, worker et web, demarre, ATTEND l'etat sain,
+        # cree le bucket MinIO, recharge Caddy, puis controle sante et ports.
+        # Aucune publication dans GHCR : elle appartient a T7.
+        run: make up
+
+      - name: Sante des huit services et publication des ports
+        run: make stack-check
+
+      - name: 8 · Controle Alembic
+        run: |
+          make migrate
+          make alembic-check
+
+      - name: 6 · Tests API
+        run: make api-check
+
+      - name: Page de statut, vue comme un navigateur la voit
+        run: make web-check
+
+      - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
+        run: make test-integration
+
+      - name: Journaux des services en cas d'echec
+        if: failure()
+        run: |
+          make ps || true
+          docker compose --env-file .env \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.dev.yml \
+            logs --tail=120 --no-color || true
+
+  # --------------------------------------------------------------------------
+  #  Porte unique. C'est CE contexte que la protection de branche exige, et non
+  #  la liste des taches : ajouter ou renommer une tache ne demande alors aucun
+  #  reglage cote GitHub, et aucune tache ne peut disparaitre sans que la porte
+  #  le voie.
+  # --------------------------------------------------------------------------
+  porte:
+    name: Porte de l integration continue
+    runs-on: ubuntu-latest
+    needs: [qualite, stack]
+    if: always()
+    steps:
+      - name: Recapituler et conclure
+        env:
+          RESULTAT_QUALITE: ${{ needs.qualite.result }}
+          RESULTAT_STACK: ${{ needs.stack.result }}
+        run: |
+          set -euo pipefail
+          echo "  Les onze controles du cahier des charges 23.1"
+          echo "    1  formatage                       tache qualite"
+          echo "    2  lint                            tache qualite"
+          echo "    3  typage                          tache qualite"
+          echo "    4  tests unitaires                 tache qualite"
+          echo "    5  tests d'integration PostgreSQL  tache stack"
+          echo "    6  tests API                       tache stack"
+          echo "    7  tests frontend                  tache qualite"
+          echo "    8  controle Alembic                tache stack"
+          echo "    9  detection de secrets            tache qualite"
+          echo "   10  audit de dependances            tache qualite"
+          echo "   11  construction des images         tache stack"
+          echo
+          echo "  qualite : ${RESULTAT_QUALITE}"
+          echo "  stack   : ${RESULTAT_STACK}"
+          echo
+          attendus=2
+          reussis=0
+          [ "${RESULTAT_QUALITE}" = "success" ] && reussis=$((reussis + 1))
+          [ "${RESULTAT_STACK}" = "success" ] && reussis=$((reussis + 1))
+          echo "  taches attendues : ${attendus}   reussies : ${reussis}"
+          if [ "${reussis}" -ne "${attendus}" ]; then
+            echo "  ECHEC : les onze controles ne sont pas tous verts" >&2
+            exit 1
+          fi
+          echo "  --> les onze controles du cahier 23.1 sont verts"

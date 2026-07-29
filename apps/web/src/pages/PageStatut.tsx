@@ -184,7 +184,13 @@ export function PageStatut(): JSX.Element {
 const ENUMERATION_FR = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' });
 
 function phraseNonSondes(): string {
-  return ENUMERATION_FR.format(NON_SONDES);
+  // La majuscule initiale n'est pas cosmetique : cette enumeration ouvre une
+  // phrase, apres un point. Constate en `T6` en lisant la page RENDUE dans un
+  // navigateur — « L'API sonde trois dependances. le worker Dramatiq... ». Le
+  // test de `T5` cherchait `toContain('worker Dramatiq')`, ce qui passe quelle
+  // que soit la grammaire : un test insensible au defaut ne le trouve jamais.
+  const liste = ENUMERATION_FR.format(NON_SONDES);
+  return liste.charAt(0).toUpperCase() + liste.slice(1);
 }
 
 function VueChargement(): JSX.Element {

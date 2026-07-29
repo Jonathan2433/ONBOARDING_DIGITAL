@@ -247,6 +247,18 @@ répondait — sur l'ancienne configuration. Aucun contrôle du lot ne comparait
 
 Trois choses, et il vaut mieux les dire que les laisser croire.
 
+> **✅ Ce point est levé depuis le 29 juillet 2026, sous-étape `T6`.** Jonathan a approuvé la
+> racine dans son trousseau **de session** — la commande donnée ici employait `sudo`, dont il ne
+> dispose pas, voir `QO-114`. `security verify-cert` est passé de **1** à **0**, et la page a été
+> **vue dans un vrai navigateur** : rendu complet, **console sans erreur** — les deux seules
+> lignes étant `[vite] connecting… connected.`, ce qui prouve au passage que le rechargement à
+> chaud traverse Caddy en `wss` —, **cinq largeurs de recette sur cinq sans débordement** de page
+> à 320, 390, 768, 1280 et 1920 px, le tableau défilant dans son propre conteneur à 320 px,
+> navigation au clavier et focus visible conformes, et l'**état dégradé rendu de bout en bout** en
+> arrêtant réellement Redis. Le détecteur de débordement a lui-même été éprouvé par une sonde de
+> 5 000 px. Un défaut de rédaction a été trouvé à cette occasion, invisible aux tests : voir
+> `T6-8`.
+
 1. **La page n'a pas été vue dans un navigateur.** La racine de l'autorité interne de Caddy
    n'est pas approuvée dans le trousseau macOS : `security verify-cert` sort en **1**,
    `CSSMERR_TP_NOT_TRUSTED`, et le navigateur refuse la connexion. Cause isolée par élimination —

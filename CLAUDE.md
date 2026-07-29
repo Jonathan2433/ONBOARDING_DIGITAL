@@ -2,10 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 28 juillet 2026, à la sortie de la sous-étape **`T5`** — §1, §4.7, §4.8, §5.3,
-§5.6, §5.7, §7, §8, §9, §10 et §11 rectifiés **sur mesures**. **Une affirmation de ce document
-s'est révélée fausse en `T5` : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T6`**
+**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T6`** — §1, §4, §5, §7, §8,
+§9, §10 et §11 rectifiés **sur mesures**. **Deux affirmations de ce document se sont révélées
+fausses : voir §9.0.**
+**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T7`**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -20,15 +20,16 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** |
-| **Prochaine action** | **`T6`** — CI GitHub Actions, **le test le plus important du lot**. Story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6) |
-| Stories `Done` | **4 sur 8** : `US001`, `US002`, `US003`, `US004`. Issues `#2` à `#5` closes |
-| Stories restantes | `US005` CI · `US006` images GHCR · `US007` design system (`P1`) · `US008` documentation |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** · **`T6`** |
+| **Prochaine action** | **`T7`** — images multiarchitecture et publication GHCR privé. Story `MVP-L01-US006`, issue [#7](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/7) |
+| Stories `Done` | **5 sur 8** : `US001` à `US005`. Issues `#2` à `#6` closes |
+| Stories restantes | `US006` images GHCR · `US007` design system (`P1`) · `US008` documentation |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
-| Branches | `main` 13 commits · `develop` **21 commits** après la fusion de `T5`. **Les deux protégées** |
-| Volumétrie | **139 fichiers suivis** — 52 Markdown, 31 Python, 7 TypeScript, **6 TSX** — **33 330 lignes** |
+| Branches | `main` 13 commits · `develop` **22 commits** après la fusion de `T6`. **Les deux protégées, et la CI y est désormais BLOQUANTE** |
+| Volumétrie | **143 fichiers suivis** — 53 Markdown, 32 Python, 7 TypeScript, 6 TSX, **4 YAML** — **34 726 lignes** |
 | Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
-| Registres | **141 décisions** · 21 écarts (5 ouverts) · 37 questions (33 ouvertes) · 31 risques |
+| Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
+| Registres | **145 décisions** · 21 écarts (5 ouverts) · 38 questions (34 ouvertes) · 32 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser — ce document se
@@ -79,9 +80,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **6 barrées** |
-| **Comment a-t-on fait `T1` à `T5` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5}-lot-1.md`** |
-| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **141 décisions** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **7 barrées** |
+| **Comment a-t-on fait `T1` à `T6` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5,6}-lot-1.md`** |
+| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **145 décisions** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
 
 Les cinq documents de cadrage sont **immuables**. Intégrité prouvée par empreinte SHA-256 dans
@@ -163,7 +164,25 @@ en **arrêtant réellement Redis** : 503, `redis indisponible`, motif `Connectio
 n'avait jamais eu un seul fichier JSX à examiner — il n'existait aucun `.tsx` dans ce dépôt.
 Éprouvé par témoin négatif, il examine et il **sait échouer**.
 
-## 4.8 Les décisions qui contraignent ton travail quotidien
+## 4.8 `T6` — intégration continue
+
+**Le test le plus important du lot, et il exigeait de prouver l'échec.** Les 11 contrôles du
+cahier §23.1 tournent sur chaque pull request en **~2 min 20**, découpés en deux tâches — la
+qualité rend son verdict en une minute sans attendre Docker — et une **porte** unique qui conclut.
+
+**Comment :** trois défauts introduits **un par un** dans une pull request jetable, chacun dans sa
+propre poussée pour que l'échec soit attribuable. Lint, test, secret : trois exécutions rouges,
+`mergeStateStatus: BLOCKED` dans les trois cas. Témoin positif indispensable : la même porte
+laisse passer la branche de `T6`, `MERGEABLE` / `CLEAN`.
+
+> **Piège de vocabulaire GitHub.** Le champ `mergeable` ne parle que des conflits et vaut
+> `MERGEABLE` même sur une pull request refusée. C'est **`mergeStateStatus`** qui fait foi.
+
+**Et deux défauts dormants réveillés** : le `Makefile` n'avait jamais tourné ailleurs que sur
+macOS avec des volumes déjà peuplés. `make env` employait la forme BSD de `sed`, et `make up`
+n'avait **jamais** fonctionné sur une machine propre. Voir §7.16.
+
+## 4.9 Les décisions qui contraignent ton travail quotidien
 
 Les 141 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
@@ -199,24 +218,29 @@ Les 141 sont dans `docs/decisions/registre-decisions.md`. Celles que tu applique
 | `DEC-471` | Testing Library sur **`jsdom`**. `restoreMocks` et `unstubGlobals` actifs |
 | `DEC-472` | Le `Caddyfile` est monté **par son répertoire**, et `make up` **recharge** Caddy |
 | `DEC-473` | **`.dockerignore`** : `node_modules`, `.venv`, caches, `.git`, `docs/prototype`, `.env` |
+| `DEC-474` | Audit : **une seule tolérance nommée**, `GHSA-mh99-v99m-4gvg`. Tout autre avis bloque |
+| `DEC-475` | Workflow en **2 tâches + 1 porte**. Actions épinglées **par empreinte de commit** |
+| `DEC-476` | **CI obligatoire sur `develop` ET `main`**, contexte unique, `strict` actif |
+| `DEC-477` | **`make up` en deux temps** : bucket MinIO créé AVANT que l'API doive être saine |
 
-## 4.9 Les séquences d'identifiants — à respecter absolument
+## 4.10 Les séquences d'identifiants — à respecter absolument
 
 Un identifiant n'est **jamais** réutilisé, **jamais** renuméroté, et un trou n'est **jamais**
 comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`473` en usage | **`DEC-474`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`477` en usage | **`DEC-478`** |
 | `ECART-nnn` | `001`–`021` | **`ECART-022`** |
-| `QO-nnn` | `072`–`113`, **5 trous** | **`QO-114`** |
-| `ROAD-RSK-nnn` | `001`–`031` | **`ROAD-RSK-032`** |
+| `QO-nnn` | `072`–`114`, **5 trous** | **`QO-115`** |
+| `ROAD-RSK-nnn` | `001`–`032` | **`ROAD-RSK-033`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
 
 Trous jamais comblés : `QO-075`, `QO-079`, `QO-080`, `QO-082`, `QO-090` (`ECART-011`).
 **L'index à jour est dans [`docs/README.md`](docs/README.md) §4. Consulte-le avant de créer un
-identifiant.**
+identifiant — et `make docs-check` échoue désormais si un marqueur ne correspond pas au maximum
+réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 
 ---
 
@@ -229,6 +253,7 @@ identifiant.**
 | `gh` | **`~/.local/bin/gh`**, 2.96.0 | **Pas dans le `PATH`.** `export PATH="$HOME/.local/bin:$PATH"` |
 | `uv` | **`~/.local/bin/uv`**, **0.11.32** | Posé en `T1`, archive officielle, **empreinte SHA-256 vérifiée** |
 | Homebrew | `/opt/homebrew`, **inutilisable** | Appartient à `admin`. `test -w` échoue sur `bin` **et** `Cellar` |
+| **Droits d'administration** | **AUCUN** | Mesuré le 29/07/2026 : `id -Gn` → `staff everyone localcounts…`, **pas de groupe `admin`**, et `sudo` répond « is not in the sudoers file ». Vois ci-dessous |
 | Node / npm | **v24.16.0** / 11.13.0 | Via `nvm` |
 | `pnpm` | **11.17.0**, par `corepack` | Épinglé par `packageManager` **avec empreinte d'intégrité** |
 | Python | **3.12.13**, géré par `uv` | Le Python système 3.9.6 n'est **jamais** utilisé |
@@ -255,15 +280,16 @@ identifiant.**
 > `T2`. MinIO vient de **quay.io**, Mailpit de **ghcr.io** : leurs registres de publication, non
 > limités. Si une inspection d'image échoue, **lis l'erreur** avant de conclure à une absence.
 
-## 5.3 Les 33 cibles du `Makefile`
+## 5.3 Les 37 cibles du `Makefile`
 
 ```text
 Environnement   tools versions tree icloud-exclude icloud-verify install
 Qualité         lint format format-check typecheck test test-unit test-integration check
+                docs-check audit
 Stack           env up down destroy ps logs health ports minio-bucket stack-check
                 persistence-test caddy-reload
-API             migrate migrate-status api-check
-Frontend        web-check
+API             migrate migrate-status api-check alembic-check
+Frontend        web-check test-frontend
 Nettoyage       clean clean-deps
 Aide            help
 ```
@@ -272,7 +298,9 @@ Aide            help
 `make web-check` = la page vue **comme un navigateur la voit**, à travers Caddy en HTTPS.
 `make caddy-reload` est appelée par `make up` : **Caddy ne surveille pas son fichier**, et sans
 rechargement il sert une configuration périmée en paraissant sain (`DEC-472`, défaut `T5-2`).
-**`make help` est la source de vérité**, pas cette liste.
+`make docs-check` recalcule les 5 empreintes SHA-256 des documents immuables et **échoue si un
+marqueur d'identifiant libre ne correspond pas au maximum en usage**. `make audit` tolère **un**
+avis nommé, `DEC-474`. **`make help` est la source de vérité**, pas cette liste.
 
 ## 5.4 Variables de `.env.example` — **v1.0**, `ECART-006` clos
 
@@ -326,17 +354,29 @@ macOS les résout **sans toucher à `/etc/hosts`** — vérifié, 0 occurrence d
 montage en cause sans lire `DEC-470` : il existe pour que les cookies `Secure` et `SameSite` du
 LOT 3 soient éprouvables.
 
-> **⚠️ La racine de l'autorité interne de Caddy n'est TOUJOURS PAS approuvée dans le trousseau
-> macOS.** Mesuré le 28/07/2026 : `security verify-cert` sort en **1**, `CSSMERR_TP_NOT_TRUSTED`,
-> et 0 entrée « Caddy » dans le trousseau système alors que le même filtre y trouve 4 entrées
-> « Apple » — témoin positif, donc le zéro est un vrai zéro. Tous les contrôles passent par
-> `curl -k`. **Conséquence concrète depuis `T5` : un navigateur refuse la connexion**, la page
-> n'a donc jamais été vue dans un moteur de rendu réel. **C'est l'action de Jonathan**, elle
-> demande son mot de passe :
+> **✅ La racine de l'autorité interne de Caddy EST approuvée** depuis le 29/07/2026.
+> `security verify-cert` sort en **0**, « certificate verification successful » — il sortait en
+> **1**, `CSSMERR_TP_NOT_TRUSTED`, avant. `curl` **sans** `-k` aboutit désormais, la page répond
+> 200, et elle a été **vue dans un vrai navigateur** : rendu complet, console sans erreur, cinq
+> largeurs de recette sans débordement.
+>
+> **La commande qui figurait ici était fausse et ne pouvait pas fonctionner.** Elle employait
+> `sudo` et le trousseau **système**, or Jonathan n'a **aucun droit d'administration** sur cette
+> machine (§5.1). Le drapeau `-d` visait le magasin administrateur ; sans lui, `security` écrit
+> dans le domaine **utilisateur**, et cela suffit. Si le volume `caddy-data` est un jour détruit,
+> une nouvelle racine est engendrée et l'approbation doit être refaite — **c'est l'action de
+> Jonathan**, elle demande son mot de passe **de session**, non celui d'un administrateur :
 >
 > ```bash
-> docker cp onboarding-dev-caddy-1:/data/caddy/pki/authorities/local/root.crt /tmp/caddy-onboarding-root.crt && sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /tmp/caddy-onboarding-root.crt
+> docker cp onboarding-dev-caddy-1:/data/caddy/pki/authorities/local/root.crt /tmp/caddy-onboarding-root.crt && security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db /tmp/caddy-onboarding-root.crt
 > ```
+>
+> Couvre Safari, Chrome et Edge. **Pas Firefox**, qui gère son propre magasin. Mes contrôles
+> restent en `curl -k` : ils ne doivent pas dépendre d'une action humaine.
+>
+> **C'est aussi pourquoi `make destroy` n'est pas anodin** : il supprime `caddy-data` avec le
+> reste. Pour éprouver une machine propre, supprime le **seul** volume utile — c'est ce que `T6` a
+> fait pour reproduire le défaut du bucket MinIO.
 
 ## 5.7 Contrainte mémoire
 
@@ -430,7 +470,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**42 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **32 pendant `T1` à `T5`**. Ils sont
+**50 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **40 pendant `T1` à `T6`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -453,6 +493,13 @@ deux `{"total":0}`.
 
 **C'est le témoin négatif qui les révèle** : quand il **passe** alors qu'il devait échouer, ce
 n'est pas le témoin qui est mauvais, c'est le contrôle qui ne discrimine pas.
+
+**Cinquième proposition, apport de `T6` — elle ne porte plus sur les contrôles mais sur les
+corrections :** avant d'appliquer un correctif, mesure **ce que le correctif casse**. Un avis de
+sécurité désigne un problème, jamais une solution. En `T6`, forcer la version « corrigée » de
+`brace-expansion` aurait neutralisé ESLint, donc `jsx-a11y`, donc le seul garde-fou
+d'accessibilité du projet — pour un déni de service théorique dans une dépendance de
+développement. Seul le fait d'installer la version et de l'appeler l'a montré.
 
 ## 7.1 iCloud : le risque s'est matérialisé
 
@@ -587,6 +634,9 @@ qui recalcule les cinq empreintes et échoue si l'une diffère.**
 | Vite accepte n'importe quel en-tête `Host` | **Non**, Vite 8 installe un contrôle d'hôte dès que le serveur n'est pas lui-même en HTTPS → `server.allowedHosts` |
 | Vite renvoie 404 sur un chemin inconnu | **Non**, il renvoie **200 + `index.html`** → discrimine sur le type MIME, jamais sur le code |
 | `@testing-library/dom` vient avec `@testing-library/react` | **Non** depuis la v16, c'est un **pair** à installer explicitement |
+| `pnpm` lit `auditConfig` dans `package.json` | **Non**, pnpm 11 lit ses réglages d'espace de travail dans **`pnpm-workspace.yaml`** — comme `storeDir` en `T1`. Même classe, autre clé |
+| Une liste blanche Gitleaks est comparée à la ligne | **Non**, au **secret capturé** seul. Sans `regexTarget = "match"`, un motif écrit sur la ligne ne correspond à rien |
+| `brace-expansion` 5.x remplace 1.x sans risque | **Non**, son export CommonJS est un **objet** portant `.expand`, non une fonction. `minimatch@3` casse |
 
 **Inspecte les exports réels avant de les utiliser**, ne te fie pas à ta mémoire d'une API.
 
@@ -621,6 +671,16 @@ qu'aucune route n'y menait à l'API. Voir §9.0.
 `grep` est ici **`ugrep`**, qui échoue avec « exceeds complexity limits » sur certains motifs.
 **Passe par Python** pour les extractions non triviales. Le système de fichiers est **insensible
 à la casse** : tout renommage ne différant que par la casse exige deux temps.
+
+**Depuis `T6`, ce n'est plus seulement une gêne locale : tout ce que tu écris tourne aussi sur un
+exécuteur Linux.** Deux pièges mesurés le 29/07/2026 :
+
+| Sur macOS | Sur Linux |
+|---|---|
+| `sed -i ''` fonctionne | **GNU sed échoue en code 2** : il lit le script comme un nom de fichier. Emploie `sed … > f.tmp && mv f.tmp f` |
+| `app.onboarding.localhost` se résout | **`gaierror`, aucune adresse.** Linux ne résout pas les sous-domaines de `.localhost`. Le workflow pose deux lignes dans `/etc/hosts` |
+
+Écris désormais du shell **portable**, et fais-le vérifier par la CI.
 
 ## 7.13 Ne jamais `grep` le prototype en entier
 
@@ -664,11 +724,32 @@ d'**exécuter** le code copié.
 **La leçon commune :** un healthcheck qui interroge un service ne dit rien de la **configuration**
 que ce service a chargée. Compare toujours l'état chargé au fichier présent.
 
+## 7.16 Ce qui n'a jamais tourné ailleurs n'est pas éprouvé
+
+**Leçon centrale de `T6`, et elle vaut pour tout ce que tu écriras.** Le `Makefile` fonctionnait
+depuis `T1` — sur **une** machine, sous macOS, avec des volumes **déjà peuplés**. La première
+exécution sur un exécuteur neuf a révélé deux défauts qui n'étaient pas des régressions, mais des
+**conditions jamais rencontrées** :
+
+1. **`make env`** employait `sed -i ''`. GNU sed échoue. Toute la tâche « stack » cassait.
+2. **`make up` n'avait jamais fonctionné sur une machine propre.** La sonde `ready` de l'API fait
+   un `head_bucket` ; sans bucket elle répond 503, `api` n'est jamais sain, `up --wait` échoue. Or
+   le bucket n'était créé qu'**après** cette attente. En local le volume `minio-data` survit à
+   `make down`, et le bucket y était déjà : le défaut ne pouvait pas se montrer.
+
+Le second aurait attendu **`T9`** pour se manifester, sur le critère « les procédures fonctionnent
+depuis une machine propre » — et il aurait alors fallu comprendre pourquoi la stack ne démarre pas
+chez quelqu'un d'autre. `DEC-477` le corrige, et **`T8` devra reproduire cet ordre** dans la
+surcouche de recette.
+
+**Pour éprouver une machine propre sans tout casser :** ne lance pas `make destroy`, qui
+supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seul** volume utile.
+
 ---
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — 5 ouverts sur 21
+## 8.1 Écarts — 5 ouverts sur 21, aucun nouveau depuis `T5`
 
 | ID | Objet | Échéance |
 |---|---|---|
@@ -690,6 +771,7 @@ que ce service a chargée. Compare toujours l'état chargé au fichier présent.
 | `QO-113` | **Conservation calendaire des journaux.** `json-file` borne par la taille | LOT 13 |
 | `QO-094` | Second référent technique — conditionne `DEC-429` | avant production |
 | `QO-106` | 9 étiquettes GitHub par défaut subsistent | choix de Jonathan |
+| `QO-114` | **Droits d'administration pour la production temporaire locale.** Jonathan n'en a aucun : `restic`, Uptime Kuma et les services au démarrage en réclament habituellement | **LOT 13, à instruire avant** |
 
 ## 8.3 Risques ouverts qui te concernent
 
@@ -699,7 +781,8 @@ que ce service a chargée. Compare toujours l'état chargé au fichier présent.
 | `ROAD-RSK-029` | Un formateur peut réécrire les documents immuables. **Garde-fou de CI à poser en `T6`** |
 | `ROAD-RSK-030` | Image `web` de **1,02 Gio** — **aggravé par `T5`**, qui y a ajouté `jsdom` et Testing Library. **À corriger en `T7`** par un `Dockerfile` multi-étapes installant les dépendances **de production seulement** |
 | `ROAD-RSK-031` | **Nouveau.** Le service `web` exécute le **serveur de développement** Vite, et toutes les surcouches en héritent. La recette servirait donc un artefact différent de la production. Deux cibles nommées en `T7`, sélection explicite en `T8` |
-| `ROAD-RSK-015` | Secret intégré au code — la mesure devient effective en `T6` avec Gitleaks |
+| `ROAD-RSK-015` | Secret intégré au code — **mesure effective depuis `T6`** : Gitleaks sur chaque pull request, historique compris, avec des règles taillées sur les formats de ce projet |
+| `ROAD-RSK-032` | **Nouveau.** Avis `GHSA-mh99-v99m-4gvg`, sévérité haute, dans une dépendance **de développement** de `jsx-a11y`. **Aucun correctif applicable** : la 1.x n'en a pas, et la 5.x casse le lint — mesuré. Tolérance nommée, `DEC-474` |
 
 ## 8.4 Contenus en attente de relecture
 
@@ -708,88 +791,84 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T6`
+# 9. Par où commencer : `T7`
 
-## 9.0 Ce que `T5` a démenti dans ce document
+## 9.0 Ce que les sous-étapes précédentes ont démenti dans ce document
 
-Le §9.3 de la version précédente affirmait : « **`Caddyfile` inchangé : le mandatement existe
-déjà.** » C'était faux, et cela aurait bloqué la sous-étape sans qu'on comprenne pourquoi. Le bloc
-`app.onboarding.localhost` renvoyait **tout** vers `web:5173` ; `VITE_API_BASE_URL` étant un
-chemin **relatif**, la page appelait Vite et non l'API. L'API n'avait par ailleurs **aucun CORS**.
+**Deux fois, ce document a affirmé faux. Les deux fois, c'était une affirmation d'architecture
+présentée comme un fait, jamais mesurée.**
 
-**La leçon dépasse ce cas :** ce document décrit un état vérifié à une date. Une affirmation
-d'architecture n'est pas une mesure. **Vérifie-la avant de bâtir dessus** — surtout quand elle
-t'annonce que tu n'as rien à faire.
+1. `T5` : « **`Caddyfile` inchangé : le mandatement existe déjà.** » Aucune route n'y menait à
+   l'API, et `VITE_API_BASE_URL` étant relatif, la page appelait Vite. Corrigé par `DEC-470`.
+2. `T6` : la commande d'approbation du certificat employait **`sudo`** et le trousseau système.
+   Jonathan n'a **aucun droit d'administration** — `sudo` lui est refusé. La commande ne pouvait
+   pas fonctionner, et le corpus le laissait deviner depuis `T0` sans le nommer (§5.1).
+
+**La leçon dépasse ces deux cas.** Ce document décrit un état vérifié à une date. **Vérifie avant
+de bâtir dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande
+toute prête.**
 
 ## 9.1 Objet
 
-**CI GitHub Actions : les 11 contrôles du cahier §23.1, dont 3 échecs volontaires prouvés.**
-Story `MVP-L01-US005`, issue [#6](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/6).
+**Images multiarchitecture `linux/amd64` et `linux/arm64`, publiées dans GHCR privé.**
+Story `MVP-L01-US006`, issue [#7](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/7).
 
-**Critère de la fiche §3 :** « Les 11 contrôles sont exécutés ; le pipeline passe ; et il **échoue
-effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement. »
+**Critère de la fiche §3 :** « Une même version immuable fonctionne sur `arm64` et `amd64` ;
+l'accès au registre est authentifié ; aucune référence à `latest` seul. »
 
-**C'est le test le plus important du lot.** La roadmap exige que la CI **bloque**. Il faut donc
-prouver l'échec, pas seulement le succès.
+C'est le **dernier critère de sortie technique** de la porte `G1` : les six autres sont acquis,
+seul « les images multiarchitectures sont construites » manque.
 
-## 9.2 Les 11 contrôles, énumérés — et non comptés
-
-Le cahier §23.1, littéralement. L'énumération est ce qui empêche l'omission (`ECART-018`) :
-
-```text
-formatage · lint · typage · tests unitaires · tests d'intégration PostgreSQL
-tests API · tests frontend · contrôle Alembic · détection de secrets
-audit de dépendances · construction des images
-```
-
-## 9.3 Ce qui est déjà là pour te servir
+## 9.2 Ce qui est déjà là pour te servir
 
 | Élément | État |
 |---|---|
-| `Makefile` | **33 cibles**, point d'entrée unique. Conçu depuis `T1` pour devenir celui de la CI |
-| Qualité | `make check` : `versions tree icloud-verify format-check lint typecheck test` |
-| Tests | **139 pytest** dont 8 d'intégration exigeant la stack réelle, **27 Vitest** dont 25 sur la page |
-| Contrôles de stack | `stack-check`, `api-check`, **`web-check`**, `persistence-test` |
-| Contrôles requis sur les branches | **0** — `gh api …/branches/main/protection` le confirme. C'est `T6` qui les posera |
-| `.github/workflows/` | **N'existe pas encore.** `.github/` ne porte que les gabarits d'issue et de PR |
+| Intégration continue | **Opérationnelle et bloquante.** Le workflow **construit déjà** les images, il ne les publie pas |
+| `Makefile` | **37 cibles**, point d'entrée unique du pipeline. Aucune commande d'outil en dur dans le workflow, sauf Gitleaks |
+| `.dockerignore` | `DEC-473`, posé en `T5` |
+| Images | Les 3 `Dockerfile` sont **mono-étape**. `api` et `worker` 662 Mio, **`web` 1,02 Gio** |
+| Épinglage | 10 références d'image, **10 par empreinte `sha256`**, 0 `latest`. Contrôlé |
+| Permissions du workflow | `contents: read` seulement. **Aucun secret de dépôt n'existe** |
+| Nommage GHCR | `DEC-445` : `ghcr.io/jonathan2433/onboarding-digital/{api,web,worker}` |
+| Étiquetage | Conventions §4.1 : version exacte, `sha-<empreinte>`, `develop`. `latest` **interdit** comme référence unique |
 
-## 9.4 Les pièges propres à `T6`
+## 9.3 Les pièges propres à `T7`
 
-1. **`make icloud-verify` fait partie de `make check`, et il n'a aucun sens sur un exécuteur
-   GitHub.** Le script sort en 0 hors macOS, mais vérifie-le plutôt que de le supposer — sinon la
-   CI échouera sur un contrôle qui ne la concerne pas.
-2. **Les 8 tests d'intégration exigent PostgreSQL, Redis et MinIO réels.** `make test-integration`
-   refuse de s'exécuter si la stack n'est pas saine, **et c'est voulu** : « un test ignoré n'est
-   pas un test qui passe ». En CI il faudra des services, pas un contournement.
-3. **`pnpm peers check` sort en 1** : `eslint-plugin-jsx-a11y@6.10.2` déclare ESLint `^3..^9`
-   alors qu'ESLint 10.8.0 est installé. Le greffon **fonctionne**, prouvé par témoin négatif en
-   `T5`. À trancher : corriger, tolérer explicitement, ou ne pas contrôler les pairs.
-4. **`ROAD-RSK-029` et `ECART-021`** recommandent deux contrôles de CI supplémentaires : recalculer
-   les **cinq empreintes SHA-256** des documents immuables, et **dériver de la source** les nombres
-   que la documentation affirme. Les deux sont des recommandations, pas des décisions.
-5. **Aucun secret dans un workflow.** Le `GITHUB_TOKEN` suffit à `T6` ; GHCR est `T7`.
-6. **Le témoin de détection de secrets doit être un secret PLAUSIBLE**, pas une chaîne bidon :
-   c'est la leçon de `T4-1`, où un test bâti sur des exemples de documentation laissait passer le
-   format réellement produit par le projet.
+1. **`ROAD-RSK-030` et `ROAD-RSK-031` se traitent ensemble**, par le `Dockerfile` multi-étapes :
+   l'image `web` pèse 1,02 Gio **et** exécute le serveur de développement Vite. Deux cibles
+   nommées — développement et exécution — et `T8` sélectionnera explicitement la seconde.
+   Contrôle proposé : faire **échouer** la construction au-delà d'un plafond déclaré, et vérifier
+   que la page servie en recette ne porte **aucune** référence à `/@vite/client`.
+2. **`T7` demandera les premières permissions d'écriture du projet** — `packages: write` — donc le
+   premier jeton. `GITHUB_TOKEN` y suffit pour GHCR sur le même dépôt : n'ajoute pas de secret
+   personnel sans nécessité prouvée.
+3. **Trivy devient pertinent** ici, les images étant publiées. Il est candidat au cahier §23.5 et
+   `T6` l'a explicitement reporté à `T7`.
+4. **Construire pour `amd64` sur un Mac `arm64`** passe par `buildx` et QEMU, ce qui est lent.
+   Mesure la durée : le budget de minutes d'un dépôt privé n'est pas illimité.
+5. **`DEC-477`** impose que le bucket MinIO existe avant que l'API doive être saine. Tout nouveau
+   montage d'environnement doit reproduire cet ordre.
+6. **Le critère dit « fonctionne » sur les deux architectures**, pas « est construite ». Une image
+   `amd64` qui se construit mais ne démarre pas ne satisfait rien : il faut la **lancer**.
 
-## 9.5 Les 7 critères de sortie de la porte `G1`
+## 9.4 Les 7 critères de sortie de la porte `G1`
 
 | | Critère | État |
 |:--:|---|---|
-| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, et **`web` sert vraiment** depuis `T5` |
-| ☐ | Les images multiarchitectures sont construites | `T7` |
-| ☑ | **Aucun secret réel n'est présent** | contrôlé à chaque sous-étape, avec témoin positif |
-| ☑ | Une migration Alembic vide ou initiale s'exécute | **fait en `T3`** |
-| ☑ | Les logs possèdent un identifiant de corrélation | **fait en `T4`** |
-| ☐ | **La CI bloque volontairement une erreur de lint, de test et de secret** | **`T6`, le test le plus important du lot** |
+| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, et **aussi sur une machine propre** depuis `T6` |
+| ☐ | **Les images multiarchitectures sont construites** | **`T7`, dernier critère technique** |
+| ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin |
+| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request |
+| ☑ | Les logs possèdent un identifiant de corrélation | `T4` |
+| ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
 | ☐ | Jonathan valide le socle | `T11` |
 
-La démonstration attendue par la roadmap est satisfaite à **5 sur 6** : seul le pipeline CI
-manque.
+**La démonstration attendue par la roadmap est satisfaite à 6 sur 6.** Restent `T7` images, `T8`
+recette, `T9` documentation, `T10` design system (`P1`), `T11` porte.
 
 À la validation, le tag **`v0.1.0`** est posé sur `main` (`DEC-428`).
 
-## 9.6 Ce que le LOT 1 ne doit toujours pas faire
+## 9.5 Ce que le LOT 1 ne doit toujours pas faire
 
 Créer une table métier, un modèle SQLAlchemy métier ou un type métier dans
 `packages/contracts` · implémenter une authentification, même partielle, même de test ·
@@ -809,6 +888,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 ├── Makefile                     ← 33 cibles, point d'entrée unique (DEC-441)
 ├── .env.example                 ← v1.0, 78 variables, aucun secret
 ├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
+├── .gitleaks.toml               ← regles taillees sur les formats de CE projet (T6)
 ├── .node-version · .python-version
 ├── package.json · pnpm-workspace.yaml    ← pnpm épinglé, store hors iCloud
 ├── pyproject.toml               ← workspace uv, Ruff, mypy strict, pytest
@@ -828,13 +908,15 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │   ├── compose/  base + surcouche dev        ← surcouche recette en T8
 │   ├── caddy/    Caddyfile — monté PAR SON RÉPERTOIRE (DEC-472), tls internal
 │   └── scripts/  exclure-icloud · verifier-{ports,persistance,sante,page-statut}
+│                  verifier-documentation.py  ← empreintes + sequences (T6)
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
     ├── decisions/                   ← 141 décisions, 21 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T5, registres
 ```
 
-`.github/workflows/` n'existe pas encore : c'est `T6`.
+`.github/` porte les gabarits d'issue et de pull request, et depuis `T6` **`workflows/ci.yml`** :
+trois tâches, les 11 contrôles du cahier §23.1, et la porte que la protection de branche exige.
 
 ---
 
@@ -848,12 +930,21 @@ git status -sb
 gh issue list --milestone G1 --state all
 
 make icloud-verify        # PAS une formalite : voir §7.1
-make check                # qualite complete : 139 pytest + 27 Vitest
+make check                # qualite complete, docs-check compris
+make audit                # pip-audit et pnpm audit (DEC-474)
 make up                   # les 8 services, ET recharge Caddy (DEC-472)
 make stack-check          # sante + ports
 make api-check            # les 3 endpoints
 make web-check            # la page vue comme un navigateur la voit
+make alembic-check        # une seule tete de migration
 make test-integration     # 8 tests sur services reels
+```
+
+**Et regarde l'integration continue**, qui existe depuis `T6` et qui **bloque** :
+
+```bash
+gh run list --limit 5
+gh pr checks <numero>
 ```
 
 Si Docker ne répond pas : `open -a Docker`, puis attendre. Il s'est arrêté seul une fois pendant
@@ -892,7 +983,8 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
   42 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
   filtre de masquage, et les **cinq** fois où j'ai lu le code de sortie d'un `grep` en croyant lire
   celui d'une commande. En `T5`, **cinq défauts sur huit étaient dans mes contrôles**, pas dans le
-  livrable — c'est la forme la plus insidieuse : on croit avoir prouvé ;
+  livrable — c'est la forme la plus insidieuse : on croit avoir prouvé. En `T6`, j'ai rejoué une
+  leçon **écrite dans ce document** : un piège documenté n'est pas un piège désarmé ;
 - distinguer nettement **ce qui est prouvé** de **ce qui est recommandé** ;
 - dire ce qui **n'est pas** couvert, plutôt que de le laisser croire. La conservation de 30 jours
   des journaux n'est pas faite, et `QO-113` le dit ;
@@ -901,7 +993,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 141 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 145 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
