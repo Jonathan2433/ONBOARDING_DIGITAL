@@ -946,6 +946,33 @@ def fonctionnel_worker(
             "redis-server",
             "--requirepass",
             "verif-t7",
+            # `--ignore-warnings ARM64-COW-BUG`, ET IL FAUT DIRE POURQUOI.
+            #
+            # Sous emulation QEMU, Redis detecte le bug copie-sur-ecriture connu
+            # d'ARM64 et REFUSE DE DEMARRER, volontairement, pour ne pas
+            # corrompre ses donnees a la prochaine sauvegarde d'arriere-plan.
+            # Mesure du 29/07/2026, execution 30452743418 : « Your kernel has a
+            # bug that could lead to data corruption during background save.
+            # Redis will now exit to prevent data corruption », conteneur
+            # `exited code=1`. Aucune attente n'y changeait rien : ce n'etait ni
+            # un delai, ni notre image.
+            #
+            # POURQUOI C'EST ACCEPTABLE ICI, ET NULLE PART AILLEURS
+            #   Ce Redis est un DOUBLE JETABLE. `--save ""` desactive toute
+            #   sauvegarde, il ne porte aucune donnee, et il vit le temps d'un
+            #   PING. L'avertissement porte sur une corruption de donnees ; il
+            #   n'y a pas de donnee.
+            #
+            #   Le Redis du projet, lui, tourne NATIVEMENT sur le Mac `aarch64`
+            #   et n'a jamais declenche cet avertissement. Ce drapeau n'a RIEN a
+            #   faire dans `docker-compose.base.yml` : l'y porter transformerait
+            #   un garde-fou contre la perte de donnees en nuisance silencieuse.
+            #   C'est exactement la classe de correctif que `T6-7` a appris a
+            #   mesurer avant d'appliquer.
+            "--ignore-warnings",
+            "ARM64-COW-BUG",
+            "--save",
+            "",
         )
         if code != 0:
             journal.echec(f"{plateforme} : Redis jetable n'a pas demarre : {sortie.strip()[:160]}")
