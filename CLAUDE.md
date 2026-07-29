@@ -484,6 +484,57 @@ et c'est là que `QO-085` pourra se clore.
 docker compose -p observatoire-ecom-studio start
 ```
 
+## 5.8 Images, registre et étiquettes — les constantes de `T7`
+
+**Elles n'existaient pas avant `T7`. Toutes sont déclarées dans le `Makefile`, en une seule source
+de vérité, et le workflow n'en redéfinit aucune.**
+
+| Constante | Valeur | Où, et pourquoi cette valeur |
+|---|---|---|
+| `REGISTRE_IMAGES` | `ghcr.io/jonathan2433/onboarding-digital` | `DEC-445`. **Minuscules obligatoires** : GHCR refuse une majuscule dans un nom de paquet, alors que le compte s'écrit `Jonathan2433` |
+| `PLATEFORMES_IMAGES` | `linux/amd64,linux/arm64` | Cahier §22.3, littéralement : `arm64` pour le Mac M5, `amd64` pour un futur serveur x86 |
+| `IMAGES_SPEC` | `api::130 worker::130 web:execution:35` | `<service>:<cible>:<plafond Mio>`. **Une liste littérale, et non trois familles de variables** : une variable Make n'est **pas** visible du shell d'une recette, et l'indirection `$${CIBLE_$$service}` y vaudrait la chaîne vide — `web` n'aurait jamais reçu `--target execution`, **en silence** |
+| `VERSION_IMAGE` · `REVISION_IMAGE` | `0.0.0-dev` · `inconnue` | Défauts. La CI passe la version et l'empreinte du commit réels |
+| `ETIQUETTE_LOCALE` | `onboarding-local` | Les listes de manifestes construites **localement**. Jamais poussées |
+
+**Les plafonds portent sur la taille de CONTENU, pas sur l'usage disque, et c'est mesuré.** Une
+image a **deux** tailles qui diffèrent d'un facteur quatre : `api` `arm64` pèse **115 Mo de contenu**
+et **473 Mo sur disque**. `T2` et `T5` citaient la seconde, `docker images` la rapportant.
+
+> **Pourquoi la première, et le motif est décisif :** l'usage disque **n'est pas comparable d'une
+> plateforme à l'autre**. `docker image ls --tree` annonce **473 Mo** pour la variante `arm64` et
+> **114 Mo** pour la variante `amd64` de la **même** image — seule la variante native est dépaquetée
+> localement. Un plafond fondé sur cette grandeur passerait ou échouerait selon l'architecture de
+> l'exécuteur. C'est le défaut `T7-6`, et il a produit un plafond **4,5 fois trop large**.
+
+**Étiquettes publiées** — `DEC-481`, conventions §4.1 :
+
+| Étiquette | Quand | Usage |
+|---|---|---|
+| `sha-<empreinte courte>` | **toujours** | traçabilité, diagnostic, rejeu |
+| `develop` | poussée sur `develop` | recette locale **seulement** |
+| version exacte, `0.1.0` | tag `v*` | **seule** référence autorisée en production |
+| ~~`latest`~~ | **jamais** | `DEC-481`, plus strict que les conventions. `make images-check` échoue si le mot apparaît |
+
+> **Les étiquettes locales de Compose, `onboarding-dev-web:latest`, sont hors de cette
+> interdiction** : Compose les engendre pour toute image construite sans étiquette explicite, elles
+> ne sont jamais poussées, et c'est exactement le cas que les conventions §4.1 tolèrent. Le contrôle
+> les distingue, avec témoin dans les deux sens — la première version criait au loup sur
+> `runs-on: ubuntu-latest`, qui est un **label d'exécuteur**.
+
+**Deux plateformes de plus, à connaître :**
+
+- **`linux/s390x`** est la **plateforme témoin** du vérificateur. Elle est volontairement absente de
+  nos manifestes, et le contrôle **exige que son inspection échoue** : sans cela, un
+  `docker image inspect --platform` qui réussirait pour n'importe quelle valeur donnerait la même
+  observation qu'un manifeste correct ;
+- **`ARM64-COW-BUG`** est un avertissement Redis, supprimé **uniquement** sur le double jetable du
+  vérificateur. Voir §7.18 — ne le porte **jamais** dans Compose.
+
+**Le magasin d'images containerd est un prérequis mesuré.** `docker info` doit rapporter
+`io.containerd.snapshotter.v1` : sans lui, `docker buildx build --platform … --load` refuse de
+charger une liste de manifestes. Vérifié le 29/07/2026 sur cette machine.
+
 ---
 
 # 6. La méthode de travail
@@ -497,7 +548,12 @@ docker compose -p observatoire-ecom-studio start
 4. Rapporter         au format imposé, avec les sorties réelles
 5. Attendre          la validation explicite de Jonathan
 6. Fusionner         une pull request par sous-étape, squash
+7. REFERMER l'issue  A LA MAIN : `Closes #N` ne marche pas depuis develop, voir §7.19
 ```
+
+**L'étape 7 n'est pas une formalité et elle a été oubliée à la fusion de `T7`.** Le commentaire de
+fermeture est aussi l'endroit où cocher les critères d'acceptation avec leurs preuves, ce que le
+backlog §11 exige.
 
 ## 6.2 Le format de rapport imposé
 
@@ -850,6 +906,29 @@ d'**exécuter** le code copié.
 **La leçon commune :** un healthcheck qui interroge un service ne dit rien de la **configuration**
 que ce service a chargée. Compare toujours l'état chargé au fichier présent.
 
+## 7.16 Ce qui n'a jamais tourné ailleurs n'est pas éprouvé
+
+**Leçon centrale de `T6`, et elle vaut pour tout ce que tu écriras.** Le `Makefile` fonctionnait
+depuis `T1` — sur **une** machine, sous macOS, avec des volumes **déjà peuplés**. La première
+exécution sur un exécuteur neuf a révélé deux défauts qui n'étaient pas des régressions, mais des
+**conditions jamais rencontrées** :
+
+1. **`make env`** employait `sed -i ''`. GNU sed échoue. Toute la tâche « stack » cassait.
+2. **`make up` n'avait jamais fonctionné sur une machine propre.** La sonde `ready` de l'API fait
+   un `head_bucket` ; sans bucket elle répond 503, `api` n'est jamais sain, `up --wait` échoue. Or
+   le bucket n'était créé qu'**après** cette attente. En local le volume `minio-data` survit à
+   `make down`, et le bucket y était déjà : le défaut ne pouvait pas se montrer.
+
+Le second aurait attendu **`T9`** pour se manifester, sur le critère « les procédures fonctionnent
+depuis une machine propre » — et il aurait alors fallu comprendre pourquoi la stack ne démarre pas
+chez quelqu'un d'autre. `DEC-477` le corrige, et **`T8` devra reproduire cet ordre** dans la
+surcouche de recette.
+
+**Pour éprouver une machine propre sans tout casser :** ne lance pas `make destroy`, qui
+supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seul** volume utile.
+
+---
+
 ## 7.17 Monter le répertoire ne suffit pas : iCloud remplace aussi les répertoires
 
 **Découvert en `T7`, et cela élargit le périmètre de `DEC-472`.** `make up` a échoué : le conteneur
@@ -876,32 +955,56 @@ de l'hôte**, et ne masque plus son erreur — elle annonçait « configuration 
 absent » là où le message réel était « no such file or directory ». Deuxième leçon, donc : le piège
 du §7.6 était dans un contrôle que le projet avait lui-même écrit.
 
-## 7.16 Ce qui n'a jamais tourné ailleurs n'est pas éprouvé
+---
 
-**Leçon centrale de `T6`, et elle vaut pour tout ce que tu écriras.** Le `Makefile` fonctionnait
-depuis `T1` — sur **une** machine, sous macOS, avec des volumes **déjà peuplés**. La première
-exécution sur un exécuteur neuf a révélé deux défauts qui n'étaient pas des régressions, mais des
-**conditions jamais rencontrées** :
+## 7.18 Diagnostiquer avant de corriger — `T7` y a perdu trois cycles
 
-1. **`make env`** employait `sed -i ''`. GNU sed échoue. Toute la tâche « stack » cassait.
-2. **`make up` n'avait jamais fonctionné sur une machine propre.** La sonde `ready` de l'API fait
-   un `head_bucket` ; sans bucket elle répond 503, `api` n'est jamais sain, `up --wait` échoue. Or
-   le bucket n'était créé qu'**après** cette attente. En local le volume `minio-data` survit à
-   `make down`, et le bucket y était déjà : le défaut ne pouvait pas se montrer.
+**Le défaut le plus coûteux de `T7`, et il n'était pas technique.** Ma sonde du worker échouait sous
+émulation. J'ai corrigé **deux fois** sans avoir diagnostiqué :
 
-Le second aurait attendu **`T9`** pour se manifester, sur le critère « les procédures fonctionnent
-depuis une machine propre » — et il aurait alors fallu comprendre pourquoi la stack ne démarre pas
-chez quelqu'un d'autre. `DEC-477` le corrige, et **`T8` devra reproduire cet ordre** dans la
-surcouche de recette.
+| Tentative | Hypothèse | Résultat |
+|---|---|---|
+| 1 | une course : Redis pas encore prêt | j'ajoute une attente → échoue toujours |
+| 2 | l'attente est trop courte | j'allonge à 120 s → « **JAMAIS en 120 s** » |
+| 3 | **je fais dire au contrôle l'état de la dépendance qu'il démarre** | `exited code=1`, et le journal donne la cause en une ligne |
 
-**Pour éprouver une machine propre sans tout casser :** ne lance pas `make destroy`, qui
-supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seul** volume utile.
+La cause : **sous QEMU, Redis détecte le bug copie-sur-écriture d'ARM64 et sort exprès**, pour ne pas
+corrompre ses données. Aucune attente n'y pouvait rien. Trois cycles d'intégration continue — une
+heure — pour un problème que le premier journal aurait nommé.
+
+> **La leçon, sans jargon :** quand un contrôle échoue et que tu ne sais pas pourquoi, **la première
+> correction à écrire est celle qui te le dira.** Un contrôle qui masque la cause de son échec ne
+> coûte pas un message : il coûte des cycles entiers. C'est le §7.6 à l'échelle d'une sous-étape.
+
+**Et une précaution sur le correctif retenu**, parce qu'on pourrait le généraliser à tort :
+`--ignore-warnings ARM64-COW-BUG` **supprime un garde-fou contre la corruption de données**. Il est
+posé sur le **double jetable** du vérificateur — sans donnée, `--save ""`, le temps d'un `PING` — et
+**vérifié absent des fichiers Compose, 0 occurrence dans les YAML**. Le Redis du projet tourne
+nativement sur `aarch64` et n'a jamais déclenché cet avertissement. **Ne le porte pas dans
+`docker-compose.base.yml`** : ce serait exactement la classe de correctif que `T6-7` a appris à
+mesurer avant d'appliquer.
 
 ---
 
+## 7.19 `Closes #N` ne referme pas une issue depuis `develop`
+
+**Constaté à la fusion de `T7`.** La pull request `#23` portait `Closes #7` ; après fusion, l'issue
+`#7` était **toujours ouverte**.
+
+GitHub n'applique le mot-clé que pour une fusion dans la branche **par défaut**, ici `main`. Or
+**toutes** les fusions du LOT 1 vont dans `develop` : aucune ne referme son issue automatiquement.
+
+```bash
+gh issue close <n> --comment "…"   # a faire A LA MAIN, apres chaque fusion
+```
+
+Les sous-étapes précédentes le faisaient déjà sans que ce soit écrit. **C'est une routine à tenir
+jusqu'à `T11`**, pas un incident — et le commentaire de fermeture est le bon endroit pour cocher les
+critères d'acceptation avec leurs preuves, ce que le backlog §11 exige.
+
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — 5 ouverts sur 21, aucun nouveau depuis `T5`
+## 8.1 Écarts — 5 ouverts sur 22
 
 | ID | Objet | Échéance |
 |---|---|---|
@@ -911,7 +1014,11 @@ supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seu
 | `ECART-014` | « Représentant de cercle » contre « Booster » | LOT 6 |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
 
-`ECART-006` est **clos** en `T3` : `.env.example` est en v1.0.
+`ECART-006` est **clos** en `T3`, et `ECART-022` en **`T7`** : `.env.example` est en **v1.1**,
+77 variables, 77 noms distincts. `ECART-022` couvrait cinq constats d'une même classe — un nombre
+ou une affirmation non dérivés de leur source — dont le plus sérieux n'était pas documentaire :
+**`make env` ne réconcilie pas un `.env` existant**, et trois variables y manquaient depuis `T3` et
+`T4`. `make env-check` est la parade, et elle est dans `make check`.
 
 ## 8.2 Questions ouvertes utiles à la suite du LOT 1
 
