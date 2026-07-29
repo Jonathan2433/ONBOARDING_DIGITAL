@@ -23,8 +23,6 @@ d'API ne doit pas deplacer l'adresse que sonde l'orchestrateur.
 
 from __future__ import annotations
 
-import json  # TEMOIN T6 : import inutilise, doit faire echouer le lint
-
 from typing import Any
 
 from fastapi import APIRouter, Request, Response, status

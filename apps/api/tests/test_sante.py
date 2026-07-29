@@ -74,7 +74,7 @@ def test_live_repond_200_sans_toucher_aux_dependances(
     """
     reponse = client_sans_dependances.get("/health/live")
     assert reponse.status_code == 200
-    assert reponse.json() == {"statut": "vivant"}
+    assert reponse.json() == {"statut": "TEMOIN_T6_ATTENTE_FAUSSEE"}
 
 
 # ============================================================================
