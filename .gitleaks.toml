@@ -99,9 +99,15 @@ regexes = [
 ]
 
 # ----------------------------------------------------------------------------
-#  Liste blanche globale.
+#  Listes blanches globales.
+#
+#  FORME `[[allowlists]]` ET NON `[allowlist]`, et ce n'est pas cosmetique :
+#  Gitleaks 8.30.1 REFUSE de charger une configuration qui melange les deux —
+#  « [allowlist] is deprecated, it cannot be used alongside [[allowlists]] ».
+#  Mesure du 29/07/2026, en ajoutant la seconde liste ci-dessous. La forme
+#  singuliere etait celle de T6 ; il fallait donc convertir la premiere aussi.
 # ----------------------------------------------------------------------------
-[allowlist]
+[[allowlists]]
 description = "Faux secrets dont la presence est le sujet meme du test"
 
 paths = [
@@ -117,4 +123,42 @@ regexes = [
   # `.env.example` ne contient que des espaces reserves, par construction, et
   # un garde-fou de demarrage refuse de demarrer si l'un subsiste en usage.
   '''CHANGE_ME''',
+]
+
+# ----------------------------------------------------------------------------
+#  Liste blanche 2 — empreintes d'image OCI. Ajoutee en T7.
+#
+#  LE FAUX POSITIF, MESURE AVANT D'ETRE CORRIGE
+#    Le compte rendu de T7 releve les empreintes des listes de manifestes
+#    construites, sous la forme `api      sha256:3b221b95...`. La regle
+#    `generic-api-key` par defaut s'y declenche : le mot `api` voisine une
+#    chaine de 64 hexadecimaux, ce qui est exactement sa signature. Les memes
+#    empreintes dans les `Dockerfile` ne la declenchent PAS, aucun mot-cle ne les
+#    voisinant. Mesure du 29/07/2026, `gitleaks dir` : 1 fuite signalee.
+#
+#  POURQUOI CORRIGER LA CONFIGURATION ET NON LE DOCUMENT
+#    Deplacer le mot `api` dans mon tableau ferait disparaitre l'alerte sans rien
+#    resoudre : T8, T9 et T11 citeront des empreintes a leur tour. Et une
+#    empreinte d'image n'est PAS un secret — elle est publique par nature, c'est
+#    l'adresse de contenu d'un artefact.
+#
+#  POURQUOI ELLE EST ETROITE, ET C'EST LE POINT DELICAT
+#    `targetRules` la borne a la SEULE regle `generic-api-key` : les deux regles
+#    propres au projet et toutes les autres regles par defaut continuent de
+#    s'appliquer sans exception.
+#    `regexTarget = "line"` parce que c'est le VOISINAGE qui doit etre reconnu —
+#    le prefixe `sha256:` — et non le secret capture seul, qui n'est qu'une
+#    chaine hexadecimale. Sans cela, la liste blanche aurait autorise TOUTE
+#    chaine de 64 hexadecimaux, donc de vraies cles. C'est la lecon T6-6 prise
+#    dans l'autre sens : il faut choisir la cible, et se demander laquelle.
+#
+#  Eprouvee dans les deux sens le 29/07/2026 : le compte rendu ne declenche plus,
+#  et une chaine de 64 hexadecimaux SANS prefixe `sha256:` reste detectee.
+# ----------------------------------------------------------------------------
+[[allowlists]]
+description = "Empreintes d'image OCI, publiques par nature"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = [
+  '''sha256:[0-9a-f]{64}''',
 ]

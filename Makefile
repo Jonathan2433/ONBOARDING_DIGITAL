@@ -71,11 +71,77 @@ DC_DEV        := docker compose --env-file "$(ENV_FILE)" $(COMPOSE_FILES)
 # Les huit services attendus sains (cahier 15.4).
 SERVICES := db redis minio mailpit caddy api worker web
 
+# ---------------------------------------------------------------------------
+#  Images multiarchitecture et publication GHCR (T7, DEC-478 a DEC-481)
+# ---------------------------------------------------------------------------
+#  Depot GHCR impose par DEC-445. Minuscules : GHCR n'accepte pas de majuscule
+#  dans un nom de paquet, alors que le compte GitHub s'ecrit `Jonathan2433`.
+REGISTRE_IMAGES := ghcr.io/jonathan2433/onboarding-digital
+
+#  Les deux architectures du cahier 22.3, litteralement : « linux/arm64 pour le
+#  Mac M5 » et « linux/amd64 pour un futur serveur x86 ».
+PLATEFORMES_IMAGES := linux/amd64,linux/arm64
+
+#  LES TROIS IMAGES APPLICATIVES, EN UNE SEULE SOURCE DE VERITE.
+#
+#  Format : <service>:<cible ou vide>:<plafond en Mio>
+#
+#  Une liste litterale et non trois familles de variables `CIBLE_x` /
+#  `PLAFOND_x` : une variable Make n'est PAS visible du shell d'une recette, et
+#  l'indirection `$${CIBLE_$$service}` y aurait valu la chaine vide — donc `web`
+#  n'aurait jamais recu `--target execution`, silencieusement. Le contourner
+#  demandait `eval`, que la passation §7.2 proscrit pour de bonnes raisons.
+#  Un decoupage de chaine dans le shell n'a aucun de ces deux defauts.
+#
+#  `web` publie sa cible `execution`, jamais la cible de developpement : c'est
+#  tout l'objet de DEC-479.
+#
+#  PLAFONDS DE TAILLE, en Mio, pour la variante PUBLIEE de chaque image.
+#  Demandes par ROAD-RSK-030 : « faire echouer la construction si l'image
+#  d'execution depasse un plafond declare. Un controle de taille qui n'echoue
+#  pas ne sert a rien. »
+#
+#  QUELLE GRANDEUR EST MESUREE, ET POURQUOI CE N'EST PAS CELLE DE T2 ET T5.
+#  Une image a DEUX tailles, et elles diffèrent d'un facteur quatre :
+#
+#    taille de CONTENU     ce que le registre stocke et transfere. Mesure du
+#                          29/07/2026 pour `api` arm64 : 115 Mo.
+#    usage DISQUE          l'arborescence depaquetee. Meme image : 473 Mo.
+#                          C'est cette grandeur que citent T2 et T5 — 662 Mo
+#                          avant T7 — parce que `docker images` la rapporte.
+#
+#  Les plafonds portent sur la taille de CONTENU, pour deux motifs mesures :
+#
+#    1. c'est la grandeur que ROAD-RSK-030 visait reellement — « publiee deux
+#       fois, telechargee a chaque deploiement, analysee par Trivy » ;
+#    2. l'usage disque N'EST PAS COMPARABLE d'une plateforme a l'autre. Mesure :
+#       `docker image ls --tree` annonce 473 Mo pour la variante arm64 et 114 Mo
+#       pour la variante amd64 de la MEME image — parce que seule la variante
+#       native est depaquetee sur cette machine. Un plafond fonde sur cette
+#       grandeur passerait ou echouerait selon l'architecture de l'executeur.
+#
+#  Mesures du 29/07/2026, taille de contenu par plateforme :
+#    api 114-115 Mo, worker 114-115 Mo, web execution 22-23 Mo.
+#  Marges retenues : ~18 % pour api et worker, un facteur 1,5 pour web, dont la
+#  petite taille absolue rend une marge en pourcentage trop serree.
+IMAGES_SPEC := api::130 worker::130 web:execution:35
+
+#  Identite du build. En local, les valeurs de .env font foi ; l'integration
+#  continue passe la version et l'empreinte du commit reels.
+VERSION_IMAGE  ?= 0.0.0-dev
+REVISION_IMAGE ?= inconnue
+
+#  Etiquette locale des images multiarchitectures construites par images-build.
+#  Elle n'est jamais poussee : c'est la liste de manifestes eprouvee sur cette
+#  machine, distincte de celle que publie l'integration continue.
+ETIQUETTE_LOCALE := onboarding-local
+
 .PHONY: help tools versions tree icloud-exclude icloud-verify install \
         lint format format-check typecheck test check clean clean-deps \
-        env up down destroy ps logs health ports minio-bucket stack-check \
+        env env-check up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
-        web-check caddy-reload docs-check audit alembic-check test-frontend
+        web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
+        images-check images-build images-inspect images-verify images-push
 
 # ---------------------------------------------------------------------------
 
@@ -225,9 +291,148 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
+
+# ---------------------------------------------------------------------------
+#  Images multiarchitecture et publication GHCR — T7, story MVP-L01-US006
+#
+#  LE MAKEFILE RESTE LE POINT D'ENTREE UNIQUE, y compris pour la publication.
+#  Aucune commande buildx n'est ecrite en dur dans le workflow : ce que
+#  l'integration continue execute, Jonathan peut le rejouer a l'identique ici.
+#  C'est ce que T1 annoncait et ce que T6 a tenu.
+# ---------------------------------------------------------------------------
+
+# Controles STATIQUES : aucun demon Docker requis, donc executables dans la
+# tache « qualite » de la CI, qui ne demarre aucun service. Inclus dans
+# `make check`.
+images-check: ## Controles statiques des images : epinglage, etiquettes, cibles
+	@python3 infra/scripts/verifier-images.py statique
+
+# Construction LOCALE des trois images pour les deux architectures, chargees dans
+# le magasin local, puis controlees.
+#
+# `--load` avec deux plateformes exige le magasin d'images containerd. Verifie le
+# 29/07/2026 sur cette machine : le snapshotter est `io.containerd.snapshotter.v1`
+# et la liste de manifestes est bien produite. Sans lui, buildx refuserait.
+#
+# La construction `linux/amd64` sur ce Mac `arm64` passe par l'emulation, donc
+# elle est LENTE. C'est le prix de la preuve locale, et la duree est mesuree.
+images-build: ## Construire les 3 images en multiarchitecture, en local, et les controler
+	@rep="$${TMPDIR:-/tmp}/onboarding-images-t7"; mkdir -p "$$rep"; \
+	construites=0; attendues=0; \
+	for spec in $(IMAGES_SPEC); do \
+		attendues=$$((attendues + 1)); \
+		service=$${spec%%:*}; reste=$${spec#*:}; cible=$${reste%%:*}; \
+		echo; \
+		echo "==> $$service — plateformes $(PLATEFORMES_IMAGES)$${cible:+, cible $$cible}"; \
+		debut=$$(date +%s); \
+		docker buildx build \
+			--platform $(PLATEFORMES_IMAGES) \
+			$${cible:+--target} $$cible \
+			--build-arg APP_VERSION=$(VERSION_IMAGE) \
+			--build-arg APP_REVISION=$(REVISION_IMAGE) \
+			--metadata-file "$$rep/$$service.json" \
+			--load \
+			-t $(ETIQUETTE_LOCALE)/$$service:multiarch \
+			-f apps/$$service/Dockerfile . ; \
+		code=$$?; \
+		if [ $$code -ne 0 ]; then echo "  ECHEC construction de $$service, code $$code"; continue; fi; \
+		construites=$$((construites + 1)); \
+		echo "  duree de construction : $$(( $$(date +%s) - debut )) s"; \
+	done; \
+	echo; \
+	echo "  images attendues : $$attendues   construites : $$construites"; \
+	if [ "$$construites" -ne "$$attendues" ]; then exit 1; fi
+	@$(MAKE) --no-print-directory images-inspect
+
+# Manifeste et taille de chaque image construite. Separee de `images-build` pour
+# etre rejouable sans reconstruire.
+images-inspect: ## Controler manifestes et tailles des images locales multiarchitecture
+	@rep="$${TMPDIR:-/tmp}/onboarding-images-t7"; echec=0; examinees=0; attendues=0; \
+	for spec in $(IMAGES_SPEC); do \
+		attendues=$$((attendues + 1)); \
+		service=$${spec%%:*}; reste=$${spec#*:}; plafond=$${reste##*:}; \
+		python3 infra/scripts/verifier-images.py manifeste \
+			$(ETIQUETTE_LOCALE)/$$service:multiarch --metadonnees "$$rep/$$service.json" || echec=1; \
+		python3 infra/scripts/verifier-images.py taille \
+			$(ETIQUETTE_LOCALE)/$$service:multiarch $$service $$plafond || echec=1; \
+		examinees=$$((examinees + 1)); \
+	done; \
+	echo; \
+	echo "  images attendues : $$attendues   examinees : $$examinees"; \
+	if [ "$$examinees" -ne "$$attendues" ]; then exit 1; fi; \
+	exit $$echec
+
+# Controle FONCTIONNEL : les conteneurs sont LANCES, sur les deux architectures.
+# Le critere de la fiche §3 dit « fonctionne », pas « est construite » : une image
+# amd64 qui se construit mais ne demarre pas ne satisfait rien.
+#
+# Le temoin de la cible de DEVELOPPEMENT est indispensable : il prouve que le
+# detecteur de `/@vite/client` sait trouver le motif. Sans lui, « 0 occurrence »
+# serait indistinguable d'une expression reguliere fausse — defaut T5-7.
+images-verify: ## Lancer les 3 images sur les 2 architectures et prouver qu'elles fonctionnent
+	@echec=0; examinees=0; attendues=0; \
+	for spec in $(IMAGES_SPEC); do \
+		attendues=$$((attendues + 1)); \
+		service=$${spec%%:*}; reste=$${spec#*:}; cible=$${reste%%:*}; \
+		python3 infra/scripts/verifier-images.py fonctionnel \
+			$$service $(ETIQUETTE_LOCALE)/$$service:multiarch \
+			$${cible:+--cible} $$cible || echec=1; \
+		examinees=$$((examinees + 1)); \
+	done; \
+	echo; \
+	echo "==> TEMOIN POSITIF : la cible de DEVELOPPEMENT doit, elle, porter /@vite/client"; \
+	python3 infra/scripts/verifier-images.py fonctionnel \
+		web onboarding-dev-web:latest --cible developpement \
+		--plateforme linux/arm64 || echec=1; \
+	echo; \
+	echo "  services attendus : $$attendues   examines : $$examinees"; \
+	if [ "$$examinees" -ne "$$attendues" ]; then exit 1; fi; \
+	exit $$echec
+
+# Publication dans GHCR. Appelee par le workflow images.yml, jamais a la main :
+# elle exige une authentification au registre, que le GITHUB_TOKEN du workflow
+# fournit (`packages: write`). Aucun secret de depot n'est necessaire.
+#
+# ETIQUETTES est fourni par l'appelant, separe par des espaces. `latest` n'y
+# figure jamais : arbitrage de Jonathan, plus strict que les conventions §4.1.
+# `images-check` echoue si le mot apparait dans un workflow.
+images-push: ## Publier les 3 images multiarchitecture dans GHCR (CI, ETIQUETTES=...)
+	@test -n "$(ETIQUETTES)" || { echo "  ECHEC : ETIQUETTES est vide"; exit 1; }
+	@rep="$${TMPDIR:-/tmp}/onboarding-images-t7"; mkdir -p "$$rep"; \
+	: > "$$rep/empreintes.txt"; \
+	publiees=0; attendues=0; \
+	for spec in $(IMAGES_SPEC); do \
+		attendues=$$((attendues + 1)); \
+		service=$${spec%%:*}; reste=$${spec#*:}; cible=$${reste%%:*}; \
+		args=""; \
+		for etiquette in $(ETIQUETTES); do \
+			args="$$args -t $(REGISTRE_IMAGES)/$$service:$$etiquette"; \
+		done; \
+		echo; \
+		echo "==> publication de $$service, etiquettes : $(ETIQUETTES)"; \
+		debut=$$(date +%s); \
+		docker buildx build \
+			--platform $(PLATEFORMES_IMAGES) \
+			$${cible:+--target} $$cible \
+			--build-arg APP_VERSION=$(VERSION_IMAGE) \
+			--build-arg APP_REVISION=$(REVISION_IMAGE) \
+			--metadata-file "$$rep/$$service-publie.json" \
+			--push $$args \
+			-f apps/$$service/Dockerfile . ; \
+		code=$$?; \
+		if [ $$code -ne 0 ]; then echo "  ECHEC publication de $$service, code $$code"; continue; fi; \
+		publiees=$$((publiees + 1)); \
+		echo "  duree : $$(( $$(date +%s) - debut )) s"; \
+		empreinte=$$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['containerimage.digest'])" "$$rep/$$service-publie.json"); \
+		echo "  empreinte de la liste de manifestes : $$empreinte"; \
+		printf '%s %s\n' "$$service" "$$empreinte" >> "$$rep/empreintes.txt"; \
+	done; \
+	echo; \
+	echo "  images attendues : $$attendues   publiees : $$publiees"; \
+	if [ "$$publiees" -ne "$$attendues" ]; then exit 1; fi
 
 # ---------------------------------------------------------------------------
 #  Stack Docker locale (T2)
@@ -260,6 +465,31 @@ env: ## Creer .env depuis .env.example, avec des secrets locaux generes
 		echo "    IMPORT_SOURCE_RETENTION_DAYS  -> sa valeur releve de QO-100, bloquante"; \
 		echo "    UPTIME_KUMA_PUSH_URL          -> supervision externe, LOT 13"; \
 	fi
+	@$(MAKE) --no-print-directory env-check
+
+# T7, ECART-022 — LA PARADE A UN DEFAUT QUE `make env` NE PEUT PAS CORRIGER.
+#
+# `make env` est idempotent : si .env existe, il n'y touche pas. C'est voulu, le
+# fichier porte des secrets locaux engendres. Mais la consequence l'etait moins :
+# une variable ajoutee a .env.example APRES la premiere creation du .env n'y
+# arrive JAMAIS.
+#
+# Mesure du 29/07/2026 : le .env de cette machine comptait 74 affectations contre
+# 78 dans le modele. Manquaient APP_REVISION, ajoutee en T3, et LOG_MAX_SIZE et
+# LOG_MAX_FILES, ajoutees en T4 — trois variables absentes depuis deux et une
+# sous-etapes.
+#
+# EFFETS REELS, MESURES ET DIFFERENTS L'UN DE L'AUTRE :
+#   - Compose substituait une chaine VIDE a $${APP_REVISION}, faute de defaut ;
+#   - LOG_MAX_SIZE et LOG_MAX_FILES ont un defaut dans Compose : la rotation de
+#     T4 fonctionnait donc par le DEFAUT, pas par .env. Ce qui est correct, mais
+#     n'est pas ce que le compte rendu de T4 laissait entendre.
+#
+# Ce controle compte les deux fichiers et NOMME les manquantes. Il ne modifie
+# rien : ajouter automatiquement des lignes a un fichier de secrets serait pire
+# que le defaut.
+env-check: ## Verifier que .env declare toutes les variables de .env.example
+	@python3 infra/scripts/verifier-images.py environnement
 
 # DEMARRAGE EN DEUX TEMPS, et l'ordre n'est pas cosmetique.
 #
@@ -324,10 +554,64 @@ minio-bucket: ## Creer le bucket MinIO (idempotent, ARB-ROAD-002)
 # rechargement, une modification du Caddyfile reste sans effet et la stack sert
 # une configuration perimee en paraissant parfaitement saine — defaut trouve en
 # T5. `caddy reload` est idempotent : il ne fait rien si rien n'a change.
-caddy-reload: ## Recharger la configuration de Caddy (idempotent)
-	@$(DC_DEV) exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null \
-		&& echo "  ok        configuration Caddy rechargee depuis le fichier monte" \
-		|| { echo "  ECHEC     rechargement de Caddy : configuration invalide ou service absent"; exit 1; }
+#
+# T7 — DEUX CORRECTIONS, apres un echec reel le 29/07/2026.
+#
+# 1. L'ERREUR N'EST PLUS MASQUEE. La version de T5 ecrivait `2>/dev/null` et
+#    concluait « configuration invalide ou service absent ». Le message reel
+#    etait « open /etc/caddy/Caddyfile: no such file or directory », soit une
+#    cause entierement differente. C'est le piege de la passation §7.6 : ne
+#    jamais supprimer l'erreur d'un controle dont on va interpreter le silence.
+#
+# 2. LE CONTROLE COMPARE DESORMAIS CE QUE LE CONTENEUR VOIT A CE QUE L'HOTE
+#    PORTE. Motif mesure : le conteneur caddy, cree a 09:51:38, voyait un
+#    /etc/caddy VIDE alors que l'hote portait bien le fichier. Les inodes de
+#    `infra/caddy` et de son Caddyfile avaient change a 10:06:49, sans aucune
+#    action de session — la signature de ROAD-RSK-026. Monter le REPERTOIRE
+#    (DEC-472) protege du remplacement du FICHIER par un editeur ; cela ne
+#    protege pas du remplacement du REPERTOIRE par iCloud, car un conteneur ne
+#    re-resout pas la source d'un montage apres sa creation. Et pendant ce
+#    temps, Caddy restait `healthy` : son API d'administration repondait sur la
+#    configuration chargee au demarrage.
+caddy-reload: ## Recharger la configuration de Caddy (idempotent, et compare hote/conteneur)
+	@empreinte_hote=$$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" infra/caddy/Caddyfile); \
+	sortie=$$($(DC_DEV) exec -T caddy sha256sum /etc/caddy/Caddyfile 2>&1); \
+	code=$$?; \
+	if [ $$code -ne 0 ]; then \
+		echo "  ECHEC     le conteneur caddy ne voit PAS /etc/caddy/Caddyfile"; \
+		printf '%s\n' "$$sortie" | sed 's/^/              /'; \
+		echo "              Cause la plus probable : le conteneur est epingle a un inode"; \
+		echo "              de repertoire perime. iCloud remplace les inodes sans action"; \
+		echo "              de session (ROAD-RSK-026), et un conteneur ne re-resout pas"; \
+		echo "              la source d'un montage lie apres sa creation."; \
+		echo "              Remede :  make caddy-recreate"; \
+		exit 1; \
+	fi; \
+	empreinte_conteneur=$$(printf '%s' "$$sortie" | cut -d' ' -f1); \
+	if [ "$$empreinte_hote" != "$$empreinte_conteneur" ]; then \
+		echo "  ECHEC     le conteneur voit un Caddyfile DIFFERENT de celui de l'hote"; \
+		echo "              hote      $$empreinte_hote"; \
+		echo "              conteneur $$empreinte_conteneur"; \
+		echo "              Remede :  make caddy-recreate"; \
+		exit 1; \
+	fi; \
+	echo "  ok        le conteneur voit le MEME Caddyfile que l'hote ($$(printf '%s' "$$empreinte_hote" | cut -c1-16)...)"; \
+	sortie=$$($(DC_DEV) exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1); \
+	code=$$?; \
+	if [ $$code -ne 0 ]; then \
+		echo "  ECHEC     rechargement de Caddy, code $$code :"; \
+		printf '%s\n' "$$sortie" | sed 's/^/              /'; \
+		exit 1; \
+	fi; \
+	echo "  ok        configuration Caddy rechargee depuis le fichier monte"
+
+# Remede au defaut ci-dessus. Recreer le conteneur lui fait RE-RESOUDRE la
+# source de son montage lie : c'est le seul geste qui repare un inode perime.
+# --no-deps : ne touche pas aux sept autres services, qui n'ont rien a se voir
+# redemarrer pour un probleme de montage propre a Caddy.
+caddy-recreate: ## Recreer le conteneur Caddy (repare un montage lie perime)
+	$(DC_DEV) up --detach --force-recreate --no-deps caddy
+	@$(MAKE) --no-print-directory caddy-reload
 
 health: ## Verifier que les 8 services sont sains (echoue sinon)
 	@manque=0; \

@@ -64,4 +64,18 @@ services:
     mem_limit: 1g
 
   web:
+    # T7, DEC-479 — SELECTION EXPLICITE DE LA CIBLE.
+    #
+    # L'image `web` porte deux cibles : `developpement`, le serveur Vite avec
+    # rechargement a chaud, et `execution`, l'artefact statique servi par Caddy.
+    # Le developpement veut la premiere.
+    #
+    # Ne PAS la nommer serait silencieux, et c'est pour cela que la ligne est
+    # ici et non implicite : sans `target`, Docker construit la DERNIERE etape du
+    # Dockerfile, soit `execution`. La stack demarrerait, la page s'afficherait,
+    # les huit services seraient sains — et le rechargement a chaud aurait
+    # disparu sans qu'aucun controle existant ne le dise. `make images-check`
+    # echoue desormais si une surcouche omet cette ligne.
+    build:
+      target: developpement
     mem_limit: 1g

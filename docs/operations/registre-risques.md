@@ -1,17 +1,17 @@
 # Registre des risques
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T7` du LOT 1
 **Sources reprises :** roadmap §14 et cahier des charges §33
 
 | Origine | Identifiants | Nombre |
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `032` | 8 |
-| **Total** | | **32** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `033` | 9 |
+| **Total** | | **33** |
 
-**Prochain identifiant libre : `ROAD-RSK-033`.**
+**Prochain identifiant libre : `ROAD-RSK-034`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -62,7 +62,7 @@ Leur libellé et leur impact sont inchangés.
 
 ---
 
-# 3. Risques constatés pendant la réalisation — `ROAD-RSK-025` à `028`
+# 3. Risques constatés pendant la réalisation — `ROAD-RSK-025` à `033`
 
 ## `ROAD-RSK-025` — Données personnelles et mot de passe en clair dans le prototype conservé
 
@@ -93,7 +93,10 @@ Leur libellé et leur impact sont inchangés.
 | Atténuations complétées en `T1` | Le nom d'une copie de conflit iCloud est le nom d'origine suivi d'une espace et d'un chiffre. Le motif `* [0-9]` est désormais exclu dans `.gitignore`, `.prettierignore`, `[tool.ruff] extend-exclude` et `eslint.config.js`, et **`make icloud-verify` échoue si une telle copie existe**. |
 | Risque résiduel | Trois éléments. **(a)** La synchronisation de `.git` lui-même demeure, inchangée depuis `DEC-418`. **(b)** Le respect effectif de l'attribut par iCloud n'est **pas prouvé localement** : convention documentée par Apple, qu'aucun outil de cette machine ne permet de vérifier — `brctl` ne couvre pas les chemins CloudDocs et renvoie 0 sur erreur. **(c)** **Nouveau et le plus sérieux :** l'atténuation s'est révélée non durable en moins de sept heures, et la duplication qu'elle devait prévenir s'est produite. Un `node_modules` dans l'arborescence synchronisée reste exposé. |
 | Arbitrage rendu le 28/07/2026 | `DEC-457`. Trois issues avaient été soumises à Jonathan : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir `DEC-418`. **Retenu : maintenir l'atténuation en l'état**, avec `make icloud-verify` exécuté en début de session et intégré à `make check`. `DEC-418` n'est pas rouverte. La copie `node_modules 2` a été supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. |
-| Statut | **Accepté** par `DEC-418`, **atténué** par `DEC-439`, `DEC-447` et `DEC-453`, **matérialisé le 27/07/2026**, **résiduel accepté** par `DEC-457`. `QO-109` close. À revoir à chaque porte. |
+| **⚠ SECONDE MATÉRIALISATION le 29/07/2026, constatée en `T7`, et sur un mécanisme NOUVEAU** | Le conteneur `caddy` voyait un `/etc/caddy` **vide** alors que l'hôte portait bien son `Caddyfile` de 2 844 octets. Chronologie sur horodatages : conteneur créé à **09:51:38** ; `ctime` de `infra/caddy` **et** de `infra/caddy/Caddyfile` à **10:06:49**, soit 15 minutes plus tard, **sans aucune action de session** — la même signature que le 27/07 à 23:30:28. Diagnostic établi par élimination : un conteneur **neuf** monté sur la même source voyait le fichier sans peine, l'hôte le lisait, aucun attribut d'éviction iCloud n'était posé. **Ce que cela ajoute à ce risque :** `DEC-472` monte le **répertoire** et non le fichier, ce qui protège du remplacement du *fichier* par un éditeur — le défaut `T5-2`. Cela ne protège **pas** du remplacement du *répertoire*, car un conteneur ne re-résout pas la source d'un montage lié après sa création. Le périmètre du risque était donc plus large que `T5` ne l'avait établi. |
+| Ce que la seconde matérialisation confirme, et ce qu'elle ajoute | **Confirme** que l'atténuation détecte sans empêcher, ce que `DEC-457` avait accepté. **Ajoute** que le garde-fou de `T5` a fonctionné : `make up` a échoué sur `caddy-reload`, alors que les huit services étaient `healthy` et que Caddy servait la configuration chargée à 09:51 — un service sain servant une configuration périmée, exactement le scénario que `T5` avait nommé. Mais le message masquait sa cause par un `2>/dev/null`, et annonçait « configuration invalide ou service absent » là où l'erreur réelle était « open /etc/caddy/Caddyfile: no such file or directory ». |
+| Atténuation complétée en `T7` | `caddy-reload` **ne masque plus l'erreur** et **compare l'empreinte SHA-256 du `Caddyfile` vu par le conteneur à celle de l'hôte** avant de recharger : le contrôle nomme désormais la cause et donne le remède. Nouvelle cible **`make caddy-recreate`**, qui recrée le seul conteneur `caddy` — `--no-deps` — et lui fait re-résoudre son montage. C'est le seul geste qui répare un inode périmé. |
+| Statut | **Accepté** par `DEC-418`, **atténué** par `DEC-439`, `DEC-447` et `DEC-453`, **matérialisé deux fois** — le 27/07/2026 sur `node_modules`, le 29/07/2026 sur `infra/caddy` —, **résiduel accepté** par `DEC-457`. `QO-109` close. À revoir à chaque porte. |
 
 ## `ROAD-RSK-027` — Mémoire vive insuffisante pour trois environnements simultanés
 
@@ -139,7 +142,10 @@ Leur libellé et leur impact sont inchangés.
 | Mesure | Aucune à `T2`, volontairement — la corriger ici anticiperait `T7`. **`T7` doit produire une image d'exécution multi-étapes** : construction avec l'outillage complet, exécution avec le seul artefact statique servi. L'ordre de grandeur attendu est celui d'`api`, sinon moins. |
 | Contrôle proposé pour `T7` | Faire échouer la construction si l'image d'exécution dépasse un plafond déclaré. Un contrôle de taille qui n'échoue pas ne sert à rien. |
 | Réévaluation du 28/07/2026, sous-étape `T5` | **Le risque s'est aggravé, et c'est `T5` qui l'a aggravé.** L'image passe de **924 Mio à 1,02 Gio** : `T5` ajoute `jsdom`, `@testing-library/react` et `@testing-library/dom` aux dépendances de développement, indispensables aux tests de la page et prescrits par le cahier §17.1, et le `Dockerfile` mono-étape les embarque tous. Le `.dockerignore` de `DEC-473` **ne compense pas** : il retire du contexte le `node_modules` de l'hôte, qui n'était constitué que de liens symboliques, donc quasiment sans poids. Les 100 Mio supplémentaires sont bien installés dans l'image. Mesure : `api` et `worker` restent à 662 Mio. |
-| Statut | **Ouvert et aggravé.** À traiter en `T7`, story `MVP-L01-US006`. La cible d'exécution devra installer les dépendances **de production seulement** et ne servir que l'artefact construit. |
+| **Traitement du 29/07/2026, sous-étape `T7` — `DEC-479`** | `Dockerfile` multi-étapes à **deux cibles nommées**. La cible publiée, `execution`, part de `caddy:2.11-alpine` et ne contient que l'artefact de `vite build`. **Mesures avant et après, usage disque :** `web` **1,02 Gio → 84,9 Mo**, soit **−91,7 %** ; `api` et `worker` **662 Mo → 473 Mo**, soit −29 %. Absence de l'outillage vérifiée par `command -v` sur cinq outils dans l'image d'exécution : `node`, `npm`, `pnpm`, `vite`, `eslint` — **5 absents sur 5**. |
+| **Second gisement, découvert par la mesure et non prévu par ce risque** | `docker history` a montré que le `RUN chown -R` final de chaque image pesait **230 Mio dans `web`** et **143 Mio dans `api` et `worker`**. Motif : une couche d'image réenregistre le fichier **entier** dès qu'une seule de ses métadonnées change ; la couche **duplique** donc l'arborescence dont elle ne modifie que le propriétaire. Corrigé dans les trois `Dockerfile` par création de l'utilisateur avant les copies et `COPY --chown`. C'est ce gisement, et non l'outillage, qui explique les 29 % gagnés par `api` et `worker`, que ce risque ne visait pas. |
+| Contrôle posé, et il échoue réellement | `make images-inspect` compare la **taille de contenu** de chaque variante publiée à un **plafond déclaré** — 130 Mio pour `api` et `worker`, 35 Mio pour `web` — et **échoue au-delà**. Éprouvé par témoin : plafond abaissé à 100 Mio, le contrôle sort en échec en nommant le dépassement. Le plafond porte sur la taille de **contenu** et non sur l'usage disque, pour un motif mesuré : `docker image ls --tree` annonce 473 Mo pour la variante `arm64` et 114 Mo pour la variante `amd64` de la **même** image, seule la variante native étant dépaquetée localement. Un plafond fondé sur cette grandeur passerait ou échouerait selon l'architecture de l'exécuteur. |
+| Statut | **Clos** le 29 juillet 2026, sous-étape `T7`, par `DEC-479`. Risque résiduel nommé : les images `api` et `worker` embarquent encore `uv` et `uvx`, **55,1 Mio mesurés**, qui ne servent qu'à la construction. Trivy n'y trouve **aucune** vulnérabilité — cible `rustbinary`, 0 avis — le gisement est donc de poids seulement. Une étape de construction séparée les retirerait ; ce n'est pas fait, pour ne pas cumuler deux restructurations dans la même sous-étape. Recommandation consignée au compte rendu de `T7`. |
 
 ---
 
@@ -153,7 +159,9 @@ Leur libellé et leur impact sont inchangés.
 | Cause | `T5` doit rendre la page visible, et le critère de la fiche §3 porte sur l'affichage de l'état réel, pas sur le mode de service. Produire dès maintenant une cible d'exécution multi-étapes anticiperait `T7`, qui possède la construction des images. |
 | Mesure | Aucune à `T5`, volontairement, et **c'est dit plutôt que laissé croire**. `T7` doit introduire un `Dockerfile` multi-étapes avec **deux cibles nommées** : une de développement conservant le serveur Vite, une d'exécution servant l'artefact de `vite build`. `T8` doit alors sélectionner explicitement la cible d'exécution dans la surcouche de recette. Traite le même défaut que `ROAD-RSK-030` par le même moyen. |
 | Contrôle proposé pour `T8` | Vérifier que la page servie en recette ne porte **aucune** référence à `/@vite/client` — présente en développement, absente d'un artefact construit. Un contrôle qui distingue les deux modes, et non un contrôle qui vérifie seulement que la page répond. |
-| Statut | **Ouvert.** À traiter en `T7`, contrôlé en `T8`. |
+| **Traitement du 29/07/2026, sous-étape `T7` — `DEC-479`** | Deux cibles nommées, comme la mesure ci-dessus le prévoyait : `developpement` conserve le serveur Vite, `execution` sert l'artefact statique par Caddy. **Aucune n'est choisie dans `docker-compose.base.yml`** : chaque surcouche la sélectionne explicitement, et `make images-check` **échoue** si une surcouche omet la ligne. Motif : l'omission serait silencieuse — sans `target`, Docker construit la dernière étape du `Dockerfile`, soit `execution`, et la stack de développement perdrait le rechargement à chaud en restant parfaitement saine. |
+| **Le contrôle proposé pour `T8` est posé dès `T7`, et il discrimine** | La cible `execution` est lancée sur les deux architectures et la page servie est examinée : **0 occurrence** de `/@vite/client`, et `/assets/` présent, donc un artefact empaqueté. **Le témoin positif est indispensable et il est exécuté** : la même sonde appliquée à la cible `developpement` trouve **1 occurrence**. Sans lui, « 0 occurrence » serait indistinguable d'une expression régulière fausse — c'est le défaut `T5-7`. `T8` héritera du contrôle au lieu de devoir l'écrire. |
+| Statut | **Clos** le 29 juillet 2026, sous-étape `T7`, par `DEC-479`. `T8` doit encore **sélectionner** la cible `execution` dans la surcouche de recette : le contrôle l'y attend et échouera si elle ne nomme aucune cible. |
 
 ---
 
@@ -168,6 +176,23 @@ Leur libellé et leur impact sont inchangés.
 | Mesure retenue | **Tolérance nommée et étroite** (`DEC-474`) : `auditConfig.ignoreGhsas` dans `pnpm-workspace.yaml`, cet avis et lui seul. Tout autre avis, de toute sévérité, continue de faire échouer `make audit` et donc l'intégration continue — éprouvé par témoin, un identifiant bidon fait rééchouer l'audit. La sortie affiche « 1 high (**1 ignored**) » : la tolérance est **visible** dans chaque exécution, jamais silencieuse. |
 | Déclencheur de réévaluation | La mise à jour d'`eslint-plugin-jsx-a11y` vers un `minimatch` moderne. **Le même greffon déclare déjà ESLint `^3 || … || ^9` alors que nous exécutons ESLint 10** : sa mise à jour est à surveiller pour les deux motifs à la fois. Retirer alors la tolérance et vérifier que `make audit` reste vert sans elle. |
 | Statut | **Ouvert, résiduel accepté en connaissance de cause.** À réévaluer à chaque lot, et au plus tard à la porte `G12`, recette transverse. |
+
+---
+
+## `ROAD-RSK-033` — Les images publiées héritent de vulnérabilités sans correctif de leurs images de base
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, sous-étape `T7` du LOT 1, par la mesure Trivy qui précède `DEC-482` |
+| Description | Les trois images publiées dans GHCR portent les vulnérabilités de leurs images de base officielles. Mesures du 29/07/2026, plateforme `linux/arm64`, Trivy 0.72.0 : `python:3.12-slim` — donc `api` et `worker` — **4 `CRITICAL`, 19 `HIGH`, 176 avis au total** ; `caddy:2.11-alpine` — donc la cible `execution` de `web` — **0 `CRITICAL`, 10 `HIGH`, 27 avis**. |
+| Le fait qui commande la décision | **Aucun des 23 avis `HIGH` ou `CRITICAL` de `python:3.12-slim` n'a de version corrective publiée.** Quatre `CRITICAL` dans `perl-base`, le reste dans la famille util-linux, `gzip` et ncurses. Debian trixie ne propose pas de correctif : il n'y a rien à mettre à jour. |
+| Second fait, qui borne la responsabilité du projet | **Nos couches n'ajoutent aucune vulnérabilité.** Les totaux des images sont **exactement** ceux de leurs bases : 176 pour `api` comme pour `python:3.12-slim`, 27 pour `web` comme pour `caddy:2.11-alpine`. Le paquet `uv` embarqué est analysé comme `rustbinary` et ne porte **aucun** avis. |
+| Impact | **Modéré, et il faut le qualifier plutôt que le compter.** Ces images ne sont pas exposées : elles vivent derrière Caddy sur la boucle locale (`DEC-460`), sans authentification à protéger avant le LOT 3, et sans donnée réelle avant le LOT 9. L'impact deviendra réel à la production temporaire du LOT 13, où l'exposition change de nature. |
+| Pourquoi la porte ne bloque pas sur `HIGH` — mesuré, pas supposé | Bloquer sur `HIGH` rendrait la chaîne **définitivement rouge sans remède** : le seul « correctif » serait d'abandonner Debian slim, que `DEC-443` a retenu sur un motif mesuré — de nombreuses roues Python n'existent pas en musl, ce qui forcerait une compilation depuis les sources. Un contrôle qui exige l'impossible finit désactivé, et un contrôle désactivé ne prouve rien. C'est la leçon de `T6-4` appliquée à un seuil au lieu d'une mise en forme. |
+| Mesure retenue | **`DEC-482`.** La porte bloque sur `CRITICAL` **corrigeable** — `--ignore-unfixed`, qui n'abaisse pas le seuil mais retire ce qu'aucune action ne peut corriger — et **rapporte sans bloquer** tout le reste, le compte complet étant affiché à chaque exécution. Vert aujourd'hui : **0 `CRITICAL` corrigeable** sur les trois images. Capable d'échouer, et ce n'est pas une supposition : l'image `web` d'**avant** `T7` en portait exactement un, `tar 7.5.13 → 7.5.19` dans le npm embarqué par Node. |
+| Un second gisement, mineur mais nommé | Le socle d'exécution de `web`, `caddy:2.11-alpine`, repose sur **Alpine 3.23.5** avec 17 avis de paquets système, là où `node:24.16-alpine` est sur **Alpine 3.24.1** avec **0**. La cible publiée porte donc un socle plus ancien que la cible de développement. Contrepartie mesurée et assumée : cette image est **déjà** dans le projet pour le mandataire inverse, à la même empreinte — la réutiliser n'ajoute **aucune vulnérabilité distincte** au périmètre du projet. |
+| Déclencheur de réévaluation | La publication d'une image `caddy:2.11-alpine` sur un Alpine plus récent, ou d'un `python:3.12-slim` corrigeant `perl-base`. À réévaluer **avant le LOT 13**, où la production temporaire change la nature de l'exposition, et au plus tard à la porte `G12`. |
+| Statut | **Ouvert, résiduel accepté en connaissance de cause** par `DEC-482`. Mesuré à chaque publication, et visible dans chaque exécution. |
 
 ---
 
