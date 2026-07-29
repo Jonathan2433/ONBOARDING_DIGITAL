@@ -26,7 +26,7 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Stories restantes | `US006` images GHCR · `US007` design system (`P1`) · `US008` documentation |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
-| Volumétrie | **143 fichiers suivis** — 53 Markdown, 32 Python, 7 TypeScript, 6 TSX, **4 YAML** — **34 726 lignes** |
+| Volumétrie | **143 fichiers suivis** — 53 Markdown, 32 Python, 7 TypeScript, 6 TSX, **4 YAML**. Lignes : `git ls-files \| xargs wc -l \| tail -1` — **non affirmé ici**, même motif que les commits |
 | Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | Registres | **145 décisions** · 21 écarts (5 ouverts) · 38 questions (34 ouvertes) · 32 risques |
@@ -34,11 +34,18 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
 >
-> **Et un nombre a été retiré de ce tableau plutôt que corrigé : le compte de commits.** Il a été
-> faux trois fois de suite, pour une raison structurelle et non par négligence — un document qui
-> est lui-même commité se décrit dans son état **d'avant son propre commit**. Le corriger une
-> quatrième fois l'aurait rendu faux une quatrième fois. Un nombre qu'on ne peut pas tenir, on ne
-> l'affirme pas : on donne la commande qui le calcule. Les autres grandeurs de ce tableau sont
+> **Deux nombres ont été retirés de ce tableau plutôt que corrigés : le compte de commits et le
+> compte de lignes.** Tous deux ont été faux plusieurs fois, pour une raison structurelle et non
+> par négligence — un document qui est lui-même commité se décrit dans son état **d'avant son
+> propre commit**, et toute correction qu'on y apporte change le compte qu'il annonce. Un nombre
+> qu'on ne peut pas tenir, on ne l'affirme pas : on donne la commande qui le calcule.
+>
+> **La façon dont ces deux-là ont été traités est elle-même une leçon.** J'ai d'abord retiré le
+> seul compte de commits, et le compte de lignes est devenu faux au commit suivant — celui qui
+> retirait l'autre. J'avais corrigé **une instance** au lieu de **la classe**. Quand tu identifies
+> un nombre non tenable, cherche tous ceux qui partagent la même propriété : ceux qui changent
+> quand tu édites le document qui les annonce. Le compte de fichiers, lui, ne change qu'avec une
+> modification structurelle réelle : il reste affirmé. Les autres grandeurs de ce tableau sont
 > vérifiées exactes à la sortie de `T6`, et `make docs-check` couvre désormais les séquences
 > d'identifiants et les empreintes — mais **pas** les nombres cités en prose, qui restent à la
 > charge du lecteur.
