@@ -467,7 +467,7 @@ LOT 3 soient éprouvables.
 |---|---|
 | RAM machine | 16 Gio |
 | **RAM allouée à Docker** | **7,75 Gio** |
-| Les 8 services, **code applicatif en marche** | **389 Mio, 5,0 %** — mesuré en `T5` |
+| Les 8 services, **code applicatif en marche** | **483 à 494 Mio, 6,1 à 6,2 %** — deux mesures du 29/07/2026, sous-étape `T7`. C'était 389 Mio en `T5` |
 | Pour mémoire, les mêmes au repos en `T2` | 146 Mio, 2 % — `api`, `worker` et `web` attendaient |
 | Le service le plus sollicité | `api`, à **9,0 %** de sa limite de 1 024 Mio |
 | Limites déclarées | 6 144 Mio au total, **effectivement appliquées** |
@@ -900,7 +900,7 @@ supprimerait `caddy-data` et l'approbation du certificat avec. Supprime le **seu
 
 | ID | Objet | Quand |
 |---|---|---|
-| `QO-085` | RAM et disque du Mac M5. **Mesurée en charge réelle en `T5` : 389 Mio, 5,0 %.** Ce qui manque pour clore : deux environnements simultanés | **`T8`** |
+| `QO-085` | RAM et disque du Mac M5. **Remesurée en `T7` : 483 à 494 Mio, 6,1 à 6,2 %** — c'était 389 Mio en `T5`. Ce qui manque pour clore : deux environnements simultanés | **`T8`** |
 | `QO-111` | **Fournisseur de collation PostgreSQL.** Ne se change pas sans recréer le cluster | LOT 2 |
 | `QO-112` | **Liste des extensions PostgreSQL.** `CREATE EXTENSION` exige des droits élevés | LOT 2 |
 | `QO-113` | **Conservation calendaire des journaux.** `json-file` borne par la taille | LOT 13 |
@@ -975,7 +975,7 @@ exactement de cette classe, une énumération tronquée**. Compte-les sur le cah
 | Contrôle de sélection | `make images-check` **échoue** si une surcouche ne nomme aucune cible de construction. Il t'attend |
 | `Makefile` | **44 cibles.** Les cibles de stack sont câblées sur `DC_DEV` — **elles ne connaissent que la surcouche `dev`**. Voir §9.3 |
 | Ordre de démarrage | **`DEC-477`** : bucket MinIO créé **avant** que l'API doive être saine. À reproduire |
-| Mémoire | **494 Mio pour une stack, 6,2 %** des 7,75 Gio — mesuré le 29/07/2026. `QO-085` se ferme ici |
+| Mémoire | **483 à 494 Mio pour une stack, 6,1 à 6,2 %** des 7,75 Gio — deux mesures du 29/07/2026 à trente minutes d'intervalle. L'écart est la variance normale du service `web`, pas une imprécision de méthode. `QO-085` se ferme ici |
 | Approbation Caddy | La racine de `onboarding-dev` est approuvée. **La recette engendrera sa PROPRE racine**, dans son propre volume `caddy-data` |
 
 ## 9.3 Les pièges propres à `T8`
@@ -988,7 +988,7 @@ exactement de cette classe, une énumération tronquée**. Compte-les sur le cah
 2. **`DEC-440` n'autorise qu'un environnement à la fois.** `T8` prouve la **séparation** par
    démarrages **successifs**, pas la simultanéité. Mais `QO-085` demande la mesure de **deux
    stacks simultanées** : ce sont deux choses différentes, et il faudra dire laquelle est prouvée.
-   Budget mesuré : 494 Mio par stack, donc deux stacks tiennent — mais les **ports** ne peuvent pas
+   Budget mesuré : ~490 Mio par stack, donc deux stacks tiennent — mais les **ports** ne peuvent pas
    être identiques, et c'est l'une des sept séparations.
 3. **Les ports de la recette doivent être distincts ET sur `127.0.0.1`.** `make ports` compare
    déclarées et réelles ; il faudra qu'il examine la bonne surcouche.

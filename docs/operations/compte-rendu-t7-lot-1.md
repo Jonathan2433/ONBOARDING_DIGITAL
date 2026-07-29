@@ -235,7 +235,7 @@ local : voir §5.4.
 
 ## 6. Défauts détectés pendant `T7`
 
-**Onze défauts. Huit étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
+**Douze défauts. Neuf étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
 étaient des défauts dormants du corpus ou de l'outillage, et un est une matérialisation de risque.
 
 | # | Défaut | Nature | Traitement |
@@ -250,11 +250,12 @@ local : voir §5.4.
 | `T7-8` | **`.env` comptait 74 affectations contre 78 dans `.env.example`.** `APP_REVISION`, ajoutée en `T3`, `LOG_MAX_SIZE` et `LOG_MAX_FILES`, ajoutées en `T4`, n'y étaient **jamais arrivées** | **Défaut dormant depuis deux sous-étapes.** `make env` est idempotent **par conception** — il porte des secrets locaux — et ne peut donc pas réconcilier. Rien ne le vérifiait. Effet mesuré : Compose substituait une **chaîne vide** à `${APP_REVISION}`, et l'image de développement a été construite avec `APP_REVISION=""` | Les trois variables ajoutées au `.env` local. Compose emploie des **valeurs par défaut explicites**, `${APP_REVISION:-inconnue}`, pour qu'une absence dégrade honnêtement. **Et `make env-check` est créée** : elle compare les noms des deux fichiers, nomme les manquants, et refuse tout doublon dans le modèle. C'est `ECART-022` |
 | `T7-9` | **J'ai écrit une empreinte SHA-256 inventée** dans `images.yml`, comme « garde-fou secondaire » de l'installation de Trivy — une valeur que je n'avais pas mesurée, et qui n'était même pas comparée | **Le pire de la liste, et sur un contrôle de sécurité.** Une empreinte fabriquée dans un fichier versionné donne l'apparence d'une vérification là où il n'y en a aucune | Remplacée par la valeur **relevée dans le fichier de sommes publié**, `bbb64b96…b2ea`, et **effectivement comparée**. L'indirection inutile est supprimée : la valeur attendue est inscrite dans le dépôt, comme `GITLEAKS_SHA256` en `T6`, et non relue au téléchargement depuis le même hôte que l'archive |
 | `T7-10` | **Mon contrôle d'injection de version ne pouvait PAS passer sur une branche de travail.** Il exigeait que la version lue diffère de `0.0.0-dev`. Or `DEC-428` jalonne les versions sur les portes et les pose en **tags** : sur une branche comme sur `develop`, il n'existe **aucune version**, et le workflow publie honnêtement `0.0.0-dev`. **La valeur injectée EST le défaut.** Trouvé par l'exécution [30442686377](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30442686377), qui a échoué sur une image parfaitement correcte | **Le défaut `T5-6` pris à l'envers** : un **succès** qui produit la même observation qu'un échec. La révision, elle, prouvait déjà que le mécanisme fonctionne — `revision='b07f46c'` et non `inconnue`. Publication et Trivy étaient verts ; seul mon contrôle mentait | Le contrôle compare désormais à **l'attendu**, ce qui est **plus fort** : il prouve que l'image porte **LA** version avec laquelle elle a été construite, et non seulement **UNE** version non nulle. Les attendus sont **obligatoires** — en leur absence le contrôle échoue au lieu de se dégrader en silence. Trois témoins : attendus justes → 37 verts ; attendu faux → échec ; attendus absents → échec |
+| `T7-12` | **Le contrôle d'accès anonyme échouait sans produire une seule ligne de sortie.** Le journal de chaque étape porte `shell: /usr/bin/bash -e {0}` : **GitHub ajoute `-e` à l'invocation du shell**, et mon `set -uo pipefail` ne le retire pas. Un `cmd ; code=$?` fait donc sortir bash à l'échec de `cmd`, **avant** la lecture du code. Or c'est un contrôle dont **l'échec de la commande est le résultat attendu** | **SIXIÈME occurrence de la famille du code de sortie**, après `T0-1`, `T2-4`, `T3-6`, `T4-3` et `T5-5` — et la première dans un workflow, où la cause est un `-e` que je n'avais pas écrit. Trouvé par l'exécution [30450427925](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30450427925) : publication et Trivy verts, seule mon étape rouge, et **muette** | Forme `cmd && code=0 \|\| code=$?`, qui soustrait cette commande — et elle seule — au `-e`. Éprouvée sous `bash -e` dans les deux sens : la nouvelle forme atteint la ligne suivante avec `code=1`, l'ancienne fait sortir bash avant. **Le remède structurel de `T7-3` ne couvrait pas ce cas** : le vérificateur Python est immunisé, mais les étapes de workflow restent du shell |
 | `T7-11` | **Un contrôle absent de ma première version du workflow.** Se connecter puis tirer prouve que l'authentification **fonctionne** ; cela ne prouve pas que le registre la **requiert**, ni que le paquet est privé. Or le critère de la story dit « l'accès au registre est **authentifié** » | **Preuve incomplète**, trouvée en relisant le critère et non par un échec. Et « le tirage anonyme a échoué » serait indistinguable de « l'image n'existe pas » — le piège `T2-1`, où un 429 masqué était lu comme une absence | Contrôle en **deux sens** : le tirage anonyme doit échouer **et** son message doit porter un motif d'**autorisation** — `unauthorized`, `denied`, `401`, `403` — puis le tirage authentifié doit réussir **sur la même référence**, ce qui prouve que l'image existe. Aucun des deux seul ne prouve rien |
 
-### 6.1 Ce que ces onze défauts enseignent
+### 6.1 Ce que ces douze défauts enseignent
 
-**Huit sur onze étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
+**Neuf sur douze étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
 La proportion est la plus élevée du lot, devant les cinq sur huit de `T5`. C'est la forme la plus
 insidieuse : on croit avoir prouvé.
 
@@ -284,6 +285,12 @@ chose ?*
 > **La règle du lot, augmentée d'une sixième proposition :**
 > un contrôle qui compare deux nombres doit prouver qu'ils mesurent **la même grandeur**. Un seuil
 > calibré sur une autre unité que la mesure passe toujours, ou échoue toujours.
+
+**`T7-12` mérite d'être nommé pour ce qu'il dit du remède de `T7-3`.** J'avais écrit que la parade
+au piège du code de sortie était de **changer d'outil** — et c'est vrai du vérificateur, qui est en
+Python. Mais les étapes d'un workflow restent du shell, et celui-là m'a été imposé avec un `-e` que
+je n'avais pas écrit. **Un remède structurel ne couvre que le périmètre où il s'applique**, et il
+faut savoir dire où il s'arrête. C'est la sixième occurrence de cette famille sur ce projet.
 
 **`T7-9` est d'une autre nature et il faut le nommer sans l'atténuer.** Écrire une empreinte
 plausible plutôt que mesurée, c'est fabriquer la preuve au lieu de la produire. Aucune des cinq

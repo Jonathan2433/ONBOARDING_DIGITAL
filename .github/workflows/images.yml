@@ -260,8 +260,24 @@ jobs:
             "web=${{ needs.publier.outputs.empreinte_web }}"; do
             service="${paire%%=*}"
             reference="${base}/${service}@${paire#*=}"
-            sortie=$(docker buildx imagetools inspect --raw "${reference}" 2>&1)
-            code=$?
+            # `&& code=0 || code=$?` ET NON `cmd ; code=$?`, et c'est le point
+            # critique de cette etape.
+            #
+            # GitHub invoque le shell en `/usr/bin/bash -e {0}` — visible dans le
+            # journal de chaque etape. Le `-e` est donc DEJA actif, et
+            # `set -uo pipefail` ne le retire pas. Un `cmd ; code=$?` fait sortir
+            # bash a l'echec de `cmd`, AVANT la lecture du code : l'etape echouait
+            # sans produire une seule ligne de sortie. Mesure du 29/07/2026,
+            # execution 30450427925.
+            #
+            # Or c'est un controle dont l'ECHEC de la commande est le resultat
+            # ATTENDU. La forme ci-dessous soustrait cette commande, et elle
+            # seule, au `-e`.
+            #
+            # SIXIEME occurrence de la famille du code de sortie sur ce projet,
+            # apres T0-1, T2-4, T3-6, T4-3 et T5-5 — et la premiere dans un
+            # workflow.
+            sortie=$(docker buildx imagetools inspect --raw "${reference}" 2>&1) && code=0 || code=$?
             echo "  ${service} : code=${code}"
             if [ "${code}" -eq 0 ]; then
               echo "  ECHEC : ${reference} est lisible SANS authentification." >&2
