@@ -48,12 +48,26 @@ name: Images multiarchitecture
 
 on:
   push:
-    branches: [develop]
+    branches:
+      - develop
+      # TEMPORAIRE — A RETIRER AVANT LA FUSION.
+      #
+      # Mesure du 29/07/2026 : `gh workflow run` repond « HTTP 404: workflow
+      # images.yml not found on the default branch ». GitHub exige qu'un
+      # `workflow_dispatch` existe sur la branche PAR DEFAUT avant de pouvoir
+      # etre declenche — or ce fichier n'y arrivera qu'a la porte G1.
+      #
+      # Sans ce declencheur, la publication ne serait eprouvee qu'APRES la fusion,
+      # donc fusionnee a l'aveugle. C'est le meme besoin que T6 avait resolu par
+      # une pull request jetable, et la meme reponse : un mecanisme temporaire,
+      # visible, qui produit la preuve puis disparait.
+      #
+      # La branche est nommee en entier, et non `build/**` : ce declencheur ne
+      # peut donc concerner AUCUNE autre branche. Sur une branche de travail,
+      # seule l'etiquette d'empreinte est publiee — ni `develop`, ni une version.
+      - build/l01-us006-images-multiarchitecture-ghcr
     tags: ['v*']
-  # Permet de PROUVER la chaine complete depuis une branche de travail, avant
-  # toute fusion. C'est le meme besoin que T6 avait resolu par une pull request
-  # jetable : une publication qu'on ne peut eprouver qu'apres fusion se fusionne
-  # a l'aveugle.
+  # Deviendra utilisable des que ce fichier atteindra `main`, a la porte G1.
   workflow_dispatch:
 
 permissions:
