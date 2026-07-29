@@ -186,28 +186,39 @@ l'image `web` d'avant `T7` en portait exactement un. Le témoin négatif vient d
 
 | Service | Contrôles | Ce qu'ils lisent |
 |---|---:|---|
-| `api` | **18** | refus de démarrer du §20.3 · `live` 200 · version **injectée** · `ready` **503 avec 3 dépendances nommées** · `uname -m` |
-| `worker` | **8** | `platform.machine()` · version et révision injectées · **7 files** · **ping réel du courtier Redis** |
+| `api` | **18** | refus de démarrer du §20.3 · `live` 200 · **version et révision égales à celles de la construction** · `ready` **503 avec 3 dépendances nommées** · `uname -m` |
+| `worker` | **8** | `platform.machine()` · **`APP_VERSION` et `APP_REVISION` égales à celles de la construction** · **7 files** · **ping réel du courtier Redis** |
 | `web` cible `execution` | **8** | 200 · **0** `/@vite/client` · `/assets/` présent · `uname -m` |
 | `web` cible `developpement` | **3** | témoin positif : **1** `/@vite/client` |
+
+**Le contrôle d'identité compare à ce que la construction a DÉCLARÉ**, et non à « différent du
+défaut ». C'est plus fort — il prouve que l'image porte **LA** version avec laquelle elle a été
+construite — et c'est la correction du défaut `T7-10`, qui faisait échouer le contrôle sur une image
+correcte.
 
 **Le `ready` à 503 est une meilleure preuve qu'un 200.** L'image est lancée sans aucune dépendance
 joignable : elle répond 503 en **nommant** `postgresql`, `redis` et `minio` indisponibles. Cela
 prouve que l'application est entièrement montée et qu'elle sonde réellement — un conteneur
 simplement démarré, routes non montées, répondrait 404.
 
-### 5.2 Témoins négatifs — 8, tous concluants
+### 5.2 Témoins négatifs — 11, tous concluants
 
 | Maillon | Défaut injecté ou action réelle | Résultat |
 |---|---|---|
 | Énumération des plateformes | plateforme **témoin** `linux/s390x`, absente du manifeste | inspection **refusée**, code 1 |
 | Plafond de taille | plafond abaissé de 130 à 100 Mio | **échec**, dépassement nommé |
-| Injection de version | contrôle appliqué à l'image de développement, valeurs par défaut | **échec** sur `0.0.0-dev` et `''` |
+| Identité du build | attendu volontairement faux, `9.9.9-faux` / `deadbee` | **échec**, lu et attendu tous deux affichés |
+| Identité du build, second sens | attendus **non fournis** | **échec** : le contrôle refuse de se dégrader en silence |
 | Détecteur `/@vite/client` | même sonde sur la cible de développement | **1 occurrence**, le détecteur n'est pas muet |
 | Détecteur de `latest` | chaînes synthétiques, **dans les deux sens** | trouve `<registre>/…:latest`, ignore `ubuntu-latest` |
 | Healthcheck `web`, mécanisme changé | port fermé 9999, **sur les deux cibles** | code 1 contre 0 sur 5173 |
 | Refus de démarrer du §20.3 | image lancée sans configuration | code 1, **7 variables nommées, 0 valeur divulguée** |
 | Cohérence `.env` | contrôle exécuté sur l'état réel du `.env` | **3 variables manquantes trouvées** |
+| Liste blanche Gitleaks des empreintes | 64 hexadécimaux **sans** préfixe `sha256:` | **toujours détecté** — la liste blanche n'a rien affaibli |
+| Gitleaks, témoin positif | les 5 secrets réels de `.env` | **5 sur 5 détectés** |
+
+**Le tirage anonyme du registre** est le douzième, mais il vit dans la chaîne d'intégration et non en
+local : voir §5.4.
 
 ### 5.3 Non-régression — la stack de développement n'a pas bougé
 
@@ -224,7 +235,7 @@ simplement démarré, routes non montées, répondrait 404.
 
 ## 6. Défauts détectés pendant `T7`
 
-**Neuf défauts. Six étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
+**Onze défauts. Huit étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
 étaient des défauts dormants du corpus ou de l'outillage, et un est une matérialisation de risque.
 
 | # | Défaut | Nature | Traitement |
@@ -238,12 +249,21 @@ simplement démarré, routes non montées, répondrait 404.
 | `T7-7` | Ma sonde fonctionnelle de l'`api` **échouait à 12/12** : le conteneur s'arrêtait. J'ai d'abord lu cela comme une panne de l'image | **C'était l'image qui avait raison.** Les 7 garde-fous du §20.3 refusaient de démarrer, faute de configuration. Mon extracteur de « variables obligatoires » avait par ailleurs répondu **0** parce qu'il ne cherchait que les champs **sans** `=` : ces sept ont un défaut **vide** | Configuration minimale fournie. **Et le défaut est devenu une preuve** : un contrôle dédié vérifie désormais que l'image **refuse de démarrer**, **nomme les 7 variables** et **ne divulgue aucune valeur** — le §20.3 éprouvé sur l'image publiée, ce qu'aucun test unitaire ne faisait |
 | `T7-8` | **`.env` comptait 74 affectations contre 78 dans `.env.example`.** `APP_REVISION`, ajoutée en `T3`, `LOG_MAX_SIZE` et `LOG_MAX_FILES`, ajoutées en `T4`, n'y étaient **jamais arrivées** | **Défaut dormant depuis deux sous-étapes.** `make env` est idempotent **par conception** — il porte des secrets locaux — et ne peut donc pas réconcilier. Rien ne le vérifiait. Effet mesuré : Compose substituait une **chaîne vide** à `${APP_REVISION}`, et l'image de développement a été construite avec `APP_REVISION=""` | Les trois variables ajoutées au `.env` local. Compose emploie des **valeurs par défaut explicites**, `${APP_REVISION:-inconnue}`, pour qu'une absence dégrade honnêtement. **Et `make env-check` est créée** : elle compare les noms des deux fichiers, nomme les manquants, et refuse tout doublon dans le modèle. C'est `ECART-022` |
 | `T7-9` | **J'ai écrit une empreinte SHA-256 inventée** dans `images.yml`, comme « garde-fou secondaire » de l'installation de Trivy — une valeur que je n'avais pas mesurée, et qui n'était même pas comparée | **Le pire de la liste, et sur un contrôle de sécurité.** Une empreinte fabriquée dans un fichier versionné donne l'apparence d'une vérification là où il n'y en a aucune | Remplacée par la valeur **relevée dans le fichier de sommes publié**, `bbb64b96…b2ea`, et **effectivement comparée**. L'indirection inutile est supprimée : la valeur attendue est inscrite dans le dépôt, comme `GITLEAKS_SHA256` en `T6`, et non relue au téléchargement depuis le même hôte que l'archive |
+| `T7-10` | **Mon contrôle d'injection de version ne pouvait PAS passer sur une branche de travail.** Il exigeait que la version lue diffère de `0.0.0-dev`. Or `DEC-428` jalonne les versions sur les portes et les pose en **tags** : sur une branche comme sur `develop`, il n'existe **aucune version**, et le workflow publie honnêtement `0.0.0-dev`. **La valeur injectée EST le défaut.** Trouvé par l'exécution [30442686377](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30442686377), qui a échoué sur une image parfaitement correcte | **Le défaut `T5-6` pris à l'envers** : un **succès** qui produit la même observation qu'un échec. La révision, elle, prouvait déjà que le mécanisme fonctionne — `revision='b07f46c'` et non `inconnue`. Publication et Trivy étaient verts ; seul mon contrôle mentait | Le contrôle compare désormais à **l'attendu**, ce qui est **plus fort** : il prouve que l'image porte **LA** version avec laquelle elle a été construite, et non seulement **UNE** version non nulle. Les attendus sont **obligatoires** — en leur absence le contrôle échoue au lieu de se dégrader en silence. Trois témoins : attendus justes → 37 verts ; attendu faux → échec ; attendus absents → échec |
+| `T7-11` | **Un contrôle absent de ma première version du workflow.** Se connecter puis tirer prouve que l'authentification **fonctionne** ; cela ne prouve pas que le registre la **requiert**, ni que le paquet est privé. Or le critère de la story dit « l'accès au registre est **authentifié** » | **Preuve incomplète**, trouvée en relisant le critère et non par un échec. Et « le tirage anonyme a échoué » serait indistinguable de « l'image n'existe pas » — le piège `T2-1`, où un 429 masqué était lu comme une absence | Contrôle en **deux sens** : le tirage anonyme doit échouer **et** son message doit porter un motif d'**autorisation** — `unauthorized`, `denied`, `401`, `403` — puis le tirage authentifié doit réussir **sur la même référence**, ce qui prouve que l'image existe. Aucun des deux seul ne prouve rien |
 
-### 6.1 Ce que ces neuf défauts enseignent
+### 6.1 Ce que ces onze défauts enseignent
 
-**Six sur neuf étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
+**Huit sur onze étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
 La proportion est la plus élevée du lot, devant les cinq sur huit de `T5`. C'est la forme la plus
 insidieuse : on croit avoir prouvé.
+
+**Deux défauts se font face, et c'est instructif.** `T7-6` était un contrôle **qui passait toujours**
+— plafond calibré sur une autre grandeur. `T7-10` était un contrôle **qui échouait toujours** sur une
+situation légitime. Les deux sont la même erreur vue de deux côtés : *je n'avais pas déterminé quelle
+valeur le succès doit produire, et laquelle l'échec*. La quatrième proposition de la règle du lot le
+demandait ; je ne l'avais appliquée qu'au sens « l'échec produit-il autre chose que le succès », pas
+au sens « le succès légitime produit-il bien ce que j'exige ».
 
 **`T7-3` mérite un mot, parce qu'il est humiliant d'une façon utile.** J'ai commis le piège du
 chemin à espace **après** l'avoir cité dans mon propre rapport de prise en charge, dans une section
