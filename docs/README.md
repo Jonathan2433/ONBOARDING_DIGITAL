@@ -73,15 +73,15 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `482` en usage | `DEC-483` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `488` en usage | `DEC-489` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `022` | `ECART-023` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `023` | `ECART-024` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `114` | `QO-115` | [questions](operations/registre-questions-ouvertes.md) |
-| `ROAD-RSK-nnn` | Risques | `001` à `033` | `ROAD-RSK-034` | [risques](operations/registre-risques.md) |
+| `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
 | `MVP-Lnn-USnnn` | User stories | `MVP-L00-US001` à `MVP-L14-US007` | — | backlog validé |
@@ -167,7 +167,7 @@ Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
-[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md) · [`T5`](operations/compte-rendu-t5-lot-1.md) · [`T6`](operations/compte-rendu-t6-lot-1.md) · [`T7`](operations/compte-rendu-t7-lot-1.md).
+[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md) · [`T5`](operations/compte-rendu-t5-lot-1.md) · [`T6`](operations/compte-rendu-t6-lot-1.md) · [`T7`](operations/compte-rendu-t7-lot-1.md) · [`T8`](operations/compte-rendu-t8-lot-1.md).
 
 | Sous-étape | Objet | Story | Issue | État |
 |---|---|---|---|---|
@@ -179,7 +179,7 @@ Comptes rendus de sous-étape :
 | `T5` | Frontend Vite, page de statut | `MVP-L01-US002` | `#3` | **Terminée** le 28/07/2026. Page servie par Caddy, état réel des 3 dépendances éprouvé **en arrêtant Redis**, version du build, 5 états, 25 tests Vitest et Testing Library. `DEC-470`–`DEC-473`, `ECART-020` et `ECART-021` clos, `ROAD-RSK-031` ouvert, `ROAD-RSK-030` aggravé, `QO-085` mesurée |
 | `T6` | CI GitHub Actions, 3 échecs volontaires prouvés | `MVP-L01-US005` | `#6` | **Terminée** le 29/07/2026. Les 11 contrôles du cahier §23.1 exécutés sur chaque pull request, pipeline vert, et **les trois échecs prouvés** — lint, test et secret, chacun bloquant la fusion. CI rendue **obligatoire** sur `develop` et `main`. `DEC-474`–`DEC-477`, `ROAD-RSK-032` et `QO-114` ouverts |
 | `T7` | Images multiarchitecture, GHCR privé | `MVP-L01-US006` | `#7` | **Terminée** le 29/07/2026. Les 3 images construites pour `linux/amd64` **et** `linux/arm64` en une liste de manifestes unique, **lancées sur les deux** — 39 contrôles fonctionnels, 0 échec. Image `web` de **1,02 Gio à 84,9 Mo** par deux cibles nommées, `ROAD-RSK-030` et `ROAD-RSK-031` **clos**. Version et révision **gravées** dans les images. Trivy mesuré puis réglé. `DEC-478`–`DEC-482`, `ECART-022` clos, **`ROAD-RSK-033` ouvert** |
-| `T8` | Environnement de recette isolé | `MVP-L01-US002` | `#3` | Planifiée |
+| `T8` | Environnement de recette isolé | `MVP-L01-US002` | `#3` | **Terminée** le 29/07/2026. Les **sept** séparations du cahier §22.2 prouvées sur l'état réel des deux environnements — **57 contrôles, 0 échec**, dont l'isolement du routage éprouvé avec ses témoins. La recette exécute les **images publiées épinglées par empreinte**, et `arm64` y est **natif** : la réserve de la fiche §3.1 est **levée**. `Makefile` paramétré par environnement, 44 → **50 cibles**, sans duplication. `DEC-483`–`DEC-488`, `ECART-023` clos, **`ROAD-RSK-034` ouvert**, **`QO-085` CLOSE** — 836,6 Mio pour deux stacks simultanées |
 | `T9` | Documentation d'exploitation locale | `MVP-L01-US008` | `#9` | Planifiée |
 | `T10` | Design system et contrat API | `MVP-L01-US007` (`P1`) | `#8` | Planifiée |
 | `T11` | Contrôles de sortie et porte `G1` | — | — | Planifiée |

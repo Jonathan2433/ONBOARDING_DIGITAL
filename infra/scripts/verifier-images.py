@@ -417,25 +417,36 @@ def noms_declares(chemin: Path) -> list[str]:
     ]
 
 
-def commande_environnement() -> int:
+def commande_environnement(nom_fichier: str = ".env") -> int:
+    """Le fichier d'environnement demande declare-t-il toutes les variables du modele ?
+
+    T8 — LE FICHIER EST DESORMAIS UN PARAMETRE, et il devait le devenir.
+        Il y a deux environnements, donc deux fichiers : `.env` et `.env.recette`.
+        Un controle qui n'aurait examine que le premier aurait laisse le second
+        dériver exactement comme ECART-022 l'a montré — c'est-a-dire en silence,
+        pendant deux sous-etapes. `make env-check` verifie les DEUX.
+    """
     print()
-    print("  Coherence de .env avec .env.example (ECART-022)")
+    print(f"  Coherence de {nom_fichier} avec .env.example (ECART-022)")
     print()
     journal = Journal()
     exemple = RACINE / ".env.example"
-    reel = RACINE / ".env"
+    reel = RACINE / nom_fichier
 
     if not reel.is_file():
-        journal.echec(".env absent : lancer `make env`")
-        return journal.conclure(".env absent")
+        journal.echec(f"{nom_fichier} absent : lancer `make env`")
+        return journal.conclure(f"{nom_fichier} absent")
 
     noms_exemple = noms_declares(exemple)
     noms_reel = noms_declares(reel)
+    largeur = max(len(".env.example"), len(nom_fichier))
     journal.info(
-        f".env.example : {len(noms_exemple)} affectations, {len(set(noms_exemple))} noms distincts"
+        f"{'.env.example'.ljust(largeur)} : {len(noms_exemple)} affectations, "
+        f"{len(set(noms_exemple))} noms distincts"
     )
     journal.info(
-        f".env         : {len(noms_reel)} affectations, {len(set(noms_reel))} noms distincts"
+        f"{nom_fichier.ljust(largeur)} : {len(noms_reel)} affectations, "
+        f"{len(set(noms_reel))} noms distincts"
     )
 
     # AUCUN doublon dans le modele. Deux declarations d'une variable, c'est la
@@ -448,19 +459,19 @@ def commande_environnement() -> int:
 
     manquantes = [n for n in dict.fromkeys(noms_exemple) if n not in noms_reel]
     for n in manquantes:
-        print(f"      MANQUANTE dans .env : {n}")
+        print(f"      MANQUANTE dans {nom_fichier} : {n}")
     journal.exiger(
         not manquantes,
-        f"toutes les variables du modele sont dans .env "
+        f"toutes les variables du modele sont dans {nom_fichier} "
         f"({len(set(noms_exemple)) - len(manquantes)}/{len(set(noms_exemple))})",
     )
     if manquantes:
         print()
-        print("      `make env` NE MET PAS A JOUR un .env existant : c'est voulu, il")
-        print("      porte des secrets locaux. Ajoute les lignes manquantes a la main,")
+        print(f"      `make env` NE MET PAS A JOUR un {nom_fichier} existant : c'est voulu,")
+        print("      il porte des secrets locaux. Ajoute les lignes manquantes a la main,")
         print("      en reprenant leur valeur de .env.example.")
 
-    return journal.conclure("le .env local declare toutes les variables du modele")
+    return journal.conclure(f"{nom_fichier} declare toutes les variables du modele")
 
 
 # ===========================================================================
@@ -1196,7 +1207,10 @@ def main(argv: list[str]) -> int:
     if commande == "statique":
         return commande_statique()
     if commande == "environnement":
-        return commande_environnement()
+        fichier = ".env"
+        if "--fichier" in argv:
+            fichier = argv[argv.index("--fichier") + 1]
+        return commande_environnement(fichier)
     if commande == "manifeste":
         metadonnees = None
         if "--metadonnees" in argv:

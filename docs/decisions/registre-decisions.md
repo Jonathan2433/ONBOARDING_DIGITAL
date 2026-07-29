@@ -26,7 +26,9 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-466+`, sous-étape `T4` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-470+`, sous-étape `T5` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-474+`, sous-étape `T6` | 4 | Soumises le 29/07/2026 |
-| **Total** | **145** | |
+| Réalisation du LOT 1 `DEC-478+`, sous-étape `T7` | 5 | Validées le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-483+`, sous-étape `T8` | 6 | Soumises le 29/07/2026 |
+| **Total** | **156** | |
 
 ---
 
@@ -242,7 +244,23 @@ GHCR privé, story `MVP-L01-US006`, issue `#7`. Soumises à Jonathan le 29 juill
 | `DEC-481` | Étiquettes publiées dans GHCR : **`sha-<empreinte>` toujours**, **`develop`** sur la branche d'intégration, **la version exacte** sur un tag. **Aucun `latest` n'est publié.** | Les conventions §4.1 tolèrent `latest` « comme alias de commodité en développement » et l'interdisent comme référence unique de déploiement ; le critère de la fiche §3 dit « aucune référence à `latest` seul ». Retenu, sur arbitrage de Jonathan et **plus strict que les conventions** : n'en publier aucune. Motif : une étiquette qui existe finit par être employée, et **aucun consommateur n'en a besoin** — la recette lit `develop`, la production la version exacte, le diagnostic l'empreinte. Les étiquettes locales que Compose engendre pour ses propres constructions, `onboarding-dev-web:latest`, restent hors de cette interdiction : elles ne sont jamais poussées, et c'est exactement le cas que les conventions tolèrent. `make images-check` distingue les deux, avec témoin dans les deux sens. | Validée |
 | `DEC-482` | **Trivy entre dans la chaîne**, sur les images **publiées**. Il **bloque sur les avis `CRITICAL` pour lesquels une version corrective existe** (`--ignore-unfixed`) et **rapporte sans bloquer** tout le reste, le compte complet étant affiché à chaque exécution. | **Décision prise après mesure, jamais avant** — c'est la cinquième proposition de la règle du lot, et elle a servi. Mesures du 29/07/2026, plateforme `linux/arm64` : `python:3.12-slim` porte **4 `CRITICAL` et 19 `HIGH`, dont AUCUN n'a de version corrective publiée** — quatre `CRITICAL` dans `perl-base`, le reste dans util-linux, gzip et ncurses. **Bloquer sur `HIGH` rendrait donc la chaîne définitivement rouge sans remède** : le seul « correctif » serait d'abandonner Debian slim, que `DEC-443` a choisi sur un motif mesuré — les roues Python n'existent pas en musl. Un contrôle qui exige l'impossible finit désactivé, et un contrôle désactivé ne prouve rien. Le réglage retenu est **vert aujourd'hui** — 0 `CRITICAL` corrigeable sur les trois images publiées — et il **peut échouer**, ce qui n'est pas une supposition : l'image `web` d'**avant** `T7` en portait exactement un, `tar 7.5.13 → 7.5.19` dans le npm embarqué par Node. Second constat de la mesure, et il mérite d'être dit : **nos couches n'ajoutent aucune vulnérabilité.** Les totaux des images sont **exactement** ceux de leurs images de base officielles — 176 pour `api` comme pour `python:3.12-slim`, 27 pour `web` comme pour `caddy:2.11-alpine`. | Validée |
 
-**Prochain identifiant libre : `DEC-483`.**
+---
+
+## 1.11 Réalisation du LOT 1 — sous-étape `T8`
+
+Décisions prises pendant la mise en place de l'environnement de recette isolé, story
+`MVP-L01-US002`, issue `#3` rouverte. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-483` | **La machine de Jonathan est authentifiée au registre GHCR en LECTURE seule.** Portée ajoutée : `read:packages` uniquement, obtenue par `gh auth refresh` puis transmise à Docker par `gh auth token`. **Aucun secret de dépôt n'est créé**, et la publication reste le fait du `GITHUB_TOKEN` de l'intégration continue. | **Ceci renverse l'arbitrage du 29/07/2026** porté par la fiche §3.1, « ne pas authentifier la machine locale au registre ». Motif du renversement : sans authentification, la recette ne peut pas tirer les images publiées, donc elle exercerait une construction locale — or `DEC-478` pose qu'« une recette qui exerce un autre artefact que la production ne recette rien ». Conséquence acquise : la réserve d'`arm64` **natif** est levée, mesurée `aarch64` dans les 3 conteneurs de l'image publiée. | Validée par Jonathan le 29/07/2026, action exécutée par lui-même |
+| `DEC-484` | **Un SEUL `Caddyfile` sert les deux environnements.** Les adresses de site y sont substituées depuis l'environnement du processus — `{$CADDY_SITE_APP:app.onboarding.localhost}` — et le service `caddy` les transmet par `environment:`. La recette emploie des **hôtes distincts**, `app.recette.` et `api.recette.onboarding.localhost`. | Le bloc `app.` porte le mandatement de même origine de `DEC-470`, donc une règle de sécurité : le dupliquer par environnement créerait deux copies à maintenir, et le jour où l'une divergerait la recette n'éprouverait plus le montage de la production. Même motif que `DEC-466` pour le masquage, et que `T7` §2.3 pour ce même fichier. **Des hôtes distincts et pas seulement des ports** : un port ne se voit pas dans un onglet de navigateur, un nom d'hôte si. Substitution et résolution **mesurées**, dans les deux sens. | Validée |
+| `DEC-485` | **Le `Makefile` est paramétré par `ENVIRONNEMENT`**, avec `dev` par défaut : un seul jeu de cibles, aucune duplication. Les alias `*-recette` **délèguent** sans porter de logique. **Un seul modèle de configuration**, `.env.example`, plus un **calque de différences versionné** par environnement — jamais un second modèle complet. | Quinze cibles étaient câblées sur la surcouche `dev`. Les dupliquer aurait créé deux copies d'une même logique, qui divergent en silence : c'est `ECART-022` pour les modèles de configuration et `DEC-466` pour le masquage. Le risque assumé du paramétrage est la régression sur `dev` ; la parade est d'avoir relevé les onze codes de sortie **avant** la première modification et de les avoir confrontés après. | Validée |
+| `DEC-486` | **La recette exécute les images PUBLIÉES, épinglées par empreinte de liste de manifestes**, jamais par étiquette. Elle **tire** au lieu de construire, et `--no-build` fait échouer le démarrage si l'image manque. `make images-pin` déplace le pointeur sans commit, en dérivant les empreintes de la publication ; le figer durablement reste un commit. | Trois motifs. `make images-check` **exige** `@sha256:` sur toute référence des fichiers suivis (`DEC-443`, cahier §23.3). Le critère de la story dit « une même version **immuable** fonctionne », et `develop` désigne un artefact différent à chaque fusion. Enfin le fichier de base déclare `build:` : sans `--no-build`, une image absente ferait construire localement et la recette exercerait un autre artefact **en paraissant saine**. Un contrôle lit en plus l'empreinte de l'image réellement en marche. | Validée |
+| `DEC-487` | **Bande de ports de la recette :** `8080` · `8443` · `15432` · `16379` · `19000` · `19001` · `18025`, toutes liées à `127.0.0.1`. | Disjointe de celle du développement, ce que la septième séparation du cahier §22.2 exige, et **mesurée libre** au moment du choix. Bandes disjointes est aussi la condition pour que les deux stacks puissent tourner ensemble le temps de la mesure de `QO-085` — ce qui ne l'autorise pas en exploitation, `DEC-440` restant en vigueur. | Validée |
+| `DEC-488` | **`make docs-check` dérive désormais les totaux des tableaux de synthèse** du registre des décisions et les confronte au corps qu'ils résument, tableau par tableau. | Les deux tableaux de comptage annonçaient **145** alors que le corps déclarait 65 décisions de réalisation, soit 150 : `T7` avait complété le corps sans reprendre les synthèses. C'est la classe de `ECART-021`, et `docs-check` ne l'attrapait pas — il vérifiait les marqueurs d'identifiant libre et les cinq empreintes, pas les totaux. La passation §1 l'exige : « ne rétablis aucun compte sans poser d'abord le contrôle qui le dérive ». | Validée |
+
+**Prochain identifiant libre : `DEC-489`.**
 
 ---
 
@@ -410,7 +428,23 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-466+` — réalisation du LOT 1, `T4` | 4 | 4 |
 | `DEC-470+` — réalisation du LOT 1, `T5` | 4 | 4 |
 | `DEC-474+` — réalisation du LOT 1, `T6` | 4 | 4 |
-| **Total** | **145** | **145** |
+| `DEC-478+` — réalisation du LOT 1, `T7` | 5 | 5 |
+| `DEC-483+` — réalisation du LOT 1, `T8` | 6 | 6 |
+| **Total** | **156** | **156** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
+
+> **Depuis `T8`, ces deux tableaux sont VÉRIFIÉS et non plus seulement tenus à la main.**
+> `make docs-check` dérive, pour chaque tableau de synthèse séparément, la somme de ses
+> lignes `DEC-4xx` et la confronte au nombre de décisions réellement déclarées dans le corps
+> du registre — puis vérifie que le « Total » égale « Total repris » plus cette somme, et que
+> les colonnes « Attendu » et « Présent » concordent ligne par ligne.
+>
+> Le contrôle a été posé parce qu'il manquait : les deux tableaux annonçaient **145** quand le
+> corps déclarait 65 décisions de réalisation, soit **150**. L'écart valait exactement les cinq
+> décisions de `T7`, dont le corps avait été complété sans que les synthèses le soient. C'est la
+> classe de `ECART-021` — un nombre affirmé sans être dérivé de sa source — et `DEC-488` la
+> referme. Vérifier chaque tableau **contre lui-même** n'est pas un détail : la première version
+> du contrôle additionnait les lignes des deux tableaux et comparait au total d'un seul, ce qui
+> donnait 170 au lieu de 85.

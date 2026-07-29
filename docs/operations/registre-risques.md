@@ -11,7 +11,7 @@
 | Constatés pendant la réalisation | `ROAD-RSK-025` à `033` | 9 |
 | **Total** | | **33** |
 
-**Prochain identifiant libre : `ROAD-RSK-034`.**
+**Prochain identifiant libre : `ROAD-RSK-035`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
@@ -193,6 +193,23 @@ Leur libellé et leur impact sont inchangés.
 | Un second gisement, mineur mais nommé | Le socle d'exécution de `web`, `caddy:2.11-alpine`, repose sur **Alpine 3.23.5** avec 17 avis de paquets système, là où `node:24.16-alpine` est sur **Alpine 3.24.1** avec **0**. La cible publiée porte donc un socle plus ancien que la cible de développement. Contrepartie mesurée et assumée : cette image est **déjà** dans le projet pour le mandataire inverse, à la même empreinte — la réutiliser n'ajoute **aucune vulnérabilité distincte** au périmètre du projet. |
 | Déclencheur de réévaluation | La publication d'une image `caddy:2.11-alpine` sur un Alpine plus récent, ou d'un `python:3.12-slim` corrigeant `perl-base`. À réévaluer **avant le LOT 13**, où la production temporaire change la nature de l'exposition, et au plus tard à la porte `G12`. |
 | Statut | **Ouvert, résiduel accepté en connaissance de cause** par `DEC-482`. Mesuré à chaque publication, et visible dans chaque exécution. |
+
+---
+
+## `ROAD-RSK-034` — Publier un port perce l'isolement inter-réseaux de Docker
+
+| Champ | Valeur |
+|---|---|
+| Ouvert le | 29 juillet 2026, sous-étape `T8` du LOT 1 |
+| Source | Constat de mesure pendant `T8`. Cahier des charges §22.2, « réseau distinct » ; `DEC-460`, publications limitées à `127.0.0.1` |
+| Constat | **Deux réseaux Docker distincts ne sont pas mutuellement inatteignables, et l'écart vient des ports publiés.** Mesuré le 29/07/2026, **sur un même conteneur**, ce qui élimine toute cause propre à un service :<br>`dev mailpit 172.20.0.4:8025`, **publié** → **JOIGNABLE** depuis le conteneur `api` de la recette ;<br>`dev mailpit 172.20.0.4:1025`, **non publié** → `TimeoutError`.<br>Confirmé de bout en bout : depuis la recette, une connexion à PostgreSQL de dev **aboutit** et `current_database()` rend `onboarding_dev`. Les **7** ports publiés du développement sont joignables ainsi. |
+| Cause | Docker installe pour chaque port publié une règle `ACCEPT` dans la chaîne `FORWARD`, et elle **précède** ses règles `DOCKER-ISOLATION` qui rejettent le trafic entre réseaux. Le paquet est donc accepté avant que l'isolement n'ait la parole. Le préfixe `127.0.0.1` de `DEC-460` protège du réseau local et du pare-feu de macOS ; il ne protège pas d'un autre réseau Docker **de la même machine**. |
+| Ce que le cahier exige, et ce qu'il n'exige pas | Le §22.2 demande un « **réseau distinct** ». C'est **acquis et prouvé** : noms distincts, sous-réseaux distincts — `172.20.0.0/16` contre `172.22.0.0/16` — et DNS isolé, le nom d'un conteneur de dev n'étant pas résolu depuis la recette (`gaierror`). Le cahier ne demande **pas** l'inatteignabilité mutuelle. Le critère est donc satisfait ; ce risque porte sur ce qui **dépasse** le critère. |
+| Barrière effective, et elle est MESURÉE | **Les secrets distincts.** Avec le mot de passe de la recette, la même connexion à la base de dev est **refusée** en « password authentication failed ». C'est la cinquième séparation du cahier qui protège, pas la sixième. `make separations-check` en fait une **exigence** et non une affirmation : le contrôle échoue si ce secret ouvre la base de l'autre environnement. |
+| Impact | **Faible au LOT 1**, où aucun environnement ne porte de donnée réelle et où les deux stacks ne tournent ensemble que le temps d'une mesure (`DEC-440`). **À réévaluer avant le LOT 13** : la production temporaire locale portera des données réelles de collaborateurs, et coexistera sur la même machine que le développement et la recette. Un identifiant fuité d'un environnement deviendrait alors exploitable depuis un autre. |
+| Atténuations disponibles, non retenues au LOT 1 | Ne pas publier les ports de la recette — mais ils servent au diagnostic, et `T9` les documentera ; `internal: true` sur le réseau — mais il coupe aussi l'accès sortant ; des règles d'isolement explicites — hors de portée sans droits d'administration (`QO-114`). Aucune n'est appliquée ici : la cinquième proposition de la règle du lot demande de mesurer ce qu'un correctif casse avant de l'appliquer, et aucune de ces trois n'a été mesurée. |
+| Déclencheur de réévaluation | L'ouverture du **LOT 13**, et toute décision de faire coexister durablement deux environnements dont l'un porte des données réelles. |
+| Statut | **Ouvert, résiduel accepté au LOT 1.** Mesuré et **rapporté visiblement** à chaque exécution de `make separations-check`, qui nomme les ports percés — le taire aurait produit un « 7 séparations prouvées » laissant croire davantage que ce qui est vrai. Même parti que `DEC-482` pour Trivy. |
 
 ---
 

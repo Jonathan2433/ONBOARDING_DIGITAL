@@ -40,8 +40,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-020` | La fiche du LOT 1 rattache `T5` à la story `US003`, dont la page de statut ne complète aucun critère | Non pour `G1`, structurant pour la traçabilité | **Clos** |
 | `ECART-021` | Quatre nombres du corpus ne sont pas dérivés de leur source : tests, masquage, commits, lignes, et le prochain identifiant de décision | Non | **Clos** |
 | `ECART-022` | Quatre affirmations du corpus non dérivées de leur source, **et un fichier de configuration qui déclare deux fois la même variable** | Non pour `G1` | **Clos** |
+| `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
 
-**Prochain identifiant libre : `ECART-023`.**
+**Prochain identifiant libre : `ECART-024`.**
 
 ---
 
@@ -318,3 +319,18 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non pour `G1` |
 | Recommandation | Corriger les cinq. Et surtout **poser le contrôle qui manque** : `make env-check` compare les noms déclarés par `.env.example` à ceux de `.env`, nomme les manquants, et **refuse aussi tout doublon dans le modèle**. C'est la parade générale — `make env` ne peut pas corriger, mais quelque chose doit s'en apercevoir. |
 | Résolution | **Clos** le 29 juillet 2026, sous-étape `T7`. Le doublon est retiré, `.env.example` passe en **v1.1** avec 77 variables et 77 noms distincts. Les trois variables manquantes sont ajoutées au `.env` local, valeurs reprises du modèle, aucune n'étant un secret. Compose emploie désormais des valeurs par défaut explicites — `${APP_VERSION:-0.0.0-dev}`, `${APP_REVISION:-inconnue}` — pour qu'une variable absente dégrade honnêtement au lieu de valoir la chaîne vide. **`make env-check` est créée**, appelée par `make env` et par `make check`. Les affirmations de `CLAUDE.md` §1 et §9.2 sont rectifiées. Le volet non atteignable du §23.2 est déclaré dans l'en-tête de [`images.yml`](../../.github/workflows/images.yml) et dans le compte rendu de `T7` : la recette de `T8` sera lancée à la main. |
+
+## `ECART-023` — La fiche du LOT 1 énumère six des sept séparations du cahier §22.2, et importe deux exigences d'autres lots
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, prise en charge de la sous-étape `T8` du LOT 1 |
+| Source | [`fiche-lot-1.md`](../operations/fiche-lot-1.md) §3, ligne `T8` ; cahier des charges §16.5, §22.2 ; backlog `MVP-L01-US002`, `MVP-L11-US003` ; cahier LOT 13, critères de sortie |
+| Constat | **Trois constats de la même famille : le critère écrit dans la fiche ne correspond pas à sa source.**<br>**1. Une énumération tronquée.** Le cahier §22.2 énumère **sept** séparations, littéralement : « projet Docker distinct ; base PostgreSQL distincte ; bucket MinIO distinct ; volumes distincts ; secrets distincts ; réseau distinct ; ports distincts. » Le critère de la fiche pour `T8` en nomme **six** : « Volumes, base, bucket, réseau, ports et secrets distincts du développement ». **« Projet Docker distinct » manque** — et c'est précisément celle qui **produit** les volumes et le réseau distincts, Compose les préfixant du nom de projet.<br>**2. « Mailpit exclusif » n'est pas une exigence du LOT 1.** Le cahier §16.5 dit « Mailpit en développement **et recette** » : c'est cela que le LOT 1 doit satisfaire. La formule « Mailpit est **exclusif** en recette » est celle de `MVP-L11-US003`, donc du **LOT 11** ; et « aucun e-mail réel ne part de la recette » est un **critère de sortie du LOT 13**. La fiche importe donc dans `T8` deux exigences de lots à venir.<br>**3. Le critère d'acceptation du backlog pour `US002` ne parle pas de recette du tout** : « PostgreSQL, Redis, MinIO, Mailpit, Caddy, web, API et worker démarrent avec une commande ; les volumes survivent au redémarrage », satisfait depuis `T2`. Le mandat de `T8` vient du cahier — « Docker Compose pour développement **et recette** » — et de la fiche, pas de la story. |
+| Impact | **Le premier constat est le plus sérieux, et il aurait été silencieux.** Un agent qui aurait compté sur la fiche aurait livré six séparations et déclaré le critère satisfait. Les deux suivants n'ont pas d'impact sur le livrable mais sur ce qu'on **affirme** : présenter comme prouvée au LOT 1 une exigence du LOT 11 ou du LOT 13 laisserait croire qu'elle est traitée alors qu'elle ne le sera que plus tard. |
+| Cause | **La même que `ECART-018`**, où la fiche annonçait « 8 contrôles de CI » là où le cahier en énumère **11** : une énumération recopiée depuis la source au lieu d'être comptée sur elle. Pour les constats 2 et 3, une formule empruntée à un autre lot sans que sa provenance soit vérifiée. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Compter les sept sur le cahier, jamais sur la fiche. Et **poser le contrôle qui les compte** : `make separations-check` annonce « 7 séparations attendues, N vérifiées » et échoue si les deux nombres diffèrent — un contrôle qui n'énumère pas ce qu'il examine peut toujours n'en avoir examiné qu'une partie. Dire explicitement, dans le compte rendu, ce que le LOT 1 prouve de Mailpit et ce qui appartient aux LOTS 11 et 13. |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T8`. Les **sept** séparations sont prouvées sur l'état réel des deux environnements — 57 contrôles, 0 échec — et le vérificateur compte les séparations examinées. Le critère de la fiche §3 est rectifié pour nommer les sept et pour renvoyer Mailpit à sa source réelle. Ce que `T8` prouve de Mailpit est énoncé sans extrapolation : aucun fournisseur réel configuré, et un e-mail émis par la recette reste dans **sa** capture sans que celle du développement bouge — l'absence de sortie réelle au sens du LOT 13 et la story `MVP-L11-US003` restent **non couvertes**, et c'est dit. |
+
+**Prochain identifiant libre : `ECART-024`.**

@@ -11,7 +11,7 @@
 | Ouvertes par la réalisation, à partir de `QO-106` | 9 | 3 |
 | **Total** | **38** | **4** |
 
-**34 questions restent ouvertes.** Ouvertes le 28 juillet 2026 : `QO-111` en `T2`
+**33 questions restent ouvertes**, sur 38 entrées — `QO-085` est close en `T8`. Ouvertes le 28 juillet 2026 : `QO-111` en `T2`
 (fournisseur de collation PostgreSQL) et `QO-112` en `T3` (liste des extensions
 PostgreSQL), les deux à trancher au **LOT 2** avec le modèle de données ; `QO-113` en `T4`
 (conservation calendaire des journaux), à trancher au **LOT 13**. Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
@@ -44,7 +44,7 @@ de données réelles, soit l'ouverture générale.
 | `QO-078` | Modalités d'effacement dans les sauvegardes | Architecture / RGPD | Production générale | Ouverte |
 | `QO-081` | Hébergement permanent de production | Jonathan / eXalt | Production générale, LOT 14 | Ouverte |
 | `QO-083` | Emplacement de sauvegarde local | Jonathan | LOT 13 | Ouverte |
-| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **Mesurée en charge réelle en `T5` — 389 Mio, 5,0 % du budget.** Reste ouverte : le dimensionnement de deux environnements simultanés relève de `T8`. Voir §1.1 |
+| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **CLOSE le 29/07/2026, sous-étape `T8`.** Les deux environnements ont été mesurés **simultanément** : **836,6 Mio pour seize services**, soit **10,5 %** des 7 936 Mio alloués à Docker. Voir §1.2 |
 | `QO-087` | SSD externe de sauvegarde | Jonathan | LOT 13 | Ouverte |
 | `QO-088` | Destination chiffrée hors site | Jonathan / eXalt | Production générale | Ouverte |
 | `QO-096` | Schéma définitif des colonnes du CSV | Jonathan / ESM | Données réelles, LOT 9 | Ouverte |
@@ -186,6 +186,53 @@ Empreinte disque des images après `T5` :
 | `onboarding-dev-web` | 924 Mio | **1,02 Gio** | `jsdom` et Testing Library, ajoutés par `DEC-471`. Voir `ROAD-RSK-030`, **aggravé** |
 | `onboarding-dev-api` | 284 Mio | 662 Mio | Dépendances applicatives réelles installées depuis `T3` |
 | `onboarding-dev-worker` | 284 Mio | 662 Mio | Idem |
+
+---
+
+
+## 1.2 Clôture de `QO-085` — la mesure de DEUX environnements simultanés
+
+**Ce que la question demandait, et qui manquait depuis `T2`.** `QO-085` porte sur le
+dimensionnement du Mac M5. `T2` avait mesuré 146 Mio au repos, `T5` 389 Mio en charge, `T7`
+483 à 494 Mio — mais toujours **une seule stack**. Le compte rendu de `T5` §1.1 le disait :
+« clore `QO-085` à `T8`, pas avant », parce que le dimensionnement de deux environnements
+simultanés était le seul volet non mesuré.
+
+**Mesure du 29 juillet 2026, sous-étape `T8`, les deux stacks démarrées en même temps.**
+Relevée par `make separations-check`, qui lit `docker stats` sur les seize conteneurs :
+
+| Environnement | Services | Mémoire |
+|---|---:|---:|
+| `onboarding-dev` | 8 | **528,5 Mio** |
+| `onboarding-recette` | 8 | **308,2 Mio** |
+| **Total** | **16** | **836,6 Mio** |
+| Budget alloué à Docker | | 7 936 Mio |
+| **Part employée** | | **10,5 %** |
+
+**La recette consomme moins que le développement, et c'est explicable :** son image `web` sert
+un artefact statique par Caddy — cible `execution`, `DEC-479` — là où le développement fait
+tourner le serveur Vite, qui est à lui seul le poste le plus lourd et le plus variable de la
+stack.
+
+### Ce que cette mesure prouve, et ce qu'elle n'autorise pas
+
+**Il faut distinguer les deux, parce que ce sont deux choses différentes.**
+
+- **Prouvé :** deux environnements complets tiennent simultanément dans le budget alloué, avec
+  une marge de près de 90 %. Le volet mémoire de `QO-085` est donc **clos**.
+- **Non autorisé pour autant :** `DEC-440` n'admet **qu'un environnement à la fois** en
+  exploitation courante, et cette décision n'est pas modifiée. `T8` prouve la **séparation** par
+  démarrages successifs ; la simultanéité n'a été employée que le temps de la mesure, parce que
+  l'épreuve d'isolement réseau l'exige — une base arrêtée rendrait un échec de connexion
+  indistinguable d'un isolement effectif.
+
+**Une précision qui évite un faux raisonnement.** Les huit limites mémoire de `DEC-440`
+totalisent 6 144 Mio par stack, soit **12 288 Mio pour deux** — plus que les 7 936 Mio alloués.
+Il n'y a pas de contradiction : ce sont des **plafonds**, non des réservations. Docker ne
+préempte rien ; seule la consommation réelle compte, et elle est de 836,6 Mio.
+
+**Le volet disque**, mesuré en `T5`, n'est pas modifié par `T8` : la recette ajoute six volumes
+et tire trois images déjà présentes en variante `arm64`.
 
 ---
 
