@@ -553,7 +553,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**59 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **49 pendant `T1` à `T7`**. Ils sont
+**62 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **52 pendant `T1` à `T7`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -650,10 +650,10 @@ chemin Compose contient une espace.
 > celui d'un autre maillon. Le piège n'y **existe pas**. Quand une classe d'erreur résiste à la
 > vigilance, change d'outil au lieu de promettre d'être plus attentif.
 
-## 7.3 Le code de sortie d'un tuyau — **4 occurrences**
+## 7.3 Le code de sortie — **6 occurrences**, et la dernière est d'un autre type
 
 ```bash
-sortie=$(commande 2>&1); code=$?          # correct
+sortie=$(commande 2>&1); code=$?          # correct... SAUF sous `set -e`
 if commande | sed 's/x/y/'; then …        # teste sed, JAMAIS commande
 echo "code=$?"   # apres un tuyau : c'est le code du DERNIER maillon
 ```
@@ -661,6 +661,23 @@ echo "code=$?"   # apres un tuyau : c'est le code du DERNIER maillon
 En `T4`, j'ai lu « build code=0 » alors que le build venait d'échouer : la stack est remontée
 sur les **anciennes images** en affichant « 8 services sains ». En `zsh`, `${pipestatus[1]}`
 donne le code du premier maillon.
+
+> **`T7` a ajouté une sixième occurrence, et elle n'est PAS un tuyau.** Le journal de chaque étape
+> GitHub Actions porte `shell: /usr/bin/bash -e {0}` : **`-e` est déjà actif, et `set -uo pipefail`
+> ne le retire pas.** Un `commande ; code=$?` fait donc sortir bash **à l'échec de la commande, avant
+> la lecture du code**. Mon étape échouait sans produire **une seule ligne de sortie**, alors que
+> c'était un contrôle dont **l'échec de la commande était le résultat attendu** — prouver qu'un
+> tirage anonyme du registre est refusé.
+>
+> ```bash
+> # Dans une étape de workflow, pour une commande dont l'échec est ATTENDU :
+> sortie=$(commande 2>&1) && code=0 || code=$?
+> ```
+>
+> **Et cela dit la limite du remède du §7.2.** Écrire les contrôles en Python immunise le
+> vérificateur ; les étapes d'un workflow restent du shell, avec un `-e` qu'on n'a pas écrit. Un
+> remède structurel ne couvre que le périmètre où il s'applique, et il faut savoir dire où il
+> s'arrête.
 
 ## 7.4 Les contrôles qui sous-couvrent — **3 occurrences**
 
@@ -1146,11 +1163,11 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  59 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
-  filtre de masquage, les **cinq** fois où j'ai lu le code de sortie d'un `grep` en croyant lire
-  celui d'une commande, et l'**empreinte SHA-256 inventée** que `T7` a écrite dans un workflow avant
+  62 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  filtre de masquage, les **six** fois où j'ai conclu sur un code de sortie qui n'était pas celui
+  que je croyais lire, et l'**empreinte SHA-256 inventée** que `T7` a écrite dans un workflow avant
   de la remplacer par la valeur mesurée. En `T5`, **cinq défauts sur huit étaient dans mes
-  contrôles** ; en `T7`, **six sur neuf** — c'est la forme la plus insidieuse : on croit avoir
+  contrôles** ; en `T7`, **neuf sur douze** — c'est la forme la plus insidieuse : on croit avoir
   prouvé. En `T6` **et** en `T7`, j'ai rejoué une leçon **écrite dans ce document** : un piège
   documenté n'est pas un piège désarmé. La parade de `T7` a été de **changer d'outil** plutôt que de
   promettre plus de vigilance ;
