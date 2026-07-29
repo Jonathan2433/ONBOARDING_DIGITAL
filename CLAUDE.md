@@ -29,7 +29,7 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
 | Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest** |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
-| **Images** | **3 images multiarchitecture** `linux/amd64` + `linux/arm64`, publiées dans GHCR privé, **lancées sur les deux** — 37 contrôles fonctionnels. `web` : **84,9 Mo** |
+| **Images** | **3 images multiarchitecture** `linux/amd64` + `linux/arm64`, publiées dans GHCR privé, **lancées sur les deux** — 39 contrôles fonctionnels. `web` : **84,9 Mo** |
 | Registres | **150 décisions** · 22 écarts (5 ouverts) · 38 questions (34 ouvertes) · 33 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
@@ -208,7 +208,7 @@ n'avait **jamais** fonctionné sur une machine propre. Voir §7.16.
 
 **Le dernier critère technique de la porte `G1`, et il exigeait de LANCER, pas de construire.** Les
 trois images sont construites pour `linux/amd64` **et** `linux/arm64` en une **liste de manifestes
-unique**, publiées dans GHCR privé, et **lancées sur les deux architectures** — 37 contrôles
+unique**, publiées dans GHCR privé, et **lancées sur les deux architectures** — 39 contrôles
 fonctionnels, 0 échec.
 
 **Comment :** en lisant, **dans** chaque conteneur, une valeur que l'autre architecture ne pourrait
@@ -553,7 +553,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**62 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **52 pendant `T1` à `T7`**. Ils sont
+**63 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **53 pendant `T1` à `T7`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -1163,11 +1163,11 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  62 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  63 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
   filtre de masquage, les **six** fois où j'ai conclu sur un code de sortie qui n'était pas celui
   que je croyais lire, et l'**empreinte SHA-256 inventée** que `T7` a écrite dans un workflow avant
   de la remplacer par la valeur mesurée. En `T5`, **cinq défauts sur huit étaient dans mes
-  contrôles** ; en `T7`, **neuf sur douze** — c'est la forme la plus insidieuse : on croit avoir
+  contrôles** ; en `T7`, **dix sur treize** — c'est la forme la plus insidieuse : on croit avoir
   prouvé. En `T6` **et** en `T7`, j'ai rejoué une leçon **écrite dans ce document** : un piège
   documenté n'est pas un piège désarmé. La parade de `T7` a été de **changer d'outil** plutôt que de
   promettre plus de vigilance ;

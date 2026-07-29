@@ -24,7 +24,7 @@ on lit dans chacun une valeur que **l'autre architecture ne pourrait pas produir
 | Volet | Preuve | Résultat |
 |---|---|---|
 | Une **seule** liste de manifestes porte les deux plateformes | `mediaType` = `application/vnd.oci.image.index.v1+json`, et les plateformes sont **lues dans le `--metadata-file` de buildx**, non codées en dur | **3 images, 2 plateformes chacune** |
-| Les images **fonctionnent** | 3 services × 2 architectures, conteneurs lancés | **37 contrôles, 0 échec** |
+| Les images **fonctionnent** | 3 services × 2 architectures, conteneurs lancés | **39 contrôles, 0 échec** |
 | L'architecture est bien celle attendue | `uname -m` **dans** le conteneur : `x86_64` / `aarch64` | 6/6 |
 | L'accès au registre est authentifié | `GITHUB_TOKEN` avec `packages: write`. **`gh secret list` reste vide** | aucun secret créé |
 | Aucun `latest` publié | `make images-check`, témoins dans les deux sens | 0 trouvée |
@@ -182,12 +182,12 @@ l'image `web` d'avant `T7` en portait exactement un. Le témoin négatif vient d
 
 ## 5. Contrôles exécutés, et leurs témoins
 
-### 5.1 Les contrôles fonctionnels — 37, aucun échec
+### 5.1 Les contrôles fonctionnels — 39, aucun échec
 
 | Service | Contrôles | Ce qu'ils lisent |
 |---|---:|---|
 | `api` | **18** | refus de démarrer du §20.3 · `live` 200 · **version et révision égales à celles de la construction** · `ready` **503 avec 3 dépendances nommées** · `uname -m` |
-| `worker` | **8** | `platform.machine()` · **`APP_VERSION` et `APP_REVISION` égales à celles de la construction** · **7 files** · **ping réel du courtier Redis** |
+| `worker` | **10** | **le Redis jetable répond PONG, attendu et compté** · `platform.machine()` · **`APP_VERSION` et `APP_REVISION` égales à celles de la construction** · **7 files** · **ping réel du courtier Redis** |
 | `web` cible `execution` | **8** | 200 · **0** `/@vite/client` · `/assets/` présent · `uname -m` |
 | `web` cible `developpement` | **3** | témoin positif : **1** `/@vite/client` |
 
@@ -235,7 +235,7 @@ local : voir §5.4.
 
 ## 6. Défauts détectés pendant `T7`
 
-**Douze défauts. Neuf étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
+**Treize défauts. Dix étaient dans mes propres contrôles, mon script ou mon échafaudage** ; deux
 étaient des défauts dormants du corpus ou de l'outillage, et un est une matérialisation de risque.
 
 | # | Défaut | Nature | Traitement |
@@ -249,13 +249,14 @@ local : voir §5.4.
 | `T7-7` | Ma sonde fonctionnelle de l'`api` **échouait à 12/12** : le conteneur s'arrêtait. J'ai d'abord lu cela comme une panne de l'image | **C'était l'image qui avait raison.** Les 7 garde-fous du §20.3 refusaient de démarrer, faute de configuration. Mon extracteur de « variables obligatoires » avait par ailleurs répondu **0** parce qu'il ne cherchait que les champs **sans** `=` : ces sept ont un défaut **vide** | Configuration minimale fournie. **Et le défaut est devenu une preuve** : un contrôle dédié vérifie désormais que l'image **refuse de démarrer**, **nomme les 7 variables** et **ne divulgue aucune valeur** — le §20.3 éprouvé sur l'image publiée, ce qu'aucun test unitaire ne faisait |
 | `T7-8` | **`.env` comptait 74 affectations contre 78 dans `.env.example`.** `APP_REVISION`, ajoutée en `T3`, `LOG_MAX_SIZE` et `LOG_MAX_FILES`, ajoutées en `T4`, n'y étaient **jamais arrivées** | **Défaut dormant depuis deux sous-étapes.** `make env` est idempotent **par conception** — il porte des secrets locaux — et ne peut donc pas réconcilier. Rien ne le vérifiait. Effet mesuré : Compose substituait une **chaîne vide** à `${APP_REVISION}`, et l'image de développement a été construite avec `APP_REVISION=""` | Les trois variables ajoutées au `.env` local. Compose emploie des **valeurs par défaut explicites**, `${APP_REVISION:-inconnue}`, pour qu'une absence dégrade honnêtement. **Et `make env-check` est créée** : elle compare les noms des deux fichiers, nomme les manquants, et refuse tout doublon dans le modèle. C'est `ECART-022` |
 | `T7-9` | **J'ai écrit une empreinte SHA-256 inventée** dans `images.yml`, comme « garde-fou secondaire » de l'installation de Trivy — une valeur que je n'avais pas mesurée, et qui n'était même pas comparée | **Le pire de la liste, et sur un contrôle de sécurité.** Une empreinte fabriquée dans un fichier versionné donne l'apparence d'une vérification là où il n'y en a aucune | Remplacée par la valeur **relevée dans le fichier de sommes publié**, `bbb64b96…b2ea`, et **effectivement comparée**. L'indirection inutile est supprimée : la valeur attendue est inscrite dans le dépôt, comme `GITLEAKS_SHA256` en `T6`, et non relue au téléchargement depuis le même hôte que l'archive |
-| `T7-10` | **Mon contrôle d'injection de version ne pouvait PAS passer sur une branche de travail.** Il exigeait que la version lue diffère de `0.0.0-dev`. Or `DEC-428` jalonne les versions sur les portes et les pose en **tags** : sur une branche comme sur `develop`, il n'existe **aucune version**, et le workflow publie honnêtement `0.0.0-dev`. **La valeur injectée EST le défaut.** Trouvé par l'exécution [30442686377](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30442686377), qui a échoué sur une image parfaitement correcte | **Le défaut `T5-6` pris à l'envers** : un **succès** qui produit la même observation qu'un échec. La révision, elle, prouvait déjà que le mécanisme fonctionne — `revision='b07f46c'` et non `inconnue`. Publication et Trivy étaient verts ; seul mon contrôle mentait | Le contrôle compare désormais à **l'attendu**, ce qui est **plus fort** : il prouve que l'image porte **LA** version avec laquelle elle a été construite, et non seulement **UNE** version non nulle. Les attendus sont **obligatoires** — en leur absence le contrôle échoue au lieu de se dégrader en silence. Trois témoins : attendus justes → 37 verts ; attendu faux → échec ; attendus absents → échec |
+| `T7-10` | **Mon contrôle d'injection de version ne pouvait PAS passer sur une branche de travail.** Il exigeait que la version lue diffère de `0.0.0-dev`. Or `DEC-428` jalonne les versions sur les portes et les pose en **tags** : sur une branche comme sur `develop`, il n'existe **aucune version**, et le workflow publie honnêtement `0.0.0-dev`. **La valeur injectée EST le défaut.** Trouvé par l'exécution [30442686377](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30442686377), qui a échoué sur une image parfaitement correcte | **Le défaut `T5-6` pris à l'envers** : un **succès** qui produit la même observation qu'un échec. La révision, elle, prouvait déjà que le mécanisme fonctionne — `revision='b07f46c'` et non `inconnue`. Publication et Trivy étaient verts ; seul mon contrôle mentait | Le contrôle compare désormais à **l'attendu**, ce qui est **plus fort** : il prouve que l'image porte **LA** version avec laquelle elle a été construite, et non seulement **UNE** version non nulle. Les attendus sont **obligatoires** — en leur absence le contrôle échoue au lieu de se dégrader en silence. Trois témoins : attendus justes → 39 verts ; attendu faux → échec ; attendus absents → échec |
 | `T7-12` | **Le contrôle d'accès anonyme échouait sans produire une seule ligne de sortie.** Le journal de chaque étape porte `shell: /usr/bin/bash -e {0}` : **GitHub ajoute `-e` à l'invocation du shell**, et mon `set -uo pipefail` ne le retire pas. Un `cmd ; code=$?` fait donc sortir bash à l'échec de `cmd`, **avant** la lecture du code. Or c'est un contrôle dont **l'échec de la commande est le résultat attendu** | **SIXIÈME occurrence de la famille du code de sortie**, après `T0-1`, `T2-4`, `T3-6`, `T4-3` et `T5-5` — et la première dans un workflow, où la cause est un `-e` que je n'avais pas écrit. Trouvé par l'exécution [30450427925](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30450427925) : publication et Trivy verts, seule mon étape rouge, et **muette** | Forme `cmd && code=0 \|\| code=$?`, qui soustrait cette commande — et elle seule — au `-e`. Éprouvée sous `bash -e` dans les deux sens : la nouvelle forme atteint la ligne suivante avec `code=1`, l'ancienne fait sortir bash avant. **Le remède structurel de `T7-3` ne couvrait pas ce cas** : le vérificateur Python est immunisé, mais les étapes de workflow restent du shell |
+| `T7-13` | **Ma sonde du worker démarrait un Redis jetable et l'interrogeait sans attendre qu'il soit prêt.** En natif, Redis écoute avant que la sonde ne démarre, et le défaut reste **latent** ; **sous émulation QEMU il n'écoute pas encore**. Mesure du 29/07/2026, exécution [30451127513](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/actions/runs/30451127513) : `connect_check_health` a échoué sur `linux/arm64` alors que la **même** sonde passait sur `linux/amd64` | **Course dans mon propre contrôle**, et c'est exactement ce que `depends_on: service_healthy` existe pour éviter. La leçon de `T6-2` dans un autre habit : ma sonde n'avait jamais tourné qu'en natif, donc elle n'était pas éprouvée. Le livrable était correct — `api` passait 9/9 sur la même architecture émulée | Attente de la réponse `PONG`, **comptée et affichée** : « le Redis jetable répond PONG après *n* tentative(s) ». Mesures locales : 2 tentatives en `amd64` émulé, 1 en `arm64` natif. Le contrôle dit désormais combien il a attendu, ce qui rendra un ralentissement visible au lieu de silencieux |
 | `T7-11` | **Un contrôle absent de ma première version du workflow.** Se connecter puis tirer prouve que l'authentification **fonctionne** ; cela ne prouve pas que le registre la **requiert**, ni que le paquet est privé. Or le critère de la story dit « l'accès au registre est **authentifié** » | **Preuve incomplète**, trouvée en relisant le critère et non par un échec. Et « le tirage anonyme a échoué » serait indistinguable de « l'image n'existe pas » — le piège `T2-1`, où un 429 masqué était lu comme une absence | Contrôle en **deux sens** : le tirage anonyme doit échouer **et** son message doit porter un motif d'**autorisation** — `unauthorized`, `denied`, `401`, `403` — puis le tirage authentifié doit réussir **sur la même référence**, ce qui prouve que l'image existe. Aucun des deux seul ne prouve rien |
 
-### 6.1 Ce que ces douze défauts enseignent
+### 6.1 Ce que ces treize défauts enseignent
 
-**Neuf sur douze étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
+**Dix sur treize étaient dans mes contrôles, mon script ou mon échafaudage — pas dans le livrable.**
 La proportion est la plus élevée du lot, devant les cinq sur huit de `T5`. C'est la forme la plus
 insidieuse : on croit avoir prouvé.
 
@@ -327,7 +328,7 @@ venais d'écrire l'a attrapé.
 | Dépendances | **Aucune ajoutée** — le socle Caddy était déjà dans le projet. Prochaine libre : `DEP-018` |
 | Tests | **166** — 139 pytest (131 unitaires, 8 d'intégration) et 27 Vitest. Inchangé : `T7` n'ajoute pas de test unitaire, ses preuves sont des contrôles d'image |
 | Cibles `Makefile` | **44** |
-| Contrôles d'image | **37 fonctionnels**, 10 statiques, 8 témoins négatifs |
+| Contrôles d'image | **39 fonctionnels**, 10 statiques, 12 témoins négatifs |
 | `make check` · `stack-check` · `api-check` · `web-check` · `alembic-check` · `audit` · `docs-check` · `test-integration` · `persistence-test` · `images-check` · `images-inspect` · `images-verify` · `env-check` | Tous **code 0** |
 
 ### Les 7 critères de la porte `G1`

@@ -950,6 +950,40 @@ def fonctionnel_worker(
         if code != 0:
             journal.echec(f"{plateforme} : Redis jetable n'a pas demarre : {sortie.strip()[:160]}")
             return
+
+        # ATTENDRE QUE REDIS SOIT PRET, et compter l'attente.
+        #
+        # Sans cela, la sonde du worker interroge un courtier qui n'ecoute pas
+        # encore. En natif Redis est pret avant que la sonde ne demarre, et le
+        # defaut reste latent ; SOUS EMULATION QEMU il ne l'est pas. Mesure du
+        # 29/07/2026, execution 30451127513 : `connect_check_health` a echoue sur
+        # `linux/arm64` alors que la meme sonde passait sur `linux/amd64`.
+        #
+        # C'est la course que `depends_on: service_healthy` existe pour eviter, et
+        # c'est la lecon de T6-2 dans un autre habit : ma sonde n'avait jamais
+        # tourne qu'en natif, donc elle n'etait pas eprouvee.
+        pret = 0
+        for tentative in range(1, 121):
+            code, sortie = lancer(
+                "docker",
+                "exec",
+                nom_redis,
+                "redis-cli",
+                "-a",
+                "verif-t7",
+                "--no-auth-warning",
+                "ping",
+            )
+            if code == 0 and "PONG" in sortie:
+                pret = tentative
+                break
+            time.sleep(1.0)
+        if not journal.exiger(
+            pret > 0,
+            f"{plateforme} : le Redis jetable repond PONG "
+            f"({'apres ' + str(pret) + ' tentative(s)' if pret else 'JAMAIS en 120 s'})",
+        ):
+            return
         sonde = (
             "import os, platform;"
             "from worker.main import courtier, files_declarees;"
