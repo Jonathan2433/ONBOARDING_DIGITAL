@@ -256,8 +256,9 @@ satisfaite, et le contrôle qui l'attendait a tiré.
 
 ## 6. Défauts détectés pendant `T8`
 
-**Six défauts. Les six étaient dans mon propre travail** — contrôles, scripts ou méthode de mesure.
-Aucun dans le livrable.
+**Sept défauts. Les sept étaient dans mon propre travail** — contrôles, scripts ou méthode de mesure.
+Aucun dans le comportement de la plateforme elle-même. **Le septième a été trouvé APRÈS la fusion**, à la
+première exécution réelle de `make images-pin`, et il est corrigé par une pull request dédiée.
 
 | # | Défaut | Nature | Traitement |
 |---:|---|---|---|
@@ -268,11 +269,20 @@ Aucun dans le livrable.
 | `T8-5` | **Mon contrôle des totaux du registre additionnait les lignes des DEUX tableaux de synthèse et comparait au total d'UN SEUL** : 170 au lieu de 85, 120 au lieu de 60 | **La sixième proposition de la règle du lot, rejouée** : un contrôle qui compare deux nombres doit prouver qu'ils mesurent **la même grandeur**. C'est `T7-6` sous une autre forme | Découpage par tableau, et **chaque synthèse vérifiée contre elle-même**. Un seul tableau juste ne suffirait pas : le contrôle exige d'en trouver au moins deux, sans quoi un détecteur muet conclurait « aucune incohérence » |
 | `T8-6` | **Ma sonde d'audit des registres ne comptait que les lignes de tableau** : elle rendait 24 risques là où il y en a 33, les fiches `ROAD-RSK-025` à `034` étant des sections `##`. J'ai failli déclarer un défaut du registre | **Faux positif de mon propre outil de mesure**, et la docstring de `verifier-documentation.py` — écrite en `T6` — **nomme exactement ce piège**. Je l'ai rejoué sans l'avoir relu | Vérifié avant de conclure, et le registre est intact : **34 mentions, aucun trou**. Le contrôle livré, lui, gère les deux formes depuis `T6`. Leçon : un piège documenté n'est pas un piège désarmé, et il faut relire les contrôles existants avant d'en écrire un nouveau |
 
-### 6.1 Ce que ces six défauts enseignent
+| `T8-7` | **`make images-pin` a été livrée sans avoir jamais tourné en conditions nominales**, l'authentification au registre n'existant pas encore quand je l'ai écrite. Première exécution réelle, **après la fusion de `T8`** : échec. Cause mesurée : `gh run view --log` prefixe chaque ligne de « tâche, **étape**, horodatage », et mon filtre portait sur le nom de l'étape. Sur l'exécution 30465685379, **TOUTES** les étapes du journal portent le libellé littéral `UNKNOWN STEP` — GitHub n'avait pas associé les noms d'étape aux lignes ; sur l'exécution précédente, le nom apparaît **20 fois**. Le journal contenait pourtant les trois empreintes, le compte et l'identité | **Deux défauts en un.** D'abord un contrôle **jamais exercé** : c'est exactement la classe `T6-1`/`T6-2` de la passation §7.16, « ce qui n'a jamais tourné ailleurs n'est pas éprouvé » — et ici, ce qui n'a jamais tourné **du tout**. Ensuite un contrôle qui **échoue pour une raison étrangère à ce qu'il mesure**, classe `T6-4` et `T7-4` : le libellé d'étape est une commodité d'affichage, pas une donnée | Le filtre par étape est **supprimé** : les trois motifs sont reconnus par leur **contenu**, et ils ne peuvent venir que de l'étape visée. Discrimination vérifiée contre le bruit réel du journal — les lignes buildx `api:sha-1060ad6@sha256:…` et l'écho du code source `${relevees}` ne correspondent pas. Le filet reste le même : mon compte confronté à celui du **producteur**. **Et l'échec dit désormais pourquoi** — il nomme le nombre de lignes lues, les empreintes reconnues et les libellés d'étape vus, ce qui est la leçon `T7-13`. **Cinq témoins sur la fonction réelle**, chacun produisant un message de cause distinct. Éprouvé de bout en bout : la recette tourne désormais sur les empreintes de `1060ad6`, et `/health/version` rapporte `revision: 1060ad6, environnement: recette` |
 
-**Les six étaient dans mon travail, aucun dans le livrable.** C'est la proportion la plus élevée du
-lot, devant les dix sur treize de `T7`. Le livrable a été correct du premier coup ; ce sont mes
-instruments qui ont dû être corrigés cinq fois.
+### 6.1 Ce que ces sept défauts enseignent
+
+**Les sept étaient dans mon travail, aucun dans le comportement de la plateforme.** C'est la
+proportion la plus élevée du lot, devant les dix sur treize de `T7`.
+
+**`T8-7` est le plus instructif des sept, et c'est celui que j'ai failli ne jamais trouver.** J'ai
+livré une cible que je n'avais **jamais exécutée** — l'authentification au registre n'existait pas
+encore au moment de l'écriture, et je ne suis pas revenu l'éprouver après. Elle a passé `lint`,
+`format-check`, `typecheck` et l'intégration continue, parce qu'aucun de ces contrôles ne lance une
+commande qui parle à GitHub. La passation §7.16 dit exactement cela : « ce qui n'a jamais tourné
+ailleurs n'est pas éprouvé ». Il faut l'élargir d'un cran — **ce qui n'a jamais tourné du tout ne
+l'est pas non plus, et une chaîne verte ne dit rien d'une cible qu'elle n'appelle pas.**
 
 **Trois défauts ont été attrapés par des garde-fous plutôt que par des échecs**, et c'est le point
 le plus utile de cette sous-étape. `T8-2` a été attrapé par un contrôle écrit **le jour même**, qui
@@ -316,7 +326,7 @@ piège dont la parade était écrite dans un fichier du dépôt.
 
 | | |
 |---|---|
-| Sous-étape | **`T8` terminée.** Story `MVP-L01-US002` prête pour validation, issue `#3` **à refermer à la main** après fusion (§7.19) |
+| Sous-étape | **`T8` terminée**, plus un correctif post-fusion `T8-7`. Story `MVP-L01-US002` prête pour validation, issue `#3` **à refermer à la main** après fusion (§7.19) |
 | Décisions | `DEC-483` à `DEC-488`. Prochaine libre : **`DEC-489`** |
 | Écarts | **`ECART-023` ouvert et clos.** Prochain libre : **`ECART-024`** |
 | Risques | **`ROAD-RSK-034` ouvert**, résiduel accepté. Prochain libre : **`ROAD-RSK-035`** |
