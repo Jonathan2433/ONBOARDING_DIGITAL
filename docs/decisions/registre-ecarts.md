@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 29 juillet 2026, sous-étape `T7` du LOT 1
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T9` du LOT 1
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 22 | 5 | 15 | 2 |
+| Total 24 | 5 | 17 | 2 |
 
 ---
 
@@ -41,8 +41,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-021` | Quatre nombres du corpus ne sont pas dérivés de leur source : tests, masquage, commits, lignes, et le prochain identifiant de décision | Non | **Clos** |
 | `ECART-022` | Quatre affirmations du corpus non dérivées de leur source, **et un fichier de configuration qui déclare deux fois la même variable** | Non pour `G1` | **Clos** |
 | `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
+| `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
 
-**Prochain identifiant libre : `ECART-024`.**
+**Prochain identifiant libre : `ECART-025`.**
 
 ---
 
@@ -333,4 +334,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Compter les sept sur le cahier, jamais sur la fiche. Et **poser le contrôle qui les compte** : `make separations-check` annonce « 7 séparations attendues, N vérifiées » et échoue si les deux nombres diffèrent — un contrôle qui n'énumère pas ce qu'il examine peut toujours n'en avoir examiné qu'une partie. Dire explicitement, dans le compte rendu, ce que le LOT 1 prouve de Mailpit et ce qui appartient aux LOTS 11 et 13. |
 | Résolution | **Clos** le 29 juillet 2026, sous-étape `T8`. Les **sept** séparations sont prouvées sur l'état réel des deux environnements — 57 contrôles, 0 échec — et le vérificateur compte les séparations examinées. Le critère de la fiche §3 est rectifié pour nommer les sept et pour renvoyer Mailpit à sa source réelle. Ce que `T8` prouve de Mailpit est énoncé sans extrapolation : aucun fournisseur réel configuré, et un e-mail émis par la recette reste dans **sa** capture sans que celle du développement bouge — l'absence de sortie réelle au sens du LOT 13 et la story `MVP-L11-US003` restent **non couvertes**, et c'est dit. |
 
-**Prochain identifiant libre : `ECART-024`.**
+## `ECART-024` — Deux contrôles affirmaient un état que la mesure contredit, tous deux nés d'un environnement unique
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, sous-étape `T9` du LOT 1 |
+| Source | `Makefile`, cible `destroy` (écrite en `T2`, paramétrée en `T8`) ; `infra/scripts/verifier-page-statut.sh` (écrit en `T5`) |
+| Constat | **Deux constats, une seule propriété commune : un contrôle écrit quand il n'existait qu'UN environnement, devenu faux quand un second est apparu.**<br>**1. `make destroy` annonçait une conséquence inexistante.** Son message avertissait, quel que soit l'environnement : « Sa perte obligera à réapprouver la racine dans le trousseau macOS, ce qui demande le mot de passe de Jonathan. » Mesure du 29/07/2026 sur les deux racines, qui sont distinctes : `security verify-cert` rend **code 0** pour `dev`, empreinte `c9a952a9…`, et **code 1** pour la recette, empreinte `fb8fbc2d…`. La racine de la recette **n'a jamais été approuvée** : l'avertissement était faux pour elle.<br>**2. `verifier-page-statut.sh` exigeait le comportement du serveur de développement.** Il demandait la référence `/src/main.tsx` dans l'index servi. Depuis `T8`, la recette sert l'artefact **bâti** — cible `execution`, `DEC-479` — dont l'index référence `/assets/index-<empreinte>.js` : `/src/main.tsx` n'y existe pas **par construction**. Mesuré : **2 contrôles sur 6 en échec sur une recette parfaitement saine**. |
+| Impact | **Le premier porte sur la cible la plus destructive du dépôt, et son effet est pervers.** Un avertissement qui annonce une conséquence inexistante n'est pas seulement inutile : il apprend à l'opérateur à passer outre. Le jour où il porte sur `dev`, où la conséquence est **réelle** et coûte à Jonathan une réapprobation avec son mot de passe, il ne sera plus lu. Le second aurait fait échouer tout contrôle de page de la recette, et un contrôle qui échoue pour une raison étrangère à ce qu'il mesure finit désactivé — classe `T6-4` et `T7-4`. |
+| Cause | **La même pour les deux, et elle est structurelle plutôt que négligente :** chacun a été écrit à une époque où il n'existait qu'un seul environnement, et il affirmait alors le vrai. `T8` a créé le second sans que ces deux affirmations soient revisitées. C'est la classe de `ECART-021` et `ECART-022` — une affirmation que sa source contredit — mais avec une nuance : ici la source n'a pas changé, **le monde a changé autour de l'affirmation**. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Corriger les deux, et pour la même raison : **faire mesurer au lieu d'affirmer**. `destroy` interroge le trousseau et dit ce qu'il a mesuré — ou dit « indéterminé » quand il ne peut pas mesurer, plutôt que de trancher. Le contrôle de page **identifie la cible servie**, exige qu'elle soit l'une des deux formes connues, et applique les contrôles de cette forme — en **échouant** s'il n'en reconnaît aucune. Et une leçon plus large pour la suite : **quand une sous-étape ajoute un environnement, relire les contrôles qui n'en connaissaient qu'un.** |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T9`. `DEC-489` et `DEC-490`. Les deux corrections sont éprouvées par des témoins **dans les deux sens** : le message de `destroy` diffère réellement entre `dev` et la recette, mesure à l'appui, et le contrôle de page passe sur les deux environnements en nommant la cible servie — tout en **échouant** sur une origine qui ne sert pas la page, l'hôte de l'API, où il rend 2 échecs sur 6. |
+
+**Prochain identifiant libre : `ECART-025`.**

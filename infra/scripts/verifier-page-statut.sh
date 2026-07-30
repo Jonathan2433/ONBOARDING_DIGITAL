@@ -66,24 +66,72 @@ verdict() {
 
 echo "  Page de statut, vue depuis $BASE"
 
-# --- 1. La page repond et porte bien l'application -----------------------------
+# --- 1. La page repond, porte l'application, ET ON IDENTIFIE LA CIBLE SERVIE ---
+#
+# T9 — CE CONTROLE EXIGEAIT LE COMPORTEMENT DU SERVEUR DE DEVELOPPEMENT.
+#
+#   Sa version de T5 demandait `id="racine"` ET la reference `/src/main.tsx` dans
+#   l'index. C'etait juste tant qu'un seul environnement existait. Depuis T8 la
+#   recette sert l'artefact BATI (cible `execution`, DEC-479), dont l'index
+#   reference `/assets/index-<empreinte>.js` : la reference `/src/main.tsx` n'y
+#   existe pas, PAR CONSTRUCTION. Mesure du 29/07/2026 : 2 controles sur 6 en
+#   echec sur une recette parfaitement saine.
+#
+#   C'est la classe de la passation §7.20 — un controle qui exige plus que
+#   l'environnement ne fournit — et de T6-4 : un controle qui echoue pour une
+#   raison etrangere a ce qu'il mesure finit desactive.
+#
+#   LA PARADE N'EST PAS DE RETIRER L'EXIGENCE. Le script IDENTIFIE la cible
+#   servie, exige qu'elle soit l'une des DEUX formes connues, et applique ensuite
+#   les controles de cette forme. S'il n'en reconnait aucune, il ECHOUE : sans
+#   cela, un index vide ou une page d'erreur passerait pour un cas non prevu.
 code=$(requete /)
-if [ "$code" = "200" ] && grep -q 'id="racine"' "$corps" && grep -q '/src/main.tsx' "$corps"; then
-  verdict "GET /                       " oui "HTTP $code  index.html avec la racine React"
-else
-  verdict "GET /                       " non "HTTP $code  racine React introuvable"
+cible=inconnue
+if [ "$code" = "200" ] && grep -q 'id="racine"' "$corps"; then
+  if grep -q '/src/main.tsx' "$corps"; then
+    cible=developpement
+  elif grep -qE '/assets/[^"]+\.js' "$corps"; then
+    cible=execution
+  fi
 fi
+case "$cible" in
+  developpement)
+    verdict "GET /                       " oui "HTTP $code  racine React, cible \`developpement\`"
+    ;;
+  execution)
+    verdict "GET /                       " oui "HTTP $code  racine React, cible \`execution\` (artefact bati)"
+    ;;
+  *)
+    verdict "GET /                       " non "HTTP $code  ni racine React, ni cible reconnue"
+    ;;
+esac
 
-# --- 2. Vite transforme reellement le module d'entree --------------------------
-# Un `index.html` servi ne prouve pas que le module TypeScript est compile. Si
-# la transformation echouait, la page resterait blanche — precisement ce que le
-# cahier §17.4 interdit.
-type_mime=$(curl -k -s -S --max-time 10 -o "$corps" -w '%{content_type}' "$BASE/src/main.tsx" 2>/dev/null)
-statut_mime=$?
-if [ "$statut_mime" -eq 0 ] && echo "$type_mime" | grep -q 'javascript'; then
-  verdict "GET /src/main.tsx           " oui "type $type_mime  module transforme par Vite"
+# --- 2. Le module d'entree est reellement servi en JavaScript -------------------
+# Un `index.html` servi ne prouve pas que le code de l'application arrive. Si le
+# module manquait, la page resterait blanche — precisement ce que le cahier §17.4
+# interdit.
+#
+# LE CHEMIN DIFFERE SELON LA CIBLE, et c'est le point : en developpement Vite
+# transforme `/src/main.tsx` a la volee ; dans l'artefact bati il n'existe aucun
+# TSX, et c'est le paquet `/assets/index-<empreinte>.js` qui porte le code. Les
+# deux doivent etre servis en `javascript` — le type MIME et non le code HTTP,
+# parce que Vite repond 200 avec `index.html` pour tout chemin inconnu (T5-6).
+case "$cible" in
+  developpement) module=/src/main.tsx ;;
+  execution)     module=$(grep -oE '/assets/[^"]+\.js' "$corps" | head -1) ;;
+  *)             module= ;;
+esac
+if [ -z "$module" ]; then
+  verdict "GET <module d'entree>       " non "aucun module a interroger : cible non reconnue"
 else
-  verdict "GET /src/main.tsx           " non "type ${type_mime:-aucun}  transformation absente"
+  type_mime=$(curl -k -s -S --max-time 10 -o /dev/null -w '%{content_type}' "$BASE$module" 2>/dev/null)
+  statut_mime=$?
+  etiquette=$(printf 'GET %-24s' "$module")
+  if [ "$statut_mime" -eq 0 ] && echo "$type_mime" | grep -q 'javascript'; then
+    verdict "$etiquette" oui "type $type_mime  module d'entree servi en JavaScript"
+  else
+    verdict "$etiquette" non "type ${type_mime:-aucun}  module d'entree absent ou mal type"
+  fi
 fi
 
 # --- 3. Meme origine : /health/ready est bien mandate vers l'API ---------------
