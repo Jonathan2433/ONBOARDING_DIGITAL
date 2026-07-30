@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "eXalt Onboarding Digital - contrat API partage (squelette, LOT 1 T1).",
+  "description": "eXalt Onboarding Digital - contrat API partage (LOT 1 T10).",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

@@ -1,0 +1,92 @@
+/*
+ * Jetons du design system, en proprietes personnalisees CSS.
+ *
+ * LOT 1, sous-etape T10, story MVP-L01-US007.
+ *
+ * ATTENTION — CE FICHIER A UN JUMEAU, ET ILS NE DOIVENT PAS DIVERGER.
+ *
+ *   `jetons.ts` est la source de verite. Ce fichier en est la projection pour le
+ *   CSS. Les deux portent donc les MEMES valeurs, et `jetons-css.test.ts` les
+ *   compare : il lit ce fichier, lit le module TypeScript, et ECHOUE si une
+ *   valeur differe ou si une variable manque d'un cote.
+ *
+ *   Pourquoi deux fichiers plutot qu'une generation ? Parce qu'une feuille de
+ *   style engendree a la construction serait absente du depot, donc illisible en
+ *   relecture, et qu'un consommateur devrait la produire avant de l'importer.
+ *   Deux fichiers avec un controle de divergence donnent la meme garantie que la
+ *   generation, sans cette machinerie. La lecon de `ECART-022` est respectee : ce
+ *   n'est pas une seconde SOURCE, c'est une projection verifiee.
+ *
+ * LES NOMS DES NEUTRES SONT CEUX DE `T5`, deliberement. La page de statut declare
+ * `--encre`, `--fond`, `--trait`, `--ok` et `--ko` depuis `T5` ; les renommer
+ * ferait divorcer la page de son propre design system.
+ */
+
+:root {
+  /* Marque — SURFACES uniquement. Chaque couleur porte le texte que la mesure
+     de contraste impose : voir jetons.ts, section « ce que la mesure impose ». */
+  --marque-bleu: #5853ff;
+  --marque-bleu-texte: #ffffff;
+  --marque-bleu-fonce: #2f2f9b;
+  --marque-bleu-fonce-texte: #ffffff;
+  --marque-rose: #ff2c9b;
+  --marque-rose-texte: #1a1a1a;
+  --marque-jaune: #ffda3e;
+  --marque-jaune-texte: #1a1a1a;
+
+  /* Neutres et etats — theme clair, repris de T5 sans modification. */
+  --fond: #ffffff;
+  --fond-doux: #f4f4f5;
+  --encre: #1a1a1a;
+  --encre-douce: #555555;
+  --trait: #d4d4d8;
+  --ok: #0f6b3f;
+  --ko: #9b1c1c;
+
+  /* Espacements — echelle de 4. */
+  --espace-xs: 4px;
+  --espace-s: 8px;
+  --espace-m: 16px;
+  --espace-l: 24px;
+  --espace-xl: 32px;
+  --espace-xxl: 48px;
+
+  /* Rayons — « cartes arrondies », cahier 13.2. */
+  --rayon-s: 6px;
+  --rayon-m: 12px;
+  --rayon-l: 16px;
+  --rayon-pastille: 999px;
+
+  /* Ombres — « ombres douces », cahier 13.2. */
+  --ombre-douce: 0 1px 3px rgb(0 0 0 / 8%), 0 4px 12px rgb(0 0 0 / 6%);
+  --ombre-posee: 0 2px 6px rgb(0 0 0 / 10%), 0 8px 24px rgb(0 0 0 / 8%);
+
+  /* Typographie — pile SYSTEME : aucun telechargement, aucun CDN. */
+  --police:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --police-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --taille-xs: 12px;
+  --taille-s: 14px;
+  --taille-m: 16px;
+  --taille-l: 20px;
+  --taille-xl: 28px;
+}
+
+/*
+ * Theme sombre, repris de T5.
+ *
+ * `prefers-color-scheme` et non une classe : le theme suit la preference du
+ * systeme, ce qui est le comportement que la page de statut a deja depuis T5.
+ * Les quatre couples de ce theme atteignent AA, remesures par jetons.test.ts.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #18181b;
+    --fond-doux: #27272a;
+    --encre: #f4f4f5;
+    --encre-douce: #a1a1aa;
+    --trait: #3f3f46;
+    --ok: #6ee7a8;
+    --ko: #fca5a5;
+  }
+}

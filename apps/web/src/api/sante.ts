@@ -28,33 +28,45 @@
  *     main, ce qui reste modeste pour deux formes de reponse.
  */
 
-/** En-tete portant l'identifiant de correlation, cote API comme cote worker. */
-export const EN_TETE_CORRELATION = 'X-Request-ID';
+// LE CONTRAT VIENT DESORMAIS DU PAQUET PARTAGE — T10, story MVP-L01-US007.
+//
+// Chemins, codes exploitables, formes de reponse et fonctions de validation
+// etaient declares ICI depuis `T5`. Ils y etaient justes, mais ils n'etaient pas
+// PARTAGES : le jour ou un second consommateur en aurait eu besoin, il les aurait
+// recopies, et c'est ainsi qu'un contrat se dedouble. Ils vivent maintenant dans
+// `@onboarding/contracts`, dont la source unique est un manifeste JSON que le
+// controle Python confronte au schema OpenAPI reellement servi.
+//
+// CE QUI RESTE ICI : le transport. `fetch`, les en-tetes, la classe d'erreur —
+// tout ce qui est propre au navigateur et qu'un autre consommateur ne voudrait pas.
+//
+// La reexportation preserve les imports existants : `PageStatut` et les tests de
+// `T5` importent ces noms depuis ce module, et rien ne justifie de les reecrire.
+export {
+  CHEMIN_READY,
+  CHEMIN_VERSION,
+  EN_TETE_CORRELATION,
+  validerEtatServices,
+  validerVersion,
+} from '@onboarding/contracts';
+export type {
+  Dependance,
+  EtatServices,
+  StatutDependance,
+  StatutGlobal,
+  Version,
+} from '@onboarding/contracts';
 
-/** Chemins d'exploitation. Volontairement hors de `VITE_API_BASE_URL`. */
-export const CHEMIN_READY = '/health/ready';
-export const CHEMIN_VERSION = '/health/version';
-
-export type StatutDependance = 'disponible' | 'indisponible';
-export type StatutGlobal = 'pret' | 'indisponible';
-
-export interface Dependance {
-  readonly nom: string;
-  readonly statut: StatutDependance;
-  readonly duree_ms: number;
-  readonly motif: string | null;
-}
-
-export interface EtatServices {
-  readonly statut: StatutGlobal;
-  readonly dependances: readonly Dependance[];
-}
-
-export interface Version {
-  readonly version: string;
-  readonly revision: string;
-  readonly environnement: string;
-}
+import {
+  CHEMIN_READY,
+  CHEMIN_VERSION,
+  CODES_READY,
+  CODES_VERSION,
+  EN_TETE_CORRELATION,
+  validerEtatServices,
+  validerVersion,
+} from '@onboarding/contracts';
+import type { EtatServices, Version } from '@onboarding/contracts';
 
 /** Charge utile et identifiant de correlation de la reponse qui l'a portee. */
 export interface Reponse<T> {
@@ -66,7 +78,7 @@ export interface Reponse<T> {
  * Echec d'interrogation de l'API.
  *
  * Porte l'identifiant de correlation quand la reponse en avait un : c'est lui
- * que l'utilisateur cite dans un signalement (cahier §17.4).
+ * que l'utilisateur cite dans un signalement (cahier 17.4).
  */
 export class ErreurSante extends Error {
   readonly correlation: string | null;
@@ -76,63 +88,6 @@ export class ErreurSante extends Error {
     this.name = 'ErreurSante';
     this.correlation = correlation;
   }
-}
-
-function estObjet(valeur: unknown): valeur is Record<string, unknown> {
-  return typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
-}
-
-function exigerChaine(source: Record<string, unknown>, cle: string): string {
-  const valeur = source[cle];
-  if (typeof valeur !== 'string') {
-    throw new TypeError(`champ « ${cle} » absent ou non textuel`);
-  }
-  return valeur;
-}
-
-function validerDependance(valeur: unknown): Dependance {
-  if (!estObjet(valeur)) {
-    throw new TypeError('dependance non objet');
-  }
-  const statut = exigerChaine(valeur, 'statut');
-  if (statut !== 'disponible' && statut !== 'indisponible') {
-    throw new TypeError(`statut de dependance inattendu : ${statut}`);
-  }
-  const duree = valeur['duree_ms'];
-  if (typeof duree !== 'number') {
-    throw new TypeError('champ « duree_ms » absent ou non numerique');
-  }
-  const motif = valeur['motif'];
-  if (motif !== null && typeof motif !== 'string') {
-    throw new TypeError('champ « motif » ni nul ni textuel');
-  }
-  return { nom: exigerChaine(valeur, 'nom'), statut, duree_ms: duree, motif };
-}
-
-function validerEtatServices(valeur: unknown): EtatServices {
-  if (!estObjet(valeur)) {
-    throw new TypeError('reponse non objet');
-  }
-  const statut = exigerChaine(valeur, 'statut');
-  if (statut !== 'pret' && statut !== 'indisponible') {
-    throw new TypeError(`statut global inattendu : ${statut}`);
-  }
-  const dependances = valeur['dependances'];
-  if (!Array.isArray(dependances)) {
-    throw new TypeError('champ « dependances » absent ou non tableau');
-  }
-  return { statut, dependances: dependances.map(validerDependance) };
-}
-
-function validerVersion(valeur: unknown): Version {
-  if (!estObjet(valeur)) {
-    throw new TypeError('reponse non objet');
-  }
-  return {
-    version: exigerChaine(valeur, 'version'),
-    revision: exigerChaine(valeur, 'revision'),
-    environnement: exigerChaine(valeur, 'environnement'),
-  };
 }
 
 async function interroger<T>(
@@ -177,10 +132,10 @@ async function interroger<T>(
  * utile qui dit si la plateforme est prete ou degradee.
  */
 export function lireEtatServices(): Promise<Reponse<EtatServices>> {
-  return interroger(CHEMIN_READY, [200, 503], validerEtatServices);
+  return interroger(CHEMIN_READY, CODES_READY, validerEtatServices);
 }
 
 /** Lire la version deployee. Seul 200 est exploitable. */
 export function lireVersion(): Promise<Reponse<Version>> {
-  return interroger(CHEMIN_VERSION, [200], validerVersion);
+  return interroger(CHEMIN_VERSION, CODES_VERSION, validerVersion);
 }
