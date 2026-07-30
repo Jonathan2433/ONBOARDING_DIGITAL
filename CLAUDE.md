@@ -2,10 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T8`** — §1, §4, §5, §7, §8,
+**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T9`** — §1, §4, §5, §7, §8,
 §9, §10 et §11 rectifiés **sur mesures**. **Cinq affirmations de ce document se sont révélées
 fausses : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T9`**
+**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T10`**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** · **`T2`** · **`T3`** · **`T4`** · **`T5`** · **`T6`** · **`T7`** · **`T8`** |
-| **Prochaine action** | **`T9`** — documentation d'exploitation locale. Story `MVP-L01-US008`, issue [#9](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/9), **déjà ouverte** |
-| Stories `Done` | **6 sur 8** : `US001` à `US006`. `US002` a reçu `T2`, `T5` **et `T8`** |
-| Stories restantes | `US007` design system (`P1`) · `US008` documentation, **`T9`** |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T9`**, les neuf |
+| **Prochaine action** | **`T10`** — design system et contrat API. Story `MVP-L01-US007`, **`P1`**, issue [#8](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/8), **déjà ouverte** |
+| Stories `Done` | **7 sur 8** : `US001` à `US006` **et `US008`**. `US002` a reçu `T2`, `T5` et `T8` |
+| Stories restantes | **`US007` seule** — design system, **`P1`**, la seule story reportable du lot |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
 | Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest**. Inchangé depuis `T7` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **156 décisions** · 23 écarts (5 ouverts) · 38 questions (**33 ouvertes**) · **34 risques** |
+| Registres | **158 décisions** · **24 écarts** (5 ouverts) · 38 questions (33 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -103,9 +103,10 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **9 barrées** |
-| **Comment a-t-on fait `T1` à `T8` ?** | **`docs/operations/compte-rendu-t{0,1,2,3,4,5,6,7,8}-lot-1.md`** |
-| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **156 décisions**, et `make docs-check` en **dérive désormais les totaux** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **10 barrées** |
+| **Comment a-t-on fait `T1` à `T9` ?** | **`docs/operations/compte-rendu-t{0,…,9}-lot-1.md`** |
+| **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
+| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **158 décisions**, et `make docs-check` en **dérive les totaux** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
 
 Les cinq documents de cadrage sont **immuables**. Intégrité prouvée par empreinte SHA-256 dans
@@ -269,9 +270,38 @@ de passe de la recette, la base de dev **refuse**. `ROAD-RSK-034`, et vois §7.2
 
 ---
 
-## 4.10 Les décisions qui contraignent ton travail quotidien
+## 4.11 `T9` — documentation d'exploitation locale
 
-Les 156 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+**Le critère disait « les procédures FONCTIONNENT depuis une machine propre ». Le mot qui commande
+tout est « fonctionnent ».** Les 13 commandes `make` du document ont donc été exécutées une par une,
+et les sorties citées sont réelles.
+
+**Le démarrage à froid est véritable, et il l'est plus qu'en `T6` et `T8`.** Ces deux sous-étapes
+avaient supprimé **un** volume. `T9` a détruit **tout** ce que la recette possédait — 6 volumes,
+conteneurs, réseau — **et retiré les 3 images du cache local**. Une machine qui n'aurait jamais vu ce
+projet est dans cet état exact. Remontée : **34 secondes**, 8/8 sains.
+
+**Le développement n'a pas été touché**, sur arbitrage de Jonathan : détruire `dev` aurait supprimé
+`caddy-data`, donc l'autorité approuvée dans son trousseau, et lui aurait coûté une réapprobation.
+
+**Deux faits d'exploitation que seule l'exécution révèle :**
+
+- **après un démarrage à froid, la migration n'est PAS appliquée.** Et `make migrate-status` sur une
+  base non migrée affiche **rien** en sortant en **0** : une sortie vide ne veut pas dire « tout va
+  bien », elle veut dire « rien n'est appliqué » ;
+- **les 14 publications et les 12 volumes sont DÉRIVÉS** par commande dans le document, jamais
+  recopiés. Toute liste recopiée est un `ECART-021` en puissance.
+
+**Et trois cibles n'avaient jamais tourné.** `make destroy` — destructive et interactive — n'avait
+jamais été lancée depuis son paramétrage en `T8` ; `make caddy-recreate` jamais sur la recette ; et
+`make web-check` avait son origine en dur sur le développement. **Les trois ont été éprouvées, et
+deux portaient un défaut.** Voir §7.21.
+
+---
+
+## 4.12 Les décisions qui contraignent ton travail quotidien
+
+Les 158 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -315,15 +345,15 @@ Les 156 sont dans `docs/decisions/registre-decisions.md`. Celles que tu applique
 | `DEC-481` | Étiquettes : `sha-<empreinte>`, `develop`, version exacte. **Aucun `latest` publié** — plus strict que les conventions §4.1 |
 | `DEC-482` | **Trivy bloque sur `CRITICAL` corrigeable seulement**, et rapporte le reste visiblement |
 
-## 4.11 Les séquences d'identifiants — à respecter absolument
+## 4.13 Les séquences d'identifiants — à respecter absolument
 
 Un identifiant n'est **jamais** réutilisé, **jamais** renuméroté, et un trou n'est **jamais**
 comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`488` en usage | **`DEC-489`** |
-| `ECART-nnn` | `001`–`023` | **`ECART-024`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`490` en usage | **`DEC-491`** |
+| `ECART-nnn` | `001`–`024` | **`ECART-025`** |
 | `QO-nnn` | `072`–`114`, **5 trous** | **`QO-115`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -662,7 +692,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**69 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **59 pendant `T1` à `T8`**. Ils sont
+**73 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **63 pendant `T1` à `T9`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -1092,6 +1122,42 @@ contrôle aurait annoncé « 7 séparations prouvées » en laissant croire dava
 
 ---
 
+## 7.21 Un contrôle juste hier peut être faux aujourd'hui, et c'est toi qui l'as rendu faux
+
+**Apport de `T9`, et les deux défauts qui l'ont produit sont instructifs parce qu'ils ne sont pas de
+la négligence.**
+
+| Défaut | Ce qu'il affirmait | Ce que la mesure dit |
+|---|---|---|
+| `make destroy`, écrite en `T2` | « détruire `caddy-data` obligera à réapprouver la racine dans le trousseau » | vrai pour `dev` — `verify-cert` code 0 — **faux pour la recette**, code 1, racine jamais approuvée |
+| Contrôle de page, écrit en `T5` | l'index doit référencer `/src/main.tsx` | vrai du serveur Vite, **faux de l'artefact bâti**, qui référence `/assets/…js` |
+
+**Les deux étaient JUSTES quand ils ont été écrits.** `T2` et `T5` ne connaissaient qu'un
+environnement. C'est `T8`, en créant le second, qui les a rendus faux — sans que rien ne le signale,
+parce qu'aucun contrôle ne les exerçait dans le nouvel environnement.
+
+> **La règle, sans jargon :** quand une sous-étape ajoute un environnement, une cible de
+> construction ou une plateforme, **relis les contrôles qui n'en connaissaient qu'un**. Un contrôle
+> ne devient pas faux tout seul : il le devient quand le monde change autour de lui, et ce
+> changement, c'est nous qui le faisons.
+
+**Le remède est le même dans les deux cas, et c'est celui du §7.20 :** faire **mesurer** au lieu
+d'affirmer. `destroy` interroge le trousseau et dit ce qu'elle a mesuré — ou dit **« indéterminé »**
+quand elle ne peut pas mesurer, plutôt que de trancher. Le contrôle de page **identifie** la cible
+servie, exige qu'elle soit l'une des deux formes connues, et **échoue** s'il n'en reconnaît aucune.
+
+**Un avertissement faux est pire qu'une absence d'avertissement.** Celui de `destroy` portait sur la
+cible la plus destructive du dépôt : annoncer une conséquence inexistante apprend à passer outre, si
+bien que le jour où il porte sur `dev`, où la conséquence est réelle, il n'est plus lu.
+
+**Et une troisième leçon, de méthode celle-là.** J'ai annoncé à Jonathan qu'un workflow ne s'était
+pas déclenché. Il ne s'était pas déclenché **encore** : `gh run list --branch` rendait 0 pendant trois
+minutes alors que les check-runs sur l'empreinte de tête montraient deux contrôles en cours. **Avant
+d'annoncer qu'une chose est absente, demande-toi si ta sonde distingue « absent » de « pas encore
+là ».** Même famille que `T2-1`, où un 429 masqué avait été lu comme une image inexistante.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — 5 ouverts sur 22
@@ -1144,112 +1210,123 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T9`
+# 9. Par où commencer : `T10`
 
-## 9.0 Ce que les sous-étapes précédentes ont démenti dans ce document
+## 9.0 Ce que les sous-étapes précédentes ont démenti
 
 **Cinq fois, ce document a affirmé faux. Chaque fois, c'était une affirmation présentée comme un
-fait, jamais mesurée.**
+fait, jamais mesurée.** Les cinq sont détaillées dans les comptes rendus de `T5` à `T7` : le
+mandatement Caddy « déjà en place », une commande d'approbation employant `sudo` sur une machine sans
+droits d'administration, « 4 YAML » là où il y en avait 6, « les 3 `Dockerfile` sont mono-étape »,
+et « 78 variables » là où il y en avait 77 dont une en doublon.
 
-1. `T5` : « **`Caddyfile` inchangé : le mandatement existe déjà.** » Aucune route n'y menait à
-   l'API, et `VITE_API_BASE_URL` étant relatif, la page appelait Vite. Corrigé par `DEC-470`.
-2. `T6` : la commande d'approbation du certificat employait **`sudo`** et le trousseau système.
-   Jonathan n'a **aucun droit d'administration** — `sudo` lui est refusé. La commande ne pouvait
-   pas fonctionner, et le corpus le laissait deviner depuis `T0` sans le nommer (§5.1).
-3. `T7` : « **4 YAML** » là où il y en avait **6**. Et ce document affirmait juste au-dessus que
-   le compte de **fichiers**, lui, était tenable — la classe de `ECART-021` était plus large que
-   `T6` ne l'avait cru.
-4. `T7` : « **Les 3 `Dockerfile` sont mono-étape.** » `api` et `worker` en comptaient **deux
-   `FROM`** chacun. Le fond était juste, l'affirmation non.
-5. `T7` : « **78 variables** » dans `.env.example`. Il y en avait **77**, l'une étant déclarée
-   deux fois. Et le `.env` de la machine en comptait **74** (`ECART-022`).
-
-> **`T8` n'a pas démenti ce document — il a démenti la FICHE DU LOT, et deux fois.** Le critère de
-> `T8` énumérait **six** des **sept** séparations du cahier §22.2, et empruntait « Mailpit
-> exclusif » à `MVP-L11-US003`, donc au LOT 11, plus un critère de sortie du LOT 13. C'est
-> `ECART-023`, et c'est la classe de `ECART-018`. **La leçon s'élargit donc : ce n'est pas seulement
-> cette passation qui vieillit, c'est tout document dérivé d'un autre.** Compte sur la source.
+> **`T8` a démenti la FICHE DU LOT, et `T9` a démenti deux CONTRÔLES du dépôt.** La leçon s'élargit
+> à chaque fois :
 >
-> **`T8` a aussi démenti une de MES attentes, ce qui est différent d'une erreur du corpus.**
-> J'attendais que deux réseaux Docker distincts soient mutuellement inatteignables. Ils ne le sont
-> pas sur les ports publiés — mesuré. Voir §7.20 : le remède n'est pas d'affaiblir le contrôle.
+> - **`T8`** : le critère de la fiche énumérait **six** des **sept** séparations du cahier §22.2 —
+>   `ECART-023`, classe de `ECART-018`. **Ce n'est donc pas seulement cette passation qui vieillit,
+>   c'est tout document dérivé d'un autre.**
+> - **`T9`** : deux contrôles affirmaient un état que la mesure contredit — l'avertissement de
+>   `make destroy` et le contrôle de page. **Les deux étaient JUSTES quand ils ont été écrits** ;
+>   c'est `T8`, en créant un second environnement, qui les a rendus faux. `ECART-024`, et vois §7.21.
+> - **`T8` et `T9` ont aussi démenti mes propres attentes**, ce qui est différent d'une erreur du
+>   corpus : deux réseaux Docker distincts ne sont pas mutuellement inatteignables, et une sonde qui
+>   rend zéro ne dit pas « absent » mais « pas encore là ».
 
-**La leçon dépasse ces cas.** Ce document décrit un état vérifié à une date. **Vérifie avant de
-bâtir dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande toute
-prête.** Et quand tu trouves un nombre faux, **cherche tous ceux qui partagent sa propriété** :
-`T8` en a trouvé un de plus, les totaux du registre des décisions, restés à **145** quand le corps
-en déclarait **150**. `DEC-488` pose le contrôle qui les dérive désormais.
+**La leçon dépasse ces cas.** Ce document décrit un état vérifié à une date. **Vérifie avant de bâtir
+dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande toute prête.**
+Et quand tu trouves un nombre faux, **cherche tous ceux qui partagent sa propriété.**
 
 ## 9.1 Objet
 
-**Documentation d'exploitation locale.** Story `MVP-L01-US008`, issue
-[#9](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/9) — **déjà ouverte**, rien à
-rouvrir.
+**Design system minimal et contrat API partagé.** Story `MVP-L01-US007`, issue
+[#8](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/8) — **déjà ouverte**.
 
-**Critère de la fiche §3 :** « Les procédures fonctionnent **depuis une machine propre** ; ports,
-volumes et commandes de diagnostic identifiés. »
+**C'est la SEULE story `P1` du lot**, donc la seule qui puisse faire l'objet d'un arbitrage de report
+sans empêcher la porte `G1`. Les six critères techniques de `G1` sont déjà acquis. **Demande à
+Jonathan s'il veut la réaliser ou la reporter avant de commencer** : c'est une décision de produit,
+pas une décision technique.
 
-**Critère du backlog, littéral :** « Les procédures fonctionnent depuis une machine propre et
-identifient les ports, volumes et commandes utiles. »
+**Critère du backlog, littéral :** « Les tokens, composants de base et génération/partage des
+contrats sont initialisés sans dépendance visuelle arbitraire. »
 
-Les deux concordent, pour une fois. **Mais le périmètre a doublé depuis que la fiche a été écrite :**
-il y a désormais **deux** environnements, **quatorze** publications de ports et **douze** volumes.
-Compte-les, ne les recopie pas.
+## 9.2 La difficulté principale, et elle est réelle
 
-## 9.2 Ce qui est déjà là pour te servir
+**« Sans dépendance visuelle arbitraire » est exactement le cas de la règle §6.5 — ne jamais
+inventer ce qui n'est pas décidé.** Voici ce que le corpus fournit, mesuré :
 
-| Élément | État |
+| Ce que le cahier §13 dit | Ce que cela donne |
 |---|---|
-| Environnements | **deux**, `dev` et `recette`, prouvés séparés sur les 7 points du cahier §22.2 |
-| `Makefile` | **50 cibles**, paramétrées par `ENVIRONNEMENT`. `make help` est la source de vérité |
-| Contrôles rejouables | `stack-check` · `api-check` · `web-check` · `alembic-check` · `persistence-test` · `separations-check` · `recette-check` · `env-check` · `images-pin` |
-| Machine propre | **déjà éprouvé deux fois** : l'exécuteur neuf de `T6`, et le premier `make up-recette` de `T8` sur des volumes inexistants |
-| Ordre de démarrage | `DEC-477`, **avec son témoin négatif** : bucket avant que l'API doive être saine |
-| Un défaut à documenter | **`T8-4`** : après un démarrage interrompu, `make up` échoue une fois puis répare au second appel. Diagnostiqué, reproductible, **non corrigé** — c'est une procédure à écrire |
+| §13.1 « la **charte graphique** » | **le document n'est PAS dans le corpus.** Même situation que `ECART-004`, où la table `DEC-001`–`417` était référencée sans exister |
+| §13.1 « la **police officielle** lorsque sa licence web le permet » | **elle n'est pas nommée**, et la condition de licence n'est pas tranchée |
+| §13.1 « des couleurs de cercles propres à chaque entité » | aucune valeur donnée |
+| §13.2 direction artistique | **qualitative** : « visuel, coloré, ludique, cartes arrondies, ombres douces, **dégradés bleu, rose et violet**, portraits ronds, badges » |
+| §13.3 | « construits au-dessus de primitives accessibles, **notamment Radix UI** » — et la liste des composants : boutons, champs, cartes, badges, menus, modales |
 
-## 9.3 Les pièges propres à `T9`
+**Mesure du 29/07/2026 : le cahier ne contient AUCUNE couleur hexadécimale.** Zéro occurrence de
+`#rrggbb`.
 
-1. **« Depuis une machine propre » ne veut pas dire `make destroy`.** Cette cible supprime
-   `caddy-data`, donc l'autorité de certification interne, et Jonathan devrait réapprouver la racine
-   dans son trousseau. Pour éprouver un démarrage à froid, supprime **le seul volume utile** — c'est
-   ce que `T6` et `T8` ont fait.
-2. **Ne documente pas de mémoire.** La fiche §2.1 dit pourquoi `US008` devait passer avant la CI :
-   « documenter le lancement pendant qu'on vient de l'éprouver produit une documentation juste ;
-   documenter après, de mémoire, produit une documentation fausse. » L'ordre a changé, le motif non.
-   **Exécute chaque procédure que tu écris, et cite sa sortie réelle.**
-3. **Compte les ports et les volumes sur la source.** `make ports` les énumère par environnement,
-   `docker volume ls --filter label=com.docker.compose.project=…` de même. Toute liste recopiée est
-   un `ECART-021` en puissance.
-4. **La racine de Caddy de la recette n'est pas approuvée**, et c'est normal. Documente-le : un
-   navigateur avertira sur `https://app.recette.onboarding.localhost:8443`. Tes contrôles restent
-   en `curl -k`.
-5. **`make images-pin` fait partie de l'exploitation**, et son effet est local et non versionné.
-   Dis quand l'employer et ce qu'il ne fait pas.
-6. **`ROAD-RSK-034` doit apparaître dans la documentation d'exploitation** : un opérateur qui lance
-   les deux environnements doit savoir que les ports publiés de l'un sont joignables depuis l'autre,
-   et que ce sont les secrets distincts qui protègent.
+**Trois conséquences, et la troisième est un piège :**
 
-## 9.4 Les 7 critères de sortie de la porte `G1`
+1. **Tu ne peux pas déduire une palette du corpus.** Ouvre une question au registre plutôt que
+   d'inventer six valeurs plausibles — c'est ce qui a produit `QO-111`, `QO-112` et `QO-113`, et
+   c'est la bonne réponse.
+2. **Radix UI est prescrit par le cahier**, donc ce n'est pas un choix à arbitrer — mais c'est une
+   **dépendance externe à inscrire au registre**, prochaine libre `DEP-018`.
+3. **Le prototype est une référence d'INTENTION, pas une base de code** (règle §2.4), et §13.2 dit
+   que le rendu reste « proche de l'intention du prototype ». Y lire des valeurs de couleur est donc
+   défendable **mais ce n'est pas à toi de le décider** : pose la question. Et si tu l'ouvres, **ne
+   le `grep` jamais en entier** — 2,83 Mo dont 2,64 Mo de Base64, §7.13.
+
+## 9.3 Ce qui existe déjà, et ce qui manque
+
+| Élément | État mesuré |
+|---|---|
+| `packages/ui` | 5 fichiers suivis : `README`, `package.json`, `tsconfig.json`, `src/index.ts`, `src/index.test.ts`. **Un test, aucun composant** |
+| `packages/contracts` | idem, 5 fichiers. **Un test, aucun type** |
+| `eslint-plugin-jsx-a11y` | actif et **éprouvé par témoin négatif** depuis `T5`. C'est le motif déterminant de `DEC-451` : tout composant livré y passera |
+| Vitest + Testing Library | opérationnels sur `jsdom` depuis `T5` (`DEC-471`) |
+| L'API | expose son schéma OpenAPI — `API_DOCS_ENABLED=true` hors production. **Le contrat peut donc être DÉRIVÉ, pas transcrit** |
+
+**Et la frontière du LOT 2, qui ne se négocie pas :** aucun type métier dans `packages/contracts`.
+Ni `Collaborateur`, ni `Cercle`, ni `Parcours`. Le contrat du LOT 1 porte ce que l'API expose
+**aujourd'hui** — les trois endpoints de santé et le format d'erreur du §18.3 — et rien de plus.
+
+## 9.4 Les pièges propres à `T10`
+
+1. **Un composant « de base » sans état accessible n'est pas un composant de base.** `jsx-a11y` est
+   actif, et le cahier §14 impose WCAG 2.2 AA. Un bouton sans nom accessible fera échouer `make lint`.
+2. **Génère le contrat, ne le recopie pas.** §6.4. Si le schéma OpenAPI de l'API est la source, une
+   commande doit le dériver, et un contrôle doit **échouer** quand le contrat et le schéma divergent.
+3. **`packages/ui` et `packages/contracts` sont dans le workspace `pnpm`** : toute dépendance ajoutée
+   y est résolue par le store hors iCloud. Vérifie `make icloud-verify` après installation.
+4. **Le `make check` complet doit rester vert**, tests Vitest compris. Le compte de référence est
+   **166** — 139 pytest, 27 Vitest.
+5. **Ne touche pas aux deux environnements.** `T10` est du code de paquet ; si `make up` doit être
+   relancé, c'est probablement que tu as dépassé le périmètre.
+
+## 9.5 Les 7 critères de sortie de la porte `G1`
 
 | | Critère | État |
 |:--:|---|---|
-| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, sur une machine propre depuis `T6`, **et en recette depuis `T8`** |
+| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, `T6`, `T8`, **et depuis une machine RÉELLEMENT propre en `T9`** — 0 volume, 0 image, remontée en 34 s |
 | ☑ | **Les images multiarchitectures sont construites** | **`T7` — lancées sur les deux, et `arm64` NATIF sur l'image publiée depuis `T8`** |
 | ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin. **Ni `T7` ni `T8` n'ont créé de secret de dépôt** |
-| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur la base de recette depuis `T8`** |
+| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur une base créée de zéro en `T9`** |
 | ☑ | Les logs possèdent un identifiant de corrélation | `T4` |
 | ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
 | ☐ | Jonathan valide le socle | `T11` |
 
-**Les six critères techniques sont acquis.** Restent `T9` documentation, `T10` design system
-(`P1`), `T11` porte. À la validation, le tag **`v0.1.0`** est posé sur `main` (`DEC-428`).
+**Les six critères techniques sont acquis.** Restent **`T10` design system, seule story `P1` et donc
+reportable sur arbitrage**, puis `T11` la porte. À la validation, le tag **`v0.1.0`** est posé sur
+`main` (`DEC-428`).
 
 > **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
 > de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
 > l'interdit. Exigé comme contexte, il ne produirait jamais de statut et **bloquerait toute fusion
 > pour toujours**, y compris pour Jonathan, `enforce_admins` étant actif.
 
-## 9.5 Ce que le LOT 1 ne doit toujours pas faire
+## 9.6 Ce que le LOT 1 ne doit toujours pas faire
 
 Créer une table métier, un modèle SQLAlchemy métier ou un type métier dans
 `packages/contracts` · implémenter une authentification, même partielle, même de test ·
@@ -1302,8 +1379,9 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 156 décisions, 23 écarts
-    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T8, registres
+    ├── decisions/                   ← 158 décisions, 24 écarts
+    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T9, registres
+                                        exploitation-locale.md  ← T9, toutes commandes exécutées
 ```
 
 `.github/` porte les gabarits d'issue et de pull request, et **deux workflows** :
@@ -1374,9 +1452,12 @@ ce lot.
 1. Lire ce document.
 2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
 3. Lire [`fiche-lot-1.md`](docs/operations/fiche-lot-1.md) : la sous-étape en cours.
-4. Lire le **compte rendu de la sous-étape précédente** — `T8` — pour savoir ce qui a été laissé
-   ouvert. Son §3 dit ce qui n'est **pas** couvert, son §6 les six défauts, et son §7 les cinq
+4. Lire le **compte rendu de la sous-étape précédente** — `T9` — pour savoir ce qui a été laissé
+   ouvert. Son §3 dit ce qui n'est **pas** couvert, son §5 les trois défauts, et son §6 les cinq
    recommandations.
+5. Lire [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt,
+   réinitialisation et **huit symptômes de diagnostic réellement rencontrés**. Toutes ses commandes
+   ont été exécutées.
 5. Vérifier l'état réel par `git`, `gh` et les mesures, **pas par ce que la doc affirme**. §9.0
    donne un exemple récent où ce document se trompait sur l'architecture.
 6. Exécuter **une** sous-étape, contrôler, rapporter, attendre la validation.
@@ -1418,7 +1499,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 156 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 158 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

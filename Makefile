@@ -613,12 +613,54 @@ down: ## Arreter la stack. LES VOLUMES SONT CONSERVES
 # elle aurait donc demande a Jonathan de confirmer la destruction d'un projet qui
 # n'est pas celui qu'elle allait detruire. Un message de confirmation qui nomme le
 # mauvais objet est pire qu'une absence de message.
+# T9 — CE MESSAGE DIT DESORMAIS LE VRAI, ET IL NE L'A PAS TOUJOURS DIT.
+#
+# La version de T8 annoncait, quel que soit l'environnement : « Sa perte
+# obligera a reapprouver la racine dans le trousseau macOS, ce qui demande le mot
+# de passe de Jonathan. » Mesure du 29/07/2026, sur les deux racines :
+#
+#     dev      empreinte c9a952a9...  security verify-cert -> code 0  APPROUVEE
+#     recette  empreinte fb8fbc2d...  security verify-cert -> code 1  non approuvee
+#
+# L'avertissement etait donc FAUX pour la recette, dont la racine n'a jamais ete
+# approuvee. Un avertissement qui annonce une consequence inexistante est pire
+# qu'une absence d'avertissement : sur la cible la plus destructive du depot, il
+# apprend a l'operateur a passer outre. Et le jour ou il porte sur `dev`, ou la
+# consequence est reelle, il ne sera plus lu.
+#
+# La correction n'est pas de reformuler : c'est de MESURER. La cible extrait la
+# racine du conteneur et interroge le trousseau. Quand elle ne peut pas mesurer —
+# conteneur arrete, ou `security` absent hors macOS — elle dit qu'elle ne sait
+# pas, plutot que d'affirmer l'un ou l'autre.
+#
+# Elle enumere aussi les volumes REELLEMENT presents, derives du moteur : « y
+# compris caddy-data » etait une affirmation de plus, vraie mais non verifiee.
 destroy: ## Arreter la stack ET SUPPRIMER LES VOLUMES (destructif)
 	@projet=$$(grep -E '^COMPOSE_PROJECT_NAME=' "$(ENV_FILE)" | cut -d= -f2); \
-	echo "  Cette cible supprime les volumes de donnees de $$projet,"; \
-	echo "  y compris caddy-data, qui porte l'autorite de certification interne."; \
-	echo "  Sa perte obligera a reapprouver la racine dans le trousseau macOS,"; \
-	echo "  ce qui demande le mot de passe de Jonathan."; \
+	volumes=$$(docker volume ls --filter "label=com.docker.compose.project=$$projet" \
+		--format '{{.Name}}' | sort | tr '\n' ' '); \
+	nb=$$(printf '%s' "$$volumes" | wc -w | tr -d ' '); \
+	echo "  Cette cible supprime les $$nb volume(s) de donnees de $$projet :"; \
+	for v in $$volumes; do echo "      $$v"; done; \
+	racine=$$(mktemp); \
+	if docker cp "$$projet-caddy-1:/data/caddy/pki/authorities/local/root.crt" "$$racine" \
+			>/dev/null 2>&1 && command -v security >/dev/null 2>&1; then \
+		if security verify-cert -c "$$racine" >/dev/null 2>&1; then \
+			echo "  ATTENTION : l'autorite de certification de CET environnement est"; \
+			echo "  APPROUVEE dans le trousseau macOS -- mesure a l'instant. La detruire"; \
+			echo "  obligera Jonathan a reapprouver la racine, avec son mot de passe de"; \
+			echo "  session. Voir CLAUDE.md 5.6 pour la commande."; \
+		else \
+			echo "  L'autorite de certification de cet environnement n'est PAS approuvee"; \
+			echo "  dans le trousseau -- mesure a l'instant. Sa perte n'a donc aucun cout"; \
+			echo "  pour toi : un navigateur avertissait deja sur cet environnement."; \
+		fi; \
+	else \
+		echo "  Etat du trousseau INDETERMINE : le conteneur caddy est arrete, ou"; \
+		echo "  l'outil securite du systeme est indisponible. Si cet environnement est"; \
+		echo "  celui dont tu as approuve la racine, sa perte te la fera reapprouver."; \
+	fi; \
+	rm -f "$$racine"; \
 	printf "  Taper exactement DETRUIRE pour confirmer : "; \
 	read reponse; [ "$$reponse" = "DETRUIRE" ] || { echo "  annule"; exit 1; }
 	$(DC) down --volumes
@@ -759,8 +801,16 @@ api-check: ## Interroger les trois endpoints de sante et lire leurs codes
 
 # Ce controle passe par Caddy en HTTPS, depuis l'hote : c'est le chemin d'un
 # navigateur, et le seul qui eprouve le mandatement de meme origine (DEC-470).
+#
+# T9 — L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, jamais ecrite en dur.
+# Elle assemble l'hote servi par Caddy et son port HTTPS publie, et n'ajoute le
+# port que s'il n'est pas 443 : une URL en `:443` serait valide mais illisible, et
+# une URL sans port ne joindrait pas la recette, publiee sur 8443.
 web-check: ## Controler la page de statut telle qu'un navigateur la voit
-	@sh infra/scripts/verifier-page-statut.sh
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	sh infra/scripts/verifier-page-statut.sh "$$origine"
 
 test-unit: ## Tests sans dependance externe
 	$(UV) run pytest -m "not integration"
