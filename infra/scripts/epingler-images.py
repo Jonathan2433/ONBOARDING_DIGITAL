@@ -49,11 +49,33 @@ BRANCHE = "develop"
 SERVICES = ("api", "worker", "web")
 REGISTRE = "ghcr.io/jonathan2433/onboarding-digital"
 
-# L'etape qui releve les empreintes, et la ligne qu'elle imprime par service.
-# Le journal de `gh run view --log` prefixe chaque ligne de
-# « <tache>\t<etape>\t<horodatage> », d'ou la recherche sur le contenu seul.
+# Les lignes utiles du journal, reconnues PAR LEUR CONTENU et non par le libelle
+# de l'etape qui les a produites.
+#
+# POURQUOI PAS PAR L'ETAPE — un defaut trouve juste apres la fusion de T8, sur la
+# premiere execution reelle de ce script en conditions nominales.
+#
+#   `gh run view --log` prefixe chaque ligne de « <tache>\t<etape>\t<horodatage> »,
+#   et la premiere version filtrait sur le nom de l'etape. Mesure du 29/07/2026 :
+#   sur l'execution 30465685379, **TOUTES** les etapes du journal portent le
+#   libelle littéral `UNKNOWN STEP` — GitHub n'avait pas encore associe les noms
+#   d'etape aux lignes. Sur l'execution precedente, 30458611741, le nom apparait
+#   20 fois. Le filtre trouvait donc zero ligne, et le script echouait sur un
+#   journal qui contenait pourtant les trois empreintes, le compte et l'identite.
+#
+#   C'est la classe de T6-4 et T7-4 : un controle qui echoue pour une raison
+#   ETRANGERE a ce qu'il mesure. Le libelle d'etape est une commodite d'affichage,
+#   pas une donnee : ces trois motifs, eux, ne peuvent venir que de l'etape visee.
+#
+# DISCRIMINATION VERIFIEE. Le journal porte aussi des lignes de buildx de la forme
+# `pushing manifest for …/api:sha-1060ad6@sha256:…` : elles ne correspondent PAS,
+# le motif exigeant `api : sha256:` et non `api:sha-…@`. Il porte de meme l'echo du
+# code source, `echo "  empreintes attendues : 3   relevees : ${relevees}"` : il ne
+# correspond pas non plus, `${relevees}` n'etant pas une suite de chiffres.
+# Et le filet de securite reste le meme : mon compte est confronte a celui que le
+# PRODUCTEUR declare.
 MOTIF_EMPREINTE = re.compile(
-    r"\b(?P<service>api|worker|web)\s*:\s*(?P<empreinte>sha256:[0-9a-f]{64})"
+    r"\b(?P<service>api|worker|web)\s+:\s+(?P<empreinte>sha256:[0-9a-f]{64})"
 )
 MOTIF_RELEVEES = re.compile(
     r"empreintes attendues\s*:\s*(?P<attendues>\d+)\s+relevees\s*:\s*(?P<relevees>\d+)"
@@ -61,8 +83,6 @@ MOTIF_RELEVEES = re.compile(
 MOTIF_IDENTITE = re.compile(
     r"Identite attendue\s*:\s*version='(?P<version>[^']*)'\s+revision='(?P<revision>[^']*)'"
 )
-
-ETAPE_EMPREINTES = "Relever les empreintes"
 
 
 def lancer(*commande: str) -> tuple[int, str]:
@@ -114,15 +134,15 @@ def relever(journal: str) -> tuple[dict[str, str], str, str]:
     relevees_declarees: int | None = None
     version = revision = ""
 
-    for ligne in journal.split("\n"):
+    lignes = journal.split("\n")
+    for ligne in lignes:
         # Le contenu utile suit le dernier horodatage ISO de la ligne.
         contenu = ligne.split("Z ", 1)[-1] if "Z " in ligne else ligne
-        if ETAPE_EMPREINTES in ligne:
-            if (m := MOTIF_EMPREINTE.search(contenu)) and m.group("service") not in empreintes:
-                empreintes[m.group("service")] = m.group("empreinte")
-            if m := MOTIF_RELEVEES.search(contenu):
-                attendues_declarees = int(m.group("attendues"))
-                relevees_declarees = int(m.group("relevees"))
+        if (m := MOTIF_EMPREINTE.search(contenu)) and m.group("service") not in empreintes:
+            empreintes[m.group("service")] = m.group("empreinte")
+        if m := MOTIF_RELEVEES.search(contenu):
+            attendues_declarees = int(m.group("attendues"))
+            relevees_declarees = int(m.group("relevees"))
         if m := MOTIF_IDENTITE.search(contenu):
             version, revision = m.group("version"), m.group("revision")
 
@@ -132,9 +152,19 @@ def relever(journal: str) -> tuple[dict[str, str], str, str]:
     # sans cela, « 2 empreintes relevees » ressemblerait a un succes partiel
     # plutot qu'a un detecteur incomplet.
     if attendues_declarees is None or relevees_declarees is None:
+        # UN ECHEC QUI DIT POURQUOI. La premiere version se contentait de « pas de
+        # compte annonce », ce qui laissait chercher du cote de la publication
+        # alors que la cause etait dans la lecture du journal. C'est la lecon
+        # T7-13 : la premiere correction a ecrire est celle qui te le dira.
+        etapes = sorted({p[1] for x in lignes if len(p := x.split("\t")) >= 3})
         raise SystemExit(
-            "  ECHEC     l'etape de relevé n'a pas annonce son propre compte.\n"
-            "            Sans lui, rien ne dit si mon extraction est complete."
+            "  ECHEC     le journal ne porte pas la ligne de compte de la publication.\n"
+            f"            journal lu : {len(lignes)} lignes, {len(empreintes)} empreinte(s) "
+            f"reconnue(s) : {sorted(empreintes)}\n"
+            f"            libelles d'etape vus : {etapes[:6]}\n"
+            "            Si le journal est vide ou tronque, l'archivage GitHub peut etre en"
+            " retard :\n"
+            "            reessaie, ou lis l'execution a la main avec `gh run view <id> --log`."
         )
     if relevees_declarees != attendues_declarees:
         raise SystemExit(
