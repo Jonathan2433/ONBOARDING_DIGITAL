@@ -1,0 +1,124 @@
+/*
+ * Styles des composants de base.
+ *
+ * LOT 1, sous-etape T10, story MVP-L01-US007.
+ *
+ * Cette feuille ne declare AUCUNE valeur : elle ne consomme que les proprietes
+ * personnalisees de `jetons.css`. Une couleur ecrite en dur ici echapperait au
+ * controle de contraste, qui ne lit que les jetons — et la palette validee ne
+ * serait plus celle qui s'affiche. `composants.test.tsx` verifie cette regle.
+ *
+ * Elle exige donc que `jetons.css` soit importe. Les deux sont exportes
+ * separement pour qu'un consommateur puisse prendre les jetons seuls.
+ */
+
+/* ---------------------------------------------------------------------------
+ *  Bouton
+ * ------------------------------------------------------------------------- */
+
+.ex-bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espace-s);
+  padding: var(--espace-s) var(--espace-m);
+  border: 1px solid transparent;
+  border-radius: var(--rayon-m);
+  font-family: var(--police);
+  font-size: var(--taille-s);
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+
+  /* Cible tactile d'au moins 24 px : WCAG 2.2 critere 2.5.8, nouveau en 2.2 et
+     donc facile a manquer. La hauteur est portee a 40 px, confortable au doigt. */
+  min-height: 40px;
+}
+
+/* LE FOCUS EST VISIBLE, ET IL N'EST PAS NEGOCIABLE (WCAG 2.4.7).
+   `:focus-visible` et non `:focus` : l'anneau apparait au clavier et pas au clic
+   a la souris, ce qui evite qu'on soit tente de le supprimer parce qu'il gene. */
+.ex-bouton:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.ex-bouton[data-variante='primaire'] {
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+}
+
+.ex-bouton[data-variante='secondaire'] {
+  background: var(--fond);
+  color: var(--encre);
+  border-color: var(--trait);
+}
+
+/* L'etat desactive ne se signale PAS par la seule couleur : le curseur change et
+   l'attribut `disabled` est porte par l'element, donc annonce par les
+   technologies d'assistance. WCAG 1.4.1 interdit de reposer sur la couleur seule. */
+.ex-bouton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ *  Badge
+ * ------------------------------------------------------------------------- */
+
+.ex-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-pastille);
+  background: var(--fond-doux);
+  color: var(--encre);
+  font-family: var(--police);
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  line-height: 1.25;
+
+  /* LE TEXTE PORTE TOUJOURS L'INFORMATION. Un badge dont le sens tiendrait a sa
+     couleur seule enfreindrait WCAG 1.4.1 ; c'est pourquoi le composant EXIGE
+     un contenu textuel et que le test le verifie. */
+}
+
+.ex-badge[data-ton='ok'] {
+  color: var(--ok);
+  border-color: currentcolor;
+}
+
+.ex-badge[data-ton='ko'] {
+  color: var(--ko);
+  border-color: currentcolor;
+}
+
+.ex-badge[data-ton='marque'] {
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  border-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ *  Carte — « cartes arrondies, ombres douces », cahier 13.2
+ * ------------------------------------------------------------------------- */
+
+.ex-carte {
+  display: block;
+  padding: var(--espace-l);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-l);
+  background: var(--fond);
+  color: var(--encre);
+  box-shadow: var(--ombre-douce);
+  font-family: var(--police);
+}
+
+.ex-carte__titre {
+  margin: 0 0 var(--espace-s);
+  font-size: var(--taille-l);
+  font-weight: 700;
+  line-height: 1.25;
+}

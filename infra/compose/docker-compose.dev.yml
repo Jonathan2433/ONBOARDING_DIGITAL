@@ -1,0 +1,81 @@
+# ============================================================================
+#  Surcouche de l'environnement de DEVELOPPEMENT
+#
+#  LOT 1, sous-etape T2, story MVP-L01-US002. Decision DEC-444.
+#
+#  Projet Compose : onboarding-dev, fixe par COMPOSE_PROJECT_NAME dans .env.
+#  Ce fichier ne se lance jamais seul : il complete docker-compose.base.yml.
+#
+#  PUBLICATION DES PORTS — cahier des charges 22.2
+#
+#  Le cahier pose que PostgreSQL, Redis, MinIO et Mailpit ne sont jamais
+#  exposes publiquement. Toutes les publications ci-dessous sont donc liees
+#  explicitement a 127.0.0.1, et jamais a 0.0.0.0 : les services sont
+#  joignables depuis cette machine et depuis aucune autre, y compris sur le
+#  reseau local ou depuis un partage de connexion.
+#
+#  Sans le prefixe 127.0.0.1, Docker publie sur toutes les interfaces et
+#  contourne le pare-feu de macOS. C'est le defaut, et c'est un piege : la
+#  cible `make ports` verifie qu'aucun service n'ecoute ailleurs que sur la
+#  boucle locale, et elle echoue sinon.
+#
+#  LIMITES MEMOIRE — DEC-440
+#
+#  Docker ne dispose que de 7,75 Gio sur cette machine. Les huit limites
+#  ci-dessous totalisent 6 Gio, ce qui laisse ~1,7 Gio de marge au moteur.
+#  Elles ne sont pas decoratives : sans elles, PostgreSQL et MinIO prennent ce
+#  qu'ils trouvent, et un pic pendant un test de charge tue un autre service
+#  sans expliquer pourquoi. Le worker du projet tiers arrete pendant ce lot en
+#  consommait a lui seul 1,774 Gio, ce qui donne l'ordre de grandeur.
+# ============================================================================
+
+services:
+  db:
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT}:5432'
+    mem_limit: 1g
+
+  redis:
+    ports:
+      - '127.0.0.1:${REDIS_HOST_PORT}:6379'
+    mem_limit: 512m
+
+  minio:
+    ports:
+      - '127.0.0.1:${MINIO_HOST_PORT}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_HOST_PORT}:9001'
+    mem_limit: 1g
+
+  mailpit:
+    ports:
+      - '127.0.0.1:${MAILPIT_HOST_PORT}:8025'
+    mem_limit: 256m
+
+  caddy:
+    ports:
+      - '127.0.0.1:${CADDY_HTTP_HOST_PORT}:80'
+      - '127.0.0.1:${CADDY_HTTPS_HOST_PORT}:443'
+    mem_limit: 256m
+
+  api:
+    mem_limit: 1g
+
+  worker:
+    mem_limit: 1g
+
+  web:
+    # T7, DEC-479 — SELECTION EXPLICITE DE LA CIBLE.
+    #
+    # L'image `web` porte deux cibles : `developpement`, le serveur Vite avec
+    # rechargement a chaud, et `execution`, l'artefact statique servi par Caddy.
+    # Le developpement veut la premiere.
+    #
+    # Ne PAS la nommer serait silencieux, et c'est pour cela que la ligne est
+    # ici et non implicite : sans `target`, Docker construit la DERNIERE etape du
+    # Dockerfile, soit `execution`. La stack demarrerait, la page s'afficherait,
+    # les huit services seraient sains — et le rechargement a chaud aurait
+    # disparu sans qu'aucun controle existant ne le dise. `make images-check`
+    # echoue desormais si une surcouche omet cette ligne.
+    build:
+      target: developpement
+    mem_limit: 1g

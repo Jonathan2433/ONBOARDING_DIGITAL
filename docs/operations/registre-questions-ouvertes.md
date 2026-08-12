@@ -1,22 +1,26 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
 |---|---:|---:|
 | Bloquantes avant données réelles ou production générale | 17 | 0 |
 | Non bloquantes pour le développement | 12 | 1 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 5 | 2 |
-| **Total** | **34** | **3** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 9 | 3 |
+| **Total** | **38** | **4** |
 
-**31 questions restent ouvertes.** Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
-(moteur Docker constaté), `QO-108` (moyen de mise en place GitHub, `DEC-448`), `QO-109`
-(atténuations iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa
-réponse et sa date de clôture ; elle n'est jamais retirée du registre.
+**34 questions restent ouvertes**, sur 39 entrées — `QO-085` est close en `T8`, `QO-115` ouverte en `T10`. Ouvertes le 28 juillet 2026 : `QO-111` en `T2`
+(fournisseur de collation PostgreSQL) et `QO-112` en `T3` (liste des extensions
+PostgreSQL), les deux à trancher au **LOT 2** avec le modèle de données ; `QO-113` en `T4`
+(conservation calendaire des journaux), à trancher au **LOT 13**. Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
+(moteur Docker constaté), `QO-107` (protection de branche possible, prouvée, `DEC-449`),
+`QO-108` (moyen de mise en place GitHub, `DEC-448` puis `DEC-449`), `QO-109` (atténuations
+iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa réponse et sa
+date de clôture ; elle n'est jamais retirée du registre.
 
-**Prochain identifiant libre : `QO-111`.**
+**Prochain identifiant libre : **`QO-116`.**
 
 > **Trous conservés dans la séquence.** La plage `QO-072` à `QO-105` couvre 34 numéros mais
 > seules **29** questions sont présentes dans le corpus. Absentes : `QO-075`, `QO-079`,
@@ -40,7 +44,7 @@ de données réelles, soit l'ouverture générale.
 | `QO-078` | Modalités d'effacement dans les sauvegardes | Architecture / RGPD | Production générale | Ouverte |
 | `QO-081` | Hébergement permanent de production | Jonathan / eXalt | Production générale, LOT 14 | Ouverte |
 | `QO-083` | Emplacement de sauvegarde local | Jonathan | LOT 13 | Ouverte |
-| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **Mesurée, à confirmer** |
+| `QO-085` | RAM et espace disque exacts du Mac M5 | Jonathan | LOT 1 | **CLOSE le 29/07/2026, sous-étape `T8`.** Les deux environnements ont été mesurés **simultanément** : **836,6 Mio pour seize services**, soit **10,5 %** des 7 936 Mio alloués à Docker. Voir §1.2 |
 | `QO-087` | SSD externe de sauvegarde | Jonathan | LOT 13 | Ouverte |
 | `QO-088` | Destination chiffrée hors site | Jonathan / eXalt | Production générale | Ouverte |
 | `QO-096` | Schéma définitif des colonnes du CSV | Jonathan / ESM | Données réelles, LOT 9 | Ouverte |
@@ -82,6 +86,154 @@ Jonathan une fois les 8 services démarrés et mesurés en charge. Ils ont en re
 réécrire `ROAD-RSK-027`, dont les deux prémisses étaient inexactes, et à la décision `DEC-440`
 — exécution non simultanée et arrêt du projet tiers pendant le LOT 1.
 
+### Mesures complémentaires du 27 juillet 2026, sous-étape `T1` — empreinte disque de l'outillage
+
+Le volet **disque** de `QO-085` n'avait encore aucune mesure. Le squelette du monorepo en
+fournit une première, avant toute image Docker.
+
+| Emplacement | Taille | Fichiers | Dans iCloud ? |
+|---|---:|---:|---|
+| `node_modules` racine | 178 Mio | 11 066 | Non — exclu par `DEC-453` |
+| `.venv` racine | 98 Mio | 2 176 | Non — exclu par `DEC-453` |
+| `node_modules` des 3 espaces de travail | 40 Kio | 10 | Non — exclus par `DEC-453` |
+| **Sous-total dans le dépôt** | **276 Mio** | **13 252** | **Exclu de la synchronisation** |
+| Store `pnpm`, `~/.local/share/pnpm/store` | 166 Mio | — | Non, hors dépôt (`DEC-439`) |
+| Cache `uv`, `~/.cache/uv` | 103 Mio | — | Non, hors dépôt |
+| CPython 3.12.13 géré par `uv` | 69 Mio | — | Non, hors dépôt |
+| **Total outillage** | **~614 Mio** | — | — |
+
+Deux enseignements pour la suite du lot :
+
+1. **13 252 fichiers** sont soustraits à iCloud dans le seul dépôt, pour un socle qui ne
+   contient encore **aucune dépendance applicative** — ni FastAPI, ni SQLAlchemy, ni Alembic,
+   ni les cinq bibliothèques frontend du cahier §17.1. Le chiffre croîtra nettement aux
+   sous-étapes `T3` et `T5`.
+2. L'espace disque n'est pas le facteur limitant : 563 Gio restent libres. **La mémoire l'est**,
+   avec 7,75 Gio pour Docker. La mesure en charge attendue par `QO-085` reste donc à faire en
+   `T2`, une fois les 8 services démarrés.
+
+### Mesures complémentaires du 28 juillet 2026, sous-étape `T2` — les 8 services démarrés
+
+Projet tiers `observatoire-ecom-studio` arrêté par `docker compose stop` — conteneurs et volume
+préservés. Budget rendu : **7,75 Gio en totalité**.
+
+| Service | Consommation | Limite appliquée (`DEC-440`) |
+|---|---:|---:|
+| minio | 84,96 Mio | 1 024 Mio |
+| db | 19,35 Mio | 1 024 Mio |
+| caddy | 15,36 Mio | 256 Mio |
+| mailpit | 13,25 Mio | 256 Mio |
+| redis | 10,71 Mio | 512 Mio |
+| api | 672 Kio | 1 024 Mio |
+| worker | 672 Kio | 1 024 Mio |
+| web | 556 Kio | 1 024 Mio |
+| **Total mesuré** | **146 Mio, soit 2 % du budget** | 6 144 Mio déclarés |
+
+Les huit limites sont **effectivement appliquées** : lecture de `HostConfig.Memory` sur chaque
+conteneur, et non de la déclaration Compose.
+
+> **⚠ Cette mesure est un plancher, pas la charge réelle, et `QO-085` reste ouverte.**
+> `api`, `worker` et `web` tiennent dans 672 Kio parce qu'ils exécutent un simple processus
+> d'attente : leur code applicatif arrive en `T3` et `T5`. Uvicorn, Dramatiq et Vite changeront
+> l'ordre de grandeur, PostgreSQL aussi dès qu'il portera un schéma et des index. La mesure qui
+> permettra de répondre se fera **après `T5`**, sur une stack qui travaille.
+
+Empreinte disque des images construites, à comparer aux 276 Mio de dépendances mesurés en `T1` :
+
+| Image | Taille |
+|---|---:|
+| `onboarding-dev-web` | **924 Mio** — voir `ROAD-RSK-030` |
+| `onboarding-dev-api` | 284 Mio |
+| `onboarding-dev-worker` | 284 Mio |
+
+### Mesures du 28 juillet 2026, sous-étape `T5` — la stack travaille réellement
+
+C'est **la mesure que `T2` annonçait**, et elle vaut celle-là : uvicorn sert, Dramatiq consomme
+son courtier, Vite transforme et sert la page de statut. Aucun service n'exécute plus un
+processus d'attente.
+
+| Service | `T2` — processus d'attente | `T5` — code applicatif en marche | Limite appliquée |
+|---|---:|---:|---:|
+| api | 672 Kio | **92,55 Mio** | 1 024 Mio |
+| minio | 84,96 Mio | 90,25 Mio | 1 024 Mio |
+| web | 556 Kio | **80,67 Mio** | 1 024 Mio |
+| worker | 672 Kio | **42,25 Mio** | 1 024 Mio |
+| db | 19,35 Mio | 36,77 Mio | 1 024 Mio |
+| mailpit | 13,25 Mio | 18,78 Mio | 256 Mio |
+| caddy | 15,36 Mio | 16,84 Mio | 256 Mio |
+| redis | 10,71 Mio | 11,19 Mio | 512 Mio |
+| **Total** | **146 Mio, 2 %** | **389 Mio, soit 5,0 % du budget** | 6 144 Mio déclarés |
+
+Les trois services applicatifs passent d'environ **2 Mio à 215 Mio** : c'est le facteur qui
+manquait. Aucune limite n'est approchée — la plus sollicitée est `api`, à **9,0 %** de la sienne.
+
+**Réponse au volet RAM :** une stack complète en fonctionnement consomme **5,0 %** des 7,75 Gio
+alloués à Docker. Même en supposant une croissance d'un ordre de grandeur avec les données du
+LOT 2 et la chaîne média du LOT 11, la marge reste confortable pour **un** environnement.
+
+> **`QO-085` n'est pas close pour autant, et voici précisément ce qui manque.** La question porte
+> sur le dimensionnement de la machine, et `DEC-440` n'autorise qu'**un environnement à la fois**
+> — arbitrage pris justement parce que le budget paraissait contraint. La mesure qui permettrait
+> de trancher est celle de `T8` : deux stacks complètes, développement et recette, avec leurs
+> volumes distincts. `T8` prouvera la **séparation** par démarrages successifs, non la
+> simultanéité ; si Jonathan souhaite un jour les faire coexister, c'est là que la mesure devra
+> être faite. **Recommandation : clore `QO-085` à `T8`, pas avant.**
+
+Empreinte disque des images après `T5` :
+
+| Image | `T2` | `T5` | Motif de l'écart |
+|---|---:|---:|---|
+| `onboarding-dev-web` | 924 Mio | **1,02 Gio** | `jsdom` et Testing Library, ajoutés par `DEC-471`. Voir `ROAD-RSK-030`, **aggravé** |
+| `onboarding-dev-api` | 284 Mio | 662 Mio | Dépendances applicatives réelles installées depuis `T3` |
+| `onboarding-dev-worker` | 284 Mio | 662 Mio | Idem |
+
+---
+
+
+## 1.2 Clôture de `QO-085` — la mesure de DEUX environnements simultanés
+
+**Ce que la question demandait, et qui manquait depuis `T2`.** `QO-085` porte sur le
+dimensionnement du Mac M5. `T2` avait mesuré 146 Mio au repos, `T5` 389 Mio en charge, `T7`
+483 à 494 Mio — mais toujours **une seule stack**. Le compte rendu de `T5` §1.1 le disait :
+« clore `QO-085` à `T8`, pas avant », parce que le dimensionnement de deux environnements
+simultanés était le seul volet non mesuré.
+
+**Mesure du 29 juillet 2026, sous-étape `T8`, les deux stacks démarrées en même temps.**
+Relevée par `make separations-check`, qui lit `docker stats` sur les seize conteneurs :
+
+| Environnement | Services | Mémoire |
+|---|---:|---:|
+| `onboarding-dev` | 8 | **528,5 Mio** |
+| `onboarding-recette` | 8 | **308,2 Mio** |
+| **Total** | **16** | **836,6 Mio** |
+| Budget alloué à Docker | | 7 936 Mio |
+| **Part employée** | | **10,5 %** |
+
+**La recette consomme moins que le développement, et c'est explicable :** son image `web` sert
+un artefact statique par Caddy — cible `execution`, `DEC-479` — là où le développement fait
+tourner le serveur Vite, qui est à lui seul le poste le plus lourd et le plus variable de la
+stack.
+
+### Ce que cette mesure prouve, et ce qu'elle n'autorise pas
+
+**Il faut distinguer les deux, parce que ce sont deux choses différentes.**
+
+- **Prouvé :** deux environnements complets tiennent simultanément dans le budget alloué, avec
+  une marge de près de 90 %. Le volet mémoire de `QO-085` est donc **clos**.
+- **Non autorisé pour autant :** `DEC-440` n'admet **qu'un environnement à la fois** en
+  exploitation courante, et cette décision n'est pas modifiée. `T8` prouve la **séparation** par
+  démarrages successifs ; la simultanéité n'a été employée que le temps de la mesure, parce que
+  l'épreuve d'isolement réseau l'exige — une base arrêtée rendrait un échec de connexion
+  indistinguable d'un isolement effectif.
+
+**Une précision qui évite un faux raisonnement.** Les huit limites mémoire de `DEC-440`
+totalisent 6 144 Mio par stack, soit **12 288 Mio pour deux** — plus que les 7 936 Mio alloués.
+Il n'y a pas de contradiction : ce sont des **plafonds**, non des réservations. Docker ne
+préempte rien ; seule la consommation réelle compte, et elle est de 836,6 Mio.
+
+**Le volet disque**, mesuré en `T5`, n'est pas modifié par `T8` : la recette ajoute six volumes
+et tire trois images déjà présentes en variante `arm64`.
+
 ---
 
 # 2. Non bloquantes pour commencer le développement
@@ -112,9 +264,14 @@ GitHub interdisant l'auto-approbation.
 | ID | Question | Responsable | Bloque | Statut |
 |---|---|---|---|---|
 | `QO-106` | Retient-on les compléments d'étiquettes GitHub proposés — familles `type`, `gravité` et `état` ? Ils ne sont pas prescrits par les documents validés. | Jonathan | Non. Confort de suivi. | Ouverte |
-| `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | Ouverte |
-| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026** par `DEC-448` : mise en place **par Jonathan dans l'interface GitHub**. Constat reconfirmé en `T0` — `gh` absent, aucun connecteur en session. L'accès Git distant est en revanche authentifié et opérationnel |
+| `QO-114` | **Les droits d'administration sont-ils nécessaires à la production temporaire locale du LOT 13, et si oui qui les accorde ?** Mesure du 29/07/2026 : `id -Gn` ne place `jonathan.dupau` dans **aucun** groupe `admin`, et `sudo` répond « is not in the sudoers file ». Le LOT 13 prévoit `restic`, Uptime Kuma, des services au démarrage et une rotation de journaux hors Docker — plusieurs réclament habituellement des droits élevés. Ce qui a déjà été contourné sans eux : outillage dans `~/.local/bin`, ports 80 et 443 publiés par Docker Desktop, `*.onboarding.localhost` résolu sans toucher à `/etc/hosts`, et l'approbation de la racine Caddy faite dans le trousseau **de session**. | Jonathan / DSI | **LOT 13, à instruire avant** | Ouverte |
+| `QO-115` | **Charte graphique eXalt et police officielle.** Le cahier §13.1 les exige ; aucune des deux n'est dans le corpus, et le prototype référence explicitement « la charte EXALT » — elle existe donc, nous ne l'avons pas. `T10` a livré des jetons **relevés du prototype** et une **pile système**, ce qui satisfait « sans dépendance visuelle arbitraire » mais reste une approximation de la charte réelle | Jonathan / Léa | **LOT 4**, avant les premiers écrans métier | Ouverte |
+| `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | **Close le 27/07/2026 par l'affirmative.** Le plan autorise la protection classique sur ce dépôt privé personnel : `main` et `develop` sont protégées avec `enforce_admins`, et le rejet du push direct est prouvé (`GH006`). **Le repli `pre-push` devient sans objet.** `DEC-449` |
+| `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026.** Réponse initiale `DEC-448` — mise en place dans l'interface par Jonathan. **Réponse effective `DEC-449`, qui remplace `DEC-448`** : installation du binaire `gh` 2.96.0 dans `~/.local/bin` par l'agent, Homebrew étant inutilisable, puis authentification par Jonathan et exécution par `gh` |
 | `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. Était à trancher au LOT 1, avant création des volumes. | **Close le 27/07/2026**, sous-étape `T0`, par `DEC-439` et `DEC-447` |
+| `QO-113` | **Comment appliquer la conservation de 30 jours des journaux techniques ?** Le cahier §28.3 demande « logs techniques : 30 jours » **et** « rotation et limite de taille obligatoires ». `DEC-467` satisfait le second volet : le pilote `json-file` de Docker rotate par taille sur les huit services. Il ne peut pas satisfaire le premier : **ce pilote borne par la taille, jamais par la durée**. Une conservation calendaire suppose une collecte centralisée — agrégateur externe, ou politique de rétention sur un volume dédié. `LOG_RETENTION_DAYS=30` porte l'intention dans `.env.example` mais n'est consommée par aucun code aujourd'hui, et c'est délibéré : une variable lue sans effet serait plus trompeuse qu'une variable inerte. | Jonathan / exploitation | **Non pour `G1`.** Le LOT 1 n'a pas d'exigence de conservation. À trancher au **LOT 13**, avec la production temporaire et la supervision. | Ouverte |
+| `QO-112` | **Quelles extensions PostgreSQL activer, et dans quelle migration ?** Le modèle §28 place en première étape « les extensions strictement nécessaires », mais **aucun document du corpus n'en nomme une seule** — vérifié le 28/07/2026, zéro occurrence de `pg_trgm`, `unaccent`, `citext`, `pgcrypto`, `uuid-ossp` dans le cahier comme dans le modèle. Deux constats : `gen_random_uuid()` est intégré à PostgreSQL depuis la version 13, donc les clés UUID du modèle §3 n'exigent aucune extension ; et le modèle §26.1 laisse la recherche tolérante explicitement ouverte, ses index arrivant à la migration 16. `DEC-463` a donc livré une migration `0001_initial` **vide**, ce que la roadmap autorise. Point d'attention : `CREATE EXTENSION` exige des droits élevés qu'un compte applicatif de production n'aura peut-être pas — la migration qui les activera doit en tenir compte. | Jonathan / architecture | **Non pour `G1`.** À trancher au **LOT 2**, avec les tables et les index de recherche. | Ouverte |
+| `QO-111` | **Quel fournisseur de collation et quelle locale pour le cluster PostgreSQL ?** La collation est fixée à l'`initdb` : la changer plus tard exige de **recréer le cluster**, donc de perdre les données. À `T2`, l'instance a été créée avec les valeurs par défaut de l'image, volontairement, faute de décision. Le trombinoscope portera des noms français accentués et le cahier §26.1 exige des index de recherche : le tri, la comparaison insensible à la casse et la recherche sans accent en dépendent directement. Options connues : le fournisseur `libc` avec une locale `fr_FR.UTF-8`, ou le fournisseur **`icu`** avec une locale `fr-FR`, disponible dans l'image Debian retenue par `DEC-458`. | Jonathan / architecture | **Non pour `G1`.** Bloquante **avant toute donnée réelle**, donc avant le LOT 9, et à trancher au **LOT 2** avec le modèle de données — c'est là que naissent les index de recherche. | Ouverte |
 | `QO-110` | Quelle nomenclature et quelle langue pour les en-têtes du CSV collaborateurs ? Jonathan n'a pas encore de visibilité sur la source de données réelle. Traitement retenu en attendant : le schéma définit des champs logiques `F01` à `F19` et un profil de correspondance versionné associe les en-têtes réelles (`DEC-434`). Un profil provisoire, non normatif, est utilisé dans le jeu d'exemple. | Jonathan / ESM | Non pour `G0`. Rattachée à `QO-096`, **bloquante avant l'import réel** au LOT 9. | Ouverte |
 
 ---

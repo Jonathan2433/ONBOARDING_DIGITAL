@@ -1,0 +1,103 @@
+# Caddyfile — eXalt Onboarding Digital, environnement local
+#
+# LOT 1, sous-etape T2, story MVP-L01-US002. Decision DEC-446.
+#
+# HTTPS local par autorite interne. Motifs :
+#   - le cahier des charges 22.2 pose qu'aucun domaine public n'est necessaire
+#     pendant la phase locale ;
+#   - macOS resout *.localhost vers 127.0.0.1 sans modifier /etc/hosts ;
+#   - motif determinant : les cookies Secure et SameSite du LOT 3 ne peuvent
+#     pas etre eprouves en HTTP clair. Les decouvrir apres la porte G1 serait
+#     le scenario de reouverture que signale ROAD-RSK-002.
+#
+# La racine de l'autorite interne doit etre approuvee UNE FOIS dans le
+# trousseau macOS. C'est une action de Jonathan : elle demande son mot de
+# passe, l'agent ne la fait pas a sa place.
+#
+# ETAT A T5 : les deux services ecoutent. La page de statut est servie sur
+# app.onboarding.localhost, et l'API sur api.onboarding.localhost.
+#
+# T8 — UN SEUL CADDYFILE POUR LES DEUX ENVIRONNEMENTS.
+#
+#   Les adresses de site sont substituees depuis l'environnement du processus
+#   Caddy, avec le developpement pour DEFAUT : un `.env` qui ne declare rien
+#   continue donc de servir app./api.onboarding.localhost, a l'identique.
+#
+#   POURQUOI PAS UN CADDYFILE PAR ENVIRONNEMENT. Le bloc `app.` porte le
+#   mandatement de meme origine de DEC-470 — /health/*, /api/* et le
+#   fourre-tout. Le dupliquer creerait deux copies a maintenir d'une regle de
+#   securite, et le jour ou l'une divergerait, la recette n'eprouverait plus le
+#   montage que la production emploie. C'est le motif de DEC-466 pour le
+#   masquage, et celui que T7 §2.3 a suivi en NE dupliquant pas ce fichier.
+#
+#   MESURE DU 29/07/2026, ET ELLE ETAIT NECESSAIRE : rien ne garantissait que
+#   Caddy substitue une variable dans une ADRESSE DE SITE, qui est lue avant
+#   l'analyse des directives. Eprouve par `caddy adapt` sur un conteneur
+#   jetable, dans les DEUX sens — sans les variables, les hotes adaptes sont
+#   `app./api.onboarding.localhost` ; avec elles, `app./api.recette.
+#   onboarding.localhost`. Sans le second essai, « la configuration est valide »
+#   aurait ete la meme observation dans les deux cas et n'aurait rien prouve.
+#
+#   Les variables doivent atteindre le PROCESSUS : un `.env` ne suffit pas,
+#   Compose ne transmet que ce que `environment:` declare. Elles sont donc
+#   declarees sur le service `caddy` de docker-compose.base.yml.
+
+{
+	# Autorite de certification interne, aucune dependance externe.
+	local_certs
+
+	# API d'administration, sur la boucle locale du conteneur uniquement.
+	# Elle sert au healthcheck : interroger l'API d'administration est un
+	# controle qui echoue reellement si Caddy est mal configure.
+	admin localhost:2019
+
+	# Journalisation JSON. Le format est impose par le cahier 28.1 ; la
+	# correlation applicative arrive en T4.
+	log {
+		format json
+	}
+}
+
+{$CADDY_SITE_APP:app.onboarding.localhost} {
+	tls internal
+
+	# DEC-470 — LA PAGE ET L'API PARTAGENT UNE SEULE ORIGINE.
+	#
+	# La page est servie ici, l'API vit sur api.onboarding.localhost : ce sont
+	# deux origines distinctes pour un navigateur. Trois montages etaient
+	# possibles, et celui-ci est retenu :
+	#
+	#   - CORS sur l'API : ajoute une surface de securite permanente, et
+	#     compliquerait les cookies Secure et SameSite du LOT 3 — or c'est
+	#     precisement pour pouvoir les eprouver que DEC-446 impose HTTPS local ;
+	#   - renvoi par le serveur de developpement Vite : disparait des qu'une
+	#     image de production sert un artefact statique, donc a refaire en T7 ;
+	#   - mandatement par Caddy, ici : le navigateur ne voit qu'une origine,
+	#     l'API n'est pas modifiee, l'en-tete X-Request-ID reste lisible par la
+	#     page sans Access-Control-Expose-Headers, et le montage survit a la
+	#     recette comme a la production.
+	#
+	# Les blocs `handle` sont mutuellement exclusifs : le premier qui correspond
+	# traite la requete. L'ordre compte donc, et le fourre-tout vient en dernier.
+
+	# Endpoints d'exploitation, volontairement hors du prefixe versionne
+	# (DEC-465).
+	handle /health/* {
+		reverse_proxy api:8000
+	}
+
+	# Contrat versionne. Vide au LOT 1, son contenu arrive au LOT 2.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Tout le reste : la page et ses ressources.
+	handle {
+		reverse_proxy web:5173
+	}
+}
+
+{$CADDY_SITE_API:api.onboarding.localhost} {
+	tls internal
+	reverse_proxy api:8000
+}

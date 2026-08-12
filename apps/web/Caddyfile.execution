@@ -1,0 +1,57 @@
+# Caddyfile de la cible `execution` de l'image web.
+#
+# LOT 1, sous-etape T7, story MVP-L01-US006. Decision DEC-479.
+#
+# CE FICHIER N'EST PAS `infra/caddy/Caddyfile`, ET LA DISTINCTION COMPTE.
+#   infra/caddy/Caddyfile  est le MANDATAIRE INVERSE de la stack : il termine
+#                          HTTPS sur app. et api.onboarding.localhost et applique
+#                          le mandatement de meme origine de DEC-470.
+#   ce fichier             est le SERVEUR DE FICHIERS interne au conteneur `web`.
+#                          Il ne fait ni TLS ni mandatement : il sert l'artefact
+#                          de `vite build` en HTTP clair sur le reseau interne,
+#                          exactement la ou le serveur de developpement Vite
+#                          servait ses modules transformes.
+#
+# Il vit dans `apps/web/` et non dans `infra/caddy/` a dessein : ce dernier est
+# monte EN ENTIER dans le conteneur du mandataire (DEC-472, montage par
+# repertoire). Y deposer un second Caddyfile inviterait la confusion sur celui
+# qui fait foi.
+
+# Ecoute sur toutes les interfaces du conteneur, port 5173.
+#
+# 5173 et non 80 : `infra/caddy/Caddyfile` porte `reverse_proxy web:5173` et n'a
+# pas a savoir quelle cible est en face. 5173 est au-dessus de 1024, donc lie
+# sans privilege par l'utilisateur `onboarding`.
+#
+# Pas de nom d'hote devant `:5173` : le site est servi quel que soit l'en-tete
+# Host. C'est le mandataire qui filtre les hotes, en amont.
+:5173 {
+	# Aucune journalisation d'acces. Meme motif que DEC-469 pour uvicorn : elle
+	# doublerait la ligne applicative sans aucun des dix champs du cahier 28.1,
+	# et journaliserait les sondes de sante toutes les 10 s.
+	log {
+		output discard
+	}
+
+	root * /srv
+
+	# Compression a la volee. L'artefact de Vite est deja minifie ; la
+	# compression porte sur le transport.
+	encode zstd gzip
+
+	# APPLICATION A PAGE UNIQUE — `try_files` avant `file_server`.
+	#
+	# Il n'y a qu'une page au LOT 1, mais le routeur du LOT 4 introduira des
+	# chemins qui ne correspondent a aucun fichier. Sans ce repli, un
+	# rafraichissement sur `/trombinoscope` renverrait 404 alors que
+	# l'application sait afficher la page : le defaut n'apparaitrait qu'au LOT 4,
+	# et se diagnostiquerait cote frontend alors qu'il serait ici.
+	#
+	# CE QUE CE REPLI NE FAIT PAS, et c'est voulu : il ne s'applique pas aux
+	# chemins /health/* ni /api/*, qui n'atteignent jamais ce conteneur — le
+	# mandataire les envoie a l'API (DEC-470). Un artefact statique ne doit
+	# jamais repondre 200 a la place de l'API.
+	try_files {path} /index.html
+
+	file_server
+}

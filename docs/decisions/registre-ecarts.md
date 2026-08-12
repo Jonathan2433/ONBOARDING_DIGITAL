@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T9` du LOT 1
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 16 | 7 | 7 | 2 |
+| Total 24 | 5 | 17 | 2 |
 
 ---
 
@@ -23,19 +23,27 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-003` | Le document prévalent portait le statut « soumis à validation finale » | Non | **Clos** |
 | `ECART-004` | Registre `DEC-001` à `DEC-417` absent du corpus | Oui, pour la clôture de `US002` | **Clos** |
 | `ECART-005` | Schéma CSV initial attendu au LOT 0 alors que le schéma définitif reste ouvert | Non | Ouvert |
-| `ECART-006` | Contenu de `.env.example` dépendant du LOT 1 | Non | Ouvert |
+| `ECART-006` | Contenu de `.env.example` dépendant du LOT 1 | Non | **Clos** |
 | `ECART-007` | 12 risques du cahier §33 sans identifiant | Non | **Clos** |
 | `ECART-008` | Aucune séquence pour les écarts et les dépendances | Non | **Clos** |
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
-| `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | Ouvert |
+| `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
 | `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
 | `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
 | `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
+| `ECART-017` | La documentation du LOT 1 est restée dans son état d'avant l'ouverture | Non | **Clos** |
+| `ECART-018` | La fiche du LOT 1 annonce 8 contrôles d'intégration là où le cahier §23.1 en énumère 11 | Non pour `G1`, structurant pour `T6` | **Clos** |
+| `ECART-019` | La passation annonce 9 placeholders `CHANGE_ME_*` dans `.env.example`, il y en a 7 | Non | **Clos** |
+| `ECART-020` | La fiche du LOT 1 rattache `T5` à la story `US003`, dont la page de statut ne complète aucun critère | Non pour `G1`, structurant pour la traçabilité | **Clos** |
+| `ECART-021` | Quatre nombres du corpus ne sont pas dérivés de leur source : tests, masquage, commits, lignes, et le prochain identifiant de décision | Non | **Clos** |
+| `ECART-022` | Quatre affirmations du corpus non dérivées de leur source, **et un fichier de configuration qui déclare deux fois la même variable** | Non pour `G1` | **Clos** |
+| `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
+| `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
 
-**Prochain identifiant libre : `ECART-017`.**
+**Prochain identifiant libre : `ECART-025`.**
 
 ---
 
@@ -110,6 +118,7 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non |
 | Recommandation | Livrer une **v0.1** couvrant les variables déductibles des décisions déjà validées, avec placeholders explicites et statut « à compléter au LOT 1 ». |
 | Résolution | Ouvert. Traitement prévu en sous-étape S5. |
+| Résolution | **Clos** le 28 juillet 2026, sous-étape `T3`. `.env.example` passe en **v1.0**. La sous-étape `T2` avait montré que les 74 variables du LOT 0 couvraient exactement les besoins de Compose ; `T3` y ajoute la seule variable manquante, **`APP_REVISION`**, exposée par `/health/version` et par le label OCI `revision` de `DEC-445`. Les 7 variables en `CHANGE_ME` sont inchangées, et `DEC-461` en génère cinq localement. |
 
 ## `ECART-007` — 12 risques du cahier §33 sans identifiant
 
@@ -157,7 +166,8 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Aucune traçabilité story ↔ issue ↔ pull request n'est possible aujourd'hui. Or elle est exigée dès le LOT 1. |
 | Bloquant | Non pour la porte `G0`. **Prérequis du LOT 1.** |
 | Recommandation | Installer `gh` ou effectuer la mise en place dans l'interface GitHub. Les commandes prêtes à l'emploi figurent dans [traçabilité GitHub §5](../operations/traceabilite-github.md). |
-| Résolution | Ouvert. Suivi par `QO-107` et `QO-108`. |
+| Résolution | **Clos** le 27 juillet 2026, en sous-étape `T0`, par `DEC-449`. `gh` 2.96.0 installé dans `~/.local/bin` — Homebrew inutilisable, ses répertoires appartenant à l'utilisateur `admin` — et authentifié par Jonathan. **Livré :** 13 étiquettes conformes en nom et couleur, 15 milestones `G0` à `G14` avec `G0` fermée, l'epic `#1` et les 8 stories `#2` à `#9` toutes rattachées à `G1`, et la protection de `main` et `develop`. Le rejet du push direct est **prouvé** (`GH006`), avec témoin positif sur branche non protégée. `QO-107` et `QO-108` closes. |
+| Reste ouvert par ailleurs | Les 104 issues des LOTS 2 à 14 ne sont **pas** créées : elles le seront lot par lot, quand chaque fiche existera. Les familles d'étiquettes complémentaires de `QO-106` ne sont pas créées, n'étant pas prescrites. Les 9 étiquettes GitHub par défaut subsistent. |
 
 ## `ECART-011` — Cinq questions absentes de la plage `QO-072` à `QO-105`
 
@@ -232,3 +242,109 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Rectifier les trois emplacements, et inscrire dans la passation la règle de vérification préalable `git status -sb` avant d'annoncer tout point de retour. |
 | Résolution | **Clos** le 27 juillet 2026. `CLAUDE.md` §1 et §10 et `controles-sortie-lot-0.md` §9 rectifiés, preuves de push versées au document de contrôles. |
 | Constat associé | Le push a réussi **en poussée directe sur `main`**, ce qui prouve que la protection exigée par `DEC-429` n'est pas en place. Suivi par `ECART-010`, `QO-107` et `QO-108`, prérequis du LOT 1. |
+
+## `ECART-017` — La documentation du LOT 1 est restée dans son état d'avant l'ouverture
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, prise en charge de la sous-étape `T1` |
+| Source | `docs/operations/fiche-lot-1.md` L3 à L7 ; `docs/README.md` §8, ligne de la sous-étape `T0` |
+| Constat | Deux inexactitudes, de même origine. **(a)** La fiche du LOT 1 portait toujours en tête l'avertissement « ⚠️ **LE LOT 1 N'EST PAS OUVERT** », alors que `DEC-450` l'a ouvert le 27/07/2026 et que `docs/README.md` §8 est intitulé « Avancement du LOT 1 — **lot ouvert** ». Deux documents du même corpus se contredisaient frontalement. **(b)** L'index attribuait à `T0` les décisions `DEC-439`–`DEC-447`, alors que `T0` a produit `DEC-439` à `DEC-449` — le compte rendu de `T0` §5 en fait foi, et `DEC-449` y remplace `DEC-448`. |
+| Impact | Faible sur le travail, réel sur la confiance dans le corpus. La fiche est le premier document que lit un agent prenant le lot en charge : un avertissement de non-ouverture en tête est exactement l'information qu'il applique sans la vérifier. Le bornage `DEC-439`–`DEC-447` masquait deux décisions dont l'une, `DEC-449`, décrit la mise en place GitHub. |
+| Cause | Défaut de mise à jour, non défaut de contrôle. La fiche a été rédigée **avant** l'ouverture et n'a pas été relue après `DEC-450` ; le bornage de l'index a été écrit alors que `T0` comptait sept arbitrages, avant l'ajout de `DEC-448` et `DEC-449`. Même classe que `ECART-016`. |
+| Bloquant | Non |
+| Recommandation | Rectifier les deux emplacements dans la pull request de `T1`, et non plus tard : un corpus qui se contredit perd sa valeur de source de vérité. |
+| Résolution | **Clos** le 27 juillet 2026. Bandeau de la fiche remplacé par l'état réel du lot ; bornage de l'index porté à `DEC-439`–`DEC-449`. Arbitrage de Jonathan : correction dans la pull request de `T1`. |
+
+## `ECART-018` — La fiche du LOT 1 annonce 8 contrôles d'intégration, le cahier en énumère 11
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 27 juillet 2026, prise en charge de la sous-étape `T1` |
+| Source | `docs/operations/fiche-lot-1.md` §3 sous-étape `T6`, et §4.1 ; cahier des charges §23.1 |
+| Constat | La fiche annonce « **8 contrôles** du cahier §23.1 » à deux endroits. Le cahier §23.1 en énumère **11** : formatage, lint, typage, tests unitaires, tests d'intégration PostgreSQL, tests API, tests frontend, contrôle Alembic, détection de secrets, audit de dépendances, construction des images. La roadmap et le backlog en listent, eux, **7** — formatage, lint, types, tests, migrations, secrets, vulnérabilités. **Aucune source du corpus ne donne 8.** |
+| Impact | **Structurant pour `T6`.** Le nombre annoncé détermine ce que la CI doit exécuter et ce que la porte `G1` contrôlera. Trois contrôles du cahier — tests API, tests frontend, construction des images — n'apparaissent dans aucun des deux décomptes inférieurs et auraient pu être omis. Aucun impact sur `T1`, qui ne crée pas de workflow. |
+| Cause | Défaut de contrôle, pas défaut de livrable : le nombre n'a pas été obtenu par comptage dans la source. **Même classe exactement que le défaut `B-5` de `T0`**, où la fiche annonçait 7 garde-fous de démarrage là où la politique de configuration en définit 11, et retenait qui plus est les mauvais. |
+| Bloquant | Non pour `G1`. Aurait été bloquant pour la validité de `T6`. |
+| Recommandation | Porter le nombre à 11 dans la fiche et **énumérer les onze**, plutôt que d'en donner le seul décompte : c'est l'énumération, non le nombre, qui empêche une omission. Rappeler que la roadmap et le backlog en listent 7, et que le cahier prévaut (règle de préséance). |
+| Résolution | **Clos** le 27 juillet 2026. Fiche §3 et §4.1 rectifiées, les onze contrôles énumérés depuis le cahier. Arbitrage de Jonathan : correction dans la pull request de `T1`. |
+
+## `ECART-019` — Le nombre de placeholders `CHANGE_ME_*` annoncé ne correspond pas au fichier
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T2` du LOT 1 |
+| Source | `CLAUDE.md` §5.6 ; `.env.example` |
+| Constat | La passation annonce « 74 variables, aucun secret, **9** placeholders `CHANGE_ME_*` ». Le fichier contient **9 occurrences de la chaîne** mais seulement **7 variables** dont la valeur est un `CHANGE_ME_*` : `APP_SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `IMPORT_SOURCE_RETENTION_DAYS`, `UPTIME_KUMA_PUSH_URL`. Les deux occurrences restantes sont des **commentaires** — le mode d'emploi en tête de fichier, et la description du garde-fou en §352. Le nombre de variables est bien de 74, il est exact. |
+| Impact | Faible mais réel, et il n'est **pas cosmétique**. Le premier des 11 garde-fous de démarrage exige qu'aucune variable ne vaille encore `CHANGE_ME_*` ; son test, à écrire en `T3`, doit énumérer les variables réellement concernées. Un test bâti sur « il y en a 9 » chercherait deux variables qui n'existent pas, ou compterait des commentaires. |
+| Cause | **Défaut de contrôle, pas défaut de livrable** : le nombre a été obtenu par un `grep -c` sur la chaîne, et non sur les affectations. Même classe que `ECART-018` — 8 contrôles annoncés contre 11 — et que le défaut `B-5` de `T0`. Le comptage a été refait ici sur le motif `^[A-Z_][A-Z0-9_]*=CHANGE_ME`. |
+| Bloquant | Non |
+| Recommandation | Rectifier la passation, et **dériver le nombre du fichier** plutôt que de le recopier. En `T3`, le test du garde-fou doit lire la liste des variables `CHANGE_ME_*` depuis `.env.example` au lieu d'en coder le nombre en dur : c'est la seule forme qui ne se périme pas. |
+| Résolution | **Clos** le 28 juillet 2026. `CLAUDE.md` §5.6 rectifié à 7, avec la liste. La distinction entre les 7 variables et les 2 mentions en commentaire est explicitée. |
+
+## `ECART-020` — La fiche du LOT 1 rattache `T5` à une story que la page de statut ne complète pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, à la prise en charge de la sous-étape `T5` du LOT 1 |
+| Source | [`fiche-lot-1.md`](../operations/fiche-lot-1.md) §3 ; backlog `EPIC MVP-L01` ; roadmap LOT 1 |
+| Constat | La fiche §3 rattache `T5` aux stories **`MVP-L01-US002` et `MVP-L01-US003`**, dont les issues `#3` et `#4` étaient closes. Or le critère de `US003` est littéralement « chaque endpoint retourne un statut explicite ; readiness vérifie les dépendances nécessaires ; la version correspond au build » : il est **intégralement satisfait depuis `T3`**, et la page de statut n'y ajoute rien. La « page web de statut » ne figure nulle part dans un critère de story : elle appartient à la **démonstration attendue** du LOT 1 dans la roadmap. Le rattachement à `US002` est en revanche fondé, son critère nommant `web` parmi les huit services devant démarrer avec une commande — or le conteneur démarrait en `sleep infinity` et le navigateur recevait un **502**. La fiche §6 ne rattache d'ailleurs sa ligne « Frontend » qu'à **`US002`** : la fiche se contredit d'un paragraphe à l'autre. |
+| Impact | Faible sur le code, réel sur la traçabilité. Rattacher un travail à une story déjà satisfaite dilue la preuve : à la porte `G1`, on ne saurait plus dire quel critère la page démontre. C'est aussi ce qui aurait conduit à rouvrir une issue sans motif. |
+| Cause | La fiche a été rédigée avant `T3` : à ce moment-là, les endpoints de santé et leur consommation par une page semblaient un même travail. La séparation est apparue quand `T3` a livré les trois endpoints, complets et éprouvés, sans aucun écran. |
+| Bloquant | Non pour `G1`, structurant pour la traçabilité de la démonstration |
+| Recommandation | Rattacher `T5` à **`US002` seule**, cohérent avec la fiche §6, et tracer la page de statut comme élément 2 de la démonstration attendue. Laisser `#4` close. |
+| Résolution | **Clos** le 28 juillet 2026. Arbitrage de Jonathan, rendu sur les trois options présentées : **rouvrir l'issue `#3`**, livrer `T5` sous `US002`, la refermer à la fusion. `#4` reste close. La fiche §3 est rectifiée. |
+
+## `ECART-021` — Quatre nombres du corpus ne sont pas dérivés de leur source
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 28 juillet 2026, sous-étape `T5` du LOT 1 |
+| Source | [`compte-rendu-t4-lot-1.md`](../operations/compte-rendu-t4-lot-1.md) §2 et §6 ; [`docs/README.md`](../README.md) §8 ; `CLAUDE.md` §1 ; [`registre-decisions.md`](registre-decisions.md) |
+| Constat | **1. Nombre de tests.** Le compte rendu de `T4` §6 et `docs/README.md` §8 annoncent **131 tests**. `pytest` en collecte **139**, prouvé par `pytest -m integration` : « 8 selected, 131 deselected ». Le compte des **unitaires** a été pris pour le total ; il manque les 8 tests d'intégration. `CLAUDE.md` §1 — « 139 : 131 unitaires, 8 d'intégration » — est le seul juste. Les **3 tests Vitest** n'étaient comptés nulle part.<br>**2. Tests de masquage.** Le compte rendu de `T4` §1 et §2 et la fiche §3 annoncent « **30 tests** » de masquage et de format. `packages/observabilite` collecte **52 cas** — 16 en journalisation, 36 en masquage — pour **21 fonctions**. Aucune lecture ne donne 30.<br>**3. Commits et lignes.** `CLAUDE.md` §1 annonce `develop` à **19 commits**, en avance de **6**, et **30 487 lignes**. La mesure donne **20**, **+7** et **30 566**. Recalculé au commit précédent `0178b43`, on retrouve exactement 30 487 : le document se décrit dans son état **d'avant son propre commit**. Même classe que le constat `B-3` de `T0`.<br>**4. Prochain identifiant de décision.** Le registre des décisions portait « **Prochain identifiant libre : `DEC-451`** » alors que `DEC-469` était en usage — **19 décisions de retard**. Le marqueur, ainsi que le bloc « ce que `T1` a délibérément écarté », étaient restés à la fin de la section 1, après le tableau de `T4`, les sous-étapes suivantes ayant inséré leurs tableaux avant eux. |
+| Impact | Faible pour les trois premiers, **réel pour le quatrième** : un agent qui se fie au registre plutôt qu'à l'index de `docs/README.md` créerait `DEC-451`, en collision avec 19 décisions existantes. Un identifiant réutilisé est précisément ce que la règle de tenue interdit. Pour les trois premiers, l'effet est la confiance dans le corpus : un décompte de tests faux empêche de voir qu'une suite a régressé. |
+| Cause | Même classe que `ECART-018` et `ECART-019` : des nombres **recopiés** plutôt que dérivés de la source. Le quatrième s'y ajoute d'un mécanisme différent — un bloc de fin de section qui n'a pas suivi l'insertion des sections suivantes. |
+| Bloquant | Non |
+| Recommandation | Corriger les quatre. Et pour ne pas les recréer : **`T6` doit ajouter à la CI un contrôle qui dérive ces nombres de la source et échoue s'ils divergent** de ce que la documentation affirme. C'est le même garde-fou que celui recommandé pour les cinq empreintes SHA-256 par `ROAD-RSK-029` — un contrôle qui recalcule plutôt qu'un humain qui relit. |
+| Résolution | **Clos** le 28 juillet 2026. Les quatre nombres sont rectifiés, le bloc de `T1` est replacé dans sa sous-étape, et le marqueur d'identifiant libre est porté à `DEC-474`. La recommandation de contrôle de CI est reportée à `T6`. |
+
+## `ECART-022` — Quatre affirmations non dérivées de leur source, et une variable déclarée deux fois
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, prise en charge de la sous-étape `T7` du LOT 1 |
+| Source | `CLAUDE.md` §1, §5.4 et §9.2 ; [`.env.example`](../../.env.example) ; cahier des charges §23.2 |
+| Constat | **Cinq constats, dont quatre partagent une propriété : une affirmation que la source contredit.**<br>**1. `.env.example` déclarait `APP_REVISION` deux fois**, aux lignes 53 et 357, dans des blocs **strictement identiques** — même commentaire, même valeur, vérifié octet pour octet. Le fichier comptait donc **78 affectations pour 77 noms distincts**, là où `CLAUDE.md` §5.4 annonce « 78 variables ». La seconde déclaration se trouvait de surcroît dans la section « FRONTEND », où elle n'a rien à faire : elle n'est pas préfixée `VITE_` et n'est pas exposée au navigateur.<br>**2. `CLAUDE.md` §1 annonce « 4 YAML ».** Le dépôt en portait **6** : 4 `.yml` et 2 `.yaml`. Le compte n'avait retenu qu'une des deux extensions.<br>**3. `CLAUDE.md` §9.2 affirme « Les 3 `Dockerfile` sont mono-étape ».** Mesure : `api` et `worker` en comptaient **deux `FROM`** chacun, `web` un seul. Le fond était juste — aucun n'avait de séparation construction/exécution — l'affirmation non.<br>**4. Le cahier §23.2 exige qu'une fusion sur `develop` « déploie la recette locale ».** Mesure du 29/07/2026 : `gh api repos/.../actions/runners` renvoie **`total_count: 0`**, il n'existe aucun exécuteur auto-hébergé, et un exécuteur GitHub ne peut pas atteindre le Mac de Jonathan. Ce volet du §23.2 **n'est pas atteignable** par l'intégration continue dans le montage actuel.<br>**5. Conséquence mesurée du constat 1, et la plus sérieuse.** `make env` est **idempotent** : si `.env` existe, il n'y touche pas. Une variable ajoutée à `.env.example` **après** la première création du `.env` n'y arrive donc jamais. Le `.env` de cette machine comptait **74 affectations contre 78** : manquaient `APP_REVISION`, ajoutée en `T3`, ainsi que `LOG_MAX_SIZE` et `LOG_MAX_FILES`, ajoutées en `T4`. |
+| Impact | **Le cinquième constat a un effet réel et mesuré.** Compose substituait une **chaîne vide** à `${APP_REVISION}`, faute de valeur par défaut : l'image de développement a été construite avec `APP_REVISION=""`, et `/health/version` renvoyait une révision vide. `LOG_MAX_SIZE` et `LOG_MAX_FILES` ont, elles, un défaut dans Compose — `${LOG_MAX_SIZE:-10m}` : la rotation de `T4` fonctionnait donc **par le défaut, pas par `.env`**, ce qui est correct mais n'est pas ce que le compte rendu de `T4` laissait entendre. Le quatrième constat porte sur une exigence du cahier qu'il faut déclarer non couverte plutôt que laisser croire. Les trois premiers n'ont aucun effet technique, et l'effet réel est la confiance dans le corpus. |
+| Cause | **Une seule pour les quatre premiers, et c'est la classe que `ECART-021` avait déjà nommée** : un nombre ou une affirmation **recopiés** au lieu d'être dérivés de la source. Le cinquième a une cause différente et instructive : une cible idempotente **par conception** ne peut pas réconcilier, et rien ne le vérifiait. `make docs-check`, posé en `T6`, couvre les empreintes et les séquences d'identifiants — pas les nombres cités en prose, ce que le compte rendu de `T6` §3 disait explicitement. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Corriger les cinq. Et surtout **poser le contrôle qui manque** : `make env-check` compare les noms déclarés par `.env.example` à ceux de `.env`, nomme les manquants, et **refuse aussi tout doublon dans le modèle**. C'est la parade générale — `make env` ne peut pas corriger, mais quelque chose doit s'en apercevoir. |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T7`. Le doublon est retiré, `.env.example` passe en **v1.1** avec 77 variables et 77 noms distincts. Les trois variables manquantes sont ajoutées au `.env` local, valeurs reprises du modèle, aucune n'étant un secret. Compose emploie désormais des valeurs par défaut explicites — `${APP_VERSION:-0.0.0-dev}`, `${APP_REVISION:-inconnue}` — pour qu'une variable absente dégrade honnêtement au lieu de valoir la chaîne vide. **`make env-check` est créée**, appelée par `make env` et par `make check`. Les affirmations de `CLAUDE.md` §1 et §9.2 sont rectifiées. Le volet non atteignable du §23.2 est déclaré dans l'en-tête de [`images.yml`](../../.github/workflows/images.yml) et dans le compte rendu de `T7` : la recette de `T8` sera lancée à la main. |
+
+## `ECART-023` — La fiche du LOT 1 énumère six des sept séparations du cahier §22.2, et importe deux exigences d'autres lots
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, prise en charge de la sous-étape `T8` du LOT 1 |
+| Source | [`fiche-lot-1.md`](../operations/fiche-lot-1.md) §3, ligne `T8` ; cahier des charges §16.5, §22.2 ; backlog `MVP-L01-US002`, `MVP-L11-US003` ; cahier LOT 13, critères de sortie |
+| Constat | **Trois constats de la même famille : le critère écrit dans la fiche ne correspond pas à sa source.**<br>**1. Une énumération tronquée.** Le cahier §22.2 énumère **sept** séparations, littéralement : « projet Docker distinct ; base PostgreSQL distincte ; bucket MinIO distinct ; volumes distincts ; secrets distincts ; réseau distinct ; ports distincts. » Le critère de la fiche pour `T8` en nomme **six** : « Volumes, base, bucket, réseau, ports et secrets distincts du développement ». **« Projet Docker distinct » manque** — et c'est précisément celle qui **produit** les volumes et le réseau distincts, Compose les préfixant du nom de projet.<br>**2. « Mailpit exclusif » n'est pas une exigence du LOT 1.** Le cahier §16.5 dit « Mailpit en développement **et recette** » : c'est cela que le LOT 1 doit satisfaire. La formule « Mailpit est **exclusif** en recette » est celle de `MVP-L11-US003`, donc du **LOT 11** ; et « aucun e-mail réel ne part de la recette » est un **critère de sortie du LOT 13**. La fiche importe donc dans `T8` deux exigences de lots à venir.<br>**3. Le critère d'acceptation du backlog pour `US002` ne parle pas de recette du tout** : « PostgreSQL, Redis, MinIO, Mailpit, Caddy, web, API et worker démarrent avec une commande ; les volumes survivent au redémarrage », satisfait depuis `T2`. Le mandat de `T8` vient du cahier — « Docker Compose pour développement **et recette** » — et de la fiche, pas de la story. |
+| Impact | **Le premier constat est le plus sérieux, et il aurait été silencieux.** Un agent qui aurait compté sur la fiche aurait livré six séparations et déclaré le critère satisfait. Les deux suivants n'ont pas d'impact sur le livrable mais sur ce qu'on **affirme** : présenter comme prouvée au LOT 1 une exigence du LOT 11 ou du LOT 13 laisserait croire qu'elle est traitée alors qu'elle ne le sera que plus tard. |
+| Cause | **La même que `ECART-018`**, où la fiche annonçait « 8 contrôles de CI » là où le cahier en énumère **11** : une énumération recopiée depuis la source au lieu d'être comptée sur elle. Pour les constats 2 et 3, une formule empruntée à un autre lot sans que sa provenance soit vérifiée. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Compter les sept sur le cahier, jamais sur la fiche. Et **poser le contrôle qui les compte** : `make separations-check` annonce « 7 séparations attendues, N vérifiées » et échoue si les deux nombres diffèrent — un contrôle qui n'énumère pas ce qu'il examine peut toujours n'en avoir examiné qu'une partie. Dire explicitement, dans le compte rendu, ce que le LOT 1 prouve de Mailpit et ce qui appartient aux LOTS 11 et 13. |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T8`. Les **sept** séparations sont prouvées sur l'état réel des deux environnements — 57 contrôles, 0 échec — et le vérificateur compte les séparations examinées. Le critère de la fiche §3 est rectifié pour nommer les sept et pour renvoyer Mailpit à sa source réelle. Ce que `T8` prouve de Mailpit est énoncé sans extrapolation : aucun fournisseur réel configuré, et un e-mail émis par la recette reste dans **sa** capture sans que celle du développement bouge — l'absence de sortie réelle au sens du LOT 13 et la story `MVP-L11-US003` restent **non couvertes**, et c'est dit. |
+
+## `ECART-024` — Deux contrôles affirmaient un état que la mesure contredit, tous deux nés d'un environnement unique
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 29 juillet 2026, sous-étape `T9` du LOT 1 |
+| Source | `Makefile`, cible `destroy` (écrite en `T2`, paramétrée en `T8`) ; `infra/scripts/verifier-page-statut.sh` (écrit en `T5`) |
+| Constat | **Deux constats, une seule propriété commune : un contrôle écrit quand il n'existait qu'UN environnement, devenu faux quand un second est apparu.**<br>**1. `make destroy` annonçait une conséquence inexistante.** Son message avertissait, quel que soit l'environnement : « Sa perte obligera à réapprouver la racine dans le trousseau macOS, ce qui demande le mot de passe de Jonathan. » Mesure du 29/07/2026 sur les deux racines, qui sont distinctes : `security verify-cert` rend **code 0** pour `dev`, empreinte `c9a952a9…`, et **code 1** pour la recette, empreinte `fb8fbc2d…`. La racine de la recette **n'a jamais été approuvée** : l'avertissement était faux pour elle.<br>**2. `verifier-page-statut.sh` exigeait le comportement du serveur de développement.** Il demandait la référence `/src/main.tsx` dans l'index servi. Depuis `T8`, la recette sert l'artefact **bâti** — cible `execution`, `DEC-479` — dont l'index référence `/assets/index-<empreinte>.js` : `/src/main.tsx` n'y existe pas **par construction**. Mesuré : **2 contrôles sur 6 en échec sur une recette parfaitement saine**. |
+| Impact | **Le premier porte sur la cible la plus destructive du dépôt, et son effet est pervers.** Un avertissement qui annonce une conséquence inexistante n'est pas seulement inutile : il apprend à l'opérateur à passer outre. Le jour où il porte sur `dev`, où la conséquence est **réelle** et coûte à Jonathan une réapprobation avec son mot de passe, il ne sera plus lu. Le second aurait fait échouer tout contrôle de page de la recette, et un contrôle qui échoue pour une raison étrangère à ce qu'il mesure finit désactivé — classe `T6-4` et `T7-4`. |
+| Cause | **La même pour les deux, et elle est structurelle plutôt que négligente :** chacun a été écrit à une époque où il n'existait qu'un seul environnement, et il affirmait alors le vrai. `T8` a créé le second sans que ces deux affirmations soient revisitées. C'est la classe de `ECART-021` et `ECART-022` — une affirmation que sa source contredit — mais avec une nuance : ici la source n'a pas changé, **le monde a changé autour de l'affirmation**. |
+| Bloquant | Non pour `G1` |
+| Recommandation | Corriger les deux, et pour la même raison : **faire mesurer au lieu d'affirmer**. `destroy` interroge le trousseau et dit ce qu'il a mesuré — ou dit « indéterminé » quand il ne peut pas mesurer, plutôt que de trancher. Le contrôle de page **identifie la cible servie**, exige qu'elle soit l'une des deux formes connues, et applique les contrôles de cette forme — en **échouant** s'il n'en reconnaît aucune. Et une leçon plus large pour la suite : **quand une sous-étape ajoute un environnement, relire les contrôles qui n'en connaissaient qu'un.** |
+| Résolution | **Clos** le 29 juillet 2026, sous-étape `T9`. `DEC-489` et `DEC-490`. Les deux corrections sont éprouvées par des témoins **dans les deux sens** : le message de `destroy` diffère réellement entre `dev` et la recette, mesure à l'appui, et le contrôle de page passe sur les deux environnements en nommant la cible servie — tout en **échouant** sur une origine qui ne sert pas la page, l'hôte de l'API, où il rend 2 échecs sur 6. |
+
+**Prochain identifiant libre : `ECART-025`.**

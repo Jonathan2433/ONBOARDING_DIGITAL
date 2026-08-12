@@ -1,0 +1,131 @@
+# ============================================================================
+#  eXalt Onboarding Digital - racine du workspace Python
+#
+#  LOT 1, sous-etape T1, story MVP-L01-US001.
+#  Decisions applicables : DEC-442 (mypy strict), DEC-443 (Python 3.12).
+#
+#  Ce fichier n'est pas un paquet installable : il agrege les deux projets
+#  apps/api et apps/worker dans un unique environnement uv, et porte la
+#  configuration partagee de Ruff, mypy et pytest.
+# ============================================================================
+
+[project]
+name = "onboarding-digital"
+version = "0.1.0"
+description = "eXalt Onboarding Digital - racine du workspace Python (uv)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "onboarding-api",
+    "onboarding-worker",
+    "onboarding-observabilite",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "apps/worker", "packages/observabilite"]
+
+[tool.uv.sources]
+onboarding-api = { workspace = true }
+onboarding-worker = { workspace = true }
+onboarding-observabilite = { workspace = true }
+
+# ----------------------------------------------------------------------------
+#  Ruff - formatage et lint Python (cahier des charges 23.5)
+# ----------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# *.md est exclu volontairement. Ruff formate les blocs de code Python
+# embarques dans le Markdown : sans cette exclusion, il traiterait les 41
+# documents du depot, dont les CINQ documents de cadrage IMMUABLES dont
+# l'integrite est prouvee par empreinte SHA-256
+# (docs/operations/integrite-et-conformite-documents.md). Un reformatage
+# silencieux invaliderait cette preuve.
+# « * [0-9] » ecarte les copies de conflit iCloud, du type « node_modules 2 ».
+extend-exclude = [".venv", "node_modules", "*.md", "* [0-9]", "* [0-9][0-9]"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle, erreurs
+    "W",    # pycodestyle, avertissements
+    "F",    # pyflakes
+    "I",    # isort, ordre des imports
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "S",    # flake8-bandit, securite
+    "ANN",  # annotations de type obligatoires
+    "C4",   # comprehensions
+    "SIM",  # simplifications
+    "RUF",  # regles propres a Ruff
+]
+ignore = [
+    "ANN401",  # Any explicite tolere lorsqu'il est justifie
+]
+
+[tool.ruff.lint.per-file-ignores]
+# assert est l'outil normal d'un test : S101 n'a pas de sens dans tests/.
+# S105 et S106 signalent des valeurs ressemblant a des mots de passe ecrites en
+# dur. Un test des garde-fous de configuration DOIT en contenir : c'est son
+# objet meme de verifier qu'une valeur secrete n'apparait pas dans un message.
+# Ces valeurs sont inertes et n'ouvrent aucun acces.
+"**/tests/**" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "worker", "observabilite"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ----------------------------------------------------------------------------
+#  mypy - mode strict (DEC-442)
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+files = ["apps/api", "apps/worker", "packages/observabilite"]
+exclude = ['(^|/)\.venv/', '(^|/)node_modules/']
+
+# Derogation CIBLEE, et non desactivation globale du mode strict.
+#
+# dramatiq ne publie ni stubs ni marqueur py.typed : mypy considere donc tout
+# appel a son API comme non type. La derogation porte sur ce module SEUL, et
+# uniquement sur `disallow_untyped_calls` — le reste du mode strict continue de
+# s'appliquer a notre code. boto3, lui, dispose de stubs officiels
+# (`boto3-stubs`) : ils sont installes plutot que de faire taire l'erreur.
+[[tool.mypy.overrides]]
+module = ["dramatiq.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["worker.main"]
+disallow_untyped_calls = false
+
+# ----------------------------------------------------------------------------
+#  pytest
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = [
+    "apps/api/tests",
+    "apps/worker/tests",
+    "packages/observabilite/tests",
+]
+addopts = "-ra --strict-markers --strict-config"
+
+[dependency-groups]
+dev = [
+    "boto3-stubs[s3]>=1.43.57",
+    "httpx>=0.28.1",
+    "mypy>=2.3.0",
+    "pip-audit>=2.9.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.0",
+]

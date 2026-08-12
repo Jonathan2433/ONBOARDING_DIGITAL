@@ -1,10 +1,21 @@
 # Fiche de lot — LOT 1 : Monorepo, qualité et environnement local
 
-> **⚠️ LE LOT 1 N'EST PAS OUVERT.**
-> Cette fiche est un **plan préparé**, produit après la validation de la porte `G0`
-> (`DEC-438`). Conformément à `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006`, aucun travail du
-> LOT 1 ne commence avant son **ouverture explicite par Jonathan**. Aucune story de ce lot ne
-> peut passer à `Ready` ou `In progress` d'ici là.
+> **✅ LE LOT 1 EST OUVERT** depuis le 27 juillet 2026, décision `DEC-450`.
+> Cette fiche a d'abord été un plan préparé, produit après la validation de la porte `G0`
+> (`DEC-438`). Les 3 prérequis bloquants du §9.1 et les 7 choix techniques du §9.2 sont levés
+> et tranchés en sous-étape `T0` : les conditions de `ROAD-003`, `ARB-BACK-003` et
+> `BACKLOG-006` sont réunies, et les stories `MVP-L01-US001` à `US008` peuvent passer à
+> `Ready` puis `In progress`.
+>
+> Les **LOTS 2 à 14 restent `Planned`** : aucune de leurs stories ne peut être entamée.
+>
+> *Le bandeau de non-ouverture qui figurait ici jusqu'au 27/07/2026 était devenu faux après
+> `DEC-450`. Corrigé au titre de `ECART-017`.*
+>
+> *Le §3 rattachait `T5` aux stories `US002` **et** `US003`. `US003` est intégralement satisfaite
+> depuis `T3` et la page de statut ne complète aucun de ses critères ; le §6 ci-dessous ne
+> rattachait d'ailleurs sa ligne « Frontend » qu'à `US002`. Rattachement corrigé à `US002` seule
+> au titre de `ECART-020`, sur arbitrage de Jonathan.*
 
 **Porte de validation :** `G1` — « Stack, CI et images validées »
 **Tag posé à la validation :** `v0.1.0` (`DEC-428`)
@@ -33,7 +44,7 @@
 | Images `linux/arm64` et `linux/amd64` | Cahier §22.3 |
 | Healthchecks `live`, `ready`, `version` | Cahier §18.7 |
 | Logs JSON avec corrélation | Cahier §28.1 |
-| CI : formatage, lint, types, tests, migrations, secrets, vulnérabilités | Cahier §23.1 |
+| CI : **11 contrôles**, énumérés au §4.3 ci-dessous | Cahier §23.1 |
 | Publication de premières images techniques dans GHCR privé | Roadmap LOT 1 |
 
 ### 1.3 Périmètre exclu
@@ -97,18 +108,59 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 
 | Sous-étape | Objet | Stories | Critère de validation |
 |---|---|---|---|
-| **T0** | Prérequis et arbitrages techniques. **Aucune écriture.** | — | Jonathan a répondu aux 3 prérequis bloquants et aux 7 choix techniques |
-| **T1** | Squelette du monorepo, outillage, versions épinglées | `US001` | L'arborescence des 7 répertoires existe ; lint, formatage et typage s'exécutent à vide sans erreur |
-| **T2** | Docker Compose développement : les 8 services démarrent et sont sains | `US002` | Une seule commande démarre tout ; les 8 services sont `healthy` ; arrêt et redémarrage sans perte de volume |
-| **T3** | API FastAPI minimale, 3 healthchecks, migration Alembic initiale | `US003` | Les 3 endpoints répondent ; `ready` vérifie réellement PostgreSQL, Redis et MinIO ; la migration s'applique sur base vide et se rejoue |
-| **T4** | Journalisation JSON corrélée, API et worker | `US004` | Chaque requête et chaque job portent un `correlation_id` ; aucun secret journalisé ; rotation configurable |
-| **T5** | Frontend Vite : page de statut consommant les healthchecks | `US002`, `US003` | La page affiche l'état réel des services et la version ; TypeScript strict sans erreur |
-| **T6** | CI GitHub Actions : 8 contrôles, dont **3 échecs volontaires prouvés** | `US005` | Le pipeline passe ; et il **échoue effectivement** sur une erreur de lint, une erreur de test et un secret introduits volontairement |
-| **T7** | Images multiarchitecture et publication GHCR privé | `US006` | Une même version immuable fonctionne sur `arm64` et `amd64` ; l'accès au registre est authentifié ; aucune référence à `latest` seul |
-| **T8** | Environnement de recette isolé | `US002` | Volumes, base, bucket, réseau, ports et secrets distincts du développement ; Mailpit exclusif |
-| **T9** | Documentation d'exploitation locale | `US008` | Les procédures fonctionnent **depuis une machine propre** ; ports, volumes et commandes de diagnostic identifiés |
-| **T10** | Design system minimal et contrat API partagé | `US007` (`P1`) | Tokens et composants de base sans dépendance visuelle arbitraire ; contrat généré et partagé |
+| ~~**T0**~~ | Prérequis et arbitrages techniques. **Aucune écriture.** ✅ **Faite le 27/07/2026, hors lot** | — | ✅ Jonathan a répondu aux 3 prérequis bloquants et aux 7 choix techniques. Voir [`compte-rendu-t0-lot-1.md`](compte-rendu-t0-lot-1.md) |
+| ~~**T1**~~ | Squelette du monorepo, outillage, versions épinglées. ✅ **Faite le 27/07/2026** | `US001` | ✅ Les 7 répertoires existent ; lint, formatage, typage et tests s'exécutent sans erreur, et **chacun des 10 maillons sait échouer** — témoins négatifs vérifiés. Décisions `DEC-451` à `DEC-456` |
+| ~~**T2**~~ | Docker Compose développement : les 8 services démarrent et sont sains. ✅ **Faite le 28/07/2026** | `US002` | ✅ `make up` démarre tout ; les 8 services sont `healthy` ; `make persistence-test` prouve la survie des 5 volumes, **et échoue quand un volume est réellement supprimé**. Décisions `DEC-458` à `DEC-461` |
+| ~~**T3**~~ | API FastAPI minimale, 3 healthchecks, migration Alembic initiale. ✅ **Faite le 28/07/2026** | `US003` | ✅ Les 3 endpoints répondent à travers Caddy ; `ready` sonde réellement les 3 dépendances et **répond 503 quand Redis est arrêté pour de vrai** ; la migration s'applique sur base vide, se rejoue, et s'annule. `DEC-462` à `DEC-465` |
+| ~~**T4**~~ | Journalisation JSON corrélée, API et worker. ✅ **Faite le 28/07/2026** | `US004` | ✅ Les 10 champs du cahier §28.1 dans les journaux **réels** des conteneurs ; corrélation en requête **et** en job, propagée à travers Caddy ; **3 barrières** de masquage, 30 tests ; rotation sur les 8 services. `DEC-466` à `DEC-469` |
+| ~~**T5**~~ | Frontend Vite : page de statut consommant les healthchecks. ✅ **Faite le 28/07/2026** | `US002` | ✅ La page affiche l'état réel des trois dépendances sondées et la version du build, **éprouvé en arrêtant réellement Redis** — 503, `redis indisponible`, motif `ConnectionError` ; TypeScript strict sans erreur ; 25 tests Vitest et Testing Library sur les cinq états. `DEC-470` à `DEC-473` |
+| ~~**T6**~~ | CI GitHub Actions : **11 contrôles** du cahier §23.1, dont **3 échecs volontaires prouvés**. ✅ **Faite le 29/07/2026** | `US005` | ✅ Les 11 contrôles sont exécutés et le pipeline passe ; il **échoue effectivement** sur les trois défauts introduits **un par un**, chacun bloquant la fusion — `mergeStateStatus: BLOCKED`. La CI est rendue **obligatoire** sur `develop` et `main`. `DEC-474` à `DEC-477` |
+| ~~**T7**~~ | Images multiarchitecture et publication GHCR privé. ✅ **Faite le 29/07/2026** | `US006` | ✅ Une **même liste de manifestes** porte `linux/amd64` et `linux/arm64`, et les trois images sont **lancées** sur les deux — 39 contrôles fonctionnels, 0 échec, dont le refus de démarrer du §20.3 éprouvé **sur l'image**. `latest` n'est publié nulle part. L'accès au registre est authentifié par le `GITHUB_TOKEN`, **sans aucun secret de dépôt**. Image `web` de **1,02 Gio à 84,9 Mo**. `DEC-478` à `DEC-482`. **Réserve à lever en `T8` :** `arm64` n'est prouvé qu'**émulé** sur l'image publiée — voir §3.1 |
+| ~~**T8**~~ | Environnement de recette isolé. ✅ **Faite le 29/07/2026** | `US002` | ✅ Les **SEPT** séparations du cahier §22.2 — **projet Docker**, base PostgreSQL, bucket MinIO, volumes, secrets, réseau, ports — prouvées sur l'**état réel** des deux environnements : **57 contrôles, 0 échec**. La recette exécute les **images publiées épinglées par empreinte**, et `arm64` y est **natif** — la réserve du §3.1 est **levée**. `DEC-483` à `DEC-488`. *Le critère écrit ici jusqu'au 29/07/2026 n'énumérait que **six** séparations — « projet Docker distinct » manquait — et empruntait « Mailpit exclusif » à `MVP-L11-US003`, donc au LOT 11, ainsi qu'un critère de sortie du LOT 13. Rectifié au titre de `ECART-023` ; voir le compte rendu §4 pour ce que le LOT 1 prouve de Mailpit et ce qui ne lui appartient pas.* |
+| ~~**T9**~~ | Documentation d'exploitation locale. ✅ **Faite le 29/07/2026** | `US008` | ✅ [`exploitation-locale.md`](exploitation-locale.md) : **toutes** ses commandes exécutées, sorties réelles citées. Démarrage à froid **véritable** éprouvé — recette détruite, images retirées du cache, remontée en **34 s**. Les **14** publications de ports et les **12** volumes sont **dérivés** par commande, jamais recopiés. Huit symptômes de diagnostic, tous rencontrés réellement sur ce projet. Trois cibles jamais exercées ont été éprouvées, dont `make destroy` |
+| ~~**T10**~~ | Design system minimal et contrat API partagé. ✅ **Faite le 30/07/2026** | `US007` (`P1`) | ✅ Jetons **relevés du prototype qui les nomme** — `EXALT_BLUE`, `EXALT_DARK_BLUE`, `EXALT_PINK`, `EXALT_YELLOW` — corroborés par le §13.2, et **chaque couple fond/texte RECALCULÉ** contre WCAG 2.2 AA. La mesure a **corrigé le prototype** : il ne prévoyait du texte foncé que pour le jaune, le rose et le vert le réclament aussi. 3 composants de base, contrat partagé par un **manifeste unique** lu par TypeScript et Python. **260 tests** contre 166 à l'entrée, **11 témoins**, et **aucune dépendance externe ajoutée**. `DEC-491` à `DEC-493`, `QO-115` ouverte, **`ROAD-RSK-032` CLOS** |
 | **T11** | Contrôles de sortie et préparation de la porte `G1` | — | Les 7 critères de sortie sont prouvés ; checklist remise à Jonathan |
+
+### 3.1 Ce que `T7` prouve nativement, et ce qu'il ne prouve qu'émulé
+
+Le critère de `US006` dit qu'« une même version immuable **fonctionne** sur Apple Silicon et
+AMD64 ». Il est satisfait, mais **pas de la même façon sur les deux architectures**, et cela doit
+être dit plutôt que laissé croire.
+
+| Architecture | Sur l'image **publiée** dans GHCR | Sur une liste de manifestes **construite localement** |
+|---|---|---|
+| `linux/amd64` | **natif** — exécuteur GitHub `x86_64`, `uname -m` lu dans le conteneur | émulé sur le Mac |
+| `linux/arm64` | **émulé** par QEMU sur l'exécuteur | **natif** — le Mac M5 est `aarch64` |
+
+**Arbitrage de Jonathan du 29/07/2026 :** ne pas authentifier la machine locale au registre. Le
+jeton `gh` de cette machine n'a ni `read:packages` ni `write:packages` — mesuré, `403` — et
+l'ajout du droit relève de ses identifiants. Conséquence assumée : l'exécution **native sur
+Apple Silicon** porte sur une liste de manifestes construite localement, dont l'empreinte
+**diffère** de celle publiée. Les deux empreintes sont nommées dans le compte rendu de `T7`.
+
+> **✅ LA RÉSERVE EST LEVÉE depuis le 29 juillet 2026, sous-étape `T8`.**
+>
+> Jonathan a élargi le jeton de `gh` à **`read:packages`** — lecture seule, aucune écriture, aucun
+> secret de dépôt créé — puis authentifié Docker au registre. C'est `DEC-483`, et cette décision
+> **renverse explicitement l'arbitrage ci-dessus**, dont le motif était de ne pas toucher au jeton.
+> Motif du renversement : sans authentification la recette ne peut pas tirer les images publiées,
+> donc elle exercerait une construction locale — or `DEC-478` pose qu'« une recette qui exerce un
+> autre artefact que la production ne recette rien ».
+>
+> **Mesure du 29/07/2026, sur l'image PUBLIÉE, tirée sur ce Mac :** hôte `arm64`, et `uname -m`
+> lu **dans** les trois conteneurs → **`aarch64`, 3 sur 3**. C'est la méthode de `T7` : lire une
+> valeur que l'autre architecture ne pourrait pas produire, plutôt que de conclure sur « le
+> conteneur a démarré », qui donnerait la même observation sur les deux.
+>
+> **Le tableau ci-dessus reste exact pour `T7`. Il se lit désormais ainsi :**
+>
+> | Architecture | Sur l'image **publiée** dans GHCR |
+> |---|---|
+> | `linux/amd64` | **natif**, exécuteur GitHub `x86_64` — depuis `T7` |
+> | `linux/arm64` | **natif**, ce Mac M5 en `aarch64` — depuis `T8` |
+>
+> Les deux architectures sont donc prouvées **nativement sur le même artefact publié**, ce qui est
+> strictement plus fort que ce que `T7` pouvait établir.
 
 ---
 
@@ -161,7 +213,7 @@ infra/
 └── minio/
 
 .github/workflows/
-├── ci.yml                             ← 8 contrôles du cahier §23.1
+├── ci.yml                             ← 11 contrôles du cahier §23.1
 └── images.yml                         ← Buildx multiarchitecture, GHCR
 
 Makefile                               ← la « commande documentée » de la démonstration
@@ -198,7 +250,12 @@ Contrôles obligatoires, modèle §28 :
 - application sur une **base vide** ;
 - rejeu depuis l'état précédent ;
 - `downgrade` puis `upgrade` compatible ;
-- **aucune création automatique de table** : `DB_AUTO_CREATE=false` (cahier §16.2) ;
+- **aucune création automatique de table** : `DB_AUTO_CREATE=false`. Attention à la source —
+  le cahier §16.2 énonce le **principe**, « aucune création automatique de tables **en
+  production** », et ne contient nulle part la chaîne `DB_AUTO_CREATE` ; ce nom de variable
+  vient de [`.env.example`](../../.env.example) L104, produit au LOT 0. Le LOT 1 applique la
+  contrainte **dans tous les environnements**, ce qui est plus strict que le cahier et
+  correspond à la valeur par défaut déjà livrée ;
 - exécution sur **PostgreSQL réel**, jamais SQLite.
 
 Toute table métier créée dans ce lot serait une anticipation du LOT 2 et devrait être refusée.
@@ -209,12 +266,12 @@ Toute table métier créée dans ce lot serait une anticipation du LOT 2 et devr
 
 | Catégorie | Contenu | Story |
 |---|---|---|
-| Unitaires API | Lecture et validation de la configuration ; **les 7 garde-fous de démarrage** de `.env.example` refusent bien de démarrer | `US002` |
+| Unitaires API | Lecture et validation de la configuration ; **les 11 garde-fous de démarrage** de [`politique-configuration-et-secrets.md`](politique-configuration-et-secrets.md) §6 refusent bien de démarrer — **4 applicables à tous les environnements** (variable obligatoire absente, `CHANGE_ME_*` résiduel, valeur typée invalide, `LOG_FORMAT` autre que `json`) et **7 propres à `APP_ENV=production`**, à éprouver en forçant cette valeur en test | `US002` |
 | Intégration PostgreSQL réel | Connexion, application de la migration, rejeu. **Aucune dépendance à SQLite** | `US003` |
 | API | Les 3 healthchecks ; `ready` en échec quand une dépendance est absente ; format d'erreur du cahier §18.3 avec identifiant de corrélation | `US003` |
 | Journalisation | Présence du `correlation_id` en requête **et** en job ; **absence de secret, de jeton et de magic link** dans la sortie | `US004` |
-| Frontend | Vitest et Testing Library sur la page de statut ; état de chargement, état d'erreur, état hors connexion | `US002` |
-| CI, échecs volontaires | Une erreur de lint, une erreur de test et un secret introduits volontairement **doivent bloquer** le pipeline | `US005` |
+| Frontend | Vitest et Testing Library sur la page de statut ; état de chargement, état d'erreur, état hors connexion. ✅ **Fait en `T5`** : les trois états, **plus** l'état nominal et l'état **dégradé** — un 503 porte le diagnostic et n'est pas une erreur | `US002` |
+| CI, échecs volontaires | Une erreur de lint, une erreur de test et un secret introduits volontairement **doivent bloquer** le pipeline. ✅ **Fait en `T6`** : trois exécutions rouges, chacune sur son propre contrôle, fusion refusée dans les trois cas | `US005` |
 | Images | La même version immuable démarre sur `arm64` et sur `amd64` | `US006` |
 | Reprise | Arrêt puis redémarrage de la stack **sans perte de volume** | `US002` |
 
@@ -247,12 +304,12 @@ la démonstration que la CI **bloque** une erreur de lint, de test et de secret.
 
 | Risque | Impact sur ce lot | Traitement |
 |---|---|---|
-| `ROAD-RSK-026` Dépôt et volumes dans iCloud Drive | **Bloquant avant T2.** La synchronisation peut corrompre un volume PostgreSQL ou un `node_modules` | Trancher `QO-109` **avant** de créer le premier volume. `.gitignore` ne protège pas d'iCloud |
-| `ROAD-RSK-027` 16 Gio de mémoire vive | Élevé dès T8, deux environnements coexistant | Ne pas exécuter dev et recette simultanément ; limites mémoire par service ; arbitrage en T0 |
+| `ROAD-RSK-026` Dépôt et volumes dans iCloud Drive | ~~Bloquant avant T2.~~ **Traité en `T0`.** Le périmètre réel s'est révélé plus étroit : les volumes nommés sont déjà hors iCloud | `DEC-447` volumes nommés exclusivement, `DEC-439` exclusion de `node_modules` et du cache. `QO-109` close |
+| `ROAD-RSK-027` ~~16 Gio~~ **7,75 Gio** de mémoire allouée à Docker | **Plus contraint qu'estimé.** Docker ne dispose que de la moitié des 16 Gio, et un projet tiers en occupait 25 % | `DEC-440` : un seul environnement à la fois, limites mémoire par service, projet tiers arrêté pendant le lot. `T8` prouve la **séparation**, pas la simultanéité |
 | `ROAD-RSK-015` Secret intégré au code | La mesure devient effective en T6 avec Gitleaks | Jusqu'à T6, contrôles manuels de chaque commit |
 | `ROAD-RSK-011` Lot technique sans résultat visible | Moyen | La page de statut de T5 est la réponse : elle rend le socle démontrable |
 | `ROAD-RSK-002` Réouverture d'un lot validé | Moyen | Le LOT 1 fixe l'outillage de tout le projet : un mauvais choix en T1 coûte cher plus tard |
-| Nouveau | Le premier commit de code déclenche le circuit branche + PR (`DEC-427`) et la protection de `main` (`DEC-429`) | Les prérequis 1 et 2 doivent être traités **avant** l'ouverture du lot, pas pendant |
+| ~~Nouveau~~ **Traité** | Le premier commit de code déclenche le circuit branche + PR (`DEC-427`) et la protection de `main` (`DEC-429`) | Prérequis traités en `T0`, avant l'ouverture. `main` et `develop` sont protégées avec `enforce_admins`, rejet du push direct **prouvé** par `GH006`. Le circuit s'applique désormais à **toute** modification, y compris documentaire |
 
 ---
 
@@ -260,28 +317,29 @@ la démonstration que la CI **bloque** une erreur de lint, de test et de secret.
 
 ### 9.1 Prérequis bloquants, hérités du LOT 0
 
-À traiter **avant** l'ouverture du lot.
+> **✅ Les 3 prérequis sont levés** en sous-étape `T0`, le 27 juillet 2026, **avant l'ouverture
+> du lot**. Voir [`compte-rendu-t0-lot-1.md`](compte-rendu-t0-lot-1.md).
 
-| # | Prérequis | Références | Pourquoi bloquant |
-|---:|---|---|---|
-| 1 | Mettre en place la traçabilité GitHub : 13 étiquettes, 15 milestones, protection de `main`. `gh` n'est pas installé et aucun connecteur GitHub n'est disponible | `ECART-010`, `QO-107`, `QO-108` | `DEC-427` fait entrer le circuit PR en vigueur dès le premier commit de code. Sans protection ni issues, `BACKLOG-010` n'est pas respecté |
-| 2 | Décider des atténuations iCloud pour les volumes Docker et les dépendances | `QO-109`, `ROAD-RSK-026` | Un volume PostgreSQL créé dans un dossier synchronisé est un risque de corruption. Déplacer après coup coûte plus cher |
-| 3 | Arbitrer l'exécution non simultanée des environnements | `ROAD-RSK-027`, `QO-085` | Détermine la conception des fichiers Compose et des limites mémoire |
+| # | Prérequis | Références | Pourquoi bloquant | État |
+|---:|---|---|---|---|
+| 1 | Mettre en place la traçabilité GitHub : 13 étiquettes, 15 milestones, protection de `main`. `gh` n'est pas installé et aucun connecteur GitHub n'est disponible | `ECART-010`, `QO-107`, `QO-108` | `DEC-427` fait entrer le circuit PR en vigueur dès le premier commit de code. Sans protection ni issues, `BACKLOG-010` n'est pas respecté | **Levé.** `gh` 2.96.0 installé hors Homebrew, authentifié par Jonathan. 13 étiquettes, 15 milestones, epic `#1`, stories `#2`–`#9`. `main` et `develop` protégées, `enforce_admins` actif, **rejet du push direct prouvé** (`GH006`). `DEC-449`. `ECART-010`, `QO-107` et `QO-108` clos |
+| 2 | Décider des atténuations iCloud pour les volumes Docker et les dépendances | `QO-109`, `ROAD-RSK-026` | Un volume PostgreSQL créé dans un dossier synchronisé est un risque de corruption. Déplacer après coup coûte plus cher | **Levé.** Mesure : les volumes nommés sont déjà hors iCloud, l'image disque de la VM Docker résidant sous `~/Library/Containers/`. Restaient `node_modules` et le cache. `DEC-439`, `DEC-447`. `QO-109` close |
+| 3 | Arbitrer l'exécution non simultanée des environnements | `ROAD-RSK-027`, `QO-085` | Détermine la conception des fichiers Compose et des limites mémoire | **Levé.** Docker ne dispose que de **7,75 Gio**, dont un quart occupé par un projet tiers. Un seul environnement à la fois ; projet tiers arrêté pendant le lot. `DEC-440`. `ROAD-RSK-027` réécrit |
 
 ### 9.2 Choix techniques non tranchés par les documents validés
 
-Aucun document du corpus ne les fixe. Ils seront présentés en **T0** avec une recommandation
-argumentée, et ne seront adoptés qu'après validation.
+Aucun document du corpus ne les fixe. Ils ont été présentés en **`T0`** avec une recommandation
+argumentée. **Les 7 sont tranchés et validés** par Jonathan le 27 juillet 2026.
 
-| # | Choix | Contrainte connue |
-|---:|---|---|
-| 1 | Gestionnaire de paquets JavaScript et outillage monorepo | Aucune dépendance essentielle à un CDN public (roadmap §2.3) |
-| 2 | `mypy` **ou** `pyright` | Le cahier §23.5 cite les deux sans trancher |
-| 3 | Versions épinglées de Python, Node et PostgreSQL | Interdiction de `latest` seul en production (cahier §23.3) |
-| 4 | Organisation des fichiers Compose pour trois environnements | Volumes, bases, buckets, réseaux, ports et secrets distincts (cahier §22.2) |
-| 5 | Nommage et étiquetage des images GHCR | Version exacte et empreinte de commit obligatoires (`DEC-428`) |
-| 6 | HTTPS local par Caddy | Aucun domaine public nécessaire en phase locale (cahier §22.2) |
-| 7 | Emplacement physique des volumes Docker | Dépend du prérequis 2 |
+| # | Choix | Contrainte connue | Décision retenue |
+|---:|---|---|---|
+| 1 | Gestionnaire de paquets JavaScript et outillage monorepo | Aucune dépendance essentielle à un CDN public (roadmap §2.3) | **`pnpm` workspaces**, store hors iCloud, aucun orchestrateur de tâches — `DEC-441` |
+| 2 | `mypy` **ou** `pyright` | Le cahier §23.5 cite les deux sans trancher | **`mypy` strict**, dans l'environnement `uv` — `DEC-442` |
+| 3 | Versions épinglées de Python, Node et PostgreSQL | Interdiction de `latest` seul en production (cahier §23.3) | **Python 3.12 · Node 24 LTS · PostgreSQL 17**, épinglage par empreinte `sha256` — `DEC-443` |
+| 4 | Organisation des fichiers Compose pour trois environnements | Volumes, bases, buckets, réseaux, ports et secrets distincts (cahier §22.2) | **Base + surcouches**, `COMPOSE_PROJECT_NAME` distinct par environnement — `DEC-444` |
+| 5 | Nommage et étiquetage des images GHCR | Version exacte et empreinte de commit obligatoires (`DEC-428`) | **`ghcr.io/jonathan2433/onboarding-digital/{api,web,worker}`** — `DEC-445` |
+| 6 | HTTPS local par Caddy | Aucun domaine public nécessaire en phase locale (cahier §22.2) | **`tls internal`** sur `app.` et `api.onboarding.localhost` — `DEC-446` |
+| 7 | Emplacement physique des volumes Docker | Dépend du prérequis 2 | **Volumes nommés exclusivement**, aucun bind mount de donnée d'état — `DEC-447` |
 
 Le cahier §23.5 propose par ailleurs `uv`, Ruff, Pytest, pytest-cov, Alembic, Gitleaks,
 pip-audit, Trivy, Vitest, Playwright et axe comme **outils candidats**. Je les retiendrai sauf
@@ -292,7 +350,7 @@ objection, ces choix étant déjà inscrits au cadrage.
 | Question | Apport attendu du LOT 1 |
 |---|---|
 | `QO-085` RAM et disque du Mac M5 | Mesure réelle en charge, une fois les 8 services démarrés |
-| `QO-086` Docker Desktop ou moteur alternatif | Constaté : Docker 29.5.3, Compose v5.1.4 — à confirmer par Jonathan |
+| ~~`QO-086`~~ Docker Desktop ou moteur alternatif | **Close en `T0`** : Docker Desktop 29.5.3, Compose v5.1.4, pilote `overlayfs`, `aarch64`, **7,75 Gio alloués**. Aucun moteur alternatif |
 | `QO-084` PostgreSQL RLS immédiat ou différé | À trancher au LOT 2, mais la migration initiale peut préparer le terrain |
 
 ---

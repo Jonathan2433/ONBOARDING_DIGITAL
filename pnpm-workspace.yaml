@@ -1,0 +1,75 @@
+# ============================================================================
+#  Espaces de travail et reglages pnpm (DEC-441)
+#  LOT 1, sous-etape T1, story MVP-L01-US001.
+#
+#  Les reglages storeDir et engineStrict figurent ICI et non dans un .npmrc :
+#  pnpm 11 ne lit plus ces cles depuis .npmrc. Verifie le 27/07/2026 -
+#  `pnpm config get store-dir` y renvoyait `undefined` et pnpm retombait
+#  silencieusement sur son defaut macOS ~/Library/pnpm/store.
+# ============================================================================
+
+# apps/api et apps/worker sont des projets Python : ils relevent du workspace
+# uv declare dans pyproject.toml, pas de pnpm. Les lister ici n'aurait aucun
+# effet et laisserait croire a une gestion unifiee qui n'existe pas.
+#
+# Aucun orchestrateur de taches n'est introduit : le Makefile tient ce role.
+packages:
+  - apps/web
+  - packages/ui
+  - packages/contracts
+
+# DEC-439 : le store pnpm reside HORS du dossier synchronise iCloud. Le depot
+# vit sous ~/Library/Mobile Documents/ ; ce chemin n'y est pas. La valeur est
+# declaree explicitement pour qu'elle ne puisse pas deriver avec le defaut.
+storeDir: ${HOME}/.local/share/pnpm/store
+
+# DEC-443 epingle Node 24 LTS. Sans ce reglage, le champ "engines" de
+# package.json ne serait qu'un avertissement.
+engineStrict: true
+
+# ============================================================================
+#  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
+#
+#  AUCUNE TOLERANCE N'EST DECLAREE, et c'est un renforcement, pas un oubli.
+#
+#  HISTOIRE, PARCE QU'ELLE EXPLIQUE POURQUOI CE BLOC EST VIDE
+#
+#    `T6` avait declare UNE tolerance nommee et etroite,
+#    `GHSA-mh99-v99m-4gvg` — brace-expansion, deni de service par expansion non
+#    bornee, chemin `eslint-plugin-jsx-a11y > minimatch@3 > brace-expansion@1.1.16`.
+#
+#    Le motif etait mesure et solide a l'epoque : la derniere version publiee de
+#    la ligne 1.x ETAIT 1.1.16, il n'existait donc aucun correctif dans cette
+#    ligne ; et forcer la ligne 5 cassait le lint, l'export CommonJS de
+#    brace-expansion 5 etant un OBJET portant `.expand` et non une fonction, la
+#    ou minimatch@3 appelle `expand(motif)`. Le « correctif » aurait neutralise
+#    ESLint, donc `eslint-plugin-jsx-a11y`, motif determinant de DEC-451.
+#
+#  CE QUI A CHANGE, MESURE LE 30/07/2026 EN SOUS-ETAPE T10
+#
+#    La ligne 1.x a recu un correctif : `brace-expansion@1.1.18`. Ce que `T6`
+#    avait mesure comme inexistant existe desormais. Un simple
+#    `pnpm update -r brace-expansion nanoid` suffit, dans les plages deja
+#    declarees, sans forcer aucune version majeure.
+#
+#    Verifie dans les deux sens : l'audit est vert AVEC et SANS la tolerance,
+#    donc elle ne couvre plus rien. Et rien n'est casse — lint, formatage,
+#    typage et les deux suites de tests restent a zero, ESLint et jsx-a11y
+#    compris.
+#
+#  POURQUOI LA RETIRER PLUTOT QUE LA LAISSER DORMIR
+#
+#    Une tolerance qui ne couvre plus rien n'est pas neutre : elle avalerait
+#    SILENCIEUSEMENT une reapparition du meme avis. Zero tolerance est donc
+#    strictement plus fort que « une tolerance devenue inutile », et c'est la
+#    direction que DEC-474 visait deja — « tout autre avis bloque ».
+#
+#    `ROAD-RSK-032` est clos par la meme mesure.
+#
+#  A SURVEILLER, ET CE N'EST PAS COUVERT ICI : `eslint-plugin-jsx-a11y` declare
+#  ESLint ^3..^9 alors que nous executons ESLint 10. Le greffon fonctionne —
+#  eprouve par temoin negatif en T5 et de nouveau en T10, cinq fautes
+#  d'accessibilite detectees — mais cette plage de paires reste a surveiller.
+# ============================================================================
+auditConfig:
+  ignoreGhsas: []

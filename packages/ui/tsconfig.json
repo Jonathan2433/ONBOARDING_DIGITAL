@@ -1,0 +1,16 @@
+{
+  "_commentaire": [
+    "LOT 1, T10 : `types: [vite/client]` est necessaire des lors que le code",
+    "importe une feuille de style — ici en `?raw`, pour que les controles de",
+    "divergence lisent le CSS sans passer par `node:fs`, donc sans ajouter",
+    "@types/node au projet. Meme motif qu'en T5 pour apps/web.",
+    "Le mode strict vient de tsconfig.base.json et n'est pas relache ici."
+  ],
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

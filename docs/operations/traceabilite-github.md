@@ -107,9 +107,13 @@ Une porte ne peut pas être fermée si (backlog §12) :
 
 ## 5. Mise en place
 
-Ces éléments se créent dans l'interface GitHub, ou en ligne de commande lorsque `gh` sera
-installé. `gh` n'est **pas** installé sur la machine à ce jour : les commandes ci-dessous
-sont fournies pour exécution ultérieure et n'ont pas été exécutées.
+> **✅ Mise en place effectuée le 27 juillet 2026**, en sous-étape `T0` du LOT 1, par `gh` en
+> ligne de commande (`DEC-449`). `gh` **2.96.0 est installé** dans `~/.local/bin/gh` — hors
+> Homebrew, dont les répertoires appartiennent à l'utilisateur `admin`. Ce chemin **n'est pas
+> dans le `PATH`** : préfixer par `export PATH="$HOME/.local/bin:$PATH"`.
+>
+> Les commandes ci-dessous ont été **exécutées et contrôlées**. Elles sont conservées comme
+> référence reproductible.
 
 ### 5.1 Étiquettes prescrites
 
@@ -152,9 +156,28 @@ Chemin dans l'interface : `Settings` → `Branches` → `Add branch protection r
 
 ---
 
-## 6. Limite connue
+## 6. État de la mise en place
 
-Aucune de ces créations n'a été effectuée : `gh` n'est pas installé et aucun connecteur
-GitHub n'est disponible dans la session de travail. La mise en place effective des
-étiquettes, des milestones, des epics, des issues et de la protection de branche reste à
-réaliser, et constitue un prérequis de la traçabilité attendue au LOT 1.
+Au 27 juillet 2026, sous-étape `T0` du LOT 1. `ECART-010` **clos**, `QO-107` et `QO-108`
+**closes**.
+
+| Élément | État | Contrôle |
+|---|---|---|
+| 13 étiquettes prescrites | **Créées** | 13/13 conformes en **nom et couleur** |
+| Étiquettes complémentaires `type`, `gravité`, `état` | **Non créées** | Non prescrites — `QO-106` reste ouverte |
+| 9 étiquettes GitHub par défaut | **Conservées** | Leur suppression appartient à Jonathan |
+| 15 milestones `G0` à `G14` | **Créées** | 15/15, **`G0` fermée** (`DEC-438`) |
+| Epic du LOT 1 | **Créé** — issue `#1` | Rattaché à `G1` |
+| Stories du LOT 1 | **Créées** — issues `#2` à `#9` | 8/8 sur `G1`, 7 `p0` + 1 `p1`, intitulés et critères **générés depuis le backlog**, fidélité 8/8 |
+| Epics et stories des LOTS 2 à 14 | **Non créés** | 104 issues restantes, à créer lot par lot quand chaque fiche existe |
+| Protection de `main` et `develop` | **Posée** | PR obligatoire, 0 approbation, `enforce_admins` actif, push forcés et suppressions rejetés, historique linéaire, résolution des conversations |
+| Contrôles d'intégration obligatoires | **Aucun** | À ajouter en `T6`, quand la CI existera |
+
+**Preuve d'effectivité de la protection**, et non simple constat de réglage : un push direct
+d'un commit vide sur `main` puis sur `develop` a été **rejeté** par le serveur —
+`GH006 : Protected branch update failed … Changes must be made through a pull request`. Témoin
+positif : le même push vers une branche neuve non protégée a **réussi**, ce qui établit que le
+test distingue bien un succès d'un échec.
+
+Le repli `pre-push` envisagé par `QO-107` est **sans objet** : le plan du compte autorise la
+protection de branche sur ce dépôt privé personnel.

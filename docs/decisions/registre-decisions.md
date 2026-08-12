@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 juillet 2026
+**Dernière mise à jour :** 29 juillet 2026, sous-étape `T6` du LOT 1
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -18,7 +18,19 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Total repris** | **85** | |
 | Décisions de réalisation `DEC-418+` | 21 | Validées le 27/07/2026 |
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
-| **Total** | **116** | |
+| Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
+| Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
+| Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
+| Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
+| Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
+| Réalisation du LOT 1 `DEC-466+`, sous-étape `T4` | 4 | Validées le 28/07/2026 |
+| Réalisation du LOT 1 `DEC-470+`, sous-étape `T5` | 4 | Validées le 28/07/2026 |
+| Réalisation du LOT 1 `DEC-474+`, sous-étape `T6` | 4 | Soumises le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-478+`, sous-étape `T7` | 5 | Validées le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-483+`, sous-étape `T8` | 6 | Validées le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Soumises le 30/07/2026 |
+| **Total** | **161** | |
 
 ---
 
@@ -73,7 +85,209 @@ tranche les 7 choix techniques de §9.2, qu'aucun document validé ne fixait.
 | `DEC-447` | Les données d'état utilisent **exclusivement des volumes Docker nommés**. **Aucun bind mount** de donnée d'état vers le dépôt : ni `./data`, ni `./volumes`, ni `./backups`. Les bind mounts de code source pour le rechargement à chaud restent autorisés. | Les volumes nommés résident dans l'image disque de la VM, hors iCloud, sans aucune action. Un bind mount de données dans le dépôt est précisément le geste qui ramènerait `ROAD-RSK-026` sur des fichiers de base ouverts en écriture. | Validée |
 | `DEC-448` | La traçabilité GitHub — branche `develop`, protection de `main` et de `develop`, 13 étiquettes prescrites, 15 milestones, epic et stories du LOT 1 — est mise en place **par Jonathan dans l'interface GitHub**. | `gh` n'est pas installé et aucun connecteur GitHub n'est disponible en session : la vérification a été refaite le 27/07/2026 et confirme le constat de `ECART-010`. La protection de branche n'est de toute façon posable que par le propriétaire du dépôt. Répond à `QO-108`. La mise en place effective clora `ECART-010` et `QO-107`. | Validée |
 
-**Prochain identifiant libre : `DEC-449`.**
+## 1.2 Mise en place effective de la traçabilité GitHub
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-449` | **Remplace `DEC-448`.** La traçabilité GitHub n'a pas été posée dans l'interface web comme `DEC-448` le prévoyait, mais **par `gh` en ligne de commande**, selon le partage de rôles suivant : Jonathan a créé la branche `develop` et **authentifié `gh` lui-même** ; l'agent a installé le binaire et exécuté les créations. `gh` **2.96.0** est installé dans **`~/.local/bin/gh`**, hors Homebrew — `/opt/homebrew` appartient à l'utilisateur `admin` et `brew install` échoue faute de droits, le correctif `sudo chown` exigeant un mot de passe. Le binaire provient de la publication officielle `cli/cli`, **empreinte SHA-256 vérifiée** contre celle publiée par le projet. Livré : 13 étiquettes, 15 milestones avec `G0` fermée, l'epic `#1` et les 8 stories `#2` à `#9`, et la protection de `main` **et** `develop`. | `DEC-448` décrivait une intention, pas ce qui a eu lieu. Les conventions interdisent de modifier une décision validée en silence : elle est remplacée par une nouvelle décision qui la référence (`CONTRIBUTING.md` §8). La ligne que l'agent n'a pas franchie est l'authentification : il n'entre pas d'identifiants à la place de Jonathan et n'extrait pas le jeton du trousseau macOS. | Validée |
+
+**Protection appliquée à `main` et `develop`**, conforme à `DEC-429` :
+
+| Réglage | Valeur appliquée |
+|---|---|
+| Pull request obligatoire | Activée |
+| Approbations requises | **0** — GitHub interdit l'auto-approbation, `QO-094` |
+| `enforce_admins` | **Activé** — sans quoi le propriétaire contournerait la règle et le contrôle ne prouverait rien |
+| Push forcés, suppressions | Rejetés |
+| Historique linéaire, résolution des conversations | Exigés |
+| Contrôles d'intégration obligatoires | **Posés en `T6`** le 29/07/2026 : contexte unique « Porte de l integration continue », `strict` actif, sur `develop` **et** `main`. Voir `DEC-476` |
+
+**Preuve d'effectivité**, et non simple constat de réglage : une tentative de push direct d'un
+commit vide sur `main` puis sur `develop` a été **rejetée** par le serveur avec
+`GH006 — Protected branch update failed … Changes must be made through a pull request`. Témoin
+positif : le même push vers une branche neuve non protégée a **réussi**, ce qui établit que le
+test sait distinguer un succès d'un échec.
+
+**Conséquence de régime, applicable immédiatement.** `enforce_admins` vaut aussi pour Jonathan :
+plus aucun commit direct sur `main` ni `develop`, **y compris documentaire**. `DEC-427` ne
+faisait entrer le circuit en vigueur qu'au premier commit de code du LOT 1 ; il s'applique en
+pratique dès maintenant, ce qui est plus strict et va dans le sens du cadrage.
+
+## 1.3 Ouverture du LOT 1
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-450` | **Jonathan ouvre le LOT 1 — « Monorepo, qualité et environnement local »** le 27 juillet 2026. Les stories `MVP-L01-US001` à `US008` peuvent passer à `Ready` puis `In progress`. Le travail démarre à la sous-étape **`T1`**, story `MVP-L01-US001`, issue `#2`. Les LOTS 2 à 14 restent `Planned` : aucune de leurs stories ne peut être entamée. | Les 3 prérequis bloquants de la fiche §9.1 sont levés et prouvés, les 7 choix techniques de §9.2 sont tranchés (`DEC-439` à `DEC-447`), et la traçabilité GitHub est en place avec protection effective des branches (`DEC-449`). Les conditions de `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006` sont donc réunies. | Validée |
+
+**Conséquences immédiates**
+
+- `DEC-427` prend effet au premier commit de code : **branche + pull request obligatoires**. En
+  pratique le régime s'applique déjà à tout, `enforce_admins` étant actif depuis `DEC-449`.
+- La porte `G1` devient la porte courante. Le tag `v0.1.0` sera posé sur `main` à sa validation
+  (`DEC-428`).
+- `ECART-006` — `.env.example` en v0.1 — doit être clos dans ce lot.
+
+## 1.4 Réalisation du LOT 1 — sous-étape `T1`
+
+Décisions prises pendant la réalisation du squelette du monorepo, story
+`MVP-L01-US001`, issue `#2`. Les six sont validées par Jonathan le 27 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-451` | Le lint et le formatage JavaScript et TypeScript sont assurés par **ESLint** en « flat config » et **Prettier**, `eslint-config-prettier` désactivant les règles en conflit. La vérification de types reste à `tsc --noEmit`, avec la configuration stricte de `tsconfig.base.json`. | Aucun document du corpus ne tranchait : le cahier §17.1 et §23.5 ne nomment aucun linter JavaScript. Motif déterminant : **`eslint-plugin-jsx-a11y`**, sans équivalent de profondeur ailleurs, alors que le cahier §14 fait de l'accessibilité une exigence dure auditée au LOT 12. Découvrir au LOT 12 qu'on ne peut pas la linter serait le scénario de réouverture de `ROAD-RSK-002`. | Validée |
+| `DEC-452` | Le critère « les répertoires sont **exécutables** » de `MVP-L01-US001` s'entend, à `T1`, comme : chaque espace de travail s'installe, se lint, se type-vérifie et exécute au moins un test réel, avec un code de sortie 0. **Aucune application n'écoute de port** à ce stade. | Le critère du backlog et celui de la fiche §3 — « lint, formatage et typage s'exécutent **à vide** sans erreur » — ne disent pas la même chose. Cette lecture est la seule compatible avec le fait que `T3` possède l'API, `T5` le frontend et `T2` la stack Docker. La retenir évite de vider trois sous-étapes de leur substance. | Validée |
+| `DEC-453` | L'exclusion iCloud de `DEC-439` est mise en œuvre par l'attribut étendu **`com.apple.fileprovider.ignore#P = 1`**, posé par [`infra/scripts/exclure-icloud.sh`](../../infra/scripts/exclure-icloud.sh), appelé **à la fois** par `make icloud-exclude` et par le `postinstall` de `package.json`. La cible `make icloud-verify` échoue si un répertoire n'est pas marqué. | Mesure du 27/07/2026 : **`pnpm install` supprime et recrée les `node_modules`**, ce qui efface l'attribut ; `uv` réutilise le `.venv` et le préserve. Une cible de `Makefile` seule n'aurait protégé que les installations lancées par `make`. **Ce qui est prouvé** : l'attribut est posé, relu, et son absence détectée. **Ce qui ne l'est pas** : le respect effectif par iCloud — convention documentée par Apple, qu'aucun outil de cette machine ne permet de vérifier. `brctl` ne couvre pas les chemins CloudDocs et renvoie 0 sur erreur. **L'attribut n'est pas durable** : voir l'incident du 27/07 consigné en `ROAD-RSK-026`. La cible `icloud-verify` détecte aussi les copies de conflit iCloud. | Validée |
+| `DEC-454` | **Le Markdown est exclu de tout formatage automatique**, aussi bien de Ruff (`extend-exclude`) que de Prettier (`.prettierignore`). | Mesure du 27/07/2026 : sans cette exclusion, Prettier **réécrivait les cinq documents de cadrage immuables**, ajoutant 54 661 octets au seul cahier des charges, soit +21,7 %. La preuve d'intégrité SHA-256 de [`integrite-et-conformite-documents.md`](../operations/integrite-et-conformite-documents.md) — et avec elle la porte `G0` — en aurait été invalidée. Ruff formate lui aussi les blocs de code embarqués dans le Markdown : il voyait 41 documents au lieu de 4 fichiers Python. Voir `ROAD-RSK-029`. | Validée |
+| `DEC-455` | Les deux projets Python sont réunis dans un **workspace `uv` unique déclaré à la racine**, membres `apps/api` et `apps/worker`, avec un seul `uv.lock`, un seul `.venv` et une seule configuration Ruff, mypy et pytest portée par le `pyproject.toml` racine. | Symétrique de `pnpm-workspace.yaml` côté JavaScript, et cohérent avec `DEC-441`. Un seul environnement virtuel signifie un seul répertoire à soustraire à iCloud, un seul verrou à auditer en CI, et une seule source pour les règles de qualité. Les fichiers `tests/__init__.py` ont été écartés : ils créaient deux paquets homonymes `tests` que mypy et pytest refusent tous les deux. | Validée |
+| `DEC-456` | Outillage posé à `T1` : **`uv` 0.11.32** depuis l'archive officielle `astral-sh/uv`, **empreinte SHA-256 vérifiée**, installée dans `~/.local/bin` ; **`pnpm` 11.17.0** par `corepack`, épinglé par le champ `packageManager` **avec empreinte d'intégrité** ; **CPython 3.12.13** géré par `uv`. Les bibliothèques du cahier §17.1 sans usage avant le LOT 4 — React Router, TanStack Query, React Hook Form, Zod, Radix UI — **ne sont pas installées**. | Même procédure que `gh` en `T0` (`DEC-449`) : Homebrew reste inutilisable, `/opt/homebrew` appartenant à l'utilisateur `admin`. `corepack` était déjà présent avec Node 24 : aucun binaire tiers supplémentaire n'a été téléchargé pour `pnpm`. Le Python système 3.9.6 n'est pas touché. Installer cinq bibliothèques sans usage ajouterait une surface d'audit de dépendances sans contrepartie, alors que le LOT 1 met justement `pip-audit` et Trivy en place. | Validée |
+
+**Décision prise le 28 juillet 2026, après matérialisation du risque `ROAD-RSK-026`**
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-457` | **`DEC-453` est maintenue en l'état** après l'incident iCloud du 27/07/2026 : marquage par attribut étendu, reposé automatiquement par le `postinstall`, contrôlé par `make icloud-verify` exécuté en début de session et intégré à `make check`. **`DEC-418` n'est pas rouverte** et `node_modules` reste dans l'arborescence synchronisée. La copie de conflit `node_modules 2` est supprimée. **Le risque résiduel est accepté en connaissance de cause** : une nouvelle copie de conflit peut réapparaître ; le vérificateur la détectera, il ne l'empêchera pas. | Jonathan a tranché sur présentation des mesures, entre trois issues : maintenir le marquage avec vérificateur, sortir physiquement `node_modules` et `.venv` de l'arborescence par liens symboliques, ou rouvrir l'emplacement du dépôt. La deuxième option est provable là où l'attribut ne l'est pas, mais pnpm remplace parfois un lien symbolique par un vrai répertoire à l'installation — elle déplacerait le risque sans le supprimer, au prix d'une demi-sous-étape avant `T2`. La troisième dépasse le périmètre du LOT 1 et relève du confort de travail de Jonathan. L'essentiel du volume — 338 Mio de store `pnpm`, de cache et de Python gérés par `uv` — est déjà hors dépôt par construction. | Validée |
+
+**Ce que `T1` a délibérément écarté**
+
+- `storeDir` et `engineStrict` dans un `.npmrc` : **pnpm 11 ne lit plus ces clés depuis
+  `.npmrc`**. Vérifié le 27/07/2026, `pnpm config get store-dir` y renvoyait `undefined` et
+  pnpm retombait silencieusement sur son défaut. Les réglages sont dans `pnpm-workspace.yaml`.
+- `--passWithNoTests` sur `packages/ui` et `packages/contracts` : une suite vide qui « passe »
+  est le contrôle qui ne peut pas échouer. Un test réel a été écrit dans chaque paquet.
+- `QO-085` recevra sa mesure en charge une fois les 8 services démarrés.
+
+*Ce bloc figurait par erreur à la fin de la section 1, après le tableau de `T4`, et son marqueur
+« prochain identifiant libre » y annonçait `DEC-451` alors que `DEC-469` était en usage —
+19 décisions de retard. Replacé dans sa sous-étape au titre de `ECART-021`.*
+
+## 1.5 Réalisation du LOT 1 — sous-étape `T2`
+
+Décisions prises pendant la mise en place de la stack Docker de développement, story
+`MVP-L01-US002`, issue `#3`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-458` | **Versions et registres des images non fixés par `DEC-443`** : Redis **8.4-alpine**, MinIO **`RELEASE.2025-09-07T16-13-09Z`** servi depuis **quay.io**, Mailpit **v1.30** servi depuis **ghcr.io**, Caddy **2.11-alpine**. PostgreSQL 17.7 en image **Debian** et non Alpine ; Python 3.12 en **`slim`** et non Alpine. Les huit images sont référencées par tag **et** empreinte `sha256`, toutes vérifiées `linux/amd64` **et** `linux/arm64`. | `DEC-443` n'épinglait que Python, Node et PostgreSQL : les quatre autres versions n'étaient fixées par aucun document. **PostgreSQL en Debian** parce qu'Alpine repose sur musl, dont la gestion des locales est réduite : ce socle portera un trombinoscope de noms français accentués et les index de recherche du cahier §26.1, et la collation ne se change pas sans recréer le cluster. **Python en `slim`** parce que de nombreuses roues n'existent pas en musl, ce qui forcerait une compilation depuis les sources. **quay.io et ghcr.io** parce que ce sont les registres de publication de MinIO et de Mailpit, et que la limite de débit anonyme de Docker Hub a réellement fait échouer une inspection pendant cette sous-étape (défaut `T2-1`). | Validée |
+| `DEC-459` | À `T2`, le healthcheck de `api`, `worker` et `web` porte sur le **processus et l'image**, non sur un appel HTTP : il vérifie que le paquet applicatif est importable, ou que Vite est résolvable. Les endpoints `/health/live`, `/health/ready` et `/health/version`, avec la vérification effective de PostgreSQL, Redis et MinIO, relèvent entièrement de `T3`. | Le critère de `T2` exige que les trois services soient sains, alors que `T3` livre l'application : à `T2`, il n'y a rien à sonder en HTTP. Arbitrage de Jonathan entre cette lecture et l'avance d'une API minimale. Retenue parce qu'elle ne vide ni `T3` ni `T5` de leur substance, et parce que le contrôle reste **capable d'échouer** — une image cassée ou une installation incomplète le font sortir en erreur. | Validée |
+| `DEC-460` | Toutes les publications de ports sont liées **explicitement à `127.0.0.1`**. Le contrôle `make ports` compare les publications **déclarées** dans la configuration Compose et les publications **réelles** du moteur, et **échoue si les deux nombres ne concordent pas**. | Le cahier §22.2 pose que PostgreSQL, Redis, MinIO et Mailpit ne sont jamais exposés publiquement. Sans préfixe explicite, Docker publie sur **toutes** les interfaces et contourne le pare-feu de macOS : le défaut est silencieux. La comparaison des deux vues vient du défaut `T2-4`, où le contrôle affirmait « aucune exposition » en n'ayant examiné que 5 publications sur 7. | Validée |
+| `DEC-461` | `make env` crée le `.env` local depuis `.env.example` et **génère aléatoirement 5 secrets de services locaux** sur 48 caractères — `APP_SECRET_KEY`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_PASSWORD` — plus un identifiant MinIO lisible. **`IMPORT_SOURCE_RETENTION_DAYS` et `UPTIME_KUMA_PUSH_URL` restent en `CHANGE_ME`**, et la cible le dit explicitement. | `.env` n'est pas versionné : générer des secrets forts localement n'enfreint aucune règle et supprime la tentation d'un mot de passe faible réutilisé. Les deux variables laissées en `CHANGE_ME` ne sont pas des oublis : la première relève de `QO-100`, bloquante, la seconde d'une supervision externe du LOT 13. Les afficher à la création évite qu'un futur contributeur les remplisse au hasard. | Validée |
+
+## 1.6 Réalisation du LOT 1 — sous-étape `T3`
+
+Décisions prises pendant la mise en place de l'API, des trois healthchecks et de la migration
+initiale, story `MVP-L01-US003`, issue `#4`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-462` | L'API est **synchrone** : SQLAlchemy en mode classique et FastAPI servant les routes par son pool de fils. L'application n'est **pas** construite à l'import : `uvicorn` est lancé avec **`--factory`**, et la configuration est portée par **`app.state`**, non par un cache global. | Aucun document n'impose l'asynchrone, et le cahier §25.1 dimensionne le produit pour environ 500 collaborateurs : le pool de fils suffit très largement. Le mode synchrone évite la double chaîne de pilotes, les sessions asynchrones et les pièges de mélange que le LOT 2 paierait cher. **La fabrique et `app.state` viennent d'un défaut réel** : la première version se terminait par `application = creer_application()`, ce qui faisait échouer la simple collecte des tests, et les routes lisaient un cache global, ce qui rendait intestable le cas « `ready` doit répondre 503 ». Un livrable difficile à tester est un livrable qu'on finit par ne pas tester. | Validée |
+| `DEC-463` | **La migration `0001_initial` est vide.** Elle n'active aucune extension PostgreSQL. La liste des extensions sera établie au **LOT 2**, avec les tables et les index de recherche. Question ouverte `QO-112`. | La fiche §5 annonçait « les extensions strictement nécessaires », mais **aucun document du corpus n'en nomme une seule** — zéro occurrence de `pg_trgm`, `unaccent`, `citext`, `pgcrypto`, `uuid-ossp` dans le cahier comme dans le modèle, témoin positif du même filtre à quatre occurrences de `SQLAlchemy`. Le modèle §3 impose des UUID, mais `gen_random_uuid()` est intégré à PostgreSQL depuis la version 13 ; le modèle §26.1 laisse la recherche tolérante explicitement ouverte, et ses index arrivent à la migration 16. La roadmap autorise littéralement « une migration Alembic **vide ou initiale** ». Choisir une liste aurait été inventer une décision, et une extension activée se retire moins facilement qu'elle ne s'ajoute. Arbitrage de Jonathan sur les trois issues possibles. | Validée |
+| `DEC-464` | Le garde-fou « aucune variable ne vaut encore `CHANGE_ME_*` » porte sur les variables que **l'API déclare**, non sur l'ensemble de `.env.example`. | Appliqué littéralement à tout le fichier, il empêcherait l'API de démarrer aujourd'hui : `IMPORT_SOURCE_RETENTION_DAYS` reste en `CHANGE_ME` parce que sa valeur relève de `QO-100`, bloquante, et `UPTIME_KUMA_PUSH_URL` parce qu'elle appartient au LOT 13. Aucune n'est utilisée par un code existant. Le jour où le LOT 9 ajoutera la première à sa configuration, `QO-100` devra être tranchée — c'est l'effet recherché, et il vaut mieux qu'un garde-fou contourné. | Validée |
+| `DEC-465` | Les healthchecks Compose deviennent des contrôles applicatifs réels : `api` interroge **`/health/ready`**, qui sonde effectivement PostgreSQL, Redis et MinIO ; `worker` teste la connexion à son **courtier Redis**. Les endpoints de santé restent **hors du préfixe `/api/v1`**. | `ready` et non `live` parce que Compose ne redémarre pas un conteneur au seul motif qu'il est `unhealthy` : aucun risque de boucle de redémarrage, et `depends_on: service_healthy` attend alors que l'API soit réellement capable de servir. Preuve d'effectivité : **Redis arrêté pour de vrai**, `ready` répond **503** avec `redis indisponible`, tandis que `live` reste à 200 — la sonde discrimine par dépendance. Les endpoints restent hors du préfixe versionné parce qu'ils relèvent de l'exploitation : l'adresse que sonde un orchestrateur ne doit pas bouger avec les versions de l'API. | Validée |
+
+## 1.7 Réalisation du LOT 1 — sous-étape `T4`
+
+Décisions prises pendant la mise en place de la journalisation JSON corrélée, story
+`MVP-L01-US004`, issue `#5`. Validées par Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-466` | La journalisation, le masquage des secrets et l'identifiant de corrélation vivent dans un **paquet Python partagé, `packages/observabilite`**, membre du workspace `uv`, dont dépendent l'API **et** le worker. Le module de corrélation, créé dans `apps/api/app/shared/` en `T3`, y déménage ; l'ancien emplacement n'est plus qu'un réexport sans logique. | Le cahier §28.1 impose le même format aux deux applications et le §28.2 la même interdiction de fuite. **Dupliquer le filtre de masquage aurait été la pire option** : deux filtres divergent, et le jour où l'un oublie un motif, la fuite est silencieuse. Une seule implémentation, deux consommateurs, une seule suite de tests. `packages/` est l'un des sept répertoires du cahier §15.3, qui ne le réserve pas au JavaScript ; `pnpm-workspace.yaml` liste ses membres explicitement, ce paquet Python n'y entre donc pas par accident. | Validée |
+| `DEC-467` | **La rotation des journaux est assurée par le pilote `json-file` de Docker**, avec `max-size` et `max-file`, sur les huit services. Les processus écrivent sur `stdout` et n'ouvrent aucun fichier. | Le §28.3 exige « rotation et limite de taille obligatoires ». Écrire dans un fichier à l'intérieur d'un conteneur produirait une donnée d'état que `DEC-447` interdit de sortir par un bind mount, et que personne ne rotaterait. **Ce que cette décision ne couvre pas, et il faut le dire** : le §28.3 demande aussi une conservation de 30 jours, or `json-file` borne par la taille et jamais par la durée. La conservation calendaire suppose une collecte centralisée, qui appartient au LOT 13. `LOG_RETENTION_DAYS` porte l'intention. Voir `QO-113`. | Validée |
+| `DEC-468` | Le champ `resultat` du §28.1 prend **trois** valeurs et non deux : **`succes`** pour 2xx et 3xx, **`refus`** pour 4xx, **`echec`** pour 5xx. Seul `echec` est journalisé au niveau `error`. | La première version n'en avait que deux, et annonçait `resultat=succes` à côté d'un `code_erreur=http_404` : contradictoire à la lecture, et ambigu à l'agrégation — on ne savait plus si `succes` comptait les refus. La distinction dit **où est la faute** : `refus` chez l'appelant, `echec` chez nous. Journaliser un 404 au niveau `error` ferait par ailleurs sonner une alerte à chaque adresse mal tapée. | Validée |
+| `DEC-469` | **Ne sont jamais journalisés** : la chaîne de requête HTTP, les arguments d'un job — seul leur nombre l'est —, les traces d'exception — seul le type l'est —, le journal d'accès d'uvicorn, et les journaux de `httpx`, `botocore` et `urllib3`, réduits aux avertissements. | Le §28.2 interdit le magic link complet : la chaîne de requête le porterait, et ne pas l'écrire du tout est la parade la plus sûre. Les arguments d'un job porteront une adresse e-mail, un identifiant de personne ou un jeton. Une trace d'exception contient les variables locales, donc des secrets. Le journal d'accès d'uvicorn, mesuré sur les journaux réels, double la ligne applicative **sans aucun des dix champs**, journalise les sondes de santé toutes les dix secondes — **8 640 lignes par jour et par service** — et écrit le chemin brut avec sa chaîne de requête. `httpx` et `botocore` écrivent des URL complètes, dont des URL signées. | Validée |
+
+## 1.8 Réalisation du LOT 1 — sous-étape `T5`
+
+Décisions prises pendant la réalisation de la page de statut, story `MVP-L01-US002`,
+issue `#3`. Soumises à Jonathan le 28 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-470` | **La page et l'API partagent une seule origine.** Le bloc `app.onboarding.localhost` du `Caddyfile` mandate `/health/*` et `/api/*` vers `api:8000`, le reste vers `web:5173`. Aucun CORS n'est ajouté à l'API, et aucun renvoi n'est configuré dans le serveur de développement Vite. `VITE_API_BASE_URL` reste à `/api/v1` et n'est **pas** employée pour les endpoints de santé, hors préfixe par `DEC-465`. | La page est servie sur `app.onboarding.localhost` et l'API sur `api.onboarding.localhost` : deux origines pour un navigateur, et l'API n'a **aucun CORS** — mesuré, 0 occurrence. Trois montages étaient possibles. CORS ajouterait une surface de sécurité permanente et compliquerait les cookies `Secure` et `SameSite` du LOT 3, or c'est précisément pour pouvoir les éprouver que `DEC-446` impose HTTPS local. Un renvoi par Vite disparaîtrait dès qu'une image de production sert un artefact statique, donc à refaire en `T7`. Le mandatement par Caddy ne modifie pas l'API, laisse l'en-tête `X-Request-ID` lisible par la page sans `Access-Control-Expose-Headers`, et survit à la recette comme à la production. **`CLAUDE.md` §9.3 affirmait « `Caddyfile` inchangé » : c'était faux**, aucune route n'y menait à l'API. | Validée |
+| `DEC-471` | Les tests de la page emploient **Testing Library** sur l'environnement **`jsdom`**, déclaré dans `vite.config.ts`. Deux dépendances de développement sont ajoutées : `@testing-library/react` et `@testing-library/dom` — pair explicite depuis la version 16 — et `jsdom`. | Testing Library est **prescrite** par le cahier §17.1 et par la fiche §6 : ce n'est pas un choix nouveau. En revanche aucun document ne tranche l'environnement DOM. `jsdom` est l'implémentation de référence, celle que documente Testing Library, et la seule dont le comportement sur `navigator.onLine` et sur le presse-papiers est stable — les deux mécanismes que la page doit éprouver. `restoreMocks` et `unstubGlobals` sont activés : un test qui laisse fuir son bouchon fait passer ou échouer le suivant pour une raison invisible. | Validée |
+| `DEC-472` | Le `Caddyfile` est monté par **son répertoire** — `../caddy:/etc/caddy:ro` — et non plus par le fichier seul, et **`make up` recharge explicitement Caddy** par la cible `caddy-reload`. | Un bind mount de fichier unique épingle l'**inode**. La plupart des éditeurs n'écrivent pas en place : ils écrivent un temporaire puis renomment, produisant un inode neuf. Le conteneur continue alors de pointer vers l'ancien inode supprimé : `ls` affiche encore l'entrée, mais toute ouverture répond « No such file or directory ». **Mesure du 28/07/2026 : le conteneur voyait un `Caddyfile` de 1 573 octets quand l'hôte en portait 2 844**, et Caddy servait une configuration périmée en paraissant parfaitement sain. Monter le répertoire résout la classe entière, le chemin étant résolu à chaque ouverture. Le rechargement traite le second volet du même défaut : Caddy ne surveille pas son fichier, et Compose ne recrée pas le conteneur quand seul le contenu du fichier monté change. Reste de la **configuration en lecture seule**, donc conforme à `DEC-447`. | Validée |
+| `DEC-473` | Un **`.dockerignore`** exclut du contexte de construction `node_modules`, `.venv`, les caches d'outillage, `.git`, `docs/prototype`, les copies de conflit iCloud et **`.env`**. | Sans lui, `COPY apps/web ./apps/web` recopie le `node_modules` de l'**hôte** par-dessus celui que `pnpm install` construit dans l'image. Mesure du 28/07/2026 : l'hôte résout `@rolldown/binding-darwin-arm64`, `lightningcss-darwin-arm64` et `@typescript/typescript-darwin-arm64` ; l'image résout les variantes `linux-arm64-musl`. Les deux arborescences ne sont pas interchangeables. Le défaut n'était **pas actif** — les liens de `apps/web/node_modules` sont relatifs et pointent vers le magasin `.pnpm` du conteneur — mais **latent** : un `node_modules` d'hôte désynchronisé du verrou produirait des liens vers des chemins absents, et l'échec surviendrait au démarrage, pas à la construction. L'exclusion de `.env` est une barrière supplémentaire : aucun `Dockerfile` ne le copie aujourd'hui, et un secret gravé dans une couche d'image y reste. **Ce fichier ne résout pas `ROAD-RSK-030`** : la réduction de l'image `web` exige un `Dockerfile` multi-étapes, en `T7`. | Validée |
+
+**Ce que `T5` a délibérément écarté**
+
+- **`axe`** et tout audit d'accessibilité outillé : `jsx-a11y` couvre le lint JSX, et l'audit
+  automatisé du cahier §14.2 relève de `T10` et de l'audit du LOT 12. Le dire vaut mieux que le
+  laisser croire.
+- **React Router** : `DEC-456` ne l'installe pas avant le LOT 4, et le LOT 1 n'a qu'une page.
+- **Zod** : la validation des deux formes de réponse est écrite à la main, pour la même raison.
+- **Un bind mount du code source** vers le conteneur `web` : `DEC-447` reste intact, les
+  modifications passent par le `make up` qui reconstruit. Le rechargement à chaud n'est exigé
+  par aucun critère du lot.
+- **Toute couleur de marque** : `packages/ui` est vide jusqu'à `T10` et la charte relève de
+  `DEP-006`. Poser une palette approximative créerait la dette que `US007` cherche à éviter.
+
+## 1.9 Réalisation du LOT 1 — sous-étape `T6`
+
+Décisions prises pendant la mise en place de l'intégration continue, story
+`MVP-L01-US005`, issue `#6`. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-474` | L'audit de dépendances **tolère un avis nommé et un seul**, `GHSA-mh99-v99m-4gvg`, déclaré dans `pnpm-workspace.yaml`. Ce n'est **pas** un abaissement de seuil : tout autre avis, de toute sévérité, continue de faire échouer `make audit` et donc l'intégration continue. | `brace-expansion` ≤ 5.0.7, déni de service, sévérité **haute**, atteint par `eslint-plugin-jsx-a11y > minimatch@3.1.5`. **Le correctif évident est exclu par la mesure** : la dernière version publiée de la ligne 1.x **est** 1.1.16, il n'existe donc aucun correctif dans cette ligne ; et forcer 5.0.8 casserait le lint, car son export CommonJS est un **objet** portant `.expand`, non une fonction appelable, alors que `minimatch@3.1.5` fait `expand(motif)` — mesuré le 29/07/2026, « m is not a function ». On aurait remplacé un déni de service théorique par la neutralisation certaine d'ESLint, donc de `eslint-plugin-jsx-a11y`, motif déterminant de `DEC-451`. La dépendance est transitive et **de développement seulement** : elle s'exécute au lint, sur nos propres motifs de fichiers, et n'entre dans aucun artefact livré. Éprouvé par témoin : un identifiant bidon à la place du vrai fait de nouveau échouer l'audit. La sortie affiche « 1 high (**1 ignored**) » : la tolérance reste visible, non silencieuse. Voir `ROAD-RSK-032`. | Validée |
+| `DEC-475` | Le workflow se découpe en **deux tâches** — « qualité » sans aucun service, « stack » avec les huit — et une troisième, **« porte »**, qui récapitule et conclut. Chaque action GitHub est référencée par **empreinte de commit**, jamais par étiquette, et Gitleaks est téléchargé puis **vérifié par empreinte SHA-256** avant exécution. | Deux tâches parce que le retour qualité ne doit pas attendre la construction des images : mesuré à 1 min 08 contre 1 min 57. Une porte unique parce que c'est **ce contexte** que la protection de branche exige : ajouter ou renommer une tâche ne demande alors aucun réglage côté GitHub, et aucune tâche ne peut disparaître sans que la porte le voie. L'épinglage par empreinte prolonge `DEC-443` pour les images et `DEC-456` pour l'outillage : une étiquette se déplace, une empreinte non. Vérifier l'empreinte d'un binaire **de sécurité** avant de l'exécuter n'est pas une précaution excessive, c'est la cohérence minimale. | Validée |
+| `DEC-476` | Les contrôles d'intégration deviennent **obligatoires sur `develop` ET sur `main`**, avec `strict` actif — la branche doit être à jour avant fusion. Le contexte exigé est **« Porte de l integration continue »**, seul. | Les conventions Git §2 le prévoyaient « au LOT 1, quand la CI existe ». Arbitrage de Jonathan sur trois options présentées. Sans cela, le critère de sortie de la roadmap — « la CI **bloque** volontairement une erreur de lint, de test et de secret » — ne serait satisfait que par la démonstration, pas par le réglage : un workflow rouge qui laisse fusionner ne bloque rien. Effet à connaître : `enforce_admins` étant actif, la règle s'applique aussi à Jonathan. Si un contrôle se bloque pour une cause extérieure, c'est à lui de désactiver temporairement le réglage. Les huit réglages précédents ont été **reconduits à l'identique** dans le même appel, l'API remplaçant l'objet entier. | Validée |
+| `DEC-477` | `make up` démarre en **deux temps** : d'abord `db`, `redis`, `minio` et `mailpit` avec attente de l'état sain, **puis la création du bucket MinIO**, puis les services applicatifs. | La sonde `ready` de l'API fait un `head_bucket` : tant que le bucket n'existe pas elle répond 503, le conteneur `api` n'est donc jamais `healthy`, et `up --wait` échoue sur « dependency failed to start ». Or le bucket n'était créé qu'**après** cette attente. Le défaut n'a jamais pu paraître en local, le volume `minio-data` survivant à `make down` : il s'est montré au **premier démarrage sur une machine neuve**, l'exécuteur d'intégration continue. Reproduit localement en supprimant le seul volume MinIO — `caddy-data` préservé pour ne pas invalider l'approbation de la racine dans le trousseau — puis corrigé et revérifié depuis le même état. **`T8` devra reproduire cet ordre** dans la surcouche de recette. | Validée |
+
+## 1.10 Réalisation du LOT 1 — sous-étape `T7`
+
+Décisions prises pendant la construction des images multiarchitecture et leur publication dans
+GHCR privé, story `MVP-L01-US006`, issue `#7`. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-478` | Les images sont construites **multiarchitecture `linux/amd64` et `linux/arm64` à la fois sur une fusion dans `develop` et sur un tag versionné**, et non mono-architecture sur `develop`. | Le cahier des charges dit deux choses différentes : son §23.2 fait publier les images à la fusion sur `develop` **sans employer le mot « multiarchitecture »**, tandis que son §23.3 réserve le « build multiarchitecture » au tag. Lu à la lettre, publier mono-architecture sur `develop` aurait suffi. Retenu, sur arbitrage de Jonathan : les deux. Motif déterminant — la recette de `T8` doit éprouver **exactement** l'artefact que la production déploiera ; une recette qui exerce un autre artefact ne recette rien, et le §22.2 n'exige des environnements séparés que pour qu'ils soient représentatifs. Coût mesuré et assumé : chaque poussée construit six variantes, dont trois en émulation. | Validée |
+| `DEC-479` | L'image `web` porte **deux cibles nommées** — `developpement`, le serveur Vite inchangé, et `execution`, l'artefact de `vite build` servi par **`caddy:2.11-alpine`**, sur le **même port 5173**. Chaque surcouche d'environnement **sélectionne sa cible explicitement**. Et le `chown -R` final est **supprimé des trois `Dockerfile`** au profit de `COPY --chown`. | Traite `ROAD-RSK-030` et `ROAD-RSK-031` d'un seul geste, comme les deux risques le prévoyaient. **Trois mesures commandent la conception.** (1) Taille : la cible publiée passe de **1,02 Gio à 84,9 Mo**, soit **−91,7 %**, et ni Node, ni Vite, ni ESLint n'y subsistent — vérifié par `command -v` sur les cinq outils. (2) `chown -R` : mesuré à **230 Mio** dans `web` et **143 Mio** dans `api` et `worker`, parce qu'une couche d'image réenregistre le fichier **entier** dès qu'une seule de ses métadonnées change — la couche duplique l'arborescence dont elle ne change que le propriétaire. Les trois images perdent 29 % à ce seul titre. (3) Socle Caddy et non `nginx` : `caddy:2.11-alpine` est **déjà employée** par ce projet pour le mandataire inverse, avec la même empreinte ; la réutiliser n'ajoute **aucune dépendance externe**, donc aucune entrée au registre des dépendances, et **aucune vulnérabilité distincte** au projet — Trivy y trouve 27 avis, exactement ceux que la stack porte déjà. Le port 5173 est conservé pour que `infra/caddy/Caddyfile` n'ait pas à changer : un Caddyfile par environnement dupliquerait le mandatement de même origine de `DEC-470`. La sélection explicite de cible est exigée parce que son absence serait **silencieuse** : sans `target`, Docker construit la dernière étape du `Dockerfile`, soit `execution`, et la stack de développement perdrait le rechargement à chaud en restant parfaitement saine. `make images-check` échoue si une surcouche omet la ligne. | Validée |
+| `DEC-480` | L'**identité du build est gravée dans l'image** : `ARG APP_VERSION` et `ARG APP_REVISION` deviennent des `ENV`, et **quatre étiquettes OCI** portent titre, source, version et révision. Compose transmet désormais les deux variables aux services `api` **et** `worker`. | Le critère de `MVP-L01-US003` exige que « la version corresponde au build », et `.env.example` annonçait cette injection « à la construction de l'image en `T7` ». **Mesure du 29/07/2026 : elle n'avait pas lieu.** Ni le `Dockerfile` ni Compose ne transmettaient ces deux variables ; `/health/version` renvoyait donc les valeurs **par défaut** de `settings.py`. Le critère n'était pas satisfait, il était **non contredit**, faute de build identifié. Côté worker l'enjeu est le même : `worker/main.py` lit `APP_VERSION` pour le champ `version` des dix champs du §28.1, et chaque ligne de journal affirmait `0.0.0-dev` quelle que soit l'image en exécution. Les valeurs par défaut restent celles de `.env.example` : une image construite sans argument continue de dire honnêtement qu'elle ne connaît pas sa révision, plutôt que d'afficher un numéro faux. | Validée |
+| `DEC-481` | Étiquettes publiées dans GHCR : **`sha-<empreinte>` toujours**, **`develop`** sur la branche d'intégration, **la version exacte** sur un tag. **Aucun `latest` n'est publié.** | Les conventions §4.1 tolèrent `latest` « comme alias de commodité en développement » et l'interdisent comme référence unique de déploiement ; le critère de la fiche §3 dit « aucune référence à `latest` seul ». Retenu, sur arbitrage de Jonathan et **plus strict que les conventions** : n'en publier aucune. Motif : une étiquette qui existe finit par être employée, et **aucun consommateur n'en a besoin** — la recette lit `develop`, la production la version exacte, le diagnostic l'empreinte. Les étiquettes locales que Compose engendre pour ses propres constructions, `onboarding-dev-web:latest`, restent hors de cette interdiction : elles ne sont jamais poussées, et c'est exactement le cas que les conventions tolèrent. `make images-check` distingue les deux, avec témoin dans les deux sens. | Validée |
+| `DEC-482` | **Trivy entre dans la chaîne**, sur les images **publiées**. Il **bloque sur les avis `CRITICAL` pour lesquels une version corrective existe** (`--ignore-unfixed`) et **rapporte sans bloquer** tout le reste, le compte complet étant affiché à chaque exécution. | **Décision prise après mesure, jamais avant** — c'est la cinquième proposition de la règle du lot, et elle a servi. Mesures du 29/07/2026, plateforme `linux/arm64` : `python:3.12-slim` porte **4 `CRITICAL` et 19 `HIGH`, dont AUCUN n'a de version corrective publiée** — quatre `CRITICAL` dans `perl-base`, le reste dans util-linux, gzip et ncurses. **Bloquer sur `HIGH` rendrait donc la chaîne définitivement rouge sans remède** : le seul « correctif » serait d'abandonner Debian slim, que `DEC-443` a choisi sur un motif mesuré — les roues Python n'existent pas en musl. Un contrôle qui exige l'impossible finit désactivé, et un contrôle désactivé ne prouve rien. Le réglage retenu est **vert aujourd'hui** — 0 `CRITICAL` corrigeable sur les trois images publiées — et il **peut échouer**, ce qui n'est pas une supposition : l'image `web` d'**avant** `T7` en portait exactement un, `tar 7.5.13 → 7.5.19` dans le npm embarqué par Node. Second constat de la mesure, et il mérite d'être dit : **nos couches n'ajoutent aucune vulnérabilité.** Les totaux des images sont **exactement** ceux de leurs images de base officielles — 176 pour `api` comme pour `python:3.12-slim`, 27 pour `web` comme pour `caddy:2.11-alpine`. | Validée |
+
+---
+
+## 1.11 Réalisation du LOT 1 — sous-étape `T8`
+
+Décisions prises pendant la mise en place de l'environnement de recette isolé, story
+`MVP-L01-US002`, issue `#3` rouverte. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-483` | **La machine de Jonathan est authentifiée au registre GHCR en LECTURE seule.** Portée ajoutée : `read:packages` uniquement, obtenue par `gh auth refresh` puis transmise à Docker par `gh auth token`. **Aucun secret de dépôt n'est créé**, et la publication reste le fait du `GITHUB_TOKEN` de l'intégration continue. | **Ceci renverse l'arbitrage du 29/07/2026** porté par la fiche §3.1, « ne pas authentifier la machine locale au registre ». Motif du renversement : sans authentification, la recette ne peut pas tirer les images publiées, donc elle exercerait une construction locale — or `DEC-478` pose qu'« une recette qui exerce un autre artefact que la production ne recette rien ». Conséquence acquise : la réserve d'`arm64` **natif** est levée, mesurée `aarch64` dans les 3 conteneurs de l'image publiée. | Validée par Jonathan le 29/07/2026, action exécutée par lui-même |
+| `DEC-484` | **Un SEUL `Caddyfile` sert les deux environnements.** Les adresses de site y sont substituées depuis l'environnement du processus — `{$CADDY_SITE_APP:app.onboarding.localhost}` — et le service `caddy` les transmet par `environment:`. La recette emploie des **hôtes distincts**, `app.recette.` et `api.recette.onboarding.localhost`. | Le bloc `app.` porte le mandatement de même origine de `DEC-470`, donc une règle de sécurité : le dupliquer par environnement créerait deux copies à maintenir, et le jour où l'une divergerait la recette n'éprouverait plus le montage de la production. Même motif que `DEC-466` pour le masquage, et que `T7` §2.3 pour ce même fichier. **Des hôtes distincts et pas seulement des ports** : un port ne se voit pas dans un onglet de navigateur, un nom d'hôte si. Substitution et résolution **mesurées**, dans les deux sens. | Validée |
+| `DEC-485` | **Le `Makefile` est paramétré par `ENVIRONNEMENT`**, avec `dev` par défaut : un seul jeu de cibles, aucune duplication. Les alias `*-recette` **délèguent** sans porter de logique. **Un seul modèle de configuration**, `.env.example`, plus un **calque de différences versionné** par environnement — jamais un second modèle complet. | Quinze cibles étaient câblées sur la surcouche `dev`. Les dupliquer aurait créé deux copies d'une même logique, qui divergent en silence : c'est `ECART-022` pour les modèles de configuration et `DEC-466` pour le masquage. Le risque assumé du paramétrage est la régression sur `dev` ; la parade est d'avoir relevé les onze codes de sortie **avant** la première modification et de les avoir confrontés après. | Validée |
+| `DEC-486` | **La recette exécute les images PUBLIÉES, épinglées par empreinte de liste de manifestes**, jamais par étiquette. Elle **tire** au lieu de construire, et `--no-build` fait échouer le démarrage si l'image manque. `make images-pin` déplace le pointeur sans commit, en dérivant les empreintes de la publication ; le figer durablement reste un commit. | Trois motifs. `make images-check` **exige** `@sha256:` sur toute référence des fichiers suivis (`DEC-443`, cahier §23.3). Le critère de la story dit « une même version **immuable** fonctionne », et `develop` désigne un artefact différent à chaque fusion. Enfin le fichier de base déclare `build:` : sans `--no-build`, une image absente ferait construire localement et la recette exercerait un autre artefact **en paraissant saine**. Un contrôle lit en plus l'empreinte de l'image réellement en marche. | Validée |
+| `DEC-487` | **Bande de ports de la recette :** `8080` · `8443` · `15432` · `16379` · `19000` · `19001` · `18025`, toutes liées à `127.0.0.1`. | Disjointe de celle du développement, ce que la septième séparation du cahier §22.2 exige, et **mesurée libre** au moment du choix. Bandes disjointes est aussi la condition pour que les deux stacks puissent tourner ensemble le temps de la mesure de `QO-085` — ce qui ne l'autorise pas en exploitation, `DEC-440` restant en vigueur. | Validée |
+| `DEC-488` | **`make docs-check` dérive désormais les totaux des tableaux de synthèse** du registre des décisions et les confronte au corps qu'ils résument, tableau par tableau. | Les deux tableaux de comptage annonçaient **145** alors que le corps déclarait 65 décisions de réalisation, soit 150 : `T7` avait complété le corps sans reprendre les synthèses. C'est la classe de `ECART-021`, et `docs-check` ne l'attrapait pas — il vérifiait les marqueurs d'identifiant libre et les cinq empreintes, pas les totaux. La passation §1 l'exige : « ne rétablis aucun compte sans poser d'abord le contrôle qui le dérive ». | Validée |
+
+---
+
+## 1.12 Réalisation du LOT 1 — sous-étape `T9`
+
+Décisions prises pendant la rédaction de la documentation d'exploitation locale, story
+`MVP-L01-US008`, issue `#9`. Soumises à Jonathan le 29 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-489` | **`make destroy` MESURE au lieu d'affirmer.** Elle énumère les volumes **réellement présents** du projet, extrait l'autorité de certification du conteneur et **interroge le trousseau** — puis dit ce qu'elle a mesuré. Quand elle ne peut pas mesurer, conteneur arrêté ou hors macOS, elle dit **« indéterminé »** plutôt que de trancher. | Sa version de `T8` annonçait, quel que soit l'environnement : « Sa perte obligera à réapprouver la racine dans le trousseau macOS. » Mesure du 29/07/2026 : `security verify-cert` rend **0 pour `dev`** et **1 pour la recette**, dont la racine n'a jamais été approuvée. L'avertissement était donc **faux** sur la cible la plus destructive du dépôt — et un avertissement qui annonce une conséquence inexistante apprend à passer outre, si bien que le jour où il porte sur `dev`, où la conséquence est réelle, il n'est plus lu. C'est `ECART-024`. | Validée |
+| `DEC-490` | **`make web-check` est paramétrée par `ENVIRONNEMENT`**, son origine étant **dérivée** de `CADDY_SITE_APP` et du port HTTPS publié. Et le contrôle de page **identifie la cible servie** — `developpement` ou `execution` — exige qu'elle soit l'une des **deux** formes connues, puis applique les contrôles de cette forme. | Le contrôle de `T5` exigeait `/src/main.tsx` dans l'index : c'est le comportement du serveur Vite. Depuis `T8` la recette sert l'artefact bâti, dont l'index référence `/assets/index-<empreinte>.js` — la référence `/src/main.tsx` n'y existe pas **par construction** (`DEC-479`). Mesuré : **2 contrôles sur 6 en échec sur une recette parfaitement saine**. La parade n'est pas de retirer l'exigence mais de la rendre juste par cible ; et **s'il ne reconnaît aucune des deux formes, le contrôle ÉCHOUE** — sans quoi un index vide passerait pour un cas non prévu. | Validée |
+
+---
+
+## 1.13 Réalisation du LOT 1 — sous-étape `T10`
+
+Décisions prises pendant la mise en place du design system et du contrat API partagé, story
+`MVP-L01-US007`, issue `#8`. Soumises à Jonathan le 30 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-491` | **Les couleurs de marque sont RELEVÉES du prototype, qui les nomme lui-même**, et chacune porte un texte apparié **déterminé par la mesure de contraste**. Les neutres et les états sont **repris de `T5`** sans être redéfinis. La typographie est une **pile système**, aucune police téléchargée. | Le cahier §13.1 exige « la charte graphique » et « la police officielle » : mesuré, ni l'une ni l'autre n'est dans le corpus, et le cahier ne contient **aucune** couleur hexadécimale. Le prototype, lui, déclare `EXALT_BLUE`, `EXALT_DARK_BLUE`, `EXALT_PINK` et `EXALT_YELLOW`, ce qui corrobore littéralement le « bleu, rose et violet » du §13.2 : deux sources concordantes, donc pas une invention. **Et la mesure a corrigé le prototype** : il ne prévoyait du texte foncé que pour le jaune ; le rose et le vert le réclament aussi. Le reprendre tel quel aurait reconduit deux défauts d'accessibilité. Arbitrage de Jonathan. | Validée par Jonathan le 30/07/2026 |
+| `DEC-492` | **Le contrat API est déclaré dans un manifeste JSON unique**, `packages/contracts/src/contrat-api.json`, lu par le frontend TypeScript **et** par un contrôle Python qui vérifie que le schéma OpenAPI servi le respecte. Les types et les validateurs quittent `apps/web` pour `packages/contracts`. | Le critère dit « génération/partage ». **La génération depuis OpenAPI était impossible** : mesuré, `components.schemas` du schéma servi est **vide**, les routes rendant des dictionnaires sans modèle de réponse. Générer aurait produit des types `unknown`, donc l'illusion d'un contrat typé. Le sens est donc inversé — le manifeste déclare, le contrôle vérifie — et il échoue dans le sens utile. Le **partage**, c'est le déplacement : les types étaient justes dans `apps/web` depuis `T5` mais un second consommateur les aurait recopiés. | Validée |
+| `DEC-493` | **Aucune tolérance d'audit n'est plus déclarée.** La tolérance nommée de `DEC-474`, `GHSA-mh99-v99m-4gvg`, est **retirée** : `make audit` est vert sans elle. | `T6` avait mesuré qu'aucun correctif n'existait dans la ligne 1.x de `brace-expansion` et que forcer la ligne 5 cassait ESLint. **Mesure du 30/07/2026 : la ligne 1.x a reçu `1.1.18`**, et ce que `T6` avait mesuré comme inexistant existe. Vérifié dans les deux sens — l'audit est vert avec et sans la tolérance — et rien n'est cassé, `jsx-a11y` compris. **Une tolérance qui ne couvre plus rien avalerait silencieusement une réapparition du même avis** : zéro tolérance est strictement plus fort, et c'est la direction que `DEC-474` visait. `ROAD-RSK-032` est clos par la même mesure. | Validée |
+
+**Prochain identifiant libre : `DEC-494`.**
 
 ---
 
@@ -233,7 +447,33 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `ARB-BACK` | 5 | 5 |
 | `DEC-418+` | 21 | 21 |
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
-| **Total** | **116** | **116** |
+| `DEC-449` — mise en place GitHub | 1 | 1 |
+| `DEC-450` — ouverture du LOT 1 | 1 | 1 |
+| `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
+| `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
+| `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
+| `DEC-466+` — réalisation du LOT 1, `T4` | 4 | 4 |
+| `DEC-470+` — réalisation du LOT 1, `T5` | 4 | 4 |
+| `DEC-474+` — réalisation du LOT 1, `T6` | 4 | 4 |
+| `DEC-478+` — réalisation du LOT 1, `T7` | 5 | 5 |
+| `DEC-483+` — réalisation du LOT 1, `T8` | 6 | 6 |
+| `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
+| `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
+| **Total** | **161** | **161** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
+
+> **Depuis `T8`, ces deux tableaux sont VÉRIFIÉS et non plus seulement tenus à la main.**
+> `make docs-check` dérive, pour chaque tableau de synthèse séparément, la somme de ses
+> lignes `DEC-4xx` et la confronte au nombre de décisions réellement déclarées dans le corps
+> du registre — puis vérifie que le « Total » égale « Total repris » plus cette somme, et que
+> les colonnes « Attendu » et « Présent » concordent ligne par ligne.
+>
+> Le contrôle a été posé parce qu'il manquait : les deux tableaux annonçaient **145** quand le
+> corps déclarait 65 décisions de réalisation, soit **150**. L'écart valait exactement les cinq
+> décisions de `T7`, dont le corps avait été complété sans que les synthèses le soient. C'est la
+> classe de `ECART-021` — un nombre affirmé sans être dérivé de sa source — et `DEC-488` la
+> referme. Vérifier chaque tableau **contre lui-même** n'est pas un détail : la première version
+> du contrôle additionnait les lignes des deux tableaux et comparait au total d'un seul, ce qui
+> donnait 170 au lieu de 85.
