@@ -2,10 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 29 juillet 2026, à la sortie de la sous-étape **`T9`** — §1, §4, §5, §7, §8,
+**Mis à jour le :** 30 juillet 2026, à la sortie de la sous-étape **`T10`** — §1, §4, §5, §7, §8,
 §9, §10 et §11 rectifiés **sur mesures**. **Cinq affirmations de ce document se sont révélées
 fausses : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais pour **poursuivre le LOT 1 à partir de `T10`**
+**Destinataire :** l'agent qui prend le relais pour **conclure le LOT 1 par `T11`, la porte `G1`**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T9`**, les neuf |
-| **Prochaine action** | **`T10`** — design system et contrat API. Story `MVP-L01-US007`, **`P1`**, issue [#8](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/8), **déjà ouverte** |
-| Stories `Done` | **7 sur 8** : `US001` à `US006` **et `US008`**. `US002` a reçu `T2`, `T5` et `T8` |
-| Stories restantes | **`US007` seule** — design system, **`P1`**, la seule story reportable du lot |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T10`**, les dix |
+| **Prochaine action** | **`T11`** — contrôles de sortie, checklist de la porte `G1`, et le tag **`v0.1.0`** sur `main` (`DEC-428`). Aucune story : c'est la porte |
+| Stories `Done` | **LES HUIT.** `US002` a reçu `T2`, `T5` et `T8` |
+| Stories restantes | **aucune.** `US007` a été réalisée et non reportée |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **166** : 139 pytest — 131 unitaires, 8 d'intégration sur services réels — et **27 Vitest**. Inchangé depuis `T7` |
+| Tests | **260** : **144 pytest** — 136 unitaires, 8 d'intégration — et **116 Vitest**. C'était 166 avant `T10` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **158 décisions** · **24 écarts** (5 ouverts) · 38 questions (33 ouvertes) · 34 risques |
+| Registres | **161 décisions** · 24 écarts (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -103,10 +103,10 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **10 barrées** |
-| **Comment a-t-on fait `T1` à `T9` ?** | **`docs/operations/compte-rendu-t{0,…,9}-lot-1.md`** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **11 barrées** |
+| **Comment a-t-on fait `T1` à `T10` ?** | **`docs/operations/compte-rendu-t{0,…,10}-lot-1.md`** |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
-| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **158 décisions**, et `make docs-check` en **dérive les totaux** |
+| Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **161 décisions**, et `make docs-check` en **dérive les totaux** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
 
 Les cinq documents de cadrage sont **immuables**. Intégrité prouvée par empreinte SHA-256 dans
@@ -299,9 +299,46 @@ deux portaient un défaut.** Voir §7.21.
 
 ---
 
-## 4.12 Les décisions qui contraignent ton travail quotidien
+## 4.12 `T10` — design system et contrat API partagé
 
-Les 158 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+**Le critère disait « sans dépendance visuelle arbitraire », et c'était le seul endroit du lot où la
+règle §6.5 — ne jamais inventer ce qui n'est pas décidé — était en jeu aussi directement.**
+
+**Mesure d'abord :** le cahier §13.1 exige « la charte graphique » et « la police officielle » ;
+**aucune des deux n'est dans le corpus**, aucun fichier de design n'est versionné, et le cahier ne
+contient **aucune** couleur hexadécimale. Zéro occurrence.
+
+**Le prototype, lui, NOMME sa palette** — `EXALT_BLUE = #5853FF`, `EXALT_DARK_BLUE = #2F2F9B`,
+`EXALT_PINK = #FF2C9B`, `EXALT_YELLOW = #FFDA3E` — et cela corrobore littéralement le « dégradés
+bleu, rose et violet » du §13.2. Deux sources concordantes, donc pas une invention. Arbitrage de
+Jonathan sur quatre options.
+
+**Et la mesure a CORRIGÉ le prototype, ce qui est le résultat le plus utile.** Le jaune rend **1,37**
+de contraste sur fond clair, le bleu foncé **1,69** sur fond sombre : les couleurs de marque sont des
+**surfaces** portant un texte apparié mesuré, pas des couleurs de texte libres. Le prototype ne
+prévoyait du texte foncé que pour le jaune ; **le rose et le vert le réclament aussi**. Le reprendre
+tel quel aurait reconduit deux défauts d'accessibilité.
+
+**Le contrat : le sens de vérification est INVERSÉ, et c'est mesuré.** `components.schemas` du schéma
+OpenAPI servi est **vide** — les routes rendent des dictionnaires sans modèle. Générer aurait produit
+des types `unknown`, donc l'illusion d'un contrat typé. Un **manifeste JSON unique** déclare donc le
+contrat, lu par TypeScript **et** par un contrôle Python qui vérifie que le schéma le respecte.
+
+**Un constat produit par ce contrôle dès sa première exécution :** l'API ne documentait **pas** le
+503 de `/health/ready`, que le frontend traite comme un état exploitable depuis `T5`.
+
+**Et un événement extérieur qui ferme un risque.** `make audit` est passé de 1 avis toléré à 4 avis
+hauts **sans que `T10` y soit pour rien** — vérifié sur un arbre créé avant `T10`, qui rend les mêmes
+4. Ce sont des avis nouvellement publiés. Les deux sont corrigeables par montée de correctif, et
+`brace-expansion@1.1.18` corrige au passage l'avis que `T6` avait mesuré **sans correctif
+possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` est clos, `DEC-493`. Vois
+§7.22.
+
+---
+
+## 4.13 Les décisions qui contraignent ton travail quotidien
+
+Les 161 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -345,16 +382,16 @@ Les 158 sont dans `docs/decisions/registre-decisions.md`. Celles que tu applique
 | `DEC-481` | Étiquettes : `sha-<empreinte>`, `develop`, version exacte. **Aucun `latest` publié** — plus strict que les conventions §4.1 |
 | `DEC-482` | **Trivy bloque sur `CRITICAL` corrigeable seulement**, et rapporte le reste visiblement |
 
-## 4.13 Les séquences d'identifiants — à respecter absolument
+## 4.14 Les séquences d'identifiants — à respecter absolument
 
 Un identifiant n'est **jamais** réutilisé, **jamais** renuméroté, et un trou n'est **jamais**
 comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`490` en usage | **`DEC-491`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`493` en usage | **`DEC-494`** |
 | `ECART-nnn` | `001`–`024` | **`ECART-025`** |
-| `QO-nnn` | `072`–`114`, **5 trous** | **`QO-115`** |
+| `QO-nnn` | `072`–`115`, **5 trous** | **`QO-116`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
@@ -692,7 +729,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**73 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **63 pendant `T1` à `T9`**. Ils sont
+**77 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **67 pendant `T1` à `T10`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -1158,6 +1195,39 @@ là ».** Même famille que `T2-1`, où un 429 masqué avait été lu comme une 
 
 ---
 
+## 7.22 Un résiduel accepté n'est pas un dossier clos
+
+**Apport de `T10`, et il renverse une mesure de `T6` en un seul jour.**
+
+`T6` avait accepté un avis de sécurité, `GHSA-mh99-v99m-4gvg`, avec un motif **mesuré et solide** :
+
+- la dernière version publiée de la ligne 1.x de `brace-expansion` **était** `1.1.16` — aucun
+  correctif n'existait dans cette ligne ;
+- forcer la ligne 5 **cassait ESLint** : son export CommonJS est un objet portant `.expand`, non une
+  fonction, là où `minimatch@3` appelle `expand(motif)`. Le « correctif » aurait neutralisé
+  `eslint-plugin-jsx-a11y`, motif déterminant de `DEC-451`.
+
+**Mesure du 30/07/2026 : la ligne 1.x a reçu `1.1.18`.** Ce que `T6` avait mesuré comme inexistant
+existe. Un `pnpm update -r`, dans les plages déjà déclarées, sans forcer aucune version majeure.
+Vérifié dans les deux sens — l'audit est vert **avec et sans** la tolérance — et rien n'est cassé.
+
+> **La règle, sans jargon :** un risque accepté parce qu'« aucun correctif n'existe » décrit
+> l'écosystème **à une date**. Réévalue-le, ne l'archive pas. Et **retire la tolérance dès qu'elle ne
+> couvre plus rien** : une tolérance morte avalerait silencieusement une réapparition du même avis,
+> donc elle est moins sûre que pas de tolérance du tout.
+
+**`ROAD-RSK-033` est exactement dans cette situation** — 23 avis `HIGH`/`CRITICAL` de
+`python:3.12-slim` « dont aucun n'a de correctif », mesuré en `T7`. À réexaminer avant le LOT 13, et
+la même surprise est possible.
+
+**Et une seconde leçon, sur la façon d'attribuer une régression.** Quand `make audit` est devenu
+rouge en cours de sous-étape, la tentation était de chercher ce que `T10` avait cassé. La mesure
+juste a été de créer un arbre de travail sur le commit **d'avant** et d'y relancer l'audit : mêmes
+quatre avis. **Avant d'attribuer une régression à ton travail, mesure l'état d'avant** — `pnpm audit`
+interroge une base qui change sans toi.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — 5 ouverts sur 22
@@ -1210,7 +1280,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T10`
+# 9. Par où commencer : `T11`, la porte `G1`
 
 ## 9.0 Ce que les sous-étapes précédentes ont démenti
 
@@ -1220,90 +1290,76 @@ mandatement Caddy « déjà en place », une commande d'approbation employant `s
 droits d'administration, « 4 YAML » là où il y en avait 6, « les 3 `Dockerfile` sont mono-étape »,
 et « 78 variables » là où il y en avait 77 dont une en doublon.
 
-> **`T8` a démenti la FICHE DU LOT, et `T9` a démenti deux CONTRÔLES du dépôt.** La leçon s'élargit
-> à chaque fois :
+> **Et la liste s'est allongée de trois façons différentes, ce qui compte plus que le nombre :**
 >
-> - **`T8`** : le critère de la fiche énumérait **six** des **sept** séparations du cahier §22.2 —
->   `ECART-023`, classe de `ECART-018`. **Ce n'est donc pas seulement cette passation qui vieillit,
->   c'est tout document dérivé d'un autre.**
-> - **`T9`** : deux contrôles affirmaient un état que la mesure contredit — l'avertissement de
->   `make destroy` et le contrôle de page. **Les deux étaient JUSTES quand ils ont été écrits** ;
->   c'est `T8`, en créant un second environnement, qui les a rendus faux. `ECART-024`, et vois §7.21.
-> - **`T8` et `T9` ont aussi démenti mes propres attentes**, ce qui est différent d'une erreur du
->   corpus : deux réseaux Docker distincts ne sont pas mutuellement inatteignables, et une sonde qui
->   rend zéro ne dit pas « absent » mais « pas encore là ».
+> - **`T8` a démenti la FICHE DU LOT** — six séparations énumérées là où le cahier en compte sept
+>   (`ECART-023`). **Ce n'est pas seulement cette passation qui vieillit, c'est tout document dérivé
+>   d'un autre.**
+> - **`T9` a démenti deux CONTRÔLES du dépôt** — l'avertissement de `make destroy` et le contrôle de
+>   page. Les deux étaient **justes quand ils ont été écrits** ; c'est `T8`, en créant un second
+>   environnement, qui les a rendus faux (`ECART-024`, §7.21).
+> - **`T10` a démenti une MESURE de `T6`**, et en un jour : un avis de sécurité accepté parce
+>   qu'« aucun correctif n'existe » en avait reçu un. **Un résiduel accepté n'est pas un dossier
+>   clos** (§7.22).
 
 **La leçon dépasse ces cas.** Ce document décrit un état vérifié à une date. **Vérifie avant de bâtir
 dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande toute prête.**
-Et quand tu trouves un nombre faux, **cherche tous ceux qui partagent sa propriété.**
 
 ## 9.1 Objet
 
-**Design system minimal et contrat API partagé.** Story `MVP-L01-US007`, issue
-[#8](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/8) — **déjà ouverte**.
+**Contrôles de sortie et porte `G1`.** Aucune story : `T11` ne construit rien.
 
-**C'est la SEULE story `P1` du lot**, donc la seule qui puisse faire l'objet d'un arbitrage de report
-sans empêcher la porte `G1`. Les six critères techniques de `G1` sont déjà acquis. **Demande à
-Jonathan s'il veut la réaliser ou la reporter avant de commencer** : c'est une décision de produit,
-pas une décision technique.
+**Les huit stories du lot sont livrées**, et les six critères techniques de `G1` sont acquis. Il ne
+reste que la **validation explicite de Jonathan**, puis le tag **`v0.1.0`** posé sur `main`
+(`DEC-428`).
 
-**Critère du backlog, littéral :** « Les tokens, composants de base et génération/partage des
-contrats sont initialisés sans dépendance visuelle arbitraire. »
+**Fondement :** roadmap LOT 1, sept critères de sortie ; backlog §12, neuf critères d'empêchement ;
+fiche §10.
 
-## 9.2 La difficulté principale, et elle est réelle
+## 9.2 Ce que `T11` doit produire
 
-**« Sans dépendance visuelle arbitraire » est exactement le cas de la règle §6.5 — ne jamais
-inventer ce qui n'est pas décidé.** Voici ce que le corpus fournit, mesuré :
+1. **Rejouer TOUS les contrôles et citer leurs codes de sortie réels**, sur les deux environnements.
+   La liste est au §11 de ce document.
+2. **Vérifier les nombres PAR LES COMMANDES DE DÉRIVATION, pas en les recopiant.** C'est la
+   recommandation 2 du compte rendu de `T9`, et la classe `ECART-021` a coûté trois passes à ce
+   projet. Les nombres de ce document sont vérifiés à la sortie de `T10` ; ils ne le seront plus
+   demain.
+3. **Une checklist remise à Jonathan**, sur le modèle de `docs/operations/checklist-validation-G0.md`,
+   qui a servi pour la porte `G0`.
+4. **Après validation seulement** : fusionner `develop` dans `main`, puis poser le tag annoté
+   `v0.1.0`. Dans cet ordre — `DEC-428` pose le tag **sur `main`**.
 
-| Ce que le cahier §13 dit | Ce que cela donne |
+## 9.3 Les pièges propres à `T11`
+
+1. **`main` est protégée avec `enforce_admins`, et la CI y est BLOQUANTE.** La fusion de `develop`
+   dans `main` passe donc par une **pull request**, comme tout le reste. Aucun commit direct, y
+   compris pour Jonathan.
+2. **La fusion dans `main` déclenchera `ci.yml`, et le tag `v*` déclenchera `images.yml`** avec la
+   version exacte. Dis-le à Jonathan **avant**, pas après : c'est la première publication d'une
+   version non `develop`.
+3. **`Closes #N` ne fonctionne pas depuis `develop`** — mais il fonctionnera depuis `main`, qui est
+   la branche par défaut. Ne t'y fie pas pour autant : referme `#8` à la main comme les autres, et
+   l'epic `#1` à la fin.
+4. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
+   s'exécute pas sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
+   statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif.
+5. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes ;
+   ne les touche pas.
+6. **Le projet Docker tiers doit être relancé à la fin du lot**, et c'est l'action de Jonathan :
+   `docker compose -p observatoire-ecom-studio start`.
+
+## 9.4 Ce qui reste ouvert et devra être dit à la porte
+
+| Élément | Ce qu'il faut annoncer |
 |---|---|
-| §13.1 « la **charte graphique** » | **le document n'est PAS dans le corpus.** Même situation que `ECART-004`, où la table `DEC-001`–`417` était référencée sans exister |
-| §13.1 « la **police officielle** lorsque sa licence web le permet » | **elle n'est pas nommée**, et la condition de licence n'est pas tranchée |
-| §13.1 « des couleurs de cercles propres à chaque entité » | aucune valeur donnée |
-| §13.2 direction artistique | **qualitative** : « visuel, coloré, ludique, cartes arrondies, ombres douces, **dégradés bleu, rose et violet**, portraits ronds, badges » |
-| §13.3 | « construits au-dessus de primitives accessibles, **notamment Radix UI** » — et la liste des composants : boutons, champs, cartes, badges, menus, modales |
-
-**Mesure du 29/07/2026 : le cahier ne contient AUCUNE couleur hexadécimale.** Zéro occurrence de
-`#rrggbb`.
-
-**Trois conséquences, et la troisième est un piège :**
-
-1. **Tu ne peux pas déduire une palette du corpus.** Ouvre une question au registre plutôt que
-   d'inventer six valeurs plausibles — c'est ce qui a produit `QO-111`, `QO-112` et `QO-113`, et
-   c'est la bonne réponse.
-2. **Radix UI est prescrit par le cahier**, donc ce n'est pas un choix à arbitrer — mais c'est une
-   **dépendance externe à inscrire au registre**, prochaine libre `DEP-018`.
-3. **Le prototype est une référence d'INTENTION, pas une base de code** (règle §2.4), et §13.2 dit
-   que le rendu reste « proche de l'intention du prototype ». Y lire des valeurs de couleur est donc
-   défendable **mais ce n'est pas à toi de le décider** : pose la question. Et si tu l'ouvres, **ne
-   le `grep` jamais en entier** — 2,83 Mo dont 2,64 Mo de Base64, §7.13.
-
-## 9.3 Ce qui existe déjà, et ce qui manque
-
-| Élément | État mesuré |
-|---|---|
-| `packages/ui` | 5 fichiers suivis : `README`, `package.json`, `tsconfig.json`, `src/index.ts`, `src/index.test.ts`. **Un test, aucun composant** |
-| `packages/contracts` | idem, 5 fichiers. **Un test, aucun type** |
-| `eslint-plugin-jsx-a11y` | actif et **éprouvé par témoin négatif** depuis `T5`. C'est le motif déterminant de `DEC-451` : tout composant livré y passera |
-| Vitest + Testing Library | opérationnels sur `jsdom` depuis `T5` (`DEC-471`) |
-| L'API | expose son schéma OpenAPI — `API_DOCS_ENABLED=true` hors production. **Le contrat peut donc être DÉRIVÉ, pas transcrit** |
-
-**Et la frontière du LOT 2, qui ne se négocie pas :** aucun type métier dans `packages/contracts`.
-Ni `Collaborateur`, ni `Cercle`, ni `Parcours`. Le contrat du LOT 1 porte ce que l'API expose
-**aujourd'hui** — les trois endpoints de santé et le format d'erreur du §18.3 — et rien de plus.
-
-## 9.4 Les pièges propres à `T10`
-
-1. **Un composant « de base » sans état accessible n'est pas un composant de base.** `jsx-a11y` est
-   actif, et le cahier §14 impose WCAG 2.2 AA. Un bouton sans nom accessible fera échouer `make lint`.
-2. **Génère le contrat, ne le recopie pas.** §6.4. Si le schéma OpenAPI de l'API est la source, une
-   commande doit le dériver, et un contrôle doit **échouer** quand le contrat et le schéma divergent.
-3. **`packages/ui` et `packages/contracts` sont dans le workspace `pnpm`** : toute dépendance ajoutée
-   y est résolue par le store hors iCloud. Vérifie `make icloud-verify` après installation.
-4. **Le `make check` complet doit rester vert**, tests Vitest compris. Le compte de référence est
-   **166** — 139 pytest, 27 Vitest.
-5. **Ne touche pas aux deux environnements.** `T10` est du code de paquet ; si `make up` doit être
-   relancé, c'est probablement que tu as dépassé le périmètre.
+| `QO-115` | La **charte graphique** et la **police officielle** n'existent pas dans le corpus. Les jetons de `T10` sont relevés du prototype et défendables, mais ce sont une **approximation** de la charte réelle. À instruire avant le LOT 4 |
+| `ROAD-RSK-034` | Les ports publiés d'un environnement restent joignables depuis l'autre. Le cahier §22.2 exige un réseau **distinct**, ce qui est acquis ; la barrière effective est la **cinquième** séparation, les secrets. À réévaluer avant le LOT 13 |
+| `ROAD-RSK-033` | 23 avis sans correctif dans `python:3.12-slim`. **`T10` vient de montrer qu'un tel résiduel peut se corriger du jour au lendemain** : à réexaminer, pas à archiver |
+| `QO-111`, `QO-112` | Collation et extensions PostgreSQL, au LOT 2 |
+| `QO-113` | Conservation calendaire des journaux, au LOT 13 |
+| `QO-114` | Droits d'administration, au LOT 13 |
+| `ECART-005`, `012`–`015` | Cinq écarts ouverts, tous rattachés à un lot ultérieur |
+| `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
 ## 9.5 Les 7 critères de sortie de la porte `G1`
 
@@ -1313,13 +1369,13 @@ Ni `Collaborateur`, ni `Cercle`, ni `Parcours`. Le contrat du LOT 1 porte ce que
 | ☑ | **Les images multiarchitectures sont construites** | **`T7` — lancées sur les deux, et `arm64` NATIF sur l'image publiée depuis `T8`** |
 | ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin. **Ni `T7` ni `T8` n'ont créé de secret de dépôt** |
 | ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur une base créée de zéro en `T9`** |
-| ☑ | Les logs possèdent un identifiant de corrélation | `T4` |
+| ☑ | Les logs possèdent un identifiant de corrélation | `T4`, **et le nom de l'en-tête est partagé et vérifié depuis `T10`** |
 | ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
 | ☐ | Jonathan valide le socle | `T11` |
 
-**Les six critères techniques sont acquis.** Restent **`T10` design system, seule story `P1` et donc
-reportable sur arbitrage**, puis `T11` la porte. À la validation, le tag **`v0.1.0`** est posé sur
-`main` (`DEC-428`).
+**Les six critères techniques sont acquis, et les HUIT stories du lot sont livrées** — `US007` a été
+réalisée, non reportée. Il ne reste que `T11` : la validation de Jonathan, puis le tag **`v0.1.0`**
+sur `main` (`DEC-428`).
 
 > **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
 > de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
@@ -1360,8 +1416,12 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                 pages/PageStatut.tsx  ← les 5 états
 ├── packages/
 │   ├── observabilite/    journal JSON, masquage, corrélation (DEC-466)
-│   ├── ui/               design system        ← tokens en T10
-│   └── contracts/        contrat API partagé  ← génération en T10
+│   ├── ui/               design system (T10) — jetons RELEVES du prototype et
+│   │                     RECALCULES contre WCAG 2.2 AA (DEC-491)
+│   │                     contraste.ts · jetons.ts · jetons.css · composants.css
+│   │                     Bouton · Badge · Carte, 90 tests
+│   └── contracts/        contrat API partagé (T10, DEC-492)
+│                         contrat-api.json  ← SOURCE UNIQUE, lue par TS ET Python
 ├── infra/
 │   ├── compose/  base + surcouches dev ET recette (T8)
 │   │             la surcouche NOMME sa cible de construction (DEC-479)
@@ -1379,8 +1439,8 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 158 décisions, 24 écarts
-    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T9, registres
+    ├── decisions/                   ← 161 décisions, 24 écarts
+    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T10, registres
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
 ```
 
@@ -1452,9 +1512,9 @@ ce lot.
 1. Lire ce document.
 2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
 3. Lire [`fiche-lot-1.md`](docs/operations/fiche-lot-1.md) : la sous-étape en cours.
-4. Lire le **compte rendu de la sous-étape précédente** — `T9` — pour savoir ce qui a été laissé
-   ouvert. Son §3 dit ce qui n'est **pas** couvert, son §5 les trois défauts, et son §6 les cinq
-   recommandations.
+4. Lire le **compte rendu de la sous-étape précédente** — `T10` — pour savoir ce qui a été laissé
+   ouvert. Son §3 dit ce qui n'est **pas** couvert et pourquoi, son §6 l'événement extérieur qui a
+   fermé `ROAD-RSK-032`, son §7 les quatre défauts, et son §8 les six recommandations.
 5. Lire [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt,
    réinitialisation et **huit symptômes de diagnostic réellement rencontrés**. Toutes ses commandes
    ont été exécutées.
@@ -1499,7 +1559,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 158 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 161 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

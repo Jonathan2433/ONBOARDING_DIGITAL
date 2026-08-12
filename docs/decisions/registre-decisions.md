@@ -28,8 +28,9 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-474+`, sous-étape `T6` | 4 | Soumises le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-478+`, sous-étape `T7` | 5 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-483+`, sous-étape `T8` | 6 | Validées le 29/07/2026 |
-| Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Soumises le 29/07/2026 |
-| **Total** | **158** | |
+| Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
+| Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Soumises le 30/07/2026 |
+| **Total** | **161** | |
 
 ---
 
@@ -273,7 +274,20 @@ Décisions prises pendant la rédaction de la documentation d'exploitation local
 | `DEC-489` | **`make destroy` MESURE au lieu d'affirmer.** Elle énumère les volumes **réellement présents** du projet, extrait l'autorité de certification du conteneur et **interroge le trousseau** — puis dit ce qu'elle a mesuré. Quand elle ne peut pas mesurer, conteneur arrêté ou hors macOS, elle dit **« indéterminé »** plutôt que de trancher. | Sa version de `T8` annonçait, quel que soit l'environnement : « Sa perte obligera à réapprouver la racine dans le trousseau macOS. » Mesure du 29/07/2026 : `security verify-cert` rend **0 pour `dev`** et **1 pour la recette**, dont la racine n'a jamais été approuvée. L'avertissement était donc **faux** sur la cible la plus destructive du dépôt — et un avertissement qui annonce une conséquence inexistante apprend à passer outre, si bien que le jour où il porte sur `dev`, où la conséquence est réelle, il n'est plus lu. C'est `ECART-024`. | Validée |
 | `DEC-490` | **`make web-check` est paramétrée par `ENVIRONNEMENT`**, son origine étant **dérivée** de `CADDY_SITE_APP` et du port HTTPS publié. Et le contrôle de page **identifie la cible servie** — `developpement` ou `execution` — exige qu'elle soit l'une des **deux** formes connues, puis applique les contrôles de cette forme. | Le contrôle de `T5` exigeait `/src/main.tsx` dans l'index : c'est le comportement du serveur Vite. Depuis `T8` la recette sert l'artefact bâti, dont l'index référence `/assets/index-<empreinte>.js` — la référence `/src/main.tsx` n'y existe pas **par construction** (`DEC-479`). Mesuré : **2 contrôles sur 6 en échec sur une recette parfaitement saine**. La parade n'est pas de retirer l'exigence mais de la rendre juste par cible ; et **s'il ne reconnaît aucune des deux formes, le contrôle ÉCHOUE** — sans quoi un index vide passerait pour un cas non prévu. | Validée |
 
-**Prochain identifiant libre : `DEC-491`.**
+---
+
+## 1.13 Réalisation du LOT 1 — sous-étape `T10`
+
+Décisions prises pendant la mise en place du design system et du contrat API partagé, story
+`MVP-L01-US007`, issue `#8`. Soumises à Jonathan le 30 juillet 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-491` | **Les couleurs de marque sont RELEVÉES du prototype, qui les nomme lui-même**, et chacune porte un texte apparié **déterminé par la mesure de contraste**. Les neutres et les états sont **repris de `T5`** sans être redéfinis. La typographie est une **pile système**, aucune police téléchargée. | Le cahier §13.1 exige « la charte graphique » et « la police officielle » : mesuré, ni l'une ni l'autre n'est dans le corpus, et le cahier ne contient **aucune** couleur hexadécimale. Le prototype, lui, déclare `EXALT_BLUE`, `EXALT_DARK_BLUE`, `EXALT_PINK` et `EXALT_YELLOW`, ce qui corrobore littéralement le « bleu, rose et violet » du §13.2 : deux sources concordantes, donc pas une invention. **Et la mesure a corrigé le prototype** : il ne prévoyait du texte foncé que pour le jaune ; le rose et le vert le réclament aussi. Le reprendre tel quel aurait reconduit deux défauts d'accessibilité. Arbitrage de Jonathan. | Validée par Jonathan le 30/07/2026 |
+| `DEC-492` | **Le contrat API est déclaré dans un manifeste JSON unique**, `packages/contracts/src/contrat-api.json`, lu par le frontend TypeScript **et** par un contrôle Python qui vérifie que le schéma OpenAPI servi le respecte. Les types et les validateurs quittent `apps/web` pour `packages/contracts`. | Le critère dit « génération/partage ». **La génération depuis OpenAPI était impossible** : mesuré, `components.schemas` du schéma servi est **vide**, les routes rendant des dictionnaires sans modèle de réponse. Générer aurait produit des types `unknown`, donc l'illusion d'un contrat typé. Le sens est donc inversé — le manifeste déclare, le contrôle vérifie — et il échoue dans le sens utile. Le **partage**, c'est le déplacement : les types étaient justes dans `apps/web` depuis `T5` mais un second consommateur les aurait recopiés. | Validée |
+| `DEC-493` | **Aucune tolérance d'audit n'est plus déclarée.** La tolérance nommée de `DEC-474`, `GHSA-mh99-v99m-4gvg`, est **retirée** : `make audit` est vert sans elle. | `T6` avait mesuré qu'aucun correctif n'existait dans la ligne 1.x de `brace-expansion` et que forcer la ligne 5 cassait ESLint. **Mesure du 30/07/2026 : la ligne 1.x a reçu `1.1.18`**, et ce que `T6` avait mesuré comme inexistant existe. Vérifié dans les deux sens — l'audit est vert avec et sans la tolérance — et rien n'est cassé, `jsx-a11y` compris. **Une tolérance qui ne couvre plus rien avalerait silencieusement une réapparition du même avis** : zéro tolérance est strictement plus fort, et c'est la direction que `DEC-474` visait. `ROAD-RSK-032` est clos par la même mesure. | Validée |
+
+**Prochain identifiant libre : `DEC-494`.**
 
 ---
 
@@ -444,7 +458,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-478+` — réalisation du LOT 1, `T7` | 5 | 5 |
 | `DEC-483+` — réalisation du LOT 1, `T8` | 6 | 6 |
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
-| **Total** | **158** | **158** |
+| `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
+| **Total** | **161** | **161** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -188,6 +188,5 @@ def test_l_en_tete_de_correlation_declare_est_celui_que_l_api_renvoie(
     assert reponse.status_code == 200
     attendu = contrat["enTeteCorrelation"]
     assert attendu in reponse.headers, (
-        f"en-tete {attendu} absent de la reponse ; en-tetes recus : "
-        f"{sorted(reponse.headers)}"
+        f"en-tete {attendu} absent de la reponse ; en-tetes recus : {sorted(reponse.headers)}"
     )

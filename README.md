@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
 | Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | `T9` **faite** — documentation d'exploitation locale, story `MVP-L01-US008`, issue [#9](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/9). Suivante : `T10`, design system et contrat API — **seule story `P1`, reportable sur arbitrage** |
+| Sous-étape en cours | `T10` **faite** — design system et contrat API, story `MVP-L01-US007`, issue [#8](https://github.com/Jonathan2433/ONBOARDING_DIGITAL/issues/8). **Les huit stories du lot sont livrées.** Suivante : `T11`, la porte `G1` et le tag `v0.1.0` |
 | Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
 
