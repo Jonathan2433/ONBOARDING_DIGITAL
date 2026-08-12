@@ -762,8 +762,23 @@ health: ## Verifier que les 8 services sont sains (echoue sinon)
 	if [ $$manque -eq 0 ]; then echo "  --> les 8 services sont sains"; fi; \
 	exit $$manque
 
-ports: ## Verifier qu'aucun service n'ecoute ailleurs que sur la boucle locale
+# DEUX CONTROLES, ET ILS NE MESURENT PAS LA MEME CHOSE.
+#
+#   verifier-ports.sh        les publications de CET environnement sont-elles
+#                            toutes liees a 127.0.0.1, et les declarees
+#                            concordent-elles avec les reelles ? (T2, DEC-460)
+#
+#   verifier-collisions-     deux conteneurs de la MACHINE reclament-ils le meme
+#   ports.py                 port d'hote, CONTENEURS ARRETES COMPRIS ?
+#
+# Le second a ete pose apres la porte G1, et il est ne d'un defaut reel : la
+# bande de ports de la recette avait ete choisie apres avoir mesure ce qui
+# ECOUTAIT, alors qu'un conteneur ARRETE declare ses ports sans en occuper aucun.
+# Le projet tiers `observatoire-ecom-studio` reclamait deja 8080 et n'a pas pu
+# demarrer. La mesure etait juste a sa date ; la methode etait incomplete.
+ports: ## Verifier les publications de l'environnement ET les collisions de la machine
 	@sh infra/scripts/verifier-ports.sh "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+	@python3 infra/scripts/verifier-collisions-ports.py
 
 stack-check: health ports ## Controler la stack : sante des 8 services et publication des ports
 

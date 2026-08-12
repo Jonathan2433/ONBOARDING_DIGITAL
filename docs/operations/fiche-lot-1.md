@@ -119,7 +119,7 @@ Une sous-étape, un contrôle, une validation. Même discipline que le LOT 0.
 | ~~**T8**~~ | Environnement de recette isolé. ✅ **Faite le 29/07/2026** | `US002` | ✅ Les **SEPT** séparations du cahier §22.2 — **projet Docker**, base PostgreSQL, bucket MinIO, volumes, secrets, réseau, ports — prouvées sur l'**état réel** des deux environnements : **57 contrôles, 0 échec**. La recette exécute les **images publiées épinglées par empreinte**, et `arm64` y est **natif** — la réserve du §3.1 est **levée**. `DEC-483` à `DEC-488`. *Le critère écrit ici jusqu'au 29/07/2026 n'énumérait que **six** séparations — « projet Docker distinct » manquait — et empruntait « Mailpit exclusif » à `MVP-L11-US003`, donc au LOT 11, ainsi qu'un critère de sortie du LOT 13. Rectifié au titre de `ECART-023` ; voir le compte rendu §4 pour ce que le LOT 1 prouve de Mailpit et ce qui ne lui appartient pas.* |
 | ~~**T9**~~ | Documentation d'exploitation locale. ✅ **Faite le 29/07/2026** | `US008` | ✅ [`exploitation-locale.md`](exploitation-locale.md) : **toutes** ses commandes exécutées, sorties réelles citées. Démarrage à froid **véritable** éprouvé — recette détruite, images retirées du cache, remontée en **34 s**. Les **14** publications de ports et les **12** volumes sont **dérivés** par commande, jamais recopiés. Huit symptômes de diagnostic, tous rencontrés réellement sur ce projet. Trois cibles jamais exercées ont été éprouvées, dont `make destroy` |
 | ~~**T10**~~ | Design system minimal et contrat API partagé. ✅ **Faite le 30/07/2026** | `US007` (`P1`) | ✅ Jetons **relevés du prototype qui les nomme** — `EXALT_BLUE`, `EXALT_DARK_BLUE`, `EXALT_PINK`, `EXALT_YELLOW` — corroborés par le §13.2, et **chaque couple fond/texte RECALCULÉ** contre WCAG 2.2 AA. La mesure a **corrigé le prototype** : il ne prévoyait du texte foncé que pour le jaune, le rose et le vert le réclament aussi. 3 composants de base, contrat partagé par un **manifeste unique** lu par TypeScript et Python. **260 tests** contre 166 à l'entrée, **11 témoins**, et **aucune dépendance externe ajoutée**. `DEC-491` à `DEC-493`, `QO-115` ouverte, **`ROAD-RSK-032` CLOS** |
-| **T11** | Contrôles de sortie et préparation de la porte `G1` | — | Les 7 critères de sortie sont prouvés ; checklist remise à Jonathan |
+| ~~**T11**~~ | Contrôles de sortie et préparation de la porte `G1`. ✅ **Faite le 12/08/2026** | — | ✅ **33 contrôles rejoués, tous à code 0** — 24 en développement, 9 en recette, plus les deux qui exigent les deux stacks. Tous les nombres **dérivés** par commande. [Checklist remise à Jonathan](checklist-validation-G1.md), avec une **démonstration guidée** des six éléments de la roadmap. **Aucune décision, aucun écart, aucun risque ajouté.** Le tag `v0.1.0` attend la validation |
 
 ### 3.1 Ce que `T7` prouve nativement, et ce qu'il ne prouve qu'émulé
 
@@ -357,7 +357,8 @@ objection, ces choix étant déjà inscrits au cadrage.
 
 ## 10. Checklist de validation de la porte `G1`
 
-Les 7 critères littéraux de la roadmap, LOT 1.
+Les 7 critères littéraux de la roadmap, LOT 1. **La checklist remise à Jonathan est
+[`checklist-validation-G1.md`](checklist-validation-G1.md)**, produite en `T11`.
 
 | | Critère de sortie |
 |:--:|---|
