@@ -30,7 +30,7 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Tests | **260** : **144 pytest** — 136 unitaires, 8 d'intégration — et **116 Vitest**. C'était 166 avant `T10` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **161 décisions** · 24 écarts (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
+| Registres | **162 décisions** · **25 écarts** (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -339,7 +339,7 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
-Les 161 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 162 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -390,8 +390,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`493` en usage | **`DEC-494`** |
-| `ECART-nnn` | `001`–`024` | **`ECART-025`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`494` en usage | **`DEC-495`** |
+| `ECART-nnn` | `001`–`025` | **`ECART-026`** |
 | `QO-nnn` | `072`–`115`, **5 trous** | **`QO-116`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -730,7 +730,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**78 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **68 pendant `T1` à `T11`**. Ils sont
+**79 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **69 pendant `T1` à `T11` et après la porte**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -1229,6 +1229,35 @@ interroge une base qui change sans toi.
 
 ---
 
+## 7.23 Un état DORMANT ne se voit pas dans ce qui tourne
+
+**Apport du correctif postérieur à la porte `G1`, et il complète le §7.21.**
+
+En `T8`, j'ai choisi la bande de ports de la recette après avoir mesuré que `8080` était **libre**.
+La mesure employait `lsof -nP -iTCP -sTCP:LISTEN` : elle regardait **ce qui écoutait**.
+
+Le projet tiers `observatoire-ecom-studio` **déclarait** `127.0.0.1:8080` depuis toujours. Il était
+**arrêté** au moment de ma mesure — et **un conteneur arrêté déclare ses ports sans en occuper
+aucun**. À sa relance : `Bind for 127.0.0.1:8080 failed: port is already allocated`.
+
+**Et la mesure refaite correctement en a révélé un second, antérieur au projet** : `5432`, entre
+`onboarding-dev` et `ticket_master`, arrêté depuis quatre semaines et donc jamais manifesté.
+
+> **La règle, sans jargon :** ma mesure répondait à « ce port est-il occupé **maintenant** ? » quand
+> la question était « ce port sera-t-il disponible **quand ce projet démarrera** ? ». **Quand tu
+> mesures une ressource partagée, demande-toi qui la RÉCLAME, pas seulement qui la détient.** Un état
+> dormant — conteneur arrêté, service désactivé, tâche planifiée qui n'a pas encore tourné — ne se
+> voit pas dans l'état courant.
+
+**Et une limite que ma première correction portait encore.** Le contrôle ne lisait que les conteneurs
+existants. Or `make down` **supprime** les conteneurs : un environnement arrêté ne déclare plus rien,
+et le contrôle était donc aveugle à lui — **il n'aurait pas attrapé le défaut qui l'a fait naître**,
+puisque la recette n'existait pas encore comme conteneurs quand j'ai choisi ses ports. `make ports`
+confronte désormais **deux sources** : les conteneurs existants **et** la configuration Compose
+assemblée, qui ne demande aucun conteneur. `DEC-494`, `ECART-025`.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — 5 ouverts sur 22
@@ -1430,7 +1459,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 161 décisions, 24 écarts
+    ├── decisions/                   ← 162 décisions, 25 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
                                         checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
@@ -1551,7 +1580,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 161 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 162 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

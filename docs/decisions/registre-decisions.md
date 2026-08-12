@@ -29,8 +29,9 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-478+`, sous-étape `T7` | 5 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-483+`, sous-étape `T8` | 6 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
-| Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Soumises le 30/07/2026 |
-| **Total** | **161** | |
+| Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
+| Correctif postérieur à `G1` `DEC-494` | 1 | Validée le 12/08/2026 |
+| **Total** | **162** | |
 
 ---
 
@@ -287,7 +288,17 @@ Décisions prises pendant la mise en place du design system et du contrat API pa
 | `DEC-492` | **Le contrat API est déclaré dans un manifeste JSON unique**, `packages/contracts/src/contrat-api.json`, lu par le frontend TypeScript **et** par un contrôle Python qui vérifie que le schéma OpenAPI servi le respecte. Les types et les validateurs quittent `apps/web` pour `packages/contracts`. | Le critère dit « génération/partage ». **La génération depuis OpenAPI était impossible** : mesuré, `components.schemas` du schéma servi est **vide**, les routes rendant des dictionnaires sans modèle de réponse. Générer aurait produit des types `unknown`, donc l'illusion d'un contrat typé. Le sens est donc inversé — le manifeste déclare, le contrôle vérifie — et il échoue dans le sens utile. Le **partage**, c'est le déplacement : les types étaient justes dans `apps/web` depuis `T5` mais un second consommateur les aurait recopiés. | Validée |
 | `DEC-493` | **Aucune tolérance d'audit n'est plus déclarée.** La tolérance nommée de `DEC-474`, `GHSA-mh99-v99m-4gvg`, est **retirée** : `make audit` est vert sans elle. | `T6` avait mesuré qu'aucun correctif n'existait dans la ligne 1.x de `brace-expansion` et que forcer la ligne 5 cassait ESLint. **Mesure du 30/07/2026 : la ligne 1.x a reçu `1.1.18`**, et ce que `T6` avait mesuré comme inexistant existe. Vérifié dans les deux sens — l'audit est vert avec et sans la tolérance — et rien n'est cassé, `jsx-a11y` compris. **Une tolérance qui ne couvre plus rien avalerait silencieusement une réapparition du même avis** : zéro tolérance est strictement plus fort, et c'est la direction que `DEC-474` visait. `ROAD-RSK-032` est clos par la même mesure. | Validée |
 
-**Prochain identifiant libre : `DEC-494`.**
+---
+
+## 1.14 Correctif postérieur à la porte `G1`
+
+Décision prise après la validation de `G1`, sur un défaut révélé par l'exploitation réelle.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-494` | **`make ports` vérifie désormais les collisions de ports d'hôte sur TOUTE la machine**, en confrontant deux sources : les conteneurs existants — **arrêtés compris** — et la **configuration Compose assemblée** de nos environnements, qui ne demande aucun conteneur. Il **échoue** sur une collision entre deux de nos environnements et **rapporte visiblement** une collision avec un projet étranger. | La bande de ports de la recette avait été choisie en `T8` après avoir mesuré ce qui **écoutait** — `lsof … -sTCP:LISTEN`. Le projet tiers `observatoire-ecom-studio` **déclarait** déjà `127.0.0.1:8080` mais était **arrêté** : invisible de cette mesure. Il n'a pas pu démarrer le 12/08/2026. **La mesure était juste à sa date ; la méthode était incomplète.** La seconde source est indispensable : `down` **supprime** les conteneurs, donc un environnement arrêté ne déclare plus rien — sans elle, le contrôle n'aurait pas attrapé le défaut qui l'a fait naître. Le partage exiger/rapporter est celui de `DEC-482` : nous ne maîtrisons pas les ports d'un projet tiers, et faire échouer `make up` pour cette raison le rendrait inutilisable. | Validée par Jonathan le 12/08/2026 |
+
+**Prochain identifiant libre : `DEC-495`.**
 
 ---
 
@@ -459,7 +470,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-483+` — réalisation du LOT 1, `T8` | 6 | 6 |
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
-| **Total** | **161** | **161** |
+| `DEC-494` — correctif postérieur à `G1` | 1 | 1 |
+| **Total** | **162** | **162** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
