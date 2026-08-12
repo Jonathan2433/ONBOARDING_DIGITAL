@@ -165,7 +165,7 @@ Leur libellé et leur impact sont inchangés.
 
 ---
 
-## `ROAD-RSK-032` — Une vulnérabilité haute subsiste dans une dépendance de développement, sans correctif applicable
+## ~~`ROAD-RSK-032`~~ — CLOS en `T10`
 
 | Champ | Valeur |
 |---|---|
@@ -176,6 +176,24 @@ Leur libellé et leur impact sont inchangés.
 | Mesure retenue | **Tolérance nommée et étroite** (`DEC-474`) : `auditConfig.ignoreGhsas` dans `pnpm-workspace.yaml`, cet avis et lui seul. Tout autre avis, de toute sévérité, continue de faire échouer `make audit` et donc l'intégration continue — éprouvé par témoin, un identifiant bidon fait rééchouer l'audit. La sortie affiche « 1 high (**1 ignored**) » : la tolérance est **visible** dans chaque exécution, jamais silencieuse. |
 | Déclencheur de réévaluation | La mise à jour d'`eslint-plugin-jsx-a11y` vers un `minimatch` moderne. **Le même greffon déclare déjà ESLint `^3 || … || ^9` alors que nous exécutons ESLint 10** : sa mise à jour est à surveiller pour les deux motifs à la fois. Retirer alors la tolérance et vérifier que `make audit` reste vert sans elle. |
 | Statut | **Ouvert, résiduel accepté en connaissance de cause.** À réévaluer à chaque lot, et au plus tard à la porte `G12`, recette transverse. |
+
+> **✅ CLOS le 30 juillet 2026, sous-étape `T10`, et le motif renverse une mesure de `T6`.**
+>
+> `T6` avait mesuré qu'aucun correctif n'existait dans la ligne 1.x de `brace-expansion` — « la
+> dernière version publiée de la ligne 1.x EST 1.1.16 » — et que forcer la ligne 5 cassait ESLint,
+> donc `eslint-plugin-jsx-a11y`. Cette mesure était juste à sa date.
+>
+> **Mesure du 30/07/2026 : la ligne 1.x a reçu `1.1.18`.** Un `pnpm update -r brace-expansion
+> nanoid`, dans les plages déjà déclarées et sans forcer aucune version majeure, suffit. L'audit
+> passe de **4 avis hauts, 1 toléré** à **zéro avis**, et rien n'est cassé — lint, formatage,
+> typage et les deux suites de tests restent à zéro, `jsx-a11y` compris, éprouvé par témoin négatif
+> sur cinq fautes d'accessibilité.
+>
+> **La tolérance de `DEC-474` est retirée par `DEC-493`** : elle ne couvre plus rien, et une
+> tolérance devenue inutile avalerait silencieusement une réapparition du même avis.
+>
+> **La leçon, et elle vaut pour la suite :** un résiduel accepté parce qu'« aucun correctif
+> n'existe » doit être **réévalué**, pas archivé. Ici l'écosystème a bougé en un jour.
 
 ---
 

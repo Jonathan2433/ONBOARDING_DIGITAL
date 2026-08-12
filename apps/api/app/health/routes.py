@@ -51,7 +51,31 @@ def _parametres(requete: Request) -> Parametres:
     return parametres
 
 
-@routeur.get("/ready", summary="L'API peut-elle servir une requete utile ?")
+@routeur.get(
+    "/ready",
+    summary="L'API peut-elle servir une requete utile ?",
+    # T10 — LE 503 EST DESORMAIS DOCUMENTE DANS LE SCHEMA, et il ne l'etait pas.
+    #
+    # La route renvoie 503 depuis `T3`, et le frontend le traite comme un etat
+    # DEGRADE exploitable — meme forme de charge utile qu'un 200. Mais le schema
+    # OpenAPI ne documentait que 200 : FastAPI ne devine pas les codes qu'une
+    # route pose elle-meme sur l'objet `Response`.
+    #
+    # Constate par `apps/api/tests/test_contrat.py`, qui confronte le manifeste
+    # partage au schema reellement monte. Un consommateur qui aurait engendre son
+    # client depuis ce schema aurait donc traite le 503 comme une erreur
+    # imprevue, alors que c'est precisement la reponse qui porte le diagnostic.
+    responses={
+        200: {"description": "Toutes les dependances sondees sont disponibles."},
+        503: {
+            "description": (
+                "Au moins une dependance est indisponible. La charge utile a "
+                "EXACTEMENT la meme forme qu'un 200 : c'est le champ `statut` qui "
+                "distingue, et le detail par dependance qui porte le motif."
+            )
+        },
+    },
+)
 def ready(requete: Request, reponse: Response) -> dict[str, Any]:
     """Disponibilite reelle : PostgreSQL, Redis et MinIO sont sondes.
 

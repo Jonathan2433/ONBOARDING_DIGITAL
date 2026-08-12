@@ -28,34 +28,48 @@ storeDir: ${HOME}/.local/share/pnpm/store
 engineStrict: true
 
 # ============================================================================
-#  Audit de dependances — DEC-474, ROAD-RSK-032, sous-etape T6.
+#  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
 #
-#  TOLERANCE NOMMEE ET ETROITE, et non un abaissement du seuil. Tout autre
-#  avis, de toute severite, continue de faire echouer `make audit` et donc
-#  l'integration continue. Eprouve par temoin : un identifiant bidon a la place
-#  de celui-ci fait de nouveau echouer l'audit.
+#  AUCUNE TOLERANCE N'EST DECLAREE, et c'est un renforcement, pas un oubli.
 #
-#  GHSA-mh99-v99m-4gvg — brace-expansion <= 5.0.7, deni de service par
-#  expansion non bornee. Severite haute. Chemin :
-#  eslint-plugin-jsx-a11y > minimatch@3.1.5 > brace-expansion@1.1.16.
+#  HISTOIRE, PARCE QU'ELLE EXPLIQUE POURQUOI CE BLOC EST VIDE
 #
-#  POURQUOI ON NE LE CORRIGE PAS, ET C'EST MESURE, PAS SUPPOSE
-#    - la derniere version publiee de la ligne 1.x EST 1.1.16 : il n'existe
-#      aucun correctif dans cette ligne, seulement en 5.0.8 ;
-#    - forcer 5.0.8 casserait le lint. Mesure du 29/07/2026 : l'export
-#      CommonJS de brace-expansion 5.0.8 est un OBJET portant `.expand`, non
-#      une fonction appelable, alors que minimatch@3.1.5 fait `expand(motif)`.
-#      Le correctif produirait donc « expand is not a function » et
-#      neutraliserait ESLint — donc `eslint-plugin-jsx-a11y`, motif determinant
-#      de DEC-451 ;
-#    - la dependance est transitive et de DEVELOPPEMENT seulement : elle
-#      s'execute au lint, sur nos propres motifs de fichiers, et n'entre dans
-#      aucun artefact livre.
+#    `T6` avait declare UNE tolerance nommee et etroite,
+#    `GHSA-mh99-v99m-4gvg` — brace-expansion, deni de service par expansion non
+#    bornee, chemin `eslint-plugin-jsx-a11y > minimatch@3 > brace-expansion@1.1.16`.
 #
-#  A RETIRER des que eslint-plugin-jsx-a11y quittera minimatch@3. Le meme
-#  greffon declare deja ESLint ^3..^9 alors que nous executons ESLint 10 : sa
-#  mise a jour est a surveiller pour les deux motifs a la fois.
+#    Le motif etait mesure et solide a l'epoque : la derniere version publiee de
+#    la ligne 1.x ETAIT 1.1.16, il n'existait donc aucun correctif dans cette
+#    ligne ; et forcer la ligne 5 cassait le lint, l'export CommonJS de
+#    brace-expansion 5 etant un OBJET portant `.expand` et non une fonction, la
+#    ou minimatch@3 appelle `expand(motif)`. Le « correctif » aurait neutralise
+#    ESLint, donc `eslint-plugin-jsx-a11y`, motif determinant de DEC-451.
+#
+#  CE QUI A CHANGE, MESURE LE 30/07/2026 EN SOUS-ETAPE T10
+#
+#    La ligne 1.x a recu un correctif : `brace-expansion@1.1.18`. Ce que `T6`
+#    avait mesure comme inexistant existe desormais. Un simple
+#    `pnpm update -r brace-expansion nanoid` suffit, dans les plages deja
+#    declarees, sans forcer aucune version majeure.
+#
+#    Verifie dans les deux sens : l'audit est vert AVEC et SANS la tolerance,
+#    donc elle ne couvre plus rien. Et rien n'est casse — lint, formatage,
+#    typage et les deux suites de tests restent a zero, ESLint et jsx-a11y
+#    compris.
+#
+#  POURQUOI LA RETIRER PLUTOT QUE LA LAISSER DORMIR
+#
+#    Une tolerance qui ne couvre plus rien n'est pas neutre : elle avalerait
+#    SILENCIEUSEMENT une reapparition du meme avis. Zero tolerance est donc
+#    strictement plus fort que « une tolerance devenue inutile », et c'est la
+#    direction que DEC-474 visait deja — « tout autre avis bloque ».
+#
+#    `ROAD-RSK-032` est clos par la meme mesure.
+#
+#  A SURVEILLER, ET CE N'EST PAS COUVERT ICI : `eslint-plugin-jsx-a11y` declare
+#  ESLint ^3..^9 alors que nous executons ESLint 10. Le greffon fonctionne —
+#  eprouve par temoin negatif en T5 et de nouveau en T10, cinq fautes
+#  d'accessibilite detectees — mais cette plage de paires reste a surveiller.
 # ============================================================================
 auditConfig:
-  ignoreGhsas:
-    - GHSA-mh99-v99m-4gvg
+  ignoreGhsas: []

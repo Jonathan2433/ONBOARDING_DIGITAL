@@ -1,11 +1,67 @@
 /**
- * Design system eXalt - point d'entree du paquet.
+ * Design system eXalt — point d'entree du paquet.
  *
- * LOT 1, sous-etape T1, story MVP-L01-US001 : coquille d'espace de travail.
+ * LOT 1, sous-etape T10, story MVP-L01-US007.
  *
- * Les tokens de couleur, de typographie et d'espacement, ainsi que les
- * composants de base, relevent de la sous-etape T10 (story MVP-L01-US007,
- * priorite P1). Le cahier des charges 13.3 en fixe les exigences ; aucune
- * dependance visuelle arbitraire ne doit etre introduite avant.
+ * CE QUE CE PAQUET CONTIENT
+ *
+ *   Les JETONS — couleurs, espacements, rayons, ombres, typographie, largeurs de
+ *   recette — et TROIS composants de base. Le critere de la story dit
+ *   « initialises » : c'est un socle eprouve, pas un catalogue complet.
+ *
+ *   Les jetons ne sont pas arbitraires, et c'est tout le point : les couleurs de
+ *   marque sont RELEVEES du prototype qui les nomme lui-meme, les neutres sont
+ *   REPRIS de la page de statut de `T5`, et chaque couple fond/texte est
+ *   RECALCULE par `jetons.test.ts` contre les seuils de WCAG 2.2 AA. Voir
+ *   l'en-tete de `jetons.ts` pour la tracabilite complete.
+ *
+ * CE QU'IL NE CONTIENT PAS, ET POURQUOI
+ *
+ *   Le cahier 13.3 enumere douze familles de composants — menus, modales,
+ *   onglets, tableaux, alertes, carrousels, lecteurs video, etats vides. Elles
+ *   arrivent avec les ecrans qui les emploient, a partir du LOT 4, et le cahier
+ *   dit qu'elles seront construites au-dessus de primitives accessibles,
+ *   « notamment Radix UI ». Aucune n'est ici : livrer un menu deroulant sans
+ *   ecran qui l'emploie serait du code non eprouve.
+ *
+ *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
+ *
+ * COMMENT ON L'EMPLOIE
+ *
+ *   Les styles sont deux feuilles separees, a importer par l'application :
+ *
+ *       import '@onboarding/ui/jetons.css';       // les proprietes personnalisees
+ *       import '@onboarding/ui/composants.css';   // les classes des composants
+ *
+ *   Separees, parce qu'un consommateur peut vouloir les jetons seuls — la page de
+ *   statut de `T5`, par exemple, a ses propres styles et n'a besoin que des
+ *   valeurs.
  */
+
+export { Badge } from './Badge.js';
+export type { ProprietesBadge, TonBadge } from './Badge.js';
+export { Bouton } from './Bouton.js';
+export type { ProprietesBouton, VarianteBouton } from './Bouton.js';
+export { Carte } from './Carte.js';
+export type { NiveauTitre, ProprietesCarte } from './Carte.js';
+export {
+  atteintSeuil,
+  contraste,
+  luminance,
+  SEUIL_AA_GRAND_TEXTE,
+  SEUIL_AA_TEXTE_NORMAL,
+} from './contraste.js';
+export {
+  ACCENTS_ADMIS,
+  ESPACEMENTS,
+  LARGEURS_RECETTE,
+  MARQUE,
+  OMBRES,
+  RAYONS,
+  SEUIL_ACCENT,
+  THEMES,
+  TYPOGRAPHIE,
+} from './jetons.js';
+export type { CoupleColore } from './jetons.js';
+
 export const PACKAGE_NAME = '@onboarding/ui';

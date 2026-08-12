@@ -1,0 +1,93 @@
+{
+  "_commentaire": [
+    "LE CONTRAT DE L'API, EN UNE SEULE SOURCE LISIBLE PAR LES DEUX LANGAGES.",
+    "",
+    "LOT 1, sous-etape T10, story MVP-L01-US007.",
+    "",
+    "POURQUOI UN MANIFESTE JSON ET NON DU TYPESCRIPT",
+    "  Le contrat a deux consommateurs qui ne parlent pas la meme langue : le",
+    "  frontend TypeScript, qui en tire ses types et ses chemins, et un controle",
+    "  Python qui verifie que l'API SERT bien ce qui est declare ici. Un fichier",
+    "  TypeScript serait illisible depuis Python ; un fichier Python serait",
+    "  illisible depuis le navigateur. JSON est la seule forme que les deux lisent",
+    "  sans outillage.",
+    "",
+    "  Le motif est celui de DEC-466 pour le masquage et de ECART-022 pour les",
+    "  modeles de configuration : une seule source, pas deux copies qui divergent.",
+    "",
+    "POURQUOI PAS UNE GENERATION DEPUIS LE SCHEMA OPENAPI",
+    "  Mesure du 30/07/2026 sur le schema reellement servi : `components.schemas`",
+    "  est VIDE. Les routes de sante rendent des dictionnaires sans modele de",
+    "  reponse declare, donc le schema ne porte aucune forme a generer — seulement",
+    "  des chemins et des codes. Generer depuis lui produirait des types `unknown`",
+    "  et donnerait l'illusion d'un contrat type.",
+    "",
+    "  Le sens de la verification est donc inverse, et c'est plus honnete : ce",
+    "  fichier DECLARE le contrat, et `apps/api/tests/test_contrat.py` verifie que",
+    "  le schema servi le respecte — meme ensemble de chemins, memes methodes,",
+    "  memes codes. Une route ajoutee, retiree ou renommee sans mise a jour de ce",
+    "  fichier fait ECHOUER ce controle.",
+    "",
+    "CE QU'IL NE CONTIENT PAS",
+    "  Aucun type metier. Le modele de donnees appartient au LOT 2, qui n'est pas",
+    "  ouvert. Ce contrat ne porte que ce que l'API expose AUJOURD'HUI : les trois",
+    "  endpoints de sante du cahier 18.7 et la racine du prefixe versionne."
+  ],
+
+  "version": "1.0",
+
+  "_commentaire_en_tete": [
+    "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
+    "cote frontend : c'est lui que l'utilisateur cite dans un signalement."
+  ],
+  "enTeteCorrelation": "X-Request-ID",
+
+  "_commentaire_prefixe": [
+    "DEC-465 place les endpoints de sante HORS du prefixe versionne : ils relevent",
+    "de l'exploitation, et l'adresse que sonde un orchestrateur ne doit pas bouger",
+    "avec les versions de l'API. `prefixeVersionne` ne s'applique donc QU'aux",
+    "chemins metier, et il n'y en a aucun au LOT 1."
+  ],
+  "prefixeVersionne": "/api/v1",
+
+  "endpoints": [
+    {
+      "cle": "live",
+      "chemin": "/health/live",
+      "methode": "get",
+      "codesExploitables": [200],
+      "forme": "Vivacite",
+      "role": "L'application repond. Ne sonde AUCUNE dependance (cahier 18.7)."
+    },
+    {
+      "cle": "ready",
+      "chemin": "/health/ready",
+      "methode": "get",
+      "codesExploitables": [200, 503],
+      "forme": "EtatServices",
+      "role": [
+        "Sonde reellement PostgreSQL, Redis et MinIO.",
+        "503 N'EST PAS UNE ERREUR : la charge utile a exactement la meme forme",
+        "qu'un 200, et c'est le champ `statut` qui dit si la plateforme est prete",
+        "ou degradee. Lire un 503 comme une panne de transport jetterait le",
+        "diagnostic au moment ou il devient utile."
+      ]
+    },
+    {
+      "cle": "version",
+      "chemin": "/health/version",
+      "methode": "get",
+      "codesExploitables": [200],
+      "forme": "Version",
+      "role": "Version, revision et environnement du build en execution."
+    },
+    {
+      "cle": "racineVersionnee",
+      "chemin": "/api/v1/",
+      "methode": "get",
+      "codesExploitables": [200],
+      "forme": "Inconnue",
+      "role": "Racine du contrat versionne. Vide au LOT 1 ; son contenu arrive au LOT 2."
+    }
+  ]
+}
