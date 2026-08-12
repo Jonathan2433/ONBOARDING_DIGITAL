@@ -2,10 +2,10 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 30 juillet 2026, à la sortie de la sous-étape **`T10`** — §1, §4, §5, §7, §8,
+**Mis à jour le :** 12 août 2026, à la sortie de la sous-étape **`T11`** — §1, §4, §5, §7, §8,
 §9, §10 et §11 rectifiés **sur mesures**. **Cinq affirmations de ce document se sont révélées
 fausses : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais pour **conclure le LOT 1 par `T11`, la porte `G1`**
+**Destinataire :** l'agent qui prend le relais **APRÈS la validation de la porte `G1`**, pour le LOT 2
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -20,8 +20,8 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
 | **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
-| Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T10`**, les dix |
-| **Prochaine action** | **`T11`** — contrôles de sortie, checklist de la porte `G1`, et le tag **`v0.1.0`** sur `main` (`DEC-428`). Aucune story : c'est la porte |
+| Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T11`**, les onze. **Le lot est complet** |
+| **Prochaine action** | **La validation de la porte `G1` par Jonathan.** La [checklist](docs/operations/checklist-validation-G1.md) lui est remise. Puis fusion dans `main`, tag **`v0.1.0`**, et ouverture du LOT 2 — décision à tracer |
 | Stories `Done` | **LES HUIT.** `US002` a reçu `T2`, `T5` et `T8` |
 | Stories restantes | **aucune.** `US007` a été réalisée et non reportée |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
@@ -103,8 +103,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **11 barrées** |
-| **Comment a-t-on fait `T1` à `T10` ?** | **`docs/operations/compte-rendu-t{0,…,10}-lot-1.md`** |
+| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **les 12 barrées** |
+| **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
+| **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
 | Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **161 décisions**, et `make docs-check` en **dérive les totaux** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
@@ -729,7 +730,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**77 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **67 pendant `T1` à `T10`**. Ils sont
+**78 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **68 pendant `T1` à `T11`**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -873,7 +874,7 @@ while IFS= read -r ligne <&3; do commande </dev/null; done 3< "$fichier"
 # Puis COMPARER le nombre examine au nombre attendu, et echouer sinon.
 ```
 
-## 7.5 `zsh` ne découpe pas les variables en mots
+## 7.5 `zsh` ne découpe pas les variables en mots — **rejoué trois fois en une seule session**
 
 ```bash
 CIBLES="a b c"
@@ -1280,84 +1281,74 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T11`, la porte `G1`
+# 9. Par où commencer : la porte `G1` est instruite, elle attend la décision
 
-## 9.0 Ce que les sous-étapes précédentes ont démenti
+## 9.0 Ce que les sous-étapes ont démenti, et ce qu'il faut en retenir
 
-**Cinq fois, ce document a affirmé faux. Chaque fois, c'était une affirmation présentée comme un
-fait, jamais mesurée.** Les cinq sont détaillées dans les comptes rendus de `T5` à `T7` : le
-mandatement Caddy « déjà en place », une commande d'approbation employant `sudo` sur une machine sans
-droits d'administration, « 4 YAML » là où il y en avait 6, « les 3 `Dockerfile` sont mono-étape »,
-et « 78 variables » là où il y en avait 77 dont une en doublon.
+**Cinq fois, ce document a affirmé faux, et chaque fois c'était une affirmation jamais mesurée.** Les
+cinq sont détaillées dans les comptes rendus de `T5` à `T7`. Et la liste s'est allongée de quatre
+façons différentes, ce qui compte plus que le nombre :
 
-> **Et la liste s'est allongée de trois façons différentes, ce qui compte plus que le nombre :**
->
-> - **`T8` a démenti la FICHE DU LOT** — six séparations énumérées là où le cahier en compte sept
->   (`ECART-023`). **Ce n'est pas seulement cette passation qui vieillit, c'est tout document dérivé
->   d'un autre.**
-> - **`T9` a démenti deux CONTRÔLES du dépôt** — l'avertissement de `make destroy` et le contrôle de
->   page. Les deux étaient **justes quand ils ont été écrits** ; c'est `T8`, en créant un second
->   environnement, qui les a rendus faux (`ECART-024`, §7.21).
-> - **`T10` a démenti une MESURE de `T6`**, et en un jour : un avis de sécurité accepté parce
->   qu'« aucun correctif n'existe » en avait reçu un. **Un résiduel accepté n'est pas un dossier
->   clos** (§7.22).
+- **`T8` a démenti la FICHE DU LOT** — six séparations énumérées là où le cahier en compte sept
+  (`ECART-023`). **Tout document dérivé d'un autre vieillit, pas seulement cette passation.**
+- **`T9` a démenti deux CONTRÔLES du dépôt.** Les deux étaient **justes quand ils ont été écrits** ;
+  c'est `T8`, en créant un second environnement, qui les a rendus faux (`ECART-024`, §7.21).
+- **`T10` a démenti une MESURE de `T6`**, en un jour : un avis de sécurité accepté parce qu'« aucun
+  correctif n'existe » en avait reçu un (§7.22).
+- **`T11` a démenti une lecture de `git`.** Après la fusion de `develop` dans `main`,
+  `git rev-list --left-right --count` rendait `1 18` d'une syntaxe et `0 32` d'une autre, et **aucun
+  des deux ne répondait à la question** : ce sont des artefacts de fusion en squash. Ce qui fait foi
+  est l'**arbre**, identique des deux côtés. **Un compte de commits répond à une autre question que
+  celle qu'on croit poser.**
 
-**La leçon dépasse ces cas.** Ce document décrit un état vérifié à une date. **Vérifie avant de bâtir
-dessus — surtout quand il t'annonce que tu n'as rien à faire, ou te donne une commande toute prête.**
+**Vérifie avant de bâtir dessus — surtout quand ce document t'annonce que tu n'as rien à faire.**
 
-## 9.1 Objet
+## 9.1 Où en est exactement le lot
 
-**Contrôles de sortie et porte `G1`.** Aucune story : `T11` ne construit rien.
+**Les douze sous-étapes sont faites, les huit stories sont livrées, et 33 contrôles de sortie sont à
+zéro.** Il ne reste **aucun travail technique**.
 
-**Les huit stories du lot sont livrées**, et les six critères techniques de `G1` sont acquis. Il ne
-reste que la **validation explicite de Jonathan**, puis le tag **`v0.1.0`** posé sur `main`
-(`DEC-428`).
+**Ce qui reste est une décision de Jonathan**, et la [checklist](docs/operations/checklist-validation-G1.md)
+lui est remise. Elle porte les sept critères avec leurs preuves, les neuf critères d'empêchement du
+backlog §12, une **démonstration guidée** des six éléments de la roadmap, ce qui reste ouvert, et ce
+que la pose du tag déclenchera.
 
-**Fondement :** roadmap LOT 1, sept critères de sortie ; backlog §12, neuf critères d'empêchement ;
-fiche §10.
+## 9.2 Ce qui suit la validation, dans cet ordre
 
-## 9.2 Ce que `T11` doit produire
+1. **Fusionner `develop` dans `main`** — par pull request, `main` étant protégée avec
+   `enforce_admins`. **Une seconde fusion est nécessaire** : la première, faite le 12/08/2026
+   (PR `#30`, `be65b53`), précède les documents de `T11`.
+2. **Poser le tag annoté `v0.1.0` sur `main`** — `DEC-428`, et **sur `main`**, pas sur `develop`.
+3. **Refermer l'epic `#1`.**
+4. **Relancer le projet Docker tiers** : `docker compose -p observatoire-ecom-studio start`. Action
+   de Jonathan.
+5. **Ouvrir le LOT 2**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003` exigent
+   une validation explicite avant tout lot dépendant.
 
-1. **Rejouer TOUS les contrôles et citer leurs codes de sortie réels**, sur les deux environnements.
-   La liste est au §11 de ce document.
-2. **Vérifier les nombres PAR LES COMMANDES DE DÉRIVATION, pas en les recopiant.** C'est la
-   recommandation 2 du compte rendu de `T9`, et la classe `ECART-021` a coûté trois passes à ce
-   projet. Les nombres de ce document sont vérifiés à la sortie de `T10` ; ils ne le seront plus
-   demain.
-3. **Une checklist remise à Jonathan**, sur le modèle de `docs/operations/checklist-validation-G0.md`,
-   qui a servi pour la porte `G0`.
-4. **Après validation seulement** : fusionner `develop` dans `main`, puis poser le tag annoté
-   `v0.1.0`. Dans cet ordre — `DEC-428` pose le tag **sur `main`**.
+## 9.3 Les pièges de cette fin de lot
 
-## 9.3 Les pièges propres à `T11`
-
-1. **`main` est protégée avec `enforce_admins`, et la CI y est BLOQUANTE.** La fusion de `develop`
-   dans `main` passe donc par une **pull request**, comme tout le reste. Aucun commit direct, y
-   compris pour Jonathan.
-2. **La fusion dans `main` déclenchera `ci.yml`, et le tag `v*` déclenchera `images.yml`** avec la
-   version exacte. Dis-le à Jonathan **avant**, pas après : c'est la première publication d'une
-   version non `develop`.
-3. **`Closes #N` ne fonctionne pas depuis `develop`** — mais il fonctionnera depuis `main`, qui est
-   la branche par défaut. Ne t'y fie pas pour autant : referme `#8` à la main comme les autres, et
-   l'epic `#1` à la fin.
-4. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
+1. **Le tag `v*` déclenchera `images.yml` avec la version exacte.** Première publication d'une version
+   non `develop` : jusqu'ici seules les étiquettes `sha-<empreinte>` et `develop` existent. **Dis-le
+   à Jonathan avant, pas après.**
+2. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
    s'exécute pas sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
    statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif.
-5. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes ;
-   ne les touche pas.
-6. **Le projet Docker tiers doit être relancé à la fin du lot**, et c'est l'action de Jonathan :
-   `docker compose -p observatoire-ecom-studio start`.
+3. **Compare les ARBRES, pas les commits**, pour savoir si `main` porte bien le contenu de `develop`.
+   Voir §9.0.
+4. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes.
+5. **Le LOT 2 n'est pas ouvert** tant que Jonathan ne l'a pas dit. N'écris pas une ligne qui lui
+   appartienne : ni table, ni modèle SQLAlchemy métier, ni type métier dans `packages/contracts`.
 
 ## 9.4 Ce qui reste ouvert et devra être dit à la porte
 
 | Élément | Ce qu'il faut annoncer |
 |---|---|
-| `QO-115` | La **charte graphique** et la **police officielle** n'existent pas dans le corpus. Les jetons de `T10` sont relevés du prototype et défendables, mais ce sont une **approximation** de la charte réelle. À instruire avant le LOT 4 |
+| `QO-115` | La **charte graphique** et la **police officielle** n'existent pas dans le corpus — le prototype référence pourtant « la charte EXALT », donc **elle existe et nous ne l'avons pas**. Les jetons de `T10` sont défendables mais restent une **approximation**. À instruire avant le LOT 4 |
 | `ROAD-RSK-034` | Les ports publiés d'un environnement restent joignables depuis l'autre. Le cahier §22.2 exige un réseau **distinct**, ce qui est acquis ; la barrière effective est la **cinquième** séparation, les secrets. À réévaluer avant le LOT 13 |
-| `ROAD-RSK-033` | 23 avis sans correctif dans `python:3.12-slim`. **`T10` vient de montrer qu'un tel résiduel peut se corriger du jour au lendemain** : à réexaminer, pas à archiver |
-| `QO-111`, `QO-112` | Collation et extensions PostgreSQL, au LOT 2 |
-| `QO-113` | Conservation calendaire des journaux, au LOT 13 |
-| `QO-114` | Droits d'administration, au LOT 13 |
+| `ROAD-RSK-033` | 23 avis sans correctif dans `python:3.12-slim`. **`T10` a montré qu'un tel résiduel peut se corriger du jour au lendemain** : à réexaminer, pas à archiver |
+| `QO-111`, `QO-112` | Collation et extensions PostgreSQL — **à trancher au LOT 2, avant la première table** |
+| `QO-113` | Conservation calendaire des journaux, LOT 13 |
+| `QO-114` | **Jonathan n'a aucun droit d'administration sur cette machine.** À instruire avant le LOT 13 |
 | `ECART-005`, `012`–`015` | Cinq écarts ouverts, tous rattachés à un lot ultérieur |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
@@ -1371,11 +1362,11 @@ fiche §10.
 | ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur une base créée de zéro en `T9`** |
 | ☑ | Les logs possèdent un identifiant de corrélation | `T4`, **et le nom de l'en-tête est partagé et vérifié depuis `T10`** |
 | ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
-| ☐ | Jonathan valide le socle | `T11` |
+| ☐ | Jonathan valide le socle | **la [checklist](docs/operations/checklist-validation-G1.md) lui est remise, `T11` faite** |
 
-**Les six critères techniques sont acquis, et les HUIT stories du lot sont livrées** — `US007` a été
-réalisée, non reportée. Il ne reste que `T11` : la validation de Jonathan, puis le tag **`v0.1.0`**
-sur `main` (`DEC-428`).
+**Les six critères techniques sont acquis, les HUIT stories sont livrées, et les 33 contrôles de
+sortie de `T11` sont à zéro.** Il ne reste que la **décision de Jonathan**, puis la fusion dans
+`main` et le tag **`v0.1.0`** (`DEC-428`).
 
 > **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
 > de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
@@ -1440,7 +1431,8 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
     ├── decisions/                   ← 161 décisions, 24 écarts
-    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T10, registres
+    └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
+                                        checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
 ```
 
