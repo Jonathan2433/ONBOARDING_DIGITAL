@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 29 juillet 2026, sous-étape `T9` du LOT 1
+**Dernière mise à jour :** 12 août 2026, correctif postérieur à la porte `G1`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 24 | 5 | 17 | 2 |
+| Total 25 | 5 | 18 | 2 |
 
 ---
 
@@ -42,8 +42,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-022` | Quatre affirmations du corpus non dérivées de leur source, **et un fichier de configuration qui déclare deux fois la même variable** | Non pour `G1` | **Clos** |
 | `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
 | `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
+| `ECART-025` | La bande de ports de la recette a été choisie sur une mesure de ce qui **écoutait**, non de ce qui était **déclaré** : un projet tiers arrêté réclamait déjà `8080` | Non pour `G1` | **Clos** |
 
-**Prochain identifiant libre : `ECART-025`.**
+**Prochain identifiant libre : `ECART-026`.**
 
 ---
 
@@ -347,4 +348,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Corriger les deux, et pour la même raison : **faire mesurer au lieu d'affirmer**. `destroy` interroge le trousseau et dit ce qu'il a mesuré — ou dit « indéterminé » quand il ne peut pas mesurer, plutôt que de trancher. Le contrôle de page **identifie la cible servie**, exige qu'elle soit l'une des deux formes connues, et applique les contrôles de cette forme — en **échouant** s'il n'en reconnaît aucune. Et une leçon plus large pour la suite : **quand une sous-étape ajoute un environnement, relire les contrôles qui n'en connaissaient qu'un.** |
 | Résolution | **Clos** le 29 juillet 2026, sous-étape `T9`. `DEC-489` et `DEC-490`. Les deux corrections sont éprouvées par des témoins **dans les deux sens** : le message de `destroy` diffère réellement entre `dev` et la recette, mesure à l'appui, et le contrôle de page passe sur les deux environnements en nommant la cible servie — tout en **échouant** sur une origine qui ne sert pas la page, l'hôte de l'API, où il rend 2 échecs sur 6. |
 
-**Prochain identifiant libre : `ECART-025`.**
+## `ECART-025` — La bande de ports de la recette a été choisie sur une mesure de ce qui écoutait, non de ce qui était déclaré
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 août 2026, **après la validation de la porte `G1`**, par l'exploitation réelle |
+| Source | `DEC-487`, bande de ports de la recette ; sortie de `docker compose -p observatoire-ecom-studio start` |
+| Constat | La bande de ports de la recette — `8080`, `8443`, `15432`, `16379`, `18025`, `19000`, `19001` — a été choisie en `T8` après avoir mesuré que ces ports étaient **libres**. La mesure employait `lsof -nP -iTCP -sTCP:LISTEN` : elle regardait ce qui **écoutait**.<br>**Le projet tiers `observatoire-ecom-studio` déclare `127.0.0.1:8080` depuis toujours.** Il était simplement **arrêté** au moment de la mesure — et un conteneur arrêté déclare ses ports sans en occuper aucun. À sa relance, le 12/08/2026 : `Bind for 127.0.0.1:8080 failed: port is already allocated`.<br>**La même mesure, refaite correctement, a révélé un SECOND conflit antérieur au projet** : `5432`, entre `onboarding-dev` et `ticket_master`, arrêté depuis quatre semaines et donc jamais manifesté. |
+| Impact | **La recette et le projet tiers ne peuvent pas tourner en même temps.** L'effet est borné : `DEC-440` n'autorise de toute façon qu'un environnement à la fois, et le développement seul ne collisionne avec rien. Mais le symptôme est arrivé **sans avertissement**, et le message de Docker ne nomme pas le coupable — il dit qu'un port est pris, pas par qui. |
+| Cause | **La mesure était juste à sa date ; la MÉTHODE était incomplète.** Elle répondait à « ce port est-il occupé maintenant ? » quand la question était « ce port sera-t-il disponible quand ce projet démarrera ? ». C'est la même famille que `ECART-024` — un contrôle juste au moment où il est écrit, faux quand l'état du monde autour de lui change — avec une variante : ici c'est un **état dormant** que la mesure ne voyait pas. |
+| Bloquant | Non pour `G1`, qui était déjà validée. Aucun critère de sortie n'est remis en cause : les sept séparations du cahier §22.2 portent sur nos deux environnements, et elles restent prouvées |
+| Recommandation | **Poser le contrôle qui manquait**, plutôt que de promettre plus d'attention. Arbitrage de Jonathan du 12/08/2026 : le contrôle est retenu, **et le déplacement du port de la recette ne l'est pas** — la collision reste, désormais visible. |
+| Résolution | **Clos** le 12 août 2026 par `DEC-494`. `make ports` confronte désormais **deux sources** : les conteneurs existants, **arrêtés compris**, et la **configuration Compose assemblée** de nos environnements — indispensable, puisque `down` supprime les conteneurs et qu'un environnement arrêté ne déclare plus rien. Il **échoue** sur une collision entre deux de nos environnements — éprouvé par témoin, code 1 avec le port et les deux propriétaires nommés — et **rapporte visiblement** les collisions étrangères, dont les deux constatées. **La collision `8080` subsiste et est assumée** : elle est désormais annoncée avant d'être découverte. |
+
+**Prochain identifiant libre : `ECART-026`.**
