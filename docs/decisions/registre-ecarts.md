@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 12 août 2026, correctif postérieur à la porte `G1`
+**Dernière mise à jour :** 12 août 2026, correctifs postérieurs à la porte `G1`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 25 | 5 | 18 | 2 |
+| Total 26 | 5 | 19 | 2 |
 
 ---
 
@@ -43,8 +43,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
 | `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
 | `ECART-025` | La bande de ports de la recette a été choisie sur une mesure de ce qui **écoutait**, non de ce qui était **déclaré** : un projet tiers arrêté réclamait déjà `8080` | Non pour `G1` | **Clos** |
+| `ECART-026` | Les conventions Git prescrivaient une stratégie de fusion que la protection de branche **interdisait** : deux règles justes séparément, incompatibles ensemble | Non pour `G1`, **bloquant pour `G2`** | **Clos** |
 
-**Prochain identifiant libre : `ECART-026`.**
+**Prochain identifiant libre : `ECART-027`.**
 
 ---
 
@@ -361,4 +362,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Poser le contrôle qui manquait**, plutôt que de promettre plus d'attention. Arbitrage de Jonathan du 12/08/2026 : le contrôle est retenu, **et le déplacement du port de la recette ne l'est pas** — la collision reste, désormais visible. |
 | Résolution | **Clos** le 12 août 2026 par `DEC-494`. `make ports` confronte désormais **deux sources** : les conteneurs existants, **arrêtés compris**, et la **configuration Compose assemblée** de nos environnements — indispensable, puisque `down` supprime les conteneurs et qu'un environnement arrêté ne déclare plus rien. Il **échoue** sur une collision entre deux de nos environnements — éprouvé par témoin, code 1 avec le port et les deux propriétaires nommés — et **rapporte visiblement** les collisions étrangères, dont les deux constatées. **La collision `8080` subsiste et est assumée** : elle est désormais annoncée avant d'être découverte. |
 
-**Prochain identifiant libre : `ECART-026`.**
+## `ECART-026` — Les conventions Git prescrivaient une stratégie de fusion que la protection de branche interdisait
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 août 2026, **après la validation de la porte `G1`**, sur les conflits de la pull request `#33` |
+| Source | [`conventions-git-et-versions.md`](../operations/conventions-git-et-versions.md) §2, tableau des réglages de protection, et §2.1, stratégie de fusion ; protection de branche de `main` et de `develop`, relevée par `gh api` |
+| Constat | **Le document se contredit.** Sa ligne 94 pose « historique linéaire requis » comme réglage recommandé, au motif qu'il est « cohérent avec la fusion par squash ». Sa ligne 106 impose **`develop` → `main` : merge commit**, au motif de « conserver la traçabilité de l'ensemble intégré et validé ».<br>**Or ces deux règles s'excluent :** « historique linéaire requis » **refuse tout merge commit**. Les deux ont pourtant été appliquées — mesuré le 12/08/2026 : `required_linear_history` valait `true` sur `main` **et** sur `develop`, avec `enforce_admins`.<br>**Conséquence directe :** la PR `#30`, première fusion de `develop` dans `main`, **n'a pas été squashée par inadvertance — c'était la seule méthode que la protection autorisait.** |
+| Impact | **Cumulatif, et c'est ce qui le rend sérieux.** Le squash a coupé `main` de l'histoire de `develop` : la base de fusion est restée `09ceb7c`, si bien que **tout fichier touché des deux côtés entre en conflit alors que le contenu ne divergeait pas**. Mesuré sur la PR `#33` : **9 fichiers en conflit, insolubles** — leur résolution exigeait elle-même un merge commit sur `develop`, que la protection refusait. Et le défaut se serait **reproduit à chaque porte**, en s'aggravant à mesure que les deux histoires s'éloignent. |
+| Cause | **Deux règles justes séparément, incompatibles ensemble, dans un même document.** Ni la ligne 94 ni la ligne 106 n'est fausse en soi : la première sert la lisibilité de `develop`, la seconde la traçabilité de `main`. Aucune relecture de l'une n'aurait révélé le problème — il ne se voit qu'en les confrontant, et il ne s'est manifesté qu'à la **seconde** fusion vers `main`. C'est la classe de `ECART-023`, élargie : un document dérivé peut non seulement vieillir, il peut **prescrire l'impossible dès sa rédaction**. |
+| Bloquant | Non pour `G1`, déjà validée, et aucun critère de sortie n'est remis en cause. Bloquant en revanche pour **toute** fusion de `develop` dans `main`, donc pour la porte `G2` et les suivantes |
+| Recommandation | **Distinguer le réglage par branche** au lieu de l'appliquer uniformément : `develop` ne reçoit que des squash de branches de travail et gagne à rester linéaire ; `main` reçoit des merge commits et ne peut pas l'être. Et **poser le contrôle qui manquait** : après une fusion `develop` → `main`, comparer les **arbres** et vérifier l'**ascendance**, plutôt que de se fier au verdict de fusion. |
+| Résolution | **Clos** le 12 août 2026 par `DEC-495`, la rectification des §2 et §2.1 des conventions, et la PR `#35`.<br>**Réglage :** `required_linear_history` retiré sur `main`, conservé sur `develop` — mesuré après application, `false` / `true`, les six autres réglages inchangés.<br>**Réparation :** la PR `#35` est une **vraie fusion**, `develop` devient ancêtre de `main`, et la base de fusion remonte de `09ceb7c` à `e526e57`, la tête de `develop`. Mesuré : `main^{tree}` = `develop^{tree}` = `9bc9359`, **2 parents**, `main`↔`develop` à **3 / 0**.<br>**Et le contrôle posé a immédiatement attrapé un défaut :** une résolution en `git merge -X theirs` avait rendu un arbre **divergent**, la stratégie ayant conservé un fragment **non conflictuel** du côté abandonné — **41 lignes dupliquées dans `fiche-lot-1.md`, aucun conflit signalé**. Sans la comparaison des arbres, cette fusion passait en paraissant propre. |
+
+**Prochain identifiant libre : `ECART-027`.**
