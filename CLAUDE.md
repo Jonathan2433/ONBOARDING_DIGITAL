@@ -19,9 +19,9 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
-| **Lot en cours** | **AUCUN.** Le LOT 2 n'est pas ouvert tant que Jonathan ne l'a pas dit — §9.6 |
+| **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
 | Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T11`**, les onze. **Le lot est complet** |
-| **Prochaine action** | **Ouvrir le LOT 2 — décision à tracer.** La porte `G1` est **FRANCHIE** : tag `v0.1.0` posé sur `main`, et `main` porte le contenu de `develop` (arbres identiques, `9bc9359`). Reste aussi à refermer l'epic `#1` |
+| **Prochaine action** | **La validation par Jonathan du découpage du §3 de la [fiche du LOT 2](docs/operations/fiche-lot-2.md).** `DEC-496` pose qu'**aucune ligne de code** n'est écrite avant. Puis `T1` : trancher `QO-111` et `QO-112`, et les **7 choix techniques** du §9.2 |
 | Stories `Done` | **LES HUIT.** `US002` a reçu `T2`, `T5` et `T8` |
 | Stories restantes | **aucune.** `US007` a été réalisée et non reportée |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
@@ -30,7 +30,7 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Tests | **260** : **144 pytest** — 136 unitaires, 8 d'intégration — et **116 Vitest**. C'était 166 avant `T10` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **163 décisions** · **26 écarts** (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
+| Registres | **164 décisions** · **26 écarts** (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -103,7 +103,8 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 1 ?** | **`docs/operations/fiche-lot-1.md`** — 12 sous-étapes, **les 12 barrées** |
+| **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — **12 sous-étapes, aucune faite.** Le plan attend la validation du §3 |
+| Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
 | **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
@@ -339,7 +340,7 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
-Les 163 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 164 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -390,7 +391,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`495` en usage | **`DEC-496`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`496` en usage | **`DEC-497`** |
 | `ECART-nnn` | `001`–`026` | **`ECART-027`** |
 | `QO-nnn` | `072`–`115`, **5 trous** | **`QO-116`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -1418,8 +1419,11 @@ que la pose du tag déclenchera.
 3. **Compare les ARBRES, pas les commits**, pour savoir si `main` porte bien le contenu de `develop`.
    Voir §9.0.
 4. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes.
-5. **Le LOT 2 n'est pas ouvert** tant que Jonathan ne l'a pas dit. N'écris pas une ligne qui lui
-   appartienne : ni table, ni modèle SQLAlchemy métier, ni type métier dans `packages/contracts`.
+5. **Le LOT 2 EST ouvert** depuis le 18/08/2026 (`DEC-496`), **mais son plan attend validation** :
+   `DEC-496` pose qu'aucune ligne de code n'est écrite avant que Jonathan ait validé le §3 de
+   [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md). **Les interdits du LOT 2 sont au §11 de cette
+   fiche** — au premier chef : aucune table d'authentification, aucun écran, aucun type métier dans
+   `packages/contracts` avant qu'une route l'expose. **Les LOTS 3 à 14 restent `Planned`.**
 
 ## 9.4 Ce qui reste ouvert et devra être dit à la porte
 
@@ -1512,7 +1516,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 163 décisions, 26 écarts
+    ├── decisions/                   ← 164 décisions, 26 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
                                         checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
@@ -1633,7 +1637,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 163 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 164 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
