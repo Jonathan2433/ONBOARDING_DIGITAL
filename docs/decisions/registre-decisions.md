@@ -30,8 +30,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-483+`, sous-étape `T8` | 6 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
-| Correctif postérieur à `G1` `DEC-494` | 1 | Validée le 12/08/2026 |
-| **Total** | **162** | |
+| Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
+| **Total** | **163** | |
 
 ---
 
@@ -290,15 +290,17 @@ Décisions prises pendant la mise en place du design system et du contrat API pa
 
 ---
 
-## 1.14 Correctif postérieur à la porte `G1`
+## 1.14 Correctifs postérieurs à la porte `G1`
 
-Décision prise après la validation de `G1`, sur un défaut révélé par l'exploitation réelle.
+Décisions prises après la validation de `G1`, sur des défauts révélés par l'exploitation réelle — l'un au démarrage d'un projet tiers, l'autre à la fusion de `develop` dans `main`.
 
 | ID | Décision | Motif | Statut |
 |---|---|---|---|
 | `DEC-494` | **`make ports` vérifie désormais les collisions de ports d'hôte sur TOUTE la machine**, en confrontant deux sources : les conteneurs existants — **arrêtés compris** — et la **configuration Compose assemblée** de nos environnements, qui ne demande aucun conteneur. Il **échoue** sur une collision entre deux de nos environnements et **rapporte visiblement** une collision avec un projet étranger. | La bande de ports de la recette avait été choisie en `T8` après avoir mesuré ce qui **écoutait** — `lsof … -sTCP:LISTEN`. Le projet tiers `observatoire-ecom-studio` **déclarait** déjà `127.0.0.1:8080` mais était **arrêté** : invisible de cette mesure. Il n'a pas pu démarrer le 12/08/2026. **La mesure était juste à sa date ; la méthode était incomplète.** La seconde source est indispensable : `down` **supprime** les conteneurs, donc un environnement arrêté ne déclare plus rien — sans elle, le contrôle n'aurait pas attrapé le défaut qui l'a fait naître. Le partage exiger/rapporter est celui de `DEC-482` : nous ne maîtrisons pas les ports d'un projet tiers, et faire échouer `make up` pour cette raison le rendrait inutilisable. | Validée par Jonathan le 12/08/2026 |
 
-**Prochain identifiant libre : `DEC-495`.**
+| `DEC-495` | **`required_linear_history` est RETIRÉ sur `main` et CONSERVÉ sur `develop`.** `main` reçoit des **merge commits** de `develop`, conformément au §2.1 des conventions ; `develop` ne reçoit que des **squash** de branches de travail, et y garder l'exigence préserve la règle « un commit lisible par story » tenue depuis `T1`. | **Le réglage et le §2.1 des conventions s'excluent, et le document se contredisait** : sa ligne 94 recommandait l'historique linéaire « cohérent avec la fusion par squash », sa ligne 106 imposait le merge commit pour `develop` → `main`. Les deux ont été appliqués, si bien que la PR `#30` **n'a pas été squashée par inadvertance — c'était la seule méthode que la protection permettait**. Conséquence **cumulative** : le squash coupe `main` de l'histoire de `develop`, la base de fusion reste `09ceb7c`, et **chaque porte suivante conflicte sur tout fichier touché des deux côtés** alors que le contenu ne divergeait pas — mesuré sur `#33`, 9 fichiers, insolubles. Mesuré après application : `main` → `false`, `develop` → `true`, les six autres réglages inchangés. | Validée par Jonathan le 12/08/2026 |
+
+**Prochain identifiant libre : `DEC-496`.**
 
 ---
 
@@ -470,8 +472,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-483+` — réalisation du LOT 1, `T8` | 6 | 6 |
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
-| `DEC-494` — correctif postérieur à `G1` | 1 | 1 |
-| **Total** | **162** | **162** |
+| `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
+| **Total** | **163** | **163** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

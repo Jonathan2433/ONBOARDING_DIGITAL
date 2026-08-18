@@ -18,10 +18,10 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie |
-| **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0` |
+| Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
+| **Lot en cours** | **AUCUN.** Le LOT 2 n'est pas ouvert tant que Jonathan ne l'a pas dit — §9.6 |
 | Sous-étapes faites | **`T0`** hors lot · **`T1`** → **`T11`**, les onze. **Le lot est complet** |
-| **Prochaine action** | **La validation de la porte `G1` par Jonathan.** La [checklist](docs/operations/checklist-validation-G1.md) lui est remise. Puis fusion dans `main`, tag **`v0.1.0`**, et ouverture du LOT 2 — décision à tracer |
+| **Prochaine action** | **Ouvrir le LOT 2 — décision à tracer.** La porte `G1` est **FRANCHIE** : tag `v0.1.0` posé sur `main`, et `main` porte le contenu de `develop` (arbres identiques, `9bc9359`). Reste aussi à refermer l'epic `#1` |
 | Stories `Done` | **LES HUIT.** `US002` a reçu `T2`, `T5` et `T8` |
 | Stories restantes | **aucune.** `US007` a été réalisée et non reportée |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
@@ -30,7 +30,7 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | Tests | **260** : **144 pytest** — 136 unitaires, 8 d'intégration — et **116 Vitest**. C'était 166 avant `T10` |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **162 décisions** · **25 écarts** (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
+| Registres | **163 décisions** · **26 écarts** (5 ouverts) · **39 questions** (34 ouvertes) · 34 risques dont **`ROAD-RSK-032` clos en `T10`** |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -339,7 +339,7 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
-Les 162 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 163 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -390,8 +390,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`494` en usage | **`DEC-495`** |
-| `ECART-nnn` | `001`–`025` | **`ECART-026`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`495` en usage | **`DEC-496`** |
+| `ECART-nnn` | `001`–`026` | **`ECART-027`** |
 | `QO-nnn` | `072`–`115`, **5 trous** | **`QO-116`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -730,7 +730,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**79 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **69 pendant `T1` à `T11` et après la porte**. Ils sont
+**80 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **70 pendant `T1` à `T11` et après la porte**. Ils sont
 tous consignés dans les comptes rendus de sous-étape.
 
 ## 7.0 La règle qui résume tout
@@ -1258,6 +1258,45 @@ assemblée, qui ne demande aucun conteneur. `DEC-494`, `ECART-025`.
 
 ---
 
+## 7.24 Deux règles justes séparément peuvent s'exclure, et un outil qui réussit ne prouve rien
+
+**Apport du correctif de stratégie de fusion, et il tient deux leçons distinctes.**
+
+**La première porte sur les documents.** Les conventions Git posaient, à onze lignes d'intervalle,
+« historique linéaire requis » (ligne 94) et « `develop` → `main` : merge commit » (ligne 106).
+**Aucune des deux n'est fausse** — la première sert la lisibilité de `develop`, la seconde la
+traçabilité de `main`. Elles sont **incompatibles** : l'historique linéaire refuse tout merge commit.
+Les deux ont été appliquées, si bien que la fusion s'est rabattue sur le squash, ce qui a coupé `main`
+de l'histoire de `develop` — et **9 fichiers sont entrés en conflit alors que le contenu ne
+divergeait pas**.
+
+> **La règle, sans jargon :** relire une règle ne suffit pas, il faut **confronter les règles entre
+> elles**. Et le défaut ne s'est manifesté qu'à la **seconde** fusion vers `main` : une contradiction
+> peut rester invisible tant qu'une seule de ses branches a été exercée. C'est `ECART-023` élargi —
+> un document dérivé ne fait pas que vieillir, il peut **prescrire l'impossible dès sa rédaction**.
+
+**La seconde porte sur les outils, et c'est la quatrième proposition du §7.0 appliquée à `git`.** Ma
+résolution en `git merge -X theirs` **a réussi** : code 0, aucun conflit signalé. Et elle avait gardé,
+du côté abandonné, un fragment **non conflictuel** — le bloc `§3.1` de `fiche-lot-1.md` — **en plus**
+de la version qui le remplaçait. Soit **41 lignes dupliquées**, et une réserve `arm64` réapparaissant
+*après* le texte qui la lève.
+
+**Le succès de la fusion et sa justesse sont deux grandeurs différentes.** « Aucun conflit » ne veut
+pas dire « le résultat est celui que je veux » : les deux produisent exactement la même observation.
+Le contrôle qui discrimine ne porte pas sur le verdict de l'outil mais sur son **résultat** —
+l'arbre :
+
+```bash
+git rev-parse origin/main^{tree} origin/develop^{tree}   # doivent etre IDENTIQUES
+git merge-base --is-ancestor origin/develop origin/main  # doit sortir en 0
+git rev-parse origin/main^@ | wc -l                      # 2 = merge commit, 1 = squash
+```
+
+**Et c'est ce contrôle-là qui a attrapé le défaut.** Sans lui, cette fusion passait en paraissant
+propre — comme `T2-5`, où un Mailpit vide et un volume effacé rendaient tous deux `{"total":0}`.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — 5 ouverts sur 22
@@ -1342,23 +1381,37 @@ lui est remise. Elle porte les sept critères avec leurs preuves, les neuf crit�
 backlog §12, une **démonstration guidée** des six éléments de la roadmap, ce qui reste ouvert, et ce
 que la pose du tag déclenchera.
 
-## 9.2 Ce qui suit la validation, dans cet ordre
+## 9.2 Ce qui a suivi la validation, et ce qui reste
 
-1. **Fusionner `develop` dans `main`** — par pull request, `main` étant protégée avec
-   `enforce_admins`. **Une seconde fusion est nécessaire** : la première, faite le 12/08/2026
-   (PR `#30`, `be65b53`), précède les documents de `T11`.
-2. **Poser le tag annoté `v0.1.0` sur `main`** — `DEC-428`, et **sur `main`**, pas sur `develop`.
-3. **Refermer l'epic `#1`.**
-4. **Relancer le projet Docker tiers** : `docker compose -p observatoire-ecom-studio start`. Action
-   de Jonathan.
-5. **Ouvrir le LOT 2**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003` exigent
-   une validation explicite avant tout lot dépendant.
+**Fait, et mesuré le 12/08/2026 :**
+
+1. **☑ `develop` fusionnée dans `main`.** Il a fallu **deux** pull requests. La première, `#30`
+   (`be65b53`), précédait les documents de `T11` **et a été squashée** — voir `ECART-026`. La
+   seconde, `#35` (`4c25ed2`), est une **vraie fusion**. Mesuré : `main^{tree}` =
+   `develop^{tree}` = `9bc9359`, **2 parents**, `develop` **ancêtre** de `main`, `main`↔`develop` à
+   **3 / 0**, et la base de fusion remontée de `09ceb7c` à `e526e57`.
+2. **☑ Tag annoté `v0.1.0` posé sur `main`**, sur `be65b53` — `DEC-428`. **Il n'a pas été déplacé
+   vers `4c25ed2`** : arbitrage de Jonathan, et conventions §4, un tag posé ne se déplace jamais.
+   **Conséquence à connaître : `v0.1.0` ne contient pas les documents de `T11`.**
+3. **☑ `required_linear_history` retiré sur `main`**, conservé sur `develop` — `DEC-495`,
+   `ECART-026`. Sans cela la porte `G2` aurait reconflicté à l'identique.
+
+**Reste à faire, et ce sont des actions de Jonathan :**
+
+4. **☐ Refermer l'epic `#1`.**
+5. **☐ Relancer le projet Docker tiers** : `docker compose -p observatoire-ecom-studio start`.
+   **Il collisionne sur `8080` avec la recette** (`ECART-025`) : les deux ne peuvent pas tourner en
+   même temps, et `make ports` l'annonce désormais.
+6. **☐ Ouvrir le LOT 2**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003`
+   exigent une validation explicite avant tout lot dépendant.
 
 ## 9.3 Les pièges de cette fin de lot
 
-1. **Le tag `v*` déclenchera `images.yml` avec la version exacte.** Première publication d'une version
-   non `develop` : jusqu'ici seules les étiquettes `sha-<empreinte>` et `develop` existent. **Dis-le
-   à Jonathan avant, pas après.**
+1. **☑ Le tag `v*` a déclenché `images.yml`, et le piège s'est réalisé comme annoncé.** Mesuré le
+   12/08/2026 : exécution sur `ref=v0.1.0`, **succès**, et les images publiées portent désormais
+   l'étiquette **`0.1.0`** — première version non `develop` du dépôt, aux côtés de `sha-be65b53`,
+   `sha-e526e57` et `develop`. **Aucun `latest`**, `DEC-481` tenu. Le piège vaut toujours pour la
+   porte suivante : dis-le à Jonathan **avant** de poser un tag, pas après.
 2. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
    s'exécute pas sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
    statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif.
@@ -1391,11 +1444,11 @@ que la pose du tag déclenchera.
 | ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur une base créée de zéro en `T9`** |
 | ☑ | Les logs possèdent un identifiant de corrélation | `T4`, **et le nom de l'en-tête est partagé et vérifié depuis `T10`** |
 | ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
-| ☐ | Jonathan valide le socle | **la [checklist](docs/operations/checklist-validation-G1.md) lui est remise, `T11` faite** |
+| ☑ | Jonathan valide le socle | **VALIDÉ le 12/08/2026** — [checklist](docs/operations/checklist-validation-G1.md) instruite, tag `v0.1.0` posé sur `main`, contenu de `develop` porté par `main` |
 
-**Les six critères techniques sont acquis, les HUIT stories sont livrées, et les 33 contrôles de
-sortie de `T11` sont à zéro.** Il ne reste que la **décision de Jonathan**, puis la fusion dans
-`main` et le tag **`v0.1.0`** (`DEC-428`).
+**LES SEPT CRITÈRES SONT ACQUIS. La porte `G1` est franchie, et le LOT 1 est verrouillé.** Les
+huit stories sont livrées, les 33 contrôles de sortie de `T11` sont à zéro, le tag `v0.1.0` est posé
+sur `main` (`DEC-428`), et `main` porte le contenu de `develop` — arbres identiques, `9bc9359`.
 
 > **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
 > de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
@@ -1459,7 +1512,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 162 décisions, 25 écarts
+    ├── decisions/                   ← 163 décisions, 26 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
                                         checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
@@ -1580,7 +1633,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 162 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 163 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
