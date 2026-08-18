@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `493` en usage | `DEC-494` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `494` en usage | `DEC-495` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `024` | `ECART-025` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `025` | `ECART-026` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `115` | `QO-116` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -167,7 +167,8 @@ Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
-[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md) · [`T5`](operations/compte-rendu-t5-lot-1.md) · [`T6`](operations/compte-rendu-t6-lot-1.md) · [`T7`](operations/compte-rendu-t7-lot-1.md) · [`T8`](operations/compte-rendu-t8-lot-1.md) · [`T9`](operations/compte-rendu-t9-lot-1.md) · [`T10`](operations/compte-rendu-t10-lot-1.md).
+[`T1`](operations/compte-rendu-t1-lot-1.md) · [`T2`](operations/compte-rendu-t2-lot-1.md) · [`T3`](operations/compte-rendu-t3-lot-1.md) · [`T4`](operations/compte-rendu-t4-lot-1.md) · [`T5`](operations/compte-rendu-t5-lot-1.md) · [`T6`](operations/compte-rendu-t6-lot-1.md) · [`T7`](operations/compte-rendu-t7-lot-1.md) · [`T8`](operations/compte-rendu-t8-lot-1.md) · [`T9`](operations/compte-rendu-t9-lot-1.md) · [`T10`](operations/compte-rendu-t10-lot-1.md) · [`T11`](operations/compte-rendu-t11-lot-1.md).
+Checklist de la porte : [`checklist-validation-G1.md`](operations/checklist-validation-G1.md).
 
 | Sous-étape | Objet | Story | Issue | État |
 |---|---|---|---|---|
@@ -182,7 +183,7 @@ Comptes rendus de sous-étape :
 | `T8` | Environnement de recette isolé | `MVP-L01-US002` | `#3` | **Terminée** le 29/07/2026. Les **sept** séparations du cahier §22.2 prouvées sur l'état réel des deux environnements — **57 contrôles, 0 échec**, dont l'isolement du routage éprouvé avec ses témoins. La recette exécute les **images publiées épinglées par empreinte**, et `arm64` y est **natif** : la réserve de la fiche §3.1 est **levée**. `Makefile` paramétré par environnement, 44 → **50 cibles**, sans duplication. `DEC-483`–`DEC-488`, `ECART-023` clos, **`ROAD-RSK-034` ouvert**, **`QO-085` CLOSE** — 836,6 Mio pour deux stacks simultanées |
 | `T9` | Documentation d'exploitation locale | `MVP-L01-US008` | `#9` | **Terminée** le 29/07/2026. [`exploitation-locale.md`](operations/exploitation-locale.md) créé, **toutes** ses commandes exécutées. Démarrage à froid véritable prouvé — 0 volume, 0 image, remontée en **34 s**. 14 publications et 12 volumes **dérivés**. Trois cibles jamais exercées éprouvées, dont `make destroy`, dont l'avertissement était **faux** pour la recette. `DEC-489`, `ECART-024` |
 | `T10` | Design system et contrat API | `MVP-L01-US007` (`P1`) | `#8` | **Terminée** le 30/07/2026. Jetons **relevés** du prototype et **recalculés** contre WCAG 2.2 AA — la mesure a corrigé deux défauts d'accessibilité que le prototype portait. 3 composants de base, contrat partagé par manifeste unique lu par **TypeScript et Python**. **260 tests**, 11 témoins, **aucune dépendance ajoutée**. `DEC-491`–`DEC-493`, `QO-115` ouverte, **`ROAD-RSK-032` CLOS** — l'audit passe à **zéro avis, zéro tolérance** |
-| `T11` | Contrôles de sortie et porte `G1` | — | — | Planifiée |
+| `T11` | Contrôles de sortie et porte `G1` | — | — | **Terminée** le 12/08/2026. **33 contrôles rejoués, tous à 0**, tous les nombres **dérivés**. [Checklist](operations/checklist-validation-G1.md) remise à Jonathan avec une démonstration guidée. Aucune décision ajoutée. **Le tag `v0.1.0` attend la validation** |
 
 Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic `#1`, stories `#2`
 à `#9`. **`main` et `develop` sont protégées** — toute modification passe par une pull request.
