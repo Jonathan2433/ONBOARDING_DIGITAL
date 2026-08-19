@@ -1,17 +1,17 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 18 août 2026, LOT 2 sous-étape `T1`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T6`
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
 |---|---:|---:|
 | Bloquantes avant données réelles ou production générale | 17 | 1 |
 | Non bloquantes pour le développement | 12 | 1 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 11 | 5 |
-| **Total** | **40** | **7** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 12 | 5 |
+| **Total** | **41** | **7** |
 
-**33 questions restent ouvertes**, sur **40** entrées, et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`.
+**34 questions restent ouvertes**, sur **41** entrées, et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`.
 
 **Closes au LOT 2, sous-étape `T1`** : `QO-111` (collation PostgreSQL, `DEC-497`) et `QO-112` (extensions PostgreSQL, `DEC-498`). **Ouverte en `T1`** : `QO-116` (compte applicatif superutilisateur contre le moindre privilège du cahier §20.1, à traiter au LOT 3). `QO-113` (conservation calendaire des journaux) reste à trancher au **LOT 13**. Closes le 27 juillet 2026 en sous-étape `T0` : `QO-086`
 (moteur Docker constaté), `QO-107` (protection de branche possible, prouvée, `DEC-449`),
@@ -19,7 +19,7 @@
 iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa réponse et sa
 date de clôture ; elle n'est jamais retirée du registre.
 
-**Prochain identifiant libre : **`QO-117`.**
+**Prochain identifiant libre : **`QO-118`.**
 
 > **Trous conservés dans la séquence.** La plage `QO-072` à `QO-105` couvre 34 numéros mais
 > seules **29** questions sont présentes dans le corpus. Absentes : `QO-075`, `QO-079`,
@@ -266,6 +266,7 @@ GitHub interdisant l'auto-approbation.
 | `QO-114` | **Les droits d'administration sont-ils nécessaires à la production temporaire locale du LOT 13, et si oui qui les accorde ?** Mesure du 29/07/2026 : `id -Gn` ne place `jonathan.dupau` dans **aucun** groupe `admin`, et `sudo` répond « is not in the sudoers file ». Le LOT 13 prévoit `restic`, Uptime Kuma, des services au démarrage et une rotation de journaux hors Docker — plusieurs réclament habituellement des droits élevés. Ce qui a déjà été contourné sans eux : outillage dans `~/.local/bin`, ports 80 et 443 publiés par Docker Desktop, `*.onboarding.localhost` résolu sans toucher à `/etc/hosts`, et l'approbation de la racine Caddy faite dans le trousseau **de session**. | Jonathan / DSI | **LOT 13, à instruire avant** | Ouverte |
 | `QO-115` | **Charte graphique eXalt et police officielle.** Le cahier §13.1 les exige ; aucune des deux n'est dans le corpus, et le prototype référence explicitement « la charte EXALT » — elle existe donc, nous ne l'avons pas. `T10` a livré des jetons **relevés du prototype** et une **pile système**, ce qui satisfait « sans dépendance visuelle arbitraire » mais reste une approximation de la charte réelle | Jonathan / Léa | **LOT 4**, avant les premiers écrans métier | Ouverte |
 | `QO-116` | **L'application se connecte à PostgreSQL avec un compte SUPERUTILISATEUR, alors que le cahier §20.1 pose le « moindre privilège » comme principe de sécurité.** Mesure du 18/08/2026 : `SELECT rolsuper FROM pg_roles WHERE rolname = current_user` rend `t` pour `onboarding_app`. Ce compte est celui qu'`initdb` crée, donc propriétaire du cluster : il peut détruire la base, lire toute table et créer toute extension. Le moindre privilège demanderait **deux** rôles — un pour les migrations, qui a besoin du DDL, et un pour l'exécution, qui n'a besoin que du DML. | Jonathan | **Non pour `G2`.** Il n'y a ni authentification, ni donnée réelle, ni accès extérieur avant le LOT 3 : l'exposition reste théorique. Arbitrage de Jonathan du 18/08/2026 : **à traiter au LOT 3**, le lot dont la sécurité applicative est l'objet. Le risque assumé d'ici là est nommé : plus on attend, plus de lots auront été écrits en supposant ce compte. | Ouverte |
+| `QO-117` | **Quelle est la portée de l'unicité d'un alias client, et faut-il en imposer une ?** Le modèle §7.3 décrit `client_alias` — `alias_normalized`, `client_id`, `entity_id` nullable, validation humaine — mais **ne pose aucune règle d'unicité**, et le §25.1 ne mentionne pas cette table. Un même alias pourrait donc désigner **deux clients canoniques différents**, ce qui rendrait la recherche ambiguë à l'import du LOT 9. **La difficulté n'est pas technique mais métier** : `entity_id` étant nullable, l'unicité peut être **globale** — un alias désigne un seul client partout — ou **par entité** — Bordeaux et Lille peuvent connaître le même alias sous deux clients différents. Le second cas est concevable après une fusion d'entreprises. **Aucun index n'a été inventé** : `T5` a montré ce que coûte une dérivation absente du modèle. | Jonathan et Léa | **Non pour `G2`.** Le socle accepte les deux réponses, et l'ajouter plus tard est une migration d'une ligne. **Bloquant pour le LOT 9**, où l'import a besoin d'une correspondance déterministe. | Ouverte |
 | `QO-107` | Le plan GitHub du compte permet-il les règles de protection de branche sur un dépôt privé personnel ? Si non, le repli documenté est un garde-fou local `pre-push`, qui ne remplace pas la protection côté serveur. | Jonathan | Non pour `G0`. Prérequis du LOT 1 pour rendre `DEC-429` effective. | **Close le 27/07/2026 par l'affirmative.** Le plan autorise la protection classique sur ce dépôt privé personnel : `main` et `develop` sont protégées avec `enforce_admins`, et le rejet du push direct est prouvé (`GH006`). **Le repli `pre-push` devient sans objet.** `DEC-449` |
 | `QO-108` | Comment réalise-t-on la mise en place GitHub — installation de `gh`, interface web, ou connecteur ? Aucun outil d'accès à l'API GitHub n'est disponible dans la session de travail. | Jonathan | Non pour `G0`. Prérequis du LOT 1. | **Close le 27/07/2026.** Réponse initiale `DEC-448` — mise en place dans l'interface par Jonathan. **Réponse effective `DEC-449`, qui remplace `DEC-448`** : installation du binaire `gh` 2.96.0 dans `~/.local/bin` par l'agent, Homebrew étant inutilisable, puis authentification par Jonathan et exécution par `gh` |
 | `QO-109` | Quelles atténuations retient-on pour les volumes Docker et les dépendances, le dépôt résidant dans iCloud Drive par `DEC-418` ? `.gitignore` empêche Git de les suivre mais n'empêche pas iCloud de les synchroniser. | Jonathan / architecture | Non pour `G0`. Était à trancher au LOT 1, avant création des volumes. | **Close le 27/07/2026**, sous-étape `T0`, par `DEC-439` et `DEC-447` |

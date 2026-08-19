@@ -181,6 +181,32 @@ def _affecter_metier(
     )
 
 
+def _client(connexion: Connection, nom: str | None = None) -> uuid.UUID:
+    """Creer un client REEL, et le motif est une lecon.
+
+    **AJOUTEE EN `T6`.** Ces tests passaient `uuid.uuid4()` comme identifiant de
+    client, ce qui marchait en `T5` : la colonne etait un `uuid` SANS cle
+    etrangere, `client` n'existant pas encore.
+
+    `T6` a ajoute la cle -- c'etait une dette explicite, annoncee dans l'en-tete de
+    la migration `0006` -- et trois tests de `T5` sont passes au rouge. Ils etaient
+    JUSTES quand ils ont ete ecrits ; c'est `T6` qui les a rendus faux. C'est le
+    §7.21 de la passation, et la bonne reaction est de les mettre a jour en disant
+    pourquoi, jamais de contourner la cle.
+
+    Le nom est engendre par defaut : `client.canonical_name` est unique, et
+    plusieurs appels dans un meme test doivent produire des clients distincts.
+    """
+    canonique = nom or f"client {uuid.uuid4().hex[:8]}"
+    return connexion.execute(  # type: ignore[no-any-return]
+        text(
+            "INSERT INTO client (canonical_name, display_name, status) "
+            "VALUES (:nom, :affiche, 'active') RETURNING id"
+        ),
+        {"nom": canonique, "affiche": canonique.title()},
+    ).scalar_one()
+
+
 def _situation(
     connexion: Connection,
     entite: uuid.UUID,
@@ -357,7 +383,11 @@ def test_un_INTERCONTRACT_interdit_un_client(cx: Connection) -> None:
             entite,
             _appartenance(cx, entite, "jean@exalt.com"),
             status="intercontract",
-            client=uuid.uuid4(),
+            #  Un client REEL, meme pour un test de refus : depuis que la cle
+            #  etrangere existe (`T6`), un identifiant fictif ferait echouer la
+            #  cle plutot que la contrainte visee. Le test ne prouverait plus ce
+            #  qu'il annonce.
+            client=_client(cx),
         )
     assert "client_selon_le_statut" in str(echec.value)
 
@@ -372,7 +402,11 @@ def test_les_deux_situations_bien_formees_sont_acceptees(cx: Connection) -> None
     """
     entite = _entite(cx)
     _situation(
-        cx, entite, _appartenance(cx, entite, "a@exalt.com"), status="mission", client=uuid.uuid4()
+        cx,
+        entite,
+        _appartenance(cx, entite, "a@exalt.com"),
+        status="mission",
+        client=_client(cx),
     )
     _situation(
         cx, entite, _appartenance(cx, entite, "b@exalt.com"), status="intercontract", client=None
@@ -424,7 +458,13 @@ def test_une_succession_de_situations_est_acceptee(cx: Connection) -> None:
     appartenance = _appartenance(cx, entite, "jean@exalt.com")
     _situation(cx, entite, appartenance, status="intercontract", debut=JANVIER, fin=JUIN)
     _situation(
-        cx, entite, appartenance, status="mission", client=uuid.uuid4(), debut=JUIN, fin=None
+        cx,
+        entite,
+        appartenance,
+        status="mission",
+        client=_client(cx),
+        debut=JUIN,
+        fin=None,
     )
     etats = (
         cx.execute(text("SELECT status FROM professional_status_assignment ORDER BY starts_at"))
@@ -453,7 +493,7 @@ def test_toutes_les_situations_declarees_sont_acceptees(cx: Connection) -> None:
             entite,
             _appartenance(cx, entite, f"p{indice}@exalt.com"),
             status=situation.value,
-            client=uuid.uuid4() if situation is SituationProfessionnelle.MISSION else None,
+            client=_client(cx) if situation is SituationProfessionnelle.MISSION else None,
         )
     total = cx.execute(text("SELECT count(*) FROM professional_status_assignment")).scalar_one()
     assert total == len(SITUATIONS_PROFESSIONNELLES)
