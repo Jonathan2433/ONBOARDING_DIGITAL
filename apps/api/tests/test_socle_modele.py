@@ -36,7 +36,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.postgresql import ExcludeConstraint
+from sqlalchemy.dialects.postgresql import TSTZRANGE, ExcludeConstraint
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -51,7 +51,9 @@ from app.shared.modele import (
     RessourceLocale,
     contrainte_enumeration,
     metadonnees,
+    nom_exclusion,
     noms_de_contraintes_trop_longs,
+    noms_exclusions_non_conformes,
 )
 
 # ============================================================================
@@ -222,7 +224,9 @@ class AffectationDEssai(ChampsCommuns, RessourceLocale, Periode, BaseDEssai):
         ExcludeConstraint(
             ("sujet_id", "="),
             ("period", "&&"),
-            name="sans_chevauchement",
+            #  Prefixe par la table : c'est la collision de ce nom avec celui de
+            #  `entity_membership`, en `T4`, qui a fait naitre la regle.
+            name=nom_exclusion("essai_affectation", "sans_chevauchement"),
             using="gist",
         ),
         contrainte_enumeration("status", SituationProfessionnelle, "status_valide"),
@@ -465,7 +469,34 @@ TABLES_DECLAREES = {
     "allowed_email_domain",
     # LOT 2, T3 — modele §6.1
     "person",
+    # LOT 2, T4 — modele §6.2
+    "entity_membership",
 }
+
+
+def test_aucune_contrainte_d_exclusion_n_est_mal_nommee() -> None:
+    """Les noms d'index etant uniques a l'echelle du SCHEMA, le prefixe est obligatoire.
+
+    Le §25.2 prevoit des exclusions sur SEPT relations. Sans ce controle, la
+    collision qui a fait naitre la regle en `T4` se reproduirait six fois, et
+    chaque fois a la CREATION de la table -- donc dans une migration.
+    """
+    assert noms_exclusions_non_conformes() == []
+
+
+def test_le_controle_de_nommage_des_exclusions_DETECTE_un_nom_nu() -> None:
+    """Temoin : sans lui, le test precedent passerait meme si la regle etait cassee."""
+    essai = MetaData(naming_convention=CONVENTION_DE_NOMMAGE)
+    Table(
+        "essai_nu",
+        essai,
+        Column("id", Integer, primary_key=True),
+        Column("sujet", Integer, nullable=False),
+        Column("periode", TSTZRANGE, nullable=False),
+        ExcludeConstraint(("sujet", "="), ("periode", "&&"), name="nom_nu", using="gist"),
+    )
+    fautives = noms_exclusions_non_conformes(essai)
+    assert fautives == [("essai_nu", "nom_nu")]
 
 
 def test_le_modele_declare_exactement_les_tables_attendues() -> None:

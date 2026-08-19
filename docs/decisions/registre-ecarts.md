@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T3`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T4`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 29 | 5 | 22 | 2 |
+| Total 30 | 5 | 23 | 2 |
 
 ---
 
@@ -47,8 +47,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-027` | Trois tests d'intégration recopiaient la révision de tête d'Alembic au lieu de la dériver, et sont devenus faux à la première migration du LOT 2 | Non | **Clos** |
 | `ECART-028` | Le modèle place les domaines e-mail autorisés à **deux endroits** : catégorie de `platform_setting` au §5.2, et table dédiée au §5.4 | Non | **Clos** |
 | `ECART-029` | L'index simple du §25.1 **ne satisfait pas** l'unicité insensible à la casse exigée par le §6.1 | Non pour `G2`, **le serait pour `G3`** | **Clos** |
+| `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
 
-**Prochain identifiant libre : `ECART-030`.**
+**Prochain identifiant libre : `ECART-031`.**
 
 ---
 
@@ -417,4 +418,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Ne pas choisir entre les deux.** Une troisième voie satisfait les deux textes : exiger que la valeur **stockée** soit déjà en minuscules. L'index simple du §25.1 devient alors suffisant, puisque deux graphies ne peuvent pas coexister — l'une des deux ne peut pas être écrite. |
 | Résolution | **Clos** le 19 août 2026 par `DEC-503`. La contrainte `ck_person_email_normalise_en_minuscules` refuse toute forme normalisée non minuscule, et l'index unique simple du §25.1 est conservé tel qu'il est spécifié. **Éprouvé par témoin** : une forme normalisée avec majuscules est refusée, et trois formes minuscules distinctes sont acceptées.<br>**Cette voie est plus forte qu'un index fonctionnel sur `lower(email_normalized)`** : celui-ci empêcherait le doublon mais laisserait entrer une valeur non normalisée dans une colonne nommée `_normalized`. |
 
-**Prochain identifiant libre : `ECART-030`.**
+## `ECART-030` — Le diagramme d'états du §24.1 montre un état que l'énumération du §6.2 ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T4`, en implémentant `entity_membership` |
+| Source | Modèle de données §6.2, colonne `membership_state` ; §24.1, diagramme « Appartenance à une entité » |
+| Constat | Le §6.2 déclare `membership_state` comme une énumération de **quatre** valeurs : `future`, `active`, `departed`, `archived`.<br>Le diagramme du §24.1, intitulé « **Appartenance à une entité** », en montre **cinq** : il ajoute `Anonymized`, avec deux transitions entrantes — `Departed --> Anonymized: délai RGPD atteint` et `Archived --> Anonymized: délai RGPD atteint` — et une sortie vers l'état final. |
+| Impact | Faible si la lecture est bonne, sérieux si elle ne l'est pas. Ajouter `anonymized` à l'énumération de l'appartenance créerait un **second endroit** où l'anonymisation est représentée, `person.account_state` en portant déjà la valeur. Deux représentations du même fait divergent, et le LOT 10 — RGPD et conservation — devrait alors les réconcilier. |
+| Cause | Le diagramme décrit le **cycle de vie du collaborateur** vu depuis son appartenance, ce qui est naturel pour un lecteur métier : il part, il est archivé, puis ses données sont anonymisées. Mais l'anonymisation est une opération sur l'**identité**, pas sur le profil local — le §6.1 la déclare sur `person.account_state`, et le « délai RGPD » se compte par personne. Le diagramme mêle deux niveaux que les tables séparent. |
+| Bloquant | Non |
+| Recommandation | **La colonne fait autorité sur le diagramme.** Le §6.2 énumère explicitement quatre valeurs ; le §24.1 illustre. Et l'anonymisation reste là où le §6.1 la place, sur `person`. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-505`. `membership_state` porte **quatre** valeurs, et un test l'exige explicitement en nommant l'écart : `assert "anonymized" not in ETATS_APPARTENANCE`. La lecture est inscrite dans la docstring de l'énumération, à l'endroit où quelqu'un tenté d'ajouter la cinquième valeur la lira.<br>**Une conséquence à connaître pour le LOT 10** : anonymiser une personne ne changera pas l'état de ses appartenances, qui resteront `departed` ou `archived`. C'est cohérent — le profil local a cessé d'exister à son terme, l'identité est effacée ensuite — mais il faudra que le LOT 10 le dise, et non le découvre. |
+
+**Prochain identifiant libre : `ECART-031`.**

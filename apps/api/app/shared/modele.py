@@ -255,6 +255,50 @@ def contrainte_enumeration(
     return CheckConstraint(expression, name=nom)
 
 
+#  PREFIXE DES CONTRAINTES D'EXCLUSION, ET POURQUOI IL EST A LA CHARGE DU
+#  DEVELOPPEUR.
+#
+#  La convention de nommage de SQLAlchemy connait cinq cles -- `ix`, `uq`, `ck`,
+#  `fk`, `pk` -- et AUCUNE pour les contraintes d'exclusion. Un
+#  `ExcludeConstraint` prend donc son `name=` tel quel, sans prefixe de table.
+#
+#  Or PostgreSQL implemente une contrainte d'exclusion par un INDEX, et **les
+#  noms d'index sont uniques a l'echelle du SCHEMA**, pas par table -- a la
+#  difference des noms de contraintes. Deux tables portant chacune une exclusion
+#  nommee `sans_chevauchement` echouent donc a la creation de la seconde :
+#  « relation "sans_chevauchement" already exists ».
+#
+#  Mesure du 19/08/2026 : le defaut est apparu en `T4`, revele par la table
+#  d'essai de `T1` qui portait deja ce nom. Le §25.2 prevoit des exclusions sur
+#  SEPT relations : sans regle, la collision se reproduirait six fois.
+#
+#  Regle retenue : `ex_<table>_<objet>`, et un controle la verifie.
+PREFIXE_EXCLUSION = "ex"
+
+
+def nom_exclusion(table: str, objet: str) -> str:
+    """Nom conventionnel d'une contrainte d'exclusion : `ex_<table>_<objet>`."""
+    return f"{PREFIXE_EXCLUSION}_{table}_{objet}"
+
+
+def noms_exclusions_non_conformes(metadata: MetaData | None = None) -> list[tuple[str, str]]:
+    """Contraintes d'exclusion dont le nom n'est pas prefixe par leur table.
+
+    Retourne les couples `(table, nom)`. Une liste vide est le resultat attendu.
+    """
+    cible = metadonnees if metadata is None else metadata
+    fautives: list[tuple[str, str]] = []
+    for table in cible.tables.values():
+        for contrainte in table.constraints:
+            if type(contrainte).__name__ != "ExcludeConstraint":
+                continue
+            nom = getattr(contrainte, "name", None)
+            attendu = f"{PREFIXE_EXCLUSION}_{table.name}_"
+            if not isinstance(nom, str) or not nom.startswith(attendu):
+                fautives.append((table.name, str(nom)))
+    return sorted(fautives)
+
+
 def noms_de_contraintes_trop_longs(metadata: MetaData | None = None) -> list[tuple[str, int]]:
     """Contraintes et index dont le nom depasse la limite de PostgreSQL.
 

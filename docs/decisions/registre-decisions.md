@@ -24,6 +24,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-497+`, sous-étape `T1`** | 4 | **Validées le 18/08/2026** |
 | **Réalisation du LOT 2 `DEC-501+`, sous-étape `T2`** | 2 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-503+`, sous-étape `T3`** | 2 | **Validées le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-505+`, sous-étape `T4`** | 3 | **Validées le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -35,7 +36,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **172** | |
+| **Total** | **175** | |
 
 ---
 
@@ -340,7 +341,29 @@ Deux décisions. La table `person`, et une seule.
 | `DEC-503` | **`person` est créée par la migration `0004`, et porte QUATRE contraintes de vérification.** **(a)** `email_normalized = lower(email_normalized)` : la valeur **stockée** doit déjà être en minuscules. **(b)** Plausibilité **minimale** : aucun espace, arobase pas en première position, **rien de plus**. **(c)** Les cinq états du §6.1 par contrainte de vérification. **(d)** `(account_state = 'anonymized') = (anonymized_at IS NOT NULL)`, **dérivée**. Et la normalisation applicative **met en minuscules et retire les espaces de bordure, sans rien d'autre**. | **(a)** Le §6.1 exige une unicité **insensible à la casse** de `email_normalized` ; le §25.1 écrit `person(email_normalized) UNIQUE`, un index **simple**, qui est sensible à la casse. Exiger que la valeur stockée soit déjà minuscule concilie les deux **sans choisir** : deux graphies du même e-mail ne peuvent pas coexister, puisque l'une des deux ne peut pas être écrite. C'est plus fort qu'un index fonctionnel sur `lower(...)`, qui empêcherait le doublon mais laisserait entrer une valeur non normalisée dans une colonne nommée `_normalized`. Voir `ECART-029`. **(b)** Le corpus ne prescrit **aucun** format d'adresse. Une expression prétendant valider selon la RFC rejette des adresses légitimes, et **un refus à l'import du LOT 9 coûterait plus cher qu'une adresse mal formée stockée** ; la contrainte ne retient donc que le strictement vérifiable. **(d)** Le §6.1 déclare les deux colonnes sans lier leurs valeurs. Une personne `anonymized` **sans** horodatage rendrait le LOT 10 incapable de dire **quand** l'anonymisation a eu lieu, ce que le RGPD exige de tracer ; un horodatage **sans** l'état décrirait une anonymisation qui n'a pas pris. **Normalisation étroite** : retirer les points ou couper à un `+` **fusionnerait des personnes distinctes**, et rien ne le demande — deux collaborateurs peuvent s'appeler `j.dupont` et `jdupont`. | Validée par Jonathan le 19/08/2026 |
 | `DEC-504` | **La règle « une personne anonymisée ne peut pas être réactivée » du §6.1 est portée par un DÉCLENCHEUR**, `person_anonymisation_terminale`. Il refuse **toute** sortie de `anonymized`, pas seulement vers `active`. | Même classe et même parti que `DEC-502` : la règle compare l'état **nouveau** à l'**ancien**, ce qu'aucune contrainte de ligne ne voit, et la couche de services n'arrive qu'en `T11` — huit sous-étapes plus loin. **Toute** sortie est refusée parce que le §6.1 n'en prévoit aucune et que **l'anonymisation est irréversible par nature** : les données qu'elle a effacées ne sont plus là pour être restaurées. Le refus est nommé, ce qui permet à un test d'exiger qu'il vienne de cette règle. | Validée par Jonathan le 19/08/2026 |
 
-**Prochain identifiant libre : `DEC-505`.**
+## 1.19 Réalisation du LOT 2 — sous-étape `T4`
+
+Trois décisions, dont une qui corrige une classe de défaut pour les sept exclusions à venir.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-505` | **`entity_membership` est créée par la migration `0005`**, avec **deux** contraintes qui se partagent la règle de `US002`, et cinq choix. **(a)** Index unique **partiel** du §25.1, `WHERE membership_state IN ('future','active')`. **(b)** Contrainte d'exclusion du §25.2, **sans clause `WHERE`**. **(c)** La plage générée est un **`daterange`** et non un `tstzrange` : le mixin `Periode` du socle ne s'applique pas. **(d)** `version` est **câblée en verrou optimiste**. **(e)** Le couple `(id, entity_id)` est **unique**, §25.3. Et **aucune colonne d'identité** — ni `first_name`, ni `last_name`, ni `email`. | **(a) et (b) ne disent pas la même chose, et aucune ne suffit.** L'index seul laisserait passer deux appartenances `departed` **qui se chevauchent** ; l'exclusion seule laisserait passer deux appartenances **occupantes à des périodes disjointes**. Deux tests montrent chacun ce que l'autre contrainte ne verrait pas — sans eux, on pourrait croire l'une redondante et la retirer. L'exclusion est sans `WHERE` parce que le §6.2 l'écrit sans restriction d'état : une personne n'a pas été dans deux entités en même temps, **même dans le passé**. **(c)** Le §6.2 déclare `arrival_date` et `departure_date` en **`date`** ; le mixin produit un `tstzrange`. La convention semi-ouverte de `T1` est conservée. **(d)** Le §6.2 l'écrit explicitement : « `version` \| entier \| **Concurrence optimiste** ». `T1` avait déclaré la colonne sans la câbler, en posant que ce serait un choix par table. **(e)** Le couple est la **cible** des clés étrangères composites de `T5` à `T8` ; le poser à la création évite d'altérer la table plus tard. **Les colonnes d'identité sont interdites par le §6.1** : c'est une règle d'**absence**, donc vérifiée par un contrôle, puisqu'une absence ne se déclare pas. | Validée par Jonathan le 19/08/2026 |
+| `DEC-506` | **La règle « une entité archivée ne reçoit plus de nouveaux membres » du §5.1 est portée par un DÉCLENCHEUR** sur `entity_membership`, à l'**insertion** et à la **mise à jour de `entity_id`**. La lecture de `entity` emploie `FOR SHARE`. | **La règle est INTER-TABLES** : elle interroge `entity` depuis `entity_membership`, ce qu'aucune contrainte de vérification ne peut faire — elles ne voient que la ligne en cours. C'est le cas type du §25.4, et le même parti que `DEC-502` et `DEC-504`. Elle couvre la **mise à jour** parce que la règle serait sinon contournable en deux temps : créer l'appartenance dans une entité saine, puis la déplacer. `FOR SHARE` parce que sans lui une transaction concurrente pourrait archiver l'entité **entre notre lecture et notre insertion**, et la règle serait contournée par une simple course. | Validée par Jonathan le 19/08/2026 |
+| `DEC-507` | **Toute contrainte d'exclusion est nommée `ex_<table>_<objet>`**, par la fonction `nom_exclusion()`. Un contrôle le vérifie, avec son témoin. | **Mesuré, et le défaut était réel.** PostgreSQL implémente une contrainte d'exclusion par un **index**, et **les noms d'index sont uniques à l'échelle du SCHÉMA**, pas par table — à la différence des noms de contraintes. Or la convention de nommage de SQLAlchemy connaît cinq clés — `ix`, `uq`, `ck`, `fk`, `pk` — et **aucune pour les exclusions** : le `name=` est pris tel quel. Une exclusion nommée `sans_chevauchement` sur `entity_membership` a donc collisionné avec celle de la table d'essai des tests du socle : « relation "sans_chevauchement" already exists ». **Le §25.2 prévoit des exclusions sur SEPT relations** : sans règle, la collision se reproduirait six fois, et chaque fois **à la création de la table**, donc dans une migration. | Validée par Jonathan le 19/08/2026 |
+
+> **Rectification de `DEC-500`, mesurée le 19/08/2026.** `DEC-500` affirmait qu'`autogenerate`
+> « n'écrit **pas** les clauses `WHERE` des index partiels du §25.1, ni les contraintes d'exclusion du
+> §25.2 ». **C'est trop large et la mesure le dément** : il a rendu fidèlement l'index partiel **avec**
+> sa clause `WHERE` et la contrainte d'exclusion, dès lors qu'elles sont déclarées dans les
+> métadonnées.
+>
+> **Ce qu'il ne peut effectivement pas faire reste vrai, et c'est ce qui fonde la décision** : il ne
+> peut pas **inventer** ce qui n'est pas dans les métadonnées — les **déclencheurs** et leurs
+> fonctions, dont les migrations `0003`, `0004` et `0005` portent trois exemplaires écrits à la main.
+> Le statut de brouillon est donc maintenu, et **il s'est justifié en `T2`** en révélant quatre défauts
+> de modèle.
+
+**Prochain identifiant libre : `DEC-508`.**
 
 ---
 
@@ -506,6 +529,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-497+` — réalisation du LOT 2, `T1` | 4 | 4 |
 | `DEC-501+` — réalisation du LOT 2, `T2` | 2 | 2 |
 | `DEC-503+` — réalisation du LOT 2, `T3` | 2 | 2 |
+| `DEC-505+` — réalisation du LOT 2, `T4` | 3 | 3 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -517,7 +541,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **172** | **172** |
+| **Total** | **175** | **175** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

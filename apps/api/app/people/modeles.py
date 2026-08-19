@@ -48,11 +48,31 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
+import uuid
+from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Computed,
+    Date,
+    DateTime,
+    ForeignKeyConstraint,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy.dialects.postgresql import DATERANGE, ExcludeConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.shared.modele import Base, ChampsCommuns, contrainte_enumeration
+from app.shared.modele import (
+    Base,
+    ChampsCommuns,
+    RessourceLocale,
+    contrainte_enumeration,
+    nom_exclusion,
+)
 
 
 class EtatCompte(enum.StrEnum):
@@ -140,4 +160,203 @@ class Person(ChampsCommuns, Base):
             "(account_state = 'anonymized') = (anonymized_at IS NOT NULL)",
             name="anonymisation_coherente",
         ),
+    )
+
+
+# ===========================================================================
+#  `entity_membership` — LOT 2, sous-etape `T4`, story `MVP-L02-US002`
+# ===========================================================================
+#
+#  FONDEMENT — modele §6.2, principe §2.2, etats §24.1, contraintes §25.1 a
+#  §25.3, point 4 de l'ordre du §28.
+#
+#  C'EST LA TABLE QUI PORTE LA REGLE CENTRALE DE `US002` : une seule
+#  appartenance active ou future par personne.
+#
+#  CINQ LECTURES, POSEES PLUTOT QUE SUPPOSEES.
+#
+#    1. **« PRINCIPALE » EST DESCRIPTIF, PAS UNE COLONNE.** Le §6.2 ecrit « une
+#       seule appartenance active ou future PRINCIPALE par personne », mais
+#       n'expose aucune colonne qui distinguerait une appartenance principale
+#       d'une autre, et le §25.1 ecrit son index SANS notion de principal :
+#       `entity_membership(person_id) UNIQUE WHERE membership_state IN
+#       ('future','active')`. Le §2.2 tranche : « une consultation d'une autre
+#       entite ne cree pas une appartenance supplementaire ». Au MVP, toute
+#       appartenance EST principale, et l'index du §25.1 dit exactement la
+#       regle.
+#
+#    2. **LES DATES SONT DES `date`, PAS DES `timestamptz`.** Le mixin `Periode`
+#       du socle ne s'applique donc PAS : il produit un `tstzrange`. La plage
+#       generee ici est un `daterange`, et la contrainte d'exclusion porte sur
+#       elle.
+#
+#    3. **`version` EST CABLEE EN VERROU OPTIMISTE**, et c'est la premiere table
+#       ou le modele le demande explicitement -- §6.2, « `version` | entier |
+#       Concurrence optimiste ». `T1` avait declare la colonne sans la cabler,
+#       en disant que le cablage serait un choix par table : le voici.
+#
+#    4. **LE COUPLE `(id, entity_id)` EST UNIQUE**, §25.3. Il n'a aucune utilite
+#       pour cette table elle-meme -- `id` est deja unique -- mais il est la
+#       CIBLE des cles etrangeres composites que `T5` a `T8` poseront :
+#       `membership_job_assignment`, `circle_membership`, `dsm_assignment`. Sans
+#       lui, ces tables ne pourraient pas garantir qu'elles referencent une
+#       appartenance de LEUR entite. Le poser a la creation evite d'alterer la
+#       table plus tard.
+#
+#    5. **AUCUNE COLONNE `first_name`, `last_name` NI `email`.** Le §6.1 pose
+#       que « le nom et l'e-mail ne sont pas dupliques dans les tables
+#       d'appartenance ». C'est une regle de NON-DUPLICATION, donc une absence :
+#       un controle la verifie, puisqu'une absence ne se declare pas.
+
+
+class EtatAppartenance(enum.StrEnum):
+    """Les quatre valeurs du §6.2.
+
+    Le diagramme du §24.1 en montre CINQ, `Anonymized` compris. La colonne du
+    §6.2 n'en declare que quatre, et c'est elle qui fait autorite : l'anonymisation
+    est une operation sur la PERSONNE -- `person.account_state` porte deja la
+    valeur -- et non sur son appartenance. Voir `ECART-030`.
+
+    `archived` n'est PAS terminal : le §24.1 autorise `Archived --> Active`,
+    « reactivation explicite autorisee ». Aucun declencheur ne l'interdit donc,
+    contrairement a `person.account_state = 'anonymized'`.
+    """
+
+    FUTURE = "future"
+    ACTIVE = "active"
+    DEPARTED = "departed"
+    ARCHIVED = "archived"
+
+
+ETATS_APPARTENANCE: tuple[str, ...] = tuple(membre.value for membre in EtatAppartenance)
+
+#  Les etats qui occupent la place unique du §25.1.
+ETATS_OCCUPANTS: tuple[str, ...] = (EtatAppartenance.FUTURE.value, EtatAppartenance.ACTIVE.value)
+
+
+class CategorieProfessionnelle(enum.StrEnum):
+    """§6.2 : « `consultant`, `dg`, autre categorie configurable ulterieure ».
+
+    Le modele annonce donc explicitement que d'autres valeurs viendront. C'est
+    exactement le motif qui a fait choisir une contrainte de verification plutot
+    qu'un type `enum` natif en `DEC-499` : ajouter une valeur ici est une
+    migration d'une ligne, alors qu'en retirer une d'un `enum` natif exigerait de
+    recreer le type et de reecrire les colonnes dependantes.
+    """
+
+    CONSULTANT = "consultant"
+    DG = "dg"
+
+
+CATEGORIES_PROFESSIONNELLES: tuple[str, ...] = tuple(
+    membre.value for membre in CategorieProfessionnelle
+)
+
+
+class VisibiliteProfil(enum.StrEnum):
+    """§6.2 : `draft`, `published`, `hidden`."""
+
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    HIDDEN = "hidden"
+
+
+VISIBILITES_PROFIL: tuple[str, ...] = tuple(membre.value for membre in VisibiliteProfil)
+
+
+class EntityMembership(ChampsCommuns, RessourceLocale, Base):
+    """Profil d'une personne dans une entite — modele §6.2."""
+
+    __tablename__ = "entity_membership"
+
+    person_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+
+    arrival_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    departure_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+
+    #  Plage GENEREE, semi-ouverte `[arrivee, depart)`, comme la convention posee
+    #  en `T1` : la fin d'une periode et le debut de la suivante peuvent porter le
+    #  meme jour sans se chevaucher. C'est ce qu'une succession d'appartenances
+    #  demande. `departure_date` a NULL donne une plage non bornee.
+    period: Mapped[Any] = mapped_column(
+        DATERANGE,
+        Computed("daterange(arrival_date, departure_date)", persisted=True),
+        nullable=False,
+    )
+
+    membership_state: Mapped[str] = mapped_column(String(16), nullable=False)
+    professional_category: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    short_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fun_fact: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    profile_visibility: Mapped[str] = mapped_column(String(16), nullable=False)
+    profile_published_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    #  §6.2 : « `version` | entier | Concurrence optimiste ». Le cablage fait que
+    #  tout `UPDATE` par l'ORM porte `WHERE version = <lu>` et incremente la
+    #  colonne : une mise a jour concurrente leve `StaleDataError` au lieu
+    #  d'ecraser silencieusement. La colonne vient de `ChampsCommuns`, le
+    #  cablage est propre a cette table.
+    #  RUF012 reclame un `ClassVar` ici ; mypy le REFUSE, parce que
+    #  `DeclarativeBase` de SQLAlchemy declare `__mapper_args__` en variable
+    #  d'instance. Les deux outils se contredisent, et c'est la declaration de
+    #  SQLAlchemy qui fait foi : le dictionnaire reste nu, et l'avis de Ruff est
+    #  tu ICI et nulle part ailleurs.
+    __mapper_args__ = {"version_id_col": ChampsCommuns.version}  # noqa: RUF012
+
+    __table_args__ = (
+        ForeignKeyConstraint(["person_id"], ["person.id"]),
+        ForeignKeyConstraint(["entity_id"], ["entity.id"]),
+        #  §25.1, LA REGLE CENTRALE DE `US002` : une seule appartenance dans un
+        #  etat occupant, par personne. Index unique PARTIEL : les appartenances
+        #  `departed` et `archived` ne comptent pas, ce qui permet l'historique
+        #  du §2.2 -- « plusieurs appartenances historiques, une seule active ».
+        Index(
+            "uq_entity_membership_person_id_occupante",
+            "person_id",
+            unique=True,
+            postgresql_where=text(
+                "membership_state IN (" + ", ".join(f"'{e}'" for e in ETATS_OCCUPANTS) + ")"
+            ),
+        ),
+        #  §25.2 et §6.2 : « pas de chevauchement temporel entre deux
+        #  appartenances principales ». Sans clause `WHERE` : le §6.2 l'ecrit
+        #  sans restriction d'etat, donc deux appartenances HISTORIQUES ne
+        #  doivent pas se chevaucher non plus -- une personne n'a pas ete dans
+        #  deux entites en meme temps, meme dans le passe.
+        ExcludeConstraint(
+            ("person_id", "="),
+            ("period", "&&"),
+            #  `nom_exclusion` et non un nom nu : PostgreSQL implemente une
+            #  exclusion par un INDEX, et les noms d'index sont uniques a
+            #  l'echelle du SCHEMA. Voir la regle en tete de `app/shared/modele.py`.
+            name=nom_exclusion("entity_membership", "sans_chevauchement"),
+            using="gist",
+        ),
+        #  §25.3 : couple unique, cible des cles etrangeres composites de `T5` a
+        #  `T8`. Voir la lecture 4 en tete de section.
+        UniqueConstraint("id", "entity_id", name="id_entite_unique"),
+        CheckConstraint(
+            "departure_date IS NULL OR departure_date >= arrival_date",
+            name="depart_apres_arrivee",
+        ),
+        #  DERIVEE du §24.1, non ecrite telle quelle : la transition
+        #  `Active --> Departed` y est libellee « depart ENREGISTRE ». Un depart
+        #  qui n'est pas date n'est pas enregistre.
+        #
+        #  Elle ne vaut QUE pour `departed`. `archived` peut venir de `Future`
+        #  -- « arrivee annulee » au §24.1 -- donc sans aucune date de depart.
+        CheckConstraint(
+            "membership_state <> 'departed' OR departure_date IS NOT NULL",
+            name="depart_date_si_departed",
+        ),
+        contrainte_enumeration("membership_state", EtatAppartenance, "membership_state_valide"),
+        contrainte_enumeration(
+            "professional_category", CategorieProfessionnelle, "professional_category_valide"
+        ),
+        contrainte_enumeration("profile_visibility", VisibiliteProfil, "profile_visibility_valide"),
+        Index("ix_entity_membership_entity_id_membership_state", "entity_id", "membership_state"),
     )
