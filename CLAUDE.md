@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
 | **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : `T1` à `T9` faites**, `T10` à `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T10` — contraintes de rôles et de périmètres**, issue `#43` (`US005`). Trois règles inter-tables y arrivent, dont « `mission` exige un client actif pour l'entité ». Voir §10 du compte rendu de `T9` |
+| Sous-étapes faites | **LOT 2 : `T1` à `T10` faites**, `T11` et `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **`T11` — isolation inter-entités**, issue `#44` (`US006`). **Commence par MESURER** : les clés étrangères composites `(id, entity_id)` du §25.3, posées en `T5`, en couvrent peut-être déjà l'essentiel — `T10` a montré que deux tiers d'une story pouvaient être **déjà acquis**. Voir §10 du compte rendu de `T10` |
 | Stories `Done` | **LOT 2 : `US001`, `US002`, `US003`.** `US008` se clôt en `T12` · *LOT 1 : les huit* |
 | Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **438** : **322 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
+| Tests | **449** : **333 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **181 décisions** · **31 écarts** (**6 ouverts**, dont `ECART-012` **instruit** et `ECART-031`) · **41 questions** (34 ouvertes) · 34 risques |
+| Registres | **182 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -104,7 +104,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
-| **Comment a-t-on fait `T1` à `T9` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,9}-lot-2.md`** — 29 défauts, dont **25 dans mon propre travail** |
+| **Comment a-t-on fait `T1` à `T10` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,10}-lot-2.md`** — 33 défauts, et les **quatre de `T10` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
 | **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
@@ -392,8 +392,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`513` en usage | **`DEC-514`** |
-| `ECART-nnn` | `001`–`031` | **`ECART-032`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`514` en usage | **`DEC-515`** |
+| `ECART-nnn` | `001`–`032` | **`ECART-033`** |
 | `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -1303,15 +1303,23 @@ propre — comme `T2-5`, où un Mailpit vide et un volume effacé rendaient tous
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — 5 ouverts sur 22
+## 8.1 Écarts — **7 ouverts sur 32**
+
+> **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
+> par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
+> sans que ce tableau ne les reçoive. **Classe `ECART-021` : un compte qui n'est pas dérivé de sa
+> source vieillit en silence.** La source est `docs/decisions/registre-ecarts.md`, dont l'en-tête
+> porte le total, et `make docs-check` en dérive les séquences. **Recompte avant de réutiliser.**
 
 | ID | Objet | Échéance |
 |---|---|---|
 | `ECART-005` | Schéma CSV définitif relève de `QO-096` | LOT 9 |
-| `ECART-012` | `intercontrat` imposé à une direction générale | LOT 2, avant LOT 5 |
+| `ECART-012` | `intercontrat` imposé à une direction générale. **Instruit en `T5`** : le coût des deux options est mesuré, **la décision revient à Léa** | LOT 2, avant LOT 5 |
 | `ECART-013` | Les 5 tâches communes du prototype ont des identifiants différents | LOT 7 |
 | `ECART-014` | « Représentant de cercle » contre « Booster » | LOT 6 |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
+| `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | avant le LOT 6 |
+| `ECART-032` | **Le backlog interdit plus large que le cahier, la matrice ET le modèle réunis** : « aucune responsabilité **métier** active dans plusieurs entités » là où les trois autres restreignent au seul **Booster**. Le cahier prévaut, le livrable est conforme — **mais un relecteur du backlog conclurait à un critère manquant** | à annoncer à `G2` |
 
 `ECART-023` est ouvert et clos en **`T8`** — la fiche énumérait six des sept séparations du cahier §22.2, et empruntait « Mailpit exclusif » aux LOTS 11 et 13.
 
@@ -1490,13 +1498,15 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                 app/modeles.py         ← importe TOUS les modeles (LOT 2, T2)
 │                 app/shared/modele.py   ← socle declaratif (LOT 2, T1, DEC-499)
 │                 app/{entities,people,clients,organization}/
-│                                        ← 18 tables (LOT 2, T2 a T8)
+│                                        ← 18 tables METIER (LOT 2, T2 a T8)
+│                                          19 avec alembic_version : DIS LAQUELLE
 │                 alembic/versions/      ← 0001 vide, 0002 ext., 0003 entites,
 │                                          0004 person, 0005 appartenance,
 │                                          0006 metiers, 0007 clients,
 │                                          0008 cercles et bureaux,
 │                                          0009 responsabilites et DSM,
-│                                          0010 exclusions autoportantes
+│                                          0010 exclusions autoportantes,
+│                                          0011 roles et perimetres (T10)
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)

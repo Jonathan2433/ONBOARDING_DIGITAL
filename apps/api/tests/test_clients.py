@@ -415,11 +415,26 @@ def test_un_alias_ne_FUSIONNE_RIEN_automatiquement(cx: Connection) -> None:
 
 @pytest.mark.integration
 def test_une_situation_MISSION_exige_un_client_EXISTANT(cx: Connection) -> None:
-    """DETTE DE `T5` ACQUITTEE, et eprouvee par le COMPORTEMENT.
+    """DETTE DE `T5` ACQUITTEE — et le declencheur de `T10` l'OMBRAGE desormais.
 
     En `T5`, `client_id` etait un `uuid` sans cle etrangere : n'importe quelle
-    valeur passait. La cle est ajoutee par `0007`, et ce test le prouve autrement
-    qu'en lisant le catalogue -- il tente l'insertion.
+    valeur passait. La cle est ajoutee par `0007`.
+
+    **MIS A JOUR EN `T10`, ET LE MOTIF EST UN OMBRAGE.** Le declencheur
+    `mission_client_actif_dans_l_entite` est un `BEFORE INSERT`, et **les
+    declencheurs BEFORE ROW s'executent AVANT la verification des cles
+    etrangeres**. Un `client_id` inexistant fait donc echouer le DECLENCHEUR --
+    « pas de client active dans cette entite » -- avant que la cle etrangere n'ait
+    la parole.
+
+    **La cle etrangere n'est donc plus atteignable par le comportement** pour une
+    ligne `mission`, et pour une ligne `intercontract` elle ne peut pas l'etre non
+    plus, `client_selon_le_statut` imposant `client_id IS NULL`.
+
+    Meme situation que la contrainte ombragee de `T4`, et meme parti : la cle est
+    CONSERVEE -- le §6.5 la veut, et elle redeviendrait la seule barriere si le
+    declencheur changeait -- le test porte sur le mecanisme REEL, et **le catalogue
+    prouve ce que le comportement ne peut plus prouver**.
     """
     entite = _entite(cx)
     personne = _personne(cx, "consultant@exalt-company.com")
@@ -432,6 +447,20 @@ def test_une_situation_MISSION_exige_un_client_EXISTANT(cx: Connection) -> None:
         {"p": personne, "e": entite},
     ).scalar_one()
 
+    #  1. La cle etrangere EXISTE : preuve par le catalogue, puisque le
+    #     comportement ne peut plus la joindre.
+    presente = cx.execute(
+        text(
+            "SELECT count(*) FROM pg_constraint "
+            "WHERE conrelid = 'professional_status_assignment'::regclass "
+            "AND contype = 'f' AND conname = "
+            "'fk_professional_status_assignment_client_id_client'"
+        )
+    ).scalar_one()
+    assert presente == 1, "la dette de `T5` doit rester acquittee"
+
+    #  2. Un client inexistant est refuse — par le declencheur, qui parle le
+    #     premier.
     with pytest.raises(IntegrityError) as echec, cx.begin_nested():
         cx.execute(
             text(
@@ -440,14 +469,18 @@ def test_une_situation_MISSION_exige_un_client_EXISTANT(cx: Connection) -> None:
             ),
             {"e": entite, "a": appartenance, "c": uuid.uuid4()},
         )
-    assert "fk_professional_status_assignment_client_id_client" in str(echec.value)
+    assert "une mission exige un client active dans cette entite" in str(echec.value)
 
-    #  Temoin : avec un client REEL, l'insertion passe.
+    #  3. Temoin : avec un client REEL **et active dans l'entite**, l'insertion
+    #     passe.
+    client = _client(cx)
+    _activer(cx, entite, client)
     cx.execute(
         text(
             "INSERT INTO professional_status_assignment (entity_id, entity_membership_id, "
             "status, client_id, starts_at) VALUES (:e, :a, 'mission', :c, now())"
         ),
-        {"e": entite, "a": appartenance, "c": _client(cx)},
+        {"e": entite, "a": appartenance, "c": client},
     )
-    assert cx.execute(text("SELECT count(*) FROM professional_status_assignment")).scalar_one() == 1
+    total = cx.execute(text("SELECT count(*) FROM professional_status_assignment")).scalar_one()
+    assert total == 1

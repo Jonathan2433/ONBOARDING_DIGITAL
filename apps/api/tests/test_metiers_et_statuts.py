@@ -181,8 +181,18 @@ def _affecter_metier(
     )
 
 
-def _client(connexion: Connection, nom: str | None = None) -> uuid.UUID:
-    """Creer un client REEL, et le motif est une lecon.
+def _client(
+    connexion: Connection, nom: str | None = None, *, entite: uuid.UUID | None = None
+) -> uuid.UUID:
+    """Creer un client REEL et, si une entite est donnee, l'y ACTIVER.
+
+    **MIS A JOUR EN `T10`.** Le declencheur `mission_client_actif_dans_l_entite`
+    exige desormais qu'un client de mission soit active dans l'entite, par une
+    ligne de `entity_client` non archivee -- §6.5, « `mission` exige un client
+    ACTIF POUR L'ENTITE ». Un client seulement global ne suffit plus.
+
+    C'est le §7.21 pour la sixieme fois de ce lot : ces tests etaient justes quand
+    ils ont ete ecrits, et une regle ulterieure les a rendus faux.
 
     **AJOUTEE EN `T6`.** Ces tests passaient `uuid.uuid4()` comme identifiant de
     client, ce qui marchait en `T5` : la colonne etait un `uuid` SANS cle
@@ -198,13 +208,19 @@ def _client(connexion: Connection, nom: str | None = None) -> uuid.UUID:
     plusieurs appels dans un meme test doivent produire des clients distincts.
     """
     canonique = nom or f"client {uuid.uuid4().hex[:8]}"
-    return connexion.execute(  # type: ignore[no-any-return]
+    identifiant: uuid.UUID = connexion.execute(
         text(
             "INSERT INTO client (canonical_name, display_name, status) "
             "VALUES (:nom, :affiche, 'active') RETURNING id"
         ),
         {"nom": canonique, "affiche": canonique.title()},
     ).scalar_one()
+    if entite is not None:
+        connexion.execute(
+            text("INSERT INTO entity_client (entity_id, client_id) VALUES (:e, :c)"),
+            {"e": entite, "c": identifiant},
+        )
+    return identifiant
 
 
 def _situation(
@@ -387,7 +403,7 @@ def test_un_INTERCONTRACT_interdit_un_client(cx: Connection) -> None:
             #  etrangere existe (`T6`), un identifiant fictif ferait echouer la
             #  cle plutot que la contrainte visee. Le test ne prouverait plus ce
             #  qu'il annonce.
-            client=_client(cx),
+            client=_client(cx, entite=entite),
         )
     assert "client_selon_le_statut" in str(echec.value)
 
@@ -406,7 +422,7 @@ def test_les_deux_situations_bien_formees_sont_acceptees(cx: Connection) -> None
         entite,
         _appartenance(cx, entite, "a@exalt.com"),
         status="mission",
-        client=_client(cx),
+        client=_client(cx, entite=entite),
     )
     _situation(
         cx, entite, _appartenance(cx, entite, "b@exalt.com"), status="intercontract", client=None
@@ -462,7 +478,7 @@ def test_une_succession_de_situations_est_acceptee(cx: Connection) -> None:
         entite,
         appartenance,
         status="mission",
-        client=_client(cx),
+        client=_client(cx, entite=entite),
         debut=JUIN,
         fin=None,
     )
@@ -493,7 +509,9 @@ def test_toutes_les_situations_declarees_sont_acceptees(cx: Connection) -> None:
             entite,
             _appartenance(cx, entite, f"p{indice}@exalt.com"),
             status=situation.value,
-            client=_client(cx) if situation is SituationProfessionnelle.MISSION else None,
+            client=_client(cx, entite=entite)
+            if situation is SituationProfessionnelle.MISSION
+            else None,
         )
     total = cx.execute(text("SELECT count(*) FROM professional_status_assignment")).scalar_one()
     assert total == len(SITUATIONS_PROFESSIONNELLES)

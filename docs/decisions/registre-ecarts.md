@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T8`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T10`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 31 | 6 | 23 | 2 |
+| Total 32 | 7 | 23 | 2 |
 
 ---
 
@@ -49,8 +49,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-029` | L'index simple du §25.1 **ne satisfait pas** l'unicité insensible à la casse exigée par le §6.1 | Non pour `G2`, **le serait pour `G3`** | **Clos** |
 | `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
+| `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
 
-**Prochain identifiant libre : `ECART-032`.**
+**Prochain identifiant libre : `ECART-033`.**
 
 ---
 
@@ -445,4 +446,19 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Ne rien inventer.** Trois issues sont concevables et le choix n'est pas technique : ajouter un état de publication à `office` (nouvelle version du modèle), rattacher la publication aux contenus du §15, ou lire « publié » comme « non archivé » — cette dernière étant la plus simple et la plus contestable, puisqu'elle ferait de tout bureau non archivé un bureau publié. |
 | Résolution | **Ouvert.** `T8` a implémenté tout ce qui est applicable : les trois règles de portée, l'unicité du Booster par cercle, les trois exclusions, et les deux règles inter-tables par déclencheur. **La règle du bureau publié est consignée dans l'en-tête de la migration `0009`**, à l'endroit où quelqu'un cherchant pourquoi elle manque la lira.<br>**Et un second motif la rendrait de toute façon impossible en contrainte** : « entre un et trois » est un **comptage borné**, qu'aucune contrainte de ligne ni index n'exprime. Il faudra un déclencheur, le jour où l'état de publication existera. |
 
-**Prochain identifiant libre : `ECART-032`.**
+## `ECART-032` — Le backlog interdit plus largement que le cahier, la matrice et le modèle réunis
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T10`, en vérifiant les trois critères de `MVP-L02-US005` **avant** de les implémenter |
+| Source | Backlog §`MVP-L02-US005`, critères d'acceptation ; cahier des charges §4.1 ; matrice des rôles §3 ; modèle de données §8.4, contraintes de `framework_responsibility_assignment` |
+| Constat | Le backlog énonce comme critère d'acceptation : « aucune **responsabilité métier** active dans plusieurs entités ». Sans qualificatif, la formule couvre les **quatre** types du §8.4 — `DSM`, `ESM`, `BOOSTER`, `OFFICE_MANAGER`.<br>**Les trois autres documents disent tous la même chose, et tous restreignent au seul Booster :**<br>• cahier des charges : « une personne ne peut pas être **Booster** active dans plusieurs entités » ;<br>• matrice des rôles : « Une personne ne peut pas être **Booster** active simultanément dans plusieurs entités. » ;<br>• modèle §8.4 : « une personne ne peut pas être **Booster** active dans plusieurs entités simultanément ».<br>**C'est donc le backlog qui est l'exception**, et non le modèle qui serait en retard. |
+| Impact | **Aucun sur le livrable, et la règle de préséance suffit à le dire.** Le §3 de la passation pose que le cahier « prévaut sur tout » : le déclencheur `booster_une_seule_entite` posé en `T8`, restreint à `BOOSTER`, est **conforme**.<br>L'impact porte sur la **lecture de la porte `G2`** : le critère de `US005` sera lu dans le backlog, et un relecteur pourrait conclure à un critère non satisfait alors qu'il l'est au sens du cahier. |
+| Cause | Une généralisation de vocabulaire dans un document dérivé. Le backlog résume en une ligne trois règles hétérogènes, et « Booster » y est devenu « responsabilité métier » — terme qui n'apparaît sous cette forme dans **aucun** des trois autres documents. **Même classe que `ECART-023`** : un document dérivé ne fait pas que vieillir, il peut **prescrire autre chose que sa source dès sa rédaction**. |
+| Bloquant | Non. Le livrable est conforme au document prévalent, et aucune donnée réelle n'existe |
+| Recommandation | **Ne pas appliquer l'énoncé large, et le dire.** L'appliquer interdirait des données que le corpus autorise ailleurs : la matrice §5.1 prévoit qu'un super-administrateur « intervienne dans toutes les entités », et le §8.6 rend `entity_id` **nullable** pour `SUPER_ADMIN` précisément pour cela. Poser une interdiction que trois documents sur quatre ne portent pas serait **inventer une contrainte** — §6.5 — et l'erreur serait du côté coûteux : **un refus est un échec dur, une permission se resserre plus tard.** C'est le contresens que `T7` a évité sur les cercles secondaires et `T8` sur la multiplicité des `DSM`.<br>Si Léa veut la portée large, elle est **techniquement immédiate** : le déclencheur de `T8` teste `NEW.responsibility_type = 'BOOSTER'`, et retirer cette condition suffit. À instruire **avant le LOT 6**, qui expose les responsabilités. |
+| Résolution | **Ouvert.** Aucune correction du backlog : il est **immuable** (§3). L'écart est consigné, et le compte rendu de `T10` §2 dit explicitement lequel des deux énoncés est appliqué et pourquoi. **À annoncer à la porte `G2`**, pour qu'un relecteur du backlog ne conclue pas à un critère manquant. |
+
+---
+
+**Prochain identifiant libre : `ECART-033`.**

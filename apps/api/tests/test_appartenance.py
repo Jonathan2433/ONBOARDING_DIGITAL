@@ -367,6 +367,25 @@ def test_les_enumerations_refusent_une_valeur_hors_liste(cx: Connection) -> None
         assert contrainte in str(echec.value), f"attendu {contrainte} pour {argument}"
 
 
+def _responsabilite_dsm(connexion: Connection, entite: uuid.UUID, personne: uuid.UUID) -> None:
+    """Donner a une personne une responsabilite `DSM` active dans l'entite.
+
+    **AJOUTEE EN `T10`.** Le declencheur `dg_implique_dsm_local` exige qu'une
+    categorie `dg` soit accompagnee d'une responsabilite `DSM` active dans la meme
+    entite -- critere « DG implique DSM local » de `US005`. Ce test etait juste
+    quand il a ete ecrit ; une regle ulterieure l'a rendu faux, et c'est le §7.21
+    pour la sixieme fois de ce lot.
+    """
+    connexion.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment (person_id, entity_id, "
+            "responsibility_type, assigned_by_person_id, starts_at) "
+            "VALUES (:p, :e, 'DSM', :p, now())"
+        ),
+        {"p": personne, "e": entite},
+    )
+
+
 @pytest.mark.integration
 def test_toutes_les_valeurs_declarees_sont_acceptees(cx: Connection) -> None:
     """Temoin des trois enumerations : aucune ne refuse ce qu'elle declare."""
@@ -382,7 +401,11 @@ def test_toutes_les_valeurs_declarees_sont_acceptees(cx: Connection) -> None:
         )
         total += 1
     for indice, categorie in enumerate(CATEGORIES_PROFESSIONNELLES):
-        _appartenance(cx, _personne(cx, f"cat{indice}@exalt.com"), entite, categorie=categorie)
+        personne = _personne(cx, f"cat{indice}@exalt.com")
+        if categorie == "dg":
+            #  `T10` : « DG implique DSM local ». Voir `_responsabilite_dsm`.
+            _responsabilite_dsm(cx, entite, personne)
+        _appartenance(cx, personne, entite, categorie=categorie)
         total += 1
     for indice, visibilite in enumerate(VISIBILITES_PROFIL):
         _appartenance(cx, _personne(cx, f"vis{indice}@exalt.com"), entite, visibilite=visibilite)

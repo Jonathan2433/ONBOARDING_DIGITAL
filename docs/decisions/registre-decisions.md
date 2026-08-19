@@ -30,6 +30,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-511`, sous-étape `T7`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-512`, sous-étape `T8`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-513`, sous-étape `T9`** | 1 | **Validée le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-514`, sous-étape `T10`** | 1 | **Validée le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -41,7 +42,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **181** | |
+| **Total** | **182** | |
 
 ---
 
@@ -431,7 +432,16 @@ Une décision, et **un angle mort d'outil mesuré** qui complète `DEC-500`.
 > dérive d'exclusion.** C'est ce qui justifie son existence, et pourquoi un test de la suite en double
 > une partie — le script est une cible séparée, le test tourne à chaque pull request.
 
-**Prochain identifiant libre : `DEC-514`.**
+## 1.25 Réalisation du LOT 2 — sous-étape `T10`
+
+Une décision. Les règles de rôles et de périmètres, et **deux des trois critères déjà acquis** —
+vérifier avant de refaire était le premier travail.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-514` | **Les règles de rôles et de périmètres du modèle §6.5, §8.2 et §8.4 sont portées par la migration `0011`**, qui **ne crée aucune table** et pose **deux déclencheurs défensifs**. **(a)** Deux des trois critères de `US005` étaient **déjà acquis** en `T8` : ils sont **vérifiés, pas réimplémentés**. **(b)** « DG implique DSM local » est appliqué comme une **implication**, et la **création automatique** du §8.4 est laissée au service. **(c)** « Une `mission` exige un client actif pour l'entité » est lu sur **`entity_client` non archivée**, jamais sur `client.status`. **(d)** Ce déclencheur est **borné à `client_id IS NOT NULL`**, pour que la contrainte de `T5` garde la parole sur le cas nul. **(e)** La clé étrangère de `client_id` est **ombragée** par ce déclencheur : elle est **conservée**, et le **catalogue** prouve ce que le comportement ne peut plus prouver. **(f)** La règle de **non-effet** du §8.2 est portée par un **test**, aucune contrainte ne pouvant l'exprimer. | **(a) Réimplémenter aurait produit un doublon silencieux.** « Un seul Booster actif par cercle » est l'index partiel du §25.1, posé en `T8` ; « aucune responsabilité active dans plusieurs entités » est le déclencheur `booster_une_seule_entite`, posé en `T8` aussi. Une seconde contrainte de même objet n'aurait rien cassé — donc rien ne l'aurait signalée — et aurait doublé la surface à maintenir. **(b) LE MODÈLE DÉCRIT UNE ACTION, LE BACKLOG UNE IMPLICATION, ET SEULE LA SECONDE EST APPLICABLE PAR LA BASE.** Le §8.4 écrit « un DG reçoit **automatiquement** une responsabilité DSM dans la même transaction » ; or `assigned_by_person_id` est `NOT NULL`, et **un déclencheur ne sait pas qui attribue**. Inventer un attributeur — la personne elle-même, un identifiant technique — **fabriquerait une trace d'audit fausse**, ce qui est pire qu'une trace absente : le §7.0 l'interdit pour une empreinte, et une responsabilité auditée relève de la même classe. L'implication, elle, se vérifie sans rien inventer, et le service qui créera la responsabilité **satisfera** cet invariant au lieu de s'y substituer. **(c) La distinction est mesurable et le §7.2 la rend nécessaire** : « archiver localement une relation » signifie qu'un client **globalement actif** peut être **localement archivé**, et réciproquement qu'un client globalement archivé reste localement actif. Lire `client.status` aurait donné le mauvais verdict dans les deux sens. Trois tests l'établissent : activation absente, activation **archivée**, activation dans une **autre** entité. **(d)** Sans cette borne, un `client_id` nul faisait parler le déclencheur — « pas de client actif » — là où la vraie règle enfreinte est `client_selon_le_statut` de `T5`. **Un message juste sur le fond mais faux sur la cause enseigne à chercher au mauvais endroit.** **(e) UN OMBRAGE MESURÉ, ET IL INVERSE UN TEST DE `T6`.** Les déclencheurs `BEFORE ROW` s'exécutent **avant** la vérification des clés étrangères : un `client_id` inexistant échoue donc sur le déclencheur, et la clé étrangère n'a plus la parole — pour une ligne `mission` comme pour une ligne `intercontract`, dont `client_id` doit être nul. Même situation que la contrainte ombragée de `T4`, et même parti qu'en `(b)` de `DEC-511` : la règle écrite est conservée. **Le test est réécrit pour porter sur le mécanisme réel et prouver la clé par `pg_constraint`** — c'est le §7.21 pour la sixième fois de ce lot, et cette fois c'est un test que j'avais écrit trois sous-étapes plus tôt. **(f)** Une règle de non-effet n'a **rien à refuser** : ce qui pourrait la violer est un service trop zélé, pas une ligne. Le seul garde-fou possible est un test qui relève l'état complet des quatre relations citées, ajoute un cercle secondaire **et** sa responsabilité de Booster, puis constate que rien n'a changé. Même parti qu'en `T6` pour les alias clients. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-515`.**
 
 ---
 
@@ -603,6 +613,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-511` — réalisation du LOT 2, `T7` | 1 | 1 |
 | `DEC-512` — réalisation du LOT 2, `T8` | 1 | 1 |
 | `DEC-513` — réalisation du LOT 2, `T9` | 1 | 1 |
+| `DEC-514` — réalisation du LOT 2, `T10` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -614,7 +625,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **181** | **181** |
+| **Total** | **182** | **182** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
