@@ -26,14 +26,17 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.configuration.settings import charger_parametres
-from app.shared.modele import metadonnees
+
+#  `app.modeles` et non `app.shared.modele` : ce module importe TOUS les modules
+#  de modeles, ce qui est la condition pour que leurs tables soient inscrites
+#  dans les metadonnees. Importer seulement le socle rendrait `target_metadata`
+#  vide alors que la base porte des tables, et `--autogenerate` proposerait de
+#  supprimer tout le schema.
+from app.modeles import metadonnees
 
 configuration = context.config
 
-# LOT 2, T1 : les metadonnees du socle declaratif. Aucune table n'y est encore
-# declaree -- elles arrivent en T2 et suivantes -- mais le cablage est pose des
-# maintenant pour que `alembic check` puisse comparer le declare au reel a
-# chaque sous-etape, plutot qu'a la fin du lot.
+# LOT 2 : les metadonnees, portant toutes les tables declarees a ce jour.
 target_metadata = metadonnees
 
 parametres = charger_parametres()

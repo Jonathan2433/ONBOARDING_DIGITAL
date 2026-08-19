@@ -37,6 +37,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     MetaData,
+    Text,
     Uuid,
     func,
     text,
@@ -148,7 +149,11 @@ class ChampsCommuns:
     archived_by_person_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), nullable=True
     )
-    archive_reason: Mapped[str | None] = mapped_column(nullable=True)
+    #  `Text` et non `String` sans longueur : le §3.1 ecrit `archive_reason text
+    #  null`. Sans le type explicite, SQLAlchemy produit un `VARCHAR` sans borne,
+    #  ce qui n'est pas faux mais n'est pas ce que le modele ecrit. Defaut de `T1`,
+    #  releve en `T2` a la lecture du brouillon de migration.
+    archive_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class RessourceLocale:
