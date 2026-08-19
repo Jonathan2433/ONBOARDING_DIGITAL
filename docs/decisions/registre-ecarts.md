@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T5`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T8`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 30 | 5 | 23 | 2 |
+| Total 31 | 6 | 23 | 2 |
 
 ---
 
@@ -48,8 +48,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-028` | Le modèle place les domaines e-mail autorisés à **deux endroits** : catégorie de `platform_setting` au §5.2, et table dédiée au §5.4 | Non | **Clos** |
 | `ECART-029` | L'index simple du §25.1 **ne satisfait pas** l'unicité insensible à la casse exigée par le §6.1 | Non pour `G2`, **le serait pour `G3`** | **Clos** |
 | `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
+| `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
 
-**Prochain identifiant libre : `ECART-031`.**
+**Prochain identifiant libre : `ECART-032`.**
 
 ---
 
@@ -431,4 +432,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **La colonne fait autorité sur le diagramme.** Le §6.2 énumère explicitement quatre valeurs ; le §24.1 illustre. Et l'anonymisation reste là où le §6.1 la place, sur `person`. |
 | Résolution | **Clos** le 19 août 2026 par `DEC-505`. `membership_state` porte **quatre** valeurs, et un test l'exige explicitement en nommant l'écart : `assert "anonymized" not in ETATS_APPARTENANCE`. La lecture est inscrite dans la docstring de l'énumération, à l'endroit où quelqu'un tenté d'ajouter la cinquième valeur la lira.<br>**Une conséquence à connaître pour le LOT 10** : anonymiser une personne ne changera pas l'état de ses appartenances, qui resteront `departed` ou `archived`. C'est cohérent — le profil local a cessé d'exister à son terme, l'identité est effacée ensuite — mais il faudra que le LOT 10 le dise, et non le découvre. |
 
-**Prochain identifiant libre : `ECART-031`.**
+## `ECART-031` — Une règle du §8.4 exige un état de publication que `office` ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T8`, en implémentant les responsabilités Framework |
+| Source | Modèle de données §8.4, contraintes de `framework_responsibility_assignment` ; §8.3, champs de `office` ; §25.4, règles nécessitant un service ou un déclencheur |
+| Constat | Le §8.4 pose parmi ses contraintes : « un bureau possède entre un et trois responsables actifs **lorsqu'il est publié** », et le §25.4 la reprend sous la forme « un bureau publié avec un à trois responsables actifs ».<br>**Or le §8.3 ne déclare aucun état de publication sur `office`.** Ses champs sont `entity_id`, `code`, `name`, `description`, `location_text`, `display_order` — auxquels s'ajoutent les champs communs du §3.1, dont `archived_at`, mais **aucun** `published_at` ni `visibility`.<br>La condition « lorsqu'il est publié » **n'a donc rien à quoi se rattacher**. |
+| Impact | La règle est **inapplicable en l'état**, et son inapplicabilité est silencieuse : rien dans le schéma ne signale qu'une contrainte du modèle n'est pas portée. Sans consignation, elle serait simplement oubliée — et le §25.4 la liste pourtant parmi celles qui « seront appliquées par un service transactionnel ». |
+| Cause | Le §8.4 emprunte une notion — la publication d'un bureau — à un domaine que le modèle traite ailleurs. Les contenus éditoriaux du §15 et les états de publication du §12.1 (`arrival_profile`) montrent que le modèle sait déclarer une publication ; il ne l'a pas fait pour `office`. **Même classe que `ECART-030`** : une règle qui suppose un état que la table ne porte pas. |
+| Bloquant | Non pour `G2` : la règle n'est pas un critère de sortie du LOT 2, et aucune donnée réelle n'existe. **À instruire avant le LOT 6**, qui publie les cercles et bureaux au portail |
+| Recommandation | **Ne rien inventer.** Trois issues sont concevables et le choix n'est pas technique : ajouter un état de publication à `office` (nouvelle version du modèle), rattacher la publication aux contenus du §15, ou lire « publié » comme « non archivé » — cette dernière étant la plus simple et la plus contestable, puisqu'elle ferait de tout bureau non archivé un bureau publié. |
+| Résolution | **Ouvert.** `T8` a implémenté tout ce qui est applicable : les trois règles de portée, l'unicité du Booster par cercle, les trois exclusions, et les deux règles inter-tables par déclencheur. **La règle du bureau publié est consignée dans l'en-tête de la migration `0009`**, à l'endroit où quelqu'un cherchant pourquoi elle manque la lira.<br>**Et un second motif la rendrait de toute façon impossible en contrainte** : « entre un et trois » est un **comptage borné**, qu'aucune contrainte de ligne ni index n'exprime. Il faudra un déclencheur, le jour où l'état de publication existera. |
+
+**Prochain identifiant libre : `ECART-032`.**

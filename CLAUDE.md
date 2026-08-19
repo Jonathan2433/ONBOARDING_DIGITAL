@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
 | **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : `T1` à `T7` faites**, `T8` à `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T8` — DSM, responsabilités Framework et rôles techniques**, issue `#42` (`US004`, taille **XL**). Trois index partiels du §25.1 y sont écrits littéralement, et deux règles du §25.4 y arrivent. Voir §10 du compte rendu de `T7` |
+| Sous-étapes faites | **LOT 2 : `T1` à `T8` faites**, `T9` à `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **`T9` — historisation et contraintes temporelles**, issue `#42`. Elle ne crée **aucune table** : les **sept** relations du §25.2 existent, et son travail est de **prouver par un contrôle qui les compte**. Voir §10 du compte rendu de `T8` |
 | Stories `Done` | **LOT 2 : `US001`, `US002`, `US003`.** `US008` se clôt en `T12` · *LOT 1 : les huit* |
 | Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **411** : **295 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
+| Tests | **430** : **314 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **179 décisions** · **30 écarts** (5 ouverts, dont `ECART-012` **instruit**) · **41 questions** (34 ouvertes) · 34 risques |
+| Registres | **180 décisions** · **31 écarts** (**6 ouverts**, dont `ECART-012` **instruit** et `ECART-031` neuf) · **41 questions** (34 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -104,7 +104,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
-| **Comment a-t-on fait `T1` à `T7` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,7}-lot-2.md`** — 23 défauts, dont **19 dans mon propre travail** |
+| **Comment a-t-on fait `T1` à `T8` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,8}-lot-2.md`** — 26 défauts, dont **22 dans mon propre travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
 | **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
@@ -341,7 +341,7 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
-Les 179 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 180 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -392,8 +392,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`511` en usage | **`DEC-512`** |
-| `ECART-nnn` | `001`–`030` | **`ECART-031`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`512` en usage | **`DEC-513`** |
+| `ECART-nnn` | `001`–`031` | **`ECART-032`** |
 | `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -1489,11 +1489,12 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                 app/modeles.py         ← importe TOUS les modeles (LOT 2, T2)
 │                 app/shared/modele.py   ← socle declaratif (LOT 2, T1, DEC-499)
 │                 app/{entities,people,clients,organization}/
-│                                        ← 15 tables (LOT 2, T2 a T7)
+│                                        ← 18 tables (LOT 2, T2 a T8)
 │                 alembic/versions/      ← 0001 vide, 0002 ext., 0003 entites,
 │                                          0004 person, 0005 appartenance,
 │                                          0006 metiers, 0007 clients,
-│                                          0008 cercles et bureaux
+│                                          0008 cercles et bureaux,
+│                                          0009 responsabilites et DSM
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)
@@ -1526,7 +1527,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 179 décisions, 30 écarts
+    ├── decisions/                   ← 180 décisions, 31 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
                                         checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
@@ -1648,7 +1649,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 179 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 180 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

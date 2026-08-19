@@ -483,6 +483,10 @@ TABLES_DECLAREES = {
     "circle",
     "circle_membership",
     "office",
+    # LOT 2, T8 — modele §8.4 a §8.6
+    "framework_responsibility_assignment",
+    "dsm_assignment",
+    "technical_role_assignment",
 }
 
 
