@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T2`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T3`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 28 | 5 | 21 | 2 |
+| Total 29 | 5 | 22 | 2 |
 
 ---
 
@@ -46,8 +46,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-026` | Les conventions Git prescrivaient une stratégie de fusion que la protection de branche **interdisait** : deux règles justes séparément, incompatibles ensemble | Non pour `G1`, **bloquant pour `G2`** | **Clos** |
 | `ECART-027` | Trois tests d'intégration recopiaient la révision de tête d'Alembic au lieu de la dériver, et sont devenus faux à la première migration du LOT 2 | Non | **Clos** |
 | `ECART-028` | Le modèle place les domaines e-mail autorisés à **deux endroits** : catégorie de `platform_setting` au §5.2, et table dédiée au §5.4 | Non | **Clos** |
+| `ECART-029` | L'index simple du §25.1 **ne satisfait pas** l'unicité insensible à la casse exigée par le §6.1 | Non pour `G2`, **le serait pour `G3`** | **Clos** |
 
-**Prochain identifiant libre : `ECART-029`.**
+**Prochain identifiant libre : `ECART-030`.**
 
 ---
 
@@ -403,4 +404,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **La table fait autorité.** Une table dédiée, avec ses colonnes nommées et ses règles d'historisation, l'emporte sur un libellé dans une liste à puces. |
 | Résolution | **Clos** le 19 août 2026 par `DEC-501`. `allowed_email_domain` est la seule dépositaire des domaines : **aucune clé de `platform_setting` n'en portera**, et la contrainte de forme sur les clés ne réserve rien à cet usage. La lecture est inscrite en tête de `app/entities/modeles.py`, à l'endroit où quelqu'un qui ajouterait une clé de paramètre la lira. |
 
-**Prochain identifiant libre : `ECART-029`.**
+## `ECART-029` — L'index du §25.1 ne suffit pas à l'unicité insensible à la casse du §6.1
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T3`, en implémentant `person` |
+| Source | Modèle de données §6.1, contraintes de `person` ; §25.1, index uniques partiels |
+| Constat | Le §6.1 pose parmi les contraintes de `person` : « **unicité insensible à la casse** de `email_normalized` ». Le §25.1 spécifie l'index correspondant : `person(email_normalized) UNIQUE` — un index **simple**, donc **sensible à la casse**.<br>**L'index spécifié ne satisfait pas la contrainte exigée.** `Jean.Dupont@exalt.com` et `jean.dupont@exalt.com` sont deux valeurs distinctes pour un index simple, et coexisteraient. |
+| Impact | Réel et silencieux si on suit le §25.1 à la lettre : deux comptes pour la même personne, découverts au premier magic link ambigu — donc au LOT 3, dans une fonctionnalité d'authentification, avec des conséquences de sécurité. Nul si on suit le §6.1. |
+| Cause | Le §25.1 est une liste d'**index à prévoir**, écrite en raccourci ; le §6.1 est la liste des **contraintes**. Le raccourci a perdu une exigence. Ni l'un ni l'autre n'est faux en soi — c'est leur conjonction qui l'est, la classe de `ECART-026`. |
+| Bloquant | Non pour `G2`. Le serait pour `G3`, où l'authentification résout une personne par son adresse |
+| Recommandation | **Ne pas choisir entre les deux.** Une troisième voie satisfait les deux textes : exiger que la valeur **stockée** soit déjà en minuscules. L'index simple du §25.1 devient alors suffisant, puisque deux graphies ne peuvent pas coexister — l'une des deux ne peut pas être écrite. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-503`. La contrainte `ck_person_email_normalise_en_minuscules` refuse toute forme normalisée non minuscule, et l'index unique simple du §25.1 est conservé tel qu'il est spécifié. **Éprouvé par témoin** : une forme normalisée avec majuscules est refusée, et trois formes minuscules distinctes sont acceptées.<br>**Cette voie est plus forte qu'un index fonctionnel sur `lower(email_normalized)`** : celui-ci empêcherait le doublon mais laisserait entrer une valeur non normalisée dans une colonne nommée `_normalized`. |
+
+**Prochain identifiant libre : `ECART-030`.**
