@@ -20,6 +20,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Arbitrages techniques `DEC-439+`, sous-étape `T0` | 10 | Validés le 27/07/2026 |
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
+| **Ouverture du LOT 2 `DEC-496`** | 1 | **Validée le 18/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -31,7 +32,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **163** | |
+| **Total** | **164** | |
 
 ---
 
@@ -300,7 +301,13 @@ Décisions prises après la validation de `G1`, sur des défauts révélés par 
 
 | `DEC-495` | **`required_linear_history` est RETIRÉ sur `main` et CONSERVÉ sur `develop`.** `main` reçoit des **merge commits** de `develop`, conformément au §2.1 des conventions ; `develop` ne reçoit que des **squash** de branches de travail, et y garder l'exigence préserve la règle « un commit lisible par story » tenue depuis `T1`. | **Le réglage et le §2.1 des conventions s'excluent, et le document se contredisait** : sa ligne 94 recommandait l'historique linéaire « cohérent avec la fusion par squash », sa ligne 106 imposait le merge commit pour `develop` → `main`. Les deux ont été appliqués, si bien que la PR `#30` **n'a pas été squashée par inadvertance — c'était la seule méthode que la protection permettait**. Conséquence **cumulative** : le squash coupe `main` de l'histoire de `develop`, la base de fusion reste `09ceb7c`, et **chaque porte suivante conflicte sur tout fichier touché des deux côtés** alors que le contenu ne divergeait pas — mesuré sur `#33`, 9 fichiers, insolubles. Mesuré après application : `main` → `false`, `develop` → `true`, les six autres réglages inchangés. | Validée par Jonathan le 12/08/2026 |
 
-**Prochain identifiant libre : `DEC-496`.**
+## 1.15 Ouverture du LOT 2
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-496` | **Jonathan ouvre le LOT 2 — « Socle de données et isolation multi-entités »** le 18 août 2026. Les stories `MVP-L02-US001` à `US008` peuvent passer à `Ready`. Porte de validation **`G2`**, tag **`v0.2.0`** (`DEC-428`, conventions §4). Les **LOTS 3 à 14 restent `Planned`**. | `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006` exigent une validation explicite et tracée avant tout lot dépendant. La porte `G1` est franchie : ses **sept** critères de sortie sont acquis, les huit stories sont `Done`, le tag `v0.1.0` est posé sur `main`, et `main` porte le contenu de `develop` — arbres identiques, `9bc9359`. La dépendance du LOT 2 déclarée par la roadmap, « LOTS 0 et 1 », est donc satisfaite. **Aucune ligne de code n'est écrite avant que Jonathan ait validé le découpage en sous-étapes** de [`fiche-lot-2.md`](../operations/fiche-lot-2.md). | Validée par Jonathan le 18/08/2026 |
+
+**Prochain identifiant libre : `DEC-497`.**
 
 ---
 
@@ -462,6 +469,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-439+` — arbitrages `T0` | 10 | 10 |
 | `DEC-449` — mise en place GitHub | 1 | 1 |
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
+| `DEC-496` — ouverture du LOT 2 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -473,7 +481,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **163** | **163** |
+| **Total** | **164** | **164** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `495` en usage | `DEC-496` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `496` en usage | `DEC-497` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -126,8 +126,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | Porte | Moment | Validation obligatoire | État |
 |---|---|---|---|
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
-| `G1` | Fin du socle local | Stack, CI et images validées | **Porte courante** — LOT 1 ouvert le 27/07/2026 (`DEC-450`) |
-| `G2` | Fin du modèle implémenté | Contraintes et isolation validées | Planifiée |
+| `G1` | Fin du socle local | Stack, CI et images validées | **FRANCHIE** le 12/08/2026 — tag `v0.1.0` posé sur `main` |
+| `G2` | Fin du modèle implémenté | Contraintes et isolation validées | **Porte courante** — LOT 2 ouvert le 18/08/2026 (`DEC-496`), tag `v0.2.0` |
 | `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
 | `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
 | `G5` | Fin du trombinoscope | Profils et permissions validés | Planifiée |
@@ -161,9 +161,9 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 
 ---
 
-## 8. Avancement du LOT 1 — **lot ouvert**, porte `G1`
+## 8. Avancement du LOT 1 — **terminé**, porte `G1` **franchie**
 
-Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
+Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`), **verrouillé le 12 août 2026**. Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
@@ -187,3 +187,16 @@ Checklist de la porte : [`checklist-validation-G1.md`](operations/checklist-vali
 
 Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic `#1`, stories `#2`
 à `#9`. **`main` et `develop` sont protégées** — toute modification passe par une pull request.
+
+---
+
+## 9. Avancement du LOT 2 — **lot ouvert**, porte `G2`
+
+**Ouvert par Jonathan le 18 août 2026 (`DEC-496`).** Plan soumis à validation :
+[`operations/fiche-lot-2.md`](operations/fiche-lot-2.md) — **12 sous-étapes, `T1` à `T12`**,
+8 stories dont **7 en `P0`**, **16 tables** du modèle, tag `v0.2.0`.
+**Aucune ligne de code n'est écrite avant que Jonathan ait validé le découpage du §3**, condition
+posée dans `DEC-496`. Deux questions bloquent `T1` : `QO-111` (collation) et `QO-112`
+(extensions). `ECART-012` est échu dans ce lot, rattaché à `T5`.
+
+---
