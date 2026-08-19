@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `512` en usage | `DEC-513` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `513` en usage | `DEC-514` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -207,6 +207,7 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 | `T6` | Clients, activations locales et alias | `MVP-L02-US003` | **Terminée** le 19/08/2026. **La dette de `T5` est acquittée** : clé étrangère de `client_id`. Normalisation **volontairement minimale** — `DATA-005` interdit tout rapprochement automatique. **`QO-117` ouverte** : le modèle ne pose aucune unicité sur les alias, et la portée est un choix métier. 21 tests, dont deux sur des **non-actions**. `DEC-510` |
 | `T7` | Cercles, bureaux et appartenance aux cercles | `MVP-L02-US001`, `US003` | **Terminée** le 19/08/2026, et elle **clôt les deux stories**. **L'exclusion est PARTIELLE** — une exclusion sans `WHERE` aurait interdit les cercles secondaires multiples, et le livrable aurait **paru correct**. Un **résiduel du §8.1 est nommé, non comblé**. 17 tests. `DEC-511` |
 | `T8` | DSM, responsabilités Framework et rôles techniques | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Un défaut qui valait trois types sur quatre** : une clé d'exclusion contenant une colonne **nullable** ne contraint rien sur les lignes où elle est nulle. Deux **permissions** distinguées de deux interdictions voisines. **`ECART-031` ouvert** — le §8.4 exige un état de publication que `office` ne déclare pas. 19 tests. `DEC-512` |
-| `T9` à `T12` | Voir la fiche | — | Non entamées |
+| `T9` | Historisation et contraintes temporelles | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Aucune table créée** : les 7 relations existaient. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2** — et **il a trouvé un défaut le jour même**. **`alembic check` est AVEUGLE aux exclusions**, mesuré : 10 déclarées, 9 en base, code 0. 8 tests. `DEC-513` |
+| `T10` à `T12` | Voir la fiche | — | Non entamées |
 
 ---
