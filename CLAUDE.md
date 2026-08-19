@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
 | **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : `T1` faite**, `T2` à `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T2` — entités, paramètres et domaines e-mail**, issue `#39`. `T1` est terminée : découpage validé, `QO-111` et `QO-112` closes, les 7 choix du §9.2 tranchés |
+| Sous-étapes faites | **LOT 2 : `T1` et `T2` faites**, `T3` à `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **`T3` — la table `person`**, issue `#40`. **Aucune table d'authentification** : le §28 groupe « `person` et authentification » mais c'est un ordre global, pas une frontière de lot |
 | Stories `Done` | **LOT 2 : aucune.** `US008` est ouverte, elle se clôt en `T12` · *LOT 1 : les huit* |
 | Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **280** : **164 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 ; `T1` du LOT 2 en ajoute **20** |
+| Tests | **305** : **189 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **168 décisions** · **27 écarts** (5 ouverts) · **40 questions** (33 ouvertes) · 34 risques |
+| Registres | **170 décisions** · **28 écarts** (5 ouverts) · **40 questions** (33 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -104,7 +104,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
-| **Comment a-t-on fait `T1` du LOT 2 ?** | **`docs/operations/compte-rendu-t1-lot-2.md`** — 7 défauts, dont **5 dans mes propres contrôles** |
+| **Comment a-t-on fait `T1` et `T2` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-2.md`** — 12 défauts, dont **9 dans mon propre travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
 | **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
@@ -341,7 +341,7 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
-Les 168 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
+Les 170 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
 
 | ID | Décision |
 |---|---|
@@ -392,8 +392,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`500` en usage | **`DEC-501`** |
-| `ECART-nnn` | `001`–`027` | **`ECART-028`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`502` en usage | **`DEC-503`** |
+| `ECART-nnn` | `001`–`028` | **`ECART-029`** |
 | `QO-nnn` | `072`–`116`, **5 trous** | **`QO-117`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -1485,7 +1485,10 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 ├── pyproject.toml               ← workspace uv, Ruff, mypy strict, pytest
 ├── tsconfig.base.json · eslint.config.js · .prettierrc.json · .prettierignore
 ├── apps/
-│   ├── api/      app/{configuration,health,shared}, alembic/, tests/, Dockerfile
+│   ├── api/      app/{configuration,entities,health,shared}, alembic/, tests/, Dockerfile
+│                 app/modeles.py         ← importe TOUS les modeles (LOT 2, T2)
+│                 app/shared/modele.py   ← socle declaratif (LOT 2, T1, DEC-499)
+│                 alembic/versions/      ← 0001 vide, 0002 extensions, 0003 entites
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)
@@ -1518,7 +1521,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
-    ├── decisions/                   ← 168 décisions, 27 écarts
+    ├── decisions/                   ← 170 décisions, 28 écarts
     └── operations/                  ← fiche-lot-1, comptes rendus T0 à T11, registres
                                         checklist-validation-G1.md  ← T11, la porte
                                         exploitation-locale.md  ← T9, toutes commandes exécutées
@@ -1640,7 +1643,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 168 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : 170 décisions, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

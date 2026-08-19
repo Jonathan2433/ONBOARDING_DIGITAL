@@ -22,6 +22,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
 | **Ouverture du LOT 2 `DEC-496`** | 1 | **Validée le 18/08/2026** |
 | **Réalisation du LOT 2 `DEC-497+`, sous-étape `T1`** | 4 | **Validées le 18/08/2026** |
+| **Réalisation du LOT 2 `DEC-501+`, sous-étape `T2`** | 2 | **Validées le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -33,7 +34,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **168** | |
+| **Total** | **170** | |
 
 ---
 
@@ -320,7 +321,16 @@ du §9.2 de la [fiche du LOT 2](../operations/fiche-lot-2.md).
 | `DEC-499` | **Socle déclaratif dans `app/shared/modele.py`**, et cinq choix qu'il fixe. **(a)** Convention de nommage des contraintes sur la `MetaData`, avec `%(constraint_name)s` pour les vérifications. **(b)** Les colonnes d'auteur `created_by_person_id`, `updated_by_person_id`, `archived_by_person_id` sont des `uuid` **sans clé étrangère**. **(c)** Une période est **deux colonnes** `starts_at` / `ends_at` **plus** une colonne `period` **générée** `tstzrange(starts_at, ends_at)`. **(d)** Les énumérations sont bornées par **contrainte de vérification**, jamais par un type `enum` natif. **(e)** `id` reçoit **deux** défauts, `uuid4` côté Python et `gen_random_uuid()` côté serveur. **Les noms de tables et de colonnes sont ceux du modèle de données à la lettre, donc en anglais**, par exception assumée au français du reste du code. | **(a)** Un `downgrade()` doit **nommer** les objets qu'il supprime ; sans convention le nom est choisi par PostgreSQL et n'apparaît nulle part dans le code. Le jeton `%(constraint_name)s` rend toute contrainte anonyme **impossible à créer**, ce qui est le garde-fou et non la gêne. **(b)** Le §3.1 les écrit `uuid null` sans clé étrangère ; `entity` précède `person` dans l'ordre du §28, donc la contrainte ne pourrait pas exister ; et le LOT 10 devra effacer ou anonymiser des personnes. **(c)** Le §25.1 écrit ses index partiels avec `WHERE ends_at IS NULL`, le §25.2 réclame des plages : les deux représentations sont nécessaires, et une colonne **générée** ne peut pas diverger de sa source, contrairement à deux colonnes maintenues par du code. La plage est **semi-ouverte**, donc deux périodes adjacentes ne se chevauchent pas. **(d)** Retirer ou renommer une valeur d'un type `enum` natif exige de recréer le type et de réécrire les colonnes dépendantes — or `ECART-012` est ouvert et échu dans ce lot, et porte précisément sur l'ajout d'une **troisième** valeur à la situation professionnelle. **(e)** Le défaut Python donne son identifiant à l'objet avant le `flush`, ce dont les factories de `T12` ont besoin ; le défaut serveur couvre les écritures hors ORM. Un dictionnaire de traduction entre les noms du modèle et ceux du schéma serait un endroit où les deux divergent en silence : une chose, un nom. | Validée par Jonathan le 18/08/2026 |
 | `DEC-500` | **`autogenerate` d'Alembic sert de BROUILLON et jamais de livrable**, `target_metadata` est câblé, et **`make migrate` rafraîchit puis VÉRIFIE le code embarqué** avant d'agir — nouvelles cibles `code-refresh` et `code-check`, et le script `verifier-code-embarque.py` compare les empreintes SHA-256 des fichiers `.py` vus par le conteneur à celles du dépôt. | `autogenerate` n'écrit pas les clauses `WHERE` des index partiels du §25.1, ni les contraintes d'exclusion du §25.2, ni les colonnes générées : une migration produite sans relecture serait incomplète **en paraissant complète**. Le câblage de `target_metadata` rend en revanche `alembic check` utilisable — la commande existe en Alembic 1.18.5, vérifié — donc un écart entre le déclaré et le réel devient **détectable**. La vérification du code embarqué répond à un défaut **réel** du 18/08/2026 : `apps/api` n'étant pas monté en bind, la migration `0002` écrite sur l'hôte était invisible du conteneur, et `make migrate` a rendu `0001 (head)` **en sortant en 0**. Même mécanisme que le défaut `T5-2` du LOT 1 — Caddy servant une configuration périmée en étant `healthy` — et même parti que `DEC-472` : `make up` appelle `caddy-reload` parce qu'attendre du service qu'il se rafraîchisse seul ne marche pas. Le contrôle **après** le rafraîchissement n'est pas redondant : un `build` qui n'aurait pas pris produirait la même observation qu'un `build` réussi. | Validée par Jonathan le 18/08/2026 |
 
-**Prochain identifiant libre : `DEC-501`.**
+## 1.17 Réalisation du LOT 2 — sous-étape `T2`
+
+Deux décisions. Les quatre premières tables du projet.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-501` | **Les quatre tables du modèle §5 sont créées par la migration `0003`**, et quatre lectures sont posées. **(a)** `platform_setting` et `entity_setting` sont des tables **clé / valeur `jsonb`, SANS catalogue de clés** ; la clé est bornée par sa **forme** — minuscules, chiffres, tirets bas, points de hiérarchie — jamais par une liste. **(b)** `allowed_email_domain.entity_id` est **nullable**, le mixin `RessourceLocale` ne s'y applique donc pas, et sa clé étrangère est nullable. **(c)** **Aucune contrainte d'exclusion** sur `allowed_email_domain`. **(d)** Les deux tables locales portent une **clé étrangère vers `entity`**, sans `name=` explicite pour que la convention de nommage s'applique, et sans `ondelete`. L'unicité de `entity(code)` **n'est pas partielle**. | **(a)** Les §5.2 et §5.3 n'énumèrent **aucune colonne** : ils décrivent des catégories de paramètres — durées de session, mentions légales, configuration de l'onboarding — dont la plupart appartiennent à des lots ultérieurs. Inventer un schéma, ou une liste de clés, serait exactement ce que la règle §6.5 interdit ; un catalogue en base devrait de plus être modifié par chacun des douze lots restants, ce qui est le motif retenu pour les énumérations en `DEC-499`. **(b)** Le §5.4 l'écrit : « nullable pour un domaine global ». PostgreSQL n'exige rien d'une clé étrangère nulle, ce qui est exactement la sémantique voulue. **(c)** Le §25.2 énumère les relations à contrainte temporelle — appartenance, métier, statut, DSM, cercle principal, responsabilités, rôles techniques — et **`allowed_email_domain` n'y est pas**. En poser une serait exiger plus que le modèle ; `btree_gist` et la colonne `period` étant déjà là, l'ajouter plus tard reste une migration d'une ligne. **(d)** Le cahier §22.2 exige « un `entity_id` **ou** une relation VÉRIFIABLE vers une entité » : une colonne `uuid` sans contrainte n'est pas vérifiable, et le §2.5 du modèle pose le refus par défaut. Pas d'`ondelete` parce qu'une entité ne se supprime pas, elle s'archive (§2.4). Unicité non partielle parce que réattribuer le code d'une entité archivée rendrait ambigus tous les journaux d'audit qui le citent. | Validée par Jonathan le 19/08/2026 |
+| `DEC-502` | **La règle « `code` immuable après activation » du §5.1 est portée par un DÉCLENCHEUR**, `entity_code_immuable_apres_activation`, posé par la migration `0003`. Il lève une violation d'intégrité — `ERRCODE = check_violation` — et **nomme** le refus. Il ne se réveille que sur `BEFORE UPDATE OF code`. Il ne dispense pas le service de porter la règle. | **La règle n'est pas exprimable par une contrainte de vérification** : elle compare la valeur NOUVELLE à l'ANCIENNE, ce qu'une contrainte de ligne ne voit pas. Le §25.4 du modèle prévoit ce cas — « appliquées par un service transactionnel [...] Une contrainte ou un trigger défensif pourra être ajouté lorsque le risque le justifie » — et le motif retenu est **daté** : la couche de services n'arrive qu'en `T11`, soit **neuf sous-étapes** plus loin. Une règle sans mise en œuvre pendant neuf sous-étapes est une règle qui n'est pas appliquée. `ERRCODE` de violation d'intégrité pour que le refus arrive au même titre qu'une contrainte, et `CONSTRAINT` nommé pour qu'un test puisse **exiger que l'échec vienne de cette règle** et pas d'une autre. La descente supprime le déclencheur **et sa fonction** : la table emporterait le déclencheur, pas la fonction, qui resterait orpheline. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-503`.**
 
 ---
 
@@ -484,6 +494,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
 | `DEC-496` — ouverture du LOT 2 | 1 | 1 |
 | `DEC-497+` — réalisation du LOT 2, `T1` | 4 | 4 |
+| `DEC-501+` — réalisation du LOT 2, `T2` | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -495,7 +506,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **168** | **168** |
+| **Total** | **170** | **170** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

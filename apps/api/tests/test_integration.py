@@ -258,20 +258,35 @@ def test_la_migration_s_applique_sur_une_base_vide(base_vide: Parametres) -> Non
     assert _revision_appliquee(base_vide) == _tete_de_migration(base_vide)
 
 
-def test_la_migration_ne_cree_aucune_table_metier(base_vide: Parametres) -> None:
-    """Garde-fou de perimetre : aucune table a la sortie de `T1` du LOT 2.
+def test_les_migrations_creent_exactement_les_tables_DECLAREES(
+    base_vide: Parametres,
+) -> None:
+    """Les migrations produisent exactement ce que le modele declare.
 
-    **Mis a jour le 18/08/2026.** Ce test disait « c'est le LOT 2 qui possede le
-    modele », le LOT 2 n'etant pas ouvert. Il l'est depuis le 18/08/2026
-    (`DEC-496`), et sa sous-etape `T1` ne cree deliberement aucune table : elle
-    pose le socle declaratif et l'unique extension.
+    **Mis a jour le 19/08/2026, LOT 2 sous-etape `T2`.** Ce test exigeait
+    auparavant qu'AUCUNE table metier n'existe -- juste au LOT 1, faux des la
+    premiere table du LOT 2.
 
-    **Ce test ECHOUERA en `T2`, et c'est voulu.** Il faudra alors y inscrire la
-    liste des tables attendues. Une table qui apparaitrait sans que ce test soit
-    mis a jour serait une table creee sans decision.
+    L'attendu est DERIVE des metadonnees, jamais recopie : c'est la lecon de
+    `ECART-027`. Le garde-fou qui exige qu'une table nouvelle soit DECIDEE vit
+    ailleurs, dans `test_socle_modele.py`, avec sa liste ecrite en dur. Les deux
+    controles ont des roles distincts :
+
+      - celui-la detecte une DERIVE entre les migrations et le modele ;
+      - l'autre detecte une table AJOUTEE sans decision.
+
+    `alembic_version` est retiree de la comparaison : c'est la table de service
+    d'Alembic, elle n'appartient pas au modele.
     """
+    from app.modeles import metadonnees
+
     _alembic(base_vide, "upgrade", "head")
-    assert _tables_publiques(base_vide) == set()
+    en_base = _tables_publiques(base_vide) - {"alembic_version"}
+    declarees = set(metadonnees.tables)
+    assert en_base == declarees, (
+        f"tables en base : {sorted(en_base)} ; declarees par le modele : "
+        f"{sorted(declarees)}. Une migration manque, ou une table est declaree sans migration."
+    )
 
 
 def test_la_migration_se_rejoue_sans_effet(base_vide: Parametres) -> None:

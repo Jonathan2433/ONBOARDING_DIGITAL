@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 18 août 2026, LOT 2 sous-étape `T1`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T2`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 27 | 5 | 20 | 2 |
+| Total 28 | 5 | 21 | 2 |
 
 ---
 
@@ -45,8 +45,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-025` | La bande de ports de la recette a été choisie sur une mesure de ce qui **écoutait**, non de ce qui était **déclaré** : un projet tiers arrêté réclamait déjà `8080` | Non pour `G1` | **Clos** |
 | `ECART-026` | Les conventions Git prescrivaient une stratégie de fusion que la protection de branche **interdisait** : deux règles justes séparément, incompatibles ensemble | Non pour `G1`, **bloquant pour `G2`** | **Clos** |
 | `ECART-027` | Trois tests d'intégration recopiaient la révision de tête d'Alembic au lieu de la dériver, et sont devenus faux à la première migration du LOT 2 | Non | **Clos** |
+| `ECART-028` | Le modèle place les domaines e-mail autorisés à **deux endroits** : catégorie de `platform_setting` au §5.2, et table dédiée au §5.4 | Non | **Clos** |
 
-**Prochain identifiant libre : `ECART-028`.**
+**Prochain identifiant libre : `ECART-029`.**
 
 ---
 
@@ -389,4 +390,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Dériver, jamais recopier** — la parade de `ECART-021`, transposée au code de test. |
 | Résolution | **Clos** le 18 août 2026. Une fonction `_tete_de_migration()` interroge `alembic heads` et **exige d'y trouver exactement une tête**, puis les trois tests comparent à cette valeur dérivée. **Éprouvé par témoin** : une révision `0003` jetable a été ajoutée, les trois tests ont **continué à passer**, puis le témoin a été supprimé. Sans ce témoin, la correction n'aurait pas été distinguable d'un simple remplacement de `0001` par `0002`. |
 
-**Prochain identifiant libre : `ECART-028`.**
+## `ECART-028` — Le modèle place les domaines e-mail autorisés à deux endroits
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T2`, en implémentant les quatre tables du §5 |
+| Source | Modèle de données §5.2 `platform_setting` et §5.4 `allowed_email_domain` |
+| Constat | Le §5.2 énumère « **domaines e-mail autorisés** » parmi les catégories de paramètres globaux de `platform_setting`. Le §5.4 consacre à ces mêmes domaines **une table dédiée**, avec ses colonnes nommées — `domain`, `entity_id`, `active`, `starts_at`, `ends_at`. La même donnée est donc rattachée à deux endroits du modèle. |
+| Impact | Faible, mais réel si on l'ignore : une implémentation qui suivrait le §5.2 stockerait les domaines dans une clé de paramètre `jsonb`, **et perdrait au passage tout ce que le §5.4 apporte** — l'historisation par période, l'interrupteur `active`, et le rattachement optionnel à une entité. Deux endroits pour la même donnée finissent toujours par se contredire. |
+| Cause | Le §5.2 décrit des **catégories fonctionnelles** de paramétrage, pas un schéma de stockage. La mention y est descriptive ; elle a été lue au premier abord comme prescriptive. |
+| Bloquant | Non |
+| Recommandation | **La table fait autorité.** Une table dédiée, avec ses colonnes nommées et ses règles d'historisation, l'emporte sur un libellé dans une liste à puces. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-501`. `allowed_email_domain` est la seule dépositaire des domaines : **aucune clé de `platform_setting` n'en portera**, et la contrainte de forme sur les clés ne réserve rien à cet usage. La lecture est inscrite en tête de `app/entities/modeles.py`, à l'endroit où quelqu'un qui ajouterait une clé de paramètre la lira. |
+
+**Prochain identifiant libre : `ECART-029`.**

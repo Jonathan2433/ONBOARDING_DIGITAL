@@ -266,7 +266,7 @@ def controler_totaux_decisions() -> tuple[int, int]:
     CE QU'IL VERIFIE, ET TOUT EST DERIVE — aucune valeur n'est codee ici :
 
         1. le « Total repris » egale la somme des lignes qui le composent ;
-        2. la somme des lignes `DEC-4xx` egale le nombre de decisions
+        2. la somme des lignes `DEC-nnn` egale le nombre de decisions
            REELLEMENT declarees dans le corps du registre ;
         3. le « Total » egale « Total repris » plus cette somme ;
         4. dans le tableau de completude, « Attendu » egale « Present » partout.
@@ -301,7 +301,14 @@ def controler_totaux_decisions() -> tuple[int, int]:
     motif_repris = re.compile(
         r"`(RIGHTS|DATA|ROAD|BACKLOG|ARB-\*|ARB-DROIT|ARB-DATA|ARB-ROAD|ARB-BACK)`"
     )
-    motif_realisation = re.compile(r"`DEC-4\d\d")
+    #  `DEC-\d+` et NON `DEC-4\d\d`. Le motif d'origine ne voyait que la
+    #  centaine 4, ce qui etait juste tant que la sequence n'avait pas franchi
+    #  `DEC-499` -- elle l'a franchi le 18/08/2026 en `T1` du LOT 2. Le controle
+    #  comptait alors 83 lignes pour 85 decisions declarees, et son message
+    #  accusait le registre alors que le defaut etait dans le motif. C'est
+    #  `ECART-024` a nouveau : un controle juste a sa date, faux quand le monde
+    #  bouge autour de lui. Le mot « realisation » ne designe pas une centaine.
+    motif_realisation = re.compile(r"`DEC-\d+")
     for rang, table in enumerate(syntheses, 1):
         somme_reprises = sum(n[0] for libelle, n in table if motif_repris.search(libelle))
         somme_realisation = sum(n[0] for libelle, n in table if motif_realisation.search(libelle))
@@ -324,14 +331,14 @@ def controler_totaux_decisions() -> tuple[int, int]:
         controles += 1
         if somme_realisation != reelles:
             print(
-                f"    ECHEC    synthese {rang} : ses lignes `DEC-4xx` totalisent "
+                f"    ECHEC    synthese {rang} : ses lignes `DEC-nnn` totalisent "
                 f"{somme_realisation}, le corps du registre en declare {reelles}"
             )
             print("             Une sous-etape a complete le corps sans reprendre la synthese.")
             fautes += 1
         else:
             print(
-                f"    ok       synthese {rang} : lignes `DEC-4xx` = {somme_realisation}, "
+                f"    ok       synthese {rang} : lignes `DEC-nnn` = {somme_realisation}, "
                 f"egal aux {reelles} decisions du corps"
             )
 

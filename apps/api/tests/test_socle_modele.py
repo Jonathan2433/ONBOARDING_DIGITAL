@@ -452,18 +452,28 @@ def test_les_horodatages_communs_sont_renseignes_par_le_serveur(connexion: Conne
     assert version == 1, "le §3.1 pose `version integer not null default 1`"
 
 
-@pytest.mark.integration
-def test_le_socle_ne_declare_aucune_table_a_la_sortie_de_T1(
-    parametres_de_la_stack: Parametres,
-) -> None:
-    """`T1` pose des briques, pas des tables. Le dire par un controle.
+#  LISTE ECRITE EN DUR, ET C'EST DELIBERE. Ne la remplace pas par une derivation
+#  des metadonnees : le test comparerait alors les metadonnees a elles-memes et ne
+#  prouverait plus rien. Son objet est d'exiger qu'une table NOUVELLE soit
+#  inscrite ici, donc DECIDEE. Chaque sous-etape qui ajoute une table met cette
+#  liste a jour dans la meme pull request que sa migration.
+TABLES_DECLAREES = {
+    # LOT 2, T2 — modele §5.1 a §5.4
+    "entity",
+    "platform_setting",
+    "entity_setting",
+    "allowed_email_domain",
+}
 
-    Ce test ECHOUERA en `T2`, et c'est voulu : il faudra alors le remplacer par
-    la liste des tables attendues. Un socle qui declarerait une table sans
-    migration correspondante serait un ecart silencieux.
+
+def test_le_modele_declare_exactement_les_tables_attendues() -> None:
+    """Garde-fou de perimetre : ces tables, et AUCUNE autre.
+
+    Ce test echouera a chaque sous-etape qui ajoute une table, et c'est sa
+    fonction. Une table qui apparaitrait sans que ce test soit mis a jour serait
+    une table creee sans decision.
     """
-    _exiger_postgresql(parametres_de_la_stack)
-    assert metadonnees.tables == {}, (
-        f"tables declarees a la sortie de T1 : {sorted(metadonnees.tables)}. "
-        "Si c'est voulu, mettre ce test a jour ET la migration correspondante."
+    assert set(metadonnees.tables) == TABLES_DECLAREES, (
+        f"tables declarees : {sorted(metadonnees.tables)}. "
+        "Toute table nouvelle doit etre ajoutee a TABLES_DECLAREES ET a une migration."
     )
