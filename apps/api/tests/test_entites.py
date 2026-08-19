@@ -40,28 +40,40 @@ def test_le_statut_porte_les_quatre_valeurs_du_modele() -> None:
     assert [m.value for m in StatutEntite] == list(STATUTS_ENTITE)
 
 
-def test_tous_les_modules_de_modeles_sont_importes() -> None:
-    """`app/modeles.py` doit importer TOUS les modules de modeles du disque.
+def test_tous_les_modules_DECLARANT_des_tables_sont_importes() -> None:
+    """Tout module qui declare une table doit etre importe par `app/modeles.py`.
 
-    Un module oublie ici serait invisible de `target_metadata`, et
-    `alembic revision --autogenerate` proposerait de SUPPRIMER ses tables. Le
-    controle compare le disque a ce que le point d'entree importe.
+    Un module oublie serait invisible de `target_metadata`, et
+    `alembic revision --autogenerate` proposerait de SUPPRIMER ses tables.
+
+    **VERSION ELARGIE, LOT 2 `T5`.** La premiere version ne cherchait que les
+    fichiers NOMMES `modeles.py` : un module de modeles appele autrement -- par
+    exemple `metiers.py` -- lui aurait echappe en silence. Le controle cherche
+    desormais tout fichier qui contient `__tablename__`, ce qui ne depend plus
+    d'une convention de nommage que rien n'impose.
     """
     import pathlib
 
+    import app
     from app import modeles as point_entree
 
-    racine = pathlib.Path(point_entree.__file__).parent
-    sur_le_disque = {
-        chemin.parent.name
-        for chemin in racine.rglob("modeles.py")
-        if chemin.parent != racine and "__pycache__" not in chemin.parts
+    racine = pathlib.Path(app.__file__).parent
+    declarants = {
+        chemin.resolve()
+        for chemin in racine.rglob("*.py")
+        if "__pycache__" not in chemin.parts
+        and "__tablename__" in chemin.read_text(encoding="utf-8")
     }
-    importes = {module.__name__.split(".")[-2] for module in point_entree.MODULES_DE_MODELES}
-    assert sur_le_disque == importes, (
-        f"modules de modeles sur le disque : {sorted(sur_le_disque)} ; "
-        f"importes par app/modeles.py : {sorted(importes)}. "
-        "Un module absent rendrait ses tables invisibles d'autogenerate."
+    importes = {
+        pathlib.Path(module.__file__).resolve()
+        for module in point_entree.MODULES_DE_MODELES
+        if module.__file__
+    }
+    oublies = declarants - importes
+    assert not oublies, (
+        f"modules declarant des tables mais non importes par app/modeles.py : "
+        f"{sorted(str(c.relative_to(racine)) for c in oublies)}. "
+        "Leurs tables seraient invisibles d'autogenerate."
     )
 
 

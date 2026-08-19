@@ -471,6 +471,10 @@ TABLES_DECLAREES = {
     "person",
     # LOT 2, T4 — modele §6.2
     "entity_membership",
+    # LOT 2, T5 — modele §6.3 a §6.5
+    "job_catalog",
+    "membership_job_assignment",
+    "professional_status_assignment",
 }
 
 

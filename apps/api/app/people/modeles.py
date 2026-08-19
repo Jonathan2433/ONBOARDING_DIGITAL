@@ -58,6 +58,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -69,8 +70,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.shared.modele import (
     Base,
     ChampsCommuns,
+    Periode,
     RessourceLocale,
     contrainte_enumeration,
+    nom_cle_composite,
     nom_exclusion,
 )
 
@@ -338,7 +341,12 @@ class EntityMembership(ChampsCommuns, RessourceLocale, Base):
         ),
         #  §25.3 : couple unique, cible des cles etrangeres composites de `T5` a
         #  `T8`. Voir la lecture 4 en tete de section.
-        UniqueConstraint("id", "entity_id", name="id_entite_unique"),
+        #  AUCUN `name=` : la convention rend `uq_entity_membership_id_entity_id`,
+        #  prefixe par la table. Un nom explicite comme `id_entite_unique` ecrase ce
+        #  prefixe, et **une contrainte UNIQUE cree un INDEX, dont le nom est global
+        #  au schema** : la collision avec `job_catalog` s'est produite en `T5`.
+        #  La migration `0006` renomme la contrainte creee par `0005`.
+        UniqueConstraint("id", "entity_id"),
         CheckConstraint(
             "departure_date IS NULL OR departure_date >= arrival_date",
             name="depart_apres_arrivee",
@@ -359,4 +367,228 @@ class EntityMembership(ChampsCommuns, RessourceLocale, Base):
         ),
         contrainte_enumeration("profile_visibility", VisibiliteProfil, "profile_visibility_valide"),
         Index("ix_entity_membership_entity_id_membership_state", "entity_id", "membership_state"),
+    )
+
+
+# ===========================================================================
+#  Metiers et situations professionnelles — LOT 2, `T5`, story `MVP-L02-US003`
+# ===========================================================================
+#
+#  FONDEMENT — modele §6.3 `job_catalog`, §6.4 `membership_job_assignment`,
+#  §6.5 `professional_status_assignment`, contraintes §25.1 a §25.3, point 5 de
+#  l'ordre du §28.
+#
+#  QUATRE LECTURES, POSEES PLUTOT QUE SUPPOSEES.
+#
+#    1. **LA VALEUR STOCKEE EST `intercontract`, EN ANGLAIS.** Le modele emploie
+#       les deux orthographes, et la mesure les separe nettement : `intercontract`
+#       aux lignes 352, 361 et 770, TOUJOURS entre accents graves, donc la ou il
+#       specifie une VALEUR ; `intercontrat` aux lignes 48, 69, 353, 915 et 1710,
+#       en PROSE, donc la ou il nomme le concept. Les noms de colonnes et de
+#       valeurs suivent le modele a la lettre -- `DEC-499` -- donc l'anglais.
+#       `ECART-012` citait la forme francaise dans son champ Source : corrige.
+#
+#    2. **LE §6.4 N'ENUMERE AUCUNE COLONNE.** Il donne trois contraintes, et
+#       celles-ci disent ce qu'il faut : « une seule affectation metier active »
+#       exige un etat courant reperable, « le metier appartient a la meme entite
+#       que l'appartenance » exige `entity_id` et des cles composites du §25.3,
+#       « les periodes ne se chevauchent pas » exige une plage. Les colonnes sont
+#       DERIVEES de ces trois exigences, et de rien d'autre.
+#
+#    3. **`client_id` N'A PAS ENCORE DE CLE ETRANGERE**, et ce n'est pas un
+#       oubli. Le §6.5 la veut vers `client`, que le §28 place au point 6, donc
+#       en `T6`. La colonne est declaree ici -- le §6.5 l'exige -- et la
+#       contrainte sera ajoutee par la migration de `T6`. L'alternative aurait
+#       ete de deplacer cette table en `T6`, ce qui aurait contredit l'ordre du
+#       §28 et le decoupage valide par Jonathan.
+#
+#    4. **DEUX REGLES DU §6.5 NE SONT PAS APPLICABLES EN `T5`** : « `mission`
+#       exige un client ACTIF POUR L'ENTITE » et « `intercontract` interdit un
+#       client actif » supposent `entity_client`, qui arrive en `T6`. Ce qui EST
+#       applicable ici est la FORME que le §6.5 pose dans son tableau de
+#       colonnes : « `client_id` obligatoire en mission, nul en intercontrat ».
+#       C'est une contrainte de ligne, et elle est posee.
+
+
+class SituationProfessionnelle(enum.StrEnum):
+    """§6.5 : « `status` | `mission` ou `intercontract` ».
+
+    **`ECART-012` PORTE PRECISEMENT SUR CETTE ENUMERATION**, et il est echu dans
+    cette sous-etape : pour une categorie `dg`, ou pour une personne dont
+    l'activite n'est pas une mission client, `intercontract` est la seule valeur
+    possible -- or le terme designe, dans le langage metier, un consultant en
+    attente de mission. Le trombinoscope du LOT 5 l'afficherait.
+
+    **Ce n'est PAS une decision technique.** Le registre recommande de ne pas
+    modifier le modele, et d'arbitrer entre conditionner l'AFFICHAGE ou ajouter
+    une TROISIEME valeur. **Lea decide du produit.** Cette sous-etape implemente
+    donc ce que le modele valide ecrit -- deux valeurs -- et instruit la question.
+
+    **Et le cout de chaque issue est connu** : conditionner l'affichage ne touche
+    pas au socle ; ajouter une troisieme valeur est une migration d'UNE LIGNE,
+    parce que `DEC-499` a choisi une contrainte de verification et non un type
+    `enum` natif. C'etait le motif, et il se realise ici.
+    """
+
+    MISSION = "mission"
+    INTERCONTRACT = "intercontract"
+
+
+SITUATIONS_PROFESSIONNELLES: tuple[str, ...] = tuple(
+    membre.value for membre in SituationProfessionnelle
+)
+
+
+class JobCatalog(ChampsCommuns, RessourceLocale, Base):
+    """Catalogue de metiers configurable par entite — modele §6.3."""
+
+    __tablename__ = "job_catalog"
+
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    #  Le §6.3 nomme `display_order` sans en donner le type. Un entier, avec un
+    #  defaut : sans defaut, toute insertion devrait le fournir alors que le §6.3
+    #  ne le presente pas comme obligatoire.
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+    active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
+
+    __table_args__ = (
+        ForeignKeyConstraint(["entity_id"], ["entity.id"]),
+        #  §25.1, litteralement : `job_catalog(entity_id, code) UNIQUE WHERE
+        #  archived_at IS NULL`. Index PARTIEL : un metier archive libere son
+        #  code, contrairement a `entity(code)` dont l'unicite n'est pas
+        #  partielle. La difference est dans le §25.1 lui-meme, et elle se
+        #  comprend : un code d'entite est cite dans les journaux d'audit, un
+        #  code de metier est une donnee de configuration locale.
+        Index(
+            "uq_job_catalog_entity_id_code_non_archive",
+            "entity_id",
+            "code",
+            unique=True,
+            postgresql_where=text("archived_at IS NULL"),
+        ),
+        #  §25.3 : cible des cles composites de `membership_job_assignment`.
+        #  Sans `name=` : voir `entity_membership` et `noms_d_index_en_collision`.
+        UniqueConstraint("id", "entity_id"),
+        Index("ix_job_catalog_entity_id_active", "entity_id", "active"),
+    )
+
+
+class MembershipJobAssignment(ChampsCommuns, RessourceLocale, Periode, Base):
+    """Historise le metier d'une appartenance — modele §6.4.
+
+    Colonnes DERIVEES des trois contraintes du §6.4 : voir la lecture 2 en tete
+    de section.
+
+    Le mixin `Periode` s'applique ici -- contrairement a `entity_membership` --
+    parce que le §6.4 ne parle pas de DATES mais de periodes, et que le §25.1
+    ecrit ses index partiels avec `ends_at IS NULL` pour les relations de ce
+    genre. Les bornes sont donc des `timestamptz`.
+    """
+
+    __tablename__ = "membership_job_assignment"
+
+    entity_membership_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+    job_catalog_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+
+    __table_args__ = (
+        #  §25.3 : DEUX cles etrangeres COMPOSITES, et c'est ce qui applique « le
+        #  metier appartient a la meme entite que l'appartenance ». Une paire de
+        #  cles simples vers `entity_membership(id)` et `job_catalog(id)`
+        #  laisserait affecter un metier de Lille a une appartenance de Bordeaux :
+        #  rien ne relierait les deux entites. En passant `entity_id` dans les
+        #  deux cles, l'entite est forcement la meme -- c'est la MEME colonne.
+        #  NOMS EXPLICITES, et le motif est mesure : la convention concatene
+        #  toutes les colonnes d'une cle composite et depasse la limite de 63
+        #  octets de PostgreSQL -- 77 et 65 caracteres ici. Voir
+        #  `nom_cle_composite`.
+        ForeignKeyConstraint(
+            ["entity_membership_id", "entity_id"],
+            ["entity_membership.id", "entity_membership.entity_id"],
+            name=nom_cle_composite("membership_job_assignment", "entity_membership"),
+        ),
+        ForeignKeyConstraint(
+            ["job_catalog_id", "entity_id"],
+            ["job_catalog.id", "job_catalog.entity_id"],
+            name=nom_cle_composite("membership_job_assignment", "job_catalog"),
+        ),
+        #  §6.4 : « une seule affectation metier active » ET « les periodes ne se
+        #  chevauchent pas ». **UNE SEULE CONTRAINTE PORTE LES DEUX**, et c'est un
+        #  resultat de mesure, non une economie.
+        #
+        #  J'avais d'abord ajoute un index unique partiel `WHERE ends_at IS NULL`,
+        #  sur le motif que le §25.1 emploie pour `dsm_assignment`. Mesure du
+        #  19/08/2026 : **il ne peut JAMAIS se declencher**. Deux affectations
+        #  actives ont toutes deux `ends_at` a NULL, donc deux plages NON BORNEES,
+        #  donc elles se chevauchent TOUJOURS -- `[janvier,)` contient decembre.
+        #  L'exclusion les refuse systematiquement la premiere.
+        #
+        #  C'est l'INVERSE de `entity_membership`, ou l'index partiel et
+        #  l'exclusion sont complementaires : la-bas l'index porte sur
+        #  `membership_state`, pas sur `ends_at`, et deux appartenances occupantes
+        #  peuvent avoir des periodes disjointes. **Le meme motif est
+        #  complementaire dans une table et redondant dans l'autre, et seule la
+        #  mesure les distingue.**
+        #
+        #  L'index est donc retire. Il n'etait pas ecrit dans le §25.1 -- qui ne
+        #  mentionne pas cette table -- c'etait ma derivation, et elle etait
+        #  inutile. Un index redondant coute a chaque ecriture et laisse croire
+        #  qu'il travaille.
+        ExcludeConstraint(
+            ("entity_membership_id", "="),
+            ("period", "&&"),
+            name=nom_exclusion("membership_job_assignment", "sans_chevauchement"),
+            using="gist",
+        ),
+    )
+
+
+class ProfessionalStatusAssignment(ChampsCommuns, RessourceLocale, Periode, Base):
+    """Historise la situation professionnelle — modele §6.5."""
+
+    __tablename__ = "professional_status_assignment"
+
+    entity_membership_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    #  §6.5 : « `client_id` | Obligatoire en mission, nul en intercontrat ».
+    #  AUCUNE cle etrangere pour l'instant : `client` arrive en `T6`, point 6 de
+    #  l'ordre du §28. La contrainte sera ajoutee par la migration de `T6`.
+    client_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
+
+    #  §6.5 : « `reason` | Facultatif, audit fonctionnel ».
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        #  Nom explicite : la convention rendait 82 caracteres. Voir
+        #  `nom_cle_composite`.
+        ForeignKeyConstraint(
+            ["entity_membership_id", "entity_id"],
+            ["entity_membership.id", "entity_membership.entity_id"],
+            name=nom_cle_composite("professional_status_assignment", "entity_membership"),
+        ),
+        contrainte_enumeration("status", SituationProfessionnelle, "status_valide"),
+        #  §6.5, tableau de colonnes : la FORME de la regle client. Ce qui n'est
+        #  PAS ici -- « mission exige un client ACTIF POUR L'ENTITE » -- suppose
+        #  `entity_client`, donc `T6`.
+        CheckConstraint(
+            "(status = 'mission') = (client_id IS NOT NULL)",
+            name="client_selon_le_statut",
+        ),
+        #  §6.5 : « une seule situation active par appartenance » ET §25.2. Une
+        #  seule contrainte porte les deux, pour la raison mesuree expliquee sur
+        #  `MembershipJobAssignment` : deux situations actives ont toutes deux
+        #  `ends_at` a NULL, donc des plages non bornees qui se chevauchent
+        #  toujours. Un index partiel `WHERE ends_at IS NULL` ne pourrait jamais
+        #  se declencher.
+        ExcludeConstraint(
+            ("entity_membership_id", "="),
+            ("period", "&&"),
+            name=nom_exclusion("professional_status_assignment", "sans_chevauchement"),
+            using="gist",
+        ),
     )
