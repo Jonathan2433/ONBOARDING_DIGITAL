@@ -386,7 +386,11 @@ class FrameworkResponsibilityAssignment(ChampsCommuns, Periode, Base):
             ("period", "&&"),
             name=nom_exclusion("framework_responsibility_assignment", "booster"),
             using="gist",
-            where=text("responsibility_type = 'BOOSTER'"),
+            #  `AND circle_id IS NOT NULL` : la clause doit se suffire a elle-meme.
+            #  `portee_selon_le_type` le garantit deja, mais une contrainte dont la
+            #  justesse depend d'une AUTRE contrainte est fragile -- et le controle
+            #  `historisation-check` l'exige explicitement, sans heuristique.
+            where=text("responsibility_type = 'BOOSTER' AND circle_id IS NOT NULL"),
         ),
         ExcludeConstraint(
             ("person_id", "="),
@@ -394,7 +398,7 @@ class FrameworkResponsibilityAssignment(ChampsCommuns, Periode, Base):
             ("period", "&&"),
             name=nom_exclusion("framework_responsibility_assignment", "office_manager"),
             using="gist",
-            where=text("responsibility_type = 'OFFICE_MANAGER'"),
+            where=text("responsibility_type = 'OFFICE_MANAGER' AND office_id IS NOT NULL"),
         ),
         ExcludeConstraint(
             ("person_id", "="),
@@ -488,17 +492,34 @@ class TechnicalRoleAssignment(ChampsCommuns, Periode, Base):
             "OR (role_type = 'SUPER_ADMIN' AND entity_id IS NULL)",
             name="portee_selon_le_role",
         ),
-        #  §25.2, « roles techniques ». Sur le couple (personne, role) : une meme
-        #  personne peut etre `ENTITY_ADMIN` et `SUPER_ADMIN`, le §8.6 ne
-        #  l'interdisant pas. `entity_id` entre dans la cle pour qu'une personne
-        #  puisse administrer deux entites simultanement -- le §8.6 ne l'interdit
-        #  pas davantage.
+        #  §25.2, « roles techniques ». DEUX exclusions PARTIELLES, et la raison
+        #  est un defaut trouve en `T9` par le controle `historisation-check`.
+        #
+        #  Ma version de `T8` posait UNE exclusion incluant `entity_id`. Or
+        #  `entity_id` est NUL pour un `SUPER_ADMIN` -- le §8.6 l'exige -- et
+        #  l'operateur `=` ne rapproche jamais deux NULL : **deux `SUPER_ADMIN`
+        #  qui se chevauchent pour la meme personne n'auraient PAS ete detectes**.
+        #  C'est exactement le defaut `T8-1`, dans une table ou je croyais l'avoir
+        #  traite.
+        #
+        #  `entity_id` entre dans la cle du seul cas ou il n'est jamais nul, pour
+        #  qu'une personne puisse administrer deux entites simultanement -- le §8.6
+        #  ne l'interdit pas.
         ExcludeConstraint(
             ("person_id", "="),
             ("role_type", "="),
             ("entity_id", "="),
             ("period", "&&"),
-            name=nom_exclusion("technical_role_assignment", "sans_chevauchement"),
+            name=nom_exclusion("technical_role_assignment", "entity_admin"),
             using="gist",
+            where=text("role_type = 'ENTITY_ADMIN' AND entity_id IS NOT NULL"),
+        ),
+        ExcludeConstraint(
+            ("person_id", "="),
+            ("role_type", "="),
+            ("period", "&&"),
+            name=nom_exclusion("technical_role_assignment", "super_admin"),
+            using="gist",
+            where=text("role_type = 'SUPER_ADMIN'"),
         ),
     )

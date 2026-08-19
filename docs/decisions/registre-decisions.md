@@ -29,6 +29,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-510`, sous-étape `T6`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-511`, sous-étape `T7`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-512`, sous-étape `T8`** | 1 | **Validée le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-513`, sous-étape `T9`** | 1 | **Validée le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -40,7 +41,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **180** | |
+| **Total** | **181** | |
 
 ---
 
@@ -408,7 +409,29 @@ Une décision. Les responsabilités, et **un défaut qui valait trois types sur 
 |---|---|---|---|
 | `DEC-512` | **Les trois tables du modèle §8.4 à §8.6 sont créées par la migration `0009`**, avec **trois** contraintes d'exclusion **partielles** et **deux** déclencheurs. **(a)** Les trois règles de portée du §8.4 sont portées par **une seule** contrainte de vérification. **(b)** **Trois** exclusions partielles, chacune sur une clé **sans colonne nullable**. **(c)** « Une personne ne peut pas être Booster active dans plusieurs entités » est portée par un **déclencheur**. **(d)** « Le DSM doit avoir une responsabilité DSM active dans la même entité » de même. **(e)** Le motif de validation des valeurs énumérées est **élargi à la casse libre**. | **(a)** Une contrainte par type aurait donné trois messages pour une seule notion, et un type oublié serait passé entre les trois. **(b) UN DÉFAUT MESURÉ, ET IL VALAIT TROIS TYPES SUR QUATRE.** Ma première version posait **une** exclusion incluant `circle_id`. Or `circle_id` est **NUL** pour un `DSM` ou un `ESM`, et **l'opérateur `=` ne rapproche jamais deux NULL** : deux `DSM` de la même personne aux périodes qui se chevauchent **n'auraient pas été détectés**. La contrainte aurait existé **sans rien garantir**. Chaque exclusion porte désormais sur une clé sans colonne nullable, sa clause `WHERE` garantissant cette absence par construction. **Et elles n'empêchent que deux affectations IDENTIQUES qui se chevauchent** : le §8.4 ne dit rien de la multiplicité pour `DSM`, `ESM` et `OFFICE_MANAGER`, et imposer « une seule active par personne » serait inventer. **(c) Un index unique ne sait pas l'exprimer** : il dit « au plus une ligne », alors que la règle dit « au plus une **entité distincte** » — et le §8.4 autorise **explicitement** plusieurs cercles dans une même entité. **(d)** Règle **inter-tables**, la « vérification du rôle actif du DSM cible » que le §25.4 nomme. **(e)** Le motif exigeait des **minuscules**, ce qui était juste pour `T2` à `T7` et faux ici : le §8.4 et le §8.6 écrivent leurs valeurs en **majuscules**, et le §25.1 les cite ainsi. **L'objet du contrôle n'a jamais été la casse mais la sûreté du SQL** — empêcher une valeur portant une apostrophe de produire du SQL malformé. Cet objet est préservé entièrement, et un témoin le vérifie. C'est le §7.21 dans un contrôle que j'ai moi-même écrit en `T1`. | Validée par Jonathan le 19/08/2026 |
 
-**Prochain identifiant libre : `DEC-513`.**
+## 1.24 Réalisation du LOT 2 — sous-étape `T9`
+
+Une décision, et **un angle mort d'outil mesuré** qui complète `DEC-500`.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-513` | **`make historisation-check` compte les relations historisées du §25.2 et exige qu'aucune clé d'exclusion ne repose sur une colonne nullable non exclue.** Le compte attendu est **dérivé du §25.2 lui-même**, lu dans le modèle. L'exigence sur les colonnes nullables est **exacte** : la clause `WHERE` doit contenir un `IS NOT NULL` explicite. La migration `0010` rend les quatre exclusions concernées **autoportantes**, et **scinde** celle de `technical_role_assignment`. Le contrôle est appelé par la tâche « stack » de la CI, **après** les migrations. | **Sept contraintes posées une par une dans cinq sous-étapes, c'est exactement la situation où l'on croit avoir tout fait.** Aucun contrôle ne disait combien de relations étaient couvertes — troisième proposition du §7.0. **Le compte est dérivé** parce que recopier « 7 » serait un `ECART-021` en puissance. **L'exigence est exacte et non heuristique** : ma première version tolérait toute clause mentionnant `responsibility_type`, au motif qu'une autre contrainte garantissait la non-nullité — **une heuristique dans un contrôle**, qui aurait accepté n'importe quelle exclusion restreinte par ce type. Et le fond est meilleur : **une contrainte dont la justesse dépend d'une autre contrainte est fragile**. **Le contrôle a trouvé un défaut le jour même** : `technical_role_assignment.entity_id` est nullable — le §8.6 l'exige pour `SUPER_ADMIN` — et figurait dans la clé d'exclusion, si bien que **deux `SUPER_ADMIN` qui se chevauchent n'auraient pas été détectés**. C'est `T8-1` dans une table où je croyais l'avoir traité : **une correction appliquée à la main table par table en oublie une**, le contrôle mécanique les a toutes examinées. | Validée par Jonathan le 19/08/2026 |
+
+> **UN ANGLE MORT D'`alembic check`, MESURÉ — et il complète la rectification de `DEC-500`.**
+>
+> Avec **10** contraintes d'exclusion déclarées dans le modèle et **9** en base, dont une portant une
+> clause `WHERE` différente, `alembic check` a répondu « **No new upgrade operations detected** »,
+> **code 0**. Et `autogenerate` n'a produit qu'un `pass`.
+>
+> **`alembic check` est aveugle aux contraintes d'exclusion : il ne les compare pas.** La rectification
+> de `DEC-500` en `T4` disait qu'`autogenerate` *rend* fidèlement une exclusion ; c'est vrai **à la
+> création d'une table**, et faux pour la **détection de dérive** ensuite.
+>
+> **Conséquence pratique : `make historisation-check` est le seul contrôle du dépôt qui détecte une
+> dérive d'exclusion.** C'est ce qui justifie son existence, et pourquoi un test de la suite en double
+> une partie — le script est une cible séparée, le test tourne à chaque pull request.
+
+**Prochain identifiant libre : `DEC-514`.**
 
 ---
 
@@ -579,6 +602,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-510` — réalisation du LOT 2, `T6` | 1 | 1 |
 | `DEC-511` — réalisation du LOT 2, `T7` | 1 | 1 |
 | `DEC-512` — réalisation du LOT 2, `T8` | 1 | 1 |
+| `DEC-513` — réalisation du LOT 2, `T9` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -590,7 +614,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **180** | **180** |
+| **Total** | **181** | **181** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -820,6 +820,13 @@ code-check: ## Verifier que le conteneur execute le code du depot, par empreinte
 	@python3 infra/scripts/verifier-code-embarque.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+# LOT 2, T9. Deux controles que les sous-etapes precedentes ne portaient pas :
+# le COMPTE des relations historisees, derive du modele §25.2 lui-meme, et
+# l'absence de colonne nullable dans une cle d'exclusion — defaut `T8-1`.
+historisation-check: ## Verifier les 7 relations historisees du modele 25.2
+	@python3 infra/scripts/verifier-historisation.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current
 
