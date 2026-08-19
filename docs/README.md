@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `510` en usage | `DEC-511` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `511` en usage | `DEC-512` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -205,6 +205,7 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 | `T4` | `entity_membership` | `MVP-L02-US002` | **Terminée** le 19/08/2026. **La règle centrale de `US002`** : une seule appartenance occupante par personne. **Deux** contraintes complémentaires, et deux tests montrent chacun ce que l'autre ne verrait pas. Verrou optimiste câblé. **`ECART-030` clos**, **`DEC-507`** pose le nommage des exclusions. 24 tests. `DEC-505`–`DEC-507` |
 | `T5` | Métiers et statuts professionnels | `MVP-L02-US003` | **Terminée** le 19/08/2026. **Clés étrangères COMPOSITES** du §25.3 : un métier d'une autre entité est refusé **par la base**. Deux index que j'avais ajoutés sont **retirés** — la mesure a montré qu'ils ne pouvaient jamais se déclencher. **`ECART-012` instruit**, il attend Léa. **`DEC-509`** pose la doctrine de nommage après deux collisions. 23 tests. `DEC-508`, `DEC-509` |
 | `T6` | Clients, activations locales et alias | `MVP-L02-US003` | **Terminée** le 19/08/2026. **La dette de `T5` est acquittée** : clé étrangère de `client_id`. Normalisation **volontairement minimale** — `DATA-005` interdit tout rapprochement automatique. **`QO-117` ouverte** : le modèle ne pose aucune unicité sur les alias, et la portée est un choix métier. 21 tests, dont deux sur des **non-actions**. `DEC-510` |
-| `T7` à `T12` | Voir la fiche | — | Non entamées |
+| `T7` | Cercles, bureaux et appartenance aux cercles | `MVP-L02-US001`, `US003` | **Terminée** le 19/08/2026, et elle **clôt les deux stories**. **L'exclusion est PARTIELLE** — une exclusion sans `WHERE` aurait interdit les cercles secondaires multiples, et le livrable aurait **paru correct**. Un **résiduel du §8.1 est nommé, non comblé**. 17 tests. `DEC-511` |
+| `T8` à `T12` | Voir la fiche | — | Non entamées |
 
 ---

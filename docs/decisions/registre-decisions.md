@@ -27,6 +27,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-505+`, sous-étape `T4`** | 3 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-508+`, sous-étape `T5`** | 2 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-510`, sous-étape `T6`** | 1 | **Validée le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-511`, sous-étape `T7`** | 1 | **Validée le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -38,7 +39,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **178** | |
+| **Total** | **179** | |
 
 ---
 
@@ -390,7 +391,15 @@ Une décision. Les trois tables clients, et une dette acquittée.
 > **Une dette notée dans un commentaire n'est pas une dette outillée.** Depuis que la clé est déclarée,
 > `alembic check` en garantit la présence.
 
-**Prochain identifiant libre : `DEC-511`.**
+## 1.22 Réalisation du LOT 2 — sous-étape `T7`
+
+Une décision. Les cercles et bureaux, et un résiduel **nommé plutôt que comblé**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-511` | **Les trois tables du modèle §8.1 à §8.3 sont créées par la migration `0008`**, avec **trois** contraintes distinctes sur `circle_membership` et un déclencheur. **(a)** L'exclusion temporelle du §25.2 est **PARTIELLE**, restreinte au type `principal`. **(b)** L'index partiel du §25.1 sur **deux** conditions est conservé bien qu'**ombragé**. **(c)** Un index partiel distinct porte « deux relations actives identiques au même cercle » du §8.2, pour les **deux** types. **(d)** La règle « impossible d'archiver un cercle avec des membres actifs » est portée par un **déclencheur**, et **le résiduel du sens inverse est nommé, non comblé**. | **(a) C'est ce qui évite un contresens.** Le §8.2 autorise explicitement « plusieurs cercles secondaires actifs » : une exclusion sans clause `WHERE` sur `(entity_membership_id, period)` les interdirait tous sauf un — et **le livrable paraîtrait correct**, puisqu'il refuserait bien quelque chose. Le §25.2 ne liste d'ailleurs que le « cercle **principal** ». Deux tests l'écartent, dont un qui exige que deux périodes **secondaires** qui se chevauchent soient **acceptées**. **(b)** Il est ombragé par l'exclusion — deux principaux actifs ont des plages non bornées qui se chevauchent toujours — **mais le §25.1 l'écrit littéralement**. La différence avec les deux index retirés en `T5` est nette : ceux-là étaient une **dérivation**, absente du §25.1. Même parti que `ck_entity_membership_depart_apres_arrivee` en `T4`. **(c)** Règle distincte des deux précédentes, et elle n'empêche pas plusieurs secondaires : ce sont des cercles **différents**, donc des couples différents. **(d)** Règle **inter-tables**, donc impossible en contrainte de ligne — cas type du §25.4, même parti que `DEC-502`, `DEC-504` et `DEC-506`. **Le résiduel : le §8.1 n'énonce la règle que dans UN sens.** Il ne dit pas qu'on ne peut pas ajouter un membre actif à un cercle **déjà archivé**. **L'asymétrie est probablement délibérée** — pour `entity`, le §5.1 énonce explicitement les deux sens, et `DEC-506` les applique : le modèle sait exprimer le sens inverse quand il le veut. Poser ici une règle qu'il n'écrit pas serait inventer. **Un test MONTRE le résiduel** plutôt que de le taire, et dit que le combler exigerait de tracer une décision. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-512`.**
 
 ---
 
@@ -559,6 +568,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-505+` — réalisation du LOT 2, `T4` | 3 | 3 |
 | `DEC-508+` — réalisation du LOT 2, `T5` | 2 | 2 |
 | `DEC-510` — réalisation du LOT 2, `T6` | 1 | 1 |
+| `DEC-511` — réalisation du LOT 2, `T7` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -570,7 +580,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **178** | **178** |
+| **Total** | **179** | **179** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
