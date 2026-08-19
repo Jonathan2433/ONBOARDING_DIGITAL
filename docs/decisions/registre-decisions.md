@@ -28,6 +28,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-508+`, sous-étape `T5`** | 2 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-510`, sous-étape `T6`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-511`, sous-étape `T7`** | 1 | **Validée le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-512`, sous-étape `T8`** | 1 | **Validée le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -39,7 +40,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **179** | |
+| **Total** | **180** | |
 
 ---
 
@@ -399,7 +400,15 @@ Une décision. Les cercles et bureaux, et un résiduel **nommé plutôt que comb
 |---|---|---|---|
 | `DEC-511` | **Les trois tables du modèle §8.1 à §8.3 sont créées par la migration `0008`**, avec **trois** contraintes distinctes sur `circle_membership` et un déclencheur. **(a)** L'exclusion temporelle du §25.2 est **PARTIELLE**, restreinte au type `principal`. **(b)** L'index partiel du §25.1 sur **deux** conditions est conservé bien qu'**ombragé**. **(c)** Un index partiel distinct porte « deux relations actives identiques au même cercle » du §8.2, pour les **deux** types. **(d)** La règle « impossible d'archiver un cercle avec des membres actifs » est portée par un **déclencheur**, et **le résiduel du sens inverse est nommé, non comblé**. | **(a) C'est ce qui évite un contresens.** Le §8.2 autorise explicitement « plusieurs cercles secondaires actifs » : une exclusion sans clause `WHERE` sur `(entity_membership_id, period)` les interdirait tous sauf un — et **le livrable paraîtrait correct**, puisqu'il refuserait bien quelque chose. Le §25.2 ne liste d'ailleurs que le « cercle **principal** ». Deux tests l'écartent, dont un qui exige que deux périodes **secondaires** qui se chevauchent soient **acceptées**. **(b)** Il est ombragé par l'exclusion — deux principaux actifs ont des plages non bornées qui se chevauchent toujours — **mais le §25.1 l'écrit littéralement**. La différence avec les deux index retirés en `T5` est nette : ceux-là étaient une **dérivation**, absente du §25.1. Même parti que `ck_entity_membership_depart_apres_arrivee` en `T4`. **(c)** Règle distincte des deux précédentes, et elle n'empêche pas plusieurs secondaires : ce sont des cercles **différents**, donc des couples différents. **(d)** Règle **inter-tables**, donc impossible en contrainte de ligne — cas type du §25.4, même parti que `DEC-502`, `DEC-504` et `DEC-506`. **Le résiduel : le §8.1 n'énonce la règle que dans UN sens.** Il ne dit pas qu'on ne peut pas ajouter un membre actif à un cercle **déjà archivé**. **L'asymétrie est probablement délibérée** — pour `entity`, le §5.1 énonce explicitement les deux sens, et `DEC-506` les applique : le modèle sait exprimer le sens inverse quand il le veut. Poser ici une règle qu'il n'écrit pas serait inventer. **Un test MONTRE le résiduel** plutôt que de le taire, et dit que le combler exigerait de tracer une décision. | Validée par Jonathan le 19/08/2026 |
 
-**Prochain identifiant libre : `DEC-512`.**
+## 1.23 Réalisation du LOT 2 — sous-étape `T8`
+
+Une décision. Les responsabilités, et **un défaut qui valait trois types sur quatre**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-512` | **Les trois tables du modèle §8.4 à §8.6 sont créées par la migration `0009`**, avec **trois** contraintes d'exclusion **partielles** et **deux** déclencheurs. **(a)** Les trois règles de portée du §8.4 sont portées par **une seule** contrainte de vérification. **(b)** **Trois** exclusions partielles, chacune sur une clé **sans colonne nullable**. **(c)** « Une personne ne peut pas être Booster active dans plusieurs entités » est portée par un **déclencheur**. **(d)** « Le DSM doit avoir une responsabilité DSM active dans la même entité » de même. **(e)** Le motif de validation des valeurs énumérées est **élargi à la casse libre**. | **(a)** Une contrainte par type aurait donné trois messages pour une seule notion, et un type oublié serait passé entre les trois. **(b) UN DÉFAUT MESURÉ, ET IL VALAIT TROIS TYPES SUR QUATRE.** Ma première version posait **une** exclusion incluant `circle_id`. Or `circle_id` est **NUL** pour un `DSM` ou un `ESM`, et **l'opérateur `=` ne rapproche jamais deux NULL** : deux `DSM` de la même personne aux périodes qui se chevauchent **n'auraient pas été détectés**. La contrainte aurait existé **sans rien garantir**. Chaque exclusion porte désormais sur une clé sans colonne nullable, sa clause `WHERE` garantissant cette absence par construction. **Et elles n'empêchent que deux affectations IDENTIQUES qui se chevauchent** : le §8.4 ne dit rien de la multiplicité pour `DSM`, `ESM` et `OFFICE_MANAGER`, et imposer « une seule active par personne » serait inventer. **(c) Un index unique ne sait pas l'exprimer** : il dit « au plus une ligne », alors que la règle dit « au plus une **entité distincte** » — et le §8.4 autorise **explicitement** plusieurs cercles dans une même entité. **(d)** Règle **inter-tables**, la « vérification du rôle actif du DSM cible » que le §25.4 nomme. **(e)** Le motif exigeait des **minuscules**, ce qui était juste pour `T2` à `T7` et faux ici : le §8.4 et le §8.6 écrivent leurs valeurs en **majuscules**, et le §25.1 les cite ainsi. **L'objet du contrôle n'a jamais été la casse mais la sûreté du SQL** — empêcher une valeur portant une apostrophe de produire du SQL malformé. Cet objet est préservé entièrement, et un témoin le vérifie. C'est le §7.21 dans un contrôle que j'ai moi-même écrit en `T1`. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-513`.**
 
 ---
 
@@ -569,6 +578,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-508+` — réalisation du LOT 2, `T5` | 2 | 2 |
 | `DEC-510` — réalisation du LOT 2, `T6` | 1 | 1 |
 | `DEC-511` — réalisation du LOT 2, `T7` | 1 | 1 |
+| `DEC-512` — réalisation du LOT 2, `T8` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -580,7 +590,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **179** | **179** |
+| **Total** | **180** | **180** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

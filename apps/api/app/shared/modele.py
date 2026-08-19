@@ -214,7 +214,25 @@ class Periode:
 # ---------------------------------------------------------------------------
 #  Enumerations — contrainte de verification, et non type `enum` natif
 # ---------------------------------------------------------------------------
-MOTIF_VALEUR_ENUMEREE = re.compile(r"^[a-z][a-z0-9_]*$")
+#  MOTIF ELARGI EN `T8`, ET LE MOTIF DE L'ELARGISSEMENT EST UNE LECON.
+#
+#  La premiere version exigeait des MINUSCULES : `^[a-z][a-z0-9_]*$`. Elle
+#  etait juste pour `T2` a `T7`, dont toutes les enumerations du modele sont en
+#  minuscules -- `draft`, `active`, `mission`, `principal`.
+#
+#  Le §8.4 et le §8.6 ecrivent les leurs en MAJUSCULES : `DSM`, `ESM`,
+#  `BOOSTER`, `OFFICE_MANAGER`, `ENTITY_ADMIN`, `SUPER_ADMIN`. Et le §25.1 les
+#  cite ainsi : `responsibility_type = 'BOOSTER'`. La casse est donc une
+#  DECISION DU MODELE, pas un style de ce depot.
+#
+#  **L'objet de ce controle n'a jamais ete la casse** : c'est d'empecher qu'une
+#  valeur portant une apostrophe, une espace ou un caractere exotique ne produise
+#  du SQL malforme dans la contrainte interpolee. Le motif est elargi a la casse
+#  libre, et cet objet est preserve entierement.
+#
+#  C'est le §7.21 de la passation, dans un controle que j'ai ecrit moi-meme en
+#  `T1` : juste a sa date, rendu faux par une table ulterieure.
+MOTIF_VALEUR_ENUMEREE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 def contrainte_enumeration(
@@ -244,7 +262,8 @@ def contrainte_enumeration(
         if not MOTIF_VALEUR_ENUMEREE.match(valeur):
             message = (
                 f"valeur enumeree refusee pour la contrainte {nom} : {valeur!r}. "
-                f"Attendu : minuscules, chiffres et tirets bas, commencant par une lettre"
+                f"Attendu : lettres, chiffres et tirets bas, commencant par une lettre. "
+                f"La CASSE est libre : elle est decidee par le modele de donnees"
             )
             raise ValueError(message)
 
