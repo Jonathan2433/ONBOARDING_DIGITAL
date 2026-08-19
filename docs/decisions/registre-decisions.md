@@ -25,6 +25,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-501+`, sous-étape `T2`** | 2 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-503+`, sous-étape `T3`** | 2 | **Validées le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-505+`, sous-étape `T4`** | 3 | **Validées le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-508+`, sous-étape `T5`** | 2 | **Validées le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -36,7 +37,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **175** | |
+| **Total** | **177** | |
 
 ---
 
@@ -363,7 +364,16 @@ Trois décisions, dont une qui corrige une classe de défaut pour les sept exclu
 > Le statut de brouillon est donc maintenu, et **il s'est justifié en `T2`** en révélant quatre défauts
 > de modèle.
 
-**Prochain identifiant libre : `DEC-508`.**
+## 1.20 Réalisation du LOT 2 — sous-étape `T5`
+
+Deux décisions, dont une qui pose une doctrine de nommage après **deux** collisions mesurées.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-508` | **Les trois tables du modèle §6.3 à §6.5 sont créées par la migration `0006`**, et quatre choix sont posés. **(a)** `job_catalog(entity_id, code)` unique **partiel**, `WHERE archived_at IS NULL`. **(b)** Les règles d'entité du §6.4 sont portées par **deux clés étrangères COMPOSITES** du §25.3, et non par une paire de clés simples. **(c)** « Une seule affectation active » et « une seule situation active » sont portées par la **contrainte d'exclusion seule** : les index uniques partiels `WHERE ends_at IS NULL` que j'avais ajoutés sont **retirés**. **(d)** `professional_status_assignment.client_id` est déclarée **sans clé étrangère**, qui sera ajoutée en `T6`. La valeur stockée est **`intercontract`**, en anglais. | **(a)** Le §25.1 l'écrit littéralement. L'index est partiel — un métier archivé **libère** son code — à la différence de `entity(code)` : un code d'entité est cité dans les journaux d'audit, un code de métier est une donnée de configuration locale. **(b)** Une paire de clés **simples** laisserait affecter un métier de Lille à une appartenance de Bordeaux : rien ne relierait les deux entités. En faisant passer `entity_id` dans les deux clés, l'entité est forcément la même — **c'est la même colonne**. **(c) MESURE du 19/08/2026 : ces index ne peuvent JAMAIS se déclencher.** Deux relations actives ont toutes deux `ends_at` à NULL, donc deux plages **non bornées**, qui se chevauchent **toujours** — `[janvier,)` contient décembre. L'exclusion les refuse systématiquement la première. **C'est l'inverse de `entity_membership`**, où l'index et l'exclusion sont complémentaires parce que l'index y porte sur `membership_state` et non sur `ends_at` : **le même motif est complémentaire dans une table et redondant dans l'autre, et seule la mesure les distingue**. Ces index n'étaient pas dans le §25.1, qui ne mentionne pas ces tables : c'était une dérivation, et elle était inutile. **(d)** `client` arrive au point 6 du §28, donc en `T6`. L'alternative — déplacer la table en `T6` — aurait contredit l'ordre du §28 et le découpage validé. **`intercontract`** parce que le modèle emploie cette forme partout où il spécifie une **valeur** (lignes 352, 361, 770, toujours entre accents graves), et `intercontrat` en **prose** : voir la rectification de `ECART-012`. | Validée par Jonathan le 19/08/2026 |
+| `DEC-509` | **Doctrine de nommage des contraintes, et le contrôle qui la vérifie.** Clé primaire, contrainte UNIQUE, index : **ne pas passer de `name=`**, la convention préfixe déjà par la table. Contrainte de vérification : nom **court et descriptif**, que la convention préfixe. Clé étrangère : laisser la convention, **sauf** si elle dépasse 63 octets — cas des clés **composites** — alors `nom_cle_composite()`. Contrainte d'exclusion : **toujours** `nom_exclusion()`. Le contrôle `noms_d_index_en_collision()` compare les noms **entre eux**. | **Deux collisions mesurées, et la cause commune est le `name=` explicite.** En `T4`, `sans_chevauchement` sur une **exclusion**, où la convention de SQLAlchemy n'a **aucune clé** — le nom explicite était obligatoire mais non préfixé. En `T5`, `id_entite_unique` sur une contrainte **UNIQUE**, que la convention **savait** nommer et dont le `name=` a écrasé le préfixe. **PostgreSQL implémente clés primaires, UNIQUE et exclusions par des INDEX, et les noms d'index sont uniques à l'échelle du SCHÉMA** — pas par table, à la différence des vérifications et des clés étrangères. **Le contrôle compare les noms entre eux plutôt que de vérifier un préfixe** : c'est ce que PostgreSQL fera de toute façon, et un contrôle de préfixe laisserait passer deux tables préfixant de la même façon. S'y ajoute la limite de **63 octets**, que PostgreSQL applique par **troncature silencieuse** : trois clés composites la dépassaient — 77, 65 et 82 caractères — et c'est le contrôle `noms_de_contraintes_trop_longs`, écrit en `T1`, qui les a attrapées **quatre sous-étapes plus tard**. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-510`.**
 
 ---
 
@@ -530,6 +540,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-501+` — réalisation du LOT 2, `T2` | 2 | 2 |
 | `DEC-503+` — réalisation du LOT 2, `T3` | 2 | 2 |
 | `DEC-505+` — réalisation du LOT 2, `T4` | 3 | 3 |
+| `DEC-508+` — réalisation du LOT 2, `T5` | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -541,7 +552,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **175** | **175** |
+| **Total** | **177** | **177** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

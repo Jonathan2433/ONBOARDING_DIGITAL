@@ -299,6 +299,90 @@ def noms_exclusions_non_conformes(metadata: MetaData | None = None) -> list[tupl
     return sorted(fautives)
 
 
+def noms_d_index_en_collision(metadata: MetaData | None = None) -> list[tuple[str, list[str]]]:
+    """Objets que PostgreSQL implemente par un INDEX et qui partagent un nom.
+
+    Retourne les couples `(nom, tables)`. Une liste vide est le resultat attendu.
+
+    POURQUOI CE CONTROLE CIBLE LE MODE DE DEFAILLANCE, ET NON UNE CONVENTION.
+    PostgreSQL implemente par un index les cles PRIMAIRES, les contraintes
+    UNIQUE, les contraintes d'EXCLUSION et bien sur les index. **Et les noms
+    d'index sont uniques a l'echelle du SCHEMA**, pas par table -- a la
+    difference des noms de contraintes de verification ou de cles etrangeres.
+
+    La collision s'est produite DEUX FOIS, et pour la meme cause de fond :
+
+      - `T4`, `sans_chevauchement` : une exclusion, ou la convention de
+        SQLAlchemy n'a aucune cle, donc le nom explicite etait obligatoire mais
+        n'etait pas prefixe ;
+      - `T5`, `id_entite_unique` : une contrainte UNIQUE, que la convention
+        SAVAIT nommer -- `uq_<table>_<colonnes>` -- et dont un `name=` explicite
+        a ecrase le prefixe.
+
+    **La cause commune est le `name=` explicite.** Un controle qui ne verifierait
+    qu'un prefixe laisserait passer deux tables prefixant de la meme facon ; ce
+    controle-ci compare les noms entre eux, ce qui est exactement ce que
+    PostgreSQL fera.
+
+    LA DOCTRINE QUI EN DECOULE, ET ELLE EST COURTE
+
+      cle PRIMAIRE, contrainte UNIQUE, index  ne PAS passer de `name=`. La
+                                              convention prefixe deja par la
+                                              table.
+      contrainte de VERIFICATION              passer un nom COURT et descriptif :
+                                              la convention le prefixe, le jeton
+                                              `%(constraint_name)s` l'exigeant.
+      cle etrangere                           laisser la convention, SAUF si elle
+                                              depasse 63 octets -- cas des cles
+                                              COMPOSITES. Alors
+                                              `nom_cle_composite`.
+      contrainte d'EXCLUSION                  toujours `nom_exclusion` : la
+                                              convention n'a aucune cle pour
+                                              elles.
+    """
+    cible = metadonnees if metadata is None else metadata
+    par_nom: dict[str, list[str]] = {}
+    familles_indexees = {"PrimaryKeyConstraint", "UniqueConstraint", "ExcludeConstraint"}
+    for table in cible.tables.values():
+        objets: list[Any] = [*table.constraints, *table.indexes]
+        for objet in objets:
+            famille = type(objet).__name__
+            if famille not in familles_indexees and famille != "Index":
+                continue
+            nom = getattr(objet, "name", None)
+            if isinstance(nom, str):
+                par_nom.setdefault(nom, []).append(table.name)
+    return sorted((nom, sorted(tables)) for nom, tables in par_nom.items() if len(tables) > 1)
+
+
+def nom_cle_composite(table: str, table_visee: str) -> str:
+    """Nom d'une cle etrangere COMPOSITE : `fk_<table>_<table_visee>`.
+
+    POURQUOI LA CONVENTION NE SUFFIT PAS ICI. La convention rend
+    `fk_%(table_name)s_%(column_0_N_name)s_%(referred_table_name)s`, ce qui est
+    parfait pour une cle simple. Pour une cle COMPOSITE, `column_0_N_name`
+    concatene toutes les colonnes, et le nom explose :
+
+        fk_professional_status_assignment_entity_membership_id_entity_id_entity_membership
+        -> 82 caracteres, pour une limite de 63
+
+    Mesure du 19/08/2026, sous-etape `T5` : TROIS cles composites depassaient, a
+    77, 65 et 82 caracteres. **PostgreSQL tronque a 63 octets EN SILENCE**, et
+    deux noms qui ne differeraient qu'apres le 63e caractere entreraient en
+    collision sans qu'aucun message ne le dise.
+
+    C'est le controle `noms_de_contraintes_trop_longs`, pose en `T1`, qui l'a
+    attrape -- quatre sous-etapes plus tard, et sur des noms que les metadonnees
+    ne portaient pas encore quand il a ete ecrit.
+
+    Le nom retenu decrit la RELATION et non ses colonnes : `<table>` vers
+    `<table_visee>`. Il reste unique par table, ce qui suffit -- les noms de
+    contraintes sont propres a chaque table, contrairement aux noms d'index
+    (voir `nom_exclusion`).
+    """
+    return f"fk_{table}_{table_visee}"
+
+
 def noms_de_contraintes_trop_longs(metadata: MetaData | None = None) -> list[tuple[str, int]]:
     """Contraintes et index dont le nom depasse la limite de PostgreSQL.
 

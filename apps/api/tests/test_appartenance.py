@@ -444,7 +444,17 @@ def test_deplacer_une_appartenance_vers_une_entite_archivee_est_refuse(cx: Conne
 
 @pytest.mark.integration
 def test_le_couple_id_entity_id_est_unique(cx: Connection) -> None:
-    """§25.3 : la cible des cles etrangeres composites de `T5` a `T8`."""
+    """§25.3 : la cible des cles etrangeres composites de `T5` a `T8`.
+
+    **LE NOM A CHANGE EN `T5`, ET LE MOTIF VAUT D'ETRE SU.** `T4` avait nomme
+    cette contrainte `id_entite_unique`, explicitement. `T5` a voulu la meme sur
+    `job_catalog` : « relation "id_entite_unique" already exists ».
+
+    Une contrainte UNIQUE est implementee par un INDEX, et **les noms d'index sont
+    uniques a l'echelle du SCHEMA**. Le `name=` explicite avait de plus ecrase la
+    convention, qui prefixe deja par la table. La migration `0006` renomme donc la
+    contrainte, et le nom attendu est desormais celui de la convention.
+    """
     contraintes = set(
         cx.execute(
             text(
@@ -455,7 +465,7 @@ def test_le_couple_id_entity_id_est_unique(cx: Connection) -> None:
         .scalars()
         .all()
     )
-    assert "id_entite_unique" in contraintes, (
+    assert "uq_entity_membership_id_entity_id" in contraintes, (
         "sans ce couple unique, les tables de `T5` a `T8` ne pourraient pas garantir "
         "par cle etrangere composite qu'elles referencent une appartenance de LEUR entite"
     )

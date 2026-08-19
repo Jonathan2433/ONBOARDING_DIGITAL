@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T4`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T5`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -29,7 +29,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
-| `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
+| `ECART-012` | La valeur `intercontract` est imposée à une direction générale, faute de troisième valeur. **Instruit en `T5`** : le coût des deux options est mesuré, la décision revient à Léa | Non | **Ouvert, instruit** |
 | `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
@@ -192,12 +192,12 @@ formulée, et son caractère bloquant est explicité.
 | Champ | Valeur |
 |---|---|
 | Constaté le | 27 juillet 2026, sous-étape S6, en construisant le jeu d'exemple |
-| Source | Modèle de données §6.5 : `professional_status_assignment.status` vaut `mission` ou `intercontrat`, une seule situation active par appartenance |
+| Source | Modèle de données §6.5 : `professional_status_assignment.status` vaut **`mission` ou `intercontract`**, une seule situation active par appartenance.<br>**Rectifié le 19/08/2026, LOT 2 sous-étape `T5`** : ce champ citait `intercontrat`, la forme **française**. La mesure sépare nettement les deux usages du modèle — `intercontract` aux lignes 352, 361 et 770, **toujours entre accents graves**, donc là où il spécifie une **valeur** ; `intercontrat` aux lignes 48, 69, 353, 915 et 1710, en **prose**. Quelqu'un implémentant depuis cet écart plutôt que depuis le modèle aurait stocké une valeur que rien ne reconnaît. |
 | Constat | Le champ de situation professionnelle est obligatoire pour **toute** personne et n'offre que deux valeurs. Pour une catégorie `dg`, ou pour une personne dont l'activité n'est pas une mission client, `intercontrat` est la seule valeur possible. Or ce terme désigne, dans le langage métier, un consultant en attente de mission. |
 | Impact | Aucun impact technique : les contraintes restent cohérentes, `intercontrat` interdisant un client actif. L'impact est **fonctionnel et éditorial** : le trombinoscope afficherait « intercontrat » sur une fiche de direction générale, ce qui serait lu comme une erreur par les collaborateurs. |
 | Bloquant | Non |
 | Recommandation | Ne pas modifier le modèle de données, qui est validé. Deux pistes à arbitrer avec Léa : soit l'affichage du statut est conditionné par la catégorie professionnelle, la situation restant `intercontrat` en base ; soit une troisième valeur est ajoutée à l'énumération, ce qui exige une décision et une nouvelle version du modèle. La première piste est moins coûteuse et ne touche pas au socle. |
-| Résolution | Ouvert. À clarifier avec Léa et l'ESM, **au plus tard au LOT 2** lors de l'implémentation de `professional_status_assignment`, et avant le LOT 5 qui affiche le statut au trombinoscope. |
+| Résolution | **Ouvert — INSTRUIT le 19/08/2026 en `T5`, et il attend Léa.**<br>`professional_status_assignment` existe désormais, avec les **deux** valeurs que le modèle validé écrit. `T5` n'a pas tranché, et ne devait pas : **Léa décide du produit**.<br>**Ce que `T5` apporte à la décision, c'est le COÛT mesuré de chaque option** — et il est faible dans les deux cas, ce qui n'était pas connu quand l'écart a été ouvert :<br>• **conditionner l'affichage** par la catégorie professionnelle, la valeur restant `intercontract` en base : **aucune modification du socle**, tout se joue au LOT 5 avec le trombinoscope ;<br>• **ajouter une troisième valeur** : **une migration d'UNE LIGNE**, parce que `DEC-499` a choisi une contrainte de vérification et non un type `enum` natif. C'était précisément le motif de ce choix, et il se réalise ici.<br>**Le coût n'est donc pas ce qui doit départager les deux options** : c'est un choix de produit, et il revient à Léa. |
 
 ## `ECART-013` — Identifiants de tâches non stables entre les deux parcours
 
