@@ -463,6 +463,8 @@ TABLES_DECLAREES = {
     "platform_setting",
     "entity_setting",
     "allowed_email_domain",
+    # LOT 2, T3 — modele §6.1
+    "person",
 }
 
 

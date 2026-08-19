@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `502` en usage | `DEC-503` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `504` en usage | `DEC-505` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `028` | `ECART-029` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `029` | `ECART-030` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `116` | `QO-117` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -201,6 +201,7 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 |:--:|---|---|---|
 | `T1` | Socle technique du modèle et extensions | `MVP-L02-US008` | **Terminée** le 18/08/2026. Collation **ICU `fr-FR`** posée avant la première table, `btree_gist` seule extension, socle déclaratif éprouvé — **20 tests**, dont le refus de chevauchement par la base et ses trois témoins. `QO-111` et `QO-112` **closes**, les **7** choix du §9.2 tranchés. `DEC-497`–`DEC-500`, `ECART-027` clos, **`QO-116` ouverte** |
 | `T2` | Entités, paramètres et domaines e-mail | `MVP-L02-US001` | **Terminée** le 19/08/2026. **Les 4 premières tables du projet**, migration `0003` éprouvée en montée, descente et remontée. Règle « `code` immuable après activation » portée par **déclencheur** — 26 tests, chaque refus avec son témoin. `alembic check` sans écart. `DEC-501`, `DEC-502`, `ECART-028` clos |
-| `T3` à `T12` | Voir la fiche | — | Non entamées |
+| `T3` | La table `person` | `MVP-L02-US002` | **Terminée** le 19/08/2026. Identité **globale**, `ARB-DATA-001` : aucun `entity_id`. **`ECART-029` clos** — l'index du §25.1 ne satisfaisait pas l'unicité insensible à la casse du §6.1. Anonymisation **terminale** par déclencheur. **Aucune table d'authentification**, vérifié par contrôle. 19 tests. `DEC-503`, `DEC-504` |
+| `T4` à `T12` | Voir la fiche | — | Non entamées |
 
 ---

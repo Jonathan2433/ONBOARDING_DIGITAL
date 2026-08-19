@@ -3,7 +3,7 @@
 > **✅ LE LOT 2 EST OUVERT** depuis le 18 août 2026, décision `DEC-496`.
 >
 > **Le découpage du §3 est VALIDÉ par Jonathan le 18 août 2026**, ce qui lève la condition posée
-> par `DEC-496`. Les sous-étapes **`T1` et `T2` sont terminées** ; les dix suivantes ne sont pas
+> par `DEC-496`. Les sous-étapes **`T1` à `T3` sont terminées** ; les neuf suivantes ne sont pas
 > entamées.
 >
 > Cette fiche reste un **plan** : ce qui y est écrit au futur n'est pas prouvé. Les preuves sont dans
@@ -127,7 +127,7 @@ sous-étapes.
 |:--:|---|---|:--:|---|
 | ~~**`T1`**~~ | ~~**Socle technique du modèle et extensions.**~~ **TERMINÉE le 18/08/2026** — `#46`. `QO-111` et `QO-112` **closes**, les **7** choix du §9.2 **tranchés** (`DEC-497`–`DEC-500`). Collation **ICU `fr-FR`** posée avant la première table, `btree_gist` seule extension, migration `0002` éprouvée en montée, descente et remontée. **20 tests**, dont le refus de chevauchement par la base et **trois témoins**. Compte rendu : [`compte-rendu-t1-lot-2.md`](compte-rendu-t1-lot-2.md) | `US008` | 1 | ☑ |
 | ~~**`T2`**~~ | ~~**Entités, paramètres et domaines e-mail.**~~ **TERMINÉE le 19/08/2026** — `#39`. **Les 4 premières tables du projet.** Migration `0003` éprouvée en montée, descente et remontée ; `alembic check` sans écart. Règle « `code` immuable après activation » portée par **déclencheur** (`DEC-502`). **26 tests**, chaque refus avec son témoin. Compte rendu : [`compte-rendu-t2-lot-2.md`](compte-rendu-t2-lot-2.md) | `US001` | 2 | ☑ |
-| **`T3`** | **Personnes.** `person`, e-mail normalisé unique. **Aucune table d'authentification.** | `US002` | 3 | `person(email_normalized)` unique éprouvé par témoin, **normalisation comprise** — deux graphies du même e-mail doivent collisionner |
+| ~~**`T3`**~~ | ~~**Personnes.**~~ **TERMINÉE le 19/08/2026** — `#40`. Identité **globale**, `ARB-DATA-001` : aucun `entity_id`, vérifié par contrôle. **`ECART-029` clos** — l'index simple du §25.1 **ne satisfaisait pas** l'unicité insensible à la casse du §6.1 ; la valeur stockée doit désormais être minuscule. Anonymisation **terminale** par déclencheur (`DEC-504`). **0 table d'authentification sur 7**, mesuré. **19 tests**. Compte rendu : [`compte-rendu-t3-lot-2.md`](compte-rendu-t3-lot-2.md) | `US002` | 3 | ☑ |
 | **`T4`** | **Appartenance à une entité.** `entity_membership`, ses états §24.1, et **la règle d'une seule appartenance principale active**. | `US002` | 4 | L'index partiel `UNIQUE WHERE membership_state IN ('future','active')` **refuse** la seconde ; les états suivent §24.1 |
 | **`T5`** | **Métiers et statuts professionnels.** `job_catalog`, `membership_job_assignment`, `professional_status_assignment`. **Instruire `ECART-012`.** | `US003` | 5 | Unicité partielle `WHERE archived_at IS NULL` ; `intercontrat` **interdit** un client actif ; `ECART-012` est instruit et arbitré |
 | **`T6`** | **Clients, activations locales et alias.** `client`, `entity_client`, `client_alias`. | `US003` | 6 | Un rapprochement d'alias **ne fusionne rien** automatiquement — éprouvé par témoin |

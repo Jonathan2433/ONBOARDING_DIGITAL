@@ -23,6 +23,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Ouverture du LOT 2 `DEC-496`** | 1 | **Validée le 18/08/2026** |
 | **Réalisation du LOT 2 `DEC-497+`, sous-étape `T1`** | 4 | **Validées le 18/08/2026** |
 | **Réalisation du LOT 2 `DEC-501+`, sous-étape `T2`** | 2 | **Validées le 19/08/2026** |
+| **Réalisation du LOT 2 `DEC-503+`, sous-étape `T3`** | 2 | **Validées le 19/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -34,7 +35,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **170** | |
+| **Total** | **172** | |
 
 ---
 
@@ -330,7 +331,16 @@ Deux décisions. Les quatre premières tables du projet.
 | `DEC-501` | **Les quatre tables du modèle §5 sont créées par la migration `0003`**, et quatre lectures sont posées. **(a)** `platform_setting` et `entity_setting` sont des tables **clé / valeur `jsonb`, SANS catalogue de clés** ; la clé est bornée par sa **forme** — minuscules, chiffres, tirets bas, points de hiérarchie — jamais par une liste. **(b)** `allowed_email_domain.entity_id` est **nullable**, le mixin `RessourceLocale` ne s'y applique donc pas, et sa clé étrangère est nullable. **(c)** **Aucune contrainte d'exclusion** sur `allowed_email_domain`. **(d)** Les deux tables locales portent une **clé étrangère vers `entity`**, sans `name=` explicite pour que la convention de nommage s'applique, et sans `ondelete`. L'unicité de `entity(code)` **n'est pas partielle**. | **(a)** Les §5.2 et §5.3 n'énumèrent **aucune colonne** : ils décrivent des catégories de paramètres — durées de session, mentions légales, configuration de l'onboarding — dont la plupart appartiennent à des lots ultérieurs. Inventer un schéma, ou une liste de clés, serait exactement ce que la règle §6.5 interdit ; un catalogue en base devrait de plus être modifié par chacun des douze lots restants, ce qui est le motif retenu pour les énumérations en `DEC-499`. **(b)** Le §5.4 l'écrit : « nullable pour un domaine global ». PostgreSQL n'exige rien d'une clé étrangère nulle, ce qui est exactement la sémantique voulue. **(c)** Le §25.2 énumère les relations à contrainte temporelle — appartenance, métier, statut, DSM, cercle principal, responsabilités, rôles techniques — et **`allowed_email_domain` n'y est pas**. En poser une serait exiger plus que le modèle ; `btree_gist` et la colonne `period` étant déjà là, l'ajouter plus tard reste une migration d'une ligne. **(d)** Le cahier §22.2 exige « un `entity_id` **ou** une relation VÉRIFIABLE vers une entité » : une colonne `uuid` sans contrainte n'est pas vérifiable, et le §2.5 du modèle pose le refus par défaut. Pas d'`ondelete` parce qu'une entité ne se supprime pas, elle s'archive (§2.4). Unicité non partielle parce que réattribuer le code d'une entité archivée rendrait ambigus tous les journaux d'audit qui le citent. | Validée par Jonathan le 19/08/2026 |
 | `DEC-502` | **La règle « `code` immuable après activation » du §5.1 est portée par un DÉCLENCHEUR**, `entity_code_immuable_apres_activation`, posé par la migration `0003`. Il lève une violation d'intégrité — `ERRCODE = check_violation` — et **nomme** le refus. Il ne se réveille que sur `BEFORE UPDATE OF code`. Il ne dispense pas le service de porter la règle. | **La règle n'est pas exprimable par une contrainte de vérification** : elle compare la valeur NOUVELLE à l'ANCIENNE, ce qu'une contrainte de ligne ne voit pas. Le §25.4 du modèle prévoit ce cas — « appliquées par un service transactionnel [...] Une contrainte ou un trigger défensif pourra être ajouté lorsque le risque le justifie » — et le motif retenu est **daté** : la couche de services n'arrive qu'en `T11`, soit **neuf sous-étapes** plus loin. Une règle sans mise en œuvre pendant neuf sous-étapes est une règle qui n'est pas appliquée. `ERRCODE` de violation d'intégrité pour que le refus arrive au même titre qu'une contrainte, et `CONSTRAINT` nommé pour qu'un test puisse **exiger que l'échec vienne de cette règle** et pas d'une autre. La descente supprime le déclencheur **et sa fonction** : la table emporterait le déclencheur, pas la fonction, qui resterait orpheline. | Validée par Jonathan le 19/08/2026 |
 
-**Prochain identifiant libre : `DEC-503`.**
+## 1.18 Réalisation du LOT 2 — sous-étape `T3`
+
+Deux décisions. La table `person`, et une seule.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-503` | **`person` est créée par la migration `0004`, et porte QUATRE contraintes de vérification.** **(a)** `email_normalized = lower(email_normalized)` : la valeur **stockée** doit déjà être en minuscules. **(b)** Plausibilité **minimale** : aucun espace, arobase pas en première position, **rien de plus**. **(c)** Les cinq états du §6.1 par contrainte de vérification. **(d)** `(account_state = 'anonymized') = (anonymized_at IS NOT NULL)`, **dérivée**. Et la normalisation applicative **met en minuscules et retire les espaces de bordure, sans rien d'autre**. | **(a)** Le §6.1 exige une unicité **insensible à la casse** de `email_normalized` ; le §25.1 écrit `person(email_normalized) UNIQUE`, un index **simple**, qui est sensible à la casse. Exiger que la valeur stockée soit déjà minuscule concilie les deux **sans choisir** : deux graphies du même e-mail ne peuvent pas coexister, puisque l'une des deux ne peut pas être écrite. C'est plus fort qu'un index fonctionnel sur `lower(...)`, qui empêcherait le doublon mais laisserait entrer une valeur non normalisée dans une colonne nommée `_normalized`. Voir `ECART-029`. **(b)** Le corpus ne prescrit **aucun** format d'adresse. Une expression prétendant valider selon la RFC rejette des adresses légitimes, et **un refus à l'import du LOT 9 coûterait plus cher qu'une adresse mal formée stockée** ; la contrainte ne retient donc que le strictement vérifiable. **(d)** Le §6.1 déclare les deux colonnes sans lier leurs valeurs. Une personne `anonymized` **sans** horodatage rendrait le LOT 10 incapable de dire **quand** l'anonymisation a eu lieu, ce que le RGPD exige de tracer ; un horodatage **sans** l'état décrirait une anonymisation qui n'a pas pris. **Normalisation étroite** : retirer les points ou couper à un `+` **fusionnerait des personnes distinctes**, et rien ne le demande — deux collaborateurs peuvent s'appeler `j.dupont` et `jdupont`. | Validée par Jonathan le 19/08/2026 |
+| `DEC-504` | **La règle « une personne anonymisée ne peut pas être réactivée » du §6.1 est portée par un DÉCLENCHEUR**, `person_anonymisation_terminale`. Il refuse **toute** sortie de `anonymized`, pas seulement vers `active`. | Même classe et même parti que `DEC-502` : la règle compare l'état **nouveau** à l'**ancien**, ce qu'aucune contrainte de ligne ne voit, et la couche de services n'arrive qu'en `T11` — huit sous-étapes plus loin. **Toute** sortie est refusée parce que le §6.1 n'en prévoit aucune et que **l'anonymisation est irréversible par nature** : les données qu'elle a effacées ne sont plus là pour être restaurées. Le refus est nommé, ce qui permet à un test d'exiger qu'il vienne de cette règle. | Validée par Jonathan le 19/08/2026 |
+
+**Prochain identifiant libre : `DEC-505`.**
 
 ---
 
@@ -495,6 +505,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-496` — ouverture du LOT 2 | 1 | 1 |
 | `DEC-497+` — réalisation du LOT 2, `T1` | 4 | 4 |
 | `DEC-501+` — réalisation du LOT 2, `T2` | 2 | 2 |
+| `DEC-503+` — réalisation du LOT 2, `T3` | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -506,7 +517,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **170** | **170** |
+| **Total** | **172** | **172** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
