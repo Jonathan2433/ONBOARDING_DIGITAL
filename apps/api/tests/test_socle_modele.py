@@ -479,6 +479,10 @@ TABLES_DECLAREES = {
     "client",
     "entity_client",
     "client_alias",
+    # LOT 2, T7 — modele §8.1 a §8.3
+    "circle",
+    "circle_membership",
+    "office",
 }
 
 
