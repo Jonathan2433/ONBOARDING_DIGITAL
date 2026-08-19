@@ -26,6 +26,7 @@ UN TEST IGNORE N'EST PAS UN TEST QUI PASSE
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
@@ -158,8 +159,8 @@ def base_vide(parametres_de_la_stack: Parametres) -> Iterator[Parametres]:
         connexion.execute(f'DROP DATABASE IF EXISTS "{NOM_BASE_DE_TEST}"')
 
 
-def _alembic(parametres: Parametres, *commande: str) -> None:
-    """Executer une commande Alembic en processus separe.
+def _alembic(parametres: Parametres, *commande: str) -> str:
+    """Executer une commande Alembic en processus separe, et rendre sa sortie.
 
     Un sous-processus, et non l'API Python d'Alembic : `env.py` lit la
     configuration a l'import, et l'executer dans le processus de test
@@ -198,6 +199,33 @@ def _alembic(parametres: Parametres, *commande: str) -> None:
     assert resultat.returncode == 0, (
         f"alembic {' '.join(commande)} a echoue :\n{resultat.stdout}\n{resultat.stderr}"
     )
+    return resultat.stdout
+
+
+MOTIF_TETE = re.compile(r"^([0-9a-z_]+)\s*\(head", re.MULTILINE)
+
+
+def _tete_de_migration(parametres: Parametres) -> str:
+    """Revision de tete, DERIVEE d'Alembic et jamais recopiee.
+
+    POURQUOI CETTE FONCTION EXISTE. Trois tests de cette suite annoncaient
+    `"0001"` EN DUR. Ils etaient justes en `T3`, quand c'etait la seule revision
+    du depot, et sont devenus faux des que le LOT 2 a ajoute `0002` -- sans que
+    rien ne le signale avant l'echec.
+
+    C'est `ECART-024` rejoue, et la parade est celle de `ECART-021` : un nombre
+    ou un identifiant qu'on recopie finit par mentir, un nombre qu'on derive de
+    sa source ne peut pas. Onze migrations restent a ecrire dans ce lot ; sans
+    cette fonction, chacune aurait casse les memes trois tests.
+    """
+    sortie = _alembic(parametres, "heads")
+    # Annotation explicite : `re.findall` est type `list[Any]`, et mypy strict
+    # refuse de rendre un `Any` depuis une fonction annoncant `str`.
+    tetes: list[str] = MOTIF_TETE.findall(sortie)
+    assert len(tetes) == 1, (
+        f"une seule tete de migration attendue, {len(tetes)} trouvee(s) dans :\n{sortie}"
+    )
+    return tetes[0]
 
 
 def _revision_appliquee(parametres: Parametres) -> str | None:
@@ -227,14 +255,20 @@ def test_la_migration_s_applique_sur_une_base_vide(base_vide: Parametres) -> Non
     """Modele §28 : application sur une base vide."""
     assert _revision_appliquee(base_vide) is None, "la base doit partir vierge"
     _alembic(base_vide, "upgrade", "head")
-    assert _revision_appliquee(base_vide) == "0001"
+    assert _revision_appliquee(base_vide) == _tete_de_migration(base_vide)
 
 
 def test_la_migration_ne_cree_aucune_table_metier(base_vide: Parametres) -> None:
-    """Interdiction du LOT 1 : aucune table metier, la migration est vide.
+    """Garde-fou de perimetre : aucune table a la sortie de `T1` du LOT 2.
 
-    Ce test est un garde-fou de perimetre : si quelqu'un ajoute une table dans
-    `0001_initial`, il echoue. C'est le LOT 2 qui possede le modele.
+    **Mis a jour le 18/08/2026.** Ce test disait « c'est le LOT 2 qui possede le
+    modele », le LOT 2 n'etant pas ouvert. Il l'est depuis le 18/08/2026
+    (`DEC-496`), et sa sous-etape `T1` ne cree deliberement aucune table : elle
+    pose le socle declaratif et l'unique extension.
+
+    **Ce test ECHOUERA en `T2`, et c'est voulu.** Il faudra alors y inscrire la
+    liste des tables attendues. Une table qui apparaitrait sans que ce test soit
+    mis a jour serait une table creee sans decision.
     """
     _alembic(base_vide, "upgrade", "head")
     assert _tables_publiques(base_vide) == set()
@@ -244,7 +278,7 @@ def test_la_migration_se_rejoue_sans_effet(base_vide: Parametres) -> None:
     """Modele §28 : rejeu depuis l'etat precedent."""
     _alembic(base_vide, "upgrade", "head")
     _alembic(base_vide, "upgrade", "head")
-    assert _revision_appliquee(base_vide) == "0001"
+    assert _revision_appliquee(base_vide) == _tete_de_migration(base_vide)
 
 
 def test_le_downgrade_puis_upgrade_est_compatible(base_vide: Parametres) -> None:
@@ -254,14 +288,16 @@ def test_le_downgrade_puis_upgrade_est_compatible(base_vide: Parametres) -> None
     retour arriere : une migration qu'on ne sait pas annuler rend le rollback
     applicatif impossible.
     """
+    tete = _tete_de_migration(base_vide)
+
     _alembic(base_vide, "upgrade", "head")
-    assert _revision_appliquee(base_vide) == "0001"
+    assert _revision_appliquee(base_vide) == tete
 
     _alembic(base_vide, "downgrade", "base")
     assert _revision_appliquee(base_vide) is None
 
     _alembic(base_vide, "upgrade", "head")
-    assert _revision_appliquee(base_vide) == "0001"
+    assert _revision_appliquee(base_vide) == tete
 
 
 def test_aucune_table_n_est_creee_automatiquement(base_vide: Parametres) -> None:

@@ -71,6 +71,32 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # LOT 2, T1, DEC-497, question QO-111 close.
+      #
+      # Ces arguments ne sont lus qu'au PREMIER demarrage, par initdb : ils sont
+      # sans effet sur un volume deja peuple. Changer la collation d'une base
+      # existante exige de la detruire et de la recreer -- c'est pourquoi le
+      # choix est fait au LOT 2, avant la premiere table.
+      #
+      # POURQUOI ICU fr-FR, et c'est MESURE, non suppose. La collation libc
+      # en_US.utf8 heritee de l'image classait « Jeanne » AVANT « Jean-Pierre »
+      # et « Legall » avant « Le Gall » : les noms composes et les particules
+      # sortaient dans un ordre qu'un annuaire francais ne produit pas. Sur des
+      # prenoms simplement accentues -- Elodie, Emile, Etienne, Eva, Zoe -- les
+      # deux collations trient a l'IDENTIQUE : le motif du changement n'est donc
+      # pas l'accentuation, c'est la ponctuation interne aux noms.
+      #
+      # Un second argument avait ete avance puis RETIRE : la detection d'un
+      # changement de regles de tri. Mesure, pg_database.datcollversion vaut
+      # 2.41 pour libc et 153.128 pour ICU -- les DEUX enregistrent une version,
+      # et une non-concordance serait detectee dans les deux cas. L'argument ne
+      # tenait pas.
+      #
+      # DECLARE ICI, DANS LE FICHIER DE BASE, ET NON DANS UNE VARIABLE. Une
+      # variable permettrait au developpement et a la recette de diverger sur
+      # leur collation : deux environnements qui ne trient pas pareil ne
+      # recettent pas la meme chose, et l'ecart serait invisible.
+      POSTGRES_INITDB_ARGS: '--locale-provider=icu --icu-locale=fr-FR --encoding=UTF8'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
