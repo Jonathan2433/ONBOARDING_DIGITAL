@@ -475,6 +475,10 @@ TABLES_DECLAREES = {
     "job_catalog",
     "membership_job_assignment",
     "professional_status_assignment",
+    # LOT 2, T6 — modele §7.1 a §7.3
+    "client",
+    "entity_client",
+    "client_alias",
 }
 
 

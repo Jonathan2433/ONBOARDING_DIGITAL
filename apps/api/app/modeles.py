@@ -16,12 +16,13 @@ les modules presents sur le disque a ceux que ce fichier importe.
 
 from __future__ import annotations
 
+from app.clients import modeles as clients_modeles
 from app.entities import modeles as entities_modeles
 from app.people import modeles as people_modeles
 from app.shared.modele import Base, metadonnees
 
 #  Les modules sont references pour que les analyseurs ne les prennent pas pour
 #  des imports inutilises. L'effet recherche est l'import lui-meme.
-MODULES_DE_MODELES = (entities_modeles, people_modeles)
+MODULES_DE_MODELES = (entities_modeles, people_modeles, clients_modeles)
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]

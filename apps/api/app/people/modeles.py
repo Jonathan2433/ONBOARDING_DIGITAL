@@ -556,8 +556,14 @@ class ProfessionalStatusAssignment(ChampsCommuns, RessourceLocale, Periode, Base
     status: Mapped[str] = mapped_column(String(16), nullable=False)
 
     #  §6.5 : « `client_id` | Obligatoire en mission, nul en intercontrat ».
-    #  AUCUNE cle etrangere pour l'instant : `client` arrive en `T6`, point 6 de
-    #  l'ordre du §28. La contrainte sera ajoutee par la migration de `T6`.
+    #
+    #  **DETTE DE `T5` ACQUITTEE EN `T6`.** Cette colonne a ete declaree sans cle
+    #  etrangere parce que `client` n'existait pas encore -- point 6 de l'ordre du
+    #  §28. La cle est declaree dans `__table_args__` depuis `T6`, et la migration
+    #  `0007` l'ajoute par `create_foreign_key`.
+    #
+    #  Elle reste NULLABLE : le §6.5 veut `client_id` nul en `intercontract`, et
+    #  la contrainte `client_selon_le_statut` lie sa presence au statut.
     client_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
 
     #  §6.5 : « `reason` | Facultatif, audit fonctionnel ».
@@ -571,6 +577,13 @@ class ProfessionalStatusAssignment(ChampsCommuns, RessourceLocale, Periode, Base
             ["entity_membership.id", "entity_membership.entity_id"],
             name=nom_cle_composite("professional_status_assignment", "entity_membership"),
         ),
+        #  Dette de `T5`, acquittee en `T6`. Cle SIMPLE et non composite : le §6.5
+        #  ecrit `client_id` sans mentionner l'entite, et `client` est GLOBAL
+        #  (`DATA-004`) -- il n'a pas de `entity_id` a apparier. La regle « mission
+        #  exige un client ACTIF POUR L'ENTITE » porte sur `entity_client`, et
+        #  reste a appliquer en `T10` -- « contraintes de roles et de perimetres »
+        #  de la fiche. Ce n'est pas une question ouverte, c'est du travail planifie.
+        ForeignKeyConstraint(["client_id"], ["client.id"]),
         contrainte_enumeration("status", SituationProfessionnelle, "status_valide"),
         #  §6.5, tableau de colonnes : la FORME de la regle client. Ce qui n'est
         #  PAS ici -- « mission exige un client ACTIF POUR L'ENTITE » -- suppose
