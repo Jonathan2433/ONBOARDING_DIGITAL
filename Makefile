@@ -784,9 +784,41 @@ stack-check: health ports ## Controler la stack : sante des 8 services et public
 
 # --workdir : alembic.ini reside dans apps/api, et `script_location` y est
 # relatif. Lance depuis /app, alembic repond « No 'script_location' key found ».
-migrate: ## Appliquer les migrations Alembic sur la base de developpement
+# LOT 2, T1 : `migrate` RAFRAICHIT puis VERIFIE le code embarque avant d'agir.
+#
+# `apps/api` n'est PAS monte en bind : le code est cuit dans l'image. Une
+# migration ecrite sur l'hote et non reconstruite est INVISIBLE du conteneur, et
+# `alembic upgrade head` repond « deja a jour » en sortant en 0. Le defaut s'est
+# produit reellement le 18/08/2026 : la migration 0002 existait, `make migrate`
+# a rendu `0001 (head)`, succes apparent, rien d'applique.
+#
+# C'est le meme mecanisme que le defaut T5-2 du LOT 1 -- Caddy servant une
+# configuration perimee en etant `healthy` -- et le meme parti que `DEC-472` :
+# `make up` appelle `caddy-reload` parce qu'attendre du service qu'il se
+# rafraichisse seul ne marche pas.
+#
+# Le controle APRES le rafraichissement n'est pas redondant : un `build` qui
+# n'aurait pas pris produirait exactement la meme observation qu'un `build`
+# reussi. C'est la quatrieme proposition du §7.0.
+migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque d'abord)
+	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT)
 	$(DC) exec -T --workdir /app/apps/api api alembic upgrade head
 	@$(MAKE) --no-print-directory migrate-status ENVIRONNEMENT=$(ENVIRONNEMENT)
+
+# `--wait` n'est pas un confort : `up --detach` rend la main des que le conteneur
+# est DEMARRE, pas des qu'il est SAIN. Sans l'attente, la CI enchainerait
+# `api-check` sur une API en cours de demarrage, et l'echec serait intermittent
+# donc penible a attribuer. Un defaut qui ne se produit qu'une fois sur trois
+# coute plus cher qu'un defaut franc.
+code-refresh: ## Reconstruire et recreer api et worker pour qu'ils portent le code du depot
+	@echo "==> Reconstruction de api et worker (le code est cuit dans l'image)"
+	@$(DC) build api worker
+	@$(DC) up --detach --wait --no-deps api worker
+
+code-check: ## Verifier que le conteneur execute le code du depot, par empreinte
+	@python3 infra/scripts/verifier-code-embarque.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current

@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `496` en usage | `DEC-497` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `500` en usage | `DEC-501` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `026` | `ECART-027` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `115` | `QO-116` | [questions](operations/registre-questions-ouvertes.md) |
+| `ECART-nnn` | Écarts | `001` à `027` | `ECART-028` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `116` | `QO-117` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -195,8 +195,11 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 **Ouvert par Jonathan le 18 août 2026 (`DEC-496`).** Plan soumis à validation :
 [`operations/fiche-lot-2.md`](operations/fiche-lot-2.md) — **12 sous-étapes, `T1` à `T12`**,
 8 stories dont **7 en `P0`**, **16 tables** du modèle, tag `v0.2.0`.
-**Aucune ligne de code n'est écrite avant que Jonathan ait validé le découpage du §3**, condition
-posée dans `DEC-496`. Deux questions bloquent `T1` : `QO-111` (collation) et `QO-112`
-(extensions). `ECART-012` est échu dans ce lot, rattaché à `T5`.
+**Découpage validé par Jonathan le 18/08/2026.** `ECART-012` est échu dans ce lot, rattaché à `T5`.
+
+| | Sous-étape | Story | État |
+|:--:|---|---|---|
+| `T1` | Socle technique du modèle et extensions | `MVP-L02-US008` | **Terminée** le 18/08/2026. Collation **ICU `fr-FR`** posée avant la première table, `btree_gist` seule extension, socle déclaratif éprouvé — **20 tests**, dont le refus de chevauchement par la base et ses trois témoins. `QO-111` et `QO-112` **closes**, les **7** choix du §9.2 tranchés. `DEC-497`–`DEC-500`, `ECART-027` clos, **`QO-116` ouverte** |
+| `T2` à `T12` | Voir la fiche | — | Non entamées |
 
 ---

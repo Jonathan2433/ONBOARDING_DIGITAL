@@ -2,16 +2,18 @@
 
 > **✅ LE LOT 2 EST OUVERT** depuis le 18 août 2026, décision `DEC-496`.
 >
-> **Cette fiche est un PLAN soumis à validation, pas un compte rendu.** Rien n'y est prouvé.
-> **Aucune ligne de code n'est écrite avant que Jonathan ait validé le découpage du §3** — c'est
-> une condition posée dans `DEC-496` elle-même.
+> **Le découpage du §3 est VALIDÉ par Jonathan le 18 août 2026**, ce qui lève la condition posée
+> par `DEC-496`. La sous-étape **`T1` est terminée** ; les onze suivantes ne sont pas entamées.
+>
+> Cette fiche reste un **plan** : ce qui y est écrit au futur n'est pas prouvé. Les preuves sont dans
+> les comptes rendus de sous-étape.
 >
 > Les **LOTS 3 à 14 restent `Planned`** : aucune de leurs stories ne peut être entamée.
 
 **Porte de validation :** `G2` — « Fin du modèle implémenté — contraintes et isolation validées »
 **Tag posé à la validation :** `v0.2.0` (`DEC-428`, conventions §4)
 **Dépendance :** roadmap, « LOTS 0 et 1 ». **Satisfaite** — `G0` le 27/07/2026, `G1` le 12/08/2026
-**Jalon GitHub :** `G2`, déjà créé, 0 issue
+**Jalon GitHub :** `G2` — **epic `#38`, stories `#39` à `#46`**, créées le 18/08/2026
 **Stories :** `MVP-L02-US001` à `US008` — **sept en `P0`**, une en `P1`
 
 ---
@@ -122,7 +124,7 @@ sous-étapes.
 
 | | Objet | Stories | §28 | Ce qui devra être prouvé |
 |:--:|---|---|:--:|---|
-| **`T1`** | **Socle technique du modèle et extensions.** Trancher `QO-111` et `QO-112`. Base déclarative SQLAlchemy, convention de nommage des contraintes, mixins des champs communs §3.1, stratégie de test sur PostgreSQL réel. Migration des extensions. | `US008` | 1 | La migration s'applique sur une base **vide**, se rejoue, et **se défait**. Les 7 choix du §9.2 sont tranchés et tracés |
+| ~~**`T1`**~~ | ~~**Socle technique du modèle et extensions.**~~ **TERMINÉE le 18/08/2026** — `#46`. `QO-111` et `QO-112` **closes**, les **7** choix du §9.2 **tranchés** (`DEC-497`–`DEC-500`). Collation **ICU `fr-FR`** posée avant la première table, `btree_gist` seule extension, migration `0002` éprouvée en montée, descente et remontée. **20 tests**, dont le refus de chevauchement par la base et **trois témoins**. Compte rendu : [`compte-rendu-t1-lot-2.md`](compte-rendu-t1-lot-2.md) | `US008` | 1 | ☑ |
 | **`T2`** | **Entités, paramètres et domaines e-mail.** `entity`, `platform_setting`, `entity_setting`, `allowed_email_domain`. Archivage §2.4. | `US001` | 2 | `entity(code)` unique éprouvé par **témoin** ; l'archivage **ne supprime pas** l'historique ; un paramètre local **surcharge** le global |
 | **`T3`** | **Personnes.** `person`, e-mail normalisé unique. **Aucune table d'authentification.** | `US002` | 3 | `person(email_normalized)` unique éprouvé par témoin, **normalisation comprise** — deux graphies du même e-mail doivent collisionner |
 | **`T4`** | **Appartenance à une entité.** `entity_membership`, ses états §24.1, et **la règle d'une seule appartenance principale active**. | `US002` | 4 | L'index partiel `UNIQUE WHERE membership_state IN ('future','active')` **refuse** la seconde ; les états suivent §24.1 |
@@ -242,31 +244,30 @@ fonctionnent ne démontrerait pas la moitié de ce lot.
 
 ### 9.1 Questions ouvertes à trancher — les deux sont bloquantes pour `T1`
 
-| ID | Question | Pourquoi elle bloque |
+| ID | Question | État |
 |---|---|---|
-| `QO-111` | **Fournisseur de collation PostgreSQL** | **Ne se change pas sans recréer le cluster.** Doit être tranché avant la première table |
-| `QO-112` | **Liste des extensions PostgreSQL** | `CREATE EXTENSION` exige des droits élevés, et **le choix du §9.2 point 3 en dépend** : une contrainte d'exclusion sur `(uuid, plage temporelle)` réclame `btree_gist` |
+| ~~`QO-111`~~ | Fournisseur de collation PostgreSQL | **CLOSE en `T1`, `DEC-497`** — ICU, locale `fr-FR`, bases recréées avant la première table |
+| ~~`QO-112`~~ | Liste des extensions PostgreSQL | **CLOSE en `T1`, `DEC-498`** — `btree_gist` seule. `pgcrypto` écartée : `gen_random_uuid()` est **dans le noyau**, mesuré |
+
+> **Une question NOUVELLE, née de la mesure de `T1` et absente de cette liste :** `QO-116`.
+> L'application se connecte à PostgreSQL avec un compte **superutilisateur**, alors que le cahier
+> §20.1 pose le « moindre privilège ». Arbitrage de Jonathan : **à traiter au LOT 3**, le lot dont la
+> sécurité applicative est l'objet. Le risque assumé d'ici là est nommé au registre.
 
 ### 9.2 Choix techniques que les documents validés ne tranchent pas
 
-**Sept, à instruire en `T1` et à trancher avec Jonathan. Aucun ne sera inventé** — c'est la règle
-§6.5, la plus utilisée du LOT 1.
+**Les SEPT sont tranchés en `T1`, le 18/08/2026, et tracés.** Aucun n'a été inventé — c'est la
+règle §6.5, la plus utilisée du LOT 1.
 
-1. **`created_by_person_id` et `updated_by_person_id`** : clé étrangère vers `person` — impossible
-   en `T2`, où `person` n'existe pas encore — ou colonne `uuid` sans contrainte ? Le §3.1 écrit
-   `uuid null` et **ne mentionne aucune clé étrangère**.
-2. **Représentation d'une période** : deux colonnes `starts_at` / `ends_at`, comme le §25.1
-   l'implique par ses `WHERE ends_at IS NULL`, ou une plage `tstzrange` que le §25.2 réclame pour
-   ses contraintes d'exclusion ? Les deux, avec colonne générée ?
-3. **Contraintes d'exclusion** : posées en base, ou règle de service seule ? Le §25.2 dit
-   « **pourra** utiliser », ce qui est une permission, pas une prescription.
-4. **Énumérations** : type `enum` PostgreSQL, contrainte `CHECK`, ou table de référence ? Le modèle
-   énumère des valeurs sans imposer de représentation.
-5. **Convention de nommage des contraintes** : sans elle, un retour arrière de migration ne
-   retrouve pas les objets qu'il doit défaire.
-6. **Génération des UUID** : applicative, ou `gen_random_uuid()` — ce qui rattache le choix à
-   `QO-112`.
-7. **`autogenerate` d'Alembic** : activé, ou migrations écrites à la main ?
+| | Choix | Tranché | Décision |
+|:--:|---|---|---|
+| 1 | `created_by_person_id` : clé étrangère ou `uuid` nu ? | **`uuid` sans clé étrangère** — c'est ce que le §3.1 écrit, `entity` précède `person`, et le LOT 10 devra anonymiser des personnes | `DEC-499` |
+| 2 | Représentation d'une période | **Les deux** : `starts_at` / `ends_at` comme source, plus une colonne `period` **générée**. Le §25.1 a besoin des bornes, le §25.2 de la plage, et une colonne générée ne peut pas diverger de sa source | `DEC-499` |
+| 3 | Contraintes d'exclusion en base, ou service seul ? | **En base**, `btree_gist`, le service traduisant le refus. Arbitrage de Jonathan : une règle qui n'existe que dans le code est contournable par tout autre chemin d'écriture | `DEC-498` |
+| 4 | Énumérations | **Contrainte de vérification**, jamais type `enum` natif : `ECART-012` porte précisément sur l'ajout d'une **troisième** valeur, et retirer une valeur d'un `enum` natif exige de recréer le type | `DEC-499` |
+| 5 | Nommage des contraintes | **Convention sur la `MetaData`**, avec `%(constraint_name)s`, ce qui rend toute contrainte anonyme **impossible à créer** — un `downgrade()` doit nommer ce qu'il supprime | `DEC-499` |
+| 6 | Génération des UUID | **Deux défauts** : `uuid4` côté Python pour les factories, `gen_random_uuid()` côté serveur pour les écritures hors ORM | `DEC-499` |
+| 7 | `autogenerate` d'Alembic | **Brouillon, jamais livrable** — il n'écrit ni les `WHERE` des index partiels, ni les exclusions, ni les colonnes générées. `target_metadata` est câblé pour rendre `alembic check` utilisable | `DEC-500` |
 
 ### 9.3 Un écart échu dans ce lot
 

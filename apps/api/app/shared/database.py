@@ -4,9 +4,15 @@ LOT 1, sous-etape T3, story MVP-L01-US003.
 
 FONDEMENT — cahier des charges §16.2 : SQLAlchemy, Alembic, et **aucune
 creation automatique de tables**. Ce module ne contient donc NI `Base`
-declarative metier, NI `create_all` : les tables naissent de migrations
-Alembic explicites, et le modele de donnees appartient au LOT 2, qui n'est pas
-ouvert.
+declarative, NI `create_all` : les tables naissent de migrations Alembic
+explicites.
+
+**Mis a jour au LOT 2, sous-etape `T1`.** La phrase « le modele de donnees
+appartient au LOT 2, qui n'est pas ouvert » etait juste quand elle a ete ecrite
+et ne l'est plus : le LOT 2 est ouvert depuis le 18/08/2026 (`DEC-496`). La base
+declarative vit desormais dans `app/shared/modele.py`, et elle reste separee de
+ce module : le socle du modele ne doit pas dependre d'un moteur, sans quoi
+importer une table ouvrirait une connexion.
 
 Le moteur est cree paresseusement : importer ce module ne doit pas ouvrir de
 connexion, sans quoi les tests unitaires de configuration exigeraient une base

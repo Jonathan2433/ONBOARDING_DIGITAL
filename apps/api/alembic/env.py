@@ -7,10 +7,17 @@ lue dans `alembic.ini` : le cahier §20.3 impose la configuration par
 environnement, et une URL en dur dans un fichier versionne contiendrait un mot
 de passe.
 
-`target_metadata` vaut `None` et le restera jusqu'au LOT 2 : il n'existe aucun
-modele SQLAlchemy metier. Le declarer vide plutot que d'inventer une `Base`
-evite qu'un `alembic revision --autogenerate` lance par erreur ne produise une
-migration de suppression de tout le schema.
+**Mis a jour au LOT 2, sous-etape `T1`.** `target_metadata` valait `None`
+« jusqu'au LOT 2 » : c'est fait, il porte desormais les metadonnees de
+`app.shared.modele`.
+
+CE QUE CE CABLAGE PERMET, ET CE QU'IL NE PERMET PAS. Il rend `alembic check`
+utilisable -- la commande existe en Alembic 1.18.5, verifie -- donc il rend
+DETECTABLE un ecart entre le modele declare et le schema reellement applique.
+Il rend aussi `--autogenerate` possible, et c'est la que la prudence s'impose :
+autogenerate n'ecrit PAS les clauses `WHERE` des index partiels du §25.1, ni les
+contraintes d'exclusion du §25.2, ni les colonnes generees. Il sert de BROUILLON
+et jamais de livrable ; chaque migration est relue et completee a la main.
 """
 
 from __future__ import annotations
@@ -19,11 +26,15 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.configuration.settings import charger_parametres
+from app.shared.modele import metadonnees
 
 configuration = context.config
 
-# Aucun modele metier au LOT 1. Voir le LOT 2.
-target_metadata = None
+# LOT 2, T1 : les metadonnees du socle declaratif. Aucune table n'y est encore
+# declaree -- elles arrivent en T2 et suivantes -- mais le cablage est pose des
+# maintenant pour que `alembic check` puisse comparer le declare au reel a
+# chaque sous-etape, plutot qu'a la fin du lot.
+target_metadata = metadonnees
 
 parametres = charger_parametres()
 configuration.set_main_option("sqlalchemy.url", parametres.url_postgresql())

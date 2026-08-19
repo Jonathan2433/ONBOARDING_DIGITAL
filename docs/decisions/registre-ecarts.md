@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 12 août 2026, correctifs postérieurs à la porte `G1`
+**Dernière mise à jour :** 18 août 2026, LOT 2 sous-étape `T1`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 26 | 5 | 19 | 2 |
+| Total 27 | 5 | 20 | 2 |
 
 ---
 
@@ -44,8 +44,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
 | `ECART-025` | La bande de ports de la recette a été choisie sur une mesure de ce qui **écoutait**, non de ce qui était **déclaré** : un projet tiers arrêté réclamait déjà `8080` | Non pour `G1` | **Clos** |
 | `ECART-026` | Les conventions Git prescrivaient une stratégie de fusion que la protection de branche **interdisait** : deux règles justes séparément, incompatibles ensemble | Non pour `G1`, **bloquant pour `G2`** | **Clos** |
+| `ECART-027` | Trois tests d'intégration recopiaient la révision de tête d'Alembic au lieu de la dériver, et sont devenus faux à la première migration du LOT 2 | Non | **Clos** |
 
-**Prochain identifiant libre : `ECART-027`.**
+**Prochain identifiant libre : `ECART-028`.**
 
 ---
 
@@ -375,4 +376,17 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Distinguer le réglage par branche** au lieu de l'appliquer uniformément : `develop` ne reçoit que des squash de branches de travail et gagne à rester linéaire ; `main` reçoit des merge commits et ne peut pas l'être. Et **poser le contrôle qui manquait** : après une fusion `develop` → `main`, comparer les **arbres** et vérifier l'**ascendance**, plutôt que de se fier au verdict de fusion. |
 | Résolution | **Clos** le 12 août 2026 par `DEC-495`, la rectification des §2 et §2.1 des conventions, et la PR `#35`.<br>**Réglage :** `required_linear_history` retiré sur `main`, conservé sur `develop` — mesuré après application, `false` / `true`, les six autres réglages inchangés.<br>**Réparation :** la PR `#35` est une **vraie fusion**, `develop` devient ancêtre de `main`, et la base de fusion remonte de `09ceb7c` à `e526e57`, la tête de `develop`. Mesuré : `main^{tree}` = `develop^{tree}` = `9bc9359`, **2 parents**, `main`↔`develop` à **3 / 0**.<br>**Et le contrôle posé a immédiatement attrapé un défaut :** une résolution en `git merge -X theirs` avait rendu un arbre **divergent**, la stratégie ayant conservé un fragment **non conflictuel** du côté abandonné — **41 lignes dupliquées dans `fiche-lot-1.md`, aucun conflit signalé**. Sans la comparaison des arbres, cette fusion passait en paraissant propre. |
 
-**Prochain identifiant libre : `ECART-027`.**
+## `ECART-027` — Trois tests d'intégration recopiaient la révision de tête d'Alembic
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 18 août 2026, LOT 2 sous-étape `T1`, en ajoutant la migration `0002` |
+| Source | `apps/api/tests/test_integration.py`, trois tests écrits en `T3` du LOT 1 |
+| Constat | Trois tests de migration — application sur base vide, rejeu, montée après descente — affirmaient `assert _revision_appliquee(base_vide) == "0001"`, **la révision écrite en dur**. Ils sont passés au rouge dès que la migration `0002` a été ajoutée, avec `assert '0002' == '0001'`. |
+| Impact | Borné, et le défaut était bruyant. Mais **onze migrations restent à écrire dans ce lot** : sans correction de la cause, chacune aurait cassé les mêmes trois tests, et la tentation à chaque fois aurait été de mettre à jour le nombre plutôt que de supprimer la classe. |
+| Cause | **Un identifiant recopié au lieu d'être dérivé de sa source.** C'est exactement `ECART-021`, appliqué non plus à un nombre de la documentation mais à une valeur d'un test. Et c'est `ECART-024` pour le mécanisme : les trois tests étaient **justes quand ils ont été écrits** — `0001` était alors la seule révision du dépôt — et c'est l'ouverture du LOT 2 qui les a rendus faux. Un contrôle ne devient pas faux tout seul. |
+| Bloquant | Non. Découvert par l'échec des tests, corrigé dans la même sous-étape |
+| Recommandation | **Dériver, jamais recopier** — la parade de `ECART-021`, transposée au code de test. |
+| Résolution | **Clos** le 18 août 2026. Une fonction `_tete_de_migration()` interroge `alembic heads` et **exige d'y trouver exactement une tête**, puis les trois tests comparent à cette valeur dérivée. **Éprouvé par témoin** : une révision `0003` jetable a été ajoutée, les trois tests ont **continué à passer**, puis le témoin a été supprimé. Sans ce témoin, la correction n'aurait pas été distinguable d'un simple remplacement de `0001` par `0002`. |
+
+**Prochain identifiant libre : `ECART-028`.**

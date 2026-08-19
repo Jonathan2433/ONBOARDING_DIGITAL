@@ -21,6 +21,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Mise en place GitHub `DEC-449` | 1 | Validée le 27/07/2026. **Remplace `DEC-448`** |
 | Ouverture du LOT 1 `DEC-450` | 1 | Validée le 27/07/2026 |
 | **Ouverture du LOT 2 `DEC-496`** | 1 | **Validée le 18/08/2026** |
+| **Réalisation du LOT 2 `DEC-497+`, sous-étape `T1`** | 4 | **Validées le 18/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -32,7 +33,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **164** | |
+| **Total** | **168** | |
 
 ---
 
@@ -307,7 +308,19 @@ Décisions prises après la validation de `G1`, sur des défauts révélés par 
 |---|---|---|---|
 | `DEC-496` | **Jonathan ouvre le LOT 2 — « Socle de données et isolation multi-entités »** le 18 août 2026. Les stories `MVP-L02-US001` à `US008` peuvent passer à `Ready`. Porte de validation **`G2`**, tag **`v0.2.0`** (`DEC-428`, conventions §4). Les **LOTS 3 à 14 restent `Planned`**. | `ROAD-003`, `ARB-BACK-003` et `BACKLOG-006` exigent une validation explicite et tracée avant tout lot dépendant. La porte `G1` est franchie : ses **sept** critères de sortie sont acquis, les huit stories sont `Done`, le tag `v0.1.0` est posé sur `main`, et `main` porte le contenu de `develop` — arbres identiques, `9bc9359`. La dépendance du LOT 2 déclarée par la roadmap, « LOTS 0 et 1 », est donc satisfaite. **Aucune ligne de code n'est écrite avant que Jonathan ait validé le découpage en sous-étapes** de [`fiche-lot-2.md`](../operations/fiche-lot-2.md). | Validée par Jonathan le 18/08/2026 |
 
-**Prochain identifiant libre : `DEC-497`.**
+## 1.16 Réalisation du LOT 2 — sous-étape `T1`
+
+Quatre décisions. Elles closent `QO-111` et `QO-112`, et tranchent les **sept** choix techniques
+du §9.2 de la [fiche du LOT 2](../operations/fiche-lot-2.md).
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-497` | **Le cluster PostgreSQL est créé avec le fournisseur de collation ICU et la locale `fr-FR`**, par `POSTGRES_INITDB_ARGS` déclaré dans le fichier Compose de **base** et non dans une variable. Les bases de développement et de recette ont été détruites et recréées le 18/08/2026, alors qu'elles ne contenaient que `alembic_version`. **`QO-111` est close.** | **Mesure, et non préférence.** Avec la collation libc `en_US.utf8` héritée de l'image, `Jeanne` se classait **avant** `Jean-Pierre` et `Legall` avant `Le Gall` : les noms composés et les particules sortaient dans un ordre qu'un annuaire français ne produit pas, et le trombinoscope du LOT 5 l'aurait affiché. Sur des prénoms simplement accentués — `Élodie`, `Émile`, `Étienne`, `Èva`, `Zoé` — les deux collations trient à l'**identique** : le motif n'est donc pas l'accentuation. **Un second argument a été avancé puis RETIRÉ** : la détection d'un changement de règles de tri. Mesuré, `pg_database.datcollversion` vaut `2.41` pour libc et `153.128` pour ICU — les **deux** enregistrent une version, une non-concordance serait détectée dans les deux cas, et l'argument ne tenait pas. Déclaré dans le fichier de base parce qu'une variable permettrait aux deux environnements de **diverger sur leur collation** : deux environnements qui ne trient pas pareil ne recettent pas la même chose. | Validée par Jonathan le 18/08/2026 |
+| `DEC-498` | **Une seule extension PostgreSQL est installée : `btree_gist`**, par la migration `0002`. Et **les règles anti-chevauchement sont portées par la BASE**, contrainte d'exclusion sur `(sujet WITH =, period WITH &&)`, le service se chargeant du message compréhensible. **`QO-112` est close.** | Aucun document du corpus ne nommait une extension. La liste est donc **dérivée d'un besoin technique nommé** : une contrainte d'exclusion mélangeant l'égalité d'un `uuid` et le chevauchement d'une plage exige `btree_gist`. **Ce qui n'est PAS installé est le plus instructif** : `pgcrypto` serait là pour `gen_random_uuid()`, or la mesure du 18/08/2026 rattache cette fonction à **« le NOYAU »** — PostgreSQL la fournit en interne depuis la 13 ; `citext` ferait un second mécanisme là où `email_normalized` décide déjà d'une normalisation applicative ; `unaccent` et `pg_trgm` servent la recherche tolérante du §26.1, qui appartient au **LOT 5**. Les six sont **disponibles** — 45 extensions dans l'image — donc ne pas les installer est un choix. Arbitrage de Jonathan sur la barrière en base : une règle qui n'existe que dans le code est contournable par tout autre chemin d'écriture — migration, script, correction directe — et l'incohérence ne se verrait qu'à la lecture. | Validée par Jonathan le 18/08/2026 |
+| `DEC-499` | **Socle déclaratif dans `app/shared/modele.py`**, et cinq choix qu'il fixe. **(a)** Convention de nommage des contraintes sur la `MetaData`, avec `%(constraint_name)s` pour les vérifications. **(b)** Les colonnes d'auteur `created_by_person_id`, `updated_by_person_id`, `archived_by_person_id` sont des `uuid` **sans clé étrangère**. **(c)** Une période est **deux colonnes** `starts_at` / `ends_at` **plus** une colonne `period` **générée** `tstzrange(starts_at, ends_at)`. **(d)** Les énumérations sont bornées par **contrainte de vérification**, jamais par un type `enum` natif. **(e)** `id` reçoit **deux** défauts, `uuid4` côté Python et `gen_random_uuid()` côté serveur. **Les noms de tables et de colonnes sont ceux du modèle de données à la lettre, donc en anglais**, par exception assumée au français du reste du code. | **(a)** Un `downgrade()` doit **nommer** les objets qu'il supprime ; sans convention le nom est choisi par PostgreSQL et n'apparaît nulle part dans le code. Le jeton `%(constraint_name)s` rend toute contrainte anonyme **impossible à créer**, ce qui est le garde-fou et non la gêne. **(b)** Le §3.1 les écrit `uuid null` sans clé étrangère ; `entity` précède `person` dans l'ordre du §28, donc la contrainte ne pourrait pas exister ; et le LOT 10 devra effacer ou anonymiser des personnes. **(c)** Le §25.1 écrit ses index partiels avec `WHERE ends_at IS NULL`, le §25.2 réclame des plages : les deux représentations sont nécessaires, et une colonne **générée** ne peut pas diverger de sa source, contrairement à deux colonnes maintenues par du code. La plage est **semi-ouverte**, donc deux périodes adjacentes ne se chevauchent pas. **(d)** Retirer ou renommer une valeur d'un type `enum` natif exige de recréer le type et de réécrire les colonnes dépendantes — or `ECART-012` est ouvert et échu dans ce lot, et porte précisément sur l'ajout d'une **troisième** valeur à la situation professionnelle. **(e)** Le défaut Python donne son identifiant à l'objet avant le `flush`, ce dont les factories de `T12` ont besoin ; le défaut serveur couvre les écritures hors ORM. Un dictionnaire de traduction entre les noms du modèle et ceux du schéma serait un endroit où les deux divergent en silence : une chose, un nom. | Validée par Jonathan le 18/08/2026 |
+| `DEC-500` | **`autogenerate` d'Alembic sert de BROUILLON et jamais de livrable**, `target_metadata` est câblé, et **`make migrate` rafraîchit puis VÉRIFIE le code embarqué** avant d'agir — nouvelles cibles `code-refresh` et `code-check`, et le script `verifier-code-embarque.py` compare les empreintes SHA-256 des fichiers `.py` vus par le conteneur à celles du dépôt. | `autogenerate` n'écrit pas les clauses `WHERE` des index partiels du §25.1, ni les contraintes d'exclusion du §25.2, ni les colonnes générées : une migration produite sans relecture serait incomplète **en paraissant complète**. Le câblage de `target_metadata` rend en revanche `alembic check` utilisable — la commande existe en Alembic 1.18.5, vérifié — donc un écart entre le déclaré et le réel devient **détectable**. La vérification du code embarqué répond à un défaut **réel** du 18/08/2026 : `apps/api` n'étant pas monté en bind, la migration `0002` écrite sur l'hôte était invisible du conteneur, et `make migrate` a rendu `0001 (head)` **en sortant en 0**. Même mécanisme que le défaut `T5-2` du LOT 1 — Caddy servant une configuration périmée en étant `healthy` — et même parti que `DEC-472` : `make up` appelle `caddy-reload` parce qu'attendre du service qu'il se rafraîchisse seul ne marche pas. Le contrôle **après** le rafraîchissement n'est pas redondant : un `build` qui n'aurait pas pris produirait la même observation qu'un `build` réussi. | Validée par Jonathan le 18/08/2026 |
+
+**Prochain identifiant libre : `DEC-501`.**
 
 ---
 
@@ -470,6 +483,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-449` — mise en place GitHub | 1 | 1 |
 | `DEC-450` — ouverture du LOT 1 | 1 | 1 |
 | `DEC-496` — ouverture du LOT 2 | 1 | 1 |
+| `DEC-497+` — réalisation du LOT 2, `T1` | 4 | 4 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -481,7 +495,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **164** | **164** |
+| **Total** | **168** | **168** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
