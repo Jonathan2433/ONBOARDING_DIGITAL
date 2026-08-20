@@ -598,6 +598,7 @@ up: env ## Demarrer la stack : les 8 services (ENVIRONNEMENT=dev par defaut)
 	@echo "==> Demarrage des services d'infrastructure"
 	$(DC) up --detach --wait $(DRAPEAUX_UP) db redis minio mailpit
 	@$(MAKE) --no-print-directory minio-bucket ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory roles-provision ENVIRONNEMENT=$(ENVIRONNEMENT)
 	@echo "==> Demarrage des services applicatifs"
 	$(DC) up --detach --wait $(DRAPEAUX_UP)
 	@$(MAKE) --no-print-directory caddy-reload ENVIRONNEMENT=$(ENVIRONNEMENT)
@@ -833,6 +834,14 @@ isolation-check: ## Verifier l isolation inter-entites du modele 2.5 et 25.3
 
 isolation-temoin: ## Temoin negatif : le controle d isolation sait-il echouer ?
 	@python3 infra/scripts/verifier-isolation.py --temoin \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+roles-provision: ## Approvisionner les deux roles du moindre privilege (QO-116, idempotent)
+	@python3 infra/scripts/provisionner-roles.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+privileges-check: ## Verifier le moindre privilege PostgreSQL (QO-116) — DDL REFUSE au role d execution
+	@python3 infra/scripts/verifier-privileges.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 migrations-check: ## Prouver qu une base VIDE se construit uniquement par migrations

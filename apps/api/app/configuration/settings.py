@@ -97,6 +97,24 @@ class Parametres(BaseSettings):
     POSTGRES_DB: str = ""
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
+    #  MOINDRE PRIVILEGE — LOT 3, T1, `QO-116`, `DEC-518`.
+    #
+    #  `POSTGRES_USER` est le compte que cree `initdb` : il est SUPERUTILISATEUR
+    #  et proprietaire du cluster. Rien ne peut l'empecher d'exister, et le
+    #  pretendre serait pire que le nommer. Ce qui change au LOT 3, c'est que
+    #  **l'application ne l'emploie plus** : il ne sert qu'a l'initialisation du
+    #  cluster et a l'approvisionnement des deux roles ci-dessous.
+    #
+    #  DEUX ROLES, ET LEUR SEPARATION EST LE POINT :
+    #    - MIGRATIONS possede les objets du schema et peut les modifier. Alembic
+    #      l'emploie, et lui seul ;
+    #    - RUNTIME ne peut que lire et ecrire des LIGNES. L'API et le worker
+    #      l'emploient. Il ne peut ni creer, ni supprimer, ni modifier une table,
+    #      et un temoin l'exige.
+    POSTGRES_MIGRATIONS_USER: str = ""
+    POSTGRES_MIGRATIONS_PASSWORD: str = ""
+    POSTGRES_RUNTIME_USER: str = ""
+    POSTGRES_RUNTIME_PASSWORD: str = ""
     DB_AUTO_CREATE: bool = False
 
     # --- Redis ---------------------------------------------------------------
@@ -130,6 +148,13 @@ class Parametres(BaseSettings):
             "POSTGRES_DB",
             "POSTGRES_USER",
             "POSTGRES_PASSWORD",
+            #  LOT 3, T1 : sans elles, l'API tenterait de se connecter avec un
+            #  utilisateur vide et echouerait a la premiere requete. Les declarer
+            #  obligatoires les fait echouer au DEMARRAGE, en les NOMMANT.
+            "POSTGRES_RUNTIME_USER",
+            "POSTGRES_RUNTIME_PASSWORD",
+            "POSTGRES_MIGRATIONS_USER",
+            "POSTGRES_MIGRATIONS_PASSWORD",
             "REDIS_PASSWORD",
             "MINIO_ROOT_USER",
             "MINIO_ROOT_PASSWORD",
@@ -220,12 +245,37 @@ class Parametres(BaseSettings):
     # ------------------------------------------------------------------------
 
     def url_postgresql(self) -> str:
-        """URL SQLAlchemy vers PostgreSQL.
+        """URL SQLAlchemy de l'APPLICATION — le role d'execution, jamais le superutilisateur.
 
         Contient le mot de passe : ne jamais la journaliser telle quelle.
+
+        **CETTE METHODE EMPLOYAIT `POSTGRES_USER` JUSQU'AU LOT 3.** C'etait
+        `QO-116` : le cahier §20.1 pose le moindre privilege, et l'API se
+        connectait avec le compte proprietaire du cluster. Elle emploie desormais
+        `POSTGRES_RUNTIME_USER`, qui ne peut que lire et ecrire des lignes.
         """
+        return self._url(self.POSTGRES_RUNTIME_USER, self.POSTGRES_RUNTIME_PASSWORD)
+
+    def url_postgresql_migrations(self) -> str:
+        """URL SQLAlchemy des MIGRATIONS — le role qui possede les objets du schema.
+
+        Employee par `alembic/env.py`, et par lui seul. Elle porte le droit de
+        creer et de modifier des tables, que l'application n'a pas.
+        """
+        return self._url(self.POSTGRES_MIGRATIONS_USER, self.POSTGRES_MIGRATIONS_PASSWORD)
+
+    def url_postgresql_superutilisateur(self) -> str:
+        """URL du compte cree par `initdb`. **N'A QU'UN SEUL USAGE LEGITIME.**
+
+        Approvisionner les deux roles ci-dessus — `make roles-provision` — parce
+        que `CREATE ROLE` exige le superutilisateur. Toute autre utilisation est
+        une regression de `QO-116`, et `make privileges-check` la detecte.
+        """
+        return self._url(self.POSTGRES_USER, self.POSTGRES_PASSWORD)
+
+    def _url(self, utilisateur: str, mot_de_passe: str) -> str:
         return (
-            f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+psycopg://{utilisateur}:{mot_de_passe}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 

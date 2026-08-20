@@ -40,7 +40,7 @@ from sqlalchemy import text
 from app.configuration.settings import Parametres
 from app.health.dependances import sonder_minio, sonder_postgresql, sonder_redis
 from app.main import creer_application
-from app.shared.database import moteur
+from app.shared.database import moteur, moteur_migrations
 
 pytestmark = pytest.mark.integration
 
@@ -138,7 +138,16 @@ def base_vide(parametres_de_la_stack: Parametres) -> Iterator[Parametres]:
         autocommit=True,
     ) as connexion:
         connexion.execute(f'DROP DATABASE IF EXISTS "{NOM_BASE_DE_TEST}"')
-        connexion.execute(f'CREATE DATABASE "{NOM_BASE_DE_TEST}"')
+        #  LE PROPRIETAIRE EST LE ROLE DE MIGRATION — LOT 3, `T1`, `QO-116`.
+        #  Alembic se connecte desormais avec ce role : sur une base dont il
+        #  n'est pas proprietaire, il echoue avec « permission denied for schema
+        #  public », et le message ne dit pas que la cause est la PROPRIETE de la
+        #  base jetable. Le declarer proprietaire lui donne d'emblee tout ce
+        #  qu'une migration exige.
+        connexion.execute(
+            f'CREATE DATABASE "{NOM_BASE_DE_TEST}" '
+            f'OWNER "{parametres_de_la_stack.POSTGRES_MIGRATIONS_USER}"'
+        )
 
     yield parametres_de_la_stack.model_copy(update={"POSTGRES_DB": NOM_BASE_DE_TEST})
 
@@ -178,6 +187,16 @@ def _alembic(parametres: Parametres, *commande: str) -> str:
             "POSTGRES_DB": parametres.POSTGRES_DB,
             "POSTGRES_USER": parametres.POSTGRES_USER,
             "POSTGRES_PASSWORD": parametres.POSTGRES_PASSWORD,
+            #  LOT 3, T1 — `QO-116`, `DEC-518`. Le sous-processus Alembic
+            #  construit ses propres `Parametres`, donc les quatre variables
+            #  des deux roles doivent traverser la frontiere de processus.
+            #  **Le garde-fou de demarrage a nomme les quatre manquantes**, ce
+            #  qui est exactement son role : « Demarrage refuse : 4 garde-fou(s)
+            #  de configuration en echec ».
+            "POSTGRES_MIGRATIONS_USER": parametres.POSTGRES_MIGRATIONS_USER,
+            "POSTGRES_MIGRATIONS_PASSWORD": parametres.POSTGRES_MIGRATIONS_PASSWORD,
+            "POSTGRES_RUNTIME_USER": parametres.POSTGRES_RUNTIME_USER,
+            "POSTGRES_RUNTIME_PASSWORD": parametres.POSTGRES_RUNTIME_PASSWORD,
             "REDIS_PASSWORD": parametres.REDIS_PASSWORD,
             "MINIO_ROOT_USER": parametres.MINIO_ROOT_USER,
             "MINIO_ROOT_PASSWORD": parametres.MINIO_ROOT_PASSWORD,
@@ -229,8 +248,16 @@ def _tete_de_migration(parametres: Parametres) -> str:
 
 
 def _revision_appliquee(parametres: Parametres) -> str | None:
-    """Revision inscrite dans `alembic_version`, ou None si la table est absente."""
-    with moteur(parametres).connect() as connexion:
+    """Revision inscrite dans `alembic_version`, ou None si la table est absente.
+
+    **LA CONNEXION DES MIGRATIONS, ET NON CELLE DE L'APPLICATION** — LOT 3, `T1`,
+    `QO-116`. `alembic_version` est une metadonnee de MIGRATION : la lire avec le
+    role d'execution echouait sur la base jetable avec « permission denied for
+    table alembic_version », parce que rien n'y accorde de droits a ce role. Sur
+    la base reelle, les privileges PAR DEFAUT la rendraient lisible — mais
+    dependre de cet effet de bord serait fragile, et le sens est plus clair ainsi.
+    """
+    with moteur_migrations(parametres).connect() as connexion:
         presente = connexion.execute(
             text("SELECT to_regclass('public.alembic_version') IS NOT NULL")
         ).scalar_one()
@@ -240,8 +267,11 @@ def _revision_appliquee(parametres: Parametres) -> str | None:
 
 
 def _tables_publiques(parametres: Parametres) -> set[str]:
-    """Tables du schema public, hors table de suivi d'Alembic."""
-    with moteur(parametres).connect() as connexion:
+    """Tables du schema public, hors table de suivi d'Alembic.
+
+    Meme motif que `_revision_appliquee` : c'est une lecture de SCHEMA.
+    """
+    with moteur_migrations(parametres).connect() as connexion:
         lignes = connexion.execute(
             text(
                 "SELECT tablename FROM pg_tables "

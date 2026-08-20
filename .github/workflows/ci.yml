@@ -200,6 +200,7 @@ jobs:
           make migrate
           make alembic-check
           make historisation-check
+          make privileges-check
           make isolation-check
           make isolation-temoin
           make migrations-check

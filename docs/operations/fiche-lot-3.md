@@ -3,7 +3,7 @@
 **Porte de validation :** `G3` · **Tag prévu :** `v0.3.0`
 **Ouvert par Jonathan le :** 20 août 2026 — décision `DEC-518`
 **Rédigée le :** 20 août 2026, à la sortie de la porte `G2`
-**Statut de cette fiche :** **soumise à validation** — le §3 est ce que tu valides
+**Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 20/08/2026** — « tout me convient »
 **Traçabilité GitHub :** epic `#62`, jalon `G3`, huit stories `#63` à `#70`
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
@@ -45,7 +45,7 @@ tout ce qui était théorique devient réel — c'est le motif de l'arbitrage du
 
 | | Sous-étape | Story | Ce qui prouvera qu'elle est finie |
 |:--:|---|---|---|
-| **`T1`** | **Moindre privilège PostgreSQL — deux rôles.** `QO-116`. Un rôle porteur du DDL pour les migrations, un rôle borné au DML pour l'exécution. | — | Les huit services démarrent, les **onze** migrations s'appliquent et les **373** tests passent, **sur une base recréée de zéro** · le rôle d'exécution **échoue** sur un `CREATE TABLE` et sur un `DROP` — témoin exigé · `QO-116` **close** |
+| ~~**`T1`**~~ | ~~**Moindre privilège PostgreSQL — deux rôles.**~~ **TERMINÉE le 20/08/2026.** **`QO-116` CLOSE** (`DEC-520`). **TROIS comptes et non deux** : `initdb` crée un superutilisateur, rien ne peut l'empêcher — ce qui change, c'est que l'application ne l'emploie plus. **`btree_gist` est `trusted`**, mesuré, ce qui rend la migration `0002` applicable sans superutilisateur. **`REASSIGN OWNED` a échoué** : 188 des 196 fonctions appartiennent à l'extension, et une extension n'a pas d'`ALTER … OWNER TO` — transfert explicite et **filtré**, 19 tables et 8 fonctions. Les **privilèges par défaut** couvrent les tables futures. **Tout rejoué sur une base recréée de zéro** : 8 services sains, 11 migrations, **390 tests**. Compte rendu : [`compte-rendu-t1-lot-3.md`](compte-rendu-t1-lot-3.md) | — | ☑ |
 | **`T2`** | **Les sept tables du modèle §10**, migration `0012`. `user_account`, `admin_password_credential`, `magic_link_request`, `user_session`, `service_account`, `service_token`, `auth_event`. | toutes | Migration éprouvée en montée, descente et remontée · `make migrations-check` compare le schéma · **aucun mot de passe ni jeton en clair** dans une colonne, vérifié par contrôle |
 | **`T3`** | **Magic link — la demande.** Réponse **générique** quelle que soit l'existence de l'adresse, domaine autorisé configurable, profil actif exigé. | `US001` | La réponse et le **code HTTP** sont **identiques** pour une adresse connue et inconnue — deux tests, et la comparaison porte sur le corps **et** l'en-tête · un profil **archivé** ne reçoit rien (§30.11) · Mailpit capte le message |
 | **`T4`** | **Magic link — la consommation.** Usage unique, expiration à 15 minutes, le dernier lien invalide les précédents. | `US002` | Un second usage **échoue** · un lien de 16 minutes échoue · émettre un nouveau lien invalide l'ancien · **aucun lien complet dans les journaux**, prouvé par un contrôle sur les barrières de masquage |

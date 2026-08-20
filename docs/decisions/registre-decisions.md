@@ -35,6 +35,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-516`, sous-étape `T12`** | 1 | **Validée le 20/08/2026** |
 | **Franchissement de la porte `G2` `DEC-517`** | 1 | **Validée le 20/08/2026** |
 | **Ouverture du LOT 3 `DEC-518+`** | 2 | **Validées le 20/08/2026** |
+| **Réalisation du LOT 3 `DEC-520`, sous-étape `T1`** | 1 | **Validée le 20/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -46,7 +47,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **187** | |
+| **Total** | **188** | |
 
 ---
 
@@ -480,7 +481,15 @@ Deux décisions. L'ouverture du lot, **l'ordre de ses sous-étapes**, et une que
 | `DEC-518` | **Jonathan ouvre le LOT 3 — Authentification, sessions et sécurité applicative, porte `G3` — le 20 août 2026.** Et il arbitre son ordre : **`QO-116`, le moindre privilège PostgreSQL, est traité en PREMIÈRE sous-étape**, avant l'authentification elle-même. **Deux rôles distincts** seront créés : l'un porteur du DDL pour les migrations, l'autre borné au DML pour l'exécution. | **L'ouverture explicite est exigée** par `ROAD-003` et `ARB-BACK-003`, et le §2 de la passation en fait la première règle non négociable : seul le lot ouvert par Jonathan peut être réalisé. **Et l'ORDRE n'est pas un détail de confort.** Le registre de `QO-116` le dit depuis `T1` : « plus on attend, plus de lots auront été écrits en supposant ce compte ». Le LOT 3 est **précisément celui qui introduit l'accès extérieur**, donc celui où l'exposition cesse d'être théorique — reporter le moindre privilège *après* l'authentification aurait signifié écrire l'authentification elle-même sur un compte superutilisateur. **Le coût de ce choix est nommé et accepté** : la façon dont la plateforme se connecte à sa base change, et il faudra **reprouver** que les huit services démarrent, que les onze migrations s'appliquent et que les 373 tests passent. C'est exactement le genre de changement que le §7.16 vise — *ce qui n'a jamais tourné ailleurs n'est pas éprouvé* — et il sera éprouvé sur une base **recréée de zéro**, non sur celle qui tourne. | Validée par Jonathan le 20/08/2026 |
 | `DEC-519` | **`QO-115` est CLOSE : la charte graphique et la police officielle eXalt n'existent pas dans le corpus, et les jetons relevés du prototype en `T10` du LOT 1 font référence.** Ils restent qualifiés d'**approximation** dans la documentation, et non de charte. | **La mesure de `T10` avait établi les faits** : le cahier §13.1 exige « la charte graphique » et « la police officielle », **aucune des deux n'est dans le corpus**, aucun fichier de design n'est versionné, et le cahier ne contient **aucune** couleur hexadécimale — zéro occurrence. Le prototype, lui, **nomme** sa palette, et cela corrobore littéralement le « dégradés bleu, rose et violet » du §13.2 : **deux sources concordantes**, donc pas une invention. **Et la mesure avait CORRIGÉ le prototype**, ce qui est le résultat le plus utile : le jaune rend 1,37 de contraste sur fond clair et le bleu foncé 1,69 sur fond sombre, si bien que les couleurs de marque sont des **surfaces** portant un texte apparié mesuré. Le reprendre tel quel aurait reconduit **deux** défauts d'accessibilité. **Fermer la question ne ferme pas la porte** : si la charte apparaît, les jetons sont dans un fichier unique — `packages/ui/jetons.ts` — et le contrôle de contraste se rejoue. Ce qui est décidé, c'est de **ne plus attendre un document qui n'existe pas** pour construire le LOT 4. | Validée par Jonathan le 20/08/2026 |
 
-**Prochain identifiant libre : `DEC-520`.**
+## 1.30 Réalisation du LOT 3 — sous-étape `T1`
+
+Une décision. Le moindre privilège PostgreSQL, et **`QO-116` close**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-520` | **`QO-116` est levée : l'application ne se connecte plus à PostgreSQL en superutilisateur.** **(a)** **TROIS** comptes, et non deux : le superutilisateur d'`initdb` subsiste, et son unique usage légitime devient l'approvisionnement des deux autres. **(b)** L'approvisionnement est une **cible `make`**, jamais une migration. **(c)** Le transfert de propriété est **explicite et filtré**, non un `REASSIGN OWNED`. **(d)** Les **privilèges par défaut** couvrent les tables qui n'existent pas encore. **(e)** `moteur_migrations()` est nommé, et les rares tests qui créent des objets l'emploient. **(f)** Toute base **jetable** est créée avec le rôle de migration pour **propriétaire**. **(g)** `make privileges-check` est **dans la CI**, plus **13 tests**. | **(a) `initdb` crée un superutilisateur, et rien ne peut l'empêcher d'exister.** Prétendre le contraire serait pire que le nommer : le cahier §20.1 demande que **l'application** n'en use pas, et c'est ce qui change. Mesuré avant : `SELECT rolsuper` rendait `t` pour le compte applicatif ; mesuré après : `f`, et il ne peut ni créer une base, ni créer un rôle. **(b) La dépendance serait circulaire** : un rôle est un objet de **cluster**, `CREATE ROLE` exige le superutilisateur, et une migration exécutée par le rôle de migration ne pourrait pas créer ce rôle. La cible est appelée par `make up` **après** que la base est saine et **avant** que l'API ne démarre — même place et même motif que la création du bucket MinIO, `DEC-477`. **(c) `REASSIGN OWNED` A ÉCHOUÉ, ET LA MESURE A DONNÉ LA CAUSE EN DEUX NOMBRES** : « cannot reassign ownership … because they are required by the database system ». Sur les **196** fonctions du schéma, **188 appartiennent à `btree_gist`** et **8 seulement sont les nôtres** ; une extension n'a pas d'`ALTER … OWNER TO`, et la propriété de la **base** elle-même bloquait aussi. Le transfert filtre donc sur `pg_depend.deptype = 'e'`, **compte** ce qu'il a transféré — 19 tables, 8 fonctions — et **nomme le résiduel** : l'extension et la base restent au superutilisateur, sans conséquence, le rôle de migration ayant `CREATE ON DATABASE` explicitement. **Et cette mesure a débloqué la sous-étape** : `btree_gist` est `trusted = t` sur PostgreSQL 17.7, donc installable **sans** superutilisateur — sans quoi la migration `0002` aurait été inapplicable. **(d) C'EST LE POINT LE PLUS SUBTIL.** Une table créée par une migration **future** n'existe pas au moment du `GRANT`. Sans privilèges par défaut, chaque migration devrait accorder ses droits, et **le jour où l'une l'oublie, l'application échoue à l'EXÉCUTION avec « permission denied » alors que la migration a RÉUSSI** : le défaut se manifesterait loin de sa cause. Un contrôle l'éprouve en créant une table **après** l'approvisionnement. **(e)** Neuf tests du socle créent des tables pour éprouver les contraintes : le rôle d'exécution les refuse, **et c'est précisément ce qu'on lui demande**. Les faire passer par `moteur_migrations()` rend explicite lesquels font du DDL. **(f)** Alembic se connecte désormais avec le rôle de migration : sur une base jetable dont il n'est pas propriétaire, il échoue avec « permission denied for schema public », **et le message ne dit pas que la cause est la propriété de la base**. `OWNER` le lui donne d'emblée. **(g) `make privileges-check` exige QUATRE propriétés, et le témoin en est une** : le rôle refuse cinq opérations DDL, **mais réussit le DML** — sans quoi les refus prouveraient l'absence de privilège, non le moindre privilège. | Validée par Jonathan le 20/08/2026 |
+
+**Prochain identifiant libre : `DEC-521`.**
 
 ---
 
@@ -657,6 +666,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-516` — réalisation du LOT 2, `T12` | 1 | 1 |
 | `DEC-517` — franchissement de la porte `G2` | 1 | 1 |
 | `DEC-518+` — ouverture du LOT 3 | 2 | 2 |
+| `DEC-520` — réalisation du LOT 3, `T1` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -668,7 +678,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **187** | **187** |
+| **Total** | **188** | **188** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
