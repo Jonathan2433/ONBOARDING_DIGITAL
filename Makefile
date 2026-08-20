@@ -827,6 +827,14 @@ historisation-check: ## Verifier les 7 relations historisees du modele 25.2
 	@python3 infra/scripts/verifier-historisation.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+isolation-check: ## Verifier l isolation inter-entites du modele 2.5 et 25.3
+	@python3 infra/scripts/verifier-isolation.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+isolation-temoin: ## Temoin negatif : le controle d isolation sait-il echouer ?
+	@python3 infra/scripts/verifier-isolation.py --temoin \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current
 

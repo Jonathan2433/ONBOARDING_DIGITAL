@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `514` en usage | `DEC-515` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `515` en usage | `DEC-516` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -209,6 +209,7 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 | `T8` | DSM, responsabilités Framework et rôles techniques | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Un défaut qui valait trois types sur quatre** : une clé d'exclusion contenant une colonne **nullable** ne contraint rien sur les lignes où elle est nulle. Deux **permissions** distinguées de deux interdictions voisines. **`ECART-031` ouvert** — le §8.4 exige un état de publication que `office` ne déclare pas. 19 tests. `DEC-512` |
 | `T9` | Historisation et contraintes temporelles | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Aucune table créée** : les 7 relations existaient. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2** — et **il a trouvé un défaut le jour même**. **`alembic check` est AVEUGLE aux exclusions**, mesuré : 10 déclarées, 9 en base, code 0. 8 tests. `DEC-513` |
 | `T10` | Contraintes de rôles et de périmètres | `MVP-L02-US005` | **Terminée** le 19/08/2026. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** — vérifiés, non réimplémentés. **`ECART-032` ouvert** : le backlog interdit plus large que le cahier, la matrice **et** le modèle, qui restreignent tous au seul **Booster**. « DG implique DSM » appliqué comme **implication** — un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** de clé étrangère par un déclencheur `BEFORE` a inversé un test de `T6`. 11 tests, dont un sur une **non-action**. `DEC-514` |
-| `T11`, `T12` | Voir la fiche | — | Non entamées |
+| `T11` | Isolation inter-entités | `MVP-L02-US006` | **Terminée** le 20/08/2026. **Aucune migration** : les 8 clés composites du §25.3 fermaient déjà tous les chemins locaux. **Ma première mesure ne prouvait rien** — une référence sans clé étrangère aurait donné la même observation ; le contrôle examine les **colonnes**, pas les contraintes. `MATCH SIMPLE` rend une clé composite **inerte** sur une colonne nulle : `T8-1` transposé. **Dépôts cloisonnés** dont les deux types ne peuvent se confondre, et le service qui referme `DEC-514`. 34 tests, témoin en CI. `DEC-515` |
+| `T12` | Voir la fiche | — | Non entamée |
 
 ---
