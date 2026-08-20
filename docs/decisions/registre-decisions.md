@@ -32,6 +32,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-513`, sous-étape `T9`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-514`, sous-étape `T10`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-515`, sous-étape `T11`** | 1 | **Validée le 20/08/2026** |
+| **Réalisation du LOT 2 `DEC-516`, sous-étape `T12`** | 1 | **Validée le 20/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -43,7 +44,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **183** | |
+| **Total** | **184** | |
 
 ---
 
@@ -451,7 +452,16 @@ et une sous-étape qui **n'écrit aucune migration**.
 |---|---|---|---|
 | `DEC-515` | **`T11` n'écrit AUCUNE migration, et pose deux contrôles plus une couche de dépôts.** **(a)** Le schéma n'est pas modifié : les **8** clés composites du §25.3 ferment déjà tous les chemins entre deux tables locales. **(b)** Le couple unique `(id, entity_id)` **n'est pas ajouté** aux 10 tables locales qui ne sont pas cibles d'une clé composite. **(c)** `make isolation-check` examine les **colonnes**, non les contraintes, et **dérive** du modèle la nullabilité attendue d'`entity_id`. **(d)** Il exige `entity_id NOT NULL` à la source de toute clé composite, au titre de `MATCH SIMPLE`. **(e)** `make isolation-temoin` est **dans la CI**. **(f)** `DepotLocal` et `DepotGlobal` rendent le cloisonnement structurel, et **ne peuvent pas se confondre**. **(g)** Le service `attribuer_la_categorie_dg` referme la boucle de `DEC-514`. | **(a) C'est le second cas de ce lot où la bonne action était de mesurer, puis de ne rien écrire** — après `T10`, dont deux critères sur trois étaient déjà acquis. La fiche §5 annonçait « onze migrations, une par sous-étape » : écrire une migration pour honorer une arithmétique de plan aurait été inventer. **(b) `id` étant clé primaire, un couple `(id, entity_id)` ne peut JAMAIS rien refuser** : si `id` est unique, le couple l'est. Aucun test ne pourrait le faire échouer, et poser dix contraintes intestables est l'inverse de la première proposition du §7.0. Le couple n'existe que pour être **référençable** ; le contrôle l'**exige** dès qu'une table devient cible, ce qui rend la règle vivante au lieu de la figer en dix index morts. **(c) MA PREMIÈRE MESURE NE PROUVAIT RIEN, ET C'EST LE MOTIF DÉTERMINANT.** J'avais énuméré les clés étrangères et constaté qu'aucune n'était simple entre deux tables locales : zéro fuite. **Une référence posée SANS clé étrangère aurait donné exactement la même observation** sur un schéma entièrement percé — quatrième proposition du §7.0. Le contrôle part donc des colonnes en `_id` et exige que chacune soit couverte, ou soit l'une des trois colonnes d'auteur du §3.1, **nommées et comptées**. La nullabilité est dérivée dans les **deux sens** : le défaut du §3.1 est la règle, une section de table n'en déclare que l'exception — ma première version prenait l'exception pour la règle et **échouait sur cinq tables conformes**. **(d)** `MATCH SIMPLE`, le défaut de PostgreSQL, **satisfait une clé composite sans aucune vérification dès qu'une de ses colonnes est nulle**. Une clé sur `(circle_id, entity_id)` dont `entity_id` serait nullable ne garantirait rien des lignes où l'entité est nulle : c'est `T8-1` transposé aux clés étrangères. **(e) Un témoin qui n'a tourné qu'une fois sur ma machine, c'est le §7.16.** Et il a servi immédiatement : sa première version ne portait qu'une clé **simple**, si bien que le contrôle `MATCH SIMPLE` **n'était jamais exercé** — un témoin qui n'exerce pas un contrôle ne prouve rien de ce contrôle. Il exige désormais les **quatre** messages, nommément, plutôt qu'un simple code de sortie non nul. **(f) Le critère de `US006` dit « les contraintes SQL ET SERVICES refusent ».** Les dépôts ne remplacent pas la base — `DEC-498` : une règle qui n'existe que dans le code est contournable par tout autre chemin d'écriture — mais un dépôt local **ne sait pas** construire une requête sans son `entity_id` : l'oubli n'est pas une faute à éviter, c'est une forme qui n'existe pas. **Le refus le plus important est celui de `DepotGlobal` sur une table locale** : sans lui il rendrait les lignes de toutes les entités **en paraissant fonctionner**, ce qui est la fuite que `US006` interdit par le seul chemin que les clés étrangères ne couvrent pas. Le classement local/global est lu sur `information_schema`, jamais recopié. Et `obtenir` rend **`None`** sur une ligne d'une autre entité, indistinguable d'une ligne inexistante : distinguer les deux révélerait son existence, ce que le §2.5 « refus par défaut » interdit. **(g)** Le service reçoit l'attributeur réel, ce qu'un déclencheur ne peut pas connaître, et **impose l'ordre** que le déclencheur exige — la responsabilité avant la catégorie. Un test prouve qu'en le contournant, **la base refuse toujours**. | Validée par Jonathan le 20/08/2026 |
 
-**Prochain identifiant libre : `DEC-516`.**
+## 1.27 Réalisation du LOT 2 — sous-étape `T12`
+
+Une décision. Les fabriques, le jeu de recette, et **trois contrôles qui prouvent ce que onze
+sous-étapes avaient fait à la main**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-516` | **`T12` pose TROIS contrôles et un générateur, et n'écrit aucune migration.** **(a)** `make migrations-check` crée une base **jetable**, y applique la chaîne, et **COMPARE le schéma obtenu à celui qui tourne** — colonnes, contraintes, index, déclencheurs, fonctions. **(b)** `make recette-modele-check` **lit les 25 contrôles du §30 dans le modèle** et exige que chacun soit classé, avec le **test nommé** dont l'existence est vérifiée. **(c)** L'absence de SQLite est cherchée comme un **usage** — import, URL, dépendance — jamais comme le mot. **(d)** Le générateur passe par les **dépôts de `T11`** et est **déterministe**. **(e)** Le test du §30.25 exige une **durée**, jamais l'usage d'un index. **(f)** `make jeu-de-donnees` **refuse** de s'exécuter sur une base déjà peuplée. | **(a) La comparaison est ce qui prouve le critère.** Chaque sous-étape avait éprouvé SA migration ; aucun contrôle n'éprouvait la chaîne entière sur une base neuve, et surtout aucun ne vérifiait qu'elle produit **le bon schéma**. Sans la comparaison, on saurait que la chaîne s'applique — pas qu'elle aboutit. La descente à `base` est ce qui trouve les `downgrade()` fautifs, comme celui de `T5` qui renommait avant de supprimer. **(b) Sous-traiter une partie du §30 en silence aurait été le pire choix** : la porte se prononce sur le modèle, elle doit savoir lesquels des 25 sont acquis, reportés, ou **inapplicables**. Le classement d'un acquis **nomme un test et vérifie qu'il existe**, sinon ce ne serait qu'une affirmation — et ce contrôle a immédiatement révélé que **neuf des noms que j'avais écrits n'existaient pas**, faute de les avoir relevés. **§30.4 est déclaré PARTIEL** : l'unicité du DSM est acquise, l'**existence** ne peut pas l'être en base, une appartenance devant précéder l'affectation qui la référence. **§30.8 est INAPPLICABLE**, `ECART-031`. **(c) MON PREMIER MOTIF ÉCHOUAIT SUR UN DÉPÔT EXEMPLAIRE** : les 16 occurrences de « sqlite » trouvées étaient **toutes de la prose affirmant son exclusion**. C'est le §7.25, écrit le jour même, rejoué dans le contrôle suivant. **(d) Un jeu non reproductible rend inexploitable l'échec qu'il révèle** : on ne peut ni le rejouer, ni le réduire. Un témoin exige que deux graines différentes produisent des jeux différents, sans quoi un générateur ignorant sa graine passerait. Les valeurs énumérées sont **importées** du code, non redéclarées : ma première version en avait **inventé trois** que le §6.2 ne déclare pas. **(e) Sur 5 000 lignes, un parcours séquentiel est souvent le plan OPTIMAL.** Exiger « aucun Seq Scan » exigerait donc le **contraire** de la performance, et échouerait sur un livrable conforme — défaut du §7.20. Le test exige la **durée**, qui est la grandeur du critère, et **rapporte** le plan. Mesure : 27 936 lignes, toutes les requêtes **sous 1,3 ms**. **(f)** Un générateur idempotent serait un mensonge — codes d'entité et adresses sont uniques — et une seconde exécution échouerait **à mi-chemin**, laissant la base à moitié peuplée. Refuser d'emblée vaut mieux. La cible annonce aussi que **semer et lancer la suite s'excluent**, de nombreux tests comparant des comptes absolus. | Validée par Jonathan le 20/08/2026 |
+
+**Prochain identifiant libre : `DEC-517`.**
 
 ---
 
@@ -625,6 +635,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-513` — réalisation du LOT 2, `T9` | 1 | 1 |
 | `DEC-514` — réalisation du LOT 2, `T10` | 1 | 1 |
 | `DEC-515` — réalisation du LOT 2, `T11` | 1 | 1 |
+| `DEC-516` — réalisation du LOT 2, `T12` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -636,7 +647,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **183** | **183** |
+| **Total** | **184** | **184** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

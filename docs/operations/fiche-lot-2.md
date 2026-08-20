@@ -136,7 +136,7 @@ sous-étapes.
 | ~~**`T9`**~~ | ~~**Historisation et contraintes temporelles.**~~ **TERMINÉE le 19/08/2026** — `#42`. **Aucune table créée** : les sept relations existaient depuis `T4` à `T8`. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2 lui-même** — et **il a trouvé un défaut le jour même** : `technical_role_assignment.entity_id`, nullable dans une clé d'exclusion. **`alembic check` est AVEUGLE aux exclusions**, mesuré. **8 tests**. Compte rendu : [`compte-rendu-t9-lot-2.md`](compte-rendu-t9-lot-2.md) | `US004` | 16 | ☑ |
 | ~~**`T10`**~~ | ~~**Contraintes de rôles et de périmètres.**~~ **TERMINÉE le 19/08/2026** — `#43`. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** : vérifiés, non réimplémentés — un doublon n'aurait rien cassé, donc rien ne l'aurait signalé. **`ECART-032` OUVERT** : le backlog interdit « aucune responsabilité **métier** » là où le cahier, la matrice **et** le modèle restreignent tous au seul **Booster**. « DG implique DSM » est appliqué comme **implication** ; la création **automatique** du §8.4 est laissée au service, car un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** mesuré a inversé un test de `T6`. **11 tests**, dont un sur une **non-action**. Compte rendu : [`compte-rendu-t10-lot-2.md`](compte-rendu-t10-lot-2.md) | `US005` | 16 | ☑ sauf `ECART-032`, sans effet sur le livrable |
 | ~~**`T11`**~~ | ~~**Isolation inter-entités.**~~ **TERMINÉE le 20/08/2026** — `#44`. **AUCUNE MIGRATION** : les 8 clés composites fermaient déjà tous les chemins locaux, 0 clé simple, mesuré. **Et ma première mesure ne prouvait rien** — elle énumérait les clés étrangères, or une référence posée **sans** clé aurait donné la même observation sur un schéma percé ; le contrôle examine donc les **colonnes**. `MATCH SIMPLE` rend une clé composite **inerte** dès qu'une colonne est nulle : c'est `T8-1` transposé, et le contrôle l'exige. **Le couple `(id, entity_id)` n'est PAS ajouté aux 10 tables qui ne sont pas cibles** : `id` étant clé primaire, il ne peut jamais rien refuser. **Dépôts cloisonnés** dont les deux types ne peuvent pas se confondre, vérifié sur le schéma. **34 tests**, et un témoin en CI. Compte rendu : [`compte-rendu-t11-lot-2.md`](compte-rendu-t11-lot-2.md) | `US006` | 16 | ☑ |
-| **`T12`** | **Factories, jeu de test et recette du modèle.** 25 entités, 5 000 profils, historiques cohérents et cas limites. Les contrôles §30 du modèle. Checklist de la porte `G2`. | `US007`, `US008` | — | Une base **vide** se construit **uniquement** par migrations ; les migrations se **rejouent** ; **aucune dépendance SQLite** ; les 7 critères de sortie sont à zéro |
+| ~~**`T12`**~~ | ~~**Factories, jeu de test et recette du modèle.**~~ **TERMINÉE le 20/08/2026** — `#45` et `#46`. **`migrations-check` COMPARE le schéma d'une base neuve à celui qui tourne** : sans cette comparaison, on saurait que la chaîne s'applique, pas qu'elle aboutit. **`recette-modele-check` lit les 25 contrôles du §30** et exige leur classement — il a révélé que **neuf des noms de tests que j'avais écrits n'existaient pas**. **Mon motif SQLite échouait sur un dépôt exemplaire** : les 16 occurrences étaient de la prose affirmant son exclusion, §7.25 rejoué le jour même. Jeu de **27 936 lignes**, requêtes **sous 1,3 ms**. **373 tests**. Compte rendu : [`compte-rendu-t12-lot-2.md`](compte-rendu-t12-lot-2.md) | `US007`, `US008` | — | ☑ |
 
 **Douze sous-étapes, comme au LOT 1.** Chacune se termine par un rapport au format imposé et attend
 la validation de Jonathan avant la suivante.
@@ -295,13 +295,16 @@ Les **sept** critères de sortie de la roadmap, littéralement :
 
 | | Critère | Sous-étape qui le prouve |
 |:--:|---|---|
-| ☐ | toutes les migrations s'appliquent sur une base vide | `T12` |
-| ☐ | les migrations sont rejouables dans un environnement de test | `T12` |
-| ☐ | les contraintes critiques disposent de tests PostgreSQL | `T2` à `T11` |
-| ☐ | les relations structurantes sont historisées | `T9` |
-| ☐ | les tests d'isolation réussissent | `T11` |
-| ☐ | aucune dépendance à SQLite n'existe pour les tests d'intégration | `T12`, **par un contrôle** |
-| ☐ | **Jonathan valide le modèle implémenté** | la porte |
+| ☑ | toutes les migrations s'appliquent sur une base vide | `T12` — `make migrations-check`, base jetable, 0 table au départ |
+| ☑ | les migrations sont rejouables dans un environnement de test | `T12` — descente à `base`, remontée à signature **identique** |
+| ☑ | les contraintes critiques disposent de tests PostgreSQL | `T2` à `T11` — **373 tests**, dont **204** d'intégration |
+| ☑ | les relations structurantes sont historisées | `T9` — les 7 du §25.2, compte **dérivé du modèle** |
+| ☑ | les tests d'isolation réussissent | `T11` — 8 clés composites, et un **témoin** en CI |
+| ☑ | aucune dépendance à SQLite n'existe pour les tests d'intégration | `T12` — 99 fichiers, **0 usage réel**, motif cherchant un **usage** |
+| ☐ | **Jonathan valide le modèle implémenté** | **la porte** — [checklist](checklist-validation-G2.md) |
+
+**LES SIX CRITÈRES TECHNIQUES SONT ACQUIS ET MESURÉS.** Le septième est la décision de Jonathan, et
+la [checklist de validation `G2`](checklist-validation-G2.md) la lui remet.
 
 Et les critères du backlog §« Validation du lot » : les **sept** stories `P0` sont `Done`, la story
 `P1` est terminée **ou** a fait l'objet d'un arbitrage explicite, la démonstration et les preuves

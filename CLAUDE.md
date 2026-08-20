@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
 | **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : `T1` à `T11` faites**, `T12` non entamée · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T12` — factories et jeu de données fictif**, issues `#45` (`US007`) et `#46` (`US008`). **DERNIÈRE sous-étape avant `G2`.** Les factories doivent employer les **dépôts** de `T11`, et respecter l'ordre imposé par les **quatre** déclencheurs. Voir §12 du compte rendu de `T11` |
+| Sous-étapes faites | **LOT 2 : LES DOUZE FAITES** · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **AUCUN TRAVAIL TECHNIQUE.** La porte `G2` est **instruite** : 6 critères techniques sur 7 acquis et mesurés, le septième est la décision de Jonathan. Lui remettre [`checklist-validation-G2.md`](docs/operations/checklist-validation-G2.md), et **dire les trois points du §10 du compte rendu de `T12`** — dont le tag `v0.2.0` qui déclenchera `images.yml` |
 | Stories `Done` | **LOT 2 : `US001`, `US002`, `US003`.** `US008` se clôt en `T12` · *LOT 1 : les huit* |
 | Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **483** : **367 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
+| Tests | **489** : **373 pytest** — dont **204 d'intégration** — et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **183 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
+| Registres | **184 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -104,10 +104,11 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
-| **Comment a-t-on fait `T1` à `T11` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,11}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
+| **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
-| **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
+| **Que valide Jonathan à la porte `G2` ?** | **`docs/operations/checklist-validation-G2.md`** — les 7 critères, les 25 contrôles du §30 **classés**, et une démonstration guidée |
+| Que validait-il à `G1` ? | `docs/operations/checklist-validation-G1.md` — 33 contrôles |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
 | Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **161 décisions**, et `make docs-check` en **dérive les totaux** |
 | Comment travaille-t-on ? | `CONTRIBUTING.md` et `docs/operations/conventions-git-et-versions.md` |
@@ -392,7 +393,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`515` en usage | **`DEC-516`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`516` en usage | **`DEC-517`** |
 | `ECART-nnn` | `001`–`032` | **`ECART-033`** |
 | `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -454,6 +455,8 @@ API             migrate migrate-status api-check alembic-check
                 code-refresh code-check                           ← LOT 2, T1
                 historisation-check                               ← LOT 2, T9
                 isolation-check isolation-temoin                  ← LOT 2, T11
+                migrations-check recette-modele-check             ← LOT 2, T12
+                jeu-de-donnees                                    ← LOT 2, T12
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
                 images-pin                                            ← T8
@@ -1276,6 +1279,33 @@ assemblée, qui ne demande aucun conteneur. `DEC-494`, `ECART-025`.
 
 ---
 
+## 7.26 Ce qui n'a jamais tourné à l'ÉCHELLE n'est pas éprouvé
+
+**Apport de `T12`, et cela élargit le §7.16.** Ce paragraphe disait : ce qui n'a jamais tourné
+**ailleurs** n'est pas éprouvé. Il faut y ajouter **l'autre volume**.
+
+Mon générateur formait l'indice d'un Booster par `800_000 + rang`, une valeur **identique d'une entité
+à l'autre**. À **trois** entités, les prénoms tirés au hasard suffisaient à éviter la collision. À
+**vingt-cinq** entités et quatre cercles — cent tirages sur soixante-quatre combinaisons —
+`email_normalized_unique` a été violée au premier essai à l'échelle.
+
+> **La règle, sans jargon :** un jeu de données réduit n'éprouve pas les contraintes d'**unicité**,
+> parce que la collision est un événement de **volume**. Quand un contrôle porte sur une unicité, une
+> borne ou un comptage, **fais-le tourner au volume que le critère nomme** — ici cinq mille profils,
+> pas trente.
+
+**Et deux corollaires mesurés en `T12` :**
+
+- **`ANALYZE` est indispensable après un jeu engendré dans une transaction.** PostgreSQL choisit ses
+  plans sur des **statistiques** : sans lui, il raisonne sur des tables qu'il croit vides, et la
+  mesure de performance ne dit rien de la réalité ;
+- **un test de performance ne doit pas exiger l'usage d'un index.** Sur 5 000 lignes, un parcours
+  séquentiel est souvent le plan **optimal** : exiger « aucun Seq Scan » exigerait le **contraire** de
+  la performance, et échouerait sur un livrable conforme. Exige la **durée**, qui est la grandeur du
+  critère, et **rapporte** le plan.
+
+---
+
 ## 7.25 Un garde-fou à faux positifs est pire qu'aucun garde-fou
 
 **Apport de `T11`, et c'est la troisième fois qu'un même défaut se rejoue : `T4-2`, `T8-3`, puis six
@@ -1555,6 +1585,7 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                                          T11 n'en ecrit AUCUNE : rien a changer
 │                 app/shared/depot.py    ← DepotLocal / DepotGlobal (T11, DEC-515)
 │                 app/organization/services.py ← l'ACTION du 8.4 (T11)
+│                 app/shared/fabriques.py ← jeu fictif DETERMINISTE (T12)
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)
@@ -1579,7 +1610,11 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  verifier-documentation.py  ← empreintes, sequences, ET
 │                                                totaux DÉRIVÉS (T8, DEC-488)
 │                  verifier-images.py         ← 6 sous-commandes, controles de T7
-│                  verifier-isolation.py       ← 2.5 et 25.3 : COLONNES, pas
+│                  verifier-migrations.py      ← base VIDE, chaine rejouee, et
+                                                le schema COMPARE (T12)
+                  verifier-recette-modele.py  ← les 25 controles du 30, CLASSES
+                  engendrer-jeu-de-donnees.py ← make jeu-de-donnees (T12)
+                  verifier-isolation.py       ← 2.5 et 25.3 : COLONNES, pas
                                                 contraintes ; MATCH SIMPLE ; --temoin
                   verifier-separations.py    ← les 7 separations du cahier 22.2,
 │                                                l'artefact en marche, l'archi,
