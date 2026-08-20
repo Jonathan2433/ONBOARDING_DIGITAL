@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `517` en usage | `DEC-518` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `519` en usage | `DEC-520` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -128,7 +128,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
 | `G1` | Fin du socle local | Stack, CI et images validées | **FRANCHIE** le 12/08/2026 — tag `v0.1.0` posé sur `main` |
 | ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
-| `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
+| `G3` | Fin de l'authentification | Sécurité et sessions validées | **Porte courante** — LOT 3 ouvert le 20/08/2026 (`DEC-518`), tag `v0.3.0` prévu. Plan : [`fiche-lot-3.md`](operations/fiche-lot-3.md), **12 sous-étapes soumises à validation** |
 | `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
 | `G5` | Fin du trombinoscope | Profils et permissions validés | Planifiée |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | Planifiée |
@@ -190,7 +190,24 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 
 ---
 
-## 9. Avancement du LOT 2 — **lot ouvert**, porte `G2`
+## 9. Avancement du LOT 3 — **lot ouvert**, porte `G3`
+
+**Ouvert par Jonathan le 20 août 2026 (`DEC-518`).** Plan soumis à validation :
+[`operations/fiche-lot-3.md`](operations/fiche-lot-3.md) — **12 sous-étapes, `T1` à `T12`**,
+8 stories dont **7 en `P0`**, les **7 tables** du modèle §10, tag `v0.3.0`.
+Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
+
+> **`T1` est le moindre privilège PostgreSQL, avant l'authentification elle-même** — arbitrage de
+> Jonathan, `DEC-518`. Motif : le LOT 3 est celui qui introduit l'accès extérieur, donc celui où
+> l'exposition de `QO-116` cesse d'être théorique.
+
+| | Sous-étape | Story | État |
+|:--:|---|---|---|
+| `T1` à `T12` | Voir la fiche | — | **Non entamées** — le §3 de la fiche attend la validation de Jonathan |
+
+---
+
+## 10. Avancement du LOT 2 — **lot VERROUILLÉ**, porte `G2` franchie
 
 **Ouvert par Jonathan le 18 août 2026 (`DEC-496`).** Plan soumis à validation :
 [`operations/fiche-lot-2.md`](operations/fiche-lot-2.md) — **12 sous-étapes, `T1` à `T12`**,

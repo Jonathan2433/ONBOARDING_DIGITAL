@@ -19,18 +19,18 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, **`G1`** franchie, tag **`v0.1.0`** · **LOT 2 verrouillé le 20/08/2026, `G2` FRANCHIE (`DEC-517`), tag `v0.2.0`** |
-| **Lot en cours** | **AUCUN.** Le LOT 3 — Authentification, sessions et sécurité applicative, porte `G3` — **n'est PAS ouvert** : `ROAD-003` et `ARB-BACK-003` exigent une décision explicite de Jonathan, à tracer comme `DEC-496` l'a été |
+| **Lot en cours** | **LOT 3 — Authentification, sessions et sécurité applicative**, ouvert par Jonathan le 20/08/2026 (`DEC-518`), porte `G3`, tag `v0.3.0`. Plan : [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md), **12 sous-étapes — le §3 ATTEND SA VALIDATION** |
 | Sous-étapes faites | **LOT 2 : les douze, terminées** · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **DEMANDER À JONATHAN D'OUVRIR LE LOT 3**, et tracer sa décision. Puis lire le §3 du modèle et le backlog `MVP-L03` avant d'écrire une ligne. **Deux dettes l'attendent nommément : `QO-116`** — l'application se connecte à PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège, arbitrage « à traiter au LOT 3 » — **et `ECART-012`, qui attend Léa** |
+| **Prochaine action** | **ATTENDRE que Jonathan valide le §3 de la fiche du LOT 3.** Rien n'est construit avant. Puis **`T1` — le moindre privilège PostgreSQL** (`QO-116`), qu'il a explicitement placé **en premier**, avant l'authentification : deux rôles, l'un DDL pour les migrations, l'autre DML pour l'exécution. **Le coût est accepté et nommé** : reprouver le démarrage, les 11 migrations et les 373 tests, sur une base **recréée de zéro** |
 | Stories `Done` | **LOT 2 : LES HUIT**, et leurs huit issues sont **closes** — `#42` l'a été tardivement, voir §7.19 · *LOT 1 : les huit* |
-| Stories restantes | **aucune au LOT 2.** L'epic `#38` se ferme à la porte. Le LOT 3 porte `MVP-L03-*`, non encore ouvert |
+| Stories restantes | **LOT 3 : les huit**, `MVP-L03-US001` à `US008`, epic `#62`, issues `#63` à `#70`, jalon `G3` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
 | Tests | **489** : **373 pytest** — dont **204 d'intégration** — et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **184 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
+| Registres | **187 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (**33 ouvertes**, `QO-115` close par `DEC-519`) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -103,7 +103,8 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
+| **Que fait-on au LOT 3 ?** | **`docs/operations/fiche-lot-3.md`** — 12 sous-étapes, **le §3 attend la validation de Jonathan**. `T1` est le moindre privilège PostgreSQL, avant l'authentification |
+| Que faisait-on au LOT 2 ? | `docs/operations/fiche-lot-2.md` — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
@@ -1436,7 +1437,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : la porte `G2` est FRANCHIE, aucun lot n'est ouvert
+# 9. Par où commencer : le LOT 3 est OUVERT, son plan attend validation
 
 ## 9.0 Ce que les sous-étapes ont démenti, et ce qu'il faut en retenir
 
@@ -1509,9 +1510,21 @@ démonstration guidée, ce qui reste ouvert, et ce que la pose du tag a déclenc
 
 **Reste à faire, et c'est une décision de Jonathan :**
 
-6. **☐ OUVRIR LE LOT 3**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003` exigent
-   une validation explicite avant tout lot dépendant, comme `DEC-496` l'a fait pour le LOT 2.
-   **N'écris pas une ligne du LOT 3 avant.**
+6. **☑ LOT 3 OUVERT** par Jonathan le 20/08/2026, `DEC-518` — et il a arbitré **l'ordre** : `QO-116`,
+   le moindre privilège PostgreSQL, est traité en **première** sous-étape, avant l'authentification.
+7. **☑ Neuf issues créées**, epic `#62` et stories `#63` à `#70`, jalon `G3`. **Engendrées depuis le
+   backlog par script**, jamais recopiées — §6.4.
+8. **☑ Trois autres décisions tracées le 20/08/2026.** `QO-115` est **close** (`DEC-519`) : la charte
+   graphique et la police officielle **n'existent pas**, les jetons relevés du prototype font
+   référence et restent qualifiés d'**approximation**. Et **`ECART-012`** — Jonathan prend le sujet
+   **en main directement auprès de Léa**, sans note écrite, son choix explicite parmi trois options.
+   L'écart reste **ouvert** jusqu'à sa réponse.
+
+**Reste à faire, et c'est une décision de Jonathan :**
+
+9. **☐ VALIDER LE §3 DE LA FICHE DU LOT 3** — le découpage en douze sous-étapes. **N'écris pas une
+   ligne avant.** C'est la mécanique du LOT 2 : ouverture le 18/08, découpage validé le même jour,
+   douze sous-étapes ensuite.
 
 ---
 
