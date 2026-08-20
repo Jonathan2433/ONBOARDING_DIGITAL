@@ -34,6 +34,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-515`, sous-étape `T11`** | 1 | **Validée le 20/08/2026** |
 | **Réalisation du LOT 2 `DEC-516`, sous-étape `T12`** | 1 | **Validée le 20/08/2026** |
 | **Franchissement de la porte `G2` `DEC-517`** | 1 | **Validée le 20/08/2026** |
+| **Ouverture du LOT 3 `DEC-518+`** | 2 | **Validées le 20/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -45,7 +46,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **185** | |
+| **Total** | **187** | |
 
 ---
 
@@ -470,7 +471,16 @@ Une décision. La validation du modèle implémenté, et **l'ordre des trois ges
 |---|---|---|---|
 | `DEC-517` | **Jonathan valide la porte `G2` le 20 août 2026, sans réserve.** Les trois gestes de clôture sont faits **dans cet ordre** : **(a)** les documents de clôture sont commités sur `develop` ; **(b)** `develop` est portée dans `main` par une **vraie fusion**, jamais un squash ; **(c)** le tag annoté `v0.2.0` est posé sur `main`. | **(a) L'ORDRE EST UN CORRECTIF D'UNE LEÇON DE `G1`.** À la porte précédente, `v0.1.0` a été posé **avant** que les documents de `T11` n'atteignent `main` : le tag **ne les contient pas**, et le §9.2 de la passation le consigne comme une conséquence à connaître. **Un tag posé ne se déplace jamais** — conventions §4, arbitrage de Jonathan à `G1` — donc la seule parade est de committer avant de tagger. Refaire sciemment un défaut consigné aurait été pire que le cycle supplémentaire que cet ordre coûte. **(b)** `required_linear_history` a été retiré de `main` en `T11` du LOT 1 (`DEC-495`, `ECART-026`) **précisément pour que cette porte ne reconflicte pas** : les deux règles « historique linéaire » et « merge commit vers `main` » s'excluaient, et leur application simultanée avait rabattu `G1` sur un squash, coupant `main` de l'histoire de `develop` — neuf fichiers en conflit sur un contenu qui ne divergeait pas. **La vérification porte sur les ARBRES, jamais sur les commits** : `git rev-parse origin/main^{tree} origin/develop^{tree}` doit rendre deux valeurs identiques, et `git rev-parse origin/main^@ \| wc -l` doit valoir **2**. C'est ce contrôle qui avait attrapé le défaut de `G1`, et sans lui la fusion passait **en paraissant propre**. **(c)** Le tag déclenche `images.yml` et publie les trois images sous l'étiquette **`0.2.0`**. **Jonathan en a été informé AVANT la pose, pas après** — c'est la leçon du §9.3 de la passation, où le piège s'était réalisé comme annoncé à `G1`. | Validée par Jonathan le 20/08/2026 |
 
-**Prochain identifiant libre : `DEC-518`.**
+## 1.29 Ouverture du LOT 3
+
+Deux décisions. L'ouverture du lot, **l'ordre de ses sous-étapes**, et une question ouverte close.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-518` | **Jonathan ouvre le LOT 3 — Authentification, sessions et sécurité applicative, porte `G3` — le 20 août 2026.** Et il arbitre son ordre : **`QO-116`, le moindre privilège PostgreSQL, est traité en PREMIÈRE sous-étape**, avant l'authentification elle-même. **Deux rôles distincts** seront créés : l'un porteur du DDL pour les migrations, l'autre borné au DML pour l'exécution. | **L'ouverture explicite est exigée** par `ROAD-003` et `ARB-BACK-003`, et le §2 de la passation en fait la première règle non négociable : seul le lot ouvert par Jonathan peut être réalisé. **Et l'ORDRE n'est pas un détail de confort.** Le registre de `QO-116` le dit depuis `T1` : « plus on attend, plus de lots auront été écrits en supposant ce compte ». Le LOT 3 est **précisément celui qui introduit l'accès extérieur**, donc celui où l'exposition cesse d'être théorique — reporter le moindre privilège *après* l'authentification aurait signifié écrire l'authentification elle-même sur un compte superutilisateur. **Le coût de ce choix est nommé et accepté** : la façon dont la plateforme se connecte à sa base change, et il faudra **reprouver** que les huit services démarrent, que les onze migrations s'appliquent et que les 373 tests passent. C'est exactement le genre de changement que le §7.16 vise — *ce qui n'a jamais tourné ailleurs n'est pas éprouvé* — et il sera éprouvé sur une base **recréée de zéro**, non sur celle qui tourne. | Validée par Jonathan le 20/08/2026 |
+| `DEC-519` | **`QO-115` est CLOSE : la charte graphique et la police officielle eXalt n'existent pas dans le corpus, et les jetons relevés du prototype en `T10` du LOT 1 font référence.** Ils restent qualifiés d'**approximation** dans la documentation, et non de charte. | **La mesure de `T10` avait établi les faits** : le cahier §13.1 exige « la charte graphique » et « la police officielle », **aucune des deux n'est dans le corpus**, aucun fichier de design n'est versionné, et le cahier ne contient **aucune** couleur hexadécimale — zéro occurrence. Le prototype, lui, **nomme** sa palette, et cela corrobore littéralement le « dégradés bleu, rose et violet » du §13.2 : **deux sources concordantes**, donc pas une invention. **Et la mesure avait CORRIGÉ le prototype**, ce qui est le résultat le plus utile : le jaune rend 1,37 de contraste sur fond clair et le bleu foncé 1,69 sur fond sombre, si bien que les couleurs de marque sont des **surfaces** portant un texte apparié mesuré. Le reprendre tel quel aurait reconduit **deux** défauts d'accessibilité. **Fermer la question ne ferme pas la porte** : si la charte apparaît, les jetons sont dans un fichier unique — `packages/ui/jetons.ts` — et le contrôle de contraste se rejoue. Ce qui est décidé, c'est de **ne plus attendre un document qui n'existe pas** pour construire le LOT 4. | Validée par Jonathan le 20/08/2026 |
+
+**Prochain identifiant libre : `DEC-520`.**
 
 ---
 
@@ -646,6 +656,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-515` — réalisation du LOT 2, `T11` | 1 | 1 |
 | `DEC-516` — réalisation du LOT 2, `T12` | 1 | 1 |
 | `DEC-517` — franchissement de la porte `G2` | 1 | 1 |
+| `DEC-518+` — ouverture du LOT 3 | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -657,7 +668,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **185** | **185** |
+| **Total** | **187** | **187** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
