@@ -18,12 +18,12 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
-| **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : LES DOUZE FAITES** · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **AUCUN TRAVAIL TECHNIQUE.** La porte `G2` est **instruite** : 6 critères techniques sur 7 acquis et mesurés, le septième est la décision de Jonathan. Lui remettre [`checklist-validation-G2.md`](docs/operations/checklist-validation-G2.md), et **dire les trois points du §10 du compte rendu de `T12`** — dont le tag `v0.2.0` qui déclenchera `images.yml` |
-| Stories `Done` | **LOT 2 : `US001`, `US002`, `US003`.** `US008` se clôt en `T12` · *LOT 1 : les huit* |
-| Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
+| Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, **`G1`** franchie, tag **`v0.1.0`** · **LOT 2 verrouillé le 20/08/2026, `G2` FRANCHIE (`DEC-517`), tag `v0.2.0`** |
+| **Lot en cours** | **AUCUN.** Le LOT 3 — Authentification, sessions et sécurité applicative, porte `G3` — **n'est PAS ouvert** : `ROAD-003` et `ARB-BACK-003` exigent une décision explicite de Jonathan, à tracer comme `DEC-496` l'a été |
+| Sous-étapes faites | **LOT 2 : les douze, terminées** · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **DEMANDER À JONATHAN D'OUVRIR LE LOT 3**, et tracer sa décision. Puis lire le §3 du modèle et le backlog `MVP-L03` avant d'écrire une ligne. **Deux dettes l'attendent nommément : `QO-116`** — l'application se connecte à PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège, arbitrage « à traiter au LOT 3 » — **et `ECART-012`, qui attend Léa** |
+| Stories `Done` | **LOT 2 : LES HUIT**, et leurs huit issues sont **closes** — `#42` l'a été tardivement, voir §7.19 · *LOT 1 : les huit* |
+| Stories restantes | **aucune au LOT 2.** L'epic `#38` se ferme à la porte. Le LOT 3 porte `MVP-L03-*`, non encore ouvert |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
@@ -1458,15 +1458,30 @@ façons différentes, ce qui compte plus que le nombre :
 
 **Vérifie avant de bâtir dessus — surtout quand ce document t'annonce que tu n'as rien à faire.**
 
-## 9.1 Où en est exactement le lot
+## 9.1 Où en est exactement le projet
 
-**Les douze sous-étapes sont faites, les huit stories sont livrées, et 33 contrôles de sortie sont à
-zéro.** Il ne reste **aucun travail technique**.
+**Le LOT 2 est verrouillé, la porte `G2` est franchie le 20/08/2026 (`DEC-517`), et le tag `v0.2.0`
+est posé sur `main`.** Les douze sous-étapes sont faites, les huit stories sont livrées, leurs huit
+issues sont closes, et les **sept** critères de sortie sont acquis — six mesurés, le septième validé
+par Jonathan.
 
-**Ce qui reste est une décision de Jonathan**, et la [checklist](docs/operations/checklist-validation-G1.md)
-lui est remise. Elle porte les sept critères avec leurs preuves, les neuf critères d'empêchement du
-backlog §12, une **démonstration guidée** des six éléments de la roadmap, ce qui reste ouvert, et ce
-que la pose du tag déclenchera.
+**Il ne reste aucun travail technique, et aucun lot n'est ouvert.** La suite est une **décision de
+Jonathan** : ouvrir le LOT 3, ce que `ROAD-003` et `ARB-BACK-003` exigent d'expliciter et de tracer.
+
+> **Ce que le LOT 2 laisse au LOT 3, nommément.** **`QO-116`** — l'application se connecte à
+> PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège ; l'arbitrage
+> de `T1` était « à traiter au LOT 3, le lot dont la sécurité applicative est l'objet ». Et **la
+> vérification « ESM ou super-administrateur » de l'attributeur** du §8.4, que `T11` a laissée au LOT 3
+> parce que la base n'a **aucune notion de l'appelant**.
+
+**Ce que le LOT 2 a produit, mesuré :** **18 tables métier**, **10 migrations** rejouables,
+**94 contraintes**, **85 index**, **8 déclencheurs**, **8 clés étrangères composites**, et
+**373 tests** dont **204 d'intégration** sur PostgreSQL réel. Le jeu de recette fait **27 936
+lignes** et toutes ses requêtes répondent **sous 1,3 ms**.
+
+**Le compte rendu de la porte est [`checklist-validation-G2.md`](docs/operations/checklist-validation-G2.md)** :
+les sept critères avec leurs preuves, les huit stories, les **25 contrôles du §30 classés**, une
+démonstration guidée, ce qui reste ouvert, et ce que la pose du tag a déclenché.
 
 ## 9.2 Ce qui a suivi la validation, et ce qui reste
 

@@ -33,6 +33,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 2 `DEC-514`, sous-étape `T10`** | 1 | **Validée le 19/08/2026** |
 | **Réalisation du LOT 2 `DEC-515`, sous-étape `T11`** | 1 | **Validée le 20/08/2026** |
 | **Réalisation du LOT 2 `DEC-516`, sous-étape `T12`** | 1 | **Validée le 20/08/2026** |
+| **Franchissement de la porte `G2` `DEC-517`** | 1 | **Validée le 20/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -44,7 +45,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **184** | |
+| **Total** | **185** | |
 
 ---
 
@@ -461,7 +462,15 @@ sous-étapes avaient fait à la main**.
 |---|---|---|---|
 | `DEC-516` | **`T12` pose TROIS contrôles et un générateur, et n'écrit aucune migration.** **(a)** `make migrations-check` crée une base **jetable**, y applique la chaîne, et **COMPARE le schéma obtenu à celui qui tourne** — colonnes, contraintes, index, déclencheurs, fonctions. **(b)** `make recette-modele-check` **lit les 25 contrôles du §30 dans le modèle** et exige que chacun soit classé, avec le **test nommé** dont l'existence est vérifiée. **(c)** L'absence de SQLite est cherchée comme un **usage** — import, URL, dépendance — jamais comme le mot. **(d)** Le générateur passe par les **dépôts de `T11`** et est **déterministe**. **(e)** Le test du §30.25 exige une **durée**, jamais l'usage d'un index. **(f)** `make jeu-de-donnees` **refuse** de s'exécuter sur une base déjà peuplée. | **(a) La comparaison est ce qui prouve le critère.** Chaque sous-étape avait éprouvé SA migration ; aucun contrôle n'éprouvait la chaîne entière sur une base neuve, et surtout aucun ne vérifiait qu'elle produit **le bon schéma**. Sans la comparaison, on saurait que la chaîne s'applique — pas qu'elle aboutit. La descente à `base` est ce qui trouve les `downgrade()` fautifs, comme celui de `T5` qui renommait avant de supprimer. **(b) Sous-traiter une partie du §30 en silence aurait été le pire choix** : la porte se prononce sur le modèle, elle doit savoir lesquels des 25 sont acquis, reportés, ou **inapplicables**. Le classement d'un acquis **nomme un test et vérifie qu'il existe**, sinon ce ne serait qu'une affirmation — et ce contrôle a immédiatement révélé que **neuf des noms que j'avais écrits n'existaient pas**, faute de les avoir relevés. **§30.4 est déclaré PARTIEL** : l'unicité du DSM est acquise, l'**existence** ne peut pas l'être en base, une appartenance devant précéder l'affectation qui la référence. **§30.8 est INAPPLICABLE**, `ECART-031`. **(c) MON PREMIER MOTIF ÉCHOUAIT SUR UN DÉPÔT EXEMPLAIRE** : les 16 occurrences de « sqlite » trouvées étaient **toutes de la prose affirmant son exclusion**. C'est le §7.25, écrit le jour même, rejoué dans le contrôle suivant. **(d) Un jeu non reproductible rend inexploitable l'échec qu'il révèle** : on ne peut ni le rejouer, ni le réduire. Un témoin exige que deux graines différentes produisent des jeux différents, sans quoi un générateur ignorant sa graine passerait. Les valeurs énumérées sont **importées** du code, non redéclarées : ma première version en avait **inventé trois** que le §6.2 ne déclare pas. **(e) Sur 5 000 lignes, un parcours séquentiel est souvent le plan OPTIMAL.** Exiger « aucun Seq Scan » exigerait donc le **contraire** de la performance, et échouerait sur un livrable conforme — défaut du §7.20. Le test exige la **durée**, qui est la grandeur du critère, et **rapporte** le plan. Mesure : 27 936 lignes, toutes les requêtes **sous 1,3 ms**. **(f)** Un générateur idempotent serait un mensonge — codes d'entité et adresses sont uniques — et une seconde exécution échouerait **à mi-chemin**, laissant la base à moitié peuplée. Refuser d'emblée vaut mieux. La cible annonce aussi que **semer et lancer la suite s'excluent**, de nombreux tests comparant des comptes absolus. | Validée par Jonathan le 20/08/2026 |
 
-**Prochain identifiant libre : `DEC-517`.**
+## 1.28 Franchissement de la porte `G2`
+
+Une décision. La validation du modèle implémenté, et **l'ordre des trois gestes**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-517` | **Jonathan valide la porte `G2` le 20 août 2026, sans réserve.** Les trois gestes de clôture sont faits **dans cet ordre** : **(a)** les documents de clôture sont commités sur `develop` ; **(b)** `develop` est portée dans `main` par une **vraie fusion**, jamais un squash ; **(c)** le tag annoté `v0.2.0` est posé sur `main`. | **(a) L'ORDRE EST UN CORRECTIF D'UNE LEÇON DE `G1`.** À la porte précédente, `v0.1.0` a été posé **avant** que les documents de `T11` n'atteignent `main` : le tag **ne les contient pas**, et le §9.2 de la passation le consigne comme une conséquence à connaître. **Un tag posé ne se déplace jamais** — conventions §4, arbitrage de Jonathan à `G1` — donc la seule parade est de committer avant de tagger. Refaire sciemment un défaut consigné aurait été pire que le cycle supplémentaire que cet ordre coûte. **(b)** `required_linear_history` a été retiré de `main` en `T11` du LOT 1 (`DEC-495`, `ECART-026`) **précisément pour que cette porte ne reconflicte pas** : les deux règles « historique linéaire » et « merge commit vers `main` » s'excluaient, et leur application simultanée avait rabattu `G1` sur un squash, coupant `main` de l'histoire de `develop` — neuf fichiers en conflit sur un contenu qui ne divergeait pas. **La vérification porte sur les ARBRES, jamais sur les commits** : `git rev-parse origin/main^{tree} origin/develop^{tree}` doit rendre deux valeurs identiques, et `git rev-parse origin/main^@ \| wc -l` doit valoir **2**. C'est ce contrôle qui avait attrapé le défaut de `G1`, et sans lui la fusion passait **en paraissant propre**. **(c)** Le tag déclenche `images.yml` et publie les trois images sous l'étiquette **`0.2.0`**. **Jonathan en a été informé AVANT la pose, pas après** — c'est la leçon du §9.3 de la passation, où le piège s'était réalisé comme annoncé à `G1`. | Validée par Jonathan le 20/08/2026 |
+
+**Prochain identifiant libre : `DEC-518`.**
 
 ---
 
@@ -636,6 +645,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-514` — réalisation du LOT 2, `T10` | 1 | 1 |
 | `DEC-515` — réalisation du LOT 2, `T11` | 1 | 1 |
 | `DEC-516` — réalisation du LOT 2, `T12` | 1 | 1 |
+| `DEC-517` — franchissement de la porte `G2` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -647,7 +657,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **184** | **184** |
+| **Total** | **185** | **185** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
