@@ -42,7 +42,12 @@ from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.configuration.settings import Parametres
-from app.shared.database import moteur
+
+#  CES TESTS CREENT DES TABLES pour eprouver le socle : ils emploient donc le
+#  moteur des MIGRATIONS, non celui de l'application. Depuis le LOT 3, `T1`, le
+#  role d'execution refuse le DDL avec « permission denied for schema public »,
+#  et c'est precisement ce que `make privileges-check` exige de lui.
+from app.shared.database import moteur_migrations
 from app.shared.modele import (
     CONVENTION_DE_NOMMAGE,
     LIMITE_IDENTIFIANT_POSTGRESQL,
@@ -249,7 +254,7 @@ def connexion(parametres_de_la_stack: Parametres) -> Iterator[Connection]:
     rien ne subsiste dans `onboarding_dev`, meme si un test echoue.
     """
     _exiger_postgresql(parametres_de_la_stack)
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         transaction = cx.begin()
         try:
             BaseDEssai.metadata.create_all(cx)
@@ -305,7 +310,7 @@ def test_la_base_est_en_collation_francaise(parametres_de_la_stack: Parametres) 
         "Legall",
     ]
 
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         provider, locale = cx.execute(
             text(
                 "SELECT datlocprovider::text, COALESCE(datlocale,'') "
@@ -348,7 +353,7 @@ def test_la_base_est_en_collation_francaise(parametres_de_la_stack: Parametres) 
 def test_btree_gist_est_installee(parametres_de_la_stack: Parametres) -> None:
     """`QO-112` : l'unique extension du lot est bien la, et elle seule."""
     _exiger_postgresql(parametres_de_la_stack)
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         installees = set(
             cx.execute(text("SELECT extname FROM pg_extension WHERE extname <> 'plpgsql'"))
             .scalars()

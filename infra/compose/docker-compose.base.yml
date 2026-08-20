@@ -301,8 +301,18 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_DB: ${POSTGRES_DB}
+      # MOINDRE PRIVILEGE — LOT 3, T1, QO-116, DEC-518.
+      # POSTGRES_USER reste transmis : les garde-fous du cahier 20.3 l'exigent, et
+      # `alembic` comme le code applicatif la lisent au demarrage. Mais AUCUN des
+      # deux ne s'en sert pour se connecter : l'API emploie RUNTIME, les
+      # migrations emploient MIGRATIONS. `make privileges-check` le verifie sur la
+      # connexion REELLE, pas sur ce fichier.
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MIGRATIONS_USER: ${POSTGRES_MIGRATIONS_USER}
+      POSTGRES_MIGRATIONS_PASSWORD: ${POSTGRES_MIGRATIONS_PASSWORD}
+      POSTGRES_RUNTIME_USER: ${POSTGRES_RUNTIME_USER}
+      POSTGRES_RUNTIME_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -363,8 +373,18 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_DB: ${POSTGRES_DB}
+      # MOINDRE PRIVILEGE — LOT 3, T1, QO-116, DEC-518.
+      # POSTGRES_USER reste transmis : les garde-fous du cahier 20.3 l'exigent, et
+      # `alembic` comme le code applicatif la lisent au demarrage. Mais AUCUN des
+      # deux ne s'en sert pour se connecter : l'API emploie RUNTIME, les
+      # migrations emploient MIGRATIONS. `make privileges-check` le verifie sur la
+      # connexion REELLE, pas sur ce fichier.
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MIGRATIONS_USER: ${POSTGRES_MIGRATIONS_USER}
+      POSTGRES_MIGRATIONS_PASSWORD: ${POSTGRES_MIGRATIONS_PASSWORD}
+      POSTGRES_RUNTIME_USER: ${POSTGRES_RUNTIME_USER}
+      POSTGRES_RUNTIME_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       REDIS_PASSWORD: ${REDIS_PASSWORD}

@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T10`
+**Dernière mise à jour :** 20 août 2026, LOT 3 sous-étape `T1`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 32 | 7 | 23 | 2 |
+| Total 33 | 7 | 24 | 2 |
 
 ---
 
@@ -50,8 +50,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
 | `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
+| `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
 
-**Prochain identifiant libre : `ECART-033`.**
+**Prochain identifiant libre : `ECART-034`.**
 
 ---
 
@@ -461,4 +462,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-033`.**
+## `ECART-033` — Un contrôle parsait du JSON dans un flux mêlé d'avertissements
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 20 août 2026, LOT 3 sous-étape `T1`, en ajoutant quatre variables d'environnement |
+| Source | `infra/scripts/verifier-collisions-ports.py`, fonction `lancer()` — écrite en `T11` du LOT 1, `DEC-494` |
+| Constat | La fonction rendait `(p.stdout + p.stderr)`, ce qui est commode pour un message d'erreur. Le contrôle **parsait ensuite ce résultat en JSON**.<br>`T1` du LOT 3 a ajouté quatre variables à `.env.example`. Avant qu'elles n'entrent dans `.env.recette`, Compose a écrit sur son flux d'erreur : « The "POSTGRES_MIGRATIONS_USER" variable is not set. Defaulting to a blank string. »<br>**`make ports` a échoué sur `json.decoder.JSONDecodeError: Extra data: line 521 column 2`.** La trace ne nommait ni Compose, ni l'avertissement, ni la variable : elle pointait une position dans un texte. |
+| Impact | Aucun sur le livrable — le contrôle **échouait bruyamment**, ce qui est le bon comportement. L'impact était sur le **diagnostic** : rien dans le message ne conduisait à la cause. |
+| Cause | **Le contrôle était JUSTE quand il a été écrit.** En `T11` du LOT 1, aucune commande Compose n'émettait d'avertissement, et mêler les deux flux n'avait aucune conséquence observable. C'est `ECART-024` à l'identique : un contrôle ne devient pas faux tout seul, il le devient quand le monde change autour de lui — et ce changement, c'est nous qui l'avons fait. §7.21. |
+| Bloquant | Non |
+| Recommandation | **Séparer les flux quand la sortie est parsée**, et **rapporter** le flux d'erreur au lieu de le mêler ou de le taire. Le taire serait le §7.6, le mêler est ce défaut. |
+| Résolution | **Clos.** `lancer_json()` rend `(code, stdout, stderr)` séparément, le JSON est parsé sur `stdout` **seul**, et les avertissements de Compose sont **comptés et affichés** — une variable absente devient une chaîne vide dans la configuration assemblée, et le silence la rendrait invisible. Un `JSONDecodeError` est désormais rattrapé et **nomme l'environnement concerné**. |
+
+---
+
+**Prochain identifiant libre : `ECART-034`.**

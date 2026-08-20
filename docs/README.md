@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `519` en usage | `DEC-520` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `520` en usage | `DEC-521` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `032` | `ECART-033` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts | `001` à `033` | `ECART-034` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `117` | `QO-118` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -192,7 +192,7 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 
 ## 9. Avancement du LOT 3 — **lot ouvert**, porte `G3`
 
-**Ouvert par Jonathan le 20 août 2026 (`DEC-518`).** Plan soumis à validation :
+**Ouvert par Jonathan le 20 août 2026 (`DEC-518`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-3.md`](operations/fiche-lot-3.md) — **12 sous-étapes, `T1` à `T12`**,
 8 stories dont **7 en `P0`**, les **7 tables** du modèle §10, tag `v0.3.0`.
 Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
@@ -203,7 +203,8 @@ Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
 
 | | Sous-étape | Story | État |
 |:--:|---|---|---|
-| `T1` à `T12` | Voir la fiche | — | **Non entamées** — le §3 de la fiche attend la validation de Jonathan |
+| `T1` | Moindre privilège PostgreSQL — deux rôles | — | **Terminée** le 20/08/2026. **`QO-116` close.** Trois comptes et non deux : `initdb` crée un superutilisateur, ce qui change c'est que l'application ne l'emploie plus. `btree_gist` est **`trusted`**, mesuré — sans quoi la migration `0002` aurait été inapplicable. `REASSIGN OWNED` a échoué : **188 des 196 fonctions appartiennent à l'extension**. Tout rejoué sur une base **recréée de zéro** : 8 services sains, 11 migrations, **390 tests**. `DEC-520`, `ECART-033` |
+| `T2` à `T12` | Voir la fiche | — | Non entamées |
 
 ---
 

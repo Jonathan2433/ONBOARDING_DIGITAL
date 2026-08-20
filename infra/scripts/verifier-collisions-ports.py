@@ -81,6 +81,30 @@ def lancer(*commande: str) -> tuple[int, str]:
     return p.returncode, (p.stdout + p.stderr).strip()
 
 
+def lancer_json(*commande: str) -> tuple[int, str, str]:
+    """Comme `lancer`, mais SEPARE les deux flux. Rend (code, stdout, stderr).
+
+    **CETTE FONCTION EXISTE A CAUSE D'UN DEFAUT MESURE EN `T1` DU LOT 3.**
+    `lancer` concatene `stdout` et `stderr`, ce qui est commode pour un message
+    d'erreur — et **fatal** quand on parse le resultat en JSON : le moindre
+    avertissement de Compose produit « Extra data », et la trace ne dit pas que
+    la cause est un avertissement.
+
+    Mesure du 20/08/2026 : quatre variables absentes de `.env.recette` faisaient
+    ecrire a Compose « The "POSTGRES_MIGRATIONS_USER" variable is not set », et
+    `make ports` echouait sur un decodage JSON. Le controle etait JUSTE quand il a
+    ete ecrit en `T11` du LOT 1 : rien n'avertissait alors. C'est le §7.21.
+
+    Le flux d'erreur n'est pas jete pour autant : il est RENDU, et l'appelant le
+    rapporte. Le taire serait le §7.6.
+    """
+    # S603 : meme motif que `lancer`.
+    p = subprocess.run(  # noqa: S603
+        list(commande), capture_output=True, text=True, cwd=RACINE
+    )
+    return p.returncode, p.stdout.strip(), p.stderr.strip()
+
+
 def nos_projets() -> set[str]:
     """Les noms de projet Compose QUI SONT LES NOTRES, derives du disque.
 
@@ -135,7 +159,7 @@ def ports_de_nos_environnements() -> dict[int, set[tuple[str, str]]]:
         fichier_env = RACINE / f".env{suffixe}"
         if not fichier_env.is_file():
             continue
-        code, sortie = lancer(
+        code, sortie, erreurs = lancer_json(
             "docker",
             "compose",
             "--env-file",
@@ -150,7 +174,20 @@ def ports_de_nos_environnements() -> dict[int, set[tuple[str, str]]]:
         )
         if code != 0:
             continue
-        assemblee = json.loads(sortie)
+        #  Les avertissements sont RAPPORTES, jamais tus : une variable absente
+        #  du fichier d'environnement devient une chaine vide dans la
+        #  configuration assemblee, et le silence la rendrait invisible.
+        avertissements = [ligne for ligne in erreurs.splitlines() if "level=warning" in ligne]
+        if avertissements:
+            print(f"    info     {nom} : {len(avertissements)} avertissement(s) de Compose")
+            for ligne in avertissements[:4]:
+                message = ligne.split('msg="')[-1].rstrip('"')
+                print(f"               {message[:96]}")
+        try:
+            assemblee = json.loads(sortie)
+        except json.JSONDecodeError as erreur:
+            print(f"    ECHEC    {nom} : configuration Compose illisible — {erreur}")
+            continue
         projet = assemblee.get("name", nom)
         for service, definition in (assemblee.get("services") or {}).items():
             for publication in definition.get("ports") or []:

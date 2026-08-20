@@ -37,6 +37,15 @@ VARIABLES_MINIMALES: dict[str, Any] = {
     "POSTGRES_DB": "onboarding_test",
     "POSTGRES_USER": "utilisateur_de_test",
     "POSTGRES_PASSWORD": "valeur-de-test-sans-portee",
+    #  LOT 3, T1 : les quatre variables des deux roles sont OBLIGATOIRES depuis
+    #  `QO-116`, donc un test unitaire qui construit `Parametres` sans elles
+    #  echouerait sur le garde-fou -- ce qui est exactement ce que le garde-fou
+    #  doit faire. Ces valeurs n'ont aucune portee : aucun test unitaire ne se
+    #  connecte.
+    "POSTGRES_MIGRATIONS_USER": "migrations_de_test",
+    "POSTGRES_MIGRATIONS_PASSWORD": "valeur-de-test-sans-portee",
+    "POSTGRES_RUNTIME_USER": "execution_de_test",
+    "POSTGRES_RUNTIME_PASSWORD": "valeur-de-test-sans-portee",
     "REDIS_PASSWORD": "valeur-de-test-sans-portee",
     "MINIO_ROOT_USER": "utilisateur-de-test",
     "MINIO_ROOT_PASSWORD": "valeur-de-test-sans-portee",
@@ -106,6 +115,18 @@ def parametres_de_la_stack(environnement_vierge: None) -> Parametres:
         "POSTGRES_DB",
         "POSTGRES_USER",
         "POSTGRES_PASSWORD",
+        #  MOINDRE PRIVILEGE — LOT 3, T1, `QO-116`, `DEC-518`.
+        #  Les tests d'integration se connectent par `url_postgresql()`, qui
+        #  emploie desormais le role d'EXECUTION. Sans ces quatre lignes, la
+        #  connexion echoue sur « fe_sendauth: no password supplied » -- et le
+        #  message ne dit pas que la cause est une variable non transmise.
+        #  Les employer ici est le bon choix : **les tests eprouvent ainsi le
+        #  MEME role que l'application**, donc ils echoueraient si un droit
+        #  manquait a l'execution.
+        "POSTGRES_MIGRATIONS_USER",
+        "POSTGRES_MIGRATIONS_PASSWORD",
+        "POSTGRES_RUNTIME_USER",
+        "POSTGRES_RUNTIME_PASSWORD",
         "REDIS_PASSWORD",
         "MINIO_ROOT_USER",
         "MINIO_ROOT_PASSWORD",
