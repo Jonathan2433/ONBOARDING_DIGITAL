@@ -1436,7 +1436,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : la porte `G1` est instruite, elle attend la décision
+# 9. Par où commencer : la porte `G2` est FRANCHIE, aucun lot n'est ouvert
 
 ## 9.0 Ce que les sous-étapes ont démenti, et ce qu'il faut en retenir
 
@@ -1450,6 +1450,11 @@ façons différentes, ce qui compte plus que le nombre :
   c'est `T8`, en créant un second environnement, qui les a rendus faux (`ECART-024`, §7.21).
 - **`T10` a démenti une MESURE de `T6`**, en un jour : un avis de sécurité accepté parce qu'« aucun
   correctif n'existe » en avait reçu un (§7.22).
+- **`T12` a démenti un contrôle que `T11` venait d'écrire, le jour même.** `T11` avait produit le
+  §7.25 — *un garde-fou à faux positifs est pire qu'aucun garde-fou* — et le contrôle SQLite de `T12`
+  l'a commis aussitôt : il cherchait le mot `sqlite` et a trouvé **16 occurrences, toutes de la prose
+  affirmant son exclusion**. **Un piège documenté n'est pas un piège désarmé**, et c'est la troisième
+  fois que cette phrase s'applique dans ce projet.
 - **`T11` a démenti une lecture de `git`.** Après la fusion de `develop` dans `main`,
   `git rev-list --left-right --count` rendait `1 18` d'une syntaxe et `0 32` d'une autre, et **aucun
   des deux ne répondait à la question** : ce sont des artefacts de fusion en squash. Ce qui fait foi
@@ -1483,91 +1488,104 @@ lignes** et toutes ses requêtes répondent **sous 1,3 ms**.
 les sept critères avec leurs preuves, les huit stories, les **25 contrôles du §30 classés**, une
 démonstration guidée, ce qui reste ouvert, et ce que la pose du tag a déclenché.
 
-## 9.2 Ce qui a suivi la validation, et ce qui reste
+## 9.2 Ce qui a suivi la validation de `G2`, et ce qui reste
 
-**Fait, et mesuré le 12/08/2026 :**
+**Fait, et mesuré le 20/08/2026 :**
 
-1. **☑ `develop` fusionnée dans `main`.** Il a fallu **deux** pull requests. La première, `#30`
-   (`be65b53`), précédait les documents de `T11` **et a été squashée** — voir `ECART-026`. La
-   seconde, `#35` (`4c25ed2`), est une **vraie fusion**. Mesuré : `main^{tree}` =
-   `develop^{tree}` = `9bc9359`, **2 parents**, `develop` **ancêtre** de `main`, `main`↔`develop` à
-   **3 / 0**, et la base de fusion remontée de `09ceb7c` à `e526e57`.
-2. **☑ Tag annoté `v0.1.0` posé sur `main`**, sur `be65b53` — `DEC-428`. **Il n'a pas été déplacé
-   vers `4c25ed2`** : arbitrage de Jonathan, et conventions §4, un tag posé ne se déplace jamais.
-   **Conséquence à connaître : `v0.1.0` ne contient pas les documents de `T11`.**
-3. **☑ `required_linear_history` retiré sur `main`**, conservé sur `develop` — `DEC-495`,
-   `ECART-026`. Sans cela la porte `G2` aurait reconflicté à l'identique.
+1. **☑ Les documents de clôture d'abord**, pull request `#59` — et **c'est un correctif de `G1`**, où
+   le tag précédait les documents de `T11`, qu'il ne contient donc pas. Un tag posé ne se déplace
+   jamais : la seule parade est de committer avant de tagger.
+2. **☑ `develop` portée dans `main` par une VRAIE fusion**, pull request `#60`. Mesuré, **par les
+   arbres et non par les commits** : `main^{tree}` = `develop^{tree}` = **`78e7cff`**, `develop`
+   **ancêtre** de `main`, **2 parents**, `main`↔`develop` à **4 / 0**, base de fusion `8038ecb`.
+   **Une seule pull request a suffi**, là où `G1` en avait exigé deux.
+3. **☑ Tag annoté `v0.2.0` posé sur `main`**, commit **`8c8e060`** — conventions §4, `DEC-517`. **Il
+   contient les documents de clôture**, contrairement à `v0.1.0`.
+4. **☑ `images.yml` déclenché par le tag**, comme annoncé **avant** la pose et non après. Les trois
+   images sont republiées sous l'étiquette **`0.2.0`**. Aucun `latest`, `DEC-481`.
+5. **☑ Les huit issues de stories closes, et l'epic `#38`.** `#42` l'a été **tardivement** : elle
+   était restée ouverte depuis `T9` alors que la fiche déclarait la story livrée — la routine du
+   §7.19 oubliée à une fusion. **Vérifie l'état des issues avant une porte, ne le suppose pas.**
 
-**Reste à faire, et ce sont des actions de Jonathan :**
+**Reste à faire, et c'est une décision de Jonathan :**
 
-4. **☐ Refermer l'epic `#1`.**
-5. **☐ Relancer le projet Docker tiers** : `docker compose -p observatoire-ecom-studio start`.
-   **Il collisionne sur `8080` avec la recette** (`ECART-025`) : les deux ne peuvent pas tourner en
-   même temps, et `make ports` l'annonce désormais.
-6. **☐ Ouvrir le LOT 2**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003`
-   exigent une validation explicite avant tout lot dépendant.
+6. **☐ OUVRIR LE LOT 3**, ce qui est une **décision à tracer** : `ROAD-003` et `ARB-BACK-003` exigent
+   une validation explicite avant tout lot dépendant, comme `DEC-496` l'a fait pour le LOT 2.
+   **N'écris pas une ligne du LOT 3 avant.**
+
+---
 
 ## 9.3 Les pièges de cette fin de lot
 
-1. **☑ Le tag `v*` a déclenché `images.yml`, et le piège s'est réalisé comme annoncé.** Mesuré le
-   12/08/2026 : exécution sur `ref=v0.1.0`, **succès**, et les images publiées portent désormais
-   l'étiquette **`0.1.0`** — première version non `develop` du dépôt, aux côtés de `sha-be65b53`,
-   `sha-e526e57` et `develop`. **Aucun `latest`**, `DEC-481` tenu. Le piège vaut toujours pour la
-   porte suivante : dis-le à Jonathan **avant** de poser un tag, pas après.
+1. **☑ Le tag `v*` a déclenché `images.yml`, et il fallait le dire AVANT.** C'est fait cette fois. La
+   leçon vaut pour `G3` : **annonce la conséquence avant l'action, pas après**.
 2. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
-   s'exécute pas sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
-   statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif.
-3. **Compare les ARBRES, pas les commits**, pour savoir si `main` porte bien le contenu de `develop`.
-   Voir §9.0.
-4. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes.
-5. **Le LOT 2 EST ouvert** depuis le 18/08/2026 (`DEC-496`), **mais son plan attend validation** :
-   `DEC-496` pose qu'aucune ligne de code n'est écrite avant que Jonathan ait validé le §3 de
-   [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md). **Les interdits du LOT 2 sont au §11 de cette
-   fiche** — au premier chef : aucune table d'authentification, aucun écran, aucun type métier dans
-   `packages/contracts` avant qu'une route l'expose. **Les LOTS 3 à 14 restent `Planned`.**
+   s'exécute **pas** sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
+   statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif. Mesuré le
+   20/08/2026 : le seul contexte requis sur `main` est **« Porte de l intégration continue »**.
+3. **`mergeStateStatus=UNSTABLE` n'est PAS un échec.** Il signale qu'un contrôle **non requis** est en
+   cours — typiquement `images.yml`. Ce qui fait foi est la liste des contextes **requis**, et elle se
+   mesure : `gh api repos/…/branches/main/protection --jq .required_status_checks.contexts`.
+4. **Compare les ARBRES, pas les commits.** `git rev-list --left-right --count` répond à une autre
+   question que celle qu'on croit poser — voir §9.0.
+5. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes.
 
-## 9.4 Ce qui reste ouvert et devra être dit à la porte
+---
 
-| Élément | Ce qu'il faut annoncer |
+## 9.4 Ce qui reste ouvert, et qu'il faut savoir avant le LOT 3
+
+| Élément | Ce qu'il faut savoir |
 |---|---|
-| `QO-115` | La **charte graphique** et la **police officielle** n'existent pas dans le corpus — le prototype référence pourtant « la charte EXALT », donc **elle existe et nous ne l'avons pas**. Les jetons de `T10` sont défendables mais restent une **approximation**. À instruire avant le LOT 4 |
-| `ROAD-RSK-034` | Les ports publiés d'un environnement restent joignables depuis l'autre. Le cahier §22.2 exige un réseau **distinct**, ce qui est acquis ; la barrière effective est la **cinquième** séparation, les secrets. À réévaluer avant le LOT 13 |
-| `ROAD-RSK-033` | 23 avis sans correctif dans `python:3.12-slim`. **`T10` a montré qu'un tel résiduel peut se corriger du jour au lendemain** : à réexaminer, pas à archiver |
-| `QO-111`, `QO-112` | Collation et extensions PostgreSQL — **à trancher au LOT 2, avant la première table** |
-| `QO-113` | Conservation calendaire des journaux, LOT 13 |
-| `QO-114` | **Jonathan n'a aucun droit d'administration sur cette machine.** À instruire avant le LOT 13 |
-| `ECART-005`, `012`–`015` | Cinq écarts ouverts, tous rattachés à un lot ultérieur |
+| **`QO-116`** | **La dette la plus directe du LOT 3.** L'application se connecte à PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège. L'arbitrage de `T1` était « à traiter au LOT 3, le lot dont la sécurité applicative est l'objet » |
+| **La vérification de l'attributeur, §8.4** | « ESM ou super-administrateur » est une règle de **permission** : la base n'a **aucune notion de l'appelant**. `T11` l'a laissée au LOT 3, et `attribuer_la_categorie_dg` reçoit déjà l'attributeur en paramètre — il ne reste qu'à vérifier son droit |
+| **`ECART-012`** | **Attend Léa**, et c'est le seul point du LOT 2 en attente d'une décision **produit**. Le coût des deux options est mesuré depuis `T5` ; échu **avant le LOT 5** |
+| **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
+| **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut, le livrable est conforme |
+| **`QO-113`**, **`QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13**, à instruire avant |
+| **`QO-115`** | La **charte graphique** et la **police officielle** n'existent pas dans le corpus. Avant le LOT 4 |
+| **Row-Level Security** | Le §2.5 la cite comme « compatibilité future ». Rien ne la datant, elle n'est **pas** mise en place — et ce n'est pas un oubli |
+| **13 des 25 contrôles du §30** | Reportés, chacun rattaché à son lot par `make recette-modele-check`. Le contrôle **échouera** si un contrôle du modèle cesse d'être classé |
+| `ROAD-RSK-033`, `ROAD-RSK-034` | 23 avis sans correctif dans `python:3.12-slim` · les ports publiés perçent l'isolement inter-réseaux. **À réévaluer avant le LOT 13**, et `T10` a montré qu'un tel résiduel peut se corriger du jour au lendemain |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
-## 9.5 Les 7 critères de sortie de la porte `G1`
+---
 
-| | Critère | État |
+## 9.5 Les 7 critères de sortie de la porte `G2`
+
+| | Critère | Ce qui le prouve |
 |:--:|---|---|
-| ☑ | Tous les services démarrent sur le Mac M5 | `T2`, `T6`, `T8`, **et depuis une machine RÉELLEMENT propre en `T9`** — 0 volume, 0 image, remontée en 34 s |
-| ☑ | **Les images multiarchitectures sont construites** | **`T7` — lancées sur les deux, et `arm64` NATIF sur l'image publiée depuis `T8`** |
-| ☑ | Aucun secret réel n'est présent | **vérifié automatiquement** depuis `T6`, avec témoin. **Ni `T7` ni `T8` n'ont créé de secret de dépôt** |
-| ☑ | Une migration Alembic vide ou initiale s'exécute | `T3`, rejouée à chaque pull request, **et sur une base créée de zéro en `T9`** |
-| ☑ | Les logs possèdent un identifiant de corrélation | `T4`, **et le nom de l'en-tête est partagé et vérifié depuis `T10`** |
-| ☑ | **La CI bloque une erreur de lint, de test et de secret** | **`T6`, prouvé trois fois** |
-| ☑ | Jonathan valide le socle | **VALIDÉ le 12/08/2026** — [checklist](docs/operations/checklist-validation-G1.md) instruite, tag `v0.1.0` posé sur `main`, contenu de `develop` porté par `main` |
+| ☑ | toutes les migrations s'appliquent sur une base **vide** | `make migrations-check` — base jetable, **0 table** au départ, tête `0011` |
+| ☑ | les migrations sont **rejouables** | descente à `base` sans table métier survivante, remontée à signature **identique** |
+| ☑ | les contraintes critiques disposent de tests PostgreSQL | **373 tests**, dont **204 d'intégration**. Chaque refus a son **témoin** |
+| ☑ | les relations structurantes sont **historisées** | `make historisation-check` — les **7** du §25.2, compte **dérivé du modèle** |
+| ☑ | les tests d'**isolation** réussissent | `make isolation-check` — **8** clés composites, **0** référence nue. Et `isolation-temoin` tourne **en CI** |
+| ☑ | aucune dépendance à **SQLite** | 99 fichiers, **0 usage réel**. Le motif cherche un **usage**, jamais le mot |
+| ☑ | **Jonathan valide le modèle implémenté** | **VALIDÉ le 20/08/2026** — `DEC-517`, [checklist](docs/operations/checklist-validation-G2.md) |
 
-**LES SEPT CRITÈRES SONT ACQUIS. La porte `G1` est franchie, et le LOT 1 est verrouillé.** Les
-huit stories sont livrées, les 33 contrôles de sortie de `T11` sont à zéro, le tag `v0.1.0` est posé
-sur `main` (`DEC-428`), et `main` porte le contenu de `develop` — arbres identiques, `9bc9359`.
+**LES SEPT CRITÈRES SONT ACQUIS. La porte `G2` est franchie, et le LOT 2 est verrouillé.**
 
-> **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis** de la protection
-> de branche. Le workflow `images.yml` ne s'exécute **pas** sur les pull requests — le cahier §23.1
-> l'interdit. Exigé comme contexte, il ne produirait jamais de statut et **bloquerait toute fusion
-> pour toujours**, y compris pour Jonathan, `enforce_admins` étant actif.
+**Et la comparaison de schémas est ce qui donne son poids au premier critère.** Sans elle, on saurait
+que la chaîne de migrations **s'applique** — pas qu'elle **aboutit** au schéma qui tourne. 269
+colonnes, 94 contraintes, 85 index, 8 déclencheurs et 196 fonctions sont **identiques** entre une base
+construite de zéro et celle qui tourne.
 
-## 9.6 Ce que le LOT 1 ne doit toujours pas faire
+---
 
-Créer une table métier, un modèle SQLAlchemy métier ou un type métier dans
-`packages/contracts` · implémenter une authentification, même partielle, même de test ·
-introduire un contournement de l'authentification · charger une donnée de collaborateur ·
-exposer PostgreSQL, Redis, MinIO ou Mailpit ailleurs que sur `127.0.0.1` · référencer une image
-par `latest` seul · introduire Kubernetes, une PWA, un fonctionnement hors ligne, Entra ID,
-Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
+## 9.6 Ce qui reste interdit tant que le LOT 3 n'est pas ouvert
+
+**Aucune ligne du LOT 3.** Concrètement, et ce sont les tables que le §11 de la fiche du LOT 2 nommait
+déjà : `user_account`, `admin_password_credential`, `magic_link_request`, `user_session`,
+`service_account`, `service_token`, `auth_event`. Ni authentification, même partielle, même de test ·
+ni contournement d'authentification · ni écran, page ou route métier de l'API · ni type métier dans
+`packages/contracts` avant qu'une route l'expose.
+
+**Et les interdits permanents du projet, qui ne dépendent d'aucun lot :** aucune donnée réelle de
+collaborateur — aucun CSV réel, aucune photo · aucune modification d'une migration déjà appliquée · ni
+des cinq documents de cadrage · aucune exposition de PostgreSQL, Redis, MinIO ou Mailpit ailleurs que
+sur `127.0.0.1` · aucune référence d'image par `latest` seul · ni Kubernetes, ni PWA, ni fonctionnement
+hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique réutilisée.
+
+---
 
 # 10. Cartographie du dépôt
 
@@ -1732,10 +1750,29 @@ git ls-files | grep -c 'V1.html'                          # doit valoir 0
 git status --short                                        # doit être vide
 ```
 
-Le premier montre **deux** fichiers, et les deux sont légitimes : le CSV explicitement fictif, et
-**`apps/web/index.html`**, point d'entrée imposé par Vite depuis `T5`. Le filtre visait le
-prototype ; `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html`. **Toute troisième
-entrée est une anomalie.**
+Le premier montre **trois** fichiers, et les trois sont légitimes :
+
+| Fichier | Pourquoi il est là |
+|---|---|
+| `docs/architecture/donnees/exemples/collaborateurs-exemple-fictif.csv` | explicitement **fictif**, LOT 0 |
+| `apps/web/index.html` | point d'entrée **imposé par Vite** depuis `T5`. Le filtre visait le prototype ; `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html` |
+| `infra/compose/differences-recette.env` | **calque de différences versionné**, `T8`. **Aucune valeur sensible** — les cinq secrets sont **engendrés** à la création de `.env.recette`, jamais écrits ici, et Gitleaks l'examine à chaque pull request |
+
+> **Ce paragraphe annonçait DEUX fichiers, et « toute troisième entrée est une anomalie ».** Il y en a
+> trois depuis `T8` du LOT 1 — le calque de recette — et **personne ne l'avait mesuré**, si bien que
+> l'avertissement aurait crié au loup sur un fichier parfaitement légitime. Constaté le 20/08/2026, à
+> la clôture de `G2`, en exécutant le contrôle d'hygiène plutôt qu'en le citant.
+>
+> **C'est la classe `ECART-021` appliquée à un avertissement**, et le §7.21 le dit : *un avertissement
+> faux est pire qu'une absence d'avertissement*, parce qu'il apprend à passer outre. Le compte est
+> donc **dérivé** ci-dessous, et non affirmé :
+>
+> ```bash
+> git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$' | wc -l    # 3 au 20/08/2026
+> ```
+>
+> **Toute entrée que ce tableau ne nomme pas est une anomalie** — c'est la formulation qui ne vieillit
+> pas, là où un nombre vieillit à la première addition.
 
 ---
 
