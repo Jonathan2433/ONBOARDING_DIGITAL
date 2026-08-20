@@ -25,7 +25,7 @@ résultat réellement obtenu, le 20/08/2026. Aucun nombre n'y est affirmé sans 
 | ☑ | les relations structurantes sont **historisées** | **acquis** | `make historisation-check` — les **7** relations du §25.2, compte **dérivé du modèle** |
 | ☑ | les tests d'**isolation** réussissent | **acquis** | `make isolation-check` + `make isolation-temoin` — 8 clés composites, 0 référence nue, et le témoin prouve les 4 discriminations |
 | ☑ | **aucune dépendance à SQLite** | **acquis** | `make migrations-check` — 99 fichiers examinés, **0 usage réel**. Le contrôle cherche un `import`, une URL ou une dépendance, **non le mot** |
-| ☐ | **Jonathan valide le modèle implémenté** | **ta décision** | ce document |
+| ☑ | **Jonathan valide le modèle implémenté** | **VALIDÉ le 20/08/2026** | décision de Jonathan, tracée par `DEC-517` |
 
 ---
 
@@ -190,13 +190,21 @@ porte déjà des personnes.
 
 ---
 
-## 9. Décision demandée
+## 9. Décision prise
 
-**Valides-tu la porte `G2` ?**
+**Jonathan a validé la porte `G2` le 20 août 2026**, sans réserve, sur la première des trois options
+proposées : porter le contenu de `develop` dans `main`, puis poser l'étiquette `v0.2.0`.
 
-- **oui** → je fusionne `develop` dans `main` par une vraie fusion, je pose `v0.2.0` annoté, et
-  j'ouvre le LOT 3 sur ta décision tracée ;
-- **oui, avec réserve** → dis laquelle : je la consigne au registre et je l'annonce au LOT 3 ;
-- **non** → dis ce qui manque : je le traite avant de reposer la question.
+**LES SEPT CRITÈRES SONT ACQUIS. La porte `G2` est franchie, et le LOT 2 est verrouillé.**
 
-**Les six critères techniques sont acquis et mesurés. Le septième est le tien.**
+### Ce qui a été fait dans cet ordre, et pourquoi cet ordre
+
+1. **les documents de clôture d'abord** — celui-ci, le registre, la fiche et la passation ;
+2. **puis `develop` dans `main`**, par une **vraie fusion** ;
+3. **puis le tag `v0.2.0`**.
+
+> **L'ORDRE EST UN CORRECTIF D'UNE LEÇON DE `G1`.** À la porte précédente, le tag `v0.1.0` a été posé
+> **avant** que les documents de `T11` n'atteignent `main` : **`v0.1.0` ne les contient pas**, et c'est
+> consigné au §9.2 de la passation comme une conséquence à connaître. Un tag posé ne se déplace
+> jamais — conventions §4 — donc la seule parade est de **committer les documents de clôture avant de
+> tagger**. C'est ce qui a été fait ici.

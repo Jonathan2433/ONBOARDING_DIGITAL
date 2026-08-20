@@ -301,10 +301,14 @@ Les **sept** critères de sortie de la roadmap, littéralement :
 | ☑ | les relations structurantes sont historisées | `T9` — les 7 du §25.2, compte **dérivé du modèle** |
 | ☑ | les tests d'isolation réussissent | `T11` — 8 clés composites, et un **témoin** en CI |
 | ☑ | aucune dépendance à SQLite n'existe pour les tests d'intégration | `T12` — 99 fichiers, **0 usage réel**, motif cherchant un **usage** |
-| ☐ | **Jonathan valide le modèle implémenté** | **la porte** — [checklist](checklist-validation-G2.md) |
+| ☑ | **Jonathan valide le modèle implémenté** | **VALIDÉ le 20/08/2026**, `DEC-517` |
 
-**LES SIX CRITÈRES TECHNIQUES SONT ACQUIS ET MESURÉS.** Le septième est la décision de Jonathan, et
-la [checklist de validation `G2`](checklist-validation-G2.md) la lui remet.
+**LES SEPT CRITÈRES SONT ACQUIS. La porte `G2` est franchie le 20/08/2026, et le LOT 2 est
+verrouillé.** Les huit stories sont livrées, leurs huit issues sont closes, et la
+[checklist de validation `G2`](checklist-validation-G2.md) porte les preuves.
+
+**Le LOT 3 n'est pas ouvert** : `ROAD-003` et `ARB-BACK-003` exigent une décision explicite de
+Jonathan avant tout lot dépendant, et elle sera tracée comme `DEC-496` l'a été pour le LOT 2.
 
 Et les critères du backlog §« Validation du lot » : les **sept** stories `P0` sont `Done`, la story
 `P1` est terminée **ou** a fait l'objet d'un arbitrage explicite, la démonstration et les preuves
