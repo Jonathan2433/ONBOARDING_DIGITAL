@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 12 août 2026, correctif postérieur à la porte `G1`
+**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T10`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 25 | 5 | 18 | 2 |
+| Total 32 | 7 | 23 | 2 |
 
 ---
 
@@ -29,7 +29,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-009` | Identité Git personnelle sur un projet interne | Non | **Accepté** |
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
-| `ECART-012` | La valeur `intercontrat` est imposée à une direction générale, faute de troisième valeur | Non | Ouvert |
+| `ECART-012` | La valeur `intercontract` est imposée à une direction générale, faute de troisième valeur. **Instruit en `T5`** : le coût des deux options est mesuré, la décision revient à Léa | Non | **Ouvert, instruit** |
 | `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
@@ -43,8 +43,15 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-023` | La fiche du LOT 1 énumère **six** des **sept** séparations du cahier §22.2, et importe dans `T8` deux exigences des LOTS 11 et 13 | Non pour `G1` | **Clos** |
 | `ECART-024` | Deux contrôles affirmaient un état que la mesure contredit — l'avertissement de `make destroy` et le contrôle de page — tous deux nés d'un environnement unique | Non pour `G1` | **Clos** |
 | `ECART-025` | La bande de ports de la recette a été choisie sur une mesure de ce qui **écoutait**, non de ce qui était **déclaré** : un projet tiers arrêté réclamait déjà `8080` | Non pour `G1` | **Clos** |
+| `ECART-026` | Les conventions Git prescrivaient une stratégie de fusion que la protection de branche **interdisait** : deux règles justes séparément, incompatibles ensemble | Non pour `G1`, **bloquant pour `G2`** | **Clos** |
+| `ECART-027` | Trois tests d'intégration recopiaient la révision de tête d'Alembic au lieu de la dériver, et sont devenus faux à la première migration du LOT 2 | Non | **Clos** |
+| `ECART-028` | Le modèle place les domaines e-mail autorisés à **deux endroits** : catégorie de `platform_setting` au §5.2, et table dédiée au §5.4 | Non | **Clos** |
+| `ECART-029` | L'index simple du §25.1 **ne satisfait pas** l'unicité insensible à la casse exigée par le §6.1 | Non pour `G2`, **le serait pour `G3`** | **Clos** |
+| `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
+| `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
+| `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
 
-**Prochain identifiant libre : `ECART-026`.**
+**Prochain identifiant libre : `ECART-033`.**
 
 ---
 
@@ -187,12 +194,12 @@ formulée, et son caractère bloquant est explicité.
 | Champ | Valeur |
 |---|---|
 | Constaté le | 27 juillet 2026, sous-étape S6, en construisant le jeu d'exemple |
-| Source | Modèle de données §6.5 : `professional_status_assignment.status` vaut `mission` ou `intercontrat`, une seule situation active par appartenance |
+| Source | Modèle de données §6.5 : `professional_status_assignment.status` vaut **`mission` ou `intercontract`**, une seule situation active par appartenance.<br>**Rectifié le 19/08/2026, LOT 2 sous-étape `T5`** : ce champ citait `intercontrat`, la forme **française**. La mesure sépare nettement les deux usages du modèle — `intercontract` aux lignes 352, 361 et 770, **toujours entre accents graves**, donc là où il spécifie une **valeur** ; `intercontrat` aux lignes 48, 69, 353, 915 et 1710, en **prose**. Quelqu'un implémentant depuis cet écart plutôt que depuis le modèle aurait stocké une valeur que rien ne reconnaît. |
 | Constat | Le champ de situation professionnelle est obligatoire pour **toute** personne et n'offre que deux valeurs. Pour une catégorie `dg`, ou pour une personne dont l'activité n'est pas une mission client, `intercontrat` est la seule valeur possible. Or ce terme désigne, dans le langage métier, un consultant en attente de mission. |
 | Impact | Aucun impact technique : les contraintes restent cohérentes, `intercontrat` interdisant un client actif. L'impact est **fonctionnel et éditorial** : le trombinoscope afficherait « intercontrat » sur une fiche de direction générale, ce qui serait lu comme une erreur par les collaborateurs. |
 | Bloquant | Non |
 | Recommandation | Ne pas modifier le modèle de données, qui est validé. Deux pistes à arbitrer avec Léa : soit l'affichage du statut est conditionné par la catégorie professionnelle, la situation restant `intercontrat` en base ; soit une troisième valeur est ajoutée à l'énumération, ce qui exige une décision et une nouvelle version du modèle. La première piste est moins coûteuse et ne touche pas au socle. |
-| Résolution | Ouvert. À clarifier avec Léa et l'ESM, **au plus tard au LOT 2** lors de l'implémentation de `professional_status_assignment`, et avant le LOT 5 qui affiche le statut au trombinoscope. |
+| Résolution | **Ouvert — INSTRUIT le 19/08/2026 en `T5`, et il attend Léa.**<br>`professional_status_assignment` existe désormais, avec les **deux** valeurs que le modèle validé écrit. `T5` n'a pas tranché, et ne devait pas : **Léa décide du produit**.<br>**Ce que `T5` apporte à la décision, c'est le COÛT mesuré de chaque option** — et il est faible dans les deux cas, ce qui n'était pas connu quand l'écart a été ouvert :<br>• **conditionner l'affichage** par la catégorie professionnelle, la valeur restant `intercontract` en base : **aucune modification du socle**, tout se joue au LOT 5 avec le trombinoscope ;<br>• **ajouter une troisième valeur** : **une migration d'UNE LIGNE**, parce que `DEC-499` a choisi une contrainte de vérification et non un type `enum` natif. C'était précisément le motif de ce choix, et il se réalise ici.<br>**Le coût n'est donc pas ce qui doit départager les deux options** : c'est un choix de produit, et il revient à Léa. |
 
 ## `ECART-013` — Identifiants de tâches non stables entre les deux parcours
 
@@ -361,4 +368,97 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Poser le contrôle qui manquait**, plutôt que de promettre plus d'attention. Arbitrage de Jonathan du 12/08/2026 : le contrôle est retenu, **et le déplacement du port de la recette ne l'est pas** — la collision reste, désormais visible. |
 | Résolution | **Clos** le 12 août 2026 par `DEC-494`. `make ports` confronte désormais **deux sources** : les conteneurs existants, **arrêtés compris**, et la **configuration Compose assemblée** de nos environnements — indispensable, puisque `down` supprime les conteneurs et qu'un environnement arrêté ne déclare plus rien. Il **échoue** sur une collision entre deux de nos environnements — éprouvé par témoin, code 1 avec le port et les deux propriétaires nommés — et **rapporte visiblement** les collisions étrangères, dont les deux constatées. **La collision `8080` subsiste et est assumée** : elle est désormais annoncée avant d'être découverte. |
 
-**Prochain identifiant libre : `ECART-026`.**
+## `ECART-026` — Les conventions Git prescrivaient une stratégie de fusion que la protection de branche interdisait
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 août 2026, **après la validation de la porte `G1`**, sur les conflits de la pull request `#33` |
+| Source | [`conventions-git-et-versions.md`](../operations/conventions-git-et-versions.md) §2, tableau des réglages de protection, et §2.1, stratégie de fusion ; protection de branche de `main` et de `develop`, relevée par `gh api` |
+| Constat | **Le document se contredit.** Sa ligne 94 pose « historique linéaire requis » comme réglage recommandé, au motif qu'il est « cohérent avec la fusion par squash ». Sa ligne 106 impose **`develop` → `main` : merge commit**, au motif de « conserver la traçabilité de l'ensemble intégré et validé ».<br>**Or ces deux règles s'excluent :** « historique linéaire requis » **refuse tout merge commit**. Les deux ont pourtant été appliquées — mesuré le 12/08/2026 : `required_linear_history` valait `true` sur `main` **et** sur `develop`, avec `enforce_admins`.<br>**Conséquence directe :** la PR `#30`, première fusion de `develop` dans `main`, **n'a pas été squashée par inadvertance — c'était la seule méthode que la protection autorisait.** |
+| Impact | **Cumulatif, et c'est ce qui le rend sérieux.** Le squash a coupé `main` de l'histoire de `develop` : la base de fusion est restée `09ceb7c`, si bien que **tout fichier touché des deux côtés entre en conflit alors que le contenu ne divergeait pas**. Mesuré sur la PR `#33` : **9 fichiers en conflit, insolubles** — leur résolution exigeait elle-même un merge commit sur `develop`, que la protection refusait. Et le défaut se serait **reproduit à chaque porte**, en s'aggravant à mesure que les deux histoires s'éloignent. |
+| Cause | **Deux règles justes séparément, incompatibles ensemble, dans un même document.** Ni la ligne 94 ni la ligne 106 n'est fausse en soi : la première sert la lisibilité de `develop`, la seconde la traçabilité de `main`. Aucune relecture de l'une n'aurait révélé le problème — il ne se voit qu'en les confrontant, et il ne s'est manifesté qu'à la **seconde** fusion vers `main`. C'est la classe de `ECART-023`, élargie : un document dérivé peut non seulement vieillir, il peut **prescrire l'impossible dès sa rédaction**. |
+| Bloquant | Non pour `G1`, déjà validée, et aucun critère de sortie n'est remis en cause. Bloquant en revanche pour **toute** fusion de `develop` dans `main`, donc pour la porte `G2` et les suivantes |
+| Recommandation | **Distinguer le réglage par branche** au lieu de l'appliquer uniformément : `develop` ne reçoit que des squash de branches de travail et gagne à rester linéaire ; `main` reçoit des merge commits et ne peut pas l'être. Et **poser le contrôle qui manquait** : après une fusion `develop` → `main`, comparer les **arbres** et vérifier l'**ascendance**, plutôt que de se fier au verdict de fusion. |
+| Résolution | **Clos** le 12 août 2026 par `DEC-495`, la rectification des §2 et §2.1 des conventions, et la PR `#35`.<br>**Réglage :** `required_linear_history` retiré sur `main`, conservé sur `develop` — mesuré après application, `false` / `true`, les six autres réglages inchangés.<br>**Réparation :** la PR `#35` est une **vraie fusion**, `develop` devient ancêtre de `main`, et la base de fusion remonte de `09ceb7c` à `e526e57`, la tête de `develop`. Mesuré : `main^{tree}` = `develop^{tree}` = `9bc9359`, **2 parents**, `main`↔`develop` à **3 / 0**.<br>**Et le contrôle posé a immédiatement attrapé un défaut :** une résolution en `git merge -X theirs` avait rendu un arbre **divergent**, la stratégie ayant conservé un fragment **non conflictuel** du côté abandonné — **41 lignes dupliquées dans `fiche-lot-1.md`, aucun conflit signalé**. Sans la comparaison des arbres, cette fusion passait en paraissant propre. |
+
+## `ECART-027` — Trois tests d'intégration recopiaient la révision de tête d'Alembic
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 18 août 2026, LOT 2 sous-étape `T1`, en ajoutant la migration `0002` |
+| Source | `apps/api/tests/test_integration.py`, trois tests écrits en `T3` du LOT 1 |
+| Constat | Trois tests de migration — application sur base vide, rejeu, montée après descente — affirmaient `assert _revision_appliquee(base_vide) == "0001"`, **la révision écrite en dur**. Ils sont passés au rouge dès que la migration `0002` a été ajoutée, avec `assert '0002' == '0001'`. |
+| Impact | Borné, et le défaut était bruyant. Mais **onze migrations restent à écrire dans ce lot** : sans correction de la cause, chacune aurait cassé les mêmes trois tests, et la tentation à chaque fois aurait été de mettre à jour le nombre plutôt que de supprimer la classe. |
+| Cause | **Un identifiant recopié au lieu d'être dérivé de sa source.** C'est exactement `ECART-021`, appliqué non plus à un nombre de la documentation mais à une valeur d'un test. Et c'est `ECART-024` pour le mécanisme : les trois tests étaient **justes quand ils ont été écrits** — `0001` était alors la seule révision du dépôt — et c'est l'ouverture du LOT 2 qui les a rendus faux. Un contrôle ne devient pas faux tout seul. |
+| Bloquant | Non. Découvert par l'échec des tests, corrigé dans la même sous-étape |
+| Recommandation | **Dériver, jamais recopier** — la parade de `ECART-021`, transposée au code de test. |
+| Résolution | **Clos** le 18 août 2026. Une fonction `_tete_de_migration()` interroge `alembic heads` et **exige d'y trouver exactement une tête**, puis les trois tests comparent à cette valeur dérivée. **Éprouvé par témoin** : une révision `0003` jetable a été ajoutée, les trois tests ont **continué à passer**, puis le témoin a été supprimé. Sans ce témoin, la correction n'aurait pas été distinguable d'un simple remplacement de `0001` par `0002`. |
+
+## `ECART-028` — Le modèle place les domaines e-mail autorisés à deux endroits
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T2`, en implémentant les quatre tables du §5 |
+| Source | Modèle de données §5.2 `platform_setting` et §5.4 `allowed_email_domain` |
+| Constat | Le §5.2 énumère « **domaines e-mail autorisés** » parmi les catégories de paramètres globaux de `platform_setting`. Le §5.4 consacre à ces mêmes domaines **une table dédiée**, avec ses colonnes nommées — `domain`, `entity_id`, `active`, `starts_at`, `ends_at`. La même donnée est donc rattachée à deux endroits du modèle. |
+| Impact | Faible, mais réel si on l'ignore : une implémentation qui suivrait le §5.2 stockerait les domaines dans une clé de paramètre `jsonb`, **et perdrait au passage tout ce que le §5.4 apporte** — l'historisation par période, l'interrupteur `active`, et le rattachement optionnel à une entité. Deux endroits pour la même donnée finissent toujours par se contredire. |
+| Cause | Le §5.2 décrit des **catégories fonctionnelles** de paramétrage, pas un schéma de stockage. La mention y est descriptive ; elle a été lue au premier abord comme prescriptive. |
+| Bloquant | Non |
+| Recommandation | **La table fait autorité.** Une table dédiée, avec ses colonnes nommées et ses règles d'historisation, l'emporte sur un libellé dans une liste à puces. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-501`. `allowed_email_domain` est la seule dépositaire des domaines : **aucune clé de `platform_setting` n'en portera**, et la contrainte de forme sur les clés ne réserve rien à cet usage. La lecture est inscrite en tête de `app/entities/modeles.py`, à l'endroit où quelqu'un qui ajouterait une clé de paramètre la lira. |
+
+## `ECART-029` — L'index du §25.1 ne suffit pas à l'unicité insensible à la casse du §6.1
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T3`, en implémentant `person` |
+| Source | Modèle de données §6.1, contraintes de `person` ; §25.1, index uniques partiels |
+| Constat | Le §6.1 pose parmi les contraintes de `person` : « **unicité insensible à la casse** de `email_normalized` ». Le §25.1 spécifie l'index correspondant : `person(email_normalized) UNIQUE` — un index **simple**, donc **sensible à la casse**.<br>**L'index spécifié ne satisfait pas la contrainte exigée.** `Jean.Dupont@exalt.com` et `jean.dupont@exalt.com` sont deux valeurs distinctes pour un index simple, et coexisteraient. |
+| Impact | Réel et silencieux si on suit le §25.1 à la lettre : deux comptes pour la même personne, découverts au premier magic link ambigu — donc au LOT 3, dans une fonctionnalité d'authentification, avec des conséquences de sécurité. Nul si on suit le §6.1. |
+| Cause | Le §25.1 est une liste d'**index à prévoir**, écrite en raccourci ; le §6.1 est la liste des **contraintes**. Le raccourci a perdu une exigence. Ni l'un ni l'autre n'est faux en soi — c'est leur conjonction qui l'est, la classe de `ECART-026`. |
+| Bloquant | Non pour `G2`. Le serait pour `G3`, où l'authentification résout une personne par son adresse |
+| Recommandation | **Ne pas choisir entre les deux.** Une troisième voie satisfait les deux textes : exiger que la valeur **stockée** soit déjà en minuscules. L'index simple du §25.1 devient alors suffisant, puisque deux graphies ne peuvent pas coexister — l'une des deux ne peut pas être écrite. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-503`. La contrainte `ck_person_email_normalise_en_minuscules` refuse toute forme normalisée non minuscule, et l'index unique simple du §25.1 est conservé tel qu'il est spécifié. **Éprouvé par témoin** : une forme normalisée avec majuscules est refusée, et trois formes minuscules distinctes sont acceptées.<br>**Cette voie est plus forte qu'un index fonctionnel sur `lower(email_normalized)`** : celui-ci empêcherait le doublon mais laisserait entrer une valeur non normalisée dans une colonne nommée `_normalized`. |
+
+## `ECART-030` — Le diagramme d'états du §24.1 montre un état que l'énumération du §6.2 ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T4`, en implémentant `entity_membership` |
+| Source | Modèle de données §6.2, colonne `membership_state` ; §24.1, diagramme « Appartenance à une entité » |
+| Constat | Le §6.2 déclare `membership_state` comme une énumération de **quatre** valeurs : `future`, `active`, `departed`, `archived`.<br>Le diagramme du §24.1, intitulé « **Appartenance à une entité** », en montre **cinq** : il ajoute `Anonymized`, avec deux transitions entrantes — `Departed --> Anonymized: délai RGPD atteint` et `Archived --> Anonymized: délai RGPD atteint` — et une sortie vers l'état final. |
+| Impact | Faible si la lecture est bonne, sérieux si elle ne l'est pas. Ajouter `anonymized` à l'énumération de l'appartenance créerait un **second endroit** où l'anonymisation est représentée, `person.account_state` en portant déjà la valeur. Deux représentations du même fait divergent, et le LOT 10 — RGPD et conservation — devrait alors les réconcilier. |
+| Cause | Le diagramme décrit le **cycle de vie du collaborateur** vu depuis son appartenance, ce qui est naturel pour un lecteur métier : il part, il est archivé, puis ses données sont anonymisées. Mais l'anonymisation est une opération sur l'**identité**, pas sur le profil local — le §6.1 la déclare sur `person.account_state`, et le « délai RGPD » se compte par personne. Le diagramme mêle deux niveaux que les tables séparent. |
+| Bloquant | Non |
+| Recommandation | **La colonne fait autorité sur le diagramme.** Le §6.2 énumère explicitement quatre valeurs ; le §24.1 illustre. Et l'anonymisation reste là où le §6.1 la place, sur `person`. |
+| Résolution | **Clos** le 19 août 2026 par `DEC-505`. `membership_state` porte **quatre** valeurs, et un test l'exige explicitement en nommant l'écart : `assert "anonymized" not in ETATS_APPARTENANCE`. La lecture est inscrite dans la docstring de l'énumération, à l'endroit où quelqu'un tenté d'ajouter la cinquième valeur la lira.<br>**Une conséquence à connaître pour le LOT 10** : anonymiser une personne ne changera pas l'état de ses appartenances, qui resteront `departed` ou `archived`. C'est cohérent — le profil local a cessé d'exister à son terme, l'identité est effacée ensuite — mais il faudra que le LOT 10 le dise, et non le découvre. |
+
+## `ECART-031` — Une règle du §8.4 exige un état de publication que `office` ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T8`, en implémentant les responsabilités Framework |
+| Source | Modèle de données §8.4, contraintes de `framework_responsibility_assignment` ; §8.3, champs de `office` ; §25.4, règles nécessitant un service ou un déclencheur |
+| Constat | Le §8.4 pose parmi ses contraintes : « un bureau possède entre un et trois responsables actifs **lorsqu'il est publié** », et le §25.4 la reprend sous la forme « un bureau publié avec un à trois responsables actifs ».<br>**Or le §8.3 ne déclare aucun état de publication sur `office`.** Ses champs sont `entity_id`, `code`, `name`, `description`, `location_text`, `display_order` — auxquels s'ajoutent les champs communs du §3.1, dont `archived_at`, mais **aucun** `published_at` ni `visibility`.<br>La condition « lorsqu'il est publié » **n'a donc rien à quoi se rattacher**. |
+| Impact | La règle est **inapplicable en l'état**, et son inapplicabilité est silencieuse : rien dans le schéma ne signale qu'une contrainte du modèle n'est pas portée. Sans consignation, elle serait simplement oubliée — et le §25.4 la liste pourtant parmi celles qui « seront appliquées par un service transactionnel ». |
+| Cause | Le §8.4 emprunte une notion — la publication d'un bureau — à un domaine que le modèle traite ailleurs. Les contenus éditoriaux du §15 et les états de publication du §12.1 (`arrival_profile`) montrent que le modèle sait déclarer une publication ; il ne l'a pas fait pour `office`. **Même classe que `ECART-030`** : une règle qui suppose un état que la table ne porte pas. |
+| Bloquant | Non pour `G2` : la règle n'est pas un critère de sortie du LOT 2, et aucune donnée réelle n'existe. **À instruire avant le LOT 6**, qui publie les cercles et bureaux au portail |
+| Recommandation | **Ne rien inventer.** Trois issues sont concevables et le choix n'est pas technique : ajouter un état de publication à `office` (nouvelle version du modèle), rattacher la publication aux contenus du §15, ou lire « publié » comme « non archivé » — cette dernière étant la plus simple et la plus contestable, puisqu'elle ferait de tout bureau non archivé un bureau publié. |
+| Résolution | **Ouvert.** `T8` a implémenté tout ce qui est applicable : les trois règles de portée, l'unicité du Booster par cercle, les trois exclusions, et les deux règles inter-tables par déclencheur. **La règle du bureau publié est consignée dans l'en-tête de la migration `0009`**, à l'endroit où quelqu'un cherchant pourquoi elle manque la lira.<br>**Et un second motif la rendrait de toute façon impossible en contrainte** : « entre un et trois » est un **comptage borné**, qu'aucune contrainte de ligne ni index n'exprime. Il faudra un déclencheur, le jour où l'état de publication existera. |
+
+## `ECART-032` — Le backlog interdit plus largement que le cahier, la matrice et le modèle réunis
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 août 2026, LOT 2 sous-étape `T10`, en vérifiant les trois critères de `MVP-L02-US005` **avant** de les implémenter |
+| Source | Backlog §`MVP-L02-US005`, critères d'acceptation ; cahier des charges §4.1 ; matrice des rôles §3 ; modèle de données §8.4, contraintes de `framework_responsibility_assignment` |
+| Constat | Le backlog énonce comme critère d'acceptation : « aucune **responsabilité métier** active dans plusieurs entités ». Sans qualificatif, la formule couvre les **quatre** types du §8.4 — `DSM`, `ESM`, `BOOSTER`, `OFFICE_MANAGER`.<br>**Les trois autres documents disent tous la même chose, et tous restreignent au seul Booster :**<br>• cahier des charges : « une personne ne peut pas être **Booster** active dans plusieurs entités » ;<br>• matrice des rôles : « Une personne ne peut pas être **Booster** active simultanément dans plusieurs entités. » ;<br>• modèle §8.4 : « une personne ne peut pas être **Booster** active dans plusieurs entités simultanément ».<br>**C'est donc le backlog qui est l'exception**, et non le modèle qui serait en retard. |
+| Impact | **Aucun sur le livrable, et la règle de préséance suffit à le dire.** Le §3 de la passation pose que le cahier « prévaut sur tout » : le déclencheur `booster_une_seule_entite` posé en `T8`, restreint à `BOOSTER`, est **conforme**.<br>L'impact porte sur la **lecture de la porte `G2`** : le critère de `US005` sera lu dans le backlog, et un relecteur pourrait conclure à un critère non satisfait alors qu'il l'est au sens du cahier. |
+| Cause | Une généralisation de vocabulaire dans un document dérivé. Le backlog résume en une ligne trois règles hétérogènes, et « Booster » y est devenu « responsabilité métier » — terme qui n'apparaît sous cette forme dans **aucun** des trois autres documents. **Même classe que `ECART-023`** : un document dérivé ne fait pas que vieillir, il peut **prescrire autre chose que sa source dès sa rédaction**. |
+| Bloquant | Non. Le livrable est conforme au document prévalent, et aucune donnée réelle n'existe |
+| Recommandation | **Ne pas appliquer l'énoncé large, et le dire.** L'appliquer interdirait des données que le corpus autorise ailleurs : la matrice §5.1 prévoit qu'un super-administrateur « intervienne dans toutes les entités », et le §8.6 rend `entity_id` **nullable** pour `SUPER_ADMIN` précisément pour cela. Poser une interdiction que trois documents sur quatre ne portent pas serait **inventer une contrainte** — §6.5 — et l'erreur serait du côté coûteux : **un refus est un échec dur, une permission se resserre plus tard.** C'est le contresens que `T7` a évité sur les cercles secondaires et `T8` sur la multiplicité des `DSM`.<br>Si Léa veut la portée large, elle est **techniquement immédiate** : le déclencheur de `T8` teste `NEW.responsibility_type = 'BOOSTER'`, et retirer cette condition suffit. À instruire **avant le LOT 6**, qui expose les responsabilités. |
+| Résolution | **Ouvert.** Aucune correction du backlog : il est **immuable** (§3). L'écart est consigné, et le compte rendu de `T10` §2 dit explicitement lequel des deux énoncés est appliqué et pourquoi. **À annoncer à la porte `G2`**, pour qu'un relecteur du backlog ne conclue pas à un critère manquant. |
+
+---
+
+**Prochain identifiant libre : `ECART-033`.**

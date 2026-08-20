@@ -2,7 +2,8 @@
 
 **Produit en :** LOT 0, sous-étape S3 — story `MVP-L00-US003`
 **Fondement :** cahier des charges sections 23.1 à 23.4 et 29.8, backlog section 11
-**Décisions applicables :** `DEC-427`, `DEC-428`, `DEC-429`
+**Décisions applicables :** `DEC-427`, `DEC-428`, `DEC-429`, **`DEC-495`**
+**Mis à jour le :** 12 août 2026 — **§2 et §2.1 se contredisaient**, voir `ECART-026`
 
 Ce document est la référence normative. [`CONTRIBUTING.md`](../../CONTRIBUTING.md) en donne
 le mode d'emploi au quotidien.
@@ -91,7 +92,22 @@ Réglages à appliquer sur `main`, puis sur `develop` :
 | Rejet des suppressions de branche | Activé | — |
 | Contrôles d'intégration obligatoires | À activer **au LOT 1**, quand la CI existe | Cahier §23.1 |
 | Résolution des conversations avant fusion | Activé | Traçabilité de la revue |
-| Historique linéaire requis | Recommandé | Lisibilité, cohérent avec la fusion par squash |
+| Historique linéaire requis | **Sur `develop` seulement** | Voir l'avertissement ci-dessous : appliqué à `main`, ce réglage rend le §2.1 inapplicable. `DEC-495` |
+
+> **⚠️ Ce réglage et la stratégie de fusion du §2.1 S'EXCLUENT sur `main`, et cela a été mesuré,
+> non déduit.** « Historique linéaire requis » **refuse tout merge commit**. Appliqué à `main`, il
+> rend la ligne « `develop` → `main` : merge commit » du §2.1 **impossible à honorer**, et la fusion
+> se rabat sur le squash — **qui coupe `main` de l'histoire de `develop`**.
+>
+> **La conséquence est cumulative, et c'est ce qui la rend sérieuse.** Deux branches qui ne partagent
+> aucune histoire conflictent sur **tout** fichier touché des deux côtés, alors que le contenu ne
+> divergeait pas. Constaté le 12/08/2026 sur la pull request `#33` : **9 fichiers en conflit,
+> insolubles** — leur résolution exigeait elle-même un merge commit sur `develop`.
+>
+> **Réglage retenu, `DEC-495` :** exigé sur **`develop`**, où toutes les fusions sont des squash de
+> branches de travail ; **retiré sur `main`**, qui reçoit des merge commits. Mesuré après
+> application le 12/08/2026 : `main` → `false`, `develop` → `true`, les six autres réglages
+> inchangés. Voir `ECART-026`.
 
 Si le plan GitHub du compte ne permet pas les règles de protection sur un dépôt privé
 personnel, le repli documenté est un garde-fou local `pre-push` refusant tout push direct
@@ -105,6 +121,30 @@ consigné comme risque accepté.
 | Branche de travail → `develop` | **Squash and merge** | Un commit lisible par story, historique de `develop` propre |
 | `develop` → `main` | **Merge commit** | Conserve la traçabilité de l'ensemble intégré et validé |
 | `hotfix/*` → `main` | **Merge commit** | Conserve le contexte de l'urgence |
+
+> **Le merge commit de `develop` → `main` n'est pas un ornement : il est ce qui fait de `develop` un
+> ANCÊTRE de `main`.** Sans lui les deux branches ne partagent aucune histoire, et chaque porte
+> reconflicte. Un **squash annulerait l'effet** en aplatissant les deux parents — c'est ce qui est
+> arrivé à la PR `#30`, et il a fallu la PR `#35` pour le réparer.
+>
+> **Il exige que « historique linéaire requis » soit RETIRÉ sur `main`** : voir l'avertissement du §2
+> et `DEC-495`.
+>
+> **Contrôle de la fusion, et il ne porte pas sur la résolution mais sur son RÉSULTAT :** après une
+> fusion `develop` → `main`, l'arbre de `main` doit égaler celui de `develop` **à l'octet près**, et
+> `develop` doit être un **ancêtre** de `main`.
+>
+> ```bash
+> git rev-parse origin/main^{tree} origin/develop^{tree}   # doivent etre IDENTIQUES
+> git merge-base --is-ancestor origin/develop origin/main  # doit sortir en 0
+> git rev-parse origin/main^@ | wc -l                      # 2 = merge commit, 1 = squash
+> ```
+>
+> **Ce contrôle a attrapé un défaut réel le 12/08/2026.** Une résolution en `git merge -X theirs`
+> avait rendu un arbre **divergent** : la stratégie conserve les fragments **non conflictuels** du
+> côté abandonné, et elle avait gardé un bloc de `fiche-lot-1.md` **en plus** de la version qui le
+> remplaçait — **41 lignes dupliquées, aucun conflit signalé**. Sans la comparaison des arbres, cette
+> fusion passait en paraissant propre.
 
 ---
 

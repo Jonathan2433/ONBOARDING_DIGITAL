@@ -199,6 +199,10 @@ jobs:
         run: |
           make migrate
           make alembic-check
+          make historisation-check
+          make isolation-check
+          make isolation-temoin
+          make migrations-check
 
       - name: 6 · Tests API
         run: make api-check

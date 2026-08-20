@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `494` en usage | `DEC-495` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `517` en usage | `DEC-518` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts | `001` à `025` | `ECART-026` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `115` | `QO-116` | [questions](operations/registre-questions-ouvertes.md) |
+| `ECART-nnn` | Écarts | `001` à `032` | `ECART-033` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `117` | `QO-118` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -126,8 +126,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | Porte | Moment | Validation obligatoire | État |
 |---|---|---|---|
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
-| `G1` | Fin du socle local | Stack, CI et images validées | **Porte courante** — LOT 1 ouvert le 27/07/2026 (`DEC-450`) |
-| `G2` | Fin du modèle implémenté | Contraintes et isolation validées | Planifiée |
+| `G1` | Fin du socle local | Stack, CI et images validées | **FRANCHIE** le 12/08/2026 — tag `v0.1.0` posé sur `main` |
+| ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
 | `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
 | `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
 | `G5` | Fin du trombinoscope | Profils et permissions validés | Planifiée |
@@ -161,9 +161,9 @@ Aucun lot dépendant ne commence avant validation explicite du lot précédent
 
 ---
 
-## 8. Avancement du LOT 1 — **lot ouvert**, porte `G1`
+## 8. Avancement du LOT 1 — **terminé**, porte `G1` **franchie**
 
-Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`). Plan :
+Ouvert par Jonathan le 27 juillet 2026 (`DEC-450`), **verrouillé le 12 août 2026**. Plan :
 [`operations/fiche-lot-1.md`](operations/fiche-lot-1.md). Arbitrages préalables :
 [`operations/compte-rendu-t0-lot-1.md`](operations/compte-rendu-t0-lot-1.md).
 Comptes rendus de sous-étape :
@@ -187,3 +187,29 @@ Checklist de la porte : [`checklist-validation-G1.md`](operations/checklist-vali
 
 Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic `#1`, stories `#2`
 à `#9`. **`main` et `develop` sont protégées** — toute modification passe par une pull request.
+
+---
+
+## 9. Avancement du LOT 2 — **lot ouvert**, porte `G2`
+
+**Ouvert par Jonathan le 18 août 2026 (`DEC-496`).** Plan soumis à validation :
+[`operations/fiche-lot-2.md`](operations/fiche-lot-2.md) — **12 sous-étapes, `T1` à `T12`**,
+8 stories dont **7 en `P0`**, **16 tables** du modèle, tag `v0.2.0`.
+**Découpage validé par Jonathan le 18/08/2026.** `ECART-012` est échu dans ce lot, rattaché à `T5`.
+
+| | Sous-étape | Story | État |
+|:--:|---|---|---|
+| `T1` | Socle technique du modèle et extensions | `MVP-L02-US008` | **Terminée** le 18/08/2026. Collation **ICU `fr-FR`** posée avant la première table, `btree_gist` seule extension, socle déclaratif éprouvé — **20 tests**, dont le refus de chevauchement par la base et ses trois témoins. `QO-111` et `QO-112` **closes**, les **7** choix du §9.2 tranchés. `DEC-497`–`DEC-500`, `ECART-027` clos, **`QO-116` ouverte** |
+| `T2` | Entités, paramètres et domaines e-mail | `MVP-L02-US001` | **Terminée** le 19/08/2026. **Les 4 premières tables du projet**, migration `0003` éprouvée en montée, descente et remontée. Règle « `code` immuable après activation » portée par **déclencheur** — 26 tests, chaque refus avec son témoin. `alembic check` sans écart. `DEC-501`, `DEC-502`, `ECART-028` clos |
+| `T3` | La table `person` | `MVP-L02-US002` | **Terminée** le 19/08/2026. Identité **globale**, `ARB-DATA-001` : aucun `entity_id`. **`ECART-029` clos** — l'index du §25.1 ne satisfaisait pas l'unicité insensible à la casse du §6.1. Anonymisation **terminale** par déclencheur. **Aucune table d'authentification**, vérifié par contrôle. 19 tests. `DEC-503`, `DEC-504` |
+| `T4` | `entity_membership` | `MVP-L02-US002` | **Terminée** le 19/08/2026. **La règle centrale de `US002`** : une seule appartenance occupante par personne. **Deux** contraintes complémentaires, et deux tests montrent chacun ce que l'autre ne verrait pas. Verrou optimiste câblé. **`ECART-030` clos**, **`DEC-507`** pose le nommage des exclusions. 24 tests. `DEC-505`–`DEC-507` |
+| `T5` | Métiers et statuts professionnels | `MVP-L02-US003` | **Terminée** le 19/08/2026. **Clés étrangères COMPOSITES** du §25.3 : un métier d'une autre entité est refusé **par la base**. Deux index que j'avais ajoutés sont **retirés** — la mesure a montré qu'ils ne pouvaient jamais se déclencher. **`ECART-012` instruit**, il attend Léa. **`DEC-509`** pose la doctrine de nommage après deux collisions. 23 tests. `DEC-508`, `DEC-509` |
+| `T6` | Clients, activations locales et alias | `MVP-L02-US003` | **Terminée** le 19/08/2026. **La dette de `T5` est acquittée** : clé étrangère de `client_id`. Normalisation **volontairement minimale** — `DATA-005` interdit tout rapprochement automatique. **`QO-117` ouverte** : le modèle ne pose aucune unicité sur les alias, et la portée est un choix métier. 21 tests, dont deux sur des **non-actions**. `DEC-510` |
+| `T7` | Cercles, bureaux et appartenance aux cercles | `MVP-L02-US001`, `US003` | **Terminée** le 19/08/2026, et elle **clôt les deux stories**. **L'exclusion est PARTIELLE** — une exclusion sans `WHERE` aurait interdit les cercles secondaires multiples, et le livrable aurait **paru correct**. Un **résiduel du §8.1 est nommé, non comblé**. 17 tests. `DEC-511` |
+| `T8` | DSM, responsabilités Framework et rôles techniques | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Un défaut qui valait trois types sur quatre** : une clé d'exclusion contenant une colonne **nullable** ne contraint rien sur les lignes où elle est nulle. Deux **permissions** distinguées de deux interdictions voisines. **`ECART-031` ouvert** — le §8.4 exige un état de publication que `office` ne déclare pas. 19 tests. `DEC-512` |
+| `T9` | Historisation et contraintes temporelles | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Aucune table créée** : les 7 relations existaient. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2** — et **il a trouvé un défaut le jour même**. **`alembic check` est AVEUGLE aux exclusions**, mesuré : 10 déclarées, 9 en base, code 0. 8 tests. `DEC-513` |
+| `T10` | Contraintes de rôles et de périmètres | `MVP-L02-US005` | **Terminée** le 19/08/2026. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** — vérifiés, non réimplémentés. **`ECART-032` ouvert** : le backlog interdit plus large que le cahier, la matrice **et** le modèle, qui restreignent tous au seul **Booster**. « DG implique DSM » appliqué comme **implication** — un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** de clé étrangère par un déclencheur `BEFORE` a inversé un test de `T6`. 11 tests, dont un sur une **non-action**. `DEC-514` |
+| `T11` | Isolation inter-entités | `MVP-L02-US006` | **Terminée** le 20/08/2026. **Aucune migration** : les 8 clés composites du §25.3 fermaient déjà tous les chemins locaux. **Ma première mesure ne prouvait rien** — une référence sans clé étrangère aurait donné la même observation ; le contrôle examine les **colonnes**, pas les contraintes. `MATCH SIMPLE` rend une clé composite **inerte** sur une colonne nulle : `T8-1` transposé. **Dépôts cloisonnés** dont les deux types ne peuvent se confondre, et le service qui referme `DEC-514`. 34 tests, témoin en CI. `DEC-515` |
+| `T12` | Factories, jeu de test et recette du modèle | `MVP-L02-US007`, `US008` | **Terminée** le 20/08/2026. **Trois contrôles qui prouvent ce que onze sous-étapes avaient fait à la main** : `migrations-check` compare le schéma d'une base **neuve** à celui qui tourne — 269 colonnes, 94 contraintes, 85 index, 8 déclencheurs **identiques** ; `recette-modele-check` **lit les 25 contrôles du §30** et exige leur classement, avec le test nommé dont l'existence est vérifiée ; l'absence de SQLite est cherchée comme un **usage**, jamais comme le mot. Jeu de **27 936 lignes**, toutes requêtes **sous 1,3 ms**. **373 tests**. `DEC-516`, [checklist `G2`](operations/checklist-validation-G2.md) |
+
+---
