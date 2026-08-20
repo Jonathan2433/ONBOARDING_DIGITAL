@@ -362,7 +362,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check recette-modele-check format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -834,6 +834,17 @@ isolation-check: ## Verifier l isolation inter-entites du modele 2.5 et 25.3
 isolation-temoin: ## Temoin negatif : le controle d isolation sait-il echouer ?
 	@python3 infra/scripts/verifier-isolation.py --temoin \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+migrations-check: ## Prouver qu une base VIDE se construit uniquement par migrations
+	@python3 infra/scripts/verifier-migrations.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+recette-modele-check: ## Classer les 25 controles de recette du modele 30
+	@python3 infra/scripts/verifier-recette-modele.py
+
+jeu-de-donnees: ## Ensemencer la base avec le jeu fictif (25 entites, 5000 profils)
+	@uv run python infra/scripts/engendrer-jeu-de-donnees.py \
+		--env-file "$(ENV_FILE)" $(ARGS)
 
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current

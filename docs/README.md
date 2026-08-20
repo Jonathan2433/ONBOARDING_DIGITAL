@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `515` en usage | `DEC-516` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `516` en usage | `DEC-517` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -127,7 +127,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 |---|---|---|---|
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
 | `G1` | Fin du socle local | Stack, CI et images validées | **FRANCHIE** le 12/08/2026 — tag `v0.1.0` posé sur `main` |
-| `G2` | Fin du modèle implémenté | Contraintes et isolation validées | **Porte courante** — LOT 2 ouvert le 18/08/2026 (`DEC-496`), tag `v0.2.0` |
+| `G2` | Fin du modèle implémenté | Contraintes et isolation validées | **Porte courante, INSTRUITE** — les **12** sous-étapes faites, **6 critères techniques sur 7 acquis**, le septième est la décision de Jonathan. [checklist](operations/checklist-validation-G2.md), tag `v0.2.0` |
 | `G3` | Fin de l'authentification | Sécurité et sessions validées | Planifiée |
 | `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
 | `G5` | Fin du trombinoscope | Profils et permissions validés | Planifiée |
@@ -210,6 +210,6 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 | `T9` | Historisation et contraintes temporelles | `MVP-L02-US004` | **Terminée** le 19/08/2026. **Aucune table créée** : les 7 relations existaient. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2** — et **il a trouvé un défaut le jour même**. **`alembic check` est AVEUGLE aux exclusions**, mesuré : 10 déclarées, 9 en base, code 0. 8 tests. `DEC-513` |
 | `T10` | Contraintes de rôles et de périmètres | `MVP-L02-US005` | **Terminée** le 19/08/2026. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** — vérifiés, non réimplémentés. **`ECART-032` ouvert** : le backlog interdit plus large que le cahier, la matrice **et** le modèle, qui restreignent tous au seul **Booster**. « DG implique DSM » appliqué comme **implication** — un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** de clé étrangère par un déclencheur `BEFORE` a inversé un test de `T6`. 11 tests, dont un sur une **non-action**. `DEC-514` |
 | `T11` | Isolation inter-entités | `MVP-L02-US006` | **Terminée** le 20/08/2026. **Aucune migration** : les 8 clés composites du §25.3 fermaient déjà tous les chemins locaux. **Ma première mesure ne prouvait rien** — une référence sans clé étrangère aurait donné la même observation ; le contrôle examine les **colonnes**, pas les contraintes. `MATCH SIMPLE` rend une clé composite **inerte** sur une colonne nulle : `T8-1` transposé. **Dépôts cloisonnés** dont les deux types ne peuvent se confondre, et le service qui referme `DEC-514`. 34 tests, témoin en CI. `DEC-515` |
-| `T12` | Voir la fiche | — | Non entamée |
+| `T12` | Factories, jeu de test et recette du modèle | `MVP-L02-US007`, `US008` | **Terminée** le 20/08/2026. **Trois contrôles qui prouvent ce que onze sous-étapes avaient fait à la main** : `migrations-check` compare le schéma d'une base **neuve** à celui qui tourne — 269 colonnes, 94 contraintes, 85 index, 8 déclencheurs **identiques** ; `recette-modele-check` **lit les 25 contrôles du §30** et exige leur classement, avec le test nommé dont l'existence est vérifiée ; l'absence de SQLite est cherchée comme un **usage**, jamais comme le mot. Jeu de **27 936 lignes**, toutes requêtes **sous 1,3 ms**. **373 tests**. `DEC-516`, [checklist `G2`](operations/checklist-validation-G2.md) |
 
 ---
