@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), porte **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, porte **`G1`** franchie, tag **`v0.1.0`** |
 | **Lot en cours** | **LOT 2 — Socle de données et isolation multi-entités**, ouvert le 18/08/2026 (`DEC-496`), porte `G2`, tag `v0.2.0`. Plan : [`fiche-lot-2.md`](docs/operations/fiche-lot-2.md), **12 sous-étapes** |
-| Sous-étapes faites | **LOT 2 : `T1` à `T10` faites**, `T11` et `T12` non entamées · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T11` — isolation inter-entités**, issue `#44` (`US006`). **Commence par MESURER** : les clés étrangères composites `(id, entity_id)` du §25.3, posées en `T5`, en couvrent peut-être déjà l'essentiel — `T10` a montré que deux tiers d'une story pouvaient être **déjà acquis**. Voir §10 du compte rendu de `T10` |
+| Sous-étapes faites | **LOT 2 : `T1` à `T11` faites**, `T12` non entamée · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **`T12` — factories et jeu de données fictif**, issues `#45` (`US007`) et `#46` (`US008`). **DERNIÈRE sous-étape avant `G2`.** Les factories doivent employer les **dépôts** de `T11`, et respecter l'ordre imposé par les **quatre** déclencheurs. Voir §12 du compte rendu de `T11` |
 | Stories `Done` | **LOT 2 : `US001`, `US002`, `US003`.** `US008` se clôt en `T12` · *LOT 1 : les huit* |
 | Stories restantes | **LOT 2 : les huit**, `MVP-L02-US001` à `US008`, epic `#38`, issues `#39` à `#46` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **449** : **333 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
+| Tests | **483** : **367 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **182 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
+| Registres | **183 décisions** · **32 écarts** (**7 ouverts**, dont `ECART-012` **instruit**, `ECART-031` et `ECART-032`) · **41 questions** (34 ouvertes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -104,7 +104,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 2 ?** | **`docs/operations/fiche-lot-2.md`** — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
-| **Comment a-t-on fait `T1` à `T10` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,10}-lot-2.md`** — 33 défauts, et les **quatre de `T10` sont tous dans mon travail** |
+| **Comment a-t-on fait `T1` à `T11` du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,11}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
 | **Que valide Jonathan à la porte ?** | **`docs/operations/checklist-validation-G1.md`** — 33 contrôles, et une démonstration guidée |
@@ -392,7 +392,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`514` en usage | **`DEC-515`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`515` en usage | **`DEC-516`** |
 | `ECART-nnn` | `001`–`032` | **`ECART-033`** |
 | `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -453,6 +453,7 @@ Stack           env env-check up down destroy ps logs health ports minio-bucket
 API             migrate migrate-status api-check alembic-check
                 code-refresh code-check                           ← LOT 2, T1
                 historisation-check                               ← LOT 2, T9
+                isolation-check isolation-temoin                  ← LOT 2, T11
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
                 images-pin                                            ← T8
@@ -734,8 +735,21 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**80 défauts détectés à ce jour** : 7 au LOT 0, 3 en `T0`, **70 pendant `T1` à `T11` et après la porte**. Ils sont
-tous consignés dans les comptes rendus de sous-étape.
+**80 défauts au LOT 0 et au LOT 1** : 7 au LOT 0, 3 en `T0`, **70 pendant `T1` à `T11` et après la
+porte `G1`**. **Plus 37 au LOT 2**, à la sortie de `T11`. Ils sont tous consignés dans les comptes
+rendus de sous-étape.
+
+> **Le second nombre est DÉRIVÉ, et il l'est parce que j'ai d'abord écrit « 39 » de tête** — 33 + 6,
+> où le 33 était lui-même un calcul non vérifié. La commande fait foi :
+>
+> ```bash
+> grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-2.md | sort -u | wc -l
+> ```
+>
+> Elle compte les défauts **nommés**. Quelques-uns sont décrits sans identifiant dans les comptes
+> rendus de `T6` et `T7` du LOT 2 : le compte est donc un **minorant**, et le dire vaut mieux que de
+> laisser croire à un total exact. Classe `ECART-021`, pour la énième fois — un nombre qu'on ne
+> dérive pas vieillit en silence.
 
 ## 7.0 La règle qui résume tout
 
@@ -1262,6 +1276,37 @@ assemblée, qui ne demande aucun conteneur. `DEC-494`, `ECART-025`.
 
 ---
 
+## 7.25 Un garde-fou à faux positifs est pire qu'aucun garde-fou
+
+**Apport de `T11`, et c'est la troisième fois qu'un même défaut se rejoue : `T4-2`, `T8-3`, puis six
+fabriques d'un coup.** Un paramètre lié partagé par deux colonnes rend `inconsistent types deduced
+for parameter $1`, et le message ne nomme ni la table ni la colonne.
+
+La parade du §7.2 s'applique — **changer d'outil plutôt que promettre de l'attention** — mais **deux
+versions syntaxiques du garde-fou ont échoué sur du code conforme** :
+
+- la première se déclenchait sur le **commentaire** expliquant le motif qu'elle interdit ;
+- la seconde sur `:p` employé pour `person_id` **et** `assigned_by_person_id` — deux colonnes `uuid`,
+  réutilisation parfaitement légitime.
+
+**Le discriminant n'était pas dans le texte source : c'est le TYPE de colonne.** Mesuré :
+`entity.code` est `character varying(64)` quand `display_name` et `city` sont `text` — d'où l'échec ;
+mais `person.email` et `email_normalized` sont **tous deux** `character varying(320)`.
+
+> **La règle, sans jargon :** un garde-fou qui refuse du code correct **apprend à passer outre**, si
+> bien que le jour où il a raison, il n'est plus lu. C'est l'avertissement faux de `make destroy` au
+> §7.21, dans un autre costume. **Un contrôle exact vaut mieux qu'un contrôle large** — et si
+> l'exactitude demande de lire le catalogue au lieu du texte, lis le catalogue. Une heuristique dans
+> un contrôle est un défaut : leçon `T9-2`, confirmée.
+
+**Et une seconde leçon, sur les témoins.** `T11` a écrit un témoin qui exige les **quatre** messages
+attendus, non un simple code de sortie non nul. Il a servi immédiatement : sa première version ne
+portait qu'une clé étrangère **simple**, si bien que le contrôle qu'elle devait éprouver **n'était
+jamais atteint**. **Un témoin qui n'exerce pas un contrôle ne prouve rien de ce contrôle**, et seul
+un témoin qui nomme ce qu'il attend le dit.
+
+---
+
 ## 7.24 Deux règles justes séparément peuvent s'exclure, et un outil qui réussit ne prouve rien
 
 **Apport du correctif de stratégie de fusion, et il tient deux leçons distinctes.**
@@ -1507,6 +1552,9 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                                          0009 responsabilites et DSM,
 │                                          0010 exclusions autoportantes,
 │                                          0011 roles et perimetres (T10)
+│                                          T11 n'en ecrit AUCUNE : rien a changer
+│                 app/shared/depot.py    ← DepotLocal / DepotGlobal (T11, DEC-515)
+│                 app/organization/services.py ← l'ACTION du 8.4 (T11)
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)
@@ -1531,7 +1579,9 @@ Graph, Teams ou MFA · réutiliser une ligne du prototype historique.
 │                  verifier-documentation.py  ← empreintes, sequences, ET
 │                                                totaux DÉRIVÉS (T8, DEC-488)
 │                  verifier-images.py         ← 6 sous-commandes, controles de T7
-│                  verifier-separations.py    ← les 7 separations du cahier 22.2,
+│                  verifier-isolation.py       ← 2.5 et 25.3 : COLONNES, pas
+                                                contraintes ; MATCH SIMPLE ; --temoin
+                  verifier-separations.py    ← les 7 separations du cahier 22.2,
 │                                                l'artefact en marche, l'archi,
 │                                                Mailpit, QO-085          (T8)
 │                  composer-env.py            ← modele + calque + secrets (T8)

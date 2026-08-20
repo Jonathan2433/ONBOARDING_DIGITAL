@@ -17,18 +17,30 @@ from app.organization.modeles import (
     TypeResponsabilite,
     TypeRoleTechnique,
 )
+from app.organization.services import (
+    CATEGORIE_DIRECTION_GENERALE,
+    RESPONSABILITE_DSM,
+    ErreurDeService,
+    attribuer_la_categorie_dg,
+    responsabilite_dsm_active,
+)
 
 __all__ = [
+    "CATEGORIE_DIRECTION_GENERALE",
+    "RESPONSABILITE_DSM",
     "TYPES_APPARTENANCE_CERCLE",
     "TYPES_RESPONSABILITE",
     "TYPES_ROLE_TECHNIQUE",
     "Circle",
     "CircleMembership",
     "DsmAssignment",
+    "ErreurDeService",
     "FrameworkResponsibilityAssignment",
     "Office",
     "TechnicalRoleAssignment",
     "TypeAppartenanceCercle",
     "TypeResponsabilite",
     "TypeRoleTechnique",
+    "attribuer_la_categorie_dg",
+    "responsabilite_dsm_active",
 ]

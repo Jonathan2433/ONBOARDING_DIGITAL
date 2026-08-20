@@ -135,7 +135,7 @@ sous-étapes.
 | ~~**`T8`**~~ | ~~**DSM, responsabilités Framework et rôles techniques.**~~ **TERMINÉE le 19/08/2026** — `#42`. **Un défaut qui valait trois types sur quatre** : une clé d'exclusion contenant une colonne **nullable** ne contraint rien sur les lignes où elle est nulle, et c'est **silencieux**. Trois exclusions **partielles** la remplacent. **Deux permissions distinguées de deux interdictions voisines** — un index naïf aurait cassé les permissions. **`ECART-031` OUVERT** : le §8.4 exige un état de publication que `office` ne déclare pas. **19 tests**. Compte rendu : [`compte-rendu-t8-lot-2.md`](compte-rendu-t8-lot-2.md) | `US004` | 8 | ☑ sauf `ECART-031` |
 | ~~**`T9`**~~ | ~~**Historisation et contraintes temporelles.**~~ **TERMINÉE le 19/08/2026** — `#42`. **Aucune table créée** : les sept relations existaient depuis `T4` à `T8`. Elle pose le contrôle qui les **compte**, avec l'attendu **dérivé du §25.2 lui-même** — et **il a trouvé un défaut le jour même** : `technical_role_assignment.entity_id`, nullable dans une clé d'exclusion. **`alembic check` est AVEUGLE aux exclusions**, mesuré. **8 tests**. Compte rendu : [`compte-rendu-t9-lot-2.md`](compte-rendu-t9-lot-2.md) | `US004` | 16 | ☑ |
 | ~~**`T10`**~~ | ~~**Contraintes de rôles et de périmètres.**~~ **TERMINÉE le 19/08/2026** — `#43`. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** : vérifiés, non réimplémentés — un doublon n'aurait rien cassé, donc rien ne l'aurait signalé. **`ECART-032` OUVERT** : le backlog interdit « aucune responsabilité **métier** » là où le cahier, la matrice **et** le modèle restreignent tous au seul **Booster**. « DG implique DSM » est appliqué comme **implication** ; la création **automatique** du §8.4 est laissée au service, car un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** mesuré a inversé un test de `T6`. **11 tests**, dont un sur une **non-action**. Compte rendu : [`compte-rendu-t10-lot-2.md`](compte-rendu-t10-lot-2.md) | `US005` | 16 | ☑ sauf `ECART-032`, sans effet sur le livrable |
-| **`T11`** | **Isolation inter-entités.** Couples uniques `(id, entity_id)` et **clés étrangères composites** §25.3. Repositories et services de base. | `US006` | 16 | Une relation croisée entre deux entités est **refusée par la base** ; le contrôle **compte** les couples examinés et **nomme** ce qu'il n'a pas couvert |
+| ~~**`T11`**~~ | ~~**Isolation inter-entités.**~~ **TERMINÉE le 20/08/2026** — `#44`. **AUCUNE MIGRATION** : les 8 clés composites fermaient déjà tous les chemins locaux, 0 clé simple, mesuré. **Et ma première mesure ne prouvait rien** — elle énumérait les clés étrangères, or une référence posée **sans** clé aurait donné la même observation sur un schéma percé ; le contrôle examine donc les **colonnes**. `MATCH SIMPLE` rend une clé composite **inerte** dès qu'une colonne est nulle : c'est `T8-1` transposé, et le contrôle l'exige. **Le couple `(id, entity_id)` n'est PAS ajouté aux 10 tables qui ne sont pas cibles** : `id` étant clé primaire, il ne peut jamais rien refuser. **Dépôts cloisonnés** dont les deux types ne peuvent pas se confondre, vérifié sur le schéma. **34 tests**, et un témoin en CI. Compte rendu : [`compte-rendu-t11-lot-2.md`](compte-rendu-t11-lot-2.md) | `US006` | 16 | ☑ |
 | **`T12`** | **Factories, jeu de test et recette du modèle.** 25 entités, 5 000 profils, historiques cohérents et cas limites. Les contrôles §30 du modèle. Checklist de la porte `G2`. | `US007`, `US008` | — | Une base **vide** se construit **uniquement** par migrations ; les migrations se **rejouent** ; **aucune dépendance SQLite** ; les 7 critères de sortie sont à zéro |
 
 **Douze sous-étapes, comme au LOT 1.** Chacune se termine par un rapport au format imposé et attend
@@ -176,8 +176,15 @@ routes existent, et il n'y en a pas dans ce lot.
 
 ## 5. Migrations prévues
 
-**Onze migrations, `0002` à `0012`**, une par sous-étape de `T1` à `T11`. `0001_initial` reste
-**vide** (`DEC-463`) et n'est pas modifiée : une migration appliquée ne se réécrit pas.
+**Dix migrations, `0002` à `0011`**, de `T1` à `T10`. `0001_initial` reste **vide** (`DEC-463`) et
+n'est pas modifiée : une migration appliquée ne se réécrit pas.
+
+> **CE PLAN ANNONÇAIT ONZE MIGRATIONS, UNE PAR SOUS-ÉTAPE JUSQU'À `T11`. LA MESURE EN A DÉCIDÉ
+> AUTREMENT.** `T11` **n'écrit aucune migration** : les **huit** clés étrangères composites du §25.3,
+> posées en `T5`, `T7` et `T8`, ferment **déjà** tous les chemins entre deux tables locales — 0 clé
+> simple, mesuré. Rien ne doit changer au schéma, et écrire une migration pour honorer une
+> arithmétique de plan serait inventer. `T9` et `T11` sont les deux sous-étapes de ce lot qui
+> produisent une preuve au lieu d'une table.
 
 Chacune sera testée selon le §28 :
 
