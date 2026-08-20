@@ -157,6 +157,8 @@ qui rend service : une suite dérivée couvre les ajouts sans qu'on y pense.
 | `T1-5` | Les **bases jetables** n'étaient pas possédées par le rôle de migration | 4 tests de migration en échec |
 | `T1-6` | `alembic_version` lu par la connexion d'**exécution** sur une base jetable | `permission denied for table alembic_version` |
 | `T1-7` | Une directive `# noqa` placée **après l'ouverture** d'une chaîne multiligne se retrouve **dans le SQL** | échec de syntaxe au transfert |
+| `T1-8` | **La liste des variables de lancement de `verifier-images.py` était RECOPIÉE** : mes quatre ajouts ne l'ont pas atteinte, et **la publication de `353e570` a échoué** | l'intégration continue, après la fusion |
+| `T1-9` | `make privileges-check` **exige une base migrée et ne le disait pas** : cinq épreuves emploient `entity` comme sujet | la recette, dont la base est vierge |
 
 **`T1-2` est le plus satisfaisant, et ce n'est pas un paradoxe.** Le garde-fou de démarrage du cahier
 §20.3 a refusé de démarrer et **a nommé les quatre variables manquantes** :
@@ -205,15 +207,54 @@ l'environnement** concerné.
 
 ---
 
+## 10 bis. Deux défauts découverts APRÈS la fusion, et le premier a rougi la publication
+
+**`T1-8` est le plus sérieux de cette sous-étape, et il est de la même famille que tout le reste.**
+
+`verifier-images.py` portait une liste **recopiée** de sept variables — « les sept variables que l'API
+déclare avec un défaut vide ». Mes quatre ajouts ne l'ont pas atteinte, si bien que la tâche
+« Lancer les images publiées » a démarré un conteneur **sans** elles. Le conteneur a refusé de
+démarrer, **ce qui est exactement ce que le garde-fou doit faire** — et la porte des images est
+devenue rouge sur `develop`.
+
+**Deux leçons, et je les ai commises toutes les deux :**
+
+- **`ECART-021`** — une liste recopiée vieillit au premier ajout. La liste est désormais **dérivée de
+  `settings.py`**, et un ajout futur l'atteindra sans qu'on y pense ;
+- **§7.16** — `make images-verify` **LANCE** les conteneurs, et je ne l'avais pas rejoué. J'avais lancé
+  `make check`, qui contient `images-check` **statique** : elle n'ouvre aucune connexion au démon et ne
+  démarre rien. **Deux cibles de noms voisins, dont une seule éprouve ce qui m'intéressait.**
+
+**Et la dérivation a elle-même un piège, mesuré :** importer `Parametres` pour lire la liste exigerait
+`pydantic`, or ce script est invoqué par `python3` hors environnement virtuel — `images-check` est dans
+`make check` et ne demande ni Docker ni dépendance. La lecture passe donc par **`ast`**, qui n'exige
+rien, et une forme inattendue **fait échouer** la lecture en la nommant plutôt que de rendre une liste
+vide qui passerait.
+
+**Éprouvé localement cette fois** : `make images-build` puis `make images-verify`, **code 0**, `api`,
+`worker` et `web` lancés sur `linux/amd64` **et** `linux/arm64`, avec le témoin de plateforme absente.
+
+**`T1-9`** est plus léger mais de la même veine. Sur la recette, dont la base est vierge, cinq épreuves
+de `privileges-check` ont échoué avec « relation "entity" does not exist ». Le contrôle **disait
+correctement** « a échoué pour une AUTRE raison » — il ne prétendait pas au succès — **mais il ne
+nommait pas la cause**. Il vérifie désormais son prérequis **en premier** et donne le remède.
+
+---
+
 ## 11. Ce qui n'est PAS couvert
 
 - **aucun garde-fou de DÉMARRAGE ne vérifie que le rôle n'est pas superutilisateur**, et c'est
   délibéré : le cahier §20.3 fixe la liste à **onze**, et faire dépendre le démarrage d'une requête de
   privilèges changerait la sémantique du démarrage. La parade est un **contrôle** — dans `make check`
   pour la partie statique, dans la CI pour la partie base — plus **13 tests** à chaque pull request ;
-- **la recette n'est pas rejouée** dans cette sous-étape : le calque déclare les deux rôles et
-  `.env.recette` a reçu ses deux mots de passe, mais lever la recette exige une authentification au
-  registre — action de Jonathan. **À faire avant `G3`**, et `make separations-check` devra être rejoué ;
+- **la recette est levée, mais elle ne peut PAS encore prouver le moindre privilège**, et le motif est
+  structurel. Mesuré le 20/08/2026 : `docker login ghcr.io` était **déjà fait** — mon avertissement
+  était inutile, et j'aurais dû le mesurer avant de le donner. Les deux rôles y sont bien créés,
+  nommés `onboarding_recette_migrations` et `onboarding_recette_runtime`. **Mais l'API de recette se
+  connecte en `onboarding_app`**, mesuré dans `pg_stat_activity` — parce que la recette exécute
+  l'artefact **publié et épinglé par empreinte** (`DEC-486`), dont la révision est `1060ad6`, celle de
+  `T8` du **LOT 1**. Le moindre privilège n'y sera effectif qu'après republication et
+  `make images-pin`. **À faire avant `G3`**, avec `make separations-check` ;
 - **`ALTER DEFAULT PRIVILEGES` ne couvre que le rôle de migration.** Une table créée par le
   superutilisateur — donc hors migration — ne serait pas lisible par l'exécution. C'est voulu : aucune
   table ne doit être créée hors migration, et `make migrations-check` le prouve déjà ;
