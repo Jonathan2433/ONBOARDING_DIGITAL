@@ -385,3 +385,184 @@ def demander_un_magic_link(
     return Demande(
         motif=MOTIF_LIEN_EMIS, lien=lien, destinataire=str(affichage), personne=identifiant
     )
+
+
+# ===========================================================================
+#  LA CONSOMMATION — LOT 3, sous-etape `T4`, story `MVP-L03-US002`
+# ===========================================================================
+#
+#  L'USAGE UNIQUE EST UNE COURSE, PAS UNE VERIFICATION
+#
+#    `T2` du LOT 3 l'avait annonce : « l'usage unique est une regle de PROCESSUS :
+#    `used_at` ne se pose qu'une fois, ce qu'aucune contrainte de ligne
+#    n'exprime ». C'est vrai, et cela ne dit pas encore comment le porter.
+#
+#    **Lire puis ecrire ne suffit PAS.** Deux requetes concurrentes portant le
+#    meme jeton liraient toutes deux `used_at IS NULL`, et toutes deux
+#    poursuivraient : le lien serait consomme DEUX fois, et le second usage
+#    reussirait. Un lien de connexion rejouable est un contournement
+#    d'authentification, pas un defaut de confort.
+#
+#    La consommation est donc un **compare-et-pose atomique** : un seul `UPDATE`
+#    conditionnel, dont le nombre de lignes affectees EST le verdict.
+#    PostgreSQL verrouille la ligne : la seconde transaction attend, puis ne
+#    trouve plus de ligne a mettre a jour. **Un test l'eprouve sur deux
+#    connexions reelles**, et sans lui cette propriete ne serait qu'une intention.
+#
+#  UN SEUL GABARIT D'ECHEC, ET C'EST UNE DERIVATION DECLAREE
+#
+#    Jeton inconnu, expire, deja consomme, invalide par un lien plus recent : les
+#    quatre rendent le MEME refus. Ce n'est pas une precaution vague -- le §3 de
+#    la fiche du lot enumere les huit ecrans de `T11`, et il en prevoit **UNE
+#    SEULE** pour « lien expire **ou** consomme ». L'API n'a donc pas a
+#    distinguer ce que l'interface ne distingue pas.
+#
+#  CE QUE LA CONSOMMATION NE FAIT PAS, ET IL FAUT LE LIRE DEUX FOIS
+#
+#    **ELLE N'AUTHENTIFIE PERSONNE.** Aucune session, aucun cookie, aucun jeton
+#    rendu : `user_session` et les trois attributs de cookie du cahier §7.4
+#    relevent de `T6`, story `US004`, dont les criteres sont ecrits. Cette
+#    fonction etablit qu'un porteur de jeton valide EST une personne donnee, et
+#    rend son identifiant a son appelant. **Rien de plus, et surtout rien qui
+#    ressemble a un acces.**
+
+
+@dataclasses.dataclass(frozen=True)
+class Consommation:
+    """Resultat d'une consommation. `personne` est non nul si et seulement si le
+    jeton etait valide."""
+
+    motif: str
+    personne: uuid.UUID | None = None
+
+    @property
+    def reussie(self) -> bool:
+        return self.personne is not None
+
+
+MOTIF_CONSOMME = "lien_consomme"
+MOTIF_LIEN_REFUSE = "lien_refuse"
+
+MOTIFS_DE_CONSOMMATION = (MOTIF_CONSOMME, MOTIF_LIEN_REFUSE)
+
+
+def consommer_un_magic_link(
+    connexion: Connection,
+    *,
+    jeton: str,
+    instant: dt.datetime,
+    empreinte_origine: str | None = None,
+) -> Consommation:
+    """Consommer un magic link, une fois et une seule.
+
+    **LE VERDICT EST LE NOMBRE DE LIGNES AFFECTEES PAR UN SEUL `UPDATE`.** Toutes
+    les conditions -- existence, non-consommation, non-invalidation, non-expiration
+    -- sont dans sa clause `WHERE`. Les evaluer avant, dans un `SELECT` separe,
+    ouvrirait la fenetre de course que cette forme ferme.
+
+    Args:
+        connexion: connexion ouverte, dans une transaction que l'appelant valide.
+        jeton: le jeton tel que le porteur le presente. Seule son empreinte
+            touche la base.
+        instant: l'horodatage de la tentative. **Injecte** : le §6 de la fiche
+            l'exige, un test qui dormirait quinze minutes serait inutilisable en
+            integration continue.
+        empreinte_origine: valeur minimisee du §10.3, ou `None`.
+
+    Returns:
+        La `Consommation`. `personne` vaut `None` sur tout refus, sans jamais
+        dire lequel des quatre cas s'est produit.
+    """
+    #  L'empreinte, jamais le jeton : le §10.3 ecrit « hash uniquement ».
+    empreinte = empreinte_de_jeton(jeton)
+
+    #  UN SEUL `UPDATE`, ET SA CLAUSE `WHERE` PORTE TOUTES LES CONDITIONS.
+    #
+    #    used_at IS NULL         -- usage unique, §10.3
+    #    invalidated_at IS NULL  -- « le dernier lien invalide les precedents »
+    #    expires_at > :instant   -- « 15 minutes apres emission »
+    #
+    #  `expires_at > instant` et non `>=` : a l'instant exact de l'expiration, le
+    #  lien est expire. La borne est donc semi-ouverte, comme les plages du socle.
+    personne = connexion.execute(
+        text(
+            "UPDATE magic_link_request SET used_at = :instant_usage "
+            "WHERE token_hash = :empreinte "
+            "  AND used_at IS NULL "
+            "  AND invalidated_at IS NULL "
+            "  AND expires_at > :instant_expiration "
+            "RETURNING person_id"
+        ),
+        {
+            #  DEUX NOMS DE PARAMETRE POUR LE MEME INSTANT, et ce n'est pas du
+            #  zele : un parametre lie employe pour deux colonnes rend
+            #  « inconsistent types deduced for parameter », et le message ne
+            #  nomme ni la table ni la colonne. Lecon `T11` du LOT 2, §7.25.
+            "instant_usage": instant,
+            "instant_expiration": instant,
+            "empreinte": empreinte,
+        },
+    ).scalar_one_or_none()
+
+    if personne is None:
+        #  **AUCUNE PERSONNE A RATTACHER, ET C'EST NORMAL** : un jeton inconnu
+        #  n'en designe aucune. `auth_event.person_id` est nullable exactement
+        #  pour ce cas, `T2` l'a pose.
+        #
+        #  Le type est `LOGIN_FAILURE` : le §10.6 declare « echec », et une
+        #  tentative de consommation refusee EST un echec de connexion. Employer
+        #  `MAGIC_LINK_USED` serait affirmer un usage qui n'a pas eu lieu.
+        _tracer_consommation(
+            connexion,
+            instant=instant,
+            type_evenement=TypeEvenementAuth.LOGIN_FAILURE,
+            motif=MOTIF_LIEN_REFUSE,
+            personne=None,
+            empreinte_origine=empreinte_origine,
+        )
+        return Consommation(motif=MOTIF_LIEN_REFUSE)
+
+    identifiant = uuid.UUID(str(personne))
+    _tracer_consommation(
+        connexion,
+        instant=instant,
+        type_evenement=TypeEvenementAuth.MAGIC_LINK_USED,
+        motif=MOTIF_CONSOMME,
+        personne=identifiant,
+        empreinte_origine=empreinte_origine,
+    )
+    #  PAS de `LOGIN_SUCCESS` ici, et c'est une precision, pas un oubli : rien
+    #  n'est encore connecte. `T6` cree la session, et c'est elle qui pourra
+    #  legitimement tracer un succes de connexion.
+    return Consommation(motif=MOTIF_CONSOMME, personne=identifiant)
+
+
+def _tracer_consommation(
+    connexion: Connection,
+    *,
+    instant: dt.datetime,
+    type_evenement: TypeEvenementAuth,
+    motif: str,
+    personne: uuid.UUID | None,
+    empreinte_origine: str | None,
+) -> None:
+    """Consigner une tentative de consommation — modele §10.6.
+
+    **`detail` ne porte QUE le motif interne**, jamais le jeton ni son empreinte.
+    Le §10.3 interdit « aucun lien complet dans les logs **ou l'audit** », et une
+    empreinte n'apporterait rien : `magic_link_request` la porte deja.
+    """
+    connexion.execute(
+        text(
+            "INSERT INTO auth_event "
+            "(event_type, occurred_at, person_id, request_origin_hash, detail) "
+            "VALUES (:type_evenement, :survenu_a, :personne, :origine, :detail)"
+        ),
+        {
+            "type_evenement": type_evenement.value,
+            "survenu_a": instant,
+            "personne": personne,
+            "origine": empreinte_origine,
+            "detail": motif,
+        },
+    )
