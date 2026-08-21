@@ -79,10 +79,38 @@ ARGUMENTS_SANS_TEMOIN: list[str] = []
 #  toute personne est legitimement referencable depuis n'importe quelle entite.
 COLONNES_D_AUTEUR = ("created_by_person_id", "updated_by_person_id", "archived_by_person_id")
 
-#  Tables GLOBALES du modele : elles ne portent pas d'`entity_id`, par decision.
-#  Le controle ne les deduit pas -- il deduit les LOCALES, par la presence de la
-#  colonne -- mais il les nomme pour que le rapport soit lisible.
-TABLES_GLOBALES_ATTENDUES = ("client", "entity", "person", "platform_setting")
+#  NULLABILITE DECLAREE EN PROSE, ET NON DANS UN TABLEAU DE COLONNES.
+#
+#  Trois sections du modele ecrivent « `entity_id` | Nullable ... » dans leur
+#  tableau de champs, et le controle les LIT. Le §10.5, lui, decrit
+#  `service_account` par une liste a puces en prose : « une entite FACULTATIVE ».
+#  La chaine `entity_id` n'y figure pas.
+#
+#  **CE RATTACHEMENT EST UNE INTERPRETATION, DECLAREE ICI ET NON DEDUITE.** C'est
+#  le parti de `RELATIONS_ATTENDUES` dans `verifier-historisation.py`, et il est
+#  prefere a un elargissement du motif sur du francais : une heuristique dans un
+#  controle est un defaut -- lecon `T9-2`, confirmee par le §7.25.
+#
+#  Le controle EXIGE que chaque entree corresponde a une table du schema : une
+#  entree devenue fausse echouerait au lieu d'etre ignoree.
+NULLABILITE_DECLAREE_EN_PROSE: dict[str, str] = {
+    "service_account": "§10.5 : une entite facultative",
+}
+
+
+#  LES TABLES GLOBALES SONT DERIVEES DU MODELE, PLUS RECOPIEES.
+#
+#  Ma premiere version portait quatre noms en dur -- `client`, `entity`, `person`,
+#  `platform_setting`. `T2` du LOT 3 a ajoute **six** tables globales
+#  d'authentification, et le controle a echoue en les declarant « inattendues ».
+#  C'est `ECART-021`, et c'est la deuxieme fois en deux sous-etapes qu'une liste
+#  recopiee de ma main vieillit au premier ajout -- la premiere etait
+#  `verifier-images.py`.
+#
+#  LE CRITERE DERIVABLE : une table est legitimement globale si **la section du
+#  modele qui la decrit ne mentionne PAS `entity_id`**. Si le modele lui en donne
+#  un et que le schema n'en a pas, c'est un defaut reel. La source fait donc foi,
+#  et un ajout futur n'exige plus de toucher ce fichier.
 
 
 def sql(compose: list[str], env: dict[str, str], requete: str) -> tuple[int, str]:
@@ -162,16 +190,50 @@ def exceptions_declarees_par_le_modele() -> dict[str, str]:
     """
     texte = MODELE.read_text(encoding="utf-8")
     resultat: dict[str, str] = {}
-    sections = list(re.finditer(r"^## \d+\.\d+ `([a-z_]+)`\s*$", texte, re.MULTILINE))
+    #  UN TITRE PEUT NOMMER PLUSIEURS TABLES, et le §10.5 le fait : «
+    #  `service_account` et `service_token` ». Ma premiere version exigeait un
+    #  titre a UN seul nom, si bien que `service_account.entity_id` -- nullable
+    #  parce que le §10.5 dit « une entite FACULTATIVE » -- etait signale comme
+    #  une nullabilite non declaree. Le controle echouait sur un livrable
+    #  conforme : §7.20.
+    sections = list(re.finditer(r"^## \d+\.\d+ (.+)$", texte, re.MULTILINE))
     for indice, section in enumerate(sections):
-        table = section.group(1)
+        tables = re.findall(r"`([a-z_]+)`", section.group(1))
+        if not tables:
+            continue
         fin = sections[indice + 1].start() if indice + 1 < len(sections) else len(texte)
-        for ligne in texte[section.end() : fin].splitlines():
-            if not ligne.startswith("|") or "entity_id" not in ligne:
+        corps = texte[section.end() : fin]
+        for ligne in corps.splitlines():
+            if "entity_id" not in ligne:
                 continue
-            if re.search(r"\bnullable\b|\bnuls?\b", ligne, re.IGNORECASE):
+            if not re.search(r"\bnullable\b|\bnuls?\b|\bfacultative?\b", ligne, re.IGNORECASE):
+                continue
+            #  Le libelle ne dit pas TOUJOURS de quelle table il s'agit quand le
+            #  titre en nomme plusieurs. On rattache a toutes celles du titre :
+            #  une exception de trop serait rapportee comme « table absente du
+            #  schema », donc visible, jamais silencieuse.
+            for table in tables:
                 resultat[table] = ligne.strip().strip("|").strip()
     return resultat
+
+
+def tables_globales_selon_le_modele() -> set[str]:
+    """Les tables dont la SECTION du modele ne mentionne aucun `entity_id`.
+
+    C'est le critere derivable de « legitimement globale ». Une table absente du
+    modele n'y figure pas : le controle la signalera separement.
+    """
+    texte = MODELE.read_text(encoding="utf-8")
+    sections = list(re.finditer(r"^## \d+\.\d+ (.+)$", texte, re.MULTILINE))
+    globales: set[str] = set()
+    for indice, section in enumerate(sections):
+        tables = re.findall(r"`([a-z_]+)`", section.group(1))
+        if not tables:
+            continue
+        fin = sections[indice + 1].start() if indice + 1 < len(sections) else len(texte)
+        if "entity_id" not in texte[section.end() : fin]:
+            globales |= set(tables)
+    return globales
 
 
 DEFAUTS_DU_TEMOIN = (
@@ -319,20 +381,39 @@ def main() -> int:
         print("    ECHEC    aucune table locale trouvee — le controle ne prouverait rien")
         return 1
 
-    ecart_globales = set(globales) ^ set(TABLES_GLOBALES_ATTENDUES)
-    if ecart_globales:
-        print(f"    ECHEC    tables globales inattendues ou manquantes : {sorted(ecart_globales)}")
-        print("             Une table sans `entity_id` echappe a toute cle composite :")
-        print("             son caractere global doit etre un choix, pas un oubli.")
-        echecs += 1
+    #  Une table globale est LEGITIME si sa section du modele ne mentionne aucun
+    #  `entity_id`. Le critere est derive, donc il ne vieillit pas.
+    globales_du_modele = tables_globales_selon_le_modele()
+    non_justifiees = sorted(set(globales) - globales_du_modele)
+    if non_justifiees:
+        for table in non_justifiees:
+            print(f"    ECHEC    {table} n'a pas d'`entity_id`, et le modele lui en donne un")
+            print("             Une table sans `entity_id` echappe a toute cle composite :")
+            print("             son caractere global doit etre un CHOIX, pas un oubli.")
+        echecs += len(non_justifiees)
     else:
-        print(f"    ok       les {len(globales)} tables globales sont celles attendues")
+        print(
+            f"    ok       les {len(globales)} tables globales le sont selon le modele "
+            f"— critere DERIVE, non recopie"
+        )
 
     # ------------------------------------------------------------------
     #  1. La nullabilite d'`entity_id` correspond au modele, DANS LES DEUX SENS
     # ------------------------------------------------------------------
     non_nul_par_defaut = defaut_du_modele_pour_entity_id()
     exceptions = exceptions_declarees_par_le_modele()
+    #  Les exceptions ecrites en PROSE, declarees en tete de ce fichier. Une
+    #  entree qui ne correspondrait a aucune table du schema est un echec : le
+    #  rattachement aurait vieilli.
+    for table_declaree, citation in NULLABILITE_DECLAREE_EN_PROSE.items():
+        if table_declaree not in locales:
+            print(
+                f"    ECHEC    {table_declaree} est declaree nullable en prose, "
+                f"mais absente du schema"
+            )
+            echecs += 1
+            continue
+        exceptions[table_declaree] = citation
     print()
     mot = "NON NUL" if non_nul_par_defaut else "nullable"
     print(f"    info     defaut du §3.1 pour `entity_id` : {mot} — DERIVE du modele")

@@ -20,17 +20,17 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 |---|---|
 | Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, **`G1`** franchie, tag **`v0.1.0`** · **LOT 2 verrouillé le 20/08/2026, `G2` FRANCHIE (`DEC-517`), tag `v0.2.0`** |
 | **Lot en cours** | **LOT 3 — Authentification, sessions et sécurité applicative**, ouvert par Jonathan le 20/08/2026 (`DEC-518`), porte `G3`, tag `v0.3.0`. Plan : [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md), **12 sous-étapes — le §3 ATTEND SA VALIDATION** |
-| Sous-étapes faites | **LOT 3 : `T1` faite.** *LOT 2 : les douze, terminées* · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T2` — les sept tables du modèle §10**, migration `0012`. **Première migration écrite sous le nouveau régime de privilèges** : elle s'appliquera avec le rôle de migration, et un test devra vérifier que ses tables sont **immédiatement lisibles** par l'exécution. Voir §12 du compte rendu de `T1` |
+| Sous-étapes faites | **LOT 3 : `T1` et `T2` faites.** *LOT 2 : les douze, terminées* · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
+| **Prochaine action** | **`T3` — la demande de magic link**, issue `#63` (`US001`). Son critère est une **égalité** : la réponse doit être identique pour une adresse connue et inconnue — **compare le corps ET les en-têtes**, pas seulement le code HTTP. Et l'index partiel de `magic_link_request` **refusera** un second lien actif : le service doit invalider le précédent. Voir §12 du compte rendu de `T2` |
 | Stories `Done` | **LOT 2 : LES HUIT**, et leurs huit issues sont **closes** — `#42` l'a été tardivement, voir §7.19 · *LOT 1 : les huit* |
 | Stories restantes | **LOT 3 : les huit**, `MVP-L03-US001` à `US008`, epic `#62`, issues `#63` à `#70`, jalon `G3` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
 | Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
 | Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **506** : **390 pytest** — dont **204 d'intégration** — et **116 Vitest**. C'était 260 à la sortie du LOT 1 |
+| Tests | **531** : **415 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1, 373 à celle du LOT 2 |
 | Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
 | **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **188 décisions** · **33 écarts** (**7 ouverts**) · **41 questions** (**32 ouvertes** — `QO-115` et `QO-116` closes) · 34 risques |
+| Registres | **189 décisions** · **33 écarts** (**7 ouverts**) · **41 questions** (**32 ouvertes** — `QO-115` et `QO-116` closes) · 34 risques |
 
 > **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
 > étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
@@ -394,7 +394,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`520` en usage | **`DEC-521`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`521` en usage | **`DEC-522`** |
 | `ECART-nnn` | `001`–`033` | **`ECART-034`** |
 | `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -458,6 +458,7 @@ API             migrate migrate-status api-check alembic-check
                 isolation-check isolation-temoin                  ← LOT 2, T11
                 migrations-check recette-modele-check             ← LOT 2, T12
                 roles-provision privileges-check                  ← LOT 3, T1
+                secrets-check                                     ← LOT 3, T2
                 jeu-de-donnees                                    ← LOT 2, T12
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
@@ -1629,12 +1630,14 @@ hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype histor
 │                                          0009 responsabilites et DSM,
 │                                          0010 exclusions autoportantes,
 │                                          0011 roles et perimetres (T10)
+│                                          0012 tables d'authentification (L3 T2)
 │                                          T11 n'en ecrit AUCUNE : rien a changer
 │                 app/shared/depot.py    ← DepotLocal / DepotGlobal (T11, DEC-515)
 │                 app/shared/database.py ← moteur() ET moteur_migrations() :
 │                                          DEUX ROLES depuis LOT 3, T1 (DEC-520)
 │                 app/organization/services.py ← l'ACTION du 8.4 (T11)
 │                 app/shared/fabriques.py ← jeu fictif DETERMINISTE (T12)
+│                 app/auth/modeles.py    ← les 7 tables du 10 (L3 T2, DEC-521)
 │   ├── worker/   worker/{main,journal}.py, tests/, Dockerfile
 │   └── web/      index.html, vite.config.ts
 │                 Dockerfile              ← 2 CIBLES depuis T7 (DEC-479)
@@ -1660,6 +1663,7 @@ hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype histor
 │                                                totaux DÉRIVÉS (T8, DEC-488)
 │                  verifier-images.py         ← 6 sous-commandes, controles de T7
 │                  provisionner-roles.py       ← les 2 roles, idempotent (T1 L3)
+                  verifier-secrets-en-clair.py ← 2 familles d'empreintes (L3 T2)
                   verifier-privileges.py      ← le DDL doit ECHOUER, et le DML
                                                 REUSSIR — le temoin est la
                   verifier-migrations.py      ← base VIDE, chaine rejouee, et

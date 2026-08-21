@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `520` en usage | `DEC-521` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `521` en usage | `DEC-522` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -204,7 +204,8 @@ Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
 | | Sous-étape | Story | État |
 |:--:|---|---|---|
 | `T1` | Moindre privilège PostgreSQL — deux rôles | — | **Terminée** le 20/08/2026. **`QO-116` close.** Trois comptes et non deux : `initdb` crée un superutilisateur, ce qui change c'est que l'application ne l'emploie plus. `btree_gist` est **`trusted`**, mesuré — sans quoi la migration `0002` aurait été inapplicable. `REASSIGN OWNED` a échoué : **188 des 196 fonctions appartiennent à l'extension**. Tout rejoué sur une base **recréée de zéro** : 8 services sains, 11 migrations, **390 tests**. `DEC-520`, `ECART-033` |
-| `T2` à `T12` | Voir la fiche | — | Non entamées |
+| `T2` | Les sept tables du modèle §10, migration `0012` | toutes | **Terminée** le 21/08/2026. **Les §25.2 à §25.4 n'imposent AUCUNE contrainte** à ces tables : aucune exclusion, aucune clé composite — en poser serait exiger plus que le modèle. Le §25.1 s'ouvrant par « à prévoir **notamment** », **quatre unicités de plus** sont posées, chacune **dérivée** d'une règle écrite. L'index partiel de `magic_link_request` porte l'**invariant** du §10.3, pas son action. **`make secrets-check`** distingue les empreintes de jeton (SHA-256, bornées) des empreintes de mot de passe (format variable, accompagnées de leur algorithme). **415 tests.** `DEC-521` |
+| `T3` à `T12` | Voir la fiche | — | Non entamées |
 
 ---
 
