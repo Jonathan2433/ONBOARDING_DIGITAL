@@ -67,6 +67,23 @@ from app.auth.csrf import (
     jeton_pour,
     origine_attendue,
 )
+from app.auth.debit import (
+    DEMANDES_DE_LIEN_PAR_ADRESSE,
+    DEMANDES_PAR_ORIGINE,
+    ECHECS_ADMIN_PAR_ADRESSE,
+    FENETRE_DEMANDES_DE_LIEN,
+    FENETRE_DEMANDES_PAR_ORIGINE,
+    FENETRE_ECHECS_ADMIN,
+    MOTIF_DEBIT_ADRESSE,
+    MOTIF_DEBIT_ECHECS_ADMIN,
+    MOTIF_DEBIT_ORIGINE,
+    CategorieDeCompteur,
+    CompteurIndisponible,
+    compter,
+    empreinte_pour_le_debit,
+    lire,
+    reinitialiser,
+)
 from app.auth.idempotence import (
     EN_TETE_CLE,
     CleInvalide,
@@ -90,6 +107,7 @@ from app.auth.sessions import (
     revoquer,
 )
 from app.configuration.settings import Parametres
+from app.people.modeles import normaliser_email
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
@@ -200,6 +218,35 @@ CODE_IDEMPOTENCE_INVALIDE = "cle_idempotence_invalide"
 CODE_MEMOIRE_INDISPONIBLE = "memoire_indisponible"
 MESSAGE_MEMOIRE_INDISPONIBLE = (
     "La protection contre les doubles soumissions est momentanement indisponible. "
+    "Reessayez dans un instant."
+)
+
+# ===========================================================================
+#
+#  LE REFUS DE LA LIMITATION DE DEBIT — CAHIER §20.2, LOT 3 `T8`
+#
+#    **429 N'EST PAS DANS LE CAHIER, ET NE POUVAIT PAS L'ETRE.** Le mot
+#    n'apparait nulle part dans le corpus -- 0 occurrence, mesuree -- parce que le
+#    cahier decrit des regles metier, pas des codes HTTP. Employer 429 est donc
+#    une derivation **declaree**, et non une invention de regle : c'est le code
+#    que le standard HTTP reserve a ce cas exact, comme `403` plutot que `401`
+#    l'etait en `T7`.
+#
+#    **LE MESSAGE NE DIT NI QUELLE DIMENSION A DEPASSE NI OU L'ON EN EST.** Un
+#    message qui dirait « 10 demandes par heure pour cette adresse » apprendrait
+#    a un attaquant quelle dimension il a saturee, donc laquelle contourner. Le
+#    motif interne est journalise ; l'appelant lit seulement qu'il doit
+#    attendre.
+#
+# ===========================================================================
+
+CODE_DEBIT_DEPASSE = "trop_de_demandes"
+MESSAGE_DEBIT_DEPASSE = (
+    "Trop de demandes ont ete faites recemment. Patientez quelques minutes avant de recommencer."
+)
+
+MESSAGE_COMPTEUR_INDISPONIBLE = (
+    "La protection contre les demandes repetees est momentanement indisponible. "
     "Reessayez dans un instant."
 )
 
@@ -405,11 +452,27 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                     "s'il s'est approche."
                 )
             },
+            status.HTTP_429_TOO_MANY_REQUESTS: {
+                "description": (
+                    "Limitation de debit du cahier §20.2. Le corps ne nomme PAS la "
+                    "dimension depassee — le dire apprendrait laquelle contourner — et "
+                    "`details.secondes_avant_reprise` donne le reste de la fenetre."
+                )
+            },
+            status.HTTP_503_SERVICE_UNAVAILABLE: {
+                "description": (
+                    "Le compteur de debit est injoignable. Le §20.1 impose le refus par "
+                    "defaut : laisser passer ferait d'une panne de Redis le moyen de "
+                    "desactiver la protection."
+                )
+            },
         },
         summary="Demander un lien de connexion",
         description=(
             "La reponse est identique que l'adresse existe ou non : le code, le corps "
-            "et les en-tetes ne permettent pas de conclure a l'existence d'un compte."
+            "et les en-tetes ne permettent pas de conclure a l'existence d'un compte. "
+            "La limitation de debit s'applique a TOUTE adresse, connue ou non : sans "
+            "cela, le 429 revelerait l'existence d'un compte."
         ),
     )
     def demander(
@@ -425,6 +488,14 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         reponse.headers["Cache-Control"] = "no-store"
         #  LOT 3, T7 — route AMONT : l'origine seule, aucun jeton possible.
         _proteger_du_csrf(parametres, requete)
+        #  LOT 3, T8 — **LA LIMITATION PRECEDE TOUT LE RESTE**, y compris la
+        #  reservation de la cle d'idempotence, qui ecrit elle aussi dans Redis :
+        #  une protection qui laisserait inonder la protection suivante ne
+        #  protegerait rien. Et elle precede surtout la BASE, ce qui est l'objet
+        #  meme d'une limitation -- et ce qui reduit le residuel de temps que
+        #  l'en-tete de ce module nomme.
+        _surveiller_l_origine(parametres, requete)
+        _limiter_les_demandes_de_lien(parametres, corps.email)
         #  **LA SEULE ROUTE DU LOT OU L'IDEMPOTENCE CHANGE QUELQUE CHOSE.** Un
         #  double clic envoie deux e-mails ET invalide le premier lien : l'effet
         #  double est visible par l'utilisateur, qui recoit deux messages dont un
@@ -514,6 +585,12 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
         #  ce qui est une preuve plus forte qu'un jeton.
         _proteger_du_csrf(parametres, requete)
+        #  LOT 3, T8 — **DETECTION SEULE, ET AUCUNE LIMITATION PAR JETON.** Le
+        #  §20.2 ne donne aucun seuil sur la consommation, et un jeton de 256 bits
+        #  ne se force pas : compter les essais par jeton protegerait contre une
+        #  attaque qui n'existe pas. Ce qui est reel est l'inondation de la route,
+        #  et la dimension qui la voit est l'origine.
+        _surveiller_l_origine(parametres, requete)
 
         origine = origine_de_la_requete(requete)
         empreinte = (
@@ -585,6 +662,20 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                     "s'il s'est approche."
                 )
             },
+            status.HTTP_429_TOO_MANY_REQUESTS: {
+                "description": (
+                    "Limitation de debit du cahier §20.2. Le corps ne nomme PAS la "
+                    "dimension depassee — le dire apprendrait laquelle contourner — et "
+                    "`details.secondes_avant_reprise` donne le reste de la fenetre."
+                )
+            },
+            status.HTTP_503_SERVICE_UNAVAILABLE: {
+                "description": (
+                    "Le compteur de debit est injoignable. Le §20.1 impose le refus par "
+                    "defaut : laisser passer ferait d'une panne de Redis le moyen de "
+                    "desactiver la protection."
+                )
+            },
         },
         summary="Se connecter avec un compte administrateur local",
         description=(
@@ -604,6 +695,11 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
         #  ce qui est une preuve plus forte qu'un jeton.
         _proteger_du_csrf(parametres, requete)
+        #  LOT 3, T8 — la detection par origine, puis la limitation par adresse.
+        #  **ELLE COMBLE LE TROU DU VERROU DE `T5`** : `failed_login_count` vit
+        #  sur `user_account`, donc une adresse sans compte n'a aucun compteur.
+        _surveiller_l_origine(parametres, requete)
+        _verifier_les_echecs_admin(parametres, corps.email)
         empreinte = _empreinte_d_origine(parametres, requete)
 
         instant = dt.datetime.now(tz=dt.UTC)
@@ -626,6 +722,14 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                     instant=instant,
                     jours_absolus=parametres.SESSION_ABSOLUTE_DAYS,
                 )
+
+        #  LOT 3, T8 — **HORS DE LA TRANSACTION, ET APRES ELLE.** Un compteur
+        #  Redis ne participe pas au `COMMIT` : l'incrementer dedans le laisserait
+        #  pose meme si la transaction etait annulee. Et il est incremente sur
+        #  l'ECHEC, jamais sur la tentative -- le §20.2 compte des « echecs ».
+        _enregistrer_le_resultat_admin(
+            parametres, corps.email, reussie=resultat.personne is not None and resultat.reussie
+        )
 
         if resultat.personne is None or not resultat.reussie:
             #  **LE MESSAGE NE CITE NI L'ADRESSE NI LE MOTIF INTERNE.** Le motif
@@ -974,6 +1078,214 @@ def _empreinte_d_origine(parametres: Parametres, requete: Request) -> str | None
     if not origine or not parametres.APP_SECRET_KEY:
         return None
     return empreinte_d_origine(origine, parametres.APP_SECRET_KEY)
+
+
+def _refuser_pour_debit(secondes_restantes: int) -> ErreurApplicative:
+    """Construire le refus 429, avec le delai a attendre.
+
+    **`Retry-After` NE REVELE RIEN QU'UN ATTAQUANT NE SACHE DEJA** : il porte le
+    reste de la fenetre du compteur qu'il vient lui-meme de saturer. Sans lui, un
+    client devrait deviner et reessayer en boucle, ce qui aggraverait exactement
+    ce que la limite protege.
+
+    Le detail ne nomme **pas** la dimension depassee : voir le bloc de commentaire
+    des constantes.
+    """
+    return ErreurApplicative(
+        code=CODE_DEBIT_DEPASSE,
+        message=MESSAGE_DEBIT_DEPASSE,
+        statut=status.HTTP_429_TOO_MANY_REQUESTS,
+        details={"secondes_avant_reprise": secondes_restantes},
+    )
+
+
+def _refuser_pour_compteur_absent() -> ErreurApplicative:
+    """Refuser quand Redis ne repond pas — cahier §20.1, « refus par defaut ».
+
+    **LAISSER PASSER FERAIT D'UNE PANNE DE REDIS LE MOYEN DE DESACTIVER LA
+    PROTECTION.** Le premier principe du §20.1 tranche : refus par defaut. Le
+    503 est le code juste -- la cause est une dependance indisponible, non la
+    requete -- et `/health/ready` la nomme deja depuis `T3` du LOT 1.
+    """
+    journal.warning(
+        "compteur de debit injoignable : la demande est refusee",
+        extra={"resultat": "echec", "code_erreur": "compteur_de_debit_injoignable"},
+    )
+    return ErreurApplicative(
+        code=CODE_MEMOIRE_INDISPONIBLE,
+        message=MESSAGE_COMPTEUR_INDISPONIBLE,
+        statut=status.HTTP_503_SERVICE_UNAVAILABLE,
+    )
+
+
+def _surveiller_l_origine(parametres: Parametres, requete: Request) -> None:
+    """Compter les demandes d'une meme origine — §20.2, « ALERTE », pas limitation.
+
+    **CETTE FONCTION NE REFUSE JAMAIS RIEN, ET C'EST LE VERBE DU CAHIER QUI LE
+    DECIDE.** Le §20.2 ecrit « 50 demandes depuis une meme origine en une heure :
+    **alerte** », quand la ligne voisine ecrit « limitation » pour l'adresse.
+    Refuser ici bloquerait **tout un bureau derriere un partage d'adresse**, et
+    inventerait une regle que le cahier n'ecrit pas.
+
+    L'alerte elle-meme exige `operational_alert` du modele §21.2 -- LOT 10. Ce
+    qui est fait ici est donc la **detection**, journalisee avec un motif nomme,
+    sur laquelle le LOT 10 branchera son alerte.
+
+    Une origine absente n'est pas comptee : il n'y a rien a compter. C'est le
+    meme cas que le CSRF de `T7` -- un appel hors navigateur -- et ce qui le
+    couvre est l'authentification.
+    """
+    empreinte = _empreinte_d_origine(parametres, requete)
+    if empreinte is None:
+        return
+    try:
+        comptage = compter(
+            parametres,
+            categorie=CategorieDeCompteur.ORIGINE,
+            valeur_minimisee=empreinte,
+            plafond=DEMANDES_PAR_ORIGINE,
+            fenetre_secondes=FENETRE_DEMANDES_PAR_ORIGINE,
+        )
+    except CompteurIndisponible:
+        #  **UNE DETECTION INDISPONIBLE NE REFUSE PAS.** Le « refus par defaut »
+        #  du §20.1 s'applique a une limitation ; refuser ici transformerait une
+        #  alerte en limitation, ce que le cahier n'ecrit pas. La limitation par
+        #  adresse, elle, refuse -- et elle est controlee juste apres.
+        journal.warning(
+            "surveillance d'origine indisponible",
+            extra={"resultat": "echec", "code_erreur": "compteur_origine_injoignable"},
+        )
+        return
+    if comptage.depasse:
+        #  Le motif nomme la dimension ; l'empreinte n'est PAS journalisee. Une
+        #  empreinte est une valeur minimisee, pas une valeur anodine : le §28.2
+        #  n'en veut pas dans un journal de production.
+        journal.warning(
+            "seuil de demandes par origine atteint",
+            extra={"resultat": "refus", "code_erreur": MOTIF_DEBIT_ORIGINE},
+        )
+
+
+def _limiter_les_demandes_de_lien(parametres: Parametres, adresse: str) -> None:
+    """Limiter les demandes de lien par adresse — §20.2, « LIMITATION ».
+
+    **LE COMPTEUR PORTE SUR L'ADRESSE NORMALISEE, AVANT TOUTE LECTURE DE LA
+    BASE.** C'est ce qui empeche la limite de devenir l'oracle que `T3` a ferme :
+    si elle ne s'appliquait qu'aux adresses connues, le 429 dirait « ce compte
+    existe ». La onzieme demande est refusee pour **n'importe quelle** adresse.
+
+    L'adresse est normalisee ici, avec la meme fonction que le service : sans
+    cela, `Jean@x.fr` et `jean@x.fr` auraient deux compteurs, et varier la casse
+    suffirait a contourner la limite.
+
+    Raises:
+        ErreurApplicative: 429 au depassement, 503 si le compteur est injoignable.
+    """
+    empreinte = empreinte_pour_le_debit(
+        normaliser_email(adresse), parametres.APP_SECRET_KEY, quoi="une adresse e-mail"
+    )
+    try:
+        comptage = compter(
+            parametres,
+            categorie=CategorieDeCompteur.DEMANDE_DE_LIEN,
+            valeur_minimisee=empreinte,
+            plafond=DEMANDES_DE_LIEN_PAR_ADRESSE,
+            fenetre_secondes=FENETRE_DEMANDES_DE_LIEN,
+        )
+    except CompteurIndisponible:
+        raise _refuser_pour_compteur_absent() from None
+    if comptage.depasse:
+        journal.warning(
+            "limitation de debit : demande de lien refusee",
+            extra={"resultat": "refus", "code_erreur": MOTIF_DEBIT_ADRESSE},
+        )
+        raise _refuser_pour_debit(comptage.secondes_restantes)
+
+
+def _empreinte_d_adresse_admin(parametres: Parametres, adresse: str) -> str:
+    """Empreinte de l'adresse employee par les compteurs d'echecs administrateur."""
+    return empreinte_pour_le_debit(
+        normaliser_email(adresse), parametres.APP_SECRET_KEY, quoi="une adresse e-mail"
+    )
+
+
+def _verifier_les_echecs_admin(parametres: Parametres, adresse: str) -> None:
+    """Refuser une connexion si l'adresse a deja trop echoue — §20.2, 5 en 15 min.
+
+    **CE COMPTEUR COMBLE LE TROU DU VERROU DE `T5`, ET LE TROU EST REEL.**
+    `failed_login_count` vit sur `user_account` : une adresse **sans** compte n'a
+    aucun compteur, donc peut etre sollicitee sans fin, et un attaquant qui
+    balaie mille adresses ne fait avancer aucun verrou. Ce compteur-ci porte sur
+    l'adresse, qu'un compte existe ou non.
+
+    **ET IL S'APPLIQUE AUX DEUX CAS, CE QUI EST LA CONDITION POUR NE RIEN
+    REVELER.** S'il ne portait que sur les adresses sans compte, la sixieme
+    tentative rendrait 429 pour une adresse inconnue et 400 pour une adresse
+    connue : le code HTTP deviendrait l'oracle que `T5` avait ferme.
+
+    Les deux nombres sont ceux du §20.2 -- « 5 echecs administrateur en 15
+    minutes » -- et ce sont **les memes** que le verrou de `T5`. Rien n'est
+    invente.
+
+    Raises:
+        ErreurApplicative: 429 si le seuil est deja atteint, 503 si le compteur
+            est injoignable.
+    """
+    try:
+        comptage = lire(
+            parametres,
+            categorie=CategorieDeCompteur.ECHEC_ADMIN,
+            valeur_minimisee=_empreinte_d_adresse_admin(parametres, adresse),
+            plafond=ECHECS_ADMIN_PAR_ADRESSE,
+        )
+    except CompteurIndisponible:
+        raise _refuser_pour_compteur_absent() from None
+    #  **`>=` ICI, `>` DANS `Comptage.depasse`, ET LA DIFFERENCE EST VOULUE.** La
+    #  limitation par adresse compte la demande courante -- la onzieme est de
+    #  trop. Ici, la valeur lue compte les echecs DEJA survenus : au cinquieme
+    #  echec, la tentative suivante est la sixieme, et elle est refusee.
+    if comptage.valeur >= ECHECS_ADMIN_PAR_ADRESSE:
+        journal.warning(
+            "limitation de debit : connexion administrateur refusee",
+            extra={"resultat": "refus", "code_erreur": MOTIF_DEBIT_ECHECS_ADMIN},
+        )
+        raise _refuser_pour_debit(comptage.secondes_restantes)
+
+
+def _enregistrer_le_resultat_admin(parametres: Parametres, adresse: str, *, reussie: bool) -> None:
+    """Incrementer le compteur d'echecs, ou l'effacer sur succes.
+
+    **L'EFFACEMENT SUR SUCCES N'EST PAS UN CONFORT.** Le §7 de la fiche du lot
+    nomme le risque « le verrouillage administrateur bloque Jonathan lui-meme » ;
+    `T5` y repond par un verrou qui se relache seul et par
+    `failed_login_count = 0` sur succes. Un compteur Redis qui survivrait a une
+    connexion reussie reintroduirait exactement ce risque, quinze minutes durant.
+
+    Il ne donne rien a un attaquant : reussir exige le mot de passe.
+    """
+    empreinte = _empreinte_d_adresse_admin(parametres, adresse)
+    if reussie:
+        reinitialiser(
+            parametres, categorie=CategorieDeCompteur.ECHEC_ADMIN, valeur_minimisee=empreinte
+        )
+        return
+    try:
+        compter(
+            parametres,
+            categorie=CategorieDeCompteur.ECHEC_ADMIN,
+            valeur_minimisee=empreinte,
+            plafond=ECHECS_ADMIN_PAR_ADRESSE,
+            fenetre_secondes=FENETRE_ECHECS_ADMIN,
+        )
+    except CompteurIndisponible:
+        #  **ON NE TRANSFORME PAS UN REFUS EN 503.** L'authentification a deja
+        #  echoue et sa reponse est arretee : lever ici remplacerait un refus
+        #  d'identifiants par une erreur de dependance, et le code HTTP dirait a
+        #  l'appelant que quelque chose d'autre s'est produit.
+        journal.warning(
+            "compteur d'echecs administrateur injoignable",
+            extra={"resultat": "echec", "code_erreur": "compteur_echecs_injoignable"},
+        )
 
 
 def compter_les_liens_actifs(parametres: Parametres, adresse_normalisee: str) -> int:

@@ -53,6 +53,9 @@ import uuid
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RACINE / "apps" / "api"))
+sys.path.insert(0, str(RACINE / "infra" / "scripts"))
+
+from debit_partage import purger_les_compteurs_de_debit  # noqa: E402
 
 CHEMIN_CONNEXION = "/api/v1/auth/connexion"
 CHEMIN_MOT_DE_PASSE = "/api/v1/auth/mot-de-passe"
@@ -359,22 +362,47 @@ def main() -> int:
                 {"email": adresse, "mot_de_passe": "un-mot-de-passe-qui-n-est-pas-le-bon"},
                 contexte,
             )
+        # ==============================================================
+        #
+        #  LE COMPTEUR DE `T8` EST EFFACE AVANT CHAQUE ASSERTION SUR
+        #  `/auth/connexion`, ET C'EST UN CORRECTIF DE `T8`
+        #
+        #    Ce verificateur pousse deliberement un compte jusqu'au
+        #    verrouillage : cinq echecs, puis une tentative avec le BON mot de
+        #    passe. Depuis `T8`, cette sixieme requete est refusee par la
+        #    limitation par adresse -- **429 au lieu de 400** -- et trois
+        #    controles ont echoue sur un livrable conforme. C'est le §7.21.
+        #
+        #    **ET LE PREMIER DES TROIS PASSAIT POUR LA MAUVAISE RAISON.** Il
+        #    n'exigeait que « pas 200 » ; un 429 le satisfaisait, et il annoncait
+        #    « verrou declenche » alors que c'etait la limitation qui avait parle.
+        #    Il exige desormais le code du refus de `T5`.
+        #
+        #    Effacer est le bon geste et non un contournement : ce controle porte
+        #    sur le VERROU de `T5`, qui a ses propres seuils en base, et la
+        #    limitation de `T8` a son propre controle -- `make debit-check`. Le
+        #    verrou obtenu reste reel, produit par cinq vrais echecs.
+        #
+        # ==============================================================
+        purger_les_compteurs_de_debit(env)
         verrouille = appeler(
             arguments.base,
             CHEMIN_CONNEXION,
             {"email": adresse, "mot_de_passe": mot_de_passe},
             contexte,
         )
-        if verrouille.statut == 200:
+        if verrouille.statut != 400:
             print(
-                f"    ECHEC    apres {ECHECS_AVANT_VERROUILLAGE} echecs, le BON mot de "
-                "passe passe encore : le verrou ne s'est pas declenche"
+                f"    ECHEC    apres {ECHECS_AVANT_VERROUILLAGE} echecs, le BON mot de passe "
+                f"rend {verrouille.statut} au lieu de 400. Un 200 dirait que le verrou ne s'est "
+                "pas declenche ; un 429 dirait que c'est la limitation de `T8` qui a parle, "
+                "et non le verrou que ce controle doit prouver"
             )
             echecs += 1
         else:
             print(
                 f"    ok       verrou declenche apres {ECHECS_AVANT_VERROUILLAGE} echecs — "
-                f"le bon mot de passe rend {verrouille.statut}"
+                "le bon mot de passe rend 400, le refus de `T5`"
             )
 
         #  Et le verrou ne se LIT PAS dans la reponse : meme forme qu'un autre refus.
@@ -414,6 +442,7 @@ def main() -> int:
         #  --------------------------------------------------------------
         controles += 1
         _provisionner(os.path.abspath(arguments.env_file), arguments.fichiers_compose, adresse)
+        purger_les_compteurs_de_debit(env)  # voir le bloc du controle 4
         deverrouille = appeler(
             arguments.base,
             CHEMIN_CONNEXION,
@@ -434,6 +463,7 @@ def main() -> int:
         #  7. LE CHANGEMENT DE MOT DE PASSE
         #  --------------------------------------------------------------
         controles += 1
+        purger_les_compteurs_de_debit(env)  # voir le bloc du controle 4
         nouveau = secrets.token_urlsafe(24)
         change = appeler(
             arguments.base,

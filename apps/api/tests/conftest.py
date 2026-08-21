@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import pathlib
 import socket
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -106,6 +107,60 @@ def environnement_vierge(monkeypatch: pytest.MonkeyPatch) -> None:
     for nom in Parametres.model_fields:
         monkeypatch.delenv(nom, raising=False)
     parametres_en_cache.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def compteurs_de_debit_neufs() -> Iterator[None]:
+    """Effacer les compteurs de limitation de debit AVANT chaque test.
+
+    LOT 3, `T8`. **CETTE FIXTURE EST AUTOUSE, ET C'EST UN CHOIX MESURE.**
+
+    `T8` a ajoute une CONDITION a deux operations qui existaient deja : dix
+    demandes de lien par adresse et par heure, cinq echecs administrateur par
+    adresse. Les compteurs vivent dans Redis, donc **ils survivent d'un test au
+    suivant** -- contrairement a une transaction annulee ou a un nettoyage SQL.
+
+    Consequence immediate, et deux tests l'ont montree : un fichier qui produit
+    cinq refus administrateur sur la meme adresse voit le sixieme rendre **429 au
+    lieu de 400**, et il echoue sur un livrable conforme. C'est le §7.21 -- un
+    controle juste hier, rendu faux par ce que nous venons d'ajouter.
+
+    **POURQUOI ICI ET NON DANS LES FIXTURES CONCERNEES.** Corriger les deux
+    fichiers fautifs aurait produit une liste implicite des fichiers a corriger,
+    qui vieillit au premier test ajoute -- c'est exactement le §7.27, trois
+    occurrences dans ce lot. Une fixture `autouse` couvre les fichiers presents
+    **et futurs**.
+
+    Elle est silencieuse quand Redis est absent : les tests unitaires ne doivent
+    pas dependre de la stack. Et elle n'efface **que** le prefixe de debit, donc
+    ni une file Dramatiq ni une cle d'idempotence de `T7`.
+    """
+
+    def _purge() -> None:
+        try:
+            import redis
+
+            from app.auth.debit import PREFIXE_REDIS
+
+            env = lire_env_du_depot()
+            client = redis.Redis(
+                host=HOTE_LOCAL,
+                port=int(env.get("REDIS_HOST_PORT", "6379")),
+                password=env.get("REDIS_PASSWORD") or None,
+                socket_connect_timeout=1,
+                socket_timeout=1,
+            )
+            cles = list(client.scan_iter(match=f"{PREFIXE_REDIS}*", count=500))
+            if cles:
+                client.delete(*cles)
+        except Exception:  # noqa: S110 — Redis absent : un test unitaire n'en depend pas
+            pass
+
+    _purge()
+    yield
+    #  **ET APRES AUSSI** : sans cela, `make debit-check` verrait les compteurs
+    #  laisses par la suite de tests et son propre comptage serait faux.
+    _purge()
 
 
 @pytest.fixture
