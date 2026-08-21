@@ -47,7 +47,7 @@
     "  requete, jamais du contenu de la base."
   ],
 
-  "version": "1.2",
+  "version": "1.3",
 
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
@@ -138,6 +138,39 @@
         "200 NE PORTE AUCUN ACCES : ni cookie, ni jeton de session. La session releve de",
         "T6, story US004. Un ecran qui traiterait ce 200 comme une connexion etablie se",
         "tromperait."
+      ]
+    },
+    {
+      "cle": "connexionAdministrateur",
+      "chemin": "/api/v1/auth/connexion",
+      "methode": "post",
+      "codesExploitables": [200, 400],
+      "forme": "ReponseDeConnexion",
+      "role": [
+        "Connexion d'un compte administrateur local — LOT 3, T5, story MVP-L03-US003.",
+        "400 EST LE SEUL REFUS, et il est UNIQUE pour cinq causes : compte inconnu,",
+        "mot de passe faux, compte verrouille, compte desactive, compte sans mot de",
+        "passe actif. Un refus qui les distinguerait revelerait qu'une adresse porte un",
+        "compte administrateur — et, pire, apprendrait a un attaquant qu'il a REUSSI a",
+        "verrouiller le titulaire legitime.",
+        "200 NE PORTE AUCUN ACCES : ni cookie, ni jeton de session. La session releve de",
+        "T6. Le champ `changement_exige` porte `must_change` du modele 10.2 : l'ecran",
+        "doit imposer le changement avant toute autre action."
+      ]
+    },
+    {
+      "cle": "changementDeMotDePasse",
+      "chemin": "/api/v1/auth/mot-de-passe",
+      "methode": "post",
+      "codesExploitables": [200, 400],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Changement du mot de passe administrateur — LOT 3, T5.",
+        "LE MOT DE PASSE ACTUEL EST EXIGE. Sans session — elles relevent de T6 — c'est",
+        "la SEULE preuve que l'appelant est le titulaire ; une route qui changerait un",
+        "mot de passe sur la seule adresse serait une prise de controle de compte.",
+        "Son 400 a exactement la meme forme que celui de la connexion : sinon cette",
+        "route deviendrait l'oracle que l'autre n'est pas."
       ]
     }
   ]

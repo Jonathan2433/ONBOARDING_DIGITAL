@@ -96,6 +96,17 @@ export const CHEMIN_DEMANDE_MAGIC_LINK: string = endpoint('demandeDeMagicLink').
  */
 export const CHEMIN_CONSOMMATION_MAGIC_LINK: string = endpoint('consommationDeMagicLink').chemin;
 
+/** Connexion administrateur locale — LOT 3, T5, story MVP-L03-US003. */
+export const CHEMIN_CONNEXION_ADMINISTRATEUR: string = endpoint('connexionAdministrateur').chemin;
+
+/**
+ * Changement du mot de passe administrateur — LOT 3, T5.
+ *
+ * L'ecran doit l'appeler AVANT toute autre action quand la connexion a rendu
+ * `changement_exige` a vrai : c'est `must_change` du modele 10.2.
+ */
+export const CHEMIN_CHANGEMENT_MOT_DE_PASSE: string = endpoint('changementDeMotDePasse').chemin;
+
 // ---------------------------------------------------------------------------
 //  Les formes de reponse
 // ---------------------------------------------------------------------------

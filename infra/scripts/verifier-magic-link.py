@@ -890,13 +890,17 @@ def _nettoyer(compose: list[str], env: dict[str, str]) -> None:
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM person WHERE email_normalized LIKE '{MARQUEUR}%'",  # noqa: S608
         f"DELETE FROM entity WHERE code = '{MARQUEUR}'",  # noqa: S608
-        #  Les evenements SANS personne — l'adresse inconnue — ne peuvent pas
-        #  etre rattaches au marqueur : ils n'ont ni personne, ni adresse. Seuls
-        #  ceux des cinq dernieres minutes sans personne sont retires, et c'est
-        #  dit : sur une base de developpement c'est sans consequence, mais le
-        #  taire serait pretendre un nettoyage exact.
+        #  Les evenements SANS personne — adresse inconnue en `T3`, jeton
+        #  inconnu en `T4` — ne peuvent pas etre rattaches au marqueur : ils n'ont
+        #  ni personne, ni adresse.
+        #
+        #  **CETTE REQUETE NOMMAIT `MAGIC_LINK_REQUESTED`, ET ELLE A VIEILLI AU
+        #  PREMIER AJOUT.** `T4` ecrit des `LOGIN_FAILURE` sans personne, que ce
+        #  filtre ne voyait pas : deux lignes restaient a chaque execution, et
+        #  c'est `T5` qui l'a mesure. §7.27 -- une liste nommee dans un controle
+        #  vieillit des qu'on y ajoute quelque chose. Le type n'est donc plus
+        #  nomme : seule la borne temporelle delimite, et elle ne vieillit pas.
         "DELETE FROM auth_event WHERE person_id IS NULL "
-        "  AND event_type = 'MAGIC_LINK_REQUESTED' "
         "  AND occurred_at > now() - interval '5 minutes'",
     )
     restes = 0
