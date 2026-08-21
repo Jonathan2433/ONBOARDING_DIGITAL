@@ -101,6 +101,17 @@ MINUTES_DE_VALIDITE_DU_MAGIC_LINK = 15
 #  §10.4 : « absolute_expires_at | Maximum 30 jours ».
 JOURS_MAXIMUM_DE_SESSION = 30
 
+#  §10.4 : « last_activity_at | Expiration inactive apres 7 jours », et cahier
+#  §7.4, « expiration apres 7 jours d'inactivite ».
+#
+#  **CETTE VALEUR N'A PAS DE COLONNE, ET C'EST DELIBERE** — `T2` du LOT 3 l'a
+#  pose : l'expiration par inactivite se CALCULE sur `last_activity_at`, et une
+#  colonne `inactive_expires_at` divergerait de sa source des la premiere mise a
+#  jour. Elle est donc ici, avec la valeur du modele, et **elle est plus exposee
+#  qu'une borne en base** : aucune contrainte ne refuserait une divergence. C'est
+#  pourquoi un garde-fou de demarrage la confronte a `SESSION_IDLE_DAYS`.
+JOURS_D_INACTIVITE_DE_SESSION = 7
+
 
 class TypeCompte(enum.StrEnum):
     """§10.1 : `EMPLOYEE_MAGIC_LINK` ou `ADMIN_LOCAL`, litteralement."""

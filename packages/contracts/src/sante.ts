@@ -107,6 +107,22 @@ export const CHEMIN_CONNEXION_ADMINISTRATEUR: string = endpoint('connexionAdmini
  */
 export const CHEMIN_CHANGEMENT_MOT_DE_PASSE: string = endpoint('changementDeMotDePasse').chemin;
 
+/**
+ * Lire la session courante — LOT 3, T6, story MVP-L03-US004.
+ *
+ * **NE DEMANDE JAMAIS DE JETON A CETTE ROUTE**, et n'en stocke aucun. Le jeton
+ * vit dans un cookie `HttpOnly` : aucun JavaScript ne peut le lire, et c'est ce
+ * qui rend tenable « aucune donnee d'authentification durable dans
+ * `localStorage` » (cahier 7.4). Un frontend qui recevrait un jeton finirait par
+ * le stocker.
+ *
+ * Cet appel RAFRAICHIT l'activite de la session : ne le boucle pas.
+ */
+export const CHEMIN_SESSION: string = endpoint('sessionCourante').chemin;
+
+/** Se deconnecter — LOT 3, T6. Toujours 200. */
+export const CHEMIN_DECONNEXION: string = endpoint('deconnexion').chemin;
+
 // ---------------------------------------------------------------------------
 //  Les formes de reponse
 // ---------------------------------------------------------------------------

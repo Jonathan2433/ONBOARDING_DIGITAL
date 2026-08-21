@@ -213,6 +213,7 @@ ETIQUETTE_LOCALE := onboarding-local
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
+        sessions-check sessions-temoin \
         up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
@@ -363,7 +364,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -927,6 +928,19 @@ web-check: ## Controler la page de statut telle qu'un navigateur la voit
 # L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, comme pour `web-check` :
 # l'ecrire en dur ferait porter ce controle sur le developpement alors qu'il
 # tournerait sur la recette. C'etait le defaut de `web-check` avant `T9`.
+sessions-check: ## Prouver les trois attributs du cookie et l absence de jeton cote navigateur (US004)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-sessions.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+# LE TEMOIN N'EXIGE AUCUNE STACK : il eprouve le controle des sources dans les
+# DEUX sens — un usage reel doit etre vu, un commentaire ne doit pas l'etre.
+# Il est donc dans `make check`, la ou la stack n'est pas garantie.
+sessions-temoin: ## Temoin : le controle de stockage navigateur sait-il ECHOUER ? (7.25)
+	@$(UV) run python infra/scripts/verifier-sessions.py --temoin
+
 admin-check: ## Prouver que le verrouillage administrateur se declenche ET se leve (US003)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

@@ -350,6 +350,24 @@ services:
       SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME}
       MAGIC_LINK_TTL_MINUTES: ${MAGIC_LINK_TTL_MINUTES}
+      # T6 du LOT 3 — SIX VARIABLES DE PLUS, ET DEUX N'ETAIENT PAS TRANSMISES
+      # ALORS QUE L'API LES DECLARAIT DEPUIS T3 DU LOT 1.
+      #
+      # `SESSION_COOKIE_SECURE` et `CSRF_PROTECTION_ENABLED` sont deux des SEPT
+      # garde-fous de production du cahier 20.3 : non transmises, elles valaient
+      # leur defaut, et le garde-fou ne pouvait donc pas se declencher sur une
+      # valeur reelle. Mesure du 21/08/2026 : 0 occurrence dans ce bloc avant T6.
+      # C'est exactement ce que T3 avait trouve sur PUBLIC_BASE_URL — §7.16, ce
+      # qui n'a jamais tourne n'est pas eprouve.
+      #
+      # Les quatre autres etaient dans .env.example depuis le LOT 0, marquees
+      # `[lot] 3`, et personne ne les declarait.
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME}
+      SESSION_COOKIE_SAMESITE: ${SESSION_COOKIE_SAMESITE}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE}
+      SESSION_IDLE_DAYS: ${SESSION_IDLE_DAYS}
+      SESSION_ABSOLUTE_DAYS: ${SESSION_ABSOLUTE_DAYS}
+      CSRF_PROTECTION_ENABLED: ${CSRF_PROTECTION_ENABLED}
     healthcheck:
       test:
         - CMD-SHELL

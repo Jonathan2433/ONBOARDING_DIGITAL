@@ -4,7 +4,7 @@
 **Ouvert par Jonathan le :** 20 août 2026 — décision `DEC-518`
 **Rédigée le :** 20 août 2026, à la sortie de la porte `G2`
 **Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 20/08/2026** — « tout me convient »
-**Avancement :** `T1` à **`T5`** terminées. **Sept sous-étapes restantes**, `T6` à `T12`
+**Avancement :** `T1` à **`T6`** terminées. **Six sous-étapes restantes**, `T7` à `T12`
 **Traçabilité GitHub :** epic `#62`, jalon `G3`, huit stories `#63` à `#70`
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
@@ -51,7 +51,7 @@ tout ce qui était théorique devient réel — c'est le motif de l'arbitrage du
 | ~~**`T3`**~~ | ~~**Magic link — la demande.**~~ **TERMINÉE le 21/08/2026.** L'égalité est obtenue **en n'ayant qu'un seul gabarit de réponse**, non en comparant deux chemins de code — `202`, 143 octets, 7 en-têtes, 0 divergence entre connue, inconnue et archivée, mesuré **à travers Caddy en HTTPS**. **`§30.11` est passé de `reporte` à `acquis`** : 11 acquis contre 10. L'autorité des domaines est la **table**, pas une variable (`DEC-523`), et `make domaines-provision` pose la ligne initiale **sans jamais réactiver** un domaine coupé. Le jeton porte un **préfixe**, `oml_`, qui rend les deux détecteurs **exacts** au lieu d'heuristiques, et la famille `oss_`/`ost_` est **réservée** pour `T6` et `T10`. **`PUBLIC_BASE_URL` était fausse et n'était transmise à personne** — §7.16. **469 tests**, `make magic-link-check` **dans la CI**. Compte rendu : [`compte-rendu-t3-lot-3.md`](compte-rendu-t3-lot-3.md) | `US001` | ☑ |
 | ~~**`T4`**~~ | ~~**Magic link — la consommation.**~~ **TERMINÉE le 21/08/2026.** L'usage unique est une **course**, pas une vérification : un **compare-et-pose atomique** dont le nombre de lignes affectées EST le verdict. **Trois versions du test de concurrence, et les deux premières ne prouvaient rien** — la seconde ne discriminait pas, un service lire-puis-écrire prenant le même verrou. Le témoin négatif est décisif : sur une implémentation vulnérable, le test concurrent échoue **et les deux autres passent**. **Le jeton voyage dans le CORPS, jamais dans l'URL.** Un seul gabarit de refus pour quatre causes, dérivé de l'écran unique de `T11`. **L'absence de journal d'accès Caddy est rapportée comme une absence et GARDÉE** par un contrôle. **482 tests**, `magic-link-check` passe de 10 à **15 contrôles**. Compte rendu : [`compte-rendu-t4-lot-3.md`](compte-rendu-t4-lot-3.md) | `US002` | ☑ |
 | ~~**`T5`**~~ | ~~**Compte administrateur local.**~~ **TERMINÉE le 21/08/2026.** `scrypt` de la bibliothèque standard, **et le motif du choix est la MÉMOIRE** : 64 Mio par calcul contre 128 à `N = 2^17`, pour une limite de service de 1 024 Mio — huit connexions suffiraient à la saturer. **Zéro dépendance ajoutée.** Le verrouillage réutilise les **deux nombres du §20.2** plutôt que d'en inventer, **se relâche seul**, et une tentative sur un compte verrouillé **ne le prolonge pas** — sans quoi le verrouillage serait un déni de service permanent. Le compteur est un **compare-et-pose atomique**, témoin négatif à l'appui : « le compteur vaut 1 au lieu de 2 ». **La dette du §8.4 est acquittée**, et le jeu de recette a révélé une lacune de lui-même — il attribuait `dg` par un DSM et ne créait aucun ESM. **525 tests**, `make admin-check` dans la CI, **`QO-118` ouverte**. Compte rendu : [`compte-rendu-t5-lot-3.md`](compte-rendu-t5-lot-3.md) | `US003` | ☑ |
-| **`T6`** | **Sessions.** Cookie `HttpOnly`, `Secure`, `SameSite` ; inactivité **7 jours**, durée absolue **30 jours** ; déconnexion. | `US004` | Les trois attributs sont sur la réponse **réelle**, lue à travers Caddy en HTTPS · les deux expirations sont éprouvées · **aucun jeton dans `localStorage`**, prouvé par un contrôle du frontend |
+| ~~**`T6`**~~ | ~~**Sessions.**~~ **TERMINÉE le 21/08/2026.** **Rien n'était à inventer, et j'allais le faire** : `.env.example` écrit `SameSite=lax`, le nom du cookie et les deux durées depuis le LOT 0 — quatre valeurs déjà tranchées (§9.0). Le jeton **n'apparaît dans AUCUN corps** : c'est ce qui rend « aucun jeton dans `localStorage` » **structurel** plutôt que disciplinaire. Le contrôle du frontend est **exact** — il retire les commentaires, garde les chaînes — et son témoin l'éprouve dans les deux sens. Les deux expirations sont bornées **des deux côtés**, et un test les **distingue** : une session gardée active meurt au trentième jour. Le rafraîchissement est un **compare-et-pose atomique** — troisième fois dans le lot — et les 8 tests séquentiels sont **aveugles** au défaut. **550 tests**, `make sessions-check` dans la CI. Compte rendu : [`compte-rendu-t6-lot-3.md`](compte-rendu-t6-lot-3.md) | `US004` | ☑ |
 | **`T7`** | **CSRF et idempotence.** Les écritures sensibles exigent la protection ; les clés d'idempotence empêchent les effets multiples. | `US005` | Une écriture sans jeton CSRF est **refusée**, avec témoin · une même clé d'idempotence rejouée ne produit **qu'un** effet (§30.19 partiellement) |
 | **`T8`** | **Limitation de débit.** Sur la demande de magic link et sur la connexion administrateur. | `US001`, `US003` | Les limites **produisent les résultats attendus** — critère de sortie littéral · la valeur minimisée `request_origin_hash` du §10.3 est employée, jamais une adresse IP brute |
 | **`T9`** | **Révocation au départ.** L'archivage d'un collaborateur invalide sessions, invitations et futurs magic links **dans la même action métier**. | `US006` | La révocation est **atomique** avec l'archivage · §30.22 devient **acquis** · une session révoquée ne répond plus, mesuré |
@@ -97,9 +97,12 @@ chacun des 25 contrôles du §30 soit classé, et qu'un « acquis » nomme un te
 
 Ce lot est le premier à **exercer** des garde-fous posés au LOT 1 et jamais éprouvés en vrai :
 
-1. **`SESSION_COOKIE_SECURE=true` et `CSRF_PROTECTION_ENABLED=true`** sont deux des sept garde-fous de
-   production du cahier §20.3, testés depuis `T3` du LOT 1 — mais **rien ne les consommait**. `T6` et
-   `T7` les rendront effectifs ;
+1. ~~**`SESSION_COOKIE_SECURE=true` et `CSRF_PROTECTION_ENABLED=true`**~~ sont deux des sept
+   garde-fous de production du cahier §20.3, testés depuis `T3` du LOT 1 — mais **rien ne les
+   consommait**. **`T6` les rend effectifs**, et a trouvé pire : **Compose ne les transmettait même
+   pas au conteneur**, 0 occurrence mesurée. Elles valaient donc leur défaut, et le garde-fou ne
+   pouvait pas se déclencher sur une valeur réelle — même classe que `PUBLIC_BASE_URL` en `T3`.
+   `CSRF_PROTECTION_ENABLED` attend encore son consommateur : `T7` ;
 2. **L'origine unique de `DEC-470`** — la page et l'API sont servies par le même hôte, sans CORS —
    existe **précisément** pour que les cookies `Secure` et `SameSite` soient éprouvables. Ne remets pas
    ce montage en cause ;
@@ -173,7 +176,7 @@ Elles seront instruites à leur sous-étape, et **rien ne sera inventé** — §
 | | Critère | Sous-étape qui le prouvera |
 |:--:|---|---|
 | ☐ | tous les scénarios autorisés et refusés sont testés | `T3` à `T10` |
-| ☐ | **aucun jeton n'est stocké dans `localStorage`** | `T6`, **par un contrôle** |
+| ☑ | **aucun jeton n'est stocké dans `localStorage`** | **`T6`, acquis le 21/08/2026.** Deux barrières : `HttpOnly` et le jeton absent de tout corps rendent la règle **structurelle**, et un contrôle **exact** des sources du frontend couvre le reste — avec son témoin dans les deux sens |
 | ☑ | aucune adresse absente de la base ne peut se connecter | **`T3`, acquis le 21/08/2026** — et la réponse ne le révèle pas |
 | ☑ | **les magic links ne figurent pas dans les logs** | **`T4`, acquis le 21/08/2026** — dans `api` ET dans `caddy`, et l'absence de journal d'accès Caddy est **gardée** par un contrôle (`DEC-525`) |
 | ☐ | les limites de débit produisent les résultats attendus | `T8` |

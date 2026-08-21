@@ -47,7 +47,7 @@
     "  requete, jamais du contenu de la base."
   ],
 
-  "version": "1.3",
+  "version": "1.4",
 
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
@@ -171,6 +171,42 @@
         "mot de passe sur la seule adresse serait une prise de controle de compte.",
         "Son 400 a exactement la meme forme que celui de la connexion : sinon cette",
         "route deviendrait l'oracle que l'autre n'est pas."
+      ]
+    },
+    {
+      "cle": "sessionCourante",
+      "chemin": "/api/v1/auth/session",
+      "methode": "get",
+      "codesExploitables": [200, 401],
+      "forme": "ReponseDeSession",
+      "role": [
+        "Lire la session courante — LOT 3, T6, story MVP-L03-US004.",
+        "ELLE NE REND JAMAIS LE JETON. Il vit dans un cookie HttpOnly, donc hors",
+        "d'atteinte de tout JavaScript — et c'est ce qui rend le critere du cahier 7.4",
+        "tenable : « aucune donnee d'authentification durable dans localStorage » ne se",
+        "tient pas par discipline, il se tient parce qu'un frontend qui recoit un jeton",
+        "finit par le stocker. Ne demande donc JAMAIS de jeton a cette route.",
+        "401 EST LE SEUL REFUS, et il est UNIQUE pour cinq causes : cookie absent, jeton",
+        "inconnu, session revoquee, duree absolue depassee, inactivite depassee. Les",
+        "distinguer apprendrait qu'un jeton a existe, et lequel des deux delais l'a",
+        "emporte.",
+        "Cet appel RAFRAICHIT l'activite : il n'est pas gratuit, et un frontend qui le",
+        "boucherait toutes les secondes maintiendrait une session vivante indefiniment."
+      ]
+    },
+    {
+      "cle": "deconnexion",
+      "chemin": "/api/v1/auth/deconnexion",
+      "methode": "post",
+      "codesExploitables": [200],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Se deconnecter — LOT 3, T6.",
+        "TOUJOURS 200, meme sans session valide : un 401 apprendrait qu'un jeton a",
+        "existe, et une deconnexion n'a de toute facon rien a refuser.",
+        "La session est REVOQUEE, pas effacee — `revoked_at` et `revoke_reason` du",
+        "modele 10.4 — et le cookie est retire avec les MEMES attributs que la pose,",
+        "sans quoi le navigateur le laisserait en place."
       ]
     }
   ]

@@ -886,6 +886,14 @@ def _nettoyer(compose: list[str], env: dict[str, str]) -> None:
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM magic_link_request WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
+        #  `user_session` A ETE AJOUTEE PAR `T6`. Ce nettoyage etait complet quand
+        #  il a ete ecrit : la consommation d'un lien ne creait alors AUCUNE
+        #  session. Depuis `T6` elle en cree une, et la cle etrangere
+        #  `fk_user_session_person_id_person` bloque la suppression de la
+        #  personne -- ce qui laisse un residu, et un residu casse l'execution
+        #  suivante. §7.21, et c'est le QUATRIEME nettoyage touche par cet ajout.
+        "DELETE FROM user_session WHERE person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM entity_membership WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM person WHERE email_normalized LIKE '{MARQUEUR}%'",  # noqa: S608
