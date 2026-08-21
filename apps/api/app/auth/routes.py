@@ -59,6 +59,22 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.auth.courriel import EchecDEnvoi, envoyer
+from app.auth.csrf import (
+    EN_TETE_JETON,
+    CsrfRefuse,
+    controler_l_origine,
+    controler_le_jeton,
+    jeton_pour,
+    origine_attendue,
+)
+from app.auth.idempotence import (
+    EN_TETE_CLE,
+    CleInvalide,
+    MemoireIndisponible,
+    controler_la_cle,
+    liberer,
+    reserver,
+)
 from app.auth.jetons import empreinte_d_origine
 from app.auth.services import (
     Demande,
@@ -67,7 +83,12 @@ from app.auth.services import (
     consommer_un_magic_link,
     demander_un_magic_link,
 )
-from app.auth.sessions import lire_et_rafraichir, ouvrir_une_session, revoquer
+from app.auth.sessions import (
+    empreinte_de_session,
+    lire_et_rafraichir,
+    ouvrir_une_session,
+    revoquer,
+)
 from app.configuration.settings import Parametres
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
@@ -159,6 +180,29 @@ MESSAGE_SESSION_REFUSEE = (
     "sans activite, et trente jours au maximum."
 )
 
+#  LOT 3, T7 — LE REFUS CSRF A UN SEUL GABARIT, LUI AUSSI.
+#
+#  Origine etrangere, jeton absent, jeton invalide : les trois rendent CE code et
+#  ce message. Distinguer « jeton absent » de « jeton invalide » dirait a un
+#  attaquant s'il s'est approche, et le motif interne va a l'audit.
+#
+#  **403 ET NON 401.** Le §18.3 veut un format coherent ; le choix du code, lui,
+#  porte du sens : 401 signifie « authentifie-toi », ce qui est faux ici -- une
+#  session valide peut tres bien accompagner une requete CSRF refusee. 403 dit
+#  « je sais qui tu es, et je refuse cette requete-la », ce qui est exact.
+CODE_CSRF_REFUSE = "requete_refusee"
+MESSAGE_CSRF_REFUSE = (
+    "Cette requete a ete refusee par la protection contre les requetes forgees. "
+    "Rechargez la page et recommencez."
+)
+
+CODE_IDEMPOTENCE_INVALIDE = "cle_idempotence_invalide"
+CODE_MEMOIRE_INDISPONIBLE = "memoire_indisponible"
+MESSAGE_MEMOIRE_INDISPONIBLE = (
+    "La protection contre les doubles soumissions est momentanement indisponible. "
+    "Reessayez dans un instant."
+)
+
 SUJET_DU_COURRIEL = "Votre lien de connexion eXalt Onboarding"
 
 CORPS_DU_COURRIEL = """Bonjour,
@@ -230,6 +274,17 @@ class ReponseDeSession(BaseModel):
     """
 
     personne: uuid.UUID
+    #  LOT 3, T7 — LE JETON ANTI-CSRF EST RENDU ICI, ET C'EST SANS DANGER.
+    #
+    #  Il doit etre LISIBLE par le frontend : c'est son objet, et un cookie
+    #  `HttpOnly` le rendrait inutilisable. Il n'ouvre aucun acces a lui seul --
+    #  il ne vaut qu'accompagne du cookie de session, qui reste `HttpOnly`. C'est
+    #  le patron du double envoi.
+    #
+    #  **IL EST RENDU PAR LA ROUTE DE SESSION, non par la connexion**, et le
+    #  motif est pratique : un frontend recharge la page, perd sa variable, et
+    #  doit pouvoir reobtenir le jeton sans se reconnecter.
+    jeton_csrf: str
 
 
 class ReponseDeConnexion(BaseModel):
@@ -341,6 +396,16 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         "/magic-link",
         status_code=status.HTTP_202_ACCEPTED,
         response_model=ReponseGenerique,
+        responses={
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Requete refusee par la protection contre les requetes forgees. "
+                    "UNE SEULE forme pour trois causes : origine etrangere, jeton "
+                    "absent, jeton invalide — les distinguer dirait a un attaquant "
+                    "s'il s'est approche."
+                )
+            },
+        },
         summary="Demander un lien de connexion",
         description=(
             "La reponse est identique que l'adresse existe ou non : le code, le corps "
@@ -358,6 +423,17 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  cache, et l'en-tete est le MEME dans tous les cas -- il ne peut donc
         #  rien reveler.
         reponse.headers["Cache-Control"] = "no-store"
+        #  LOT 3, T7 — route AMONT : l'origine seule, aucun jeton possible.
+        _proteger_du_csrf(parametres, requete)
+        #  **LA SEULE ROUTE DU LOT OU L'IDEMPOTENCE CHANGE QUELQUE CHOSE.** Un
+        #  double clic envoie deux e-mails ET invalide le premier lien : l'effet
+        #  double est visible par l'utilisateur, qui recoit deux messages dont un
+        #  seul fonctionne.
+        cle_reservee = _reserver_l_idempotence(parametres, requete, route="demande-magic-link")
+        if cle_reservee == "":
+            #  Cle deja vue : on rend la MEME reponse, sans reemettre. C'est le
+            #  sens d'idempotent — et la reponse est de toute facon generique.
+            return ReponseGenerique(message=MESSAGE_GENERIQUE)
 
         origine = origine_de_la_requete(requete)
         empreinte = (
@@ -381,6 +457,12 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  L'envoi vient APRES la reponse. Voir l'en-tete du module.
         if demande.un_lien_a_ete_emis:
             taches.add_task(_envoyer_le_lien, parametres, demande)
+        elif cle_reservee:
+            #  **AUCUN LIEN N'A ETE EMIS : LA CLE EST LIBEREE.** La garder
+            #  bloquerait six heures une demande qui n'a rien produit — par
+            #  exemple parce que le profil venait d'etre active entre-temps. Une
+            #  cle reservee sur un non-effet est une porte fermee sur rien.
+            liberer(parametres, route="demande-magic-link", cle=cle_reservee)
 
         #  Le motif ne sort pas. Il est deja dans `auth_event`, et le journal de
         #  requete du §28.1 ne porte que la route, la duree et le resultat.
@@ -402,7 +484,15 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                     "Lien refuse. UNE SEULE forme pour quatre causes : jeton inconnu, "
                     "expire, deja consomme, ou invalide par une demande plus recente."
                 )
-            }
+            },
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Requete refusee par la protection contre les requetes forgees. "
+                    "UNE SEULE forme pour trois causes : origine etrangere, jeton "
+                    "absent, jeton invalide — les distinguer dirait a un attaquant "
+                    "s'il s'est approche."
+                )
+            },
         },
         summary="Consommer un lien de connexion",
         description=(
@@ -419,6 +509,11 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  `no-store` : une reponse de connexion ne doit jamais etre servie
         #  depuis un cache, ni conservee par un intermediaire.
         reponse.headers["Cache-Control"] = "no-store"
+        #  LOT 3, T7 — route AMONT : l'origine seule. Un jeton anti-CSRF
+        #  suppose une session pour le delivrer, et ces routes la precedent.
+        #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
+        #  ce qui est une preuve plus forte qu'un jeton.
+        _proteger_du_csrf(parametres, requete)
 
         origine = origine_de_la_requete(requete)
         empreinte = (
@@ -481,7 +576,15 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                     "inconnu, mot de passe faux, compte verrouille, compte desactive, "
                     "compte sans mot de passe actif."
                 )
-            }
+            },
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Requete refusee par la protection contre les requetes forgees. "
+                    "UNE SEULE forme pour trois causes : origine etrangere, jeton "
+                    "absent, jeton invalide — les distinguer dirait a un attaquant "
+                    "s'il s'est approche."
+                )
+            },
         },
         summary="Se connecter avec un compte administrateur local",
         description=(
@@ -496,6 +599,11 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
     ) -> ReponseDeConnexion:
         """Authentifier un compte administrateur local — cahier §7.3."""
         reponse.headers["Cache-Control"] = "no-store"
+        #  LOT 3, T7 — route AMONT : l'origine seule. Un jeton anti-CSRF
+        #  suppose une session pour le delivrer, et ces routes la precedent.
+        #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
+        #  ce qui est une preuve plus forte qu'un jeton.
+        _proteger_du_csrf(parametres, requete)
         empreinte = _empreinte_d_origine(parametres, requete)
 
         instant = dt.datetime.now(tz=dt.UTC)
@@ -543,7 +651,15 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         responses={
             status.HTTP_400_BAD_REQUEST: {
                 "description": "Identifiants actuels refuses. Meme forme que la connexion."
-            }
+            },
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Requete refusee par la protection contre les requetes forgees. "
+                    "UNE SEULE forme pour trois causes : origine etrangere, jeton "
+                    "absent, jeton invalide — les distinguer dirait a un attaquant "
+                    "s'il s'est approche."
+                )
+            },
         },
         summary="Changer le mot de passe d'un compte administrateur local",
         description=(
@@ -557,6 +673,11 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
     ) -> ReponseGenerique:
         """Changer le mot de passe apres re-authentification — modele §10.2."""
         reponse.headers["Cache-Control"] = "no-store"
+        #  LOT 3, T7 — route AMONT : l'origine seule. Un jeton anti-CSRF
+        #  suppose une session pour le delivrer, et ces routes la precedent.
+        #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
+        #  ce qui est une preuve plus forte qu'un jeton.
+        _proteger_du_csrf(parametres, requete)
         empreinte = _empreinte_d_origine(parametres, requete)
         instant = dt.datetime.now(tz=dt.UTC)
 
@@ -631,12 +752,42 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                 message=MESSAGE_SESSION_REFUSEE,
                 statut=status.HTTP_401_UNAUTHORIZED,
             )
-        return ReponseDeSession(personne=etat.personne)
+        #  **CETTE ROUTE N'EXIGE AUCUN JETON, ET C'EST UN RESIDUEL NOMME.**
+        #
+        #  Elle ECRIT pourtant -- elle rafraichit `last_activity_at`. Trois
+        #  raisons de ne pas la proteger par un jeton, et la premiere suffit :
+        #
+        #    1. **elle DELIVRE le jeton.** L'exiger d'elle serait circulaire : un
+        #       frontend qui vient de recharger n'en a pas encore ;
+        #    2. son effet porte sur la session de l'appelant lui-meme. Un site
+        #       tiers qui la declencherait ne ferait que prolonger la session de
+        #       sa victime — aucun gain ;
+        #    3. c'est un `GET`, et `T7` protege les methodes qui modifient. Le
+        #       fait qu'un `GET` ecrive est une entorse assumee du §7.4, et
+        #       `T6` l'avait deja nommee.
+        #
+        #  **A REEXAMINER AU LOT 4**, quand des routes metier existeront : si le
+        #  rafraichissement passe sur chaque requete, ce point disparait.
+        assert jeton is not None  # noqa: S101 — garanti par la validation ci-dessus
+        return ReponseDeSession(
+            personne=etat.personne,
+            jeton_csrf=jeton_pour(empreinte_de_session(jeton), parametres.APP_SECRET_KEY),
+        )
 
     @routeur.post(
         "/deconnexion",
         status_code=status.HTTP_200_OK,
         response_model=ReponseGenerique,
+        responses={
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Requete refusee par la protection contre les requetes forgees. "
+                    "UNE SEULE forme pour trois causes : origine etrangere, jeton "
+                    "absent, jeton invalide — les distinguer dirait a un attaquant "
+                    "s'il s'est approche."
+                )
+            },
+        },
         summary="Se deconnecter",
         description=(
             "Revoque la session et retire le cookie. **Toujours 200**, meme sans session "
@@ -648,6 +799,17 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         """Revoquer la session courante — modele §10.4, `revoked_at`."""
         reponse.headers["Cache-Control"] = "no-store"
         jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        #  LOT 3, T7 — **LA SEULE ECRITURE DU LOT QUI EXIGE UN JETON**, parce
+        #  qu'elle est la seule a disposer d'une session pour en deriver un.
+        #
+        #  Un site tiers qui deconnecte un utilisateur est une nuisance reelle,
+        #  et elle est facile : `SameSite=lax` ne bloque pas tout. Le jeton la
+        #  ferme.
+        #
+        #  **SANS COOKIE, AUCUN JETON N'EST EXIGE** : il n'y aurait rien a
+        #  proteger, et exiger un jeton ferait echouer une deconnexion qui doit
+        #  rendre 200 en toute circonstance.
+        _proteger_du_csrf(parametres, requete, jeton_de_session=jeton if jeton else None)
         empreinte = _empreinte_d_origine(parametres, requete)
 
         with moteur(parametres).begin() as connexion:
@@ -712,6 +874,94 @@ def _retirer_le_cookie_de_session(parametres: Parametres, reponse: Response) -> 
         secure=parametres.SESSION_COOKIE_SECURE,
         samesite=parametres.SESSION_COOKIE_SAMESITE,
     )
+
+
+def _proteger_du_csrf(
+    parametres: Parametres, requete: Request, *, jeton_de_session: str | None = None
+) -> None:
+    """Appliquer les barrieres CSRF a une ecriture — cahier §7.4, §20.1.
+
+    **DEUX BARRIERES, ET LEUR PORTEE DIFFERE.** L'origine est controlee sur
+    TOUTES les ecritures ; le jeton seulement quand une session existe, parce
+    qu'un jeton suppose une session pour le delivrer.
+
+    Args:
+        jeton_de_session: le jeton du cookie, si cette route en exige un. `None`
+            signifie « route amont » : seule l'origine est controlee.
+
+    Raises:
+        ErreurApplicative: 403, avec le meme gabarit pour les trois causes.
+    """
+    try:
+        controler_l_origine(
+            origine=requete.headers.get("origin"),
+            attendue=origine_attendue(parametres.PUBLIC_BASE_URL),
+        )
+        if jeton_de_session is not None:
+            controler_le_jeton(
+                presente=requete.headers.get(EN_TETE_JETON),
+                empreinte_de_session=empreinte_de_session(jeton_de_session),
+                cle=parametres.APP_SECRET_KEY,
+            )
+    except CsrfRefuse as refus:
+        #  Le motif interne est journalise, jamais rendu : distinguer les causes
+        #  dirait a un attaquant s'il s'est approche.
+        journal.warning(
+            "requete refusee par la protection CSRF",
+            extra={"resultat": "refus", "code_erreur": refus.motif},
+        )
+        raise ErreurApplicative(
+            code=CODE_CSRF_REFUSE,
+            message=MESSAGE_CSRF_REFUSE,
+            statut=status.HTTP_403_FORBIDDEN,
+        ) from None
+
+
+def _reserver_l_idempotence(parametres: Parametres, requete: Request, *, route: str) -> str | None:
+    """Reserver la cle d'idempotence si le client en fournit une.
+
+    Rend la cle reservee -- que l'appelant devra `liberer` si son effet echoue --
+    ou `None` si aucun en-tete n'a ete fourni.
+
+    **L'EN-TETE EST OPTIONNEL, ET C'EST DECLARE.** Le §18.6 enumere six operations
+    a rendre idempotentes, et aucune n'est une route de ce lot : exiger la cle ici
+    serait exiger plus que le cahier. Le critere de `US005` porte sur ce qui se
+    passe **quand une cle est fournie**, et c'est ce qui est garanti.
+
+    Raises:
+        ErreurApplicative: 422 sur une cle malformee -- cela ne depend que de la
+            requete ; 503 si la memoire est injoignable, parce qu'on ne devine
+            pas : deviner « premiere fois » laisserait passer un doublon, deviner
+            « deja vue » refuserait une operation legitime.
+    """
+    cle = requete.headers.get(EN_TETE_CLE)
+    if not cle:
+        return None
+    try:
+        controler_la_cle(cle)
+    except CleInvalide as invalide:
+        raise ErreurApplicative(
+            code=CODE_IDEMPOTENCE_INVALIDE,
+            message=str(invalide),
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            champ=EN_TETE_CLE,
+        ) from None
+    try:
+        premiere = reserver(parametres, route=route, cle=cle)
+    except MemoireIndisponible:
+        raise ErreurApplicative(
+            code=CODE_MEMOIRE_INDISPONIBLE,
+            message=MESSAGE_MEMOIRE_INDISPONIBLE,
+            statut=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from None
+    if not premiere:
+        #  **LA CLE A DEJA SERVI : ON NE REFAIT RIEN.** L'appelant remonte sa
+        #  reponse habituelle, ce qui est le sens d'idempotent -- un second appel
+        #  rend le meme resultat sans produire un second effet. Rendre une erreur
+        #  serait plus simple et faux : le client, qui a peut-etre perdu la
+        #  premiere reponse, doit pouvoir la reobtenir.
+        return ""
+    return cle
 
 
 def _empreinte_d_origine(parametres: Parametres, requete: Request) -> str | None:

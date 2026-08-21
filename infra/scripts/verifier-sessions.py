@@ -184,12 +184,16 @@ def appeler(
     *,
     charge: dict[str, str] | None = None,
     cookie: str | None = None,
+    jeton_csrf: str | None = None,
     methode: str | None = None,
 ) -> Reponse:
     """Appeler l'API. Rend la reponse MEME sur un code d'erreur."""
     en_tetes = {"Content-Type": "application/json"} if charge is not None else {}
     if cookie:
         en_tetes["Cookie"] = cookie
+    if jeton_csrf:
+        #  `T7` du LOT 3 : les ecritures qui ont une session exigent ce jeton.
+        en_tetes["X-CSRF-Token"] = jeton_csrf
     requete = urllib.request.Request(  # noqa: S310 — https impose par `base`
         f"{base}{chemin}",
         data=json.dumps(charge).encode("utf-8") if charge is not None else None,
@@ -432,8 +436,26 @@ def main() -> int:
         #  5. LA DECONNEXION REVOQUE, ET LE SERVEUR FAIT AUTORITE
         #  --------------------------------------------------------------
         controles += 1
+        #  **LE JETON ANTI-CSRF EST DESORMAIS EXIGE**, `T7` du LOT 3 : la
+        #  deconnexion est la seule ecriture du lot qui dispose d'une session pour
+        #  en deriver un. Ce controle a echoue en `T7`, et il avait raison — §7.21,
+        #  un controle ne devient pas faux tout seul.
+        #
+        #  Le jeton est LU dans le corps de la route de session, exactement comme
+        #  un frontend le fera.
+        jeton_csrf = (
+            json.loads(session.corps).get("jeton_csrf", "") if session.statut == 200 else ""
+        )
+        if not jeton_csrf:
+            print("    ECHEC    aucun `jeton_csrf` dans la reponse de session")
+            echecs += 1
         sortie_reponse = appeler(
-            arguments.base, CHEMIN_DECONNEXION, contexte, charge={}, cookie=cookie
+            arguments.base,
+            CHEMIN_DECONNEXION,
+            contexte,
+            charge={},
+            cookie=cookie,
+            jeton_csrf=jeton_csrf,
         )
         apres = appeler(arguments.base, CHEMIN_SESSION, contexte, cookie=cookie)
         if sortie_reponse.statut != 200:
@@ -450,7 +472,17 @@ def main() -> int:
 
         #  Et elle rend toujours 200, meme sans session.
         controles += 1
-        rejouee = appeler(arguments.base, CHEMIN_DECONNEXION, contexte, charge={}, cookie=cookie)
+        #  Rejouee avec le MEME jeton : la session est deja revoquee, mais le
+        #  jeton reste valide — il est derive du jeton de session, non de son
+        #  etat. La deconnexion doit donc rendre 200.
+        rejouee = appeler(
+            arguments.base,
+            CHEMIN_DECONNEXION,
+            contexte,
+            charge={},
+            cookie=cookie,
+            jeton_csrf=jeton_csrf,
+        )
         nue = appeler(arguments.base, CHEMIN_DECONNEXION, contexte, charge={})
         if rejouee.statut != 200 or nue.statut != 200:
             print(

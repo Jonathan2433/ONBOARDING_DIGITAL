@@ -203,7 +203,16 @@ def test_les_sept_controles_de_production_refusent_le_demarrage(
         {"CSRF_PROTECTION_ENABLED": False},
         {"DB_AUTO_CREATE": True},
         {"PUBLIC_BASE_URL": "http://localhost"},
-        {"APP_SECRET_KEY": ""},
+        #  `{"APP_SECRET_KEY": ""}` A ETE RETIRE DE CETTE LISTE PAR `T7` DU LOT 3.
+        #
+        #  Elle n'etait obligatoire qu'en production. Depuis `T7`, elle est
+        #  CONSOMMEE sans repli : le jeton anti-CSRF en est derive par HMAC, et
+        #  `jeton_pour` leve sur une cle vide -- il n'existe pas de jeton
+        #  « degrade » qui aurait un sens. Une cle vide est donc un manquement
+        #  UNIVERSEL, et ce test avait raison d'echouer. §7.21.
+        #
+        #  Le cas est desormais couvert par
+        #  `test_une_cle_secrete_vide_est_refusee_dans_TOUS_les_environnements`.
     ],
 )
 def test_les_controles_de_production_ne_sappliquent_pas_en_developpement(
@@ -263,6 +272,31 @@ def test_l_exception_liste_tous_les_manquements_dun_coup() -> None:
         LOG_FORMAT="text",
     )
     manquements = parametres.controler()
-    assert len(manquements) == 3
+    #  QUATRE, ET NON TROIS, DEPUIS `T7` DU LOT 3. Une cle vide declenche
+    #  desormais DEUX garde-fous : celui des variables obligatoires — universel —
+    #  et celui de la longueur en production. Les deux disent vrai, et les deux
+    #  nomment la meme variable : l'operateur lit deux lignes pour un defaut, ce
+    #  qui est verbeux mais jamais trompeur. Les fusionner ferait qu'un garde-fou
+    #  masquerait l'autre.
+    assert len(manquements) == 4, manquements
     erreur = ConfigurationInvalide(manquements)
-    assert "3 garde-fou(s)" in str(erreur)
+    assert "4 garde-fou(s)" in str(erreur)
+
+
+@pytest.mark.usefixtures("environnement_vierge")
+def test_une_cle_secrete_vide_est_refusee_dans_TOUS_les_environnements() -> None:
+    """**AJOUTE PAR `T7` DU LOT 3, ET IL REMPLACE UN CAS INVERSE.**
+
+    `APP_SECRET_KEY` n'etait obligatoire qu'en production. Depuis `T7`, le jeton
+    anti-CSRF en est derive par HMAC et `jeton_pour` **leve** sur une cle vide :
+    il n'existe pas de jeton « degrade ». Une API demarree en developpement avec
+    une cle vide rendrait donc 500 sur la route de session -- le defaut se
+    manifesterait a la premiere connexion, **loin de sa cause**.
+
+    C'est exactement ce qu'un garde-fou de demarrage existe pour eviter.
+    """
+    for environnement in ("development", "recette", "production"):
+        manquements = construire(APP_ENV=environnement, APP_SECRET_KEY="").controler()
+        assert any("APP_SECRET_KEY" in m for m in manquements), environnement
+    #  Le temoin : une cle presente ne declenche rien en developpement.
+    assert construire(APP_ENV="development").controler() == []
