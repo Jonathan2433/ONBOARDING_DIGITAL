@@ -250,6 +250,19 @@ jobs:
         # `make check`.
         run: make sessions-check
 
+      - name: CSRF et idempotence, a travers Caddy en HTTPS
+        # LOT 3, T7 — le critere de `MVP-L03-US005` a deux moities, et chacune a
+        # son TEMOIN : « une ecriture sans jeton CSRF est refusee, AVEC TEMOIN »,
+        # et « une meme cle d'idempotence rejouee ne produit QU'UN effet ».
+        #
+        # Le second temoin est celui qu'on oublie : sans lui, l'assertion « un
+        # seul lien » serait vraie pour une raison etrangere a l'idempotence.
+        # Deux demandes SANS cle doivent donc produire DEUX liens.
+        #
+        # Ce controle emploie la VRAIE `PUBLIC_BASE_URL` du conteneur : un test
+        # qui la surcharge ne prouve rien de la configuration deployee.
+        run: make csrf-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 

@@ -38,6 +38,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.auth.csrf import EN_TETE_JETON
 from app.auth.modeles import (
     JOURS_D_INACTIVITE_DE_SESSION,
     JOURS_MAXIMUM_DE_SESSION,
@@ -642,7 +643,12 @@ def test_la_deconnexion_INVALIDE_le_cookie_et_le_retire(
         jeton = client.cookies.get(parametres.SESSION_COOKIE_NAME)
         assert client.get("/api/v1/auth/session").status_code == 200
 
-        sortie = client.post("/api/v1/auth/deconnexion")
+        #  **LE JETON ANTI-CSRF EST DESORMAIS EXIGE**, `T7` du LOT 3 : la
+        #  deconnexion est la seule ecriture du lot qui dispose d'une session
+        #  pour en deriver un. Ces deux tests ont echoue en `T7`, et ils avaient
+        #  raison — §7.21.
+        jeton_csrf = client.get("/api/v1/auth/session").json()["jeton_csrf"]
+        sortie = client.post("/api/v1/auth/deconnexion", headers={EN_TETE_JETON: jeton_csrf})
         assert sortie.status_code == 200
         assert client.get("/api/v1/auth/session").status_code == 401
 
@@ -664,7 +670,14 @@ def test_la_deconnexion_rend_TOUJOURS_200(
     """
     parametres, _, _ = stack_avec_admin
     with TestClient(creer_application(parametres), base_url=ORIGINE_DE_TEST) as client:
+        #  **SANS COOKIE, AUCUN JETON N'EST EXIGE** — il n'y aurait rien a
+        #  proteger, et exiger un jeton ferait echouer une deconnexion qui doit
+        #  rendre 200 en toute circonstance. `T7` du LOT 3.
         assert client.post("/api/v1/auth/deconnexion").status_code == 200
+        #  Avec un cookie INCONNU, en revanche, un jeton est exige : l'API ne
+        #  peut pas savoir a priori que la session n'existe pas. Le refus est
+        #  donc un 403, et c'est coherent — pas un contournement.
         client.cookies.set(parametres.SESSION_COOKIE_NAME, engendrer_un_jeton_de_session())
-        assert client.post("/api/v1/auth/deconnexion").status_code == 200
+        assert client.post("/api/v1/auth/deconnexion").status_code == 403
+        client.cookies.delete(parametres.SESSION_COOKIE_NAME)
         assert client.post("/api/v1/auth/deconnexion").status_code == 200

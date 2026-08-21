@@ -213,7 +213,7 @@ ETIQUETTE_LOCALE := onboarding-local
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
-        sessions-check sessions-temoin \
+        sessions-check sessions-temoin csrf-check \
         up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
@@ -928,6 +928,13 @@ web-check: ## Controler la page de statut telle qu'un navigateur la voit
 # L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, comme pour `web-check` :
 # l'ecrire en dur ferait porter ce controle sur le developpement alors qu'il
 # tournerait sur la recette. C'etait le defaut de `web-check` avant `T9`.
+csrf-check: ## Prouver qu une ecriture sans protection est refusee, et l idempotence (US005)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-csrf.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 sessions-check: ## Prouver les trois attributs du cookie et l absence de jeton cote navigateur (US004)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

@@ -34,6 +34,14 @@ DELAI_CONNEXION = 1.0
 # Jeu minimal permettant a la configuration d'etre valide en developpement.
 # Aucune de ces valeurs n'est un secret : elles ne servent qu'aux tests.
 VARIABLES_MINIMALES: dict[str, Any] = {
+    #  LOT 3, T7 : `APP_SECRET_KEY` est devenue OBLIGATOIRE dans tous les
+    #  environnements — elle derive le jeton anti-CSRF, et `jeton_pour` leve sur
+    #  une cle vide. Sans elle ici, tous les tests unitaires echoueraient sur le
+    #  garde-fou, ce qui est exactement son role.
+    #
+    #  Cette valeur n'est pas un secret : elle depasse les 32 caracteres que le
+    #  garde-fou de production exige, et aucun test unitaire n'ouvre de session.
+    "APP_SECRET_KEY": "cle-de-test-sans-portee-quarante-caracteres",
     "POSTGRES_DB": "onboarding_test",
     "POSTGRES_USER": "utilisateur_de_test",
     "POSTGRES_PASSWORD": "valeur-de-test-sans-portee",
@@ -112,6 +120,12 @@ def parametres_de_la_stack(environnement_vierge: None) -> Parametres:
     env = lire_env_du_depot()
     valeurs = dict(VARIABLES_MINIMALES)
     for nom in (
+        #  LOT 3, T7 : la VRAIE cle du `.env`, parce que les tests d'integration
+        #  derivent des jetons anti-CSRF que l'API doit reconnaitre. Une cle
+        #  differente de celle de l'API ferait echouer chaque jeton, et le message
+        #  ne dirait pas que la cause est une variable non transmise -- c'est ce
+        #  qui est arrive aux quatre roles PostgreSQL en `T1`.
+        "APP_SECRET_KEY",
         "POSTGRES_DB",
         "POSTGRES_USER",
         "POSTGRES_PASSWORD",

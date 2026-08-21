@@ -47,7 +47,7 @@
     "  requete, jamais du contenu de la base."
   ],
 
-  "version": "1.4",
+  "version": "1.5",
 
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
@@ -62,6 +62,45 @@
     "chemins metier, et il n'y en a aucun au LOT 1."
   ],
   "prefixeVersionne": "/api/v1",
+
+  "_commentaire_csrf": [
+    "PROTECTION DES ECRITURES — LOT 3, T7, story MVP-L03-US005.",
+    "",
+    "DEUX BARRIERES, ET LEUR PORTEE DIFFERE.",
+    "",
+    "  1. l'en-tete `Origin` est controle sur TOUTES les ecritures. Le navigateur le",
+    "     pose lui-meme et aucun script ne peut le falsifier : c'est ce qui protege",
+    "     les trois routes qui PRECEDENT toute session — demander un lien, le",
+    "     consommer, se connecter — et pour lesquelles un jeton est impossible.",
+    "",
+    "  2. un JETON est exige des ecritures qui ont une session. Aujourd'hui, une",
+    "     seule : la deconnexion. Les routes metier des lots suivants s'y",
+    "     ajouteront.",
+    "",
+    "COMMENT LE FRONTEND OBTIENT LE JETON",
+    "  `GET /api/v1/auth/session` le rend dans son corps, champ `jeton_csrf`. Il est",
+    "  LISIBLE a dessein — c'est son objet — et sans danger : il ne vaut",
+    "  qu'accompagne du cookie de session, qui reste HttpOnly. C'est le patron du",
+    "  double envoi.",
+    "  Il est rendu par la route de SESSION et non par la connexion : un frontend",
+    "  qui recharge la page perd sa variable, et doit pouvoir le reobtenir sans se",
+    "  reconnecter.",
+    "",
+    "  Le renvoyer dans l'en-tete `X-CSRF-Token`. Un jeton d'une AUTRE session ne",
+    "  correspond pas : il est derive de la session par HMAC.",
+    "",
+    "IDEMPOTENCE — en-tete `Idempotency-Key`, OPTIONNEL",
+    "  Fourni, il garantit qu'une meme cle rejouee ne produit QU'UN effet. La seule",
+    "  route ou cela change quelque chose aujourd'hui est la demande de magic link :",
+    "  un double clic y enverrait deux e-mails, dont un seul fonctionne.",
+    "  Il est optionnel parce que le cahier 18.6 enumere six operations a rendre",
+    "  idempotentes, et aucune n'est une route de ce lot : l'exiger serait exiger",
+    "  plus que le cahier.",
+    "  Forme : 8 a 200 caracteres parmi `A-Z a-z 0-9 . _ : -`. Une cle malformee rend",
+    "  422, ce qui ne depend QUE de la requete."
+  ],
+  "enTeteJetonCsrf": "X-CSRF-Token",
+  "enTeteCleIdempotence": "Idempotency-Key",
 
   "endpoints": [
     {
@@ -106,10 +145,12 @@
       "cle": "demandeDeMagicLink",
       "chemin": "/api/v1/auth/magic-link",
       "methode": "post",
-      "codesExploitables": [202],
+      "codesExploitables": [202, 403],
       "forme": "ReponseGenerique",
       "role": [
         "Demander un lien de connexion — LOT 3, T3, story MVP-L03-US001.",
+        "403 DEPUIS T7 : origine etrangere. Et si un `Idempotency-Key` est fourni, un",
+        "second appel avec la MEME cle rend le meme 202 SANS reemettre de lien.",
         "202 EST LE SEUL CODE EXPLOITABLE, et c'est une regle de securite, non une",
         "preference : le code, le corps et les en-tetes sont IDENTIQUES que l'adresse",
         "existe ou non. Le frontend ne peut donc rien en deduire, et c'est voulu — il",
@@ -122,7 +163,7 @@
       "cle": "consommationDeMagicLink",
       "chemin": "/api/v1/auth/magic-link/consommation",
       "methode": "post",
-      "codesExploitables": [200, 400],
+      "codesExploitables": [200, 400, 403],
       "forme": "ReponseDeConsommation",
       "role": [
         "Consommer un lien de connexion — LOT 3, T4, story MVP-L03-US002.",
@@ -144,7 +185,7 @@
       "cle": "connexionAdministrateur",
       "chemin": "/api/v1/auth/connexion",
       "methode": "post",
-      "codesExploitables": [200, 400],
+      "codesExploitables": [200, 400, 403],
       "forme": "ReponseDeConnexion",
       "role": [
         "Connexion d'un compte administrateur local — LOT 3, T5, story MVP-L03-US003.",
@@ -162,7 +203,7 @@
       "cle": "changementDeMotDePasse",
       "chemin": "/api/v1/auth/mot-de-passe",
       "methode": "post",
-      "codesExploitables": [200, 400],
+      "codesExploitables": [200, 400, 403],
       "forme": "ReponseGenerique",
       "role": [
         "Changement du mot de passe administrateur — LOT 3, T5.",
@@ -198,11 +239,14 @@
       "cle": "deconnexion",
       "chemin": "/api/v1/auth/deconnexion",
       "methode": "post",
-      "codesExploitables": [200],
+      "codesExploitables": [200, 403],
       "forme": "ReponseGenerique",
       "role": [
         "Se deconnecter — LOT 3, T6.",
-        "TOUJOURS 200, meme sans session valide : un 401 apprendrait qu'un jeton a",
+        "403 DEPUIS T7 : c'est la SEULE ecriture du lot qui exige un jeton CSRF, parce",
+        "qu'elle est la seule a disposer d'une session pour en deriver un. Sans cookie,",
+        "aucun jeton n'est exige — il n'y aurait rien a proteger.",
+        "TOUJOURS 200 sinon, meme sans session valide : un 401 apprendrait qu'un jeton a",
         "existe, et une deconnexion n'a de toute facon rien a refuser.",
         "La session est REVOQUEE, pas effacee — `revoked_at` et `revoke_reason` du",
         "modele 10.4 — et le cookie est retire avec les MEMES attributs que la pose,",

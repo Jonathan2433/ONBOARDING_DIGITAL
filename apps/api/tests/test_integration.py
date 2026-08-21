@@ -182,6 +182,13 @@ def _alembic(parametres: Parametres, *commande: str) -> str:
     environnement = os.environ.copy()
     environnement.update(
         {
+            #  LOT 3, T7 — `APP_SECRET_KEY` EST DEVENUE OBLIGATOIRE, et c'est la
+            #  LECON DE `T1` REJOUEE : une variable nouvellement obligatoire doit
+            #  traverser la frontiere de processus, sinon le sous-processus
+            #  Alembic refuse de demarrer. Le garde-fou l'a nommee — c'est
+            #  exactement son role, et c'est ce qui a rendu les quatre echecs
+            #  diagnosticables en une lecture.
+            "APP_SECRET_KEY": parametres.APP_SECRET_KEY,
             "POSTGRES_HOST": parametres.POSTGRES_HOST,
             "POSTGRES_PORT": str(parametres.POSTGRES_PORT),
             "POSTGRES_DB": parametres.POSTGRES_DB,

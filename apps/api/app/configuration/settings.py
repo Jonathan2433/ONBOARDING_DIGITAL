@@ -188,6 +188,21 @@ class Parametres(BaseSettings):
     # requete.
     OBLIGATOIRES: tuple[str, ...] = Field(
         default=(
+            #  LOT 3, T7 : **ELLE N'ETAIT OBLIGATOIRE QU'EN PRODUCTION**, ou le
+            #  garde-fou du §20.3 exige 32 caracteres. Depuis `T7`, elle est
+            #  CONSOMMEE sans repli possible : `jeton_pour` derive le jeton
+            #  anti-CSRF par HMAC et **leve** sur une cle vide -- il n'y a pas de
+            #  jeton « degrade » qui aurait un sens.
+            #
+            #  Sans cette ligne, une API demarree en developpement avec une cle
+            #  vide rendrait 500 sur la route de session : le defaut se
+            #  manifesterait a la premiere connexion, loin de sa cause. C'est
+            #  exactement ce qu'un garde-fou de demarrage existe pour eviter.
+            #
+            #  `empreinte_d_origine` (T3) degrade, elle, vers `None` : une origine
+            #  non minimisee valait mieux que pas de trace. Ce n'est plus le seul
+            #  usage.
+            "APP_SECRET_KEY",
             "POSTGRES_DB",
             "POSTGRES_USER",
             "POSTGRES_PASSWORD",

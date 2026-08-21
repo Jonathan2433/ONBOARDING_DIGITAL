@@ -120,6 +120,23 @@ export const CHEMIN_CHANGEMENT_MOT_DE_PASSE: string = endpoint('changementDeMotD
  */
 export const CHEMIN_SESSION: string = endpoint('sessionCourante').chemin;
 
+/**
+ * L'en-tete par lequel le frontend renvoie le jeton anti-CSRF — LOT 3, T7.
+ *
+ * Le jeton s'obtient dans le corps de `CHEMIN_SESSION`, champ `jeton_csrf`. Il
+ * est lisible a dessein, et sans danger : il ne vaut qu'accompagne du cookie de
+ * session, qui reste `HttpOnly`.
+ */
+export const EN_TETE_JETON_CSRF: string = contrat.enTeteJetonCsrf;
+
+/**
+ * L'en-tete d'idempotence — LOT 3, T7. **Optionnel.**
+ *
+ * Fourni, il garantit qu'une meme cle rejouee ne produit qu'un effet. Emploie-le
+ * sur tout formulaire qu'un double clic pourrait soumettre deux fois.
+ */
+export const EN_TETE_CLE_IDEMPOTENCE: string = contrat.enTeteCleIdempotence;
+
 /** Se deconnecter — LOT 3, T6. Toujours 200. */
 export const CHEMIN_DECONNEXION: string = endpoint('deconnexion').chemin;
 
