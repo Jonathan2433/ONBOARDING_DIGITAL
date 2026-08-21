@@ -212,7 +212,7 @@ ETIQUETTE_LOCALE := onboarding-local
         web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
-        domaines-provision magic-link-check \
+        domaines-provision magic-link-check admin-local admin-check \
         up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
@@ -851,6 +851,21 @@ domaines-provision: ## Poser le domaine e-mail initial du cahier 7.2 (DEC-523, i
 	@python3 infra/scripts/provisionner-domaines.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+# CREE OU DEVERROUILLE. Elle ne touche JAMAIS un mot de passe existant sans
+# `--reinitialiser`, et le mot de passe engendre est affiche UNE SEULE FOIS.
+# C'est la parade au risque nomme au §7 de la fiche du LOT 3 : « le verrouillage
+# administrateur bloque Jonathan lui-meme ».
+#   make admin-local ADRESSE=jonathan@exalt-company.com
+#   make admin-local ADRESSE=... REINITIALISER=1
+admin-local: ## Creer ou deverrouiller un compte administrateur (ADRESSE=... , DEC-527)
+	@test -n "$(ADRESSE)" || { \
+		echo "  ECHEC : ADRESSE est obligatoire."; \
+		echo "          make admin-local ADRESSE=jonathan@exalt-company.com"; \
+		exit 1; }
+	@$(UV) run python infra/scripts/provisionner-administrateur.py \
+		--env-file "$(ENV_FILE)" --adresse "$(ADRESSE)" \
+		$(if $(REINITIALISER),--reinitialiser,) $(COMPOSE_FILES_NUS)
+
 secrets-check: ## Verifier qu aucune colonne ne peut porter un secret en clair (10.2, 10.3)
 	@python3 infra/scripts/verifier-secrets-en-clair.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
@@ -912,6 +927,13 @@ web-check: ## Controler la page de statut telle qu'un navigateur la voit
 # L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, comme pour `web-check` :
 # l'ecrire en dur ferait porter ce controle sur le developpement alors qu'il
 # tournerait sur la recette. C'etait le defaut de `web-check` avant `T9`.
+admin-check: ## Prouver que le verrouillage administrateur se declenche ET se leve (US003)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-connexion-admin.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 magic-link-check: ## Prouver que la reponse au magic link est IDENTIQUE, connue ou non (US001)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

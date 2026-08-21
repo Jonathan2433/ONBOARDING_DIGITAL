@@ -225,6 +225,19 @@ jobs:
         # Mailpit.
         run: make magic-link-check
 
+      - name: Verrouillage administrateur, a travers Caddy en HTTPS
+        # LOT 3, T5 — le critere de `MVP-L03-US003` est double : le verrouillage
+        # se declenche ET il se leve. Le RELACHEMENT au bout de quinze minutes est
+        # eprouve par les tests, ou l'instant est injecte ; ce controle prouve
+        # l'autre moitie, sur la stack reelle : que `make admin-local` leve le
+        # verrou. C'est la parade documentee du risque « le verrouillage
+        # administrateur bloque Jonathan lui-meme ».
+        #
+        # Il porte aussi l'egalite des refus — un refus qui dirait « verrouille »
+        # apprendrait a un attaquant qu'il a REUSSI son deni de service — et il
+        # nettoie tout ce qu'il cree, compte administrateur compris.
+        run: make admin-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 

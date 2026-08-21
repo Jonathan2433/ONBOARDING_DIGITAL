@@ -248,6 +248,150 @@ def _appartenance(connexion: Connection, entite: uuid.UUID, adresse: str) -> uui
     ).scalar_one()
 
 
+def _esm(connexion: Connection, entite: uuid.UUID, adresse: str) -> uuid.UUID:
+    """Une personne REELLEMENT ESM de cette entite — LOT 3, `T5`.
+
+    **CES TESTS NOMMAIENT DEJA LEUR ATTRIBUTEUR `esm`, MAIS IL N'ETAIT ESM DE
+    RIEN.** C'etait sans consequence tant que personne ne verifiait son droit ;
+    `T5` acquitte la dette du §8.4, et les quatre tests ont echoue -- avec raison.
+    §7.21 : un controle ne devient pas faux tout seul.
+
+    L'intention du nom est desormais portee par la base, non par le nom.
+    """
+    personne = _personne(connexion, adresse)
+    connexion.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment "
+            "(person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at) "
+            "VALUES (:p, :e, 'ESM', :p, '2026-01-01T00:00:00Z')"
+        ),
+        {"p": personne, "e": entite},
+    )
+    return personne
+
+
+def _super_administrateur(connexion: Connection, adresse: str) -> uuid.UUID:
+    """Une personne SUPER_ADMIN — role technique GLOBAL, §8.6, `entity_id` NUL."""
+    personne = _personne(connexion, adresse)
+    connexion.execute(
+        text(
+            "INSERT INTO technical_role_assignment "
+            "(person_id, entity_id, role_type, starts_at) "
+            "VALUES (:p, NULL, 'SUPER_ADMIN', '2026-01-01T00:00:00Z')"
+        ),
+        {"p": personne},
+    )
+    return personne
+
+
+@pytest.mark.integration
+def test_un_attributeur_SANS_DROIT_est_refuse(cx: Connection) -> None:
+    """**LA DETTE DE `T11` DU LOT 2, ACQUITTEE — §8.4.**
+
+    « Un DG recoit automatiquement une responsabilite DSM » suppose un attributeur,
+    et le §8.4 exige qu'il soit « ESM ou super-administrateur ». `T11` avait pose
+    l'attributeur en parametre obligatoire mais **ne verifiait pas son droit** : le
+    service acceptait n'importe qui.
+
+    Le cas exerce ici est le plus trompeur : un **DSM** de l'entite. Il a un role,
+    il est legitime, et il n'a PAS ce droit-la — le DSM encadre des consultants,
+    il n'administre pas les categories.
+    """
+    entite = _entite(cx, "BORDEAUX")
+    appartenance = _appartenance(cx, entite, "dg@exalt.com")
+    dsm = _personne(cx, "dsm@exalt.com")
+    cx.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment "
+            "(person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at) "
+            "VALUES (:p, :e, 'DSM', :p, '2026-01-01T00:00:00Z')"
+        ),
+        {"p": dsm, "e": entite},
+    )
+    with pytest.raises(ErreurDeService, match="ni ESM"):
+        attribuer_la_categorie_dg(cx, entite=entite, appartenance=appartenance, attribue_par=dsm)
+
+
+@pytest.mark.integration
+def test_un_SUPER_ADMINISTRATEUR_peut_attribuer(cx: Connection) -> None:
+    """Le temoin global : le §8.6 le pose sans entite, la matrice en fait « la
+    seule exception globale ». Sans ce test, une implementation qui n'accepterait
+    QUE l'ESM passerait le precedent.
+    """
+    entite = _entite(cx, "BORDEAUX")
+    appartenance = _appartenance(cx, entite, "dg@exalt.com")
+    patron = _super_administrateur(cx, "super@exalt.com")
+    assert attribuer_la_categorie_dg(
+        cx, entite=entite, appartenance=appartenance, attribue_par=patron
+    )
+
+
+@pytest.mark.integration
+def test_un_ESM_d_une_AUTRE_entite_est_refuse(cx: Connection) -> None:
+    """**LA PORTEE EST LE POINT.** Le §8.4 fait de l'ESM une responsabilite
+    d'ENTITE. Un ESM de Lille n'administre pas Bordeaux, et l'accepter ferait de
+    lui un super-administrateur en silence — exactement l'inverse du §2.5.
+    """
+    bordeaux = _entite(cx, "BORDEAUX")
+    lille = _entite(cx, "LILLE")
+    appartenance = _appartenance(cx, bordeaux, "dg@exalt.com")
+    esm_de_lille = _esm(cx, lille, "esm-lille@exalt.com")
+    with pytest.raises(ErreurDeService, match="ni ESM"):
+        attribuer_la_categorie_dg(
+            cx, entite=bordeaux, appartenance=appartenance, attribue_par=esm_de_lille
+        )
+
+
+@pytest.mark.integration
+def test_un_ESM_dont_la_responsabilite_est_CLOTUREE_est_refuse(cx: Connection) -> None:
+    """**Controle §24.12 du cahier** : « un role cloture ne continue pas a
+    accorder des permissions ».
+
+    Sans ce test, une verification ecrite `ends_at IS NULL` passerait — et elle
+    accepterait aussi une responsabilite FUTURE, dont `ends_at` est nul lui aussi.
+    C'est pourquoi la verification interroge la plage `period`, non la colonne.
+    """
+    entite = _entite(cx, "BORDEAUX")
+    appartenance = _appartenance(cx, entite, "dg@exalt.com")
+    ancien_esm = _personne(cx, "ex-esm@exalt.com")
+    cx.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment "
+            "(person_id, entity_id, responsibility_type, assigned_by_person_id, "
+            " starts_at, ends_at) "
+            "VALUES (:p, :e, 'ESM', :p, '2024-01-01T00:00:00Z', '2025-01-01T00:00:00Z')"
+        ),
+        {"p": ancien_esm, "e": entite},
+    )
+    with pytest.raises(ErreurDeService, match="ni ESM"):
+        attribuer_la_categorie_dg(
+            cx, entite=entite, appartenance=appartenance, attribue_par=ancien_esm
+        )
+
+
+@pytest.mark.integration
+def test_un_ESM_dont_la_responsabilite_est_FUTURE_est_refuse(cx: Connection) -> None:
+    """Le second piege de `ends_at IS NULL` : une responsabilite a venir en a un.
+
+    Elle ne doit rien accorder aujourd'hui, et c'est la plage `period` qui le dit.
+    """
+    entite = _entite(cx, "BORDEAUX")
+    appartenance = _appartenance(cx, entite, "dg@exalt.com")
+    futur_esm = _personne(cx, "futur-esm@exalt.com")
+    cx.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment "
+            "(person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at) "
+            "VALUES (:p, :e, 'ESM', :p, '2099-01-01T00:00:00Z')"
+        ),
+        {"p": futur_esm, "e": entite},
+    )
+    with pytest.raises(ErreurDeService, match="ni ESM"):
+        attribuer_la_categorie_dg(
+            cx, entite=entite, appartenance=appartenance, attribue_par=futur_esm
+        )
+
+
 @pytest.mark.integration
 def test_le_service_cree_la_responsabilite_DSM_puis_la_categorie(cx: Connection) -> None:
     """L'ACTION du §8.4, que `T10` avait laissee au service — `DEC-514`.
@@ -257,7 +401,7 @@ def test_le_service_cree_la_responsabilite_DSM_puis_la_categorie(cx: Connection)
     """
     entite = _entite(cx, "BORDEAUX")
     appartenance = _appartenance(cx, entite, "dg@exalt.com")
-    esm = _personne(cx, "esm@exalt.com")
+    esm = _esm(cx, entite, "esm@exalt.com")
 
     responsabilite = attribuer_la_categorie_dg(
         cx, entite=entite, appartenance=appartenance, attribue_par=esm, motif="nomination"
@@ -299,7 +443,7 @@ def test_sans_le_service_la_BASE_refuse_toujours(cx: Connection) -> None:
 def test_le_service_ne_CREE_PAS_de_doublon_si_la_responsabilite_existe(cx: Connection) -> None:
     entite = _entite(cx, "BORDEAUX")
     appartenance = _appartenance(cx, entite, "dg@exalt.com")
-    esm = _personne(cx, "esm@exalt.com")
+    esm = _esm(cx, entite, "esm@exalt.com")
 
     premiere = attribuer_la_categorie_dg(
         cx, entite=entite, appartenance=appartenance, attribue_par=esm
@@ -308,8 +452,18 @@ def test_le_service_ne_CREE_PAS_de_doublon_si_la_responsabilite_existe(cx: Conne
         cx, entite=entite, appartenance=appartenance, attribue_par=esm
     )
     assert premiere == seconde
+    #  LE COMPTE PORTE SUR LE TYPE `DSM`, ET C'EST UN CORRECTIF DE `T5`.
+    #
+    #  Ce test comptait TOUTE la table et attendait 1. Depuis que l'attributeur
+    #  est un ESM reel — la dette du §8.4, acquittee — le decor y pose une
+    #  seconde ligne, et le compte global valait 2. **Le compte n'a pas ete
+    #  relache : il a ete rendu EXACT**, sur ce que ce test mesure vraiment — le
+    #  service ne doit pas creer un second `DSM`. §7.21.
     total = cx.execute(
-        text("SELECT count(*) FROM framework_responsibility_assignment")
+        text(
+            "SELECT count(*) FROM framework_responsibility_assignment "
+            "WHERE responsibility_type = 'DSM'"
+        )
     ).scalar_one()
     assert total == 1
 
@@ -323,11 +477,24 @@ def test_le_service_REFUSE_une_appartenance_d_une_autre_entite(cx: Connection) -
     """
     bordeaux, lille = _entite(cx, "BORDEAUX"), _entite(cx, "LILLE")
     appartenance = _appartenance(cx, lille, "dg@exalt.com")
-    esm = _personne(cx, "esm@exalt.com")
+    #  L'ESM est celui de BORDEAUX : c'est l'entite VISEE par l'appel. Sans ce
+    #  droit, le service refuserait pour la mauvaise raison, et ce test ne
+    #  prouverait plus ce qu'il annonce — le refus doit venir de l'appartenance
+    #  etrangere, pas du droit.
+    esm = _esm(cx, bordeaux, "esm@exalt.com")
     with pytest.raises(ErreurDeService, match="inconnue dans l'entite"):
         attribuer_la_categorie_dg(cx, entite=bordeaux, appartenance=appartenance, attribue_par=esm)
+    #  LE COMPTE PORTE SUR `DSM` : ce que ce test verifie est que le service n'a
+    #  RIEN CREE. Le decor, lui, contient legitimement la responsabilite ESM de
+    #  l'attributeur depuis `T5`. Compter toute la table melangerait le decor et
+    #  l'effet mesure. §7.21.
     assert (
-        cx.execute(text("SELECT count(*) FROM framework_responsibility_assignment")).scalar_one()
+        cx.execute(
+            text(
+                "SELECT count(*) FROM framework_responsibility_assignment "
+                "WHERE responsibility_type = 'DSM'"
+            )
+        ).scalar_one()
         == 0
     )
 
@@ -337,7 +504,7 @@ def test_responsabilite_dsm_active_ne_regarde_QUE_l_entite_donnee(cx: Connection
     """« DSM **local** » : le mot local n'est pas decoratif."""
     bordeaux, lille = _entite(cx, "BORDEAUX"), _entite(cx, "LILLE")
     appartenance = _appartenance(cx, lille, "dg@exalt.com")
-    esm = _personne(cx, "esm@exalt.com")
+    esm = _esm(cx, lille, "esm@exalt.com")
     attribuer_la_categorie_dg(cx, entite=lille, appartenance=appartenance, attribue_par=esm)
 
     personne = cx.execute(

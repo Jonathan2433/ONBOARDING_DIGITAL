@@ -62,6 +62,8 @@ from app.auth.courriel import EchecDEnvoi, envoyer
 from app.auth.jetons import empreinte_d_origine
 from app.auth.services import (
     Demande,
+    authentifier_un_administrateur,
+    changer_le_mot_de_passe,
     consommer_un_magic_link,
     demander_un_magic_link,
 )
@@ -105,6 +107,45 @@ MESSAGE_LIEN_REFUSE = (
 #  refuser un corps sans limite.
 LONGUEUR_MAXIMALE_JETON = 256
 
+#  LOT 3, T5 — LA CONNEXION ADMINISTRATEUR A AUSSI UN SEUL GABARIT D'ECHEC.
+#
+#  Compte inconnu, mot de passe faux, compte verrouille, compte desactive, compte
+#  sans mot de passe actif : les cinq rendent CE message et ce code. Meme parti
+#  que `T3` et `T4`, et deux motifs :
+#
+#    - un refus qui dirait « ce compte est verrouille » confirmerait qu'une
+#      adresse porte un compte administrateur, ce qui est la premiere moitie
+#      d'une attaque ;
+#    - un refus qui dirait « verrouille » apprendrait aussi a l'attaquant qu'il a
+#      REUSSI a verrouiller le titulaire legitime, donc que son deni de service
+#      fonctionne.
+#
+#  L'operateur, lui, lit la cause exacte dans `auth_event` — six motifs distincts.
+CODE_CONNEXION_REFUSEE = "identifiants_refuses"
+MESSAGE_CONNEXION_REFUSEE = (
+    "Connexion impossible. Verifiez votre adresse et votre mot de passe. "
+    "Apres plusieurs tentatives infructueuses, l'acces est suspendu quinze minutes."
+)
+
+#  **CE PLANCHER N'EST PAS DERIVE DU CORPUS, ET IL FAUT LE DIRE.**
+#
+#  Aucun document du projet n'ecrit de politique de mot de passe : le cahier §7.3
+#  parle du STOCKAGE — « stocke de maniere securisee », « jamais en clair » — et
+#  le §20.3 ne borne que `APP_SECRET_KEY`, qui est une cle machine. Le §8 de la
+#  fiche du LOT 3 enumere quatre decisions a instruire, et **une politique de mot
+#  de passe n'en fait pas partie** : personne ne l'avait vue.
+#
+#  Accepter un mot de passe d'un caractere serait pourtant contraire a tout le
+#  reste du chapitre 7. Ce plancher est donc une **recommandation en attente
+#  d'arbitrage**, `QO-118`, posee en UNE constante pour que la trancher soit une
+#  ligne. Elle est declaree ici plutot que deguisee en decision : « une hypothese
+#  deguisee en decision est pire qu'une case vide » (§6.5).
+LONGUEUR_MINIMALE_MOT_DE_PASSE = 12
+
+#  Borne haute : scrypt lit tout ce qu'on lui donne, et un corps sans limite est
+#  une surface de deni de service — d'autant plus qu'un calcul coute 64 Mio.
+LONGUEUR_MAXIMALE_MOT_DE_PASSE = 1024
+
 SUJET_DU_COURRIEL = "Votre lien de connexion eXalt Onboarding"
 
 CORPS_DU_COURRIEL = """Bonjour,
@@ -134,6 +175,49 @@ class ReponseGenerique(BaseModel):
     """Reponse unique de la demande, quelle que soit l'issue reelle."""
 
     message: str
+
+
+class ConnexionAdministrateur(BaseModel):
+    """Corps d'une connexion administrateur.
+
+    **AUCUNE VALIDATION DE FORME SUR L'ADRESSE**, meme motif qu'en `T3` : un 422
+    sur une adresse jugee mal formee serait un premier oracle. Le mot de passe
+    n'est borne que par le HAUT, et cette borne ne depend que de la requete.
+    """
+
+    email: str = Field(max_length=LONGUEUR_MAXIMALE_ADRESSE)
+    mot_de_passe: str = Field(max_length=LONGUEUR_MAXIMALE_MOT_DE_PASSE)
+
+
+class ChangementDeMotDePasse(BaseModel):
+    """Corps d'un changement de mot de passe.
+
+    **L'ANCIEN MOT DE PASSE EST EXIGE**, et ce n'est pas un confort : sans session
+    — elles relevent de `T6` — c'est la SEULE preuve que l'appelant est le
+    titulaire. Une route qui changerait un mot de passe sur la seule adresse
+    serait une prise de controle de compte.
+    """
+
+    email: str = Field(max_length=LONGUEUR_MAXIMALE_ADRESSE)
+    mot_de_passe_actuel: str = Field(max_length=LONGUEUR_MAXIMALE_MOT_DE_PASSE)
+    nouveau_mot_de_passe: str = Field(
+        min_length=LONGUEUR_MINIMALE_MOT_DE_PASSE,
+        max_length=LONGUEUR_MAXIMALE_MOT_DE_PASSE,
+    )
+
+
+class ReponseDeConnexion(BaseModel):
+    """Reponse d'une connexion administrateur REUSSIE.
+
+    **ELLE NE PORTE AUCUN ACCES**, comme la consommation de `T4` : ni cookie, ni
+    jeton. `T6` attachera la session. `changement_exige` porte `must_change` du
+    §10.2 : c'est la seule information que la reussite ajoute, et l'ecran de `T11`
+    s'en servira pour imposer le changement avant toute autre action.
+    """
+
+    message: str
+    personne: uuid.UUID
+    changement_exige: bool
 
 
 class ConsommationDeMagicLink(BaseModel):
@@ -345,7 +429,127 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
             personne=consommation.personne,
         )
 
+    @routeur.post(
+        "/connexion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeConnexion,
+        responses={
+            status.HTTP_400_BAD_REQUEST: {
+                "description": (
+                    "Connexion refusee. UNE SEULE forme pour cinq causes : compte "
+                    "inconnu, mot de passe faux, compte verrouille, compte desactive, "
+                    "compte sans mot de passe actif."
+                )
+            }
+        },
+        summary="Se connecter avec un compte administrateur local",
+        description=(
+            "Cinq causes de refus rendent la MEME reponse : un refus qui les "
+            "distinguerait revelerait qu'une adresse porte un compte administrateur, "
+            "et qu'un verrouillage a reussi. La reponse ne porte AUCUN acces : la "
+            "session releve de `T6`."
+        ),
+    )
+    def connexion(
+        corps: ConnexionAdministrateur, requete: Request, reponse: Response
+    ) -> ReponseDeConnexion:
+        """Authentifier un compte administrateur local — cahier §7.3."""
+        reponse.headers["Cache-Control"] = "no-store"
+        empreinte = _empreinte_d_origine(parametres, requete)
+
+        with moteur(parametres).begin() as connexion_bd:
+            resultat = authentifier_un_administrateur(
+                connexion_bd,
+                adresse=corps.email,
+                mot_de_passe=corps.mot_de_passe,
+                instant=dt.datetime.now(tz=dt.UTC),
+                empreinte_origine=empreinte,
+            )
+
+        if resultat.personne is None or not resultat.reussie:
+            #  **LE MESSAGE NE CITE NI L'ADRESSE NI LE MOTIF INTERNE.** Le motif
+            #  est deja dans `auth_event`, ou l'operateur le lit.
+            raise ErreurApplicative(
+                code=CODE_CONNEXION_REFUSEE,
+                message=MESSAGE_CONNEXION_REFUSEE,
+                statut=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return ReponseDeConnexion(
+            message="Identifiants acceptes.",
+            personne=resultat.personne,
+            changement_exige=resultat.changement_exige,
+        )
+
+    @routeur.post(
+        "/mot-de-passe",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseGenerique,
+        responses={
+            status.HTTP_400_BAD_REQUEST: {
+                "description": "Identifiants actuels refuses. Meme forme que la connexion."
+            }
+        },
+        summary="Changer le mot de passe d'un compte administrateur local",
+        description=(
+            "Exige le mot de passe ACTUEL : sans session — elles relevent de `T6` — "
+            "c'est la seule preuve que l'appelant est le titulaire. Le changement est "
+            "audite, et l'ancien identifiant est revoque, jamais efface."
+        ),
+    )
+    def changer_mot_de_passe(
+        corps: ChangementDeMotDePasse, requete: Request, reponse: Response
+    ) -> ReponseGenerique:
+        """Changer le mot de passe apres re-authentification — modele §10.2."""
+        reponse.headers["Cache-Control"] = "no-store"
+        empreinte = _empreinte_d_origine(parametres, requete)
+        instant = dt.datetime.now(tz=dt.UTC)
+
+        #  UNE SEULE TRANSACTION : la re-authentification, la revocation de
+        #  l'ancien identifiant, la pose du nouveau et l'audit sont
+        #  indissociables. Un mot de passe change sans trace serait une prise de
+        #  controle non journalisee.
+        with moteur(parametres).begin() as connexion_bd:
+            resultat = authentifier_un_administrateur(
+                connexion_bd,
+                adresse=corps.email,
+                mot_de_passe=corps.mot_de_passe_actuel,
+                instant=instant,
+                empreinte_origine=empreinte,
+            )
+            if resultat.compte is None:
+                #  **LE MEME REFUS QUE LA CONNEXION**, et le meme code : un
+                #  changement refuse ne doit pas se distinguer d'une connexion
+                #  refusee, sinon cette route deviendrait l'oracle que l'autre
+                #  n'est pas.
+                raise ErreurApplicative(
+                    code=CODE_CONNEXION_REFUSEE,
+                    message=MESSAGE_CONNEXION_REFUSEE,
+                    statut=status.HTTP_400_BAD_REQUEST,
+                )
+            changer_le_mot_de_passe(
+                connexion_bd,
+                compte=resultat.compte,
+                nouveau=corps.nouveau_mot_de_passe,
+                instant=instant,
+                empreinte_origine=empreinte,
+            )
+
+        return ReponseGenerique(message="Mot de passe modifie.")
+
     return routeur
+
+
+def _empreinte_d_origine(parametres: Parametres, requete: Request) -> str | None:
+    """Empreinte minimisee de l'origine, ou `None` — modele §10.3.
+
+    Extraite en fonction pour que les quatre routes du lot emploient exactement la
+    meme regle. Trois copies auraient divergé, et `T8` s'appuiera dessus.
+    """
+    origine = origine_de_la_requete(requete)
+    if not origine or not parametres.APP_SECRET_KEY:
+        return None
+    return empreinte_d_origine(origine, parametres.APP_SECRET_KEY)
 
 
 def compter_les_liens_actifs(parametres: Parametres, adresse_normalisee: str) -> int:
