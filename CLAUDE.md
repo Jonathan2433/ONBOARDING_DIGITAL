@@ -1,16 +1,18 @@
 # Passation — agent chef de projet technique
 
 **Projet :** eXalt Onboarding Digital
-**Rédigé le :** 28 juillet 2026, à la sortie de la sous-étape `T4`
-**Mis à jour le :** 12 août 2026, à la sortie de la sous-étape **`T11`** — §1, §4, §5, §7, §8,
-§9, §10 et §11 rectifiés **sur mesures**. **Cinq affirmations de ce document se sont révélées
-fausses : voir §9.0.**
-**Destinataire :** l'agent qui prend le relais **APRÈS la validation de la porte `G1`**, pour le LOT 2
+**Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
+**Mis à jour le :** 21 août 2026, à la sortie de **`T2` du LOT 3**
+**Destinataire :** l'agent qui prend le relais pour **`T3` du LOT 3**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
-connaître**, **les erreurs à ne plus commettre**, et **par où commencer**. Lis-le en entier
-avant d'agir. Il remplace la passation d'ouverture du LOT 1.
+connaître**, **les erreurs à ne plus commettre**, et **par où commencer**. Lis-le en entier avant
+d'agir.
+
+> **TOUS LES NOMBRES DE CE DOCUMENT ONT ÉTÉ DÉRIVÉS LE 21/08/2026, PAS RECOPIÉS.** C'est la classe
+> d'erreur la plus fréquente du projet — `ECART-021`, rejouée une douzaine de fois. Chaque grandeur
+> est accompagnée de la commande qui la produit. **Recompte avant de réutiliser.**
 
 ---
 
@@ -18,42 +20,48 @@ avant d'agir. Il remplace la passation d'ouverture du LOT 1.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** verrouillé le 27/07/2026 (`DEC-438`), **`G0`** franchie · **LOT 1** verrouillé le 12/08/2026, **`G1`** franchie, tag **`v0.1.0`** · **LOT 2 verrouillé le 20/08/2026, `G2` FRANCHIE (`DEC-517`), tag `v0.2.0`** |
-| **Lot en cours** | **LOT 3 — Authentification, sessions et sécurité applicative**, ouvert par Jonathan le 20/08/2026 (`DEC-518`), porte `G3`, tag `v0.3.0`. Plan : [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md), **12 sous-étapes — le §3 ATTEND SA VALIDATION** |
-| Sous-étapes faites | **LOT 3 : `T1` et `T2` faites.** *LOT 2 : les douze, terminées* · *LOT 1 : `T0` hors lot, `T1`→`T11`, complet* |
-| **Prochaine action** | **`T3` — la demande de magic link**, issue `#63` (`US001`). Son critère est une **égalité** : la réponse doit être identique pour une adresse connue et inconnue — **compare le corps ET les en-têtes**, pas seulement le code HTTP. Et l'index partiel de `magic_link_request` **refusera** un second lien actif : le service doit invalider le précédent. Voir §12 du compte rendu de `T2` |
-| Stories `Done` | **LOT 2 : LES HUIT**, et leurs huit issues sont **closes** — `#42` l'a été tardivement, voir §7.19 · *LOT 1 : les huit* |
-| Stories restantes | **LOT 3 : les huit**, `MVP-L03-US001` à `US008`, epic `#62`, issues `#63` à `#70`, jalon `G3` |
-| Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé, prouvé** par `gh api … --jq .private` → `true` |
-| Branches | `main` et `develop`, **les deux protégées, et la CI y est BLOQUANTE**. Compte de commits : `git rev-list --left-right --count main...develop` — **ce document ne peut pas le tenir**, voir la note ci-dessous |
-| Volumétrie | **fichiers suivis, Markdown, Python : `git ls-files \| sed 's/.*\\.//' \| sort \| uniq -c \| sort -rn`.** Aucun de ces comptes n'est affirmé ici — voir la note ci-dessous, `ECART-022` en a corrigé un de plus |
-| Tests | **531** : **415 pytest** et **116 Vitest**. C'était 260 à la sortie du LOT 1, 373 à celle du LOT 2 |
-| Intégration continue | **11 contrôles** du cahier §23.1 sur chaque pull request, ~2 min 20. **Bloquante, prouvé trois fois** |
-| **Images** | **3 images multiarchitecture** publiées dans GHCR privé. **Les DEUX architectures sont désormais NATIVES sur le même artefact publié** — `amd64` en CI depuis `T7`, `arm64` sur ce Mac depuis `T8`. `web` : **84,9 Mo** |
-| Registres | **189 décisions** · **33 écarts** (**7 ouverts**) · **41 questions** (**32 ouvertes** — `QO-115` et `QO-116` closes) · 34 risques |
+| Lots terminés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08/2026, tag `v0.1.0`) · **LOT 2** (`G2`, 20/08/2026, `DEC-517`, tag `v0.2.0`) |
+| **Lot en cours** | **LOT 3 — Authentification, sessions et sécurité applicative.** Ouvert le 20/08/2026 (`DEC-518`), découpage **validé le même jour**. Porte `G3`, tag `v0.3.0` prévu. Plan : [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md) |
+| Sous-étapes faites | **LOT 3 : `T1` et `T2`.** `T3` à `T12` restantes |
+| **Prochaine action** | **`T3` — la demande de magic link**, issue `#63` (`US001`). Son critère est une **ÉGALITÉ** : la réponse doit être identique pour une adresse connue et inconnue. **Compare le corps ET les en-têtes**, pas le seul code HTTP. Voir §9.2 |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8, toutes les issues closes** · LOT 3 : **0 sur 8** |
+| Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
+| Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. Tête de `develop` au 21/08 : `39a2c0d` |
+| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`) |
+| **Tests** | **531** : **415 pytest** — dont **237 d'intégration** — et **116 Vitest** (90 `ui`, 25 `web`, 1 `contracts`) |
+| Schéma PostgreSQL | **25 tables métier**, 375 colonnes, **127 contraintes**, **109 index**, **8 déclencheurs**, **10 exclusions**, **37 clés étrangères**, **12 migrations**, tête `0012` |
+| Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
+| Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~2 min de qualité + ~3 min 30 de stack |
+| Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
+| Makefile | **61 cibles** documentées. `make help` fait foi |
+| `.env.example` | **v1.3**, **83 variables**, 83 noms distincts, **9 `CHANGE_ME`** |
+| Registres | **105 décisions** `DEC-418+` · **33 écarts** (**7 ouverts**) · **41 questions** (**32 ouvertes**) · 34 risques |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **15**. Presque tous dans mes propres contrôles |
 
-> **Les nombres ci-dessus sont dérivés de la source, pas recopiés.** Quatre l'avaient été et
-> étaient faux : `ECART-021` les corrige. Recompte-les avant de les réutiliser.
+**Les commandes qui produisent ces nombres :**
+
+```bash
+git log --oneline -1 && git tag -l
+uv run pytest -q --collect-only | tail -1
+uv run pytest -m integration -q --collect-only | tail -1
+make test-frontend 2>&1 | grep -oE 'Tests  [0-9]+ passed'
+grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile
+grep -cE '^[A-Z_][A-Z0-9_]*=' .env.example
+ls apps/api/alembic/versions/*.py | wc -l
+for l in 1 2 3; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md | sort -u | wc -l; done
+```
+
+> **DEUX NOMBRES ONT ÉTÉ RETIRÉS DE CE TABLEAU PLUTÔT QUE CORRIGÉS : le compte de commits et le
+> compte de lignes.** Tous deux ont été faux plusieurs fois, pour une raison structurelle — un
+> document qui est lui-même commité se décrit dans son état **d'avant son propre commit**, et toute
+> correction change le compte qu'il annonce. **Un nombre qu'on ne peut pas tenir, on ne l'affirme
+> pas.**
 >
-> **Deux nombres ont été retirés de ce tableau plutôt que corrigés : le compte de commits et le
-> compte de lignes.** Tous deux ont été faux plusieurs fois, pour une raison structurelle et non
-> par négligence — un document qui est lui-même commité se décrit dans son état **d'avant son
-> propre commit**, et toute correction qu'on y apporte change le compte qu'il annonce. Un nombre
-> qu'on ne peut pas tenir, on ne l'affirme pas : on donne la commande qui le calcule.
->
-> **La façon dont ces nombres ont été traités est elle-même une leçon, et elle a fallu trois
-> passes.** `T6` a d'abord retiré le seul compte de commits, et le compte de lignes est devenu faux
-> au commit suivant — celui qui retirait l'autre : **une instance corrigée au lieu de la classe**.
-> Puis `T7` a trouvé que le compte de fichiers YAML était faux lui aussi — « 4 YAML » là où il y en
-> avait **6**, l'extension `.yaml` n'ayant pas été comptée — alors que ce document affirmait
-> justement que le compte de fichiers, lui, était tenable. **La classe était encore plus large que
-> `T6` ne l'avait cru.** Tous les comptes de fichiers sont donc retirés à leur tour, et remplacés
-> par la commande qui les dérive. `ECART-022` consigne les cinq constats.
->
-> Les autres grandeurs de ce tableau sont vérifiées exactes à la sortie de `T7`, et `make
-> docs-check` couvre les séquences d'identifiants et les empreintes — mais **pas** les nombres
-> cités en prose, qui restent à la charge du lecteur. **Ne rétablis aucun compte de fichiers sans
-> poser d'abord le contrôle qui le dérive.**
+> **Et la façon de traiter ces nombres est elle-même une leçon, qui a coûté quatre passes.** `T6` du
+> LOT 1 a retiré le compte de commits ; le compte de lignes est devenu faux au commit suivant. `T7` a
+> trouvé que le compte de fichiers YAML était faux aussi. Puis, à la clôture de `G2`, le contrôle
+> d'hygiène du §11 annonçait « deux fichiers » là où il y en a **trois** depuis `T8` du LOT 1.
+> **Une instance corrigée n'est pas la classe corrigée.**
 
 **La plateforme démarre, répond, s'affiche, elle est empaquetée, et elle existe désormais en DEUX
 environnements isolés.** `make up` lève les huit services du développement, `make up-recette` lève
@@ -103,7 +111,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 3 ?** | **`docs/operations/fiche-lot-3.md`** — 12 sous-étapes, **découpage validé le 20/08/2026**. `T1` **est faite** — [`compte-rendu-t1-lot-3.md`](docs/operations/compte-rendu-t1-lot-3.md) |
+| **Que fait-on au LOT 3 ?** | **`docs/operations/fiche-lot-3.md`** — 12 sous-étapes, **découpage validé le 20/08/2026**. `T1` et `T2` **sont faites** |
+| **Comment a-t-on fait `T1` et `T2` du LOT 3 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-3.md`**. `T1` : le moindre privilège. `T2` : les sept tables du §10 |
+| Quelles sont les 7 tables d'authentification ? | Modèle **§10.1 à §10.6**, et `apps/api/app/auth/modeles.py` en porte la lecture |
 | Que faisait-on au LOT 2 ? | `docs/operations/fiche-lot-2.md` — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
@@ -341,6 +351,55 @@ possible**. L'audit passe à **zéro avis, zéro tolérance** : `ROAD-RSK-032` e
 
 ---
 
+## 4.14 LOT 2 — le socle de données, en douze sous-étapes
+
+**Verrouillé le 20/08/2026, `G2` franchie, tag `v0.2.0`.** Ce qu'il a produit : **18 tables métier**,
+**11 migrations** rejouables, **8 clés étrangères composites**, **7 relations historisées**, et un jeu
+de recette de **27 936 lignes** dont toutes les requêtes répondent **sous 1,3 ms**.
+
+**Les six idées qui structurent tout le socle, et qu'il faut connaître avant d'y toucher :**
+
+1. **Une contrainte d'exclusion dont la clé contient une colonne NULLABLE ne contraint RIEN** sur les
+   lignes où elle est nulle — `=` ne rapproche jamais deux NULL. Défaut `T8-1`, qui valait **trois
+   types sur quatre**. Toutes les exclusions sont donc **partielles et autoportantes**, et
+   `make historisation-check` l'exige ;
+2. **Les clés étrangères COMPOSITES `(id, entity_id)` du §25.3 sont ce qui porte l'isolation**, pas un
+   déclencheur. Il y en a **huit**, et `make isolation-check` prouve qu'aucune référence locale n'y
+   échappe. **`MATCH SIMPLE` rend une clé composite inerte dès qu'une colonne est nulle** : le
+   contrôle exige `entity_id NOT NULL` à la source ;
+3. **Une permission du modèle n'est pas une interdiction.** Le §8.2 autorise plusieurs cercles
+   secondaires, le §8.4 plusieurs Boosters dans une même entité : un index unique naïf les casserait
+   **et le livrable paraîtrait correct**. Chaque permission a son témoin ;
+4. **Le modèle décrit parfois une ACTION, et seule l'IMPLICATION est applicable en base.** « Un DG
+   reçoit automatiquement une responsabilité DSM » suppose un attributeur, que la base ne connaît
+   pas ; inventer un attributeur **fabriquerait une trace d'audit fausse**. La base porte
+   l'implication, le service porte l'action ;
+5. **Un déclencheur `BEFORE ROW` s'exécute AVANT les clés étrangères**, et peut donc **ombrager** l'une
+   d'elles. Quand c'est le cas, la clé est conservée et **le catalogue prouve ce que le comportement
+   ne peut plus prouver** ;
+6. **Les dépôts rendent le cloisonnement structurel.** `DepotLocal` ne sait pas construire une requête
+   sans son `entity_id`, et `DepotGlobal` **refuse** une table locale — sans quoi il rendrait les
+   lignes de toutes les entités **en paraissant fonctionner**.
+
+## 4.15 LOT 3 — où en est l'authentification
+
+**`T1` — le moindre privilège PostgreSQL** (`QO-116` close, `DEC-520`). Trois comptes et non deux, le
+transfert de propriété **explicite et filtré** — 188 des 196 fonctions appartiennent à `btree_gist` —
+et les **privilèges par défaut** qui couvrent les tables futures. Tout rejoué sur une base **recréée de
+zéro**. Voir §5.9.
+
+**`T2` — les sept tables du §10** (`DEC-521`, migration `0012`). Les §25.2 à §25.4 n'imposent **aucune**
+contrainte à ces tables ; le §25.1 s'ouvrant par « à prévoir **notamment** », **quatre unicités de
+plus** sont posées, chacune **dérivée** d'une règle écrite. L'index partiel de `magic_link_request`
+porte l'**invariant** du §10.3 — « au plus un lien actif par personne » — et non son action : **il ne
+fait pas l'invalidation, il la rend obligatoire.**
+
+**Et `make secrets-check` distingue deux familles d'empreintes** : celles de **jeton**, SHA-256 bornées
+à 64 caractères, et celles de **mot de passe**, de longueur variable, dont ce qui les rend exploitables
+est la présence des colonnes `algorithm` et `parameters` que le §10.2 exige.
+
+---
+
 ## 4.13 Les décisions qui contraignent ton travail quotidien
 
 Les 181 sont dans `docs/decisions/registre-decisions.md`. Celles que tu appliqueras :
@@ -543,6 +602,44 @@ LOT 9) et `UPTIME_KUMA_PUSH_URL` (LOT 13).
 | `DB_AUTO_CREATE` · `SESSION_COOKIE_SECURE` · `CSRF_PROTECTION_ENABLED` | `false` · `true` · `true` |
 | `VITE_API_BASE_URL` | `/api/v1` |
 
+## 5.9 LES TROIS COMPTES POSTGRESQL — à connaître avant toute requête
+
+**Depuis `T1` du LOT 3 (`QO-116`, `DEC-520`), la base a trois comptes distincts.** Employer le
+mauvais produit une erreur dont le message ne dit pas que le rôle est en cause.
+
+| Compte | Variables | Ce qu'il peut | Qui l'emploie |
+|---|---|---|---|
+| `onboarding_app` | `POSTGRES_USER` / `POSTGRES_PASSWORD` | **tout** — superutilisateur créé par `initdb`, propriétaire du cluster | **`initdb` et `make roles-provision`. RIEN D'AUTRE.** |
+| `onboarding_migrations` | `POSTGRES_MIGRATIONS_USER` / `_PASSWORD` | possède le schéma, crée et modifie les tables, installe `btree_gist` | **Alembic seul**, et les rares tests qui créent des objets |
+| `onboarding_runtime` | `POSTGRES_RUNTIME_USER` / `_PASSWORD` | **lire et écrire des LIGNES** — rien de plus | l'API, le worker, et **tous** les tests d'intégration |
+
+**En code :** `moteur(parametres)` rend le moteur d'**exécution**, `moteur_migrations(parametres)`
+celui des **migrations**. `Parametres` expose trois URL, et `url_postgresql()` est celle de
+l'application.
+
+> **Ce que le rôle d'exécution REFUSE, mesuré et testé** : `CREATE TABLE` (« permission denied for
+> schema public »), `DROP TABLE` et `ALTER TABLE` (« must be owner of table »), `CREATE ROLE`, et
+> **`TRUNCATE`** — un DDL déguisé qui contourne les déclencheurs `ON DELETE`.
+>
+> **Un test qui crée une table doit employer `moteur_migrations()`.** Sinon il échoue sur
+> « permission denied for schema public », et le message ne dit pas que la cause est le rôle. C'est
+> ce qui est arrivé à neuf tests du socle en `T1`.
+
+**Trois conséquences pratiques :**
+
+1. **une base jetable doit être créée avec `OWNER <rôle de migration>`**, sinon Alembic n'y a aucun
+   droit — `test_integration.py` et `verifier-migrations.py` le font ;
+2. **les privilèges par défaut** couvrent les tables créées **par le rôle de migration**. Une table
+   créée hors migration ne serait pas lisible par l'exécution, et c'est voulu ;
+3. **`alembic_version` est une métadonnée de migration** : la lire avec la connexion des migrations.
+
+```bash
+make roles-provision    # idempotent, appelée par `make up`
+make privileges-check   # EXIGE une base migrée, et le dit
+```
+
+---
+
 ## 5.5 Les 11 garde-fous de démarrage — **implémentés et testés**
 
 `apps/api/app/configuration/settings.py`. **4 dans tous les environnements** : variable
@@ -741,9 +838,9 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**80 défauts au LOT 0 et au LOT 1** : 7 au LOT 0, 3 en `T0`, **70 pendant `T1` à `T11` et après la
-porte `G1`**. **Plus 37 au LOT 2**, à la sortie de `T11`. Ils sont tous consignés dans les comptes
-rendus de sous-étape.
+**130 défauts consignés au 21/08/2026** : **71** au LOT 1, **44** au LOT 2, **15** au LOT 3, plus 7 au
+LOT 0 et 3 en `T0`. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
+mes propres contrôles** — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.
 
 > **Le second nombre est DÉRIVÉ, et il l'est parce que j'ai d'abord écrit « 39 » de tête** — 33 + 6,
 > où le 33 était lui-même un calcul non vérifié. La commande fait foi :
@@ -752,10 +849,16 @@ rendus de sous-étape.
 > grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-2.md | sort -u | wc -l
 > ```
 >
-> Elle compte les défauts **nommés**. Quelques-uns sont décrits sans identifiant dans les comptes
-> rendus de `T6` et `T7` du LOT 2 : le compte est donc un **minorant**, et le dire vaut mieux que de
-> laisser croire à un total exact. Classe `ECART-021`, pour la énième fois — un nombre qu'on ne
-> dérive pas vieillit en silence.
+> Elle compte les défauts **nommés**, lot par lot :
+>
+> ```bash
+> for l in 1 2 3; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md \
+>   | sort -u | wc -l; done
+> ```
+>
+> Quelques défauts sont décrits **sans identifiant** dans les comptes rendus de `T6` et `T7` du LOT 2 :
+> le compte est donc un **minorant**, et le dire vaut mieux que de laisser croire à un total exact.
+> Classe `ECART-021`, pour la énième fois.
 
 ## 7.0 La règle qui résume tout
 
@@ -1282,6 +1385,62 @@ assemblée, qui ne demande aucun conteneur. `DEC-494`, `ECART-025`.
 
 ---
 
+## 7.27 Une liste recopiée vieillit au PREMIER ajout — et j'en ai écrit trois
+
+**Apport du LOT 3, et c'est la classe `ECART-021` appliquée à mes propres contrôles, trois fois en
+deux sous-étapes.**
+
+| Où | La liste recopiée | Ce qui l'a cassée | Conséquence |
+|---|---|---|---|
+| `verifier-images.py` | **7** variables d'environnement pour lancer les conteneurs | `T1` en a ajouté **4** | **la publication des images est devenue ROUGE sur `develop`** |
+| `verifier-isolation.py` | **4** tables globales attendues | `T2` en a ajouté **6** | le contrôle échouait sur un livrable conforme |
+| `test_socle_modele.py` | `TABLES_DECLAREES`, **18** tables | `T2` en a ajouté **7** | échec attendu — c'est le rôle de ce garde-fou |
+
+**Les deux premières sont des défauts, la troisième est une fonctionnalité**, et la différence est
+nette : `TABLES_DECLAREES` **doit** échouer à chaque table nouvelle, c'est son objet ; les deux autres
+prétendaient décrire un état dérivable.
+
+> **La règle, sans jargon :** avant d'écrire une liste dans un contrôle, demande-toi **d'où elle vient**.
+> Si elle décrit un état que le code ou le modèle porte déjà, **dérive-la** — un `ast` sur le fichier de
+> réglages, une requête sur le catalogue, une lecture du modèle. Si elle est une **interprétation** que
+> rien ne porte, déclare-la **et exige qu'elle corresponde au réel**, comme `RELATIONS_ATTENDUES` dans
+> `verifier-historisation.py`.
+
+**Et la dérivation a ses propres pièges, tous les deux mesurés :**
+
+- **importer pour dériver peut casser un contrôle qui n'a pas les dépendances.** `verifier-images.py`
+  est invoqué par `python3`, hors environnement virtuel : importer `Parametres` exigeait `pydantic` et
+  cassait `make check`. La lecture passe donc par **`ast`**, qui n'exige rien ;
+- **une dérivation sur de la prose est une heuristique, donc un défaut.** Le §10.5 déclare la
+  nullabilité par « une entité **facultative** », sans écrire `entity_id`. Élargir le motif sur du
+  français aurait reconduit le défaut `T9-2` — le rattachement est **déclaré**.
+
+---
+
+## 7.28 Deux cibles de noms voisins, dont une seule éprouve ce qui t'intéresse
+
+**Apport de `T1` du LOT 3, et c'est ce qui a rougi la publication.**
+
+J'ai lancé `make check`, qui contient **`images-check`** — un contrôle **statique** qui n'ouvre aucune
+connexion au démon Docker et ne démarre rien. J'ai cru avoir éprouvé les images. La cible qui **lance**
+les conteneurs est **`images-verify`**, et je ne l'avais pas rejouée.
+
+| Cible | Ce qu'elle fait | Dans `make check` ? |
+|---|---|---|
+| `images-check` | **statique** : épinglage, étiquetage, sélection de cible | **oui** |
+| `images-build` | construit 3 images × 2 architectures, en local | non |
+| `images-verify` | **LANCE les conteneurs** sur les deux architectures | non |
+
+> **La règle, sans jargon :** quand tu changes ce dont un conteneur a besoin pour démarrer — une
+> variable, un réglage, un point d'entrée — **la seule preuve est de le LANCER**. Un contrôle statique
+> ne dira rien, et il te donnera la fausse confiance d'un code de sortie à zéro.
+
+**La même distinction existe ailleurs** : `stack-check` regarde la santé, `api-check` fait un
+aller-retour applicatif réel ; `env-check` compare des fichiers, `roles-provision` touche la base.
+**Lis ce que la cible fait, pas ce que son nom suggère.**
+
+---
+
 ## 7.26 Ce qui n'a jamais tourné à l'ÉCHELLE n'est pas éprouvé
 
 **Apport de `T12`, et cela élargit le §7.16.** Ce paragraphe disait : ce qui n'a jamais tourné
@@ -1381,7 +1540,7 @@ propre — comme `T2-5`, où un Mailpit vide et un volume effacé rendaient tous
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — **7 ouverts sur 32**
+## 8.1 Écarts — **7 ouverts sur 33**
 
 > **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
 > par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
@@ -1397,6 +1556,7 @@ propre — comme `T2-5`, où un Mailpit vide et un volume effacé rendaient tous
 | `ECART-014` | « Représentant de cercle » contre « Booster » | LOT 6 |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | avant le LOT 6 |
+| `ECART-033` | **CLOS en `T1` du LOT 3.** `make ports` concaténait les deux flux de Compose puis parsait le tout en JSON : un avertissement le cassait, **sans nommer la cause**. Il était juste à sa date — `ECART-024` à l'identique |
 | `ECART-032` | **Le backlog interdit plus large que le cahier, la matrice ET le modèle réunis** : « aucune responsabilité **métier** active dans plusieurs entités » là où les trois autres restreignent au seul **Booster**. Le cahier prévaut, le livrable est conforme — **mais un relecteur du backlog conclurait à un critère manquant** | à annoncer à `G2` |
 
 `ECART-023` est ouvert et clos en **`T8`** — la fiche énumérait six des sept séparations du cahier §22.2, et empruntait « Mailpit exclusif » aux LOTS 11 et 13.
@@ -1439,166 +1599,110 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 3 est OUVERT, son plan attend validation
+# 9. Par où commencer : `T3` du LOT 3, la demande de magic link
 
 ## 9.0 Ce que les sous-étapes ont démenti, et ce qu'il faut en retenir
 
-**Cinq fois, ce document a affirmé faux, et chaque fois c'était une affirmation jamais mesurée.** Les
-cinq sont détaillées dans les comptes rendus de `T5` à `T7`. Et la liste s'est allongée de quatre
-façons différentes, ce qui compte plus que le nombre :
+**Ce document a affirmé faux une dizaine de fois, et chaque fois c'était une affirmation jamais
+mesurée.** La liste s'allonge par des voies différentes, et c'est cela qui compte :
 
-- **`T8` a démenti la FICHE DU LOT** — six séparations énumérées là où le cahier en compte sept
-  (`ECART-023`). **Tout document dérivé d'un autre vieillit, pas seulement cette passation.**
-- **`T9` a démenti deux CONTRÔLES du dépôt.** Les deux étaient **justes quand ils ont été écrits** ;
-  c'est `T8`, en créant un second environnement, qui les a rendus faux (`ECART-024`, §7.21).
-- **`T10` a démenti une MESURE de `T6`**, en un jour : un avis de sécurité accepté parce qu'« aucun
-  correctif n'existe » en avait reçu un (§7.22).
-- **`T12` a démenti un contrôle que `T11` venait d'écrire, le jour même.** `T11` avait produit le
-  §7.25 — *un garde-fou à faux positifs est pire qu'aucun garde-fou* — et le contrôle SQLite de `T12`
-  l'a commis aussitôt : il cherchait le mot `sqlite` et a trouvé **16 occurrences, toutes de la prose
-  affirmant son exclusion**. **Un piège documenté n'est pas un piège désarmé**, et c'est la troisième
-  fois que cette phrase s'applique dans ce projet.
-- **`T11` a démenti une lecture de `git`.** Après la fusion de `develop` dans `main`,
-  `git rev-list --left-right --count` rendait `1 18` d'une syntaxe et `0 32` d'une autre, et **aucun
-  des deux ne répondait à la question** : ce sont des artefacts de fusion en squash. Ce qui fait foi
-  est l'**arbre**, identique des deux côtés. **Un compte de commits répond à une autre question que
-  celle qu'on croit poser.**
+- **une FICHE de lot** — six séparations énumérées là où le cahier en compte sept (`ECART-023`) ;
+- **des CONTRÔLES du dépôt** — justes quand ils ont été écrits, rendus faux par un second
+  environnement (`ECART-024`), par un avertissement de Compose (`ECART-033`), ou par nos propres
+  ajouts (§7.27) ;
+- **une MESURE antérieure** — un avis de sécurité « sans correctif » en avait reçu un, en un jour ;
+- **une leçon FRAÎCHEMENT écrite** : `T12` du LOT 2 a commis le §7.25 que `T11` venait de rédiger, et
+  `T2` du LOT 3 l'a commis à son tour. **Un piège documenté n'est pas un piège désarmé** — c'est la
+  quatrième fois que cette phrase s'applique ;
+- **une lecture de `git`** — `git rev-list --left-right --count` répond à une autre question que celle
+  qu'on croit poser. Ce qui fait foi est l'**arbre** ;
+- **mon propre avertissement** : j'ai dit à Jonathan qu'un `docker login` était requis. Il était déjà
+  fait. **Mesure avant de signaler, pas seulement avant d'agir.**
 
 **Vérifie avant de bâtir dessus — surtout quand ce document t'annonce que tu n'as rien à faire.**
 
+---
+
 ## 9.1 Où en est exactement le projet
 
-**Le LOT 2 est verrouillé, la porte `G2` est franchie le 20/08/2026 (`DEC-517`), et le tag `v0.2.0`
-est posé sur `main`.** Les douze sous-étapes sont faites, les huit stories sont livrées, leurs huit
-issues sont closes, et les **sept** critères de sortie sont acquis — six mesurés, le septième validé
-par Jonathan.
+**Le LOT 3 est ouvert, son découpage est validé, et `T1` et `T2` sont faites.** Il reste **dix**
+sous-étapes.
 
-**Il ne reste aucun travail technique, et aucun lot n'est ouvert.** La suite est une **décision de
-Jonathan** : ouvrir le LOT 3, ce que `ROAD-003` et `ARB-BACK-003` exigent d'expliciter et de tracer.
+| Fait | Ce que ça donne |
+|---|---|
+| `T1` | trois comptes PostgreSQL, `QO-116` **close**. Voir §5.9 — **lis-le avant toute requête** |
+| `T2` | les **sept** tables du §10, migration `0012`, et `make secrets-check` |
 
-> **Ce que le LOT 2 laisse au LOT 3, nommément.** **`QO-116`** — l'application se connecte à
-> PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège ; l'arbitrage
-> de `T1` était « à traiter au LOT 3, le lot dont la sécurité applicative est l'objet ». Et **la
-> vérification « ESM ou super-administrateur » de l'attributeur** du §8.4, que `T11` a laissée au LOT 3
-> parce que la base n'a **aucune notion de l'appelant**.
-
-**Ce que le LOT 2 a produit, mesuré :** **18 tables métier**, **10 migrations** rejouables,
-**94 contraintes**, **85 index**, **8 déclencheurs**, **8 clés étrangères composites**, et
-**373 tests** dont **204 d'intégration** sur PostgreSQL réel. Le jeu de recette fait **27 936
-lignes** et toutes ses requêtes répondent **sous 1,3 ms**.
-
-**Le compte rendu de la porte est [`checklist-validation-G2.md`](docs/operations/checklist-validation-G2.md)** :
-les sept critères avec leurs preuves, les huit stories, les **25 contrôles du §30 classés**, une
-démonstration guidée, ce qui reste ouvert, et ce que la pose du tag a déclenché.
-
-## 9.2 Ce qui a suivi la validation de `G2`, et ce qui reste
-
-**Fait, et mesuré le 20/08/2026 :**
-
-1. **☑ Les documents de clôture d'abord**, pull request `#59` — et **c'est un correctif de `G1`**, où
-   le tag précédait les documents de `T11`, qu'il ne contient donc pas. Un tag posé ne se déplace
-   jamais : la seule parade est de committer avant de tagger.
-2. **☑ `develop` portée dans `main` par une VRAIE fusion**, pull request `#60`. Mesuré, **par les
-   arbres et non par les commits** : `main^{tree}` = `develop^{tree}` = **`78e7cff`**, `develop`
-   **ancêtre** de `main`, **2 parents**, `main`↔`develop` à **4 / 0**, base de fusion `8038ecb`.
-   **Une seule pull request a suffi**, là où `G1` en avait exigé deux.
-3. **☑ Tag annoté `v0.2.0` posé sur `main`**, commit **`8c8e060`** — conventions §4, `DEC-517`. **Il
-   contient les documents de clôture**, contrairement à `v0.1.0`.
-4. **☑ `images.yml` déclenché par le tag**, comme annoncé **avant** la pose et non après. Les trois
-   images sont republiées sous l'étiquette **`0.2.0`**. Aucun `latest`, `DEC-481`.
-5. **☑ Les huit issues de stories closes, et l'epic `#38`.** `#42` l'a été **tardivement** : elle
-   était restée ouverte depuis `T9` alors que la fiche déclarait la story livrée — la routine du
-   §7.19 oubliée à une fusion. **Vérifie l'état des issues avant une porte, ne le suppose pas.**
-
-**Reste à faire, et c'est une décision de Jonathan :**
-
-6. **☑ LOT 3 OUVERT** par Jonathan le 20/08/2026, `DEC-518` — et il a arbitré **l'ordre** : `QO-116`,
-   le moindre privilège PostgreSQL, est traité en **première** sous-étape, avant l'authentification.
-7. **☑ Neuf issues créées**, epic `#62` et stories `#63` à `#70`, jalon `G3`. **Engendrées depuis le
-   backlog par script**, jamais recopiées — §6.4.
-8. **☑ Trois autres décisions tracées le 20/08/2026.** `QO-115` est **close** (`DEC-519`) : la charte
-   graphique et la police officielle **n'existent pas**, les jetons relevés du prototype font
-   référence et restent qualifiés d'**approximation**. Et **`ECART-012`** — Jonathan prend le sujet
-   **en main directement auprès de Léa**, sans note écrite, son choix explicite parmi trois options.
-   L'écart reste **ouvert** jusqu'à sa réponse.
-
-**Reste à faire, et c'est une décision de Jonathan :**
-
-9. **☐ VALIDER LE §3 DE LA FICHE DU LOT 3** — le découpage en douze sous-étapes. **N'écris pas une
-   ligne avant.** C'est la mécanique du LOT 2 : ouverture le 18/08, découpage validé le même jour,
-   douze sous-étapes ensuite.
+**Rien n'attend de décision de Jonathan.** `T3` peut commencer.
 
 ---
 
-## 9.3 Les pièges de cette fin de lot
+## 9.2 `T3` — ce qu'elle doit faire, et les quatre pièges connus
 
-1. **☑ Le tag `v*` a déclenché `images.yml`, et il fallait le dire AVANT.** C'est fait cette fois. La
-   leçon vaut pour `G3` : **annonce la conséquence avant l'action, pas après**.
-2. **Ne mets PAS « Porte des images multiarchitecture » dans les contrôles requis.** `images.yml` ne
-   s'exécute **pas** sur les pull requests — cahier §23.1 — donc ce contexte ne produirait jamais de
-   statut et **bloquerait toute fusion pour toujours**, `enforce_admins` étant actif. Mesuré le
-   20/08/2026 : le seul contexte requis sur `main` est **« Porte de l intégration continue »**.
-3. **`mergeStateStatus=UNSTABLE` n'est PAS un échec.** Il signale qu'un contrôle **non requis** est en
-   cours — typiquement `images.yml`. Ce qui fait foi est la liste des contextes **requis**, et elle se
-   mesure : `gh api repos/…/branches/main/protection --jq .required_status_checks.contexts`.
-4. **Compare les ARBRES, pas les commits.** `git rev-list --left-right --count` répond à une autre
-   question que celle qu'on croit poser — voir §9.0.
-5. **Les cinq documents de cadrage restent immuables.** `make docs-check` recalcule leurs empreintes.
+**Story `MVP-L03-US001`, issue `#63`.** Critère du backlog : « la réponse est **générique** ; seuls les
+profils actifs et autorisés reçoivent un lien ; Mailpit capte le message en recette ».
+
+| Piège | Ce qu'il faut faire |
+|---|---|
+| **le critère est une ÉGALITÉ, pas un refus** | comparer le **corps ET les en-têtes** de deux réponses — adresse connue, adresse inconnue. Un même code HTTP avec un corps différent trahirait l'existence du compte |
+| **l'index partiel refusera un second lien actif** | le service **doit** invalider le précédent avant d'insérer. Ce n'est pas une option : la base l'impose (`DEC-521`) |
+| **`§30.11` devient acquis** | « un profil archivé ne reçoit pas de magic link ». `make recette-modele-check` **échouera** tant que son classement n'aura pas été mis à jour avec le test qui le prouve |
+| **le jeton ne doit jamais paraître** | ni en journal, ni en audit, ni dans un message d'erreur. Les trois barrières de `packages/observabilite` doivent recevoir **le format que ce lot produit** — leçon `T4-1` : un test de filtre énumère les formes que **ce projet** produit, pas des exemples de documentation |
+
+**Et un cinquième, structurel :** le temps **s'injecte**, il ne s'attend pas. Un test qui dormirait
+15 minutes serait inutilisable en intégration continue.
 
 ---
 
-## 9.4 Ce qui reste ouvert, et qu'il faut savoir avant le LOT 3
+## 9.3 Les dix sous-étapes restantes
+
+| | Sous-étape | Story |
+|:--:|---|---|
+| `T3` | magic link — la **demande**, réponse générique | `US001` |
+| `T4` | magic link — la **consommation**, usage unique, 15 min | `US002` |
+| `T5` | compte **administrateur local** — hachage, verrouillage. **Porte aussi la vérification « ESM ou super-administrateur »** que `T11` du LOT 2 a laissée | `US003` |
+| `T6` | **sessions** — `HttpOnly`, `Secure`, `SameSite`, 7 j / 30 j | `US004` |
+| `T7` | **CSRF** et idempotence | `US005` |
+| `T8` | **limitation de débit** | `US001`, `US003` |
+| `T9` | **révocation au départ** — rend `§30.22` acquis | `US006` |
+| `T10` | comptes de service et **scopes** | `US007` (`P1`) |
+| `T11` | les **huit écrans** d'authentification | — |
+| `T12` | **audit** des événements, recette et checklist `G3` | `US008` |
+
+**Quatre décisions que le corpus ne tranche pas**, à instruire à leur sous-étape **sans rien inventer**
+(§6.5) : l'algorithme de hachage (`T5`), les seuils de débit (`T8`), la durée maximale d'un jeton de
+service et la **liste des scopes** (`T10`).
+
+---
+
+## 9.4 Ce qui reste ouvert, et qu'il faut savoir
 
 | Élément | Ce qu'il faut savoir |
 |---|---|
-| **`QO-116`** | **La dette la plus directe du LOT 3.** L'application se connecte à PostgreSQL en **superutilisateur** alors que le cahier §20.1 pose le moindre privilège. L'arbitrage de `T1` était « à traiter au LOT 3, le lot dont la sécurité applicative est l'objet » |
-| **La vérification de l'attributeur, §8.4** | « ESM ou super-administrateur » est une règle de **permission** : la base n'a **aucune notion de l'appelant**. `T11` l'a laissée au LOT 3, et `attribuer_la_categorie_dg` reçoit déjà l'attributeur en paramètre — il ne reste qu'à vérifier son droit |
-| **`ECART-012`** | **Attend Léa**, et c'est le seul point du LOT 2 en attente d'une décision **produit**. Le coût des deux options est mesuré depuis `T5` ; échu **avant le LOT 5** |
+| **`ECART-012`** | **Attend Léa.** Jonathan lui en parle **directement**, sans note — son choix du 20/08/2026. Échu **avant le LOT 5** |
 | **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
 | **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut, le livrable est conforme |
-| **`QO-113`**, **`QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13**, à instruire avant |
-| **`QO-115`** | La **charte graphique** et la **police officielle** n'existent pas dans le corpus. Avant le LOT 4 |
+| **La recette n'est pas éprouvée sous le nouveau régime** | Elle exécute l'artefact **publié et épinglé par empreinte** (`DEC-486`), de révision antérieure à `T1`. Son API se connecte encore en superutilisateur, **mesuré**. Il faut republier puis `make images-pin`. **Avant `G3`**, avec `make separations-check` |
+| **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
 | **Row-Level Security** | Le §2.5 la cite comme « compatibilité future ». Rien ne la datant, elle n'est **pas** mise en place — et ce n'est pas un oubli |
-| **13 des 25 contrôles du §30** | Reportés, chacun rattaché à son lot par `make recette-modele-check`. Le contrôle **échouera** si un contrôle du modèle cesse d'être classé |
-| `ROAD-RSK-033`, `ROAD-RSK-034` | 23 avis sans correctif dans `python:3.12-slim` · les ports publiés perçent l'isolement inter-réseaux. **À réévaluer avant le LOT 13**, et `T10` a montré qu'un tel résiduel peut se corriger du jour au lendemain |
+| **11 des 25 contrôles du §30** | Reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé |
+| `ROAD-RSK-033`, `ROAD-RSK-034` | 23 avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13** |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
 ---
 
-## 9.5 Les 7 critères de sortie de la porte `G2`
+## 9.5 Ce que le LOT 3 ne doit pas faire
 
-| | Critère | Ce qui le prouve |
-|:--:|---|---|
-| ☑ | toutes les migrations s'appliquent sur une base **vide** | `make migrations-check` — base jetable, **0 table** au départ, tête `0011` |
-| ☑ | les migrations sont **rejouables** | descente à `base` sans table métier survivante, remontée à signature **identique** |
-| ☑ | les contraintes critiques disposent de tests PostgreSQL | **373 tests**, dont **204 d'intégration**. Chaque refus a son **témoin** |
-| ☑ | les relations structurantes sont **historisées** | `make historisation-check` — les **7** du §25.2, compte **dérivé du modèle** |
-| ☑ | les tests d'**isolation** réussissent | `make isolation-check` — **8** clés composites, **0** référence nue. Et `isolation-temoin` tourne **en CI** |
-| ☑ | aucune dépendance à **SQLite** | 99 fichiers, **0 usage réel**. Le motif cherche un **usage**, jamais le mot |
-| ☑ | **Jonathan valide le modèle implémenté** | **VALIDÉ le 20/08/2026** — `DEC-517`, [checklist](docs/operations/checklist-validation-G2.md) |
+**Au-delà de son périmètre :** aucun écran ni route métier hors des **huit** pages d'authentification —
+le portail est le LOT 4, les collaborateurs le LOT 5 · aucune table d'un lot postérieur.
 
-**LES SEPT CRITÈRES SONT ACQUIS. La porte `G2` est franchie, et le LOT 2 est verrouillé.**
-
-**Et la comparaison de schémas est ce qui donne son poids au premier critère.** Sans elle, on saurait
-que la chaîne de migrations **s'applique** — pas qu'elle **aboutit** au schéma qui tourne. 269
-colonnes, 94 contraintes, 85 index, 8 déclencheurs et 196 fonctions sont **identiques** entre une base
-construite de zéro et celle qui tourne.
-
----
-
-## 9.6 Ce qui reste interdit tant que le LOT 3 n'est pas ouvert
-
-**Aucune ligne du LOT 3.** Concrètement, et ce sont les tables que le §11 de la fiche du LOT 2 nommait
-déjà : `user_account`, `admin_password_credential`, `magic_link_request`, `user_session`,
-`service_account`, `service_token`, `auth_event`. Ni authentification, même partielle, même de test ·
-ni contournement d'authentification · ni écran, page ou route métier de l'API · ni type métier dans
-`packages/contracts` avant qu'une route l'expose.
-
-**Et les interdits permanents du projet, qui ne dépendent d'aucun lot :** aucune donnée réelle de
-collaborateur — aucun CSV réel, aucune photo · aucune modification d'une migration déjà appliquée · ni
-des cinq documents de cadrage · aucune exposition de PostgreSQL, Redis, MinIO ou Mailpit ailleurs que
-sur `127.0.0.1` · aucune référence d'image par `latest` seul · ni Kubernetes, ni PWA, ni fonctionnement
-hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique réutilisée.
+**Les interdits absolus, qui ne dépendent d'aucun lot :** **aucun contournement de l'authentification**,
+à aucun moment, même en développement, même « le temps d'un test » — règle 6 · **aucun jeton ni mot de
+passe en clair** en base, en journal, en audit ou dans un message d'erreur · **aucun jeton dans
+`localStorage`** · aucune donnée réelle de collaborateur · aucune modification d'une migration déjà
+appliquée ni des cinq documents de cadrage · aucune exposition de PostgreSQL, Redis, MinIO ou Mailpit
+ailleurs que sur `127.0.0.1` · aucune référence d'image par `latest` seul · ni Kubernetes, ni PWA, ni
+hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 
 ---
 
@@ -1698,77 +1802,65 @@ hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype histor
 # 11. Démarrage type d'une session
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
-git switch develop && git pull
-git log --oneline -5
-git status -sb
-gh issue list --milestone G1 --state all
+export PATH="$HOME/.local/bin:$PATH"        # gh et uv n'y sont PAS par defaut
+git switch develop && git pull && git log --oneline -3 && git status -sb
+gh issue list --milestone G3 --state all
 
-make icloud-verify        # PAS une formalite : voir §7.1
-make env-check            # .env contre .env.example : 3 variables manquaient (ECART-022)
-make check                # qualite complete, docs-check ET images-check compris
-make audit                # pip-audit et pnpm audit (DEC-474)
-make up                   # les 8 services, ET recharge Caddy (DEC-472)
+make icloud-verify        # PAS une formalite : le risque s'est materialise, §7.1
+make env-check            # .env contre .env.example — 4 variables manquaient en T1
+make check                # qualite complete : docs-check, images-check,
+                          # recette-modele-check, format, lint, mypy strict, tests
+make audit                # pip-audit et pnpm audit, zero tolerance depuis DEC-493
+
+make up                   # les 8 services, le bucket MinIO, LES DEUX ROLES, et
+                          # recharge Caddy. Ordre impose par DEC-477 et DEC-520
 make stack-check          # sante + ports
-make api-check            # les 3 endpoints
+make migrate              # rafraichit le code embarque, PUIS applique
+make api-check            # les 3 endpoints de sante
 make web-check            # la page vue comme un navigateur la voit
-make code-check           # LOT 2 : le conteneur execute-t-il le code du depot ?
-make alembic-check        # une seule tete de migration
-make test-integration     # 8 tests sur services reels
 
-# Images, si tu y touches. `images-build` construit amd64 EN EMULATION : c'est lent.
-make images-check         # statique, aucun Docker requis
-make images-build         # 3 images x 2 architectures, en local, puis manifestes et tailles
-make images-verify        # LANCE les conteneurs sur les 2 architectures
+# Les contrôles de schéma, tous dans la CI
+make privileges-check     # EXIGE une base migrée — il le dit s'il en manque
+make secrets-check        # 2 familles d'empreintes, ni mot de passe ni jeton en clair
+make isolation-check      # 8 clés composites, 0 référence nue
+make isolation-temoin     # le témoin : le contrôle sait-il ÉCHOUER ?
+make historisation-check  # les 7 relations du §25.2, compte dérivé du modèle
+make migrations-check     # base VIDE, chaîne rejouée, et le schéma COMPARÉ
+make recette-modele-check # les 25 contrôles du §30, classés
+make alembic-check        # une seule tête de migration
+make code-check           # le conteneur exécute-t-il le code du dépôt ?
 
-# RECETTE, depuis T8. Elle TIRE les images publiees : `docker login ghcr.io` requis.
-make up-recette           # les 8 services de recette, sur les images PUBLIEES
-make recette-check        # sante, ports, coherence du .env, puis les 7 separations
-make separations-check    # EXIGE que les DEUX stacks tournent (exception a DEC-440)
-make images-pin           # deplace le pointeur d'images sans commit, derive de la publication
-make down-recette         # arret, volumes conserves
+# Si tu touches aux images : `images-check` est STATIQUE, elle ne lance RIEN.
+make images-build && make images-verify    # celle qui LANCE. Voir §7.28
+
+# Recette, sur les images PUBLIÉES. `docker login ghcr.io` déjà fait au 21/08.
+make up-recette && make recette-check && make separations-check && make down-recette
 ```
 
-> **La recette ne demarre pas sans authentification au registre, et c'est voulu.** Si `make
-> up-recette` repond `unauthorized`, ce n'est pas une panne : c'est le garde-fou de `DEC-486` qui
-> refuse de se rabattre sur une construction locale. Le remede est un `docker login ghcr.io` de
-> Jonathan — **son action** :
->
-> ```bash
-> ~/.local/bin/gh auth token | docker login ghcr.io -u Jonathan2433 --password-stdin
-> ```
->
-> **Et si `make up-recette` echoue une fois sur `dependency failed to start` apres un demarrage
-> interrompu, rejoue-le** : c'est le defaut `T8-4`, diagnostique et non corrige. Compose evalue le
-> verdict PERIME d'un conteneur laisse `unhealthy` au lieu d'attendre l'intervalle de sonde suivant.
-
-**Et regarde l'integration continue**, qui existe depuis `T6` et qui **bloque** :
+**Et regarde l'intégration continue, qui bloque :**
 
 ```bash
-gh run list --limit 5
-gh pr checks <numero>
+gh run list --limit 5 && gh pr checks <numero>
+gh run list --workflow=images.yml --limit 3   # elle a été ROUGE une fois, §7.28
 ```
 
-Si Docker ne répond pas : `open -a Docker`, puis attendre. Il s'est arrêté seul une fois pendant
-ce lot.
+Si Docker ne répond pas : `open -a Docker`, puis attendre. Il s'est arrêté seul une fois.
 
-1. Lire ce document.
-2. Lire [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant.
-3. Lire [`fiche-lot-1.md`](docs/operations/fiche-lot-1.md) : la sous-étape en cours.
-4. Lire le **compte rendu de la sous-étape précédente** — `T10` — pour savoir ce qui a été laissé
-   ouvert. Son §3 dit ce qui n'est **pas** couvert et pourquoi, son §6 l'événement extérieur qui a
-   fermé `ROAD-RSK-032`, son §7 les quatre défauts, et son §8 les six recommandations.
-5. Lire [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt,
-   réinitialisation et **neuf symptômes de diagnostic réellement rencontrés**. Toutes ses commandes
-   ont été exécutées.
-5. Vérifier l'état réel par `git`, `gh` et les mesures, **pas par ce que la doc affirme**. §9.0
-   donne un exemple récent où ce document se trompait sur l'architecture.
-6. Exécuter **une** sous-étape, contrôler, rapporter, attendre la validation.
+**Dans quel ordre lire :**
 
-Contrôle d'hygiène utile à tout moment :
+1. **ce document**, en entier ;
+2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
+3. [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md) §3 : la sous-étape en cours ;
+4. le **compte rendu de la sous-étape précédente** — `compte-rendu-t2-lot-3.md` — dont le §12 dit ce
+   qu'elle laisse à la suivante ;
+5. [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt, et **neuf
+   symptômes de diagnostic réellement rencontrés** ;
+6. **vérifier l'état réel** par `git`, `gh` et les mesures — **pas** par ce que la doc affirme (§9.0).
+
+**Contrôle d'hygiène, à tout moment :**
 
 ```bash
-git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # 2 attendus, voir ci-dessous
+git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # 3 attendus, nommés au §11 ci-dessous
 git ls-files | grep -c 'V1.html'                          # doit valoir 0
 git status --short                                        # doit être vide
 ```
@@ -1778,21 +1870,13 @@ Le premier montre **trois** fichiers, et les trois sont légitimes :
 | Fichier | Pourquoi il est là |
 |---|---|
 | `docs/architecture/donnees/exemples/collaborateurs-exemple-fictif.csv` | explicitement **fictif**, LOT 0 |
-| `apps/web/index.html` | point d'entrée **imposé par Vite** depuis `T5`. Le filtre visait le prototype ; `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html` |
-| `infra/compose/differences-recette.env` | **calque de différences versionné**, `T8`. **Aucune valeur sensible** — les cinq secrets sont **engendrés** à la création de `.env.recette`, jamais écrits ici, et Gitleaks l'examine à chaque pull request |
+| `apps/web/index.html` | point d'entrée **imposé par Vite** depuis `T5`. `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html` |
+| `infra/compose/differences-recette.env` | **calque de différences versionné**, `T8`. **Aucune valeur sensible** — les cinq secrets sont **engendrés** à la création de `.env.recette`, et Gitleaks l'examine à chaque pull request |
 
 > **Ce paragraphe annonçait DEUX fichiers, et « toute troisième entrée est une anomalie ».** Il y en a
-> trois depuis `T8` du LOT 1 — le calque de recette — et **personne ne l'avait mesuré**, si bien que
-> l'avertissement aurait crié au loup sur un fichier parfaitement légitime. Constaté le 20/08/2026, à
-> la clôture de `G2`, en exécutant le contrôle d'hygiène plutôt qu'en le citant.
->
-> **C'est la classe `ECART-021` appliquée à un avertissement**, et le §7.21 le dit : *un avertissement
-> faux est pire qu'une absence d'avertissement*, parce qu'il apprend à passer outre. Le compte est
-> donc **dérivé** ci-dessous, et non affirmé :
->
-> ```bash
-> git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$' | wc -l    # 3 au 20/08/2026
-> ```
+> trois depuis `T8` du LOT 1, et personne ne l'avait mesuré : l'avertissement aurait **crié au loup sur
+> un fichier légitime**. C'est le §7.21 — *un avertissement faux est pire qu'une absence
+> d'avertissement*, parce qu'il apprend à passer outre.
 >
 > **Toute entrée que ce tableau ne nomme pas est une anomalie** — c'est la formulation qui ne vieillit
 > pas, là où un nombre vieillit à la première addition.
@@ -1805,7 +1889,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  63 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  130 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
   filtre de masquage, les **six** fois où j'ai conclu sur un code de sortie qui n'était pas celui
   que je croyais lire, et l'**empreinte SHA-256 inventée** que `T7` a écrite dans un workflow avant
   de la remplacer par la valeur mesurée. En `T5`, **cinq défauts sur huit étaient dans mes
@@ -1821,8 +1905,14 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : 181 décisions, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : **105 décisions depuis `DEC-418`**, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
 tuyau. **Tiens les registres à jour dans la même pull request que le travail — jamais après.**
+
+**Et une chose qui a marché à chaque fois, sur les trois lots :** quand un contrôle échoue et que tu
+ne sais pas pourquoi, **la première correction à écrire est celle qui te le dira**. Trois cycles
+d'intégration continue perdus en `T7` du LOT 1, un `REASSIGN OWNED` diagnostiqué en deux nombres en
+`T1` du LOT 3 : la différence est là. Un contrôle qui masque la cause de son échec ne coûte pas un
+message, il coûte des heures.
