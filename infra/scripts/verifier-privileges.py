@@ -122,6 +122,39 @@ def main() -> int:
     print("  Moindre privilege PostgreSQL — cahier §20.1, QO-116, DEC-518")
 
     # ------------------------------------------------------------------
+    #  0. LE PREREQUIS, NOMME — et il l'est parce qu'il a manque
+    # ------------------------------------------------------------------
+    #  Cinq des epreuves ci-dessous emploient la table `entity` comme sujet :
+    #  elles verifient qu'un `DROP`, un `ALTER` ou un `TRUNCATE` sont REFUSES, et
+    #  qu'un `SELECT` est autorise. Sur une base non migree, les cinq echouent
+    #  avec « relation "entity" does not exist ».
+    #
+    #  MESURE DU 20/08/2026, SUR LA RECETTE : le controle rendait cinq echecs
+    #  « a echoue pour une AUTRE raison », ce qui etait exact -- il ne pretendait
+    #  pas au succes -- mais **il ne nommait pas la cause**. Un controle qui
+    #  echoue sans dire ce qui lui manque coute des cycles : c'est le §7.18.
+    #
+    #  Il refuse donc de continuer, et il DIT quoi faire.
+    code, sortie = psql(
+        compose,
+        env,
+        execution,
+        mot_de_passe_execution,
+        "SELECT to_regclass('public.entity') IS NOT NULL",
+    )
+    if code:
+        print(f"    ECHEC    {execution} ne peut pas se connecter : {sortie[:180]}")
+        return 1
+    if sortie.strip() != "t":
+        print("    ECHEC    la base n'est pas migree : la table `entity` est absente.")
+        print("             Cinq des epreuves ci-dessous l'emploient comme sujet, et")
+        print('             echoueraient avec « relation "entity" does not exist » —')
+        print("             un refus, mais pas celui qu'on cherche a prouver.")
+        print("             Remede : `make migrate` (ou `make migrate ENVIRONNEMENT=recette`).")
+        return 1
+    print("    ok       prerequis : la base est migree, `entity` est presente")
+
+    # ------------------------------------------------------------------
     #  1. Les attributs du role d'execution
     # ------------------------------------------------------------------
     code, sortie = psql(
