@@ -540,6 +540,12 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
     etapes = (
         "DELETE FROM auth_event WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
+        #  `user_session` A ETE AJOUTEE PAR `T6` : la route de connexion cree
+        #  desormais une session, et la cle etrangere bloque la suppression de la
+        #  personne. Ce nettoyage etait complet quand `T5` l'a ecrit. §7.21, et
+        #  c'est le quatrieme nettoyage touche par cet ajout.
+        "DELETE FROM user_session WHERE person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         "DELETE FROM admin_password_credential WHERE user_account_id IN "  # noqa: S608
         "(SELECT u.id FROM user_account u JOIN person p ON p.id = u.person_id "
         f" WHERE p.email_normalized = '{adresse}')",

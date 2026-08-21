@@ -165,6 +165,19 @@ class Parametres(BaseSettings):
     #  refuse de demarrer si elle diverge du modele. Voir `_controles_universels`.
     MAGIC_LINK_TTL_MINUTES: int = 15
 
+    # --- Sessions (cahier §7.4, modele §10.4) -------------------------------
+    #  LOT 3, T6 : ces quatre variables etaient dans `.env.example` depuis le
+    #  LOT 0, marquees `[lot] 3`, et n'etaient DECLAREES par personne.
+    #
+    #  **LA VALEUR DE `SameSite` ETAIT DEJA TRANCHEE.** Le cahier §7.4 exige
+    #  « cookie `HttpOnly`, `Secure` et `SameSite` » sans dire laquelle, et
+    #  `.env.example` ecrit `lax` depuis la sous-etape S5 du LOT 0. La deriver
+    #  aurait ete inventer ce qui etait decide -- §9.0.
+    SESSION_COOKIE_NAME: str = "exalt_session"
+    SESSION_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
+    SESSION_IDLE_DAYS: int = 7
+    SESSION_ABSOLUTE_DAYS: int = 30
+
     # --- Securite (cahier §7.4, §20.1) --------------------------------------
     SESSION_COOKIE_SECURE: bool = True
     CSRF_PROTECTION_ENABLED: bool = True
@@ -246,13 +259,41 @@ class Parametres(BaseSettings):
         #     L'import est LOCAL a dessein : le declarer en tete lierait ce module
         #     a la couche SQLAlchemy, et les tests unitaires de configuration
         #     echoueraient alors sur une erreur de modele qui ne les concerne pas.
-        from app.auth.modeles import MINUTES_DE_VALIDITE_DU_MAGIC_LINK
+        from app.auth.modeles import (
+            JOURS_D_INACTIVITE_DE_SESSION,
+            JOURS_MAXIMUM_DE_SESSION,
+            MINUTES_DE_VALIDITE_DU_MAGIC_LINK,
+        )
 
         if self.MAGIC_LINK_TTL_MINUTES != MINUTES_DE_VALIDITE_DU_MAGIC_LINK:
             manquements.append(
                 "MAGIC_LINK_TTL_MINUTES : doit valoir "
                 f"{MINUTES_DE_VALIDITE_DU_MAGIC_LINK}, valeur imposee EN BASE par la "
                 "contrainte `expiration_a_quinze_minutes` (modele §10.3)"
+            )
+        #     LOT 3, T6 — LES DEUX DUREES DE SESSION, et l'une des deux est PLUS
+        #     exposee que l'autre.
+        #
+        #     `SESSION_ABSOLUTE_DAYS` est bornee EN BASE par la contrainte
+        #     `duree_absolue_bornee` : une valeur superieure ferait refuser
+        #     l'insertion, avec un message qui ne nommerait pas la variable.
+        #
+        #     `SESSION_IDLE_DAYS` n'a AUCUNE contrainte en base -- l'expiration
+        #     par inactivite se calcule, elle n'a pas de colonne (§10.4). Une
+        #     divergence y serait donc **silencieuse** : la plateforme
+        #     deconnecterait au bout de quatorze jours en affirmant sept. C'est
+        #     le cas le plus dangereux des deux, et c'est pourquoi il est garde.
+        if self.SESSION_ABSOLUTE_DAYS != JOURS_MAXIMUM_DE_SESSION:
+            manquements.append(
+                "SESSION_ABSOLUTE_DAYS : doit valoir "
+                f"{JOURS_MAXIMUM_DE_SESSION}, valeur imposee EN BASE par la contrainte "
+                "`duree_absolue_bornee` (modele §10.4)"
+            )
+        if self.SESSION_IDLE_DAYS != JOURS_D_INACTIVITE_DE_SESSION:
+            manquements.append(
+                "SESSION_IDLE_DAYS : doit valoir "
+                f"{JOURS_D_INACTIVITE_DE_SESSION} (cahier §7.4, modele §10.4). Aucune "
+                "contrainte en base ne le refuserait : une divergence serait SILENCIEUSE"
             )
 
         # 4 — LOG_FORMAT vaut json

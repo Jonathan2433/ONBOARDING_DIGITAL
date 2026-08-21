@@ -755,6 +755,18 @@ def test_le_compteur_d_echecs_est_ATOMIQUE_sous_CONCURRENCE(
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  `user_session` A ETE AJOUTEE PAR `T6`, ET SON ABSENCE ICI A
+                #  CASSE DIX TESTS SANS RAPPORT.
+                #
+                #  Ce nettoyage etait complet quand `T5` l'a ecrit : la route de
+                #  connexion ne creait alors AUCUNE session. `T6` lui en fait
+                #  creer une, la cle etrangere `fk_user_session_person_id_person`
+                #  a bloque la suppression de la personne, et le residu a fait
+                #  echouer `test_personnes.py`, `test_authentification.py` et
+                #  `test_jeu_de_recette.py`. Defaut `T6-2`, et c'est le §7.21 :
+                #  un controle ne devient pas faux tout seul.
+                "DELETE FROM user_session WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM admin_password_credential WHERE user_account_id IN "
                 "(SELECT u.id FROM user_account u JOIN person p ON p.id = u.person_id "
                 " WHERE p.email_normalized LIKE :motif)",
@@ -787,6 +799,18 @@ def stack_avec_admin(parametres_de_la_stack: Parametres) -> Iterator[tuple[Param
         with moteur(parametres_de_la_stack).begin() as menage:
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  `user_session` A ETE AJOUTEE PAR `T6`, ET SON ABSENCE ICI A
+                #  CASSE DIX TESTS SANS RAPPORT.
+                #
+                #  Ce nettoyage etait complet quand `T5` l'a ecrit : la route de
+                #  connexion ne creait alors AUCUNE session. `T6` lui en fait
+                #  creer une, la cle etrangere `fk_user_session_person_id_person`
+                #  a bloque la suppression de la personne, et le residu a fait
+                #  echouer `test_personnes.py`, `test_authentification.py` et
+                #  `test_jeu_de_recette.py`. Defaut `T6-2`, et c'est le §7.21 :
+                #  un controle ne devient pas faux tout seul.
+                "DELETE FROM user_session WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM admin_password_credential WHERE user_account_id IN "
                 "(SELECT u.id FROM user_account u JOIN person p ON p.id = u.person_id "

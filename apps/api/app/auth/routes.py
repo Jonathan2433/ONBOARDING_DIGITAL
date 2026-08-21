@@ -67,6 +67,7 @@ from app.auth.services import (
     consommer_un_magic_link,
     demander_un_magic_link,
 )
+from app.auth.sessions import lire_et_rafraichir, ouvrir_une_session, revoquer
 from app.configuration.settings import Parametres
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
@@ -146,6 +147,18 @@ LONGUEUR_MINIMALE_MOT_DE_PASSE = 12
 #  une surface de deni de service — d'autant plus qu'un calcul coute 64 Mio.
 LONGUEUR_MAXIMALE_MOT_DE_PASSE = 1024
 
+#  LOT 3, T6 — LA SESSION A UN SEUL GABARIT DE REFUS, LUI AUSSI.
+#
+#  Jeton absent, jeton inconnu, session revoquee, duree absolue depassee,
+#  inactivite depassee : les cinq rendent CE code et ce message. Les distinguer
+#  apprendrait a un attaquant qu'un jeton a EXISTE, et lequel des deux delais
+#  l'a emporte.
+CODE_SESSION_REFUSEE = "session_invalide"
+MESSAGE_SESSION_REFUSEE = (
+    "Aucune session valide. Reconnectez-vous : une session expire apres sept jours "
+    "sans activite, et trente jours au maximum."
+)
+
 SUJET_DU_COURRIEL = "Votre lien de connexion eXalt Onboarding"
 
 CORPS_DU_COURRIEL = """Bonjour,
@@ -204,6 +217,19 @@ class ChangementDeMotDePasse(BaseModel):
         min_length=LONGUEUR_MINIMALE_MOT_DE_PASSE,
         max_length=LONGUEUR_MAXIMALE_MOT_DE_PASSE,
     )
+
+
+class ReponseDeSession(BaseModel):
+    """Etat de la session courante — LOT 3, `T6`.
+
+    **ELLE NE PORTE PAS LE JETON**, et c'est le point : le jeton vit dans un
+    cookie `HttpOnly`, donc hors d'atteinte de tout JavaScript. Le rendre ici le
+    remettrait a portee du navigateur, et le critere du §7.4 — « aucune donnee
+    d'authentification durable dans `localStorage` » — deviendrait impossible a
+    tenir : un frontend qui recoit un jeton finit par le stocker.
+    """
+
+    personne: uuid.UUID
 
 
 class ReponseDeConnexion(BaseModel):
@@ -404,13 +430,26 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  UNE SEULE TRANSACTION : la pose de `used_at` et l'evenement d'audit
         #  sont indissociables. Un lien consomme sans trace serait un acces non
         #  journalise.
+        instant = dt.datetime.now(tz=dt.UTC)
+        jeton_de_session: str | None = None
         with moteur(parametres).begin() as connexion:
             consommation = consommer_un_magic_link(
                 connexion,
                 jeton=corps.token,
-                instant=dt.datetime.now(tz=dt.UTC),
+                instant=instant,
                 empreinte_origine=empreinte,
             )
+            if consommation.personne is not None:
+                #  LOT 3, T6 — LA SESSION NAIT DANS LA MEME TRANSACTION que la
+                #  consommation. Les separer laisserait un lien consomme sans
+                #  session : le porteur aurait brule son jeton pour rien, et
+                #  l'usage unique lui interdirait de recommencer.
+                jeton_de_session, _ = ouvrir_une_session(
+                    connexion,
+                    personne=consommation.personne,
+                    instant=instant,
+                    jours_absolus=parametres.SESSION_ABSOLUTE_DAYS,
+                )
 
         if consommation.personne is None:
             #  **LE MESSAGE NE CITE PAS LE JETON, ET LE `champ` NON PLUS.** Le
@@ -424,8 +463,10 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                 champ="token",
             )
 
+        assert jeton_de_session is not None  # noqa: S101 — garanti par la branche ci-dessus
+        _poser_le_cookie_de_session(parametres, reponse, jeton_de_session)
         return ReponseDeConsommation(
-            message="Lien accepte. Votre identite est etablie.",
+            message="Lien accepte. Vous etes connecte.",
             personne=consommation.personne,
         )
 
@@ -457,14 +498,26 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         reponse.headers["Cache-Control"] = "no-store"
         empreinte = _empreinte_d_origine(parametres, requete)
 
+        instant = dt.datetime.now(tz=dt.UTC)
+        jeton_de_session: str | None = None
         with moteur(parametres).begin() as connexion_bd:
             resultat = authentifier_un_administrateur(
                 connexion_bd,
                 adresse=corps.email,
                 mot_de_passe=corps.mot_de_passe,
-                instant=dt.datetime.now(tz=dt.UTC),
+                instant=instant,
                 empreinte_origine=empreinte,
             )
+            if resultat.personne is not None and resultat.reussie:
+                #  MEME TRANSACTION que l'authentification : un `last_login_at`
+                #  pose sans session dirait qu'une connexion a eu lieu alors
+                #  qu'aucun acces n'a ete accorde.
+                jeton_de_session, _ = ouvrir_une_session(
+                    connexion_bd,
+                    personne=resultat.personne,
+                    instant=instant,
+                    jours_absolus=parametres.SESSION_ABSOLUTE_DAYS,
+                )
 
         if resultat.personne is None or not resultat.reussie:
             #  **LE MESSAGE NE CITE NI L'ADRESSE NI LE MOTIF INTERNE.** Le motif
@@ -475,6 +528,8 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
                 statut=status.HTTP_400_BAD_REQUEST,
             )
 
+        assert jeton_de_session is not None  # noqa: S101 — garanti par la branche ci-dessus
+        _poser_le_cookie_de_session(parametres, reponse, jeton_de_session)
         return ReponseDeConnexion(
             message="Identifiants acceptes.",
             personne=resultat.personne,
@@ -537,7 +592,126 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
 
         return ReponseGenerique(message="Mot de passe modifie.")
 
+    @routeur.get(
+        "/session",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeSession,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": (
+                    "Aucune session valide. UNE SEULE forme pour cinq causes : cookie "
+                    "absent, jeton inconnu, session revoquee, duree absolue depassee, "
+                    "inactivite depassee."
+                )
+            }
+        },
+        summary="Lire la session courante",
+        description=(
+            "Valide le cookie ET rafraichit l'activite, en une seule operation atomique. "
+            "Ne rend JAMAIS le jeton : il vit dans un cookie `HttpOnly`, hors d'atteinte "
+            "de tout JavaScript."
+        ),
+    )
+    def session_courante(requete: Request, reponse: Response) -> ReponseDeSession:
+        """Lire et rafraichir la session — cahier §7.4, modele §10.4."""
+        reponse.headers["Cache-Control"] = "no-store"
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+
+        with moteur(parametres).begin() as connexion:
+            etat = lire_et_rafraichir(
+                connexion,
+                jeton=jeton,
+                instant=dt.datetime.now(tz=dt.UTC),
+                jours_d_inactivite=parametres.SESSION_IDLE_DAYS,
+            )
+
+        if etat.personne is None:
+            raise ErreurApplicative(
+                code=CODE_SESSION_REFUSEE,
+                message=MESSAGE_SESSION_REFUSEE,
+                statut=status.HTTP_401_UNAUTHORIZED,
+            )
+        return ReponseDeSession(personne=etat.personne)
+
+    @routeur.post(
+        "/deconnexion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseGenerique,
+        summary="Se deconnecter",
+        description=(
+            "Revoque la session et retire le cookie. **Toujours 200**, meme sans session "
+            "valide : un 404 ou un 401 apprendrait qu'un jeton a existe, et une "
+            "deconnexion n'a de toute facon rien a refuser."
+        ),
+    )
+    def deconnexion(requete: Request, reponse: Response) -> ReponseGenerique:
+        """Revoquer la session courante — modele §10.4, `revoked_at`."""
+        reponse.headers["Cache-Control"] = "no-store"
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        empreinte = _empreinte_d_origine(parametres, requete)
+
+        with moteur(parametres).begin() as connexion:
+            revoquer(
+                connexion,
+                jeton=jeton,
+                instant=dt.datetime.now(tz=dt.UTC),
+                empreinte_origine=empreinte,
+            )
+
+        #  **LE COOKIE EST RETIRE DANS TOUS LES CAS**, et la reponse est toujours
+        #  la meme. Que la session ait existe ou non n'est pas l'affaire de
+        #  l'appelant : il voulait se deconnecter, il l'est.
+        _retirer_le_cookie_de_session(parametres, reponse)
+        return ReponseGenerique(message="Vous etes deconnecte.")
+
     return routeur
+
+
+def _poser_le_cookie_de_session(parametres: Parametres, reponse: Response, jeton: str) -> None:
+    """Poser le cookie de session — cahier §7.4, les trois attributs.
+
+    **`HttpOnly` EST CE QUI REND LE CRITERE DU §7.4 TENABLE.** « Aucune donnee
+    d'authentification durable dans `localStorage` » ne se tient pas par
+    discipline de developpement : un jeton qu'aucun JavaScript ne peut lire ne
+    peut pas etre stocke par mégarde. La regle devient structurelle, ce qui est le
+    parti du §7.2 -- changer de forme plutot que promettre de l'attention.
+
+    `max_age` VAUT LA DUREE ABSOLUE, ET C'EST UN CHOIX. Sans lui, le cookie
+    mourrait a la fermeture du navigateur -- ce qui contredirait « expiration
+    apres SEPT JOURS d'inactivite », une regle qui suppose que la session survit a
+    un redemarrage. Le serveur reste l'autorite : un cookie encore present mais
+    dont la session a expire est refuse.
+
+    `path="/"` parce que le mandatement de `DEC-470` sert la page et l'API sur la
+    MEME origine : un cookie borne a `/api` ne serait pas envoye par les pages.
+    """
+    reponse.set_cookie(
+        key=parametres.SESSION_COOKIE_NAME,
+        value=jeton,
+        max_age=parametres.SESSION_ABSOLUTE_DAYS * 24 * 3600,
+        path="/",
+        httponly=True,
+        secure=parametres.SESSION_COOKIE_SECURE,
+        samesite=parametres.SESSION_COOKIE_SAMESITE,
+    )
+
+
+def _retirer_le_cookie_de_session(parametres: Parametres, reponse: Response) -> None:
+    """Retirer le cookie — avec les MEMES attributs que la pose.
+
+    Un navigateur n'efface un cookie que si `path`, `secure` et `samesite`
+    concordent : les omettre laisserait le cookie en place, et la deconnexion
+    paraitrait reussie. La session est revoquee cote serveur de toute facon --
+    c'est elle qui fait autorite -- mais un cookie residuel serait un jeton mort
+    qui traine.
+    """
+    reponse.delete_cookie(
+        key=parametres.SESSION_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=parametres.SESSION_COOKIE_SECURE,
+        samesite=parametres.SESSION_COOKIE_SAMESITE,
+    )
 
 
 def _empreinte_d_origine(parametres: Parametres, requete: Request) -> str | None:

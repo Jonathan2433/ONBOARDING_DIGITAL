@@ -238,6 +238,18 @@ jobs:
         # nettoie tout ce qu'il cree, compte administrateur compris.
         run: make admin-check
 
+      - name: Cookie de session et absence de jeton cote navigateur
+        # LOT 3, T6 — le critere du §3 de la fiche est explicite : « les trois
+        # attributs sont sur la reponse REELLE, lue a travers Caddy en HTTPS ».
+        # Les tests d'integration montent l'application en processus ; ce controle
+        # lit ce que le mandataire livre.
+        #
+        # Il porte aussi le second critere, qu'aucun test d'API ne peut voir :
+        # « aucun jeton dans localStorage », par un controle des SOURCES du
+        # frontend — exact, pas heuristique, et dont le temoin tourne deja dans
+        # `make check`.
+        run: make sessions-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 
