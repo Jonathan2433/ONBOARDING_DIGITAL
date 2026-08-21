@@ -36,6 +36,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Franchissement de la porte `G2` `DEC-517`** | 1 | **Validée le 20/08/2026** |
 | **Ouverture du LOT 3 `DEC-518+`** | 2 | **Validées le 20/08/2026** |
 | **Réalisation du LOT 3 `DEC-520`, sous-étape `T1`** | 1 | **Validée le 20/08/2026** |
+| **Réalisation du LOT 3 `DEC-521`, sous-étape `T2`** | 1 | **Validée le 21/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -47,7 +48,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **188** | |
+| **Total** | **189** | |
 
 ---
 
@@ -489,7 +490,15 @@ Une décision. Le moindre privilège PostgreSQL, et **`QO-116` close**.
 |---|---|---|---|
 | `DEC-520` | **`QO-116` est levée : l'application ne se connecte plus à PostgreSQL en superutilisateur.** **(a)** **TROIS** comptes, et non deux : le superutilisateur d'`initdb` subsiste, et son unique usage légitime devient l'approvisionnement des deux autres. **(b)** L'approvisionnement est une **cible `make`**, jamais une migration. **(c)** Le transfert de propriété est **explicite et filtré**, non un `REASSIGN OWNED`. **(d)** Les **privilèges par défaut** couvrent les tables qui n'existent pas encore. **(e)** `moteur_migrations()` est nommé, et les rares tests qui créent des objets l'emploient. **(f)** Toute base **jetable** est créée avec le rôle de migration pour **propriétaire**. **(g)** `make privileges-check` est **dans la CI**, plus **13 tests**. | **(a) `initdb` crée un superutilisateur, et rien ne peut l'empêcher d'exister.** Prétendre le contraire serait pire que le nommer : le cahier §20.1 demande que **l'application** n'en use pas, et c'est ce qui change. Mesuré avant : `SELECT rolsuper` rendait `t` pour le compte applicatif ; mesuré après : `f`, et il ne peut ni créer une base, ni créer un rôle. **(b) La dépendance serait circulaire** : un rôle est un objet de **cluster**, `CREATE ROLE` exige le superutilisateur, et une migration exécutée par le rôle de migration ne pourrait pas créer ce rôle. La cible est appelée par `make up` **après** que la base est saine et **avant** que l'API ne démarre — même place et même motif que la création du bucket MinIO, `DEC-477`. **(c) `REASSIGN OWNED` A ÉCHOUÉ, ET LA MESURE A DONNÉ LA CAUSE EN DEUX NOMBRES** : « cannot reassign ownership … because they are required by the database system ». Sur les **196** fonctions du schéma, **188 appartiennent à `btree_gist`** et **8 seulement sont les nôtres** ; une extension n'a pas d'`ALTER … OWNER TO`, et la propriété de la **base** elle-même bloquait aussi. Le transfert filtre donc sur `pg_depend.deptype = 'e'`, **compte** ce qu'il a transféré — 19 tables, 8 fonctions — et **nomme le résiduel** : l'extension et la base restent au superutilisateur, sans conséquence, le rôle de migration ayant `CREATE ON DATABASE` explicitement. **Et cette mesure a débloqué la sous-étape** : `btree_gist` est `trusted = t` sur PostgreSQL 17.7, donc installable **sans** superutilisateur — sans quoi la migration `0002` aurait été inapplicable. **(d) C'EST LE POINT LE PLUS SUBTIL.** Une table créée par une migration **future** n'existe pas au moment du `GRANT`. Sans privilèges par défaut, chaque migration devrait accorder ses droits, et **le jour où l'une l'oublie, l'application échoue à l'EXÉCUTION avec « permission denied » alors que la migration a RÉUSSI** : le défaut se manifesterait loin de sa cause. Un contrôle l'éprouve en créant une table **après** l'approvisionnement. **(e)** Neuf tests du socle créent des tables pour éprouver les contraintes : le rôle d'exécution les refuse, **et c'est précisément ce qu'on lui demande**. Les faire passer par `moteur_migrations()` rend explicite lesquels font du DDL. **(f)** Alembic se connecte désormais avec le rôle de migration : sur une base jetable dont il n'est pas propriétaire, il échoue avec « permission denied for schema public », **et le message ne dit pas que la cause est la propriété de la base**. `OWNER` le lui donne d'emblée. **(g) `make privileges-check` exige QUATRE propriétés, et le témoin en est une** : le rôle refuse cinq opérations DDL, **mais réussit le DML** — sans quoi les refus prouveraient l'absence de privilège, non le moindre privilège. | Validée par Jonathan le 20/08/2026 |
 
-**Prochain identifiant libre : `DEC-521`.**
+## 1.31 Réalisation du LOT 3 — sous-étape `T2`
+
+Une décision. Les sept tables du §10, et **quatre unicités dérivées d'une règle écrite**.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-521` | **Les sept tables du modèle §10 sont créées par la migration `0012`.** **(a)** **Aucune** contrainte d'exclusion, **aucune** clé composite : les §25.2 à §25.4 n'en nomment aucune. **(b)** **Quatre unicités de plus que le §25.1**, chacune dérivée d'une règle écrite. **(c)** L'index partiel de `magic_link_request` porte un **invariant**, pas l'action du §10.3. **(d)** `person_id` est **`NOT NULL`** sur `user_account`. **(e)** Les valeurs de `auth_event` et l'état de `service_account` sont **nommés ici**, le modèle ne les énumérant pas. **(f)** `make secrets-check` distingue **deux familles d'empreintes**. **(g)** Le test « aucune table d'authentification » de `T3` du LOT 2 est **inversé**, non supprimé. | **(a)** Poser une exclusion que le modèle ne demande pas serait exiger plus que le critère — défaut du §7.20. Le mixin `Periode` n'est pas employé non plus : ces tables n'ont pas de période de validité au sens du §25.2. **(b) Le §25.1 s'ouvre par « à prévoir NOTAMMENT »** : la liste est explicitement non exhaustive, ce qui autorise à en ajouter — à condition de **dériver**, jamais d'inventer. `user_account(person_id, account_type)` vient du « compte administrateur local **distinct** » du §10.1 ; `admin_password_credential` partielle vient de `revoked_at`, qui implique qu'au plus un est actif ; `service_token(token_hash)` vient de ce que **deux jetons de même empreinte rendraient l'authentification ambiguë**, ce qui est un défaut de sécurité et non une préférence. **(c) LE §10.3 DÉCRIT UNE ACTION, L'INDEX PORTE SON INVARIANT.** « Le dernier lien invalide les précédents » est ce que le service fera ; « au plus un lien actif par personne » est ce que la base garantit. L'index **ne fait pas** l'invalidation : il la rend **obligatoire**, un service qui l'oublierait voyant son insertion refusée. C'est exactement le parti de `DEC-514`. **(d)** Le §10.1 écrit « obligatoire pour les comptes humains », ce qui laisserait croire à des comptes machine dans cette table — **mais les deux seules valeurs de `account_type` qu'il déclare sont humaines**, et `service_account` existe pour les machines. Ajouter un type machine ici serait une migration et une décision. **(e)** Le §10.6 décrit ses sept événements **en français, sans identifiant**. Les nommer est donc une dérivation, déclarée : casse majuscule comme les types du §10.1, et l'ordre du modèle. Idem pour l'état de `service_account`, que le §10.5 ne détaille pas — `locked` en est écarté, un compte machine n'ayant pas de mot de passe à verrouiller. **(f) MON PREMIER CONTRÔLE ÉCHOUAIT SUR MON PROPRE CODE, ET IL AVAIT TORT.** Il exigeait 64 caractères de toute colonne d'empreinte, or une empreinte **argon2** est de longueur **variable** : elle embarque son sel et ses paramètres. Le contrôle distingue donc les empreintes de **jeton** — SHA-256, bornées à 64 — des empreintes de **mot de passe**, dont ce qui les rend exploitables est la présence des colonnes `algorithm` et `parameters` que le §10.2 exige. **Vérifier leur présence vaut mieux qu'une borne de longueur.** Il a aussi signalé `circle.color_token`, qui est une référence de couleur du §8.1 : faux positif **nommé** plutôt que toléré, §7.25. **(g)** Le supprimer aurait perdu son information. Il exige désormais la **présence** des sept, et **le compte est dérivé** de la déclaration du module : une huitième table apparaîtrait sans décision, et ce test la nommerait. | Validée par Jonathan le 21/08/2026 |
+
+**Prochain identifiant libre : `DEC-522`.**
 
 ---
 
@@ -667,6 +676,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-517` — franchissement de la porte `G2` | 1 | 1 |
 | `DEC-518+` — ouverture du LOT 3 | 2 | 2 |
 | `DEC-520` — réalisation du LOT 3, `T1` | 1 | 1 |
+| `DEC-521` — réalisation du LOT 3, `T2` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -678,7 +688,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **188** | **188** |
+| **Total** | **189** | **189** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -840,6 +840,10 @@ roles-provision: ## Approvisionner les deux roles du moindre privilege (QO-116, 
 	@python3 infra/scripts/provisionner-roles.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+secrets-check: ## Verifier qu aucune colonne ne peut porter un secret en clair (10.2, 10.3)
+	@python3 infra/scripts/verifier-secrets-en-clair.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
 privileges-check: ## Verifier le moindre privilege PostgreSQL (QO-116) — DDL REFUSE au role d execution
 	@python3 infra/scripts/verifier-privileges.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)

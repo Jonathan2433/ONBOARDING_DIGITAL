@@ -16,6 +16,7 @@ les modules presents sur le disque a ceux que ce fichier importe.
 
 from __future__ import annotations
 
+from app.auth import modeles as auth_modeles
 from app.clients import modeles as clients_modeles
 from app.entities import modeles as entities_modeles
 from app.organization import modeles as organization_modeles
@@ -25,6 +26,7 @@ from app.shared.modele import Base, metadonnees
 #  Les modules sont references pour que les analyseurs ne les prennent pas pour
 #  des imports inutilises. L'effet recherche est l'import lui-meme.
 MODULES_DE_MODELES = (
+    auth_modeles,
     entities_modeles,
     people_modeles,
     clients_modeles,
