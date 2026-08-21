@@ -84,6 +84,18 @@ export const CODES_VERSION: readonly number[] = endpoint('version').codesExploit
  */
 export const CHEMIN_DEMANDE_MAGIC_LINK: string = endpoint('demandeDeMagicLink').chemin;
 
+/**
+ * Le chemin de la consommation — LOT 3, T4, story MVP-L03-US002.
+ *
+ * La page ouverte par le lien de l'e-mail lit le jeton dans SA query string, puis
+ * appelle ce chemin avec le jeton **en corps**. Elle ne doit jamais le
+ * retransmettre dans une URL.
+ *
+ * IL N'Y A QU'UN SEUL REFUS, 400, pour quatre causes distinctes : c'est voulu, et
+ * l'ecran « lien expire ou consomme » de T11 est unique pour la meme raison.
+ */
+export const CHEMIN_CONSOMMATION_MAGIC_LINK: string = endpoint('consommationDeMagicLink').chemin;
+
 // ---------------------------------------------------------------------------
 //  Les formes de reponse
 // ---------------------------------------------------------------------------

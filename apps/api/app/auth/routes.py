@@ -1,6 +1,10 @@
-"""Route de la demande de magic link — `POST {prefixe}/auth/magic-link`.
+"""Routes du magic link — la demande, et sa consommation.
 
-LOT 3, sous-etape `T3`, story `MVP-L03-US001`.
+LOT 3 : `T3` a pose la demande (`MVP-L03-US001`), `T4` la consommation
+(`MVP-L03-US002`).
+
+    POST {prefixe}/auth/magic-link                demander un lien
+    POST {prefixe}/auth/magic-link/consommation   le consommer, UNE FOIS
 
 LE CRITERE EST UNE EGALITE, PAS UN REFUS
 
@@ -48,6 +52,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 from pydantic import BaseModel, Field
@@ -55,9 +60,14 @@ from sqlalchemy import text
 
 from app.auth.courriel import EchecDEnvoi, envoyer
 from app.auth.jetons import empreinte_d_origine
-from app.auth.services import Demande, demander_un_magic_link
+from app.auth.services import (
+    Demande,
+    consommer_un_magic_link,
+    demander_un_magic_link,
+)
 from app.configuration.settings import Parametres
 from app.shared.database import moteur
+from app.shared.errors import ErreurApplicative
 
 journal = logging.getLogger("app.auth")
 
@@ -73,6 +83,27 @@ MESSAGE_GENERIQUE = (
 #  surface de deni de service. Le refus qui en decoule ne depend QUE de la
 #  requete.
 LONGUEUR_MAXIMALE_ADRESSE = 320
+
+#  LOT 3, T4 — LE REFUS EST UNIQUE, ET C'EST UNE DERIVATION DECLAREE.
+#
+#  Jeton inconnu, expire, deja consomme, invalide par un lien plus recent : les
+#  quatre rendent CE message et ce code. Le §3 de la fiche du lot enumere les
+#  huit ecrans de `T11` et n'en prevoit **qu'UN** pour « lien expire **ou**
+#  consomme » : l'API n'a pas a distinguer ce que l'interface ne distingue pas.
+#
+#  Et le message ne cite JAMAIS le jeton. Un message d'erreur finit dans un
+#  journal, une capture d'ecran ou un ticket — cahier §28.2, et le critere de
+#  `US002` dit « sans exposer le jeton ».
+CODE_LIEN_REFUSE = "lien_invalide"
+MESSAGE_LIEN_REFUSE = (
+    "Ce lien de connexion n'est plus valable. Il a peut-etre expire, deja servi, "
+    "ou ete remplace par une demande plus recente. Demandez-en un nouveau."
+)
+
+#  La borne du jeton presente. `oml_` plus 43 caracteres en fait 47 ; la borne
+#  est large pour ne pas dependre de la taille de l'alea, et elle existe pour
+#  refuser un corps sans limite.
+LONGUEUR_MAXIMALE_JETON = 256
 
 SUJET_DU_COURRIEL = "Votre lien de connexion eXalt Onboarding"
 
@@ -100,9 +131,45 @@ class DemandeDeMagicLink(BaseModel):
 
 
 class ReponseGenerique(BaseModel):
-    """Reponse unique de la route, quelle que soit l'issue reelle."""
+    """Reponse unique de la demande, quelle que soit l'issue reelle."""
 
     message: str
+
+
+class ConsommationDeMagicLink(BaseModel):
+    """Corps de la consommation.
+
+    **LE JETON VOYAGE DANS LE CORPS, JAMAIS DANS L'URL**, et c'est le choix
+    structurant de `T4` :
+
+      - une chaine de requete finit dans l'historique du navigateur, dans un
+        en-tete `Referer`, et dans tout journal d'acces d'un mandataire ;
+      - `DEC-469` interdit deja de journaliser la chaine de requete, et
+        `journal.py` ne l'ecrit pas -- mais cela protege NOS journaux, pas ceux
+        d'un mandataire ni l'historique d'un poste.
+
+    Le lien de l'e-mail porte bien le jeton en query string : c'est une page du
+    frontend qu'il ouvre, et c'est elle qui appelle cette route avec le jeton en
+    corps. La fenetre d'exposition est ainsi bornee au navigateur du destinataire.
+    """
+
+    token: str = Field(max_length=LONGUEUR_MAXIMALE_JETON)
+
+
+class ReponseDeConsommation(BaseModel):
+    """Reponse d'une consommation REUSSIE.
+
+    **ELLE NE PORTE AUCUN ACCES**, et le dire est le point. Ni cookie, ni jeton,
+    ni identifiant de session : `user_session` et les trois attributs du cahier
+    §7.4 relevent de `T6`, story `US004`. Un porteur de jeton valide a prouve son
+    identite ; il n'a pas encore de session.
+    """
+
+    message: str
+    #  L'identifiant de la personne authentifiee. Le porteur du jeton **est**
+    #  cette personne : le lui rendre ne divulgue rien qu'il ne sache deja, et
+    #  `T6` en aura besoin pour attacher la session.
+    personne: uuid.UUID
 
 
 def origine_de_la_requete(requete: Request) -> str | None:
@@ -208,6 +275,75 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  Le motif ne sort pas. Il est deja dans `auth_event`, et le journal de
         #  requete du §28.1 ne porte que la route, la duree et le resultat.
         return ReponseGenerique(message=MESSAGE_GENERIQUE)
+
+    @routeur.post(
+        "/magic-link/consommation",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeConsommation,
+        #  LE 400 EST DECLARE, ET CE N'EST PAS COSMETIQUE. FastAPI ne documente
+        #  spontanement que le code de succes et le 422 de validation : un refus
+        #  que le contrat annonce exploitable et que le schema ignore est
+        #  exactement le defaut que `T10` du LOT 1 avait trouve sur le 503 de
+        #  `/health/ready`. `test_contrat.py` a echoue ici avant que ce bloc
+        #  n'existe, et c'est son role.
+        responses={
+            status.HTTP_400_BAD_REQUEST: {
+                "description": (
+                    "Lien refuse. UNE SEULE forme pour quatre causes : jeton inconnu, "
+                    "expire, deja consomme, ou invalide par une demande plus recente."
+                )
+            }
+        },
+        summary="Consommer un lien de connexion",
+        description=(
+            "Consomme le lien UNE FOIS. Un second usage, un lien expire, un lien "
+            "invalide par une demande plus recente et un jeton inconnu rendent tous "
+            "le MEME refus. La reponse ne porte AUCUN acces : la session releve de "
+            "`T6`."
+        ),
+    )
+    def consommer(
+        corps: ConsommationDeMagicLink, requete: Request, reponse: Response
+    ) -> ReponseDeConsommation:
+        """Consommer le lien, et refuser tout ce qui n'est pas exactement valide."""
+        #  `no-store` : une reponse de connexion ne doit jamais etre servie
+        #  depuis un cache, ni conservee par un intermediaire.
+        reponse.headers["Cache-Control"] = "no-store"
+
+        origine = origine_de_la_requete(requete)
+        empreinte = (
+            empreinte_d_origine(origine, parametres.APP_SECRET_KEY)
+            if origine and parametres.APP_SECRET_KEY
+            else None
+        )
+
+        #  UNE SEULE TRANSACTION : la pose de `used_at` et l'evenement d'audit
+        #  sont indissociables. Un lien consomme sans trace serait un acces non
+        #  journalise.
+        with moteur(parametres).begin() as connexion:
+            consommation = consommer_un_magic_link(
+                connexion,
+                jeton=corps.token,
+                instant=dt.datetime.now(tz=dt.UTC),
+                empreinte_origine=empreinte,
+            )
+
+        if consommation.personne is None:
+            #  **LE MESSAGE NE CITE PAS LE JETON, ET LE `champ` NON PLUS.** Le
+            #  format du §18.3 porte un `champ` : y mettre `token` nommerait le
+            #  champ fautif sans jamais en donner la valeur, ce qui est utile au
+            #  client et inoffensif.
+            raise ErreurApplicative(
+                code=CODE_LIEN_REFUSE,
+                message=MESSAGE_LIEN_REFUSE,
+                statut=status.HTTP_400_BAD_REQUEST,
+                champ="token",
+            )
+
+        return ReponseDeConsommation(
+            message="Lien accepte. Votre identite est etablie.",
+            personne=consommation.personne,
+        )
 
     return routeur
 

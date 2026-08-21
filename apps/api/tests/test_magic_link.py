@@ -39,6 +39,8 @@ CE QUI TOURNE SANS LA STACK, ET CE QUI L'EXIGE
 from __future__ import annotations
 
 import datetime as dt
+import threading
+import time
 import uuid
 from collections.abc import Iterator
 
@@ -56,7 +58,12 @@ from app.auth.jetons import (
     engendrer_jeton_magic_link,
     ressemble_a_un_jeton_magic_link,
 )
-from app.auth.modeles import MINUTES_DE_VALIDITE_DU_MAGIC_LINK, EtatCompte, TypeCompte
+from app.auth.modeles import (
+    MINUTES_DE_VALIDITE_DU_MAGIC_LINK,
+    EtatCompte,
+    TypeCompte,
+    TypeEvenementAuth,
+)
 from app.auth.routes import (
     MESSAGE_GENERIQUE,
     origine_de_la_requete,
@@ -65,10 +72,14 @@ from app.auth.services import (
     MOTIF_ADRESSE_INCONNUE,
     MOTIF_APPARTENANCE_NON_ACTIVE,
     MOTIF_COMPTE_NON_ACTIF,
+    MOTIF_CONSOMME,
     MOTIF_DOMAINE_NON_AUTORISE,
     MOTIF_LIEN_EMIS,
+    MOTIF_LIEN_REFUSE,
     MOTIF_PERSONNE_NON_ACTIVE,
+    Consommation,
     Demande,
+    consommer_un_magic_link,
     demander_un_magic_link,
 )
 from app.configuration.settings import (
@@ -94,6 +105,13 @@ BASE_PUBLIQUE = "https://app.onboarding.localhost"
 #  §28.1. La liste est nommee ici plutot que devinee : c'est exactement
 #  l'endroit ou une fuite pourrait se cacher.
 EN_TETES_VARIABLES = frozenset({"x-request-id", "date"})
+
+#  Bornes du test de concurrence. **LES DEUX VALEURS DOIVENT RESTER ECARTEES**,
+#  et c'est un correctif : quand elles etaient egales, le `lock_timeout` de B et
+#  le delai de la barriere s'affrontaient, et le test echouait une fois sur trois.
+#  Un controle intermittent coute plus cher qu'un controle faux. Defaut `T4-4`.
+DELAI_ATTENTE_VERROU = 10.0
+VERROU_TIMEOUT_B = "60s"
 
 
 # ===========================================================================
@@ -1045,3 +1063,436 @@ def _adresse_active(parametres: Parametres) -> str:
                 )
             ).scalar_one()
         )
+
+
+# ===========================================================================
+#  LA CONSOMMATION — LOT 3, sous-etape `T4`, story `MVP-L03-US002`
+# ===========================================================================
+#
+#  TROIS PROPRIETES, ET LA TROISIEME EST CELLE QU'ON OUBLIE
+#
+#    1. usage unique         un second usage echoue
+#    2. expiration           un lien de 16 minutes echoue, un de 15 passe encore
+#    3. **ATOMICITE**        deux requetes CONCURRENTES portant le meme jeton ne
+#                            peuvent pas reussir toutes les deux
+#
+#  La troisieme n'est pas un raffinement. Un service qui LIRAIT `used_at` puis
+#  ecrirait laisserait deux requetes simultanees passer la lecture avant que l'une
+#  n'ecrive : le lien serait consomme deux fois, et **un lien de connexion
+#  rejouable est un contournement d'authentification**. Les tests 1 et 2
+#  passeraient pourtant sans rien dire.
+#
+#  Elle s'eprouve sur DEUX connexions reelles, et le resultat est deterministe :
+#  PostgreSQL verrouille la ligne au premier `UPDATE`, la seconde transaction
+#  attend le `COMMIT`, puis ne trouve plus de ligne a mettre a jour.
+
+
+def _lien(cx: Connection, adresse: str, *, instant: dt.datetime = INSTANT) -> str:
+    """Emettre un lien et rendre le JETON qu'il porte."""
+    demande = _demander(cx, adresse, instant=instant)
+    assert demande.lien is not None, f"aucun lien emis : {demande.motif}"
+    return demande.lien.split("token=")[1]
+
+
+def _consommer(cx: Connection, jeton: str, *, instant: dt.datetime = INSTANT) -> Consommation:
+    return consommer_un_magic_link(cx, jeton=jeton, instant=instant)
+
+
+@pytest.mark.integration
+def test_un_lien_VALIDE_est_consomme(cx: Connection) -> None:
+    """LE TEMOIN CENTRAL. Sans lui, tous les refus ci-dessous seraient satisfaits
+    par une fonction qui refuserait TOUT.
+    """
+    adresse = _decor(cx, marqueur="conso-ok")
+    consommation = _consommer(cx, _lien(cx, adresse))
+    assert consommation.motif == MOTIF_CONSOMME
+    assert consommation.reussie
+    assert consommation.personne is not None
+
+
+@pytest.mark.integration
+def test_un_SECOND_usage_echoue(cx: Connection) -> None:
+    """§10.3 : « usage unique ». Le critere litteral de `US002`."""
+    adresse = _decor(cx, marqueur="conso-deux-fois")
+    jeton = _lien(cx, adresse)
+    assert _consommer(cx, jeton).reussie
+    seconde = _consommer(cx, jeton)
+    assert seconde.motif == MOTIF_LIEN_REFUSE
+    assert seconde.personne is None
+
+
+@pytest.mark.integration
+def test_un_lien_de_SEIZE_minutes_echoue(cx: Connection) -> None:
+    """§10.3 : « 15 minutes apres emission ». Le temps est INJECTE, aucun test ne dort."""
+    adresse = _decor(cx, marqueur="conso-16min")
+    jeton = _lien(cx, adresse)
+    tard = INSTANT + dt.timedelta(minutes=MINUTES_DE_VALIDITE_DU_MAGIC_LINK + 1)
+    assert _consommer(cx, jeton, instant=tard).motif == MOTIF_LIEN_REFUSE
+
+
+@pytest.mark.integration
+def test_un_lien_de_QUATORZE_minutes_passe_encore(cx: Connection) -> None:
+    """Le temoin de la borne : elle ne doit pas etre plus stricte que le modele.
+
+    Sans lui, une expiration a cinq minutes passerait le test precedent — et le
+    livrable serait plus severe que le §10.3, ce qui est le defaut du §7.20.
+    """
+    adresse = _decor(cx, marqueur="conso-14min")
+    jeton = _lien(cx, adresse)
+    tot = INSTANT + dt.timedelta(minutes=MINUTES_DE_VALIDITE_DU_MAGIC_LINK - 1)
+    assert _consommer(cx, jeton, instant=tot).reussie
+
+
+@pytest.mark.integration
+def test_la_borne_est_SEMI_OUVERTE_a_quinze_minutes_pile(cx: Connection) -> None:
+    """A l'instant EXACT de l'expiration, le lien est expire.
+
+    Le §10.3 dit « 15 minutes apres emission » sans trancher l'inclusion. La
+    convention du socle -- plages semi-ouvertes `[debut, fin)` -- est appliquee,
+    et **elle est declaree ici** plutot que laissee au hasard d'un `>` ou d'un
+    `>=` : un lecteur doit pouvoir savoir lequel des deux a ete choisi.
+    """
+    adresse = _decor(cx, marqueur="conso-15pile")
+    jeton = _lien(cx, adresse)
+    pile = INSTANT + dt.timedelta(minutes=MINUTES_DE_VALIDITE_DU_MAGIC_LINK)
+    assert _consommer(cx, jeton, instant=pile).motif == MOTIF_LIEN_REFUSE
+
+
+@pytest.mark.integration
+def test_un_lien_INVALIDE_par_une_nouvelle_demande_echoue(cx: Connection) -> None:
+    """§10.3 : « le dernier lien invalide les precedents encore actifs ».
+
+    C'est le troisieme critere de `US002`, et il relie les deux sous-etapes : `T3`
+    pose `invalidated_at`, `T4` doit le RESPECTER. Un service qui ne regarderait
+    que `used_at` accepterait un lien pourtant remplace.
+    """
+    adresse = _decor(cx, marqueur="conso-invalide")
+    ancien = _lien(cx, adresse)
+    nouveau = _lien(cx, adresse, instant=INSTANT + dt.timedelta(minutes=1))
+    assert ancien != nouveau
+    assert _consommer(cx, ancien).motif == MOTIF_LIEN_REFUSE
+    #  Et le temoin : le NOUVEAU passe. Sans lui, une implementation qui
+    #  refuserait les deux passerait le test.
+    assert _consommer(cx, nouveau, instant=INSTANT + dt.timedelta(minutes=2)).reussie
+
+
+@pytest.mark.integration
+def test_un_jeton_INCONNU_echoue(cx: Connection) -> None:
+    """Aucune ligne ne porte cette empreinte."""
+    assert _consommer(cx, engendrer_jeton_magic_link()).motif == MOTIF_LIEN_REFUSE
+
+
+@pytest.mark.integration
+def test_un_jeton_FANTAISISTE_echoue_sans_lever(cx: Connection) -> None:
+    """Le porteur controle entierement cette valeur : elle ne doit provoquer
+    aucune exception, seulement un refus.
+    """
+    for fantaisiste in ("", "pas-un-jeton", "oml_", "'; DROP TABLE person; --"):
+        assert _consommer(cx, fantaisiste).motif == MOTIF_LIEN_REFUSE
+
+
+@pytest.mark.integration
+def test_les_QUATRE_causes_de_refus_rendent_le_MEME_motif(cx: Connection) -> None:
+    """Un seul gabarit d'echec — derivation declaree, §3 de la fiche du lot.
+
+    `T11` ne prevoit qu'UN ecran pour « lien expire ou consomme ». Ce test exige
+    que les quatre causes soient **indistinguables**, et il les enumere : sans
+    l'enumeration, il pourrait n'en avoir examine qu'une.
+    """
+    adresse = _decor(cx, marqueur="conso-quatre")
+
+    consomme = _lien(cx, adresse)
+    _consommer(cx, consomme)
+
+    expire = _lien(cx, adresse, instant=INSTANT + dt.timedelta(minutes=1))
+    tard = INSTANT + dt.timedelta(minutes=30)
+
+    remplace = _lien(cx, adresse, instant=INSTANT + dt.timedelta(minutes=2))
+    _lien(cx, adresse, instant=INSTANT + dt.timedelta(minutes=3))
+
+    causes = {
+        "inconnu": _consommer(cx, engendrer_jeton_magic_link()),
+        "deja_consomme": _consommer(cx, consomme),
+        "expire": _consommer(cx, expire, instant=tard),
+        "remplace": _consommer(cx, remplace, instant=INSTANT + dt.timedelta(minutes=4)),
+    }
+    assert len(causes) == 4, "les quatre causes doivent toutes etre exercees"
+    assert {c.motif for c in causes.values()} == {MOTIF_LIEN_REFUSE}
+    assert {c.personne for c in causes.values()} == {None}
+
+
+@pytest.mark.integration
+def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
+    parametres_de_la_stack: Parametres,
+) -> None:
+    """**LE SCENARIO QUI DISCRIMINE, ET IL A FALLU DEUX ESSAIS POUR L'ECRIRE.**
+
+    Un service qui LIRAIT `used_at` puis ecrirait laisserait deux requetes
+    simultanees passer la lecture avant que l'une n'ecrive : le lien serait
+    consomme DEUX fois, et **un lien de connexion rejouable est un contournement
+    d'authentification**. Les tests d'usage unique et d'expiration passeraient
+    pourtant sans rien dire.
+
+    **DEUX VERSIONS DE CE TEST N'ONT RIEN PROUVE, ET C'EST INSTRUCTIF.**
+
+      La premiere validait A **avant** de lancer B : purement sequentielle, donc
+      equivalente au test « un second usage echoue ». Defaut `T4-1`.
+
+      La seconde bornait B par un `lock_timeout` court et exigeait qu'elle echoue
+      sur le verrou. **Elle ne discriminait pas davantage** : un service qui lit
+      puis ecrit prend le MEME verrou au moment d'ecrire, donc il aurait produit
+      exactement la meme observation. Defaut `T4-2`, et c'est la quatrieme
+      proposition du §7.0 -- *un controle dont l'echec produirait la meme
+      observation que le succes ne prouve rien.*
+
+    **CE QUI DISCRIMINE EST QUE B ATTENDE, PUIS REPRENNE :**
+
+      1. A consomme, tient le verrou, **ne valide pas** ;
+      2. B, dans un fil, tente de consommer -> elle **attend** le verrou ;
+      3. A valide. B reprend, et c'est LA que les deux implementations divergent :
+           - compare-et-pose : la clause `WHERE` est reevaluee apres l'obtention
+             du verrou, `used_at` n'est plus nul, **0 ligne** -> REFUS ;
+           - lire-puis-ecrire : la lecture avait deja conclu « eligible », et
+             l'ecriture n'a plus de garde -> **SUCCES**, donc double consommation.
+      4. **TEMOIN** : sur un AUTRE lien, non verrouille, B reussit.
+
+    **AUCUNE ATTENTE ARBITRAIRE.** La barriere de l'etape 2 n'est pas un `sleep` :
+    une troisieme connexion interroge `pg_stat_activity` jusqu'a voir un backend
+    reellement en attente de verrou. C'est une condition observee, pas un delai
+    espere -- et elle est bornee, pour qu'un echec soit un echec et non un blocage
+    de l'integration continue.
+    """
+    _exiger_postgresql(parametres_de_la_stack)
+    marqueur = f"t4race{uuid.uuid4().hex[:10]}"
+    adresse = f"{marqueur}@{DOMAINE_AUTORISE}"
+    autre_adresse = f"{marqueur}.temoin@{DOMAINE_AUTORISE}"
+
+    #  Le decor est VALIDE, non annule : les connexions concurrentes doivent voir
+    #  la meme ligne, ce qu'un `rollback` partage rendrait impossible.
+    with moteur(parametres_de_la_stack).begin() as preparation:
+        entite = _entite(preparation, f"T4-{marqueur}")
+        _appartenance(preparation, _personne(preparation, adresse), entite)
+        _appartenance(preparation, _personne(preparation, autre_adresse), entite)
+        _domaine(preparation, DOMAINE_AUTORISE)
+        jeton = _lien(preparation, adresse)
+        jeton_temoin = _lien(preparation, autre_adresse)
+
+    resultats: dict[str, Consommation] = {}
+    erreurs: list[BaseException] = []
+
+    #  L'INSTANT DE DEPART, POUR LE NETTOYAGE. Le refus de B ecrit un
+    #  `LOGIN_FAILURE` dont `person_id` est NUL -- c'est voulu, un jeton refuse ne
+    #  designe personne -- et **le marqueur ne peut donc pas l'atteindre**. Sans
+    #  cette borne, une ligne restait en base a chaque execution. Defaut `T4-5`,
+    #  et c'est la meme classe que `T3-3` : la troisieme fois que la trace d'un
+    #  refus sans personne echappe a un nettoyage.
+    #
+    #  Le filtre porte sur `created_at`, non sur `occurred_at` : `occurred_at`
+    #  vaut l'instant INJECTE du test, qui n'a rien a voir avec l'heure reelle.
+    with moteur(parametres_de_la_stack).connect() as horloge:
+        debut = horloge.execute(text("SELECT now()")).scalar_one()
+
+    def consommer_dans_un_fil() -> None:
+        """B : sa propre connexion, et un `lock_timeout` GENEREUX.
+
+        Genereux et non court : le but est qu'elle ATTENDE puis reprenne, pas
+        qu'elle abandonne. Il existe malgre tout pour qu'un verrou jamais relache
+        fasse echouer le test au lieu de le suspendre.
+
+        **IL DOIT RESTER TRES SUPERIEUR A `DELAI_ATTENTE_VERROU`.** Quand les deux
+        etaient egaux, B abandonnait pile au moment ou la barriere renoncait, et
+        le test echouait une fois sur trois -- defaut `T4-4`.
+        """
+        connexion = moteur(parametres_de_la_stack).connect()
+        try:
+            with connexion.begin():
+                connexion.execute(text(f"SET LOCAL lock_timeout = '{VERROU_TIMEOUT_B}'"))
+                resultats["b"] = consommer_un_magic_link(connexion, jeton=jeton, instant=INSTANT)
+        except BaseException as erreur:
+            erreurs.append(erreur)
+        finally:
+            connexion.close()
+
+    premiere = moteur(parametres_de_la_stack).connect()
+    try:
+        #  --- 1. A consomme et NE VALIDE PAS : elle tient le verrou ---------
+        transaction_a = premiere.begin()
+        resultat_a = consommer_un_magic_link(premiere, jeton=jeton, instant=INSTANT)
+        assert resultat_a.reussie, "la premiere transaction doit gagner"
+
+        #  --- 2. B attend le verrou, et on l'OBSERVE ------------------------
+        fil = threading.Thread(target=consommer_dans_un_fil, daemon=True)
+        fil.start()
+
+        limite = time.monotonic() + DELAI_ATTENTE_VERROU
+        en_attente = False
+        observe: list[tuple[object, ...]] = []
+        with moteur(parametres_de_la_stack).connect() as sonde:
+            while time.monotonic() < limite:
+                #  LA SONDE RAPPORTE CE QU'ELLE VOIT, pas seulement un booleen.
+                #  Une barriere qui echoue en disant « je n'ai rien vu » coute des
+                #  cycles ; celle qui dit CE qu'elle a vu donne la cause. §7.18.
+                #  `pg_blocking_pids()` DEMANDE DIRECTEMENT « qui est bloque
+                #  par qui ». Ma premiere sonde filtrait sur le TEXTE de la
+                #  requete et sur `wait_event_type` : elle n'a jamais vu B, alors
+                #  que B etait demonstrablement bloquee -- son erreur disait
+                #  « while updating tuple in relation magic_link_request ».
+                #  Une sonde qui interroge la relation de blocage elle-meme ne
+                #  depend d'aucun detail de presentation. Defaut `T4-4`.
+                observe = [
+                    tuple(ligne)
+                    for ligne in sonde.execute(
+                        text(
+                            "SELECT pid, pg_blocking_pids(pid), state, "
+                            "       wait_event_type, left(query, 50) "
+                            "FROM pg_stat_activity "
+                            "WHERE datname = current_database() "
+                            "  AND pid <> pg_backend_pid() AND query <> ''"
+                        )
+                    )
+                ]
+                en_attente = any(ligne[1] for ligne in observe)
+                if en_attente or erreurs:
+                    break
+                time.sleep(0.05)
+        assert not erreurs, f"B a echoue avant d'attendre : {erreurs}"
+        assert en_attente, (
+            "aucun backend n'attend de verrou sur `magic_link_request` : B n'a pas "
+            "ete bloquee, la barriere n'a donc rien synchronise et ce test ne "
+            f"prouve rien. Etat observe : {observe}"
+        )
+
+        #  --- 3. A valide. B reprend, et c'est LA que ca discrimine ---------
+        transaction_a.commit()
+        fil.join(timeout=DELAI_ATTENTE_VERROU)
+        assert not fil.is_alive(), "B ne s'est jamais debloquee"
+        assert not erreurs, f"B a leve : {erreurs}"
+
+        resultat_b = resultats["b"]
+        assert resultat_b.motif == MOTIF_LIEN_REFUSE, (
+            "B A AUSSI CONSOMME LE LIEN. L'usage unique n'est pas atomique : la "
+            "condition n'est pas reevaluee apres l'obtention du verrou."
+        )
+        assert resultat_b.personne is None
+
+        #  --- 4. TEMOIN : une consommation NON concurrente reussit ---------
+        #  Sans lui, une implementation qui refuserait tout passerait l'etape 3.
+        with moteur(parametres_de_la_stack).begin() as connexion:
+            temoin = consommer_un_magic_link(connexion, jeton=jeton_temoin, instant=INSTANT)
+        assert temoin.reussie, "le TEMOIN echoue : le service refuse un lien valide"
+
+        #  Et le compte en base : `used_at` pose UNE fois sur UNE ligne.
+        with moteur(parametres_de_la_stack).connect() as lecture:
+            poses = lecture.execute(
+                text(
+                    "SELECT count(*) FROM magic_link_request m "
+                    "JOIN person p ON p.id = m.person_id "
+                    "WHERE p.email_normalized = :adresse AND m.used_at IS NOT NULL"
+                ),
+                {"adresse": adresse},
+            ).scalar_one()
+        assert poses == 1
+    finally:
+        premiere.close()
+        #  LE NETTOYAGE, QUE MA REECRITURE AVAIT SUPPRIME. Defaut `T4-3` : ce
+        #  test valide sa transaction, donc rien ne s'annule tout seul. Les
+        #  residus ont fait echouer l'execution suivante, exactement comme le
+        #  defaut `T3-3`. La lecon est la meme, et c'est la deuxieme fois.
+        with moteur(parametres_de_la_stack).begin() as menage:
+            for requete in (
+                "DELETE FROM auth_event WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                "DELETE FROM magic_link_request WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                "DELETE FROM entity_membership WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                "DELETE FROM person WHERE email_normalized LIKE :motif",
+                "DELETE FROM entity WHERE code = :code",
+                "DELETE FROM allowed_email_domain WHERE domain = :domaine",
+                #  Les evenements SANS personne, bornes a cette execution.
+                "DELETE FROM auth_event WHERE person_id IS NULL   AND created_at >= :debut",
+            ):
+                menage.execute(
+                    text(requete),
+                    {
+                        "motif": f"{marqueur}%",
+                        "code": f"T4-{marqueur}",
+                        "domaine": DOMAINE_AUTORISE,
+                        "debut": debut,
+                    },
+                )
+
+
+@pytest.mark.integration
+def test_une_consommation_REUSSIE_est_tracee_MAGIC_LINK_USED(cx: Connection) -> None:
+    """§10.6 : « magic link utilise » est l'un des sept types."""
+    adresse = _decor(cx, marqueur="conso-audit-ok")
+    _consommer(cx, _lien(cx, adresse))
+    types = (
+        cx.execute(
+            text(
+                "SELECT e.event_type FROM auth_event e JOIN person p ON p.id = e.person_id "
+                "WHERE p.email_normalized = :adresse ORDER BY e.occurred_at, e.event_type"
+            ),
+            {"adresse": adresse},
+        )
+        .scalars()
+        .all()
+    )
+    assert TypeEvenementAuth.MAGIC_LINK_USED.value in types
+    #  **PAS de `LOGIN_SUCCESS`**, et c'est une precision : rien n'est encore
+    #  connecte. `T6` cree la session, et c'est elle qui tracera un succes.
+    assert TypeEvenementAuth.LOGIN_SUCCESS.value not in types
+
+
+@pytest.mark.integration
+def test_un_refus_est_trace_LOGIN_FAILURE_SANS_personne(cx: Connection) -> None:
+    """Un jeton inconnu ne designe personne, et l'echec doit rester traçable.
+
+    `auth_event.person_id` est nullable exactement pour cela — `T2` l'a posé.
+    """
+    avant = cx.execute(
+        text(
+            "SELECT count(*) FROM auth_event "
+            "WHERE person_id IS NULL AND event_type = :type_evenement"
+        ),
+        {"type_evenement": TypeEvenementAuth.LOGIN_FAILURE.value},
+    ).scalar_one()
+    _consommer(cx, engendrer_jeton_magic_link())
+    apres = cx.execute(
+        text(
+            "SELECT count(*) FROM auth_event "
+            "WHERE person_id IS NULL AND event_type = :type_evenement"
+        ),
+        {"type_evenement": TypeEvenementAuth.LOGIN_FAILURE.value},
+    ).scalar_one()
+    assert apres == avant + 1
+
+
+@pytest.mark.integration
+def test_l_audit_ne_porte_NI_le_jeton_NI_son_empreinte(cx: Connection) -> None:
+    """§10.3 : « aucun lien complet dans les logs **ou l'audit** ».
+
+    L'empreinte non plus : elle n'apporterait rien a un audit, et
+    `magic_link_request` la porte deja. Ce test regarde la ligne ENTIERE, pas la
+    seule colonne attendue — une fuite dans `detail` passerait autrement.
+    """
+    adresse = _decor(cx, marqueur="conso-audit-secret")
+    jeton = _lien(cx, adresse)
+    _consommer(cx, jeton)
+    lignes = (
+        cx.execute(
+            text(
+                "SELECT e::text FROM auth_event e JOIN person p ON p.id = e.person_id "
+                "WHERE p.email_normalized = :adresse"
+            ),
+            {"adresse": adresse},
+        )
+        .scalars()
+        .all()
+    )
+    assert lignes, "aucun evenement : le test ne prouverait rien"
+    for ligne in lignes:
+        assert jeton not in ligne
+        assert empreinte_de_jeton(jeton) not in ligne
+        assert PREFIXE_MAGIC_LINK not in ligne
