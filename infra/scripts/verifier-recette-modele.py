@@ -152,7 +152,20 @@ CLASSEMENT: dict[int, Classement] = {
         preuve="`T7` — declencheur `circle_archivage_sans_membres_actifs`",
         tests=("test_archiver_un_cercle_a_MEMBRES_ACTIFS_est_refuse",),
     ),
-    11: Classement(11, REPORTE, lot="LOT 3 — `magic_link_request` n'existe pas au LOT 2"),
+    11: Classement(
+        11,
+        ACQUIS,
+        preuve=(
+            "LOT 3 `T3` — le service exige `entity_membership.membership_state = 'active'`, "
+            "cahier §7.2. `archived` est l'un des trois etats que ce filtre ecarte, et la "
+            "reponse reste IDENTIQUE a celle d'un profil actif : le refus ne se lit pas"
+        ),
+        tests=(
+            "test_un_profil_ARCHIVE_ne_recoit_AUCUN_lien",
+            "test_un_profil_ACTIF_recoit_un_lien",
+            "test_la_reponse_est_IDENTIQUE_pour_un_profil_archive",
+        ),
+    ),
     12: Classement(12, REPORTE, lot="LOT 8 — medias et autorisations de diffusion"),
     13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
     14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),

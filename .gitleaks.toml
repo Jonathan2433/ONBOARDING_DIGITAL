@@ -99,6 +99,39 @@ regexes = [
 ]
 
 # ----------------------------------------------------------------------------
+#  Regle 3 — les jetons que CE PROJET produit. Ajoutee au LOT 3, T3.
+#
+#  LE §5 DE LA FICHE DU LOT L'EXIGE : « un nouveau format de jeton devra y etre
+#  ajoute, sinon la regle ne le verrait pas ».
+#
+#  POURQUOI UN PREFIXE PLUTOT QU'UNE MESURE D'ENTROPIE
+#    Un jeton de connexion est 43 caracteres base64url tires au hasard : sans
+#    prefixe, aucune regle ne peut le distinguer d'une empreinte, d'un
+#    identifiant ou d'un fragment de donnee encodee. Une regle fondee sur la
+#    seule entropie refuserait du contenu legitime, donc elle apprendrait a
+#    passer outre — §7.25, un garde-fou a faux positifs est pire qu'aucun
+#    garde-fou.
+#
+#    Les trois prefixes sont ceux de la famille reservee dans
+#    `packages/observabilite/observabilite/masquage.py` : `oml_` pour le magic
+#    link, `oss_` pour les sessions (T6), `ost_` pour les jetons de service
+#    (T10). Les trois sont declares des maintenant pour que T6 et T10 n'aient
+#    rien a modifier ici — une regle qu'on oublie d'elargir est une fuite.
+#
+#  CETTE REGLE EST UNE COPIE, ET UN CONTROLE LE SAIT
+#    Le TOML n'importe rien : ce motif est necessairement une copie de la
+#    constante Python. `test_masquage.py` lit donc CE FICHIER et verifie que la
+#    regle attrape un jeton reellement engendre — plutot que de faire confiance
+#    a la copie. C'est le §7.27 : une valeur recopiee vieillit au premier
+#    changement, et seule une derivation ou un controle l'empeche.
+# ----------------------------------------------------------------------------
+[[rules]]
+id = "onboarding-jeton-du-projet"
+description = "Jeton d'authentification produit par ce projet (magic link, session, service)"
+regex = '''\b(oml_|oss_|ost_)[A-Za-z0-9_-]{40,}'''
+tags = ["onboarding", "jeton", "authentification"]
+
+# ----------------------------------------------------------------------------
 #  Listes blanches globales.
 #
 #  FORME `[[allowlists]]` ET NON `[allowlist]`, et ce n'est pas cosmetique :

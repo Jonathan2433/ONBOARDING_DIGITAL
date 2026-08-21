@@ -6,11 +6,21 @@ FONDEMENT — cahier des charges §18.1 : REST JSON interne, prefixe `/api/v1`,
 OpenAPI genere, **documentation interactive uniquement en developpement et en
 recette**, aucun acces public externe dans le MVP.
 
-CE QUE CE MODULE NE FAIT PAS, ET NE DOIT PAS FAIRE AU LOT 1
-    Aucune route metier, aucun modele SQLAlchemy metier, **aucune
+CE QUE CE MODULE NE FAISAIT PAS AU LOT 1, ET CE QUI A CHANGE
+
+    Au LOT 1 : aucune route metier, aucun modele SQLAlchemy metier, **aucune
     authentification, meme partielle, meme de test**, et aucun mecanisme de
-    contournement. Les modules metier du cahier §16.1 appartiennent au LOT 2 et
-    aux suivants, l'authentification au LOT 3.
+    contournement.
+
+    **DEPUIS LE LOT 3, `T3`, LE ROUTEUR D'AUTHENTIFICATION EST MONTE.** La
+    premiere phrase n'est donc plus vraie, et la corriger vaut mieux que la
+    laisser vieillir -- §7.21 : un enonce ne devient pas faux tout seul, il le
+    devient quand le monde change autour de lui, et ici le changement EST le
+    livrable.
+
+    Ce qui reste interdit sans condition : **aucun contournement de
+    l'authentification**, a aucun moment, meme en developpement (regle 6 du
+    projet). Les routes metier des LOTS 4 et suivants ne sont pas ici.
 """
 
 from __future__ import annotations
@@ -23,6 +33,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
+from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.health import routeur as routeur_sante
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
@@ -110,9 +121,14 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     # les versions de l'API.
     application.include_router(routeur_sante)
 
-    # Le routeur metier versionne existe mais est vide : le contrat /api/v1 est
-    # pose, son contenu appartient au LOT 2 et aux suivants.
+    # Le routeur metier versionne porte la racine du contrat, et depuis le LOT 3
+    # les routes d'authentification.
     routeur_v1 = _routeur_versionne(config)
+    #  LOT 3, T3 : la demande de magic link. Le routeur est monte SOUS le
+    #  prefixe versionne, donc `/api/v1/auth/magic-link`. Le declarer dans
+    #  `packages/contracts/src/contrat-api.json` n'est pas facultatif :
+    #  `test_contrat.py` echoue si le schema servi et le manifeste divergent.
+    routeur_v1.include_router(routeur_authentification(config))
     application.include_router(routeur_v1)
 
     return application

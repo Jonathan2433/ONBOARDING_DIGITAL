@@ -325,6 +325,31 @@ services:
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       DB_AUTO_CREATE: ${DB_AUTO_CREATE}
+      # T3 du LOT 3 — CES SEPT VARIABLES N'ETAIENT PAS TRANSMISES.
+      #
+      # PUBLIC_BASE_URL est declaree par settings.py depuis T3 du LOT 1 et
+      # n'etait transmise par personne : l'API voyait donc son DEFAUT,
+      # `https://localhost`. Aucun controle ne l'exercait, parce que rien ne la
+      # consommait. C'est exactement le §7.16 -- ce qui n'a jamais tourne n'est
+      # pas eprouve -- et le premier consommateur est le magic link, dont la
+      # base d'URL en depend entierement.
+      #
+      # APP_SECRET_KEY sert a minimiser l'origine de la requete (modele §10.3,
+      # `request_origin_hash`). Sans elle, `empreinte_d_origine` leve plutot que
+      # de produire une empreinte non salee, donc reversible.
+      #
+      # EMAIL_PROVIDER est l'un des sept garde-fous de production du cahier
+      # §20.3 : non transmise, elle valait son defaut `mailpit` et le garde-fou
+      # ne pouvait donc pas se declencher sur une valeur reelle.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_USE_TLS: ${SMTP_USE_TLS}
+      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      MAGIC_LINK_TTL_MINUTES: ${MAGIC_LINK_TTL_MINUTES}
     healthcheck:
       test:
         - CMD-SHELL

@@ -6,8 +6,9 @@
  * CE QUE CE PAQUET CONTIENT
  *
  *   Le contrat de ce que l'API expose AUJOURD'HUI : les trois endpoints de sante
- *   du cahier 18.7, la racine du prefixe versionne, le nom de l'en-tete de
- *   correlation, les formes de reponse et les fonctions qui les VALIDENT.
+ *   du cahier 18.7, la racine du prefixe versionne, la demande de magic link du
+ *   LOT 3, le nom de l'en-tete de correlation, les formes de reponse et les
+ *   fonctions qui les VALIDENT.
  *
  *   La source unique est `contrat-api.json`, lu par ce paquet ET par un controle
  *   Python qui verifie que le schema OpenAPI reellement servi le respecte. Une
@@ -21,6 +22,7 @@
  */
 
 export {
+  CHEMIN_DEMANDE_MAGIC_LINK,
   CHEMIN_LIVE,
   CHEMIN_READY,
   CHEMIN_VERSION,
