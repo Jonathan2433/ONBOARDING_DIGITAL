@@ -72,6 +72,18 @@ export const CHEMIN_VERSION: string = endpoint('version').chemin;
 export const CODES_READY: readonly number[] = endpoint('ready').codesExploitables;
 export const CODES_VERSION: readonly number[] = endpoint('version').codesExploitables;
 
+/**
+ * Le chemin de la demande de magic link — LOT 3, T3, story MVP-L03-US001.
+ *
+ * Lu du manifeste, jamais recopie : les huit ecrans de `T11` s'en serviront, et
+ * un chemin ecrit en dur dans un composant divergerait au premier renommage.
+ *
+ * IL N'Y A PAS DE `CODES_MAGIC_LINK` A EXPORTER, et c'est le critere de
+ * securite : le seul code exploitable est 202, identique que l'adresse existe ou
+ * non. Un ecran qui distinguerait deux cas trahirait ce que la reponse protege.
+ */
+export const CHEMIN_DEMANDE_MAGIC_LINK: string = endpoint('demandeDeMagicLink').chemin;
+
 // ---------------------------------------------------------------------------
 //  Les formes de reponse
 // ---------------------------------------------------------------------------

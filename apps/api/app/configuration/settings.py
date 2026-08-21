@@ -134,6 +134,36 @@ class Parametres(BaseSettings):
     EMAIL_PROVIDER: str = "mailpit"
     SMTP_HOST: str = "mailpit"
     SMTP_PORT: int = 1025
+    #  LOT 3, T3 : ces cinq variables existaient dans `.env.example` depuis le
+    #  LOT 0, marquees `[lot] 3`, et n'etaient DECLAREES par personne. Les
+    #  declarer maintenant les soumet aux onze garde-fous -- dont celui du
+    #  `CHANGE_ME` residuel, qui ne porte que sur les variables que l'API
+    #  declare (`DEC-464`).
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = False
+    SMTP_FROM_ADDRESS: str = "no-reply@exalt-company.com"
+    SMTP_FROM_NAME: str = "eXalt Onboarding"
+
+    # --- Authentification (cahier §7.2, modele §10.3) -----------------------
+    #  `ALLOWED_EMAIL_DOMAINS` N'EST PAS DECLAREE ICI, ET C'EST DELIBERE.
+    #
+    #  L'API ne la lit pas : le modele §5.4 pose que c'est
+    #  `allowed_email_domain.active` qui « controle l'usage lors de
+    #  l'authentification », donc la TABLE fait autorite et la variable n'est que
+    #  la graine de `make domaines-provision`, qui lit le fichier
+    #  d'environnement directement (`DEC-523`).
+    #
+    #  La declarer donnerait « l'illusion qu'elle est validee » -- l'en-tete de
+    #  cette classe l'interdit -- et surtout elle creerait un SECOND analyseur de
+    #  la liste, a cote de celui du script : deux copies qui divergeraient au
+    #  premier changement de format, §7.27.
+    #
+    #  Le §10.3 ecrit « 15 minutes apres emission », et la contrainte
+    #  `expiration_a_quinze_minutes` de la migration `0012` l'impose EN BASE.
+    #  Cette variable ne peut donc pas etre un reglage : un garde-fou ci-dessous
+    #  refuse de demarrer si elle diverge du modele. Voir `_controles_universels`.
+    MAGIC_LINK_TTL_MINUTES: int = 15
 
     # --- Securite (cahier §7.4, §20.1) --------------------------------------
     SESSION_COOKIE_SECURE: bool = True
@@ -203,6 +233,27 @@ class Parametres(BaseSettings):
             manquements.append("POSTGRES_PORT : hors de la plage 1-65535")
         if not 1 <= self.REDIS_PORT <= 65535:
             manquements.append("REDIS_PORT : hors de la plage 1-65535")
+        #     LOT 3, T3 — UNE VALEUR DONT LE DOMAINE VALIDE N'A QU'UN ELEMENT.
+        #
+        #     Ce n'est PAS un douzieme garde-fou : c'est ce meme controle n°3
+        #     applique a `MAGIC_LINK_TTL_MINUTES`. La contrainte
+        #     `expiration_a_quinze_minutes` de la migration `0012` impose 15
+        #     minutes EN BASE : porter la variable a 20 ne changerait pas le
+        #     comportement, PostgreSQL refuserait l'insertion, et son message ne
+        #     nommerait pas la variable en cause. Le defaut se manifesterait loin
+        #     de sa cause -- exactement ce qu'un garde-fou de demarrage evite.
+        #
+        #     L'import est LOCAL a dessein : le declarer en tete lierait ce module
+        #     a la couche SQLAlchemy, et les tests unitaires de configuration
+        #     echoueraient alors sur une erreur de modele qui ne les concerne pas.
+        from app.auth.modeles import MINUTES_DE_VALIDITE_DU_MAGIC_LINK
+
+        if self.MAGIC_LINK_TTL_MINUTES != MINUTES_DE_VALIDITE_DU_MAGIC_LINK:
+            manquements.append(
+                "MAGIC_LINK_TTL_MINUTES : doit valoir "
+                f"{MINUTES_DE_VALIDITE_DU_MAGIC_LINK}, valeur imposee EN BASE par la "
+                "contrainte `expiration_a_quinze_minutes` (modele §10.3)"
+            )
 
         # 4 — LOG_FORMAT vaut json
         if self.LOG_FORMAT != "json":

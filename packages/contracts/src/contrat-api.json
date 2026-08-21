@@ -29,12 +29,25 @@
     "  fichier fait ECHOUER ce controle.",
     "",
     "CE QU'IL NE CONTIENT PAS",
-    "  Aucun type metier. Le modele de donnees appartient au LOT 2, qui n'est pas",
-    "  ouvert. Ce contrat ne porte que ce que l'API expose AUJOURD'HUI : les trois",
-    "  endpoints de sante du cahier 18.7 et la racine du prefixe versionne."
+    "  Aucun type metier. Les contenus, les collaborateurs et les parcours ont",
+    "  leurs lots. Ce contrat ne porte que ce que l'API expose AUJOURD'HUI : les",
+    "  trois endpoints de sante du cahier 18.7, la racine du prefixe versionne, et",
+    "  depuis le LOT 3 la demande de magic link.",
+    "",
+    "MISE A JOUR AU LOT 3, SOUS-ETAPE T3",
+    "  `demandeDeMagicLink` est le PREMIER endpoint non technique du projet. Le",
+    "  declarer ici n'est pas facultatif : `apps/api/tests/test_contrat.py` exige",
+    "  l'egalite dans les DEUX sens entre les chemins declares et les chemins",
+    "  servis. Une route ajoutee sans etre declaree fait echouer `make check`.",
+    "",
+    "  Son code 202 est le SEUL exploitable, et c'est le critere de securite de",
+    "  `MVP-L03-US001` : la reponse est identique que l'adresse existe ou non. Un",
+    "  second code utile — 404 sur adresse inconnue, par exemple — serait un",
+    "  oracle d'enumeration. Le 422 documente ne depend QUE de la forme de la",
+    "  requete, jamais du contenu de la base."
   ],
 
-  "version": "1.0",
+  "version": "1.1",
 
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
@@ -88,6 +101,22 @@
       "codesExploitables": [200],
       "forme": "Inconnue",
       "role": "Racine du contrat versionne. Vide au LOT 1 ; son contenu arrive au LOT 2."
+    },
+    {
+      "cle": "demandeDeMagicLink",
+      "chemin": "/api/v1/auth/magic-link",
+      "methode": "post",
+      "codesExploitables": [202],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Demander un lien de connexion — LOT 3, T3, story MVP-L03-US001.",
+        "202 EST LE SEUL CODE EXPLOITABLE, et c'est une regle de securite, non une",
+        "preference : le code, le corps et les en-tetes sont IDENTIQUES que l'adresse",
+        "existe ou non. Le frontend ne peut donc rien en deduire, et c'est voulu — il",
+        "affiche la meme confirmation dans tous les cas.",
+        "Le 422 que le schema documente ne depend que de la FORME de la requete —",
+        "champ absent, corps trop long — jamais du contenu de la base."
+      ]
     }
   ]
 }

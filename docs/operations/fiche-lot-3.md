@@ -4,6 +4,7 @@
 **Ouvert par Jonathan le :** 20 août 2026 — décision `DEC-518`
 **Rédigée le :** 20 août 2026, à la sortie de la porte `G2`
 **Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 20/08/2026** — « tout me convient »
+**Avancement :** `T1`, `T2` et **`T3`** terminées. **Neuf sous-étapes restantes**, `T4` à `T12`
 **Traçabilité GitHub :** epic `#62`, jalon `G3`, huit stories `#63` à `#70`
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
@@ -47,7 +48,7 @@ tout ce qui était théorique devient réel — c'est le motif de l'arbitrage du
 |:--:|---|---|---|
 | ~~**`T1`**~~ | ~~**Moindre privilège PostgreSQL — deux rôles.**~~ **TERMINÉE le 20/08/2026.** **`QO-116` CLOSE** (`DEC-520`). **TROIS comptes et non deux** : `initdb` crée un superutilisateur, rien ne peut l'empêcher — ce qui change, c'est que l'application ne l'emploie plus. **`btree_gist` est `trusted`**, mesuré, ce qui rend la migration `0002` applicable sans superutilisateur. **`REASSIGN OWNED` a échoué** : 188 des 196 fonctions appartiennent à l'extension, et une extension n'a pas d'`ALTER … OWNER TO` — transfert explicite et **filtré**, 19 tables et 8 fonctions. Les **privilèges par défaut** couvrent les tables futures. **Tout rejoué sur une base recréée de zéro** : 8 services sains, 11 migrations, **390 tests**. Compte rendu : [`compte-rendu-t1-lot-3.md`](compte-rendu-t1-lot-3.md) | — | ☑ |
 | ~~**`T2`**~~ | ~~**Les sept tables du modèle §10**, migration `0012`.~~ **TERMINÉE le 21/08/2026.** Les §25.2 à §25.4 n'imposent **aucune** contrainte à ces tables ; le §25.1 s'ouvrant par « à prévoir **notamment** », **quatre unicités de plus** sont posées, chacune **dérivée** d'une règle écrite. L'index partiel de `magic_link_request` porte l'**invariant** du §10.3, pas son action — parti de `DEC-514`. **`make secrets-check` distingue deux familles d'empreintes**, et il a d'abord échoué sur mon propre code : une empreinte argon2 est de longueur variable. **7/7 tables lisibles par le rôle d'exécution**, le point de passation de `T1`. **415 tests.** Compte rendu : [`compte-rendu-t2-lot-3.md`](compte-rendu-t2-lot-3.md) | toutes | ☑ |
-| **`T3`** | **Magic link — la demande.** Réponse **générique** quelle que soit l'existence de l'adresse, domaine autorisé configurable, profil actif exigé. | `US001` | La réponse et le **code HTTP** sont **identiques** pour une adresse connue et inconnue — deux tests, et la comparaison porte sur le corps **et** l'en-tête · un profil **archivé** ne reçoit rien (§30.11) · Mailpit capte le message |
+| ~~**`T3`**~~ | ~~**Magic link — la demande.**~~ **TERMINÉE le 21/08/2026.** L'égalité est obtenue **en n'ayant qu'un seul gabarit de réponse**, non en comparant deux chemins de code — `202`, 143 octets, 7 en-têtes, 0 divergence entre connue, inconnue et archivée, mesuré **à travers Caddy en HTTPS**. **`§30.11` est passé de `reporte` à `acquis`** : 11 acquis contre 10. L'autorité des domaines est la **table**, pas une variable (`DEC-523`), et `make domaines-provision` pose la ligne initiale **sans jamais réactiver** un domaine coupé. Le jeton porte un **préfixe**, `oml_`, qui rend les deux détecteurs **exacts** au lieu d'heuristiques, et la famille `oss_`/`ost_` est **réservée** pour `T6` et `T10`. **`PUBLIC_BASE_URL` était fausse et n'était transmise à personne** — §7.16. **469 tests**, `make magic-link-check` **dans la CI**. Compte rendu : [`compte-rendu-t3-lot-3.md`](compte-rendu-t3-lot-3.md) | `US001` | ☑ |
 | **`T4`** | **Magic link — la consommation.** Usage unique, expiration à 15 minutes, le dernier lien invalide les précédents. | `US002` | Un second usage **échoue** · un lien de 16 minutes échoue · émettre un nouveau lien invalide l'ancien · **aucun lien complet dans les journaux**, prouvé par un contrôle sur les barrières de masquage |
 | **`T5`** | **Compte administrateur local.** Hachage, paramètres stockés, verrouillage après échecs, `must_change`. | `US003` | Le mot de passe n'est **jamais** stocké en clair ni journalisé · le verrouillage se déclenche et se relâche · l'algorithme et ses paramètres sont **en base**, pour pouvoir migrer sans casser les comptes |
 | **`T6`** | **Sessions.** Cookie `HttpOnly`, `Secure`, `SameSite` ; inactivité **7 jours**, durée absolue **30 jours** ; déconnexion. | `US004` | Les trois attributs sont sur la réponse **réelle**, lue à travers Caddy en HTTPS · les deux expirations sont éprouvées · **aucun jeton dans `localStorage`**, prouvé par un contrôle du frontend |
@@ -84,7 +85,7 @@ existant, c'est `ECART-022`. `make env-check` sera la parade, et il est déjà d
 |---|---|
 | **`QO-116`** — compte superutilisateur contre le moindre privilège | `T1`, ci-dessus |
 | **La vérification « ESM ou super-administrateur » de l'attributeur** du §8.4 | `T11` du LOT 2 l'a laissée : la base n'a **aucune notion de l'appelant**, et `attribuer_la_categorie_dg` reçoit déjà l'attributeur en paramètre. Il ne reste qu'à vérifier son droit — **rattachée à `T5`**, où les rôles d'administration existeront |
-| **`§30.11`** — « un profil archivé ne reçoit pas de magic link » | reporté au LOT 3 par `make recette-modele-check`. **`T3`** |
+| ~~**`§30.11`**~~ — « un profil archivé ne reçoit pas de magic link » | **ACQUIS en `T3`**, le 21/08/2026. Le service exige `membership_state = 'active'`, ce qui écarte les **trois** autres états et non le seul `archived` — et la réponse reste **identique** à celle d'un profil actif : le refus ne se lit pas |
 | **`§30.22`** — « le départ révoque immédiatement les sessions et rôles » | reporté au LOT 3. **`T9`** |
 
 **Le contrôle de recette du modèle échouera** si ces classements ne sont pas mis à jour : il exige que
@@ -105,11 +106,18 @@ Ce lot est le premier à **exercer** des garde-fous posés au LOT 1 et jamais é
 3. **Les trois barrières de masquage** de `packages/observabilite` devront recevoir les **formats
    réellement produits par ce lot** : jeton de magic link, jeton de session, jeton de service. La
    leçon de `T4-1` est explicite — un test de filtre doit énumérer les formes **que ce projet
-   produit**, pas des exemples de documentation ;
+   produit**, pas des exemples de documentation.
+   **FAIT EN `T3` POUR LES TROIS PRÉFIXES À LA FOIS** : `oml_`, `oss_` et `ost_` sont reconnus dès
+   maintenant, et les constantes vivent dans `observabilite.masquage` — le filtre ne peut pas importer
+   `apps/api`, c'est l'inverse. `T6` et `T10` n'auront rien à ajouter, mais devront **éprouver** ;
 4. **`DEC-469`** interdit déjà de journaliser la chaîne de requête et les arguments de job. Un magic
    link arrive **dans une URL** : c'est exactement le cas que cette décision anticipait ;
 5. **Gitleaks** examine chaque pull request avec des règles taillées sur les formats de ce projet. Un
    nouveau format de jeton **devra y être ajouté**, sinon la règle ne le verrait pas.
+   **FAIT EN `T3`**, règle `onboarding-jeton-du-projet`, les trois préfixes. Et parce que le TOML
+   n'importe rien, cette règle est nécessairement une **copie** : un test **lit `.gitleaks.toml`** et
+   exige qu'elle attrape un jeton réellement engendré, avec le témoin inverse sur une chaîne base64
+   sans préfixe. §7.27.
 
 ---
 
@@ -165,7 +173,7 @@ Elles seront instruites à leur sous-étape, et **rien ne sera inventé** — §
 |:--:|---|---|
 | ☐ | tous les scénarios autorisés et refusés sont testés | `T3` à `T10` |
 | ☐ | **aucun jeton n'est stocké dans `localStorage`** | `T6`, **par un contrôle** |
-| ☐ | aucune adresse absente de la base ne peut se connecter | `T3` |
+| ☑ | aucune adresse absente de la base ne peut se connecter | **`T3`, acquis le 21/08/2026** — et la réponse ne le révèle pas |
 | ☐ | **les magic links ne figurent pas dans les logs** | `T4`, **par un contrôle** |
 | ☐ | les limites de débit produisent les résultats attendus | `T8` |
 | ☐ | **Jonathan valide l'authentification** | la porte |

@@ -212,6 +212,7 @@ ETIQUETTE_LOCALE := onboarding-local
         web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
+        domaines-provision magic-link-check \
         up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
@@ -806,6 +807,7 @@ migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque d'abor
 	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT)
 	$(DC) exec -T --workdir /app/apps/api api alembic upgrade head
 	@$(MAKE) --no-print-directory migrate-status ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory domaines-provision ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 # `--wait` n'est pas un confort : `up --detach` rend la main des que le conteneur
 # est DEMARRE, pas des qu'il est SAIN. Sans l'attente, la CI enchainerait
@@ -838,6 +840,15 @@ isolation-temoin: ## Temoin negatif : le controle d isolation sait-il echouer ?
 
 roles-provision: ## Approvisionner les deux roles du moindre privilege (QO-116, idempotent)
 	@python3 infra/scripts/provisionner-roles.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+# APPELEE PAR `make migrate`, ET NON PAR `make up`, et le motif est l'ordre :
+# elle ECRIT dans `allowed_email_domain`, donc elle exige une base migree. A
+# l'endroit ou `make up` appelle `roles-provision`, aucune migration n'a tourne.
+# Un appel qui « sauterait » quand la table manque produirait un succes
+# silencieux, ce que le §7.0 interdit.
+domaines-provision: ## Poser le domaine e-mail initial du cahier 7.2 (DEC-523, idempotent)
+	@python3 infra/scripts/provisionner-domaines.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 secrets-check: ## Verifier qu aucune colonne ne peut porter un secret en clair (10.2, 10.3)
@@ -897,6 +908,16 @@ web-check: ## Controler la page de statut telle qu'un navigateur la voit
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
 	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
 	sh infra/scripts/verifier-page-statut.sh "$$origine"
+
+# L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, comme pour `web-check` :
+# l'ecrire en dur ferait porter ce controle sur le developpement alors qu'il
+# tournerait sur la recette. C'etait le defaut de `web-check` avant `T9`.
+magic-link-check: ## Prouver que la reponse au magic link est IDENTIQUE, connue ou non (US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	python3 infra/scripts/verifier-magic-link.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 test-unit: ## Tests sans dependance externe
 	$(UV) run pytest -m "not integration"

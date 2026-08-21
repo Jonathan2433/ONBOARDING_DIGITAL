@@ -46,6 +46,59 @@ MASQUE = "***masque***"
 # complet du §28.2.
 LONGUEUR_MAXIMALE_VALEUR = 512
 
+# ---------------------------------------------------------------------------
+#  LES JETONS QUE CE PROJET PRODUIT — LOT 3, sous-etape `T3`
+# ---------------------------------------------------------------------------
+#
+#  POURQUOI CES CONSTANTES SONT ICI, ET NON DANS `apps/api`
+#
+#    Elles ont TROIS consommateurs : ce filtre, le code qui engendre les jetons
+#    (`app.auth.jetons`), et la regle Gitleaks de `.gitleaks.toml`. Le filtre ne
+#    peut pas importer `apps/api` -- c'est `apps/api` qui depend de ce paquet, et
+#    l'inverse serait un cycle.
+#
+#    Les poser ici donne **une seule source** aux deux consommateurs Python, et
+#    c'est exactement le motif de `DEC-466` : deux filtres de masquage finissent
+#    par diverger, et le jour ou l'un oublie un motif la fuite est silencieuse.
+#    Le troisieme consommateur est du TOML, qui n'importe rien : un controle
+#    confronte donc sa regle a ces constantes plutot que de faire confiance a la
+#    copie -- §7.27.
+#
+#  POURQUOI UN PREFIXE, ET C'EST UNE MESURE DE SECURITE
+#
+#    Un jeton purement aleatoire n'a aucune forme reconnaissable, et un detecteur
+#    reduit a « une longue chaine base64 » serait une heuristique : il refuserait
+#    du texte legitime, donc il apprendrait a passer outre (§7.25). Le prefixe
+#    rend le detecteur EXACT -- c'est le motif du motif `gh[pousr]_` ci-dessous
+#    pour les jetons GitHub.
+#
+#  LA FAMILLE EST RESERVEE ICI POUR QUE `T6` ET `T10` NE L'INVENTENT PAS CHACUNE
+#  DE SON COTE :
+#
+#      `oml_`   magic link          -- LOT 3, `T3`
+#      `oss_`   jeton de session    -- LOT 3, `T6`, story `US004`
+#      `ost_`   jeton de service    -- LOT 3, `T10`, story `US007`
+PREFIXE_MAGIC_LINK = "oml_"
+PREFIXE_SESSION = "oss_"
+PREFIXE_JETON_DE_SERVICE = "ost_"
+
+PREFIXES_DE_JETON = (PREFIXE_MAGIC_LINK, PREFIXE_SESSION, PREFIXE_JETON_DE_SERVICE)
+
+# Borne INFERIEURE de la part aleatoire. Les jetons produits en portent 43 --
+# `secrets.token_urlsafe(32)` -- et le detecteur est volontairement plus permissif
+# : cale sur 43 exactement, il cesserait de voir le jeton le jour ou la taille de
+# l'alea changerait, et ce jour-la la fuite serait SILENCIEUSE.
+LONGUEUR_MINIMALE_D_ALEA = 40
+
+# Le motif est DERIVE des constantes ci-dessus, jamais recopie.
+MOTIF_JETON_DU_PROJET = (
+    r"\b(?:"
+    + "|".join(re.escape(prefixe) for prefixe in PREFIXES_DE_JETON)
+    + r")[A-Za-z0-9_-]{"
+    + str(LONGUEUR_MINIMALE_D_ALEA)
+    + r",}"
+)
+
 # --- Barriere 1 : le nom de la cle -------------------------------------------
 #
 # Recherche par sous-chaine, en minuscules, pour attraper aussi bien
@@ -92,6 +145,15 @@ MOTIFS_DE_VALEUR_SENSIBLE: tuple[re.Pattern[str], ...] = (
     re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}"),
     # Magic link : une URL portant un parametre de jeton.
     re.compile(r"(?i)https?://\S*[?&](token|jeton|code|magic)=\S+"),
+    # LES JETONS DE CE PROJET, par leur prefixe — LOT 3, `T3`.
+    #
+    # LE MOTIF D'URL CI-DESSUS NE SUFFISAIT PAS, ET C'EST LA LECON `T4-1`
+    # REJOUEE. Il exige une URL complete : un jeton NU -- recopie dans un
+    # message d'erreur, un argument de fonction, une trace -- passait a travers.
+    # Or c'est la forme la plus probable dans ces journaux : `oml_...` sans son
+    # URL. Un test enumere les formes que **ce projet** produit, pas des
+    # exemples de documentation.
+    re.compile(MOTIF_JETON_DU_PROJET),
 )
 
 

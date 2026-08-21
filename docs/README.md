@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `521` en usage | `DEC-522` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `523` en usage | `DEC-524` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -205,7 +205,8 @@ Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
 |:--:|---|---|---|
 | `T1` | Moindre privilège PostgreSQL — deux rôles | — | **Terminée** le 20/08/2026. **`QO-116` close.** Trois comptes et non deux : `initdb` crée un superutilisateur, ce qui change c'est que l'application ne l'emploie plus. `btree_gist` est **`trusted`**, mesuré — sans quoi la migration `0002` aurait été inapplicable. `REASSIGN OWNED` a échoué : **188 des 196 fonctions appartiennent à l'extension**. Tout rejoué sur une base **recréée de zéro** : 8 services sains, 11 migrations, **390 tests**. `DEC-520`, `ECART-033` |
 | `T2` | Les sept tables du modèle §10, migration `0012` | toutes | **Terminée** le 21/08/2026. **Les §25.2 à §25.4 n'imposent AUCUNE contrainte** à ces tables : aucune exclusion, aucune clé composite — en poser serait exiger plus que le modèle. Le §25.1 s'ouvrant par « à prévoir **notamment** », **quatre unicités de plus** sont posées, chacune **dérivée** d'une règle écrite. L'index partiel de `magic_link_request` porte l'**invariant** du §10.3, pas son action. **`make secrets-check`** distingue les empreintes de jeton (SHA-256, bornées) des empreintes de mot de passe (format variable, accompagnées de leur algorithme). **415 tests.** `DEC-521` |
-| `T3` à `T12` | Voir la fiche | — | Non entamées |
+| `T3` | Magic link — la **demande**, réponse générique | `MVP-L03-US001` | **Terminée** le 21/08/2026. **Le critère est une ÉGALITÉ, pas un refus** : la route n'a **qu'un seul gabarit de réponse**, ce qui rend la divergence impossible plutôt qu'improbable — `202`, 143 octets, 7 en-têtes, **0 divergence** entre adresse connue, inconnue et profil archivé, mesuré **à travers Caddy en HTTPS**, témoin du comparateur compris. **`§30.11` passe de `reporte` à `acquis`** — 11 acquis contre 10. **L'autorité des domaines est la TABLE**, modèle §5.4 littéral, et `make domaines-provision` pose la ligne initiale **sans jamais réactiver** un domaine qu'un administrateur a coupé (`DEC-523`). Le jeton porte un **préfixe** qui rend les deux détecteurs **exacts** au lieu d'heuristiques, et la famille est **réservée** pour `T6` et `T10`. **`PUBLIC_BASE_URL` était fausse et n'était transmise à personne** — §7.16, elle n'avait jamais eu de consommateur. **469 tests**, `make magic-link-check` **dans la CI**. `DEC-522`, `DEC-523` |
+| `T4` à `T12` | Voir la fiche | — | Non entamées |
 
 ---
 

@@ -212,6 +212,19 @@ jobs:
       - name: Page de statut, vue comme un navigateur la voit
         run: make web-check
 
+      - name: Reponse generique du magic link, a travers Caddy en HTTPS
+        # LOT 3, T3 — le critere de `MVP-L03-US001` est une EGALITE : la reponse
+        # doit etre identique pour une adresse connue et une inconnue, corps et
+        # en-tetes compris. Le verifier ICI, sur la stack reelle, est ce qui
+        # empeche une divergence d'apparaitre a l'insu de tout le monde : les
+        # tests d'integration montent l'application en processus, ce controle
+        # interroge ce que le mandataire livre reellement.
+        #
+        # Il porte son propre temoin — il exige que son comparateur signale deux
+        # reponses reellement differentes — et il nettoie ce qu'il cree, base ET
+        # Mailpit.
+        run: make magic-link-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 

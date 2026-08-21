@@ -451,7 +451,18 @@ def test_les_SEPT_types_d_evenement_sont_acceptes(cx: Connection) -> None:
             text("INSERT INTO auth_event (event_type, occurred_at) VALUES (:t, :quand)"),
             {"t": type_evenement, "quand": JANVIER},
         )
-    total = cx.execute(text("SELECT count(*) FROM auth_event")).scalar_one()
+    #  LE FILTRE SUR `occurred_at` EST UN CORRECTIF DE `T3`, ET IL N'AFFAIBLIT
+    #  RIEN : le test compte toujours les SEPT lignes qu'il vient d'inserer.
+    #
+    #  Sa version de `T2` comptait `auth_event` SANS filtre, ce qui supposait la
+    #  table vide. C'etait vrai tant qu'aucun code applicatif n'y ecrivait ; `T3`
+    #  y ecrit un evenement par demande de magic link, et ce test a echoue. §7.21 :
+    #  un controle ne devient pas faux tout seul, il le devient quand le monde
+    #  change autour de lui -- et ici le changement EST le livrable.
+    total = cx.execute(
+        text("SELECT count(*) FROM auth_event WHERE occurred_at = :quand"),
+        {"quand": JANVIER},
+    ).scalar_one()
     assert total == len(TYPES_EVENEMENT_AUTH) == 7
 
 
@@ -480,6 +491,15 @@ def test_un_evenement_SANS_personne_est_accepte(cx: Connection) -> None:
         ),
         {"quand": JANVIER, "origine": EMPREINTE},
     )
-    personne, compte = cx.execute(text("SELECT person_id, user_account_id FROM auth_event")).one()
+    #  Meme correctif de `T3` que ci-dessus : la ligne examinee est celle que ce
+    #  test vient d'inserer, identifiee par son empreinte d'origine et son
+    #  horodatage. `.one()` sans filtre echouait des qu'une autre ligne existait.
+    personne, compte = cx.execute(
+        text(
+            "SELECT person_id, user_account_id FROM auth_event "
+            "WHERE occurred_at = :quand AND request_origin_hash = :origine"
+        ),
+        {"quand": JANVIER, "origine": EMPREINTE},
+    ).one()
     assert personne is None
     assert compte is None
