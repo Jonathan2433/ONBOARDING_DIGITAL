@@ -263,6 +263,24 @@ jobs:
         # qui la surcharge ne prouve rien de la configuration deployee.
         run: make csrf-check
 
+      - name: Limitation de debit, a travers Caddy en HTTPS
+        # LOT 3, T8 — « les limites produisent les resultats attendus », critere de
+        # sortie litteral du lot. Douze controles, et TROIS temoins :
+        #
+        #   - les dix premieres demandes passent : sans ce temoin, une route
+        #     cassee donnerait la meme observation qu'une limite qui fonctionne ;
+        #   - la surveillance d'origine ne refuse JAMAIS : le §20.2 ecrit
+        #     « limitation » pour l'adresse et « alerte » pour l'origine, et
+        #     confondre les deux verbes bloquerait tout un bureau derriere un
+        #     partage d'adresse ;
+        #   - un succes efface le compteur d'echecs : sinon un administrateur qui
+        #     se trompe puis reussit resterait bloque quinze minutes.
+        #
+        # Et il compare les DEUX refus, corps et en-tetes : si le 429 n'arrivait
+        # que pour une adresse connue, il dirait « ce compte existe » — l'oracle
+        # que `T3` a ferme, rouvert par la limite elle-meme.
+        run: make debit-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 

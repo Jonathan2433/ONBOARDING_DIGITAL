@@ -46,15 +46,12 @@
     "  oracle d'enumeration. Le 422 documente ne depend QUE de la forme de la",
     "  requete, jamais du contenu de la base."
   ],
-
-  "version": "1.5",
-
+  "version": 1.6,
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
     "cote frontend : c'est lui que l'utilisateur cite dans un signalement."
   ],
   "enTeteCorrelation": "X-Request-ID",
-
   "_commentaire_prefixe": [
     "DEC-465 place les endpoints de sante HORS du prefixe versionne : ils relevent",
     "de l'exploitation, et l'adresse que sonde un orchestrateur ne doit pas bouger",
@@ -62,7 +59,6 @@
     "chemins metier, et il n'y en a aucun au LOT 1."
   ],
   "prefixeVersionne": "/api/v1",
-
   "_commentaire_csrf": [
     "PROTECTION DES ECRITURES — LOT 3, T7, story MVP-L03-US005.",
     "",
@@ -101,7 +97,6 @@
   ],
   "enTeteJetonCsrf": "X-CSRF-Token",
   "enTeteCleIdempotence": "Idempotency-Key",
-
   "endpoints": [
     {
       "cle": "live",
@@ -145,7 +140,7 @@
       "cle": "demandeDeMagicLink",
       "chemin": "/api/v1/auth/magic-link",
       "methode": "post",
-      "codesExploitables": [202, 403],
+      "codesExploitables": [202, 403, 429, 503],
       "forme": "ReponseGenerique",
       "role": [
         "Demander un lien de connexion — LOT 3, T3, story MVP-L03-US001.",
@@ -156,7 +151,15 @@
         "existe ou non. Le frontend ne peut donc rien en deduire, et c'est voulu — il",
         "affiche la meme confirmation dans tous les cas.",
         "Le 422 que le schema documente ne depend que de la FORME de la requete —",
-        "champ absent, corps trop long — jamais du contenu de la base."
+        "champ absent, corps trop long — jamais du contenu de la base.",
+        "429 DEPUIS T8 : limitation de debit du cahier §20.2. Le corps ne nomme PAS la",
+        "dimension depassee -- le dire apprendrait laquelle contourner -- et",
+        "`details.secondes_avant_reprise` donne le reste de la fenetre. LE 429 ARRIVE",
+        "POUR TOUTE ADRESSE, connue ou non : sinon il dirait qu'un compte existe, et",
+        "l'egalite anti-enumeration de T3 serait rouverte par la limite elle-meme.",
+        "503 DEPUIS T8 : le compteur est injoignable. Le §20.1 impose le refus par",
+        "defaut -- laisser passer ferait d'une panne de Redis le moyen de desactiver la",
+        "protection."
       ]
     },
     {
@@ -185,7 +188,7 @@
       "cle": "connexionAdministrateur",
       "chemin": "/api/v1/auth/connexion",
       "methode": "post",
-      "codesExploitables": [200, 400, 403],
+      "codesExploitables": [200, 400, 403, 429, 503],
       "forme": "ReponseDeConnexion",
       "role": [
         "Connexion d'un compte administrateur local — LOT 3, T5, story MVP-L03-US003.",
@@ -196,7 +199,15 @@
         "verrouiller le titulaire legitime.",
         "200 NE PORTE AUCUN ACCES : ni cookie, ni jeton de session. La session releve de",
         "T6. Le champ `changement_exige` porte `must_change` du modele 10.2 : l'ecran",
-        "doit imposer le changement avant toute autre action."
+        "doit imposer le changement avant toute autre action.",
+        "429 DEPUIS T8 : limitation de debit du cahier §20.2. Le corps ne nomme PAS la",
+        "dimension depassee -- le dire apprendrait laquelle contourner -- et",
+        "`details.secondes_avant_reprise` donne le reste de la fenetre. LE 429 ARRIVE",
+        "POUR TOUTE ADRESSE, connue ou non : sinon il dirait qu'un compte existe, et",
+        "l'egalite anti-enumeration de T3 serait rouverte par la limite elle-meme.",
+        "503 DEPUIS T8 : le compteur est injoignable. Le §20.1 impose le refus par",
+        "defaut -- laisser passer ferait d'une panne de Redis le moyen de desactiver la",
+        "protection."
       ]
     },
     {
@@ -253,5 +264,13 @@
         "sans quoi le navigateur le laisserait en place."
       ]
     }
+  ],
+  "_commentaire_debit": [
+    "LOT 3, T8 — LES SEUILS NE SONT PAS DANS CE CONTRAT, ET C'EST DELIBERE.",
+    "Le §20.2 les ecrit, `app/auth/debit.py` les porte, et un test RELIT le cahier",
+    "pour exiger qu'ils correspondent. Les recopier ici en ferait une troisieme",
+    "source, qui vieillirait au premier changement -- c'est la classe ECART-021.",
+    "Ce que le frontend doit savoir n'est pas la valeur du seuil mais la FORME de",
+    "la reponse : un 429 dont `details.secondes_avant_reprise` dit quand reessayer."
   ]
 }

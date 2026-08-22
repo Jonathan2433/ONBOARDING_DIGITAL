@@ -119,10 +119,37 @@ def empreinte_d_origine(origine: str, cle: str) -> str:
         cle: `APP_SECRET_KEY`. Une cle vide leve, plutot que de produire une
             empreinte non salee qui aurait l'apparence d'une valeur minimisee.
     """
+    return empreinte_minimisee(origine, cle, quoi="une adresse IP")
+
+
+def empreinte_minimisee(valeur: str, cle: str, *, quoi: str) -> str:
+    """Empreinte HMAC d'une valeur de FAIBLE entropie — le cas inverse du jeton.
+
+    **LOT 3, `T8` L'EMPLOIE POUR LES COMPTEURS DE DEBIT, ET LE MOTIF EST LE MEME
+    QU'AU §10.3.** Une adresse e-mail est devinable ; une adresse IPv4 n'a que 32
+    bits. Une empreinte SHA-256 simple de l'une ou de l'autre se renverse par
+    enumeration, et ne serait donc pas une valeur minimisee -- seulement une
+    valeur qui en a l'air.
+
+    **UNE SEULE IMPLEMENTATION, ET C'EST DELIBERE.** `empreinte_d_origine`
+    delegue ici. Deux fonctions HMAC voisines finiraient par diverger -- une clé
+    differente, un encodage different -- et ce jour-la deux compteurs censes
+    porter sur la meme valeur compteraient separement, **en paraissant
+    fonctionner**. C'est le motif de `DEC-466`, applique a l'interieur d'un
+    module.
+
+    Args:
+        valeur: la donnee a minimiser. Elle n'est jamais journalisee.
+        cle: `APP_SECRET_KEY`. Une cle vide leve, plutot que de produire une
+            empreinte non salee qui aurait l'apparence d'une valeur minimisee.
+        quoi: ce que la valeur represente, pour que le message d'erreur soit
+            diagnosticable. **Jamais la valeur elle-meme** : un message d'erreur
+            finit dans un journal.
+    """
     if not cle:
         message = (
-            "empreinte_d_origine exige une cle non vide : sans elle, l'empreinte "
-            "d'une adresse IP est reversible par enumeration"
+            f"empreinte_minimisee exige une cle non vide : sans elle, l'empreinte "
+            f"de {quoi} est reversible par enumeration"
         )
         raise ValueError(message)
-    return hmac.new(cle.encode("utf-8"), origine.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.new(cle.encode("utf-8"), valeur.encode("utf-8"), hashlib.sha256).hexdigest()

@@ -1292,6 +1292,8 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
     with moteur(parametres_de_la_stack).connect() as horloge:
         debut = horloge.execute(text("SELECT now()")).scalar_one()
 
+    pret = threading.Event()
+
     def consommer_dans_un_fil() -> None:
         """B : sa propre connexion, et un `lock_timeout` GENEREUX.
 
@@ -1307,9 +1309,35 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
         try:
             with connexion.begin():
                 connexion.execute(text(f"SET LOCAL lock_timeout = '{VERROU_TIMEOUT_B}'"))
+                #  ==========================================================
+                #
+                #   LE SIGNAL EST POSE ICI, ET SA PLACE EST TOUT L'INTERET
+                #
+                #     Apres l'ouverture de la connexion et le reglage du
+                #     `lock_timeout`, **avant** l'instruction bloquante. La
+                #     barriere du fil principal ne demarre donc son horloge
+                #     qu'une fois B reellement prete a se bloquer.
+                #
+                #     **MESURE QUI L'A IMPOSE, EN `T8`.** Deux tests de
+                #     concurrence -- celui-ci et ceux de `T4` et `T5` -- ont
+                #     echoue par intermittence sur « B n'a pas ete bloquee », et
+                #     l'etat observe montrait que **le backend de B n'existait pas
+                #     encore** : l'ouverture d'une connexion PostgreSQL neuve
+                #     consommait le budget de la barriere, sous la charge d'une
+                #     suite complete. Ce n'est pas le verrou qui manquait, c'est
+                #     la connexion qui n'etait pas la.
+                #
+                #     Meme famille que le defaut `T4-4`, ou les deux delais se
+                #     chevauchaient : un controle intermittent coute plus cher
+                #     qu'un controle faux, parce qu'on apprend a le relancer.
+                #
+                #  ==========================================================
+                pret.set()
                 resultats["b"] = consommer_un_magic_link(connexion, jeton=jeton, instant=INSTANT)
         except BaseException as erreur:
             erreurs.append(erreur)
+            #  Sinon la barriere attendrait un signal qui ne viendra jamais.
+            pret.set()
         finally:
             connexion.close()
 
@@ -1323,6 +1351,12 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
         #  --- 2. B attend le verrou, et on l'OBSERVE ------------------------
         fil = threading.Thread(target=consommer_dans_un_fil, daemon=True)
         fil.start()
+        #  **LA BARRIERE N'OUVRE SON HORLOGE QU'APRES LE SIGNAL DE B** — voir le
+        #  bloc de commentaire dans le fil.
+        assert pret.wait(DELAI_ATTENTE_VERROU), (
+            f"B n'a pas signale son depart en {DELAI_ATTENTE_VERROU} s : la cause est "
+            "l'ouverture de sa connexion, PAS l'absence de verrou"
+        )
 
         limite = time.monotonic() + DELAI_ATTENTE_VERROU
         en_attente = False
@@ -1398,7 +1432,37 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
         #  test valide sa transaction, donc rien ne s'annule tout seul. Les
         #  residus ont fait echouer l'execution suivante, exactement comme le
         #  defaut `T3-3`. La lecon est la meme, et c'est la deuxieme fois.
+        #
+        #  ==================================================================
+        #
+        #   `T8` A AJOUTE DEUX GARDE-FOUS ICI, ET LE MOTIF EST MESURE
+        #
+        #     Ce test a echoue DEUX FOIS sur huit executions completes pendant
+        #     `T8`, jamais en isolement (3 sur 3) ni sur son seul fichier (58 sur
+        #     58) -- meme famille que le defaut `T4-4`, ou il etait intermittent
+        #     une fois sur trois. Et chaque fois, **son echec en a produit huit
+        #     autres** dans `test_personnes.py` et `test_roles_et_perimetres.py`,
+        #     qui comptent des lignes sans filtre : son decor etait reste en base.
+        #
+        #     Un nettoyage en `finally` ne suffit donc pas : si B tient encore un
+        #     verrou de ligne, le `DELETE` **attend**, et sans borne il pend ou
+        #     laisse tout derriere lui. Les deux garde-fous ci-dessous ne
+        #     corrigent pas l'intermittence -- sa cause n'est pas etablie -- ils
+        #     empechent qu'un echec en devienne neuf, et ils **nomment** ce qui
+        #     s'est passe. C'est la lecon centrale du §7.18 : la premiere
+        #     correction a ecrire est celle qui te dira pourquoi.
+        #
+        #  ==================================================================
+        if fil.is_alive():
+            print(  # un diagnostic doit etre VISIBLE dans le journal de test
+                "\n  DIAGNOSTIC : le fil B est encore vivant au nettoyage. S'il tient un "
+                "verrou, le nettoyage va echouer sur `lock_timeout`, et le decor restera "
+                "en base — ce qui fera echouer des tests SANS RAPPORT."
+            )
         with moteur(parametres_de_la_stack).begin() as menage:
+            #  Borne le nettoyage : sans elle, un verrou non relache suspend la
+            #  suite au lieu de la faire echouer.
+            menage.execute(text("SET LOCAL lock_timeout = '5s'"))
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",

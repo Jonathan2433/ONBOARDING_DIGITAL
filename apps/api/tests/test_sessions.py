@@ -411,11 +411,37 @@ def test_le_rafraichissement_est_ATOMIQUE_sous_CONCURRENCE(
     resultats: dict[str, object] = {}
     erreurs: list[BaseException] = []
 
+    pret = threading.Event()
+
     def lire_dans_un_fil() -> None:
         connexion = moteur(parametres_de_la_stack).connect()
         try:
             with connexion.begin():
                 connexion.execute(text(f"SET LOCAL lock_timeout = '{VERROU_TIMEOUT_CONCURRENT}'"))
+                #  ==========================================================
+                #
+                #   LE SIGNAL EST POSE ICI, ET SA PLACE EST TOUT L'INTERET
+                #
+                #     Apres l'ouverture de la connexion et le reglage du
+                #     `lock_timeout`, **avant** l'instruction bloquante. La
+                #     barriere du fil principal ne demarre donc son horloge
+                #     qu'une fois B reellement prete a se bloquer.
+                #
+                #     **MESURE QUI L'A IMPOSE, EN `T8`.** Deux tests de
+                #     concurrence -- celui-ci et ceux de `T4` et `T5` -- ont
+                #     echoue par intermittence sur « B n'a pas ete bloquee », et
+                #     l'etat observe montrait que **le backend de B n'existait pas
+                #     encore** : l'ouverture d'une connexion PostgreSQL neuve
+                #     consommait le budget de la barriere, sous la charge d'une
+                #     suite complete. Ce n'est pas le verrou qui manquait, c'est
+                #     la connexion qui n'etait pas la.
+                #
+                #     Meme famille que le defaut `T4-4`, ou les deux delais se
+                #     chevauchaient : un controle intermittent coute plus cher
+                #     qu'un controle faux, parce qu'on apprend a le relancer.
+                #
+                #  ==========================================================
+                pret.set()
                 resultats["b"] = lire_et_rafraichir(
                     connexion,
                     jeton=jeton,
@@ -435,6 +461,12 @@ def test_le_rafraichissement_est_ATOMIQUE_sous_CONCURRENCE(
 
         fil = threading.Thread(target=lire_dans_un_fil, daemon=True)
         fil.start()
+        #  **LA BARRIERE N'OUVRE SON HORLOGE QU'APRES LE SIGNAL DE B** — voir le
+        #  bloc de commentaire dans le fil.
+        assert pret.wait(DELAI_ATTENTE_VERROU), (
+            f"B n'a pas signale son depart en {DELAI_ATTENTE_VERROU} s : la cause est "
+            "l'ouverture de sa connexion, PAS l'absence de verrou"
+        )
 
         limite = time.monotonic() + DELAI_ATTENTE_VERROU
         en_attente = False

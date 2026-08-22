@@ -40,6 +40,9 @@ import uuid
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RACINE / "apps" / "api"))
+sys.path.insert(0, str(RACINE / "infra" / "scripts"))
+
+from debit_partage import purger_les_compteurs_de_debit  # noqa: E402
 
 CHEMIN_DEMANDE = "/api/v1/auth/magic-link"
 CHEMIN_CONSOMMATION = "/api/v1/auth/magic-link/consommation"
@@ -411,6 +414,19 @@ def main() -> int:
             "DELETE FROM magic_link_request WHERE person_id IN "  # noqa: S608
             f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         )
+        # LE COMPTEUR DE `T8` EST EFFACE AVEC LES LIGNES, ET C'EST UN CORRECTIF
+        #
+        #   Ce controle repart d'un etat connu en supprimant les liens en base. Il
+        #   ne suffit plus : depuis `T8`, une onzieme demande sur la meme adresse
+        #   est refusee par la limitation, et ce verificateur en fait une dizaine
+        #   avant d'arriver ici. Les deux controles d'idempotence ont donc echoue
+        #   sur un livrable conforme -- « 0 lien(s) au lieu de 1 » -- parce que le
+        #   429 n'emet aucun lien. C'est le §7.21.
+        #
+        #   Un etat connu n'est plus seulement une table vide : c'est une table
+        #   vide ET un compteur remis a zero. La limitation a son propre controle,
+        #   `make debit-check`.
+        purger_les_compteurs_de_debit(env)
         controles += 1
         cle = f"t7-{uuid.uuid4().hex}"
         entetes_cle = {"Origin": arguments.base, EN_TETE_CLE: cle}
@@ -452,6 +468,19 @@ def main() -> int:
             "DELETE FROM magic_link_request WHERE person_id IN "  # noqa: S608
             f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         )
+        # LE COMPTEUR DE `T8` EST EFFACE AVEC LES LIGNES, ET C'EST UN CORRECTIF
+        #
+        #   Ce controle repart d'un etat connu en supprimant les liens en base. Il
+        #   ne suffit plus : depuis `T8`, une onzieme demande sur la meme adresse
+        #   est refusee par la limitation, et ce verificateur en fait une dizaine
+        #   avant d'arriver ici. Les deux controles d'idempotence ont donc echoue
+        #   sur un livrable conforme -- « 0 lien(s) au lieu de 1 » -- parce que le
+        #   429 n'emet aucun lien. C'est le §7.21.
+        #
+        #   Un etat connu n'est plus seulement une table vide : c'est une table
+        #   vide ET un compteur remis a zero. La limitation a son propre controle,
+        #   `make debit-check`.
+        purger_les_compteurs_de_debit(env)
         controles += 1
         for _ in range(2):
             appeler(

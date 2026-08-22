@@ -935,6 +935,13 @@ csrf-check: ## Prouver qu une ecriture sans protection est refusee, et l idempot
 	$(UV) run python infra/scripts/verifier-csrf.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+debit-check: ## Prouver que les limites du 20.2 produisent les resultats attendus (US001, US003)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-debit.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 sessions-check: ## Prouver les trois attributs du cookie et l absence de jeton cote navigateur (US004)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

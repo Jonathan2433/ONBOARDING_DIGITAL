@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 20 août 2026, LOT 3 sous-étape `T1`
+**Dernière mise à jour :** 21 août 2026, LOT 3 sous-étape `T8`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 33 | 7 | 24 | 2 |
+| Total 34 | 7 | 25 | 2 |
 
 ---
 
@@ -51,8 +51,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
 | `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
 | `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
+| `ECART-034` | La fiche du lot annonçait « le cahier exige une limitation, **sans donner de seuil** » : le §20.2 en énumère **six**. Et les cinq variables de seuil de `.env.example` ne sont **consommées par personne** depuis le LOT 0 | Non — détecté avant d'inventer une valeur | **Clos** pour la fiche, **signalé** pour les variables |
 
-**Prochain identifiant libre : `ECART-034`.**
+**Prochain identifiant libre : `ECART-035`.**
 
 ---
 
@@ -477,4 +478,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-034`.**
+## `ECART-034` — La fiche du lot annonçait un seuil à choisir là où le cahier en donne six
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 21 août 2026, LOT 3 sous-étape `T8`, en ouvrant la limitation de débit |
+| Source | `docs/operations/fiche-lot-3.md` §8, ligne « **Valeurs des limites de débit** \| le cahier exige une limitation, sans donner de seuil \| `T8` » |
+| Constat | **Le cahier §20.2 s'intitule « Seuils initiaux » et en énumère six**, dont trois portent sur l'authentification :<br>• « **10** demandes de magic link par adresse et par heure : **limitation** » ;<br>• « **5** échecs administrateur en **15 minutes** : **alerte** » ;<br>• « **50** demandes depuis une même origine en une heure : **alerte** ».<br>**Et `.env.example` en porte cinq depuis le LOT 0**, chacune avec son commentaire `[source] cahier 20.2` — introduites par le commit `802fe69`.<br>**Un second constat, plus sérieux, est apparu en mesurant le premier :** ces cinq variables ne sont **consommées par personne**. `grep -rn` sur `apps/`, `packages/` et `infra/` rend **0 occurrence**. |
+| Impact | **Deux impacts, et le second est un piège d'exploitation.**<br>**(a)** La fiche invitait à *choisir* une valeur. L'avoir suivie aurait produit un seuil inventé qui **contredit le cahier** — lequel « prévaut sur tout » (§3 de la passation). C'est l'inverse du cas habituel : le document n'annonçait pas à tort que le travail était fait, il annonçait à tort qu'une **décision restait à prendre**.<br>**(b)** Un exploitant qui abaisserait `MAGIC_LINK_MAX_PER_EMAIL_PER_HOUR` dans son `.env` croirait avoir durci la sécurité et **se tromperait**, sans qu'aucun contrôle ne le signale. C'est exactement le « avertissement faux » du §7.21 : il apprend à ne plus lire ce qui est écrit. |
+| Cause | **Un document dérivé qui affirme au lieu de dériver.** Le §8 de la fiche liste les points « que le corpus ne tranche pas » — trois de ses quatre lignes sont justes (`QO-118`, la durée d'un jeton de service, la liste des scopes). La quatrième a été écrite sans relire le §20.2. Classe `ECART-021`, et même famille que `ECART-023` : un document dérivé peut **prescrire l'impossible dès sa rédaction**.<br>Pour l'impact **(b)**, la cause est différente : les variables ont été posées au LOT 0 pour leur traçabilité, avant qu'aucun code n'existe pour les lire, et rien n'a jamais mesuré l'écart entre « déclarée » et « consommée ». |
+| Bloquant | Non. Détecté **avant** d'inventer une valeur, et le livrable applique les seuils du cahier |
+| Recommandation | **(a)** Corriger la ligne du §8 de la fiche — fait — et **poser le contrôle qui l'aurait attrapée** : un test qui **relit le cahier** et exige que chaque constante de seuil corresponde à la phrase qui la produit, verbe inclus. Fait : `test_les_trois_seuils_sont_ceux_du_CAHIER_relu` et `test_les_deux_VERBES_du_cahier_sont_distincts`. Une constante changée à la main, ou un cahier modifié, font désormais échouer la suite au lieu de passer en silence.<br>**(b)** **Ne pas lire les seuils depuis l'environnement**, et le dire dans le fichier. `.env.example` §8 annonce lui-même « modifiables par le super-administrateur uniquement (matrice §19) » et « toute modification est **auditée** » : une variable d'environnement est modifiée par l'**exploitant**, pas par le super-administrateur, et sa modification n'est auditée par rien. La lire satisferait la forme et non la règle. Leur destination est **`platform_setting`** (modèle §5.2, « seuils de sécurité »), avec l'écran de réglages du **LOT 9** et l'audit du **LOT 10**.<br>**Recommandation ouverte pour la suite :** un contrôle qui exige que **chaque** variable de `.env.example` soit consommée quelque part **ou** porte une annotation explicite. Il transformerait cette classe en état contrôlé au lieu d'un état silencieux. Non posé en `T8` : hors périmètre, et il flaguerait des variables lues par Compose et non par l'API — donc il demande d'être exact avant d'être large, §7.25. |
+| Résolution | **Clos pour (a), et signalé pour (b).** Les trois seuils appliqués sont ceux du §20.2, portés en constantes dans `apps/api/app/auth/debit.py`, deux tests les confrontent au cahier, et `DEC-533` en trace la lecture. Les cinq variables de `.env.example` §8 sont **conservées** — elles portent la traçabilité vers le §20.2 et le LOT 9 en aura besoin — mais chacune est désormais **annotée `[non consommée — ECART-034]`**, avec un avertissement en tête de section plutôt qu'en note. |
+
+---
+
+**Prochain identifiant libre : `ECART-035`.**

@@ -40,6 +40,7 @@ from httpx import Response
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.auth.debit import CategorieDeCompteur, purger
 from app.auth.modeles import EtatCompte, TypeCompte, TypeEvenementAuth
 from app.auth.mots_de_passe import (
     ALGORITHME,
@@ -681,11 +682,37 @@ def test_le_compteur_d_echecs_est_ATOMIQUE_sous_CONCURRENCE(
     resultats: dict[str, object] = {}
     erreurs: list[BaseException] = []
 
+    pret = threading.Event()
+
     def compter_dans_un_fil() -> None:
         connexion = moteur(parametres_de_la_stack).connect()
         try:
             with connexion.begin():
                 connexion.execute(text(f"SET LOCAL lock_timeout = '{VERROU_TIMEOUT_CONCURRENT}'"))
+                #  ==========================================================
+                #
+                #   LE SIGNAL EST POSE ICI, ET SA PLACE EST TOUT L'INTERET
+                #
+                #     Apres l'ouverture de la connexion et le reglage du
+                #     `lock_timeout`, **avant** l'instruction bloquante. La
+                #     barriere du fil principal ne demarre donc son horloge
+                #     qu'une fois B reellement prete a se bloquer.
+                #
+                #     **MESURE QUI L'A IMPOSE, EN `T8`.** Deux tests de
+                #     concurrence -- celui-ci et ceux de `T4` et `T5` -- ont
+                #     echoue par intermittence sur « B n'a pas ete bloquee », et
+                #     l'etat observe montrait que **le backend de B n'existait pas
+                #     encore** : l'ouverture d'une connexion PostgreSQL neuve
+                #     consommait le budget de la barriere, sous la charge d'une
+                #     suite complete. Ce n'est pas le verrou qui manquait, c'est
+                #     la connexion qui n'etait pas la.
+                #
+                #     Meme famille que le defaut `T4-4`, ou les deux delais se
+                #     chevauchaient : un controle intermittent coute plus cher
+                #     qu'un controle faux, parce qu'on apprend a le relancer.
+                #
+                #  ==========================================================
+                pret.set()
                 resultats["b"] = authentifier_un_administrateur(
                     connexion,
                     adresse=adresse,
@@ -706,6 +733,12 @@ def test_le_compteur_d_echecs_est_ATOMIQUE_sous_CONCURRENCE(
 
         fil = threading.Thread(target=compter_dans_un_fil, daemon=True)
         fil.start()
+        #  **LA BARRIERE N'OUVRE SON HORLOGE QU'APRES LE SIGNAL DE B** — voir le
+        #  bloc de commentaire dans le fil.
+        assert pret.wait(DELAI_ATTENTE_VERROU), (
+            f"B n'a pas signale son depart en {DELAI_ATTENTE_VERROU} s : la cause est "
+            "l'ouverture de sa connexion, PAS l'absence de verrou"
+        )
 
         limite = time.monotonic() + DELAI_ATTENTE_VERROU
         en_attente = False
@@ -889,6 +922,21 @@ def test_les_CINQ_causes_de_refus_rendent_la_MEME_reponse(
             "/api/v1/auth/connexion",
             {"email": adresse, "mot_de_passe": AUTRE_MOT_DE_PASSE},
         )
+    #  **LE COMPTEUR DE `T8` EST EFFACE ICI, ET C'EST UN CORRECTIF DE `T8`.**
+    #
+    #  Ce test produit SIX echecs sur la meme adresse pour atteindre l'etat
+    #  « compte verrouille ». Depuis `T8`, la limitation par adresse refuse la
+    #  sixieme tentative avec un **429**, si bien que ce test echouait sur un
+    #  livrable conforme : il n'atteignait plus l'etat qu'il veut eprouver.
+    #
+    #  L'effacer est le bon geste, et non un contournement : ce test porte sur
+    #  l'EGALITE des cinq refus de `T5`, pas sur la limitation de debit -- qui a
+    #  ses propres tests et son propre controle. Le verrou obtenu reste **reel**,
+    #  produit par six vrais echecs, et c'est ce que ce test voulait prouver.
+    #
+    #  Le 429 de `T8` n'est PAS un oracle : il arrive pour toute adresse, connue
+    #  ou non, et `test_debit.py` le prouve des deux cotes.
+    purger(parametres, categorie=CategorieDeCompteur.ECHEC_ADMIN)
     refus["compte_verrouille"] = _reponse(
         parametres, "/api/v1/auth/connexion", {"email": adresse, "mot_de_passe": MOT_DE_PASSE}
     )

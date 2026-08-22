@@ -53,6 +53,8 @@ import re
 from typing import TYPE_CHECKING
 
 import redis
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Parametres
@@ -86,6 +88,13 @@ PREFIXE_REDIS = "onboarding:idempotence:"
 #  Un delai court : cette verification est sur le chemin d'une requete, et un
 #  Redis lent ne doit pas la faire pendre.
 DELAI_REDIS_SECONDES = 2
+
+#  **ET UN DELAI SEUL NE BORNE RIEN**, ce que `T8` a mesure : redis-py 8 reprend
+#  DIX fois par defaut, si bien que ce delai s'applique a chaque tentative et que
+#  le total atteint 4,06 s sur un port ferme. Le commentaire complet est dans
+#  `debit.py`. Corrige ici aussi, parce que c'est le meme chemin de requete et le
+#  meme cout : une panne de Redis ne doit pas devenir une saturation de l'API.
+REPRISES_REDIS = 0
 
 
 class CleInvalide(ValueError):
@@ -122,6 +131,7 @@ def _client(parametres: Parametres) -> redis.Redis:
         parametres.url_redis(),
         socket_connect_timeout=DELAI_REDIS_SECONDES,
         socket_timeout=DELAI_REDIS_SECONDES,
+        retry=Retry(NoBackoff(), REPRISES_REDIS),
     )
 
 
