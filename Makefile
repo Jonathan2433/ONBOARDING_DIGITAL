@@ -822,9 +822,28 @@ stack-check: health ports ## Controler la stack : sante des 8 services et public
 # Le controle APRES le rafraichissement n'est pas redondant : un `build` qui
 # n'aurait pas pris produirait exactement la meme observation qu'un `build`
 # reussi. C'est la quatrieme proposition du §7.0.
-migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque d'abord)
-	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT)
-	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT)
+# LE RAFRAICHISSEMENT DU CODE NE VAUT QUE POUR LE DEVELOPPEMENT
+#
+#   `code-refresh` reconstruit `api` et `worker` pour qu'ils portent le code du
+#   depot. C'est juste en developpement, ou l'image est construite localement.
+#
+#   **EN RECETTE, C'EST UNE ERREUR, ET ELLE EST BRUYANTE.** La surcouche reference
+#   ses images **par empreinte** (`DEC-486`), et `docker compose build` refuse :
+#   « build tag cannot contain a digest ». Surtout, reconstruire localement
+#   DEFERAIT le principe meme de la recette -- elle doit executer l'artefact
+#   PUBLIE, ce que `--no-build` garde par ailleurs.
+#
+#   Le defaut date de `T1` du LOT 2, quand `code-refresh` a ete ajoute a `migrate`
+#   alors qu'un seul environnement existait. C'est le §7.21 : un controle juste
+#   hier, rendu faux par un environnement que nous avons ajoute nous-memes -- et
+#   il n'est apparu qu'en executant reellement la recette, §7.16.
+migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque en DEV)
+	@if [ "$(ENVIRONNEMENT)" = "dev" ]; then \
+		$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT); \
+		$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT); \
+	else \
+		echo "==> $(ENVIRONNEMENT) : aucun rafraichissement, l'image est PUBLIEE et epinglee"; \
+	fi
 	$(DC) exec -T --workdir /app/apps/api api alembic upgrade head
 	@$(MAKE) --no-print-directory migrate-status ENVIRONNEMENT=$(ENVIRONNEMENT)
 	@$(MAKE) --no-print-directory domaines-provision ENVIRONNEMENT=$(ENVIRONNEMENT)
