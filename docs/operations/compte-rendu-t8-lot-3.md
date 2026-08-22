@@ -178,6 +178,7 @@ tests de `test_debit.py` échouent**. Sans cette mesure, je n'aurais pas trouvé
 | `T8-4` | Le contrôle de verrouillage de `make admin-check` **passait pour la mauvaise raison** : il n'exigeait que « pas 200 », et un 429 le satisfaisait en annonçant « verrou déclenché » | après correction de la cause `T8-5` |
 | `T8-5` | `ruff --fix` a retiré des imports momentanément inutilisés pendant la rédaction du fichier de tests. **Troisième occurrence — `T6`, `T7`, `T8`** | `ruff check` |
 | `T8-6` | **Deux tests de concurrence intermittents**, `T4` et `T6` : la barrière ouvrait son horloge avant que la connexion de B ne soit établie. **2 échecs sur 8** exécutions complètes, jamais en isolement. Voir §7 bis | l'état que le test affiche, après trois cycles |
+| `T8-7` | **Ma fixture `autouse` a BLOQUÉ l'intégration continue** : elle tentait une connexion Redis deux fois par test, et `socket_connect_timeout` ne borne **rien** — redis-py 8 reprend **dix fois** par défaut. Voir §7 quater | la tâche « qualité » restée en cours **plus de quarante minutes** sur l'étape des tests unitaires |
 
 **Et un test plus trois contrôles antérieurs sont devenus faux, tous légitimement :**
 
@@ -270,6 +271,60 @@ avant de corriger vaut aussi quand le diagnostic **innocente**.
 le chemin d'une requête. Ce n'est ni une fuite ni la cause du test intermittent, mais c'est une
 connexion TCP neuve là où un pool partagé suffirait. Le patron vient de `T7` ; le changer relève
 d'une sous-étape qui touche les deux, pas de celle-ci. **Signalé, non corrigé.**
+
+> **ET MA RÉFUTATION ÉTAIT JUSTE SUR LE MAUVAIS CRITÈRE.** J'avais bien soupçonné cette fixture ;
+> j'ai mesuré les **descripteurs de fichier**, et conclu qu'elle ne coûtait rien. La grandeur qui
+> comptait était le **temps** — 4,06 s par tentative quand Redis est absent — et elle a bloqué
+> l'intégration continue quelques minutes plus tard. Voir §7 quater, défaut `T8-7`. *Réfuter une
+> hypothèse exige de mesurer la grandeur qu'elle prédit, pas une grandeur voisine.*
+
+---
+
+## 7 quater. `T8-7` — un délai qui ne bornait rien, et une CI bloquée
+
+**Le défaut le plus coûteux de la sous-étape, et il est entièrement de mon fait.**
+
+La fixture `autouse` qui purge les compteurs ouvrait un client Redis **avant et après chaque test**,
+en s'appuyant sur `socket_connect_timeout=1` pour borner l'attente. **Ce délai ne bornait rien.**
+
+| Mesure | Valeur |
+|---|---|
+| reprises appliquées par redis-py 8.0.1, **par défaut** | **10** |
+| coût d'**une** tentative sur un port fermé | **4,06 s** |
+| la même, reprise bornée à zéro | **0,003 s** |
+| `port_ouvert` sur un port fermé, pour comparaison | **0,001 s** |
+
+La tâche **« qualité »** de l'intégration continue n'a **pas** de stack : 250 tests unitaires × deux
+purges × 4,06 s. Elle est restée **en cours plus de quarante minutes** sur l'étape des tests
+unitaires, la porte n'a jamais rendu son verdict, et la fusion a été **refusée** — `BLOCKED`, la
+protection de branche faisant son travail.
+
+> **C'est la sixième proposition du §7.0 sous un autre jour** : *un contrôle qui compare deux nombres
+> doit prouver qu'ils mesurent la même grandeur.* Ici « délai de connexion » et « attente totale »
+> sont deux grandeurs différentes, d'un **facteur dix**. J'ai affiché la première en croyant borner la
+> seconde — exactement le plafond de taille de `T7-6`, dans un autre costume.
+
+**Deux parades, et la première suffit presque :**
+
+1. **la sonde de port précède la connexion**, et son résultat est mémorisé pour la session —
+   `port_ouvert` coûte **quatre mille fois moins** qu'une tentative redis-py ;
+2. **la reprise est bornée à zéro**, ce qui couvre le cas où le port est ouvert mais Redis ne répond
+   pas — un conteneur qui démarre.
+
+**Preuve :** `.env` pointé sur un port fermé, les **250 tests unitaires passent en 5,46 s**. C'est
+exactement la situation de la tâche qualité.
+
+**Et le même défaut existait sur le CHEMIN D'UNE REQUÊTE, dans deux modules.** `debit.py` et
+`idempotence.py` déclaraient tous deux `DELAI_REDIS_SECONDES = 2` « pour qu'un Redis lent ne fasse pas
+pendre la requête ». Il ne l'empêchait pas : **quatre secondes par requête**. Le « refus par défaut »
+du §20.1 ne vaut que s'il est **rapide** — sinon une panne de Redis transforme la protection en vecteur
+de saturation. Les deux sont corrigés ; `idempotence.py` vient de `T7`, et le laisser aurait été
+livrer sciemment une attente de quatre secondes sur chaque écriture.
+
+**Ce que je retiens, et c'est une leçon de méthode :** j'avais formé cette hypothèse plus tôt — « ma
+fixture coûte quelque chose quand Redis est absent » — puis je l'avais **réfutée** sur le mauvais
+critère. J'ai mesuré les **descripteurs de fichier**, pas le **temps**. La mesure était juste, la
+question était fausse. *Réfuter une hypothèse exige de mesurer la grandeur qu'elle prédit.*
 
 ---
 

@@ -126,6 +126,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 import redis
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 
 from app.auth.jetons import empreinte_minimisee
 
@@ -140,6 +142,37 @@ PREFIXE_REDIS: Final = "onboarding:debit:"
 #  Un delai court : ce comptage est sur le chemin d'une requete, et un Redis lent
 #  ne doit pas la faire pendre.
 DELAI_REDIS_SECONDES: Final = 2
+
+# ===========================================================================
+#
+#  UN DELAI SEUL NE BORNE RIEN : redis-py REPREND DIX FOIS PAR DEFAUT
+#
+#    `socket_connect_timeout=2` avait l'air de borner l'attente. **Il ne la
+#    bornait pas.** redis-py 8 applique par defaut `Retry(ExponentialBackoff(),
+#    10)` sur une erreur de connexion : le delai s'applique a **chaque**
+#    tentative, et le total mesure **4,06 s** sur un port ferme -- contre 0,003 s
+#    avec la reprise bornee ci-dessous.
+#
+#    **LA CONSEQUENCE ETAIT REELLE, ET ELLE ETAIT DEUX FOIS GRAVE.** Sur le
+#    chemin d'une requete, le « refus par defaut » du §20.1 ne vaut que s'il est
+#    RAPIDE : quatre secondes par demande transforment une panne de Redis en
+#    saturation de l'API, donc la protection en vecteur. Et dans la tache
+#    « qualite » de l'integration continue, qui n'a **pas** de stack, la fixture
+#    de purge des tests payait ce prix **deux fois par test** -- 613 tests, soit
+#    plus de quatre-vingts minutes. La tache est restee bloquee, et c'est ce qui
+#    a fait decouvrir le defaut.
+#
+#    **C'EST LA SIXIEME PROPOSITION DU §7.0, SOUS UN AUTRE JOUR** : un nombre
+#    qu'on affiche comme une borne doit mesurer la grandeur qu'on croit borner.
+#    Ici « delai de connexion » et « attente totale » sont deux grandeurs
+#    differentes, d'un facteur dix.
+#
+#    Zero reprise, et non une : ce compteur est une protection, pas une donnee.
+#    Reessayer une fois ne le rendrait pas plus juste, et le §20.1 tranche deja
+#    ce qu'il faut faire quand il ne repond pas.
+#
+# ===========================================================================
+REPRISES_REDIS: Final = 0
 
 SECONDES_PAR_HEURE: Final = 3600
 
@@ -244,6 +277,9 @@ def _client(parametres: Parametres) -> redis.Redis:
         parametres.url_redis(),
         socket_connect_timeout=DELAI_REDIS_SECONDES,
         socket_timeout=DELAI_REDIS_SECONDES,
+        #  Voir le bloc de commentaire de `REPRISES_REDIS` : sans cela, le delai
+        #  ci-dessus ne borne PAS l'attente.
+        retry=Retry(NoBackoff(), REPRISES_REDIS),
     )
 
 

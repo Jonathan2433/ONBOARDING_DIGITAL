@@ -109,6 +109,70 @@ def environnement_vierge(monkeypatch: pytest.MonkeyPatch) -> None:
     parametres_en_cache.cache_clear()
 
 
+#  Etat de la sonde Redis, decide UNE FOIS pour toute la session.
+#
+#  `None` = pas encore sonde. Voir la fixture ci-dessous : sonder a chaque test
+#  serait deja du gaspillage, mais **tenter une CONNEXION a chaque test quand
+#  Redis est absent a bloque l'integration continue**.
+_redis_joignable: bool | None = None
+
+
+def _purger_les_compteurs_de_debit() -> None:
+    """Effacer les compteurs de limitation de debit. Silencieuse et BORNEE.
+
+    **LE COUT D'UN REDIS ABSENT EST LA RAISON D'ETRE DE CETTE FONCTION.** Ma
+    premiere version ouvrait un client redis-py directement, en s'appuyant sur
+    `socket_connect_timeout=1` pour borner l'attente. **Ce delai ne bornait
+    rien** : redis-py 8 reprend DIX fois par defaut, et une tentative sur un port
+    ferme coute **4,06 s** -- mesure faite. A deux purges par test et 613 tests,
+    la tache « qualite » de l'integration continue, qui n'a **pas** de stack, est
+    restee bloquee **plus de quatre-vingts minutes** sur l'etape des tests
+    unitaires.
+
+    Deux parades, et la premiere suffit presque :
+
+      1. **la sonde de port precede la connexion**, et son resultat est memorise
+         pour la session. `port_ouvert` coute **0,001 s** sur un port ferme, contre
+         4,06 s pour redis-py -- soit quatre mille fois moins ;
+      2. **la reprise est bornee a zero**, ce qui ramene une tentative ratee a
+         0,003 s. Elle couvre le cas ou le port est ouvert mais Redis ne repond
+         pas -- un conteneur qui demarre, par exemple.
+
+    Elle reste silencieuse sur echec : un test unitaire ne doit dependre d'aucune
+    stack, et lever ici ferait echouer des tests qui n'ont rien demande.
+    """
+    global _redis_joignable  # decision de session, memorisee une seule fois
+
+    env = lire_env_du_depot()
+    port = int(env.get("REDIS_HOST_PORT", "6379"))
+    if _redis_joignable is None:
+        _redis_joignable = port_ouvert(HOTE_LOCAL, port)
+    if not _redis_joignable:
+        return
+
+    try:
+        import redis
+        from redis.backoff import NoBackoff
+        from redis.retry import Retry
+
+        from app.auth.debit import PREFIXE_REDIS
+
+        client = redis.Redis(
+            host=HOTE_LOCAL,
+            port=port,
+            password=env.get("REDIS_PASSWORD") or None,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+            retry=Retry(NoBackoff(), 0),
+        )
+        cles = list(client.scan_iter(match=f"{PREFIXE_REDIS}*", count=500))
+        if cles:
+            client.delete(*cles)
+        client.close()
+    except Exception:  # noqa: S110 — Redis absent ou en cours de demarrage
+        pass
+
+
 @pytest.fixture(autouse=True)
 def compteurs_de_debit_neufs() -> Iterator[None]:
     """Effacer les compteurs de limitation de debit AVANT chaque test.
@@ -131,36 +195,14 @@ def compteurs_de_debit_neufs() -> Iterator[None]:
     occurrences dans ce lot. Une fixture `autouse` couvre les fichiers presents
     **et futurs**.
 
-    Elle est silencieuse quand Redis est absent : les tests unitaires ne doivent
-    pas dependre de la stack. Et elle n'efface **que** le prefixe de debit, donc
-    ni une file Dramatiq ni une cle d'idempotence de `T7`.
+    Le cout quand Redis est absent est traite dans `_purger_les_compteurs_de_debit`,
+    et il n'est pas anecdotique : c'est ce qui a bloque l'integration continue.
     """
-
-    def _purge() -> None:
-        try:
-            import redis
-
-            from app.auth.debit import PREFIXE_REDIS
-
-            env = lire_env_du_depot()
-            client = redis.Redis(
-                host=HOTE_LOCAL,
-                port=int(env.get("REDIS_HOST_PORT", "6379")),
-                password=env.get("REDIS_PASSWORD") or None,
-                socket_connect_timeout=1,
-                socket_timeout=1,
-            )
-            cles = list(client.scan_iter(match=f"{PREFIXE_REDIS}*", count=500))
-            if cles:
-                client.delete(*cles)
-        except Exception:  # noqa: S110 — Redis absent : un test unitaire n'en depend pas
-            pass
-
-    _purge()
+    _purger_les_compteurs_de_debit()
     yield
     #  **ET APRES AUSSI** : sans cela, `make debit-check` verrait les compteurs
     #  laisses par la suite de tests et son propre comptage serait faux.
-    _purge()
+    _purger_les_compteurs_de_debit()
 
 
 @pytest.fixture

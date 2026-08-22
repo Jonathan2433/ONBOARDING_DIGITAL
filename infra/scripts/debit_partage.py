@@ -51,6 +51,8 @@ def purger_les_compteurs_de_debit(env: Mapping[str, str]) -> int:
         controle suivant sur une cause qui n'est pas la sienne -- §7.6.
     """
     import redis
+    from redis.backoff import NoBackoff
+    from redis.retry import Retry
 
     from app.auth.debit import PREFIXE_REDIS
 
@@ -60,6 +62,11 @@ def purger_les_compteurs_de_debit(env: Mapping[str, str]) -> int:
         password=env.get("REDIS_PASSWORD") or None,
         socket_connect_timeout=5,
         socket_timeout=5,
+        #  **UNE SEULE TENTATIVE.** redis-py 8 reprend dix fois par defaut, si
+        #  bien que le delai ci-dessus ne borne PAS l'attente -- 4,06 s mesures
+        #  sur un port ferme. Ici l'echec doit etre rapide ET bruyant : un
+        #  verificateur qui ne peut pas repartir d'un etat connu doit le dire.
+        retry=Retry(NoBackoff(), 0),
     )
     cles = list(client.scan_iter(match=f"{PREFIXE_REDIS}*", count=500))
     return int(client.delete(*cles)) if cles else 0
