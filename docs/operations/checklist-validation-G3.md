@@ -121,13 +121,23 @@ limite s'appliquant à toute adresse.
 
 ---
 
-## 7. Ce qui reste à faire AVANT de poser le tag
+## 7. La recette — FAIT le 22/08/2026, avec ton accord
 
-**Un seul point, et il demande ton accord parce qu'il touche GHCR.**
+**C'était le seul point restant, et il est clos** — `DEC-539`. Ce qui a été mesuré :
 
-La recette exécute l'artefact **publié et épinglé par empreinte** (`DEC-486`), de révision **antérieure
-à `T1`** : son API se connecte encore en superutilisateur, ce qui est mesuré. Les trois images doivent
-être republiées, puis la recette réépinglée :
+| | Avant | Après |
+|---|---|---|
+| révision embarquée | antérieure à `T1` | **`3bc68b9`**, le commit de `T12` |
+| rôle de connexion de l'API | `onboarding_app`, **superutilisateur** | **`onboarding_recette_runtime`** — « ne peut que lire et écrire des lignes » |
+| séparations du cahier §22.2 | — | **7 sur 7**, 57 contrôles, 0 échec |
+
+**Et deux défauts trouvés en le faisant**, qui ne pouvaient apparaître qu'en exécutant réellement la
+recette : `make migrate ENVIRONNEMENT=recette` appelait `code-refresh`, qui tente un `build` sur une
+image référencée par **empreinte** — Docker refuse, et reconstruire localement **déferait le principe
+même** de la recette. Et `.env.recette` déclarait **83 variables sur 84** : `make env-check` a nommé
+la manquante, ce qui est exactement la parade posée par `ECART-022`.
+
+La procédure, pour mémoire :
 
 ```bash
 # 1. la publication se fait par le workflow `images.yml`, sur poussee vers `develop`
@@ -140,8 +150,8 @@ make images-pin
 make up-recette && make recette-check && make separations-check && make down-recette
 ```
 
-**Je ne l'ai pas fait de mon propre chef** : republier pousse vers un registre externe, et le §12 dit
-de ne rien pousser vers l'extérieur sans ton accord.
+**Je ne l'avais pas fait de mon propre chef** : republier pousse vers un registre externe, et le §12
+dit de ne rien pousser vers l'extérieur sans ton accord. Tu l'as donné le 22/08/2026.
 
 ---
 

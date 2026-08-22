@@ -47,6 +47,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 3 `DEC-536`, sous-étape `T10`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-537`, sous-étape `T11`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-538`, sous-étape `T12`** | 1 | **Validée le 22/08/2026** |
+| **Recette réépinglée `DEC-539`, avant la porte `G3`** | 1 | **Validée le 22/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -58,7 +59,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **206** | |
+| **Total** | **207** | |
 
 ---
 
@@ -580,7 +581,9 @@ ne l'a pas encore placée**.
 
 | `DEC-538` | **L'audit des sept événements passe par les types qui existent, et deux contrôles structurels remplacent une huitième promesse de vigilance.** **(a)** `make evenements-check` produit les **sept** types du §10.6 par des **appels HTTP réels**, le compte étant **importé** de `TypeEvenementAuth`. **(b)** Il porte son **témoin** : un mot de passe inséré exprès dans `auth_event`, que le contrôle doit trouver. **(c)** `make residu-check` compare un **avant/après table par table** et **remplace** `make test-integration` dans la CI. **(d)** `make icloud-verify` détecte désormais un **arbre divergent de l'amont**. **(e)** `§30.4` n'est pas reclassé : son résiduel est **enrichi**. | **(a) INSÉRER SEPT LIGNES PROUVERAIT QUE LA TABLE ACCEPTE SEPT VALEURS**, pas que les actions les produisent. Le scénario passe donc par la demande d'un lien, sa consommation, une connexion, un échec, un verrouillage, une révocation et un changement de mot de passe — chacun à travers Caddy en HTTPS. Le compte est **importé** et non écrit : un huitième type ajouté au code ferait échouer ce contrôle, **et c'est son rôle**. **Les deux acteurs sont exigés** — `person_id` et `service_account_id` depuis la migration `0013` : un contrôle qui ne compterait que le premier déclarerait l'audit acquis **en ignorant les comptes de service**, ce que le §22.1 interdit. **(b)** Sans témoin, l'absence de fuite prouverait l'absence de contrôle — §7.0, quatrième proposition. **(c) SEPT OCCURRENCES DE LA MÊME CLASSE DE DÉFAUT DANS CE SEUL LOT**, dont une commise **une sous-étape après avoir écrit la leçon** : le §7.2 dit quoi faire — *quand une classe d'erreur résiste à la vigilance, change d'outil au lieu de promettre d'être plus attentif.* Une huitième promesse ne vaudrait rien. **La mesure est EXACTE, pas heuristique** : chercher des marqueurs — `t3api`, `%.test` — serait une **liste** qui vieillit au premier ajout et une **heuristique** dans un contrôle, ce qui est un défaut (§7.25). Un avant/après table par table, la liste des tables étant **dérivée du catalogue**, fonctionne aussi bien sur une base vide que sur le jeu de recette de 27 936 lignes. Il **remplace** `test-integration` plutôt que de s'y ajouter : lancer la suite deux fois doublerait cinquante secondes pour rien, et son code de sortie porte **les deux verdicts**. **(d) LE GARDE-FOU EXISTAIT ET ÉTAIT AVEUGLE À UN MODE DE DÉFAILLANCE.** Quatre fichiers ont été remis à une version antérieure sans action de session — même mtime **à la seconde** sur les quatre, signature d'une réécriture en lot — et `make icloud-verify` est **passé au vert** : il ne cherchait que les copies de conflit `* [0-9]`, exact pour ce mode et **aveugle à celui-ci**. Étendre le garde-fou existant plutôt qu'en ajouter un parallèle garde la routine du §11 inchangée, et le **témoin négatif a été exécuté** dans un arbre de travail jetable : arbre identique à l'amont plus un fichier modifié → échec, fichiers nommés, chemin de diagnostic donné. **(e)** Le §30.4 a pour échéance le **LOT 7** et son résiduel est une règle de **processus** que rien ne peut acquérir en base. Le reclasser serait faux ; ne rien dire serait incomplet, car `T9` en couvre désormais la moitié utile — il **nomme** les consultants privés de DSM. Le résiduel passe donc de « rien ne le voit » à « rien ne le corrige automatiquement ». | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-539`.**
+| `DEC-539` | **La recette est réépinglée sur les images de `3bc68b9`, et `make migrate` ne reconstruit plus rien hors du développement.** **(a)** Les trois empreintes littérales de la surcouche de recette sont celles de la publication de `T12`. **(b)** `make migrate ENVIRONNEMENT=recette` **n'appelle plus `code-refresh`**. **(c)** Le résiduel nommé à la checklist `G3` est **clos**, mesuré. | **(a) LA RECETTE EXÉCUTAIT UNE RÉVISION ANTÉRIEURE À `T1`**, et son API se connectait en **superutilisateur** — mesuré avant, et c'est ce que la checklist annonçait comme le seul point restant. Après republication et réépinglage : `APP_REVISION = 3bc68b9`, et la seule connexion à `onboarding_recette` — hors la session de mesure elle-même, qu'il fallait exclure pour ne pas se tromper — est **`onboarding_recette_runtime`**. `make privileges-check ENVIRONNEMENT=recette` le dit : « qui ne peut que lire et écrire des lignes ». **L'épinglage durable est un COMMIT sur la surcouche**, non `.env.recette` que `make images-pin` écrit et qui n'est pas versionné — la cible le dit elle-même. **(b) UN DÉFAUT QUI NE POUVAIT APPARAÎTRE QU'EN EXÉCUTANT LA RECETTE.** `code-refresh` reconstruit `api` et `worker` pour qu'ils portent le code du dépôt : juste en développement, **erreur en recette**, où l'image est référencée par empreinte — `docker compose build` refuse avec « build tag cannot contain a digest ». Et surtout, reconstruire localement **déferait le principe même** de la recette, qui doit exécuter l'artefact **publié** (`DEC-486`). Le défaut date de `T1` du LOT 2, quand `code-refresh` a été ajouté à `migrate` alors qu'**un seul environnement existait** : c'est le §7.21, et il a fallu le §7.16 pour le révéler — *ce qui n'a jamais tourné n'est pas éprouvé.* **(c)** Et un second constat au passage, celui-là par un garde-fou qui a fonctionné : `.env.recette` déclarait **83 variables sur 84**, `SERVICE_TOKEN_MAX_DAYS` ajoutée par `T10` y manquant. `make env` ne réconcilie pas un fichier existant — c'est voulu, il porte des secrets — et `make env-check` est la parade posée par `ECART-022`. Elle a nommé la variable manquante. | Validée par Jonathan le 22/08/2026 |
+
+**Prochain identifiant libre : `DEC-540`.**
 
 ---
 
@@ -769,6 +772,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-536` — réalisation du LOT 3, `T10` | 1 | 1 |
 | `DEC-537` — réalisation du LOT 3, `T11` | 1 | 1 |
 | `DEC-538` — réalisation du LOT 3, `T12` | 1 | 1 |
+| `DEC-539` — recette réépinglée avant `G3` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -780,7 +784,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **206** | **206** |
+| **Total** | **207** | **207** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
