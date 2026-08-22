@@ -257,6 +257,7 @@ def engendrer(
 
     #  3. Un DSM habilite par entite — il doit exister AVANT toute affectation.
     dsm_par_entite: dict[uuid.UUID, uuid.UUID] = {}
+    esm_par_entite: dict[uuid.UUID, uuid.UUID] = {}
     for entite in identifiants_d_entites:
         personne, _ = _personne(connexion, tirage, compteur)
         mesure.personnes += 1
@@ -277,6 +278,36 @@ def engendrer(
         )
         mesure.responsabilites += 1
         dsm_par_entite[entite] = personne
+
+        #  UN ESM PAR ENTITE — AJOUTE AU LOT 3, `T5`, ET LE JEU EN MANQUAIT.
+        #
+        #  La matrice fait de l'ESM le « responsable fonctionnel de l'entite »,
+        #  et le §8.4 exige qu'un attributeur de categorie `dg` soit « ESM ou
+        #  super-administrateur ». Le jeu de recette n'en creait AUCUN : il
+        #  attribuait la categorie `dg` par un DSM, ce que `T5` refuse desormais.
+        #
+        #  **Le jeu de recette a donc revele une lacune de lui-meme**, et la
+        #  corriger le rend plus fidele au modele, non seulement conforme au
+        #  nouveau controle : une entite sans responsable fonctionnel n'existe
+        #  pas dans la matrice.
+        esm, _ = _personne(connexion, tirage, compteur)
+        mesure.personnes += 1
+        DepotLocal(connexion, "entity_membership", entite).creer(
+            person_id=esm,
+            arrival_date=dt.date(2024, 1, 1),
+            membership_state="active",
+            professional_category="consultant",
+            profile_visibility="published",
+        )
+        mesure.appartenances += 1
+        DepotLocal(connexion, "framework_responsibility_assignment", entite).creer(
+            person_id=esm,
+            responsibility_type="ESM",
+            assigned_by_person_id=esm,
+            starts_at=dt.datetime(2024, 1, 1, tzinfo=dt.UTC),
+        )
+        mesure.responsabilites += 1
+        esm_par_entite[entite] = esm
 
     #  4. Un Booster par cercle — le §25.1 en interdit deux, et une personne ne
     #     peut pas etre Booster dans deux entites (declencheur de `T8`).
@@ -368,6 +399,7 @@ def engendrer(
         entites=identifiants_d_entites,
         clients=clients,
         dsm_par_entite=dsm_par_entite,
+        esm_par_entite=esm_par_entite,
         cercles_par_entite=cercles_par_entite,
         mesure=mesure,
     )
@@ -382,6 +414,7 @@ def _engendrer_les_cas_limites(
     entites: list[uuid.UUID],
     clients: list[uuid.UUID],
     dsm_par_entite: dict[uuid.UUID, uuid.UUID],
+    esm_par_entite: dict[uuid.UUID, uuid.UUID],
     cercles_par_entite: dict[uuid.UUID, list[uuid.UUID]],
     mesure: Volumetrie,
 ) -> list[str]:
@@ -430,7 +463,10 @@ def _engendrer_les_cas_limites(
         connexion,
         entite=premiere,
         appartenance=appartenance,
-        attribue_par=dsm_par_entite[premiere],
+        #  L'ATTRIBUTEUR EST L'ESM, non le DSM. Le §8.4 l'exige depuis `T5` du
+        #  LOT 3, et un DSM y est desormais refuse -- avec raison : le DSM
+        #  encadre des consultants, il n'administre pas les categories.
+        attribue_par=esm_par_entite[premiere],
         motif="jeu de recette",
     )
     mesure.responsabilites += 1

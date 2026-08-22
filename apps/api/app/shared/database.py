@@ -45,8 +45,23 @@ def _moteur_cache(url: str) -> Engine:
 
 
 def moteur(parametres: Parametres) -> Engine:
-    """Moteur SQLAlchemy, cree une seule fois par URL."""
+    """Moteur de l'APPLICATION — le role d'execution, borne au DML.
+
+    Depuis le LOT 3, `T1` (`QO-116`, `DEC-518`), il ne peut ni creer ni modifier
+    une table. Un `CREATE TABLE` par ce moteur rend « permission denied for
+    schema public », et c'est voulu.
+    """
     return _moteur_cache(parametres.url_postgresql())
+
+
+def moteur_migrations(parametres: Parametres) -> Engine:
+    """Moteur des MIGRATIONS — le role qui possede les objets du schema.
+
+    Employe par Alembic, et par les rares tests qui creent des objets pour
+    eprouver le socle. **Ne jamais l'employer dans du code applicatif** :
+    `make privileges-check` verifie que l'API se connecte bien en execution.
+    """
+    return _moteur_cache(parametres.url_postgresql_migrations())
 
 
 def fabrique_de_sessions(parametres: Parametres) -> sessionmaker[Session]:

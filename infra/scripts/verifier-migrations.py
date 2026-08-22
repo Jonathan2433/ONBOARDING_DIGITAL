@@ -243,7 +243,14 @@ def main() -> int:
     #  1. La base jetable
     # ------------------------------------------------------------------
     psql(compose, env, env["POSTGRES_DB"], f'DROP DATABASE IF EXISTS "{BASE_JETABLE}"')
-    code, sortie = psql(compose, env, env["POSTGRES_DB"], f'CREATE DATABASE "{BASE_JETABLE}"')
+    #  PROPRIETAIRE : le role de migration — meme motif que dans
+    #  `test_integration.py`. Alembic se connecte avec ce role depuis le LOT 3.
+    code, sortie = psql(
+        compose,
+        env,
+        env["POSTGRES_DB"],
+        f'CREATE DATABASE "{BASE_JETABLE}" OWNER "{env["POSTGRES_MIGRATIONS_USER"]}"',
+    )
     if code:
         print(f"    ECHEC    creation de la base jetable impossible : {sortie[:200]}")
         return 1

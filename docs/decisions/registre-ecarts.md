@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 août 2026, LOT 2 sous-étape `T10`
+**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T10`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 32 | 7 | 23 | 2 |
+| Total 37 | 8 | 27 | 2 |
 
 ---
 
@@ -50,8 +50,13 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-030` | Le diagramme du §24.1 montre **cinq** états d'appartenance là où le §6.2 en déclare **quatre** : il y ajoute `anonymized` | Non | **Clos** |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | Non pour `G2`, **à instruire avant le LOT 6** | **Ouvert** |
 | `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
+| `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
+| `ECART-034` | La fiche du lot annonçait « le cahier exige une limitation, **sans donner de seuil** » : le §20.2 en énumère **six**. Et les cinq variables de seuil de `.env.example` ne sont **consommées par personne** depuis le LOT 0 | Non — détecté avant d'inventer une valeur | **Clos** pour la fiche, **signalé** pour les variables |
+| `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
+| `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
+| `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
 
-**Prochain identifiant libre : `ECART-033`.**
+**Prochain identifiant libre : `ECART-038`.**
 
 ---
 
@@ -199,7 +204,7 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Aucun impact technique : les contraintes restent cohérentes, `intercontrat` interdisant un client actif. L'impact est **fonctionnel et éditorial** : le trombinoscope afficherait « intercontrat » sur une fiche de direction générale, ce qui serait lu comme une erreur par les collaborateurs. |
 | Bloquant | Non |
 | Recommandation | Ne pas modifier le modèle de données, qui est validé. Deux pistes à arbitrer avec Léa : soit l'affichage du statut est conditionné par la catégorie professionnelle, la situation restant `intercontrat` en base ; soit une troisième valeur est ajoutée à l'énumération, ce qui exige une décision et une nouvelle version du modèle. La première piste est moins coûteuse et ne touche pas au socle. |
-| Résolution | **Ouvert — INSTRUIT le 19/08/2026 en `T5`, et il attend Léa.**<br>`professional_status_assignment` existe désormais, avec les **deux** valeurs que le modèle validé écrit. `T5` n'a pas tranché, et ne devait pas : **Léa décide du produit**.<br>**Ce que `T5` apporte à la décision, c'est le COÛT mesuré de chaque option** — et il est faible dans les deux cas, ce qui n'était pas connu quand l'écart a été ouvert :<br>• **conditionner l'affichage** par la catégorie professionnelle, la valeur restant `intercontract` en base : **aucune modification du socle**, tout se joue au LOT 5 avec le trombinoscope ;<br>• **ajouter une troisième valeur** : **une migration d'UNE LIGNE**, parce que `DEC-499` a choisi une contrainte de vérification et non un type `enum` natif. C'était précisément le motif de ce choix, et il se réalise ici.<br>**Le coût n'est donc pas ce qui doit départager les deux options** : c'est un choix de produit, et il revient à Léa. |
+| Résolution | **Ouvert — INSTRUIT le 19/08/2026 en `T5`, et il attend Léa.**<br>`professional_status_assignment` existe désormais, avec les **deux** valeurs que le modèle validé écrit. `T5` n'a pas tranché, et ne devait pas : **Léa décide du produit**.<br>**Ce que `T5` apporte à la décision, c'est le COÛT mesuré de chaque option** — et il est faible dans les deux cas, ce qui n'était pas connu quand l'écart a été ouvert :<br>• **conditionner l'affichage** par la catégorie professionnelle, la valeur restant `intercontract` en base : **aucune modification du socle**, tout se joue au LOT 5 avec le trombinoscope ;<br>• **ajouter une troisième valeur** : **une migration d'UNE LIGNE**, parce que `DEC-499` a choisi une contrainte de vérification et non un type `enum` natif. C'était précisément le motif de ce choix, et il se réalise ici.<br>**Le coût n'est donc pas ce qui doit départager les deux options** : c'est un choix de produit, et il revient à Léa.<br>**MISE À JOUR DU 20/08/2026.** Jonathan prend le sujet en main **directement auprès de Léa**, sans note écrite préalable — son choix explicite parmi trois options proposées. Le coût des deux issues reste mesuré depuis `T5` et consigné ci-dessus ; il est donc disponible s'il en a besoin. **L'écart reste OUVERT jusqu'à la réponse de Léa**, et sa réponse sera consignée ici. Échéance inchangée : **avant le LOT 5**. |
 
 ## `ECART-013` — Identifiants de tâches non stables entre les deux parcours
 
@@ -461,4 +466,79 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-033`.**
+## `ECART-033` — Un contrôle parsait du JSON dans un flux mêlé d'avertissements
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 20 août 2026, LOT 3 sous-étape `T1`, en ajoutant quatre variables d'environnement |
+| Source | `infra/scripts/verifier-collisions-ports.py`, fonction `lancer()` — écrite en `T11` du LOT 1, `DEC-494` |
+| Constat | La fonction rendait `(p.stdout + p.stderr)`, ce qui est commode pour un message d'erreur. Le contrôle **parsait ensuite ce résultat en JSON**.<br>`T1` du LOT 3 a ajouté quatre variables à `.env.example`. Avant qu'elles n'entrent dans `.env.recette`, Compose a écrit sur son flux d'erreur : « The "POSTGRES_MIGRATIONS_USER" variable is not set. Defaulting to a blank string. »<br>**`make ports` a échoué sur `json.decoder.JSONDecodeError: Extra data: line 521 column 2`.** La trace ne nommait ni Compose, ni l'avertissement, ni la variable : elle pointait une position dans un texte. |
+| Impact | Aucun sur le livrable — le contrôle **échouait bruyamment**, ce qui est le bon comportement. L'impact était sur le **diagnostic** : rien dans le message ne conduisait à la cause. |
+| Cause | **Le contrôle était JUSTE quand il a été écrit.** En `T11` du LOT 1, aucune commande Compose n'émettait d'avertissement, et mêler les deux flux n'avait aucune conséquence observable. C'est `ECART-024` à l'identique : un contrôle ne devient pas faux tout seul, il le devient quand le monde change autour de lui — et ce changement, c'est nous qui l'avons fait. §7.21. |
+| Bloquant | Non |
+| Recommandation | **Séparer les flux quand la sortie est parsée**, et **rapporter** le flux d'erreur au lieu de le mêler ou de le taire. Le taire serait le §7.6, le mêler est ce défaut. |
+| Résolution | **Clos.** `lancer_json()` rend `(code, stdout, stderr)` séparément, le JSON est parsé sur `stdout` **seul**, et les avertissements de Compose sont **comptés et affichés** — une variable absente devient une chaîne vide dans la configuration assemblée, et le silence la rendrait invisible. Un `JSONDecodeError` est désormais rattrapé et **nomme l'environnement concerné**. |
+
+---
+
+## `ECART-034` — La fiche du lot annonçait un seuil à choisir là où le cahier en donne six
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 21 août 2026, LOT 3 sous-étape `T8`, en ouvrant la limitation de débit |
+| Source | `docs/operations/fiche-lot-3.md` §8, ligne « **Valeurs des limites de débit** \| le cahier exige une limitation, sans donner de seuil \| `T8` » |
+| Constat | **Le cahier §20.2 s'intitule « Seuils initiaux » et en énumère six**, dont trois portent sur l'authentification :<br>• « **10** demandes de magic link par adresse et par heure : **limitation** » ;<br>• « **5** échecs administrateur en **15 minutes** : **alerte** » ;<br>• « **50** demandes depuis une même origine en une heure : **alerte** ».<br>**Et `.env.example` en porte cinq depuis le LOT 0**, chacune avec son commentaire `[source] cahier 20.2` — introduites par le commit `802fe69`.<br>**Un second constat, plus sérieux, est apparu en mesurant le premier :** ces cinq variables ne sont **consommées par personne**. `grep -rn` sur `apps/`, `packages/` et `infra/` rend **0 occurrence**. |
+| Impact | **Deux impacts, et le second est un piège d'exploitation.**<br>**(a)** La fiche invitait à *choisir* une valeur. L'avoir suivie aurait produit un seuil inventé qui **contredit le cahier** — lequel « prévaut sur tout » (§3 de la passation). C'est l'inverse du cas habituel : le document n'annonçait pas à tort que le travail était fait, il annonçait à tort qu'une **décision restait à prendre**.<br>**(b)** Un exploitant qui abaisserait `MAGIC_LINK_MAX_PER_EMAIL_PER_HOUR` dans son `.env` croirait avoir durci la sécurité et **se tromperait**, sans qu'aucun contrôle ne le signale. C'est exactement le « avertissement faux » du §7.21 : il apprend à ne plus lire ce qui est écrit. |
+| Cause | **Un document dérivé qui affirme au lieu de dériver.** Le §8 de la fiche liste les points « que le corpus ne tranche pas » — trois de ses quatre lignes sont justes (`QO-118`, la durée d'un jeton de service, la liste des scopes). La quatrième a été écrite sans relire le §20.2. Classe `ECART-021`, et même famille que `ECART-023` : un document dérivé peut **prescrire l'impossible dès sa rédaction**.<br>Pour l'impact **(b)**, la cause est différente : les variables ont été posées au LOT 0 pour leur traçabilité, avant qu'aucun code n'existe pour les lire, et rien n'a jamais mesuré l'écart entre « déclarée » et « consommée ». |
+| Bloquant | Non. Détecté **avant** d'inventer une valeur, et le livrable applique les seuils du cahier |
+| Recommandation | **(a)** Corriger la ligne du §8 de la fiche — fait — et **poser le contrôle qui l'aurait attrapée** : un test qui **relit le cahier** et exige que chaque constante de seuil corresponde à la phrase qui la produit, verbe inclus. Fait : `test_les_trois_seuils_sont_ceux_du_CAHIER_relu` et `test_les_deux_VERBES_du_cahier_sont_distincts`. Une constante changée à la main, ou un cahier modifié, font désormais échouer la suite au lieu de passer en silence.<br>**(b)** **Ne pas lire les seuils depuis l'environnement**, et le dire dans le fichier. `.env.example` §8 annonce lui-même « modifiables par le super-administrateur uniquement (matrice §19) » et « toute modification est **auditée** » : une variable d'environnement est modifiée par l'**exploitant**, pas par le super-administrateur, et sa modification n'est auditée par rien. La lire satisferait la forme et non la règle. Leur destination est **`platform_setting`** (modèle §5.2, « seuils de sécurité »), avec l'écran de réglages du **LOT 9** et l'audit du **LOT 10**.<br>**Recommandation ouverte pour la suite :** un contrôle qui exige que **chaque** variable de `.env.example` soit consommée quelque part **ou** porte une annotation explicite. Il transformerait cette classe en état contrôlé au lieu d'un état silencieux. Non posé en `T8` : hors périmètre, et il flaguerait des variables lues par Compose et non par l'API — donc il demande d'être exact avant d'être large, §7.25. |
+| Résolution | **Clos pour (a), et signalé pour (b).** Les trois seuils appliqués sont ceux du §20.2, portés en constantes dans `apps/api/app/auth/debit.py`, deux tests les confrontent au cahier, et `DEC-533` en trace la lecture. Les cinq variables de `.env.example` §8 sont **conservées** — elles portent la traçabilité vers le §20.2 et le LOT 9 en aura besoin — mais chacune est désormais **annotée `[non consommée — ECART-034]`**, avec un avertissement en tête de section plutôt qu'en note. |
+
+---
+
+## `ECART-035` — Le critère de `US006` nomme un objet que le modèle ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T9`, en ouvrant la révocation au départ |
+| Source | Backlog, `MVP-L03-US006` : « L'archivage d'un collaborateur invalide sessions, **invitations** et futurs magic links dans la même action métier » |
+| Constat | **`invitation` n'existe pas comme objet de données.** Mesure : **0** occurrence dans `MODELE_DONNEES_EXALT.md`, **0** dans `MATRICE_ROLES_PERMISSIONS_EXALT.md`. Le cahier le nomme **quatre** fois, et jamais comme entité :<br>• §10.11, objet **audité** — « Sont notamment audités : … invitations » ;<br>• §18.6, opération **idempotente** — donc `async_job`, **LOT 11**, `DEC-532` ;<br>• §16.4 et §29, tâche planifiée d'**expiration** — « expiration des invitations et sessions ».<br>Aucun champ, aucun cycle de vie, aucune table. **Il n'y a rien à invalider.** |
+| Impact | **Aucun sur le livrable, et c'est le point.** Les deux autres objets du critère — sessions et futurs magic links — existent et sont traités. Inventer une table `invitation` aurait été §6.5, et **pire** : elle entrerait en collision avec ce que le LOT 9 construira réellement, exactement le piège que `DEC-532` a évité en refusant une seconde clé d'idempotence.<br>L'impact porte sur la **lecture du critère** : un relecteur du backlog conclurait à un critère non satisfait alors qu'il l'est au sens de ce qui existe. |
+| Cause | **Un critère écrit avant le modèle, et jamais reconfronté à lui.** `US006` énumère trois objets ; le modèle §10 n'en déclare que deux. Même famille que `ECART-032` — le backlog interdit plus large que ses trois sources — et que `ECART-034`, où une fiche annonçait une décision déjà prise. **Un document dérivé peut prescrire autre chose que sa source dès sa rédaction.**<br>**Et le critère de `US006` diverge d'une seconde façon**, qui n'est pas cet écart mais l'éclaire : il attache la révocation à l'**archivage**, quand le §30.22 l'attache au **départ** et que le §7.4 écrit « immédiatement ». Le §24.1 tranche — il n'existe aucune transition `Active --> Archived` — et `DEC-535` applique les deux. |
+| Bloquant | Non. Le livrable traite tout ce qui existe, et le §30.22 devient acquis |
+| Recommandation | **Ne pas créer de table `invitation`**, et le dire à l'endroit où quelqu'un cherchera : le module de service le porte en tête, et ce registre le trace. **À reprendre au LOT 9**, où le back-office créera les invitations : c'est là que « l'archivage invalide les invitations » deviendra applicable, et la révocation de `T9` devra alors recevoir une ligne de plus. Le rappel est écrit au §9 du compte rendu de `T9`.<br>**À annoncer à la porte `G3`**, pour qu'un relecteur de `US006` ne conclue pas à un critère manquant. |
+| Résolution | **Ouvert.** Aucune correction du backlog : il est **immuable** (§3). Le compte rendu de `T9` §1 dit explicitement lequel des trois objets n'existe pas et pourquoi il n'est pas inventé. |
+
+---
+
+## `ECART-036` — La fiche annonçait qu'aucun document n'énumère les scopes
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T10` |
+| Source | `docs/operations/fiche-lot-3.md` §8, ligne « **Liste des scopes** \| aucun document n'en énumère \| `T10` » |
+| Constat | **Le cahier §22 en énumère cinq** : `people:read`, `people:import`, `media:process`, `email:send`, `reports:generate`.<br>**Mais deux mots changent leur portée** : « Chaque compte de service possède des scopes explicites, **par exemple** : … ». La liste est donc **écrite et non fermée** — exactement la forme du §25.1 du modèle, « à prévoir **notamment** », où le LOT 2 a posé quatre unicités de plus, chacune **dérivée** d'une règle écrite. |
+| Impact | **Deux, et le second est le plus intéressant.**<br>**(a)** Suivre la fiche aurait conduit à inventer un vocabulaire, alors que le cahier en donne un.<br>**(b)** Mais conclure trop vite à `ECART-034` — « le cahier tranche, il suffit de recopier » — aurait conduit à une **liste blanche fermée**, qui contredirait « par exemple » et **bloquerait le LOT 9**, qui créera ses propres scopes d'import, et le LOT 11 pour les médias et les exports. Les deux erreurs sont symétriques, et la bonne lecture est entre elles. |
+| Cause | Un document dérivé qui affirme sans relire sa source. **Troisième occurrence de cette classe dans ce seul lot** : `ECART-034` (les seuils de débit, §8 de la même fiche), `ECART-035` (les invitations, backlog `US006`), et celle-ci. Le §8 de la fiche liste quatre points « que le corpus ne tranche pas » ; **deux des quatre étaient faux**, et un troisième — la durée des jetons — était déjà numéroté `QO-072` dans le cahier. |
+| Bloquant | Non. Détecté avant d'inventer, et le livrable applique les cinq du cahier |
+| Recommandation | **Valider sur la FORME, pas sur l'appartenance.** `MOTIF_SCOPE` exige `domaine:action` en minuscules ; les cinq du cahier sont déclarés comme le vocabulaire **connu**, et **deux tests relisent le cahier** — l'un pour les cinq valeurs, l'autre pour les mots « par exemple ». Si le cahier fermait un jour sa liste, le second test échouerait, et il devrait.<br>**Le mode d'échec d'un scope mal orthographié est bruyant**, et c'est ce qui rend la liste ouverte acceptable : rien n'accorde `people:raed`, donc l'appel qui l'exige est **refusé** — « refus par défaut », §20.1 — et non autorisé par erreur.<br>**Et une recommandation plus large, pour la porte `G3`** : le §8 de `fiche-lot-3.md` a été faux **trois fois sur quatre**. Un relecteur ne devrait pas s'y fier sans relire le cahier. |
+| Résolution | **Clos.** Les cinq scopes du §22 sont appliqués, la liste reste ouverte, `DEC-536` en trace la lecture, et la ligne du §8 de la fiche est corrigée. |
+
+---
+
+## `ECART-037` — `auth_event` ne portait pas le lien vers `service_account` que le §11 déclare
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T10`, en instruisant « chaque appel est audité » |
+| Source | Modèle §11, diagramme d'authentification : `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces` |
+| Constat | La table `auth_event` posée par `T2` (migration `0012`) porte `person_id` et `user_account_id`, **et rien vers `service_account`**. Le diagramme du §11 déclare pourtant la relation, au même titre que `USER_ACCOUNT ||--o{ AUTH_EVENT : produces`, qui elle est portée.<br>Le §10.6 ne liste aucune colonne — il énumère les **sept événements** — donc la seule déclaration de ce lien est le diagramme. |
+| Impact | **Le critère de `US007` — « chaque appel est audité » — devenait insatisfaisable sans inventer.** Les deux seules issues auraient été un **huitième type d'événement**, que le §10.6 interdit en en déclarant sept et que `T12` auditera précisément, ou un audit **anonyme** qui ne dirait pas quel compte a appelé.<br>Aucun impact sur les livrables antérieurs : rien n'écrivait d'événement pour un compte de service avant `T10`. |
+| Cause | Le §10.6 décrit `auth_event` **par ses événements**, pas par ses colonnes, et `T2` a suivi cette section. Le lien n'est déclaré que dans le **diagramme** du §11, une section que `T2` a lue pour les sept tables mais pas pour les arêtes. **Classe `ECART-023`** : un document a plusieurs endroits qui se complètent, et lire l'un sans l'autre laisse un trou. |
+| Bloquant | Non |
+| Recommandation | **Ajouter la colonne, ce qui est implémenter le modèle et non l'étendre** — migration `0013` : `service_account_id` nullable, sa clé étrangère, son index, et une contrainte `ck_auth_event_un_seul_acteur` qui interdit qu'un événement porte **à la fois** une personne et un compte de service. **Les deux nuls restent permis, et c'est indispensable** : un magic link demandé pour une adresse inconnue, ou un jeton inconnu refusé, ne désigne personne — `T3`, `T4` et `T9` en produisent, et l'interdire casserait la réponse générique.<br>**Recommandation pour `T12`** : quand l'audit des sept événements sera classé, vérifier que les deux acteurs sont couverts — un contrôle qui ne compterait que `person_id` déclarerait l'audit acquis en ignorant les comptes de service. |
+| Résolution | **Clos.** Migration `0013` appliquée, `make migrations-check` confirme qu'une base vide reconstruite par la seule chaîne donne un schéma **identique**. Le modèle SQLAlchemy porte la colonne, et `DEC-536` trace la lecture. |
+
+---
+
+**Prochain identifiant libre : `ECART-038`.**

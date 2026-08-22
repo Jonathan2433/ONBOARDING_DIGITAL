@@ -200,6 +200,8 @@ jobs:
           make migrate
           make alembic-check
           make historisation-check
+          make privileges-check
+          make secrets-check
           make isolation-check
           make isolation-temoin
           make migrations-check
@@ -210,8 +212,146 @@ jobs:
       - name: Page de statut, vue comme un navigateur la voit
         run: make web-check
 
-      - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
-        run: make test-integration
+      - name: Reponse generique du magic link, a travers Caddy en HTTPS
+        # LOT 3, T3 — le critere de `MVP-L03-US001` est une EGALITE : la reponse
+        # doit etre identique pour une adresse connue et une inconnue, corps et
+        # en-tetes compris. Le verifier ICI, sur la stack reelle, est ce qui
+        # empeche une divergence d'apparaitre a l'insu de tout le monde : les
+        # tests d'integration montent l'application en processus, ce controle
+        # interroge ce que le mandataire livre reellement.
+        #
+        # Il porte son propre temoin — il exige que son comparateur signale deux
+        # reponses reellement differentes — et il nettoie ce qu'il cree, base ET
+        # Mailpit.
+        run: make magic-link-check
+
+      - name: Verrouillage administrateur, a travers Caddy en HTTPS
+        # LOT 3, T5 — le critere de `MVP-L03-US003` est double : le verrouillage
+        # se declenche ET il se leve. Le RELACHEMENT au bout de quinze minutes est
+        # eprouve par les tests, ou l'instant est injecte ; ce controle prouve
+        # l'autre moitie, sur la stack reelle : que `make admin-local` leve le
+        # verrou. C'est la parade documentee du risque « le verrouillage
+        # administrateur bloque Jonathan lui-meme ».
+        #
+        # Il porte aussi l'egalite des refus — un refus qui dirait « verrouille »
+        # apprendrait a un attaquant qu'il a REUSSI son deni de service — et il
+        # nettoie tout ce qu'il cree, compte administrateur compris.
+        run: make admin-check
+
+      - name: Cookie de session et absence de jeton cote navigateur
+        # LOT 3, T6 — le critere du §3 de la fiche est explicite : « les trois
+        # attributs sont sur la reponse REELLE, lue a travers Caddy en HTTPS ».
+        # Les tests d'integration montent l'application en processus ; ce controle
+        # lit ce que le mandataire livre.
+        #
+        # Il porte aussi le second critere, qu'aucun test d'API ne peut voir :
+        # « aucun jeton dans localStorage », par un controle des SOURCES du
+        # frontend — exact, pas heuristique, et dont le temoin tourne deja dans
+        # `make check`.
+        run: make sessions-check
+
+      - name: CSRF et idempotence, a travers Caddy en HTTPS
+        # LOT 3, T7 — le critere de `MVP-L03-US005` a deux moities, et chacune a
+        # son TEMOIN : « une ecriture sans jeton CSRF est refusee, AVEC TEMOIN »,
+        # et « une meme cle d'idempotence rejouee ne produit QU'UN effet ».
+        #
+        # Le second temoin est celui qu'on oublie : sans lui, l'assertion « un
+        # seul lien » serait vraie pour une raison etrangere a l'idempotence.
+        # Deux demandes SANS cle doivent donc produire DEUX liens.
+        #
+        # Ce controle emploie la VRAIE `PUBLIC_BASE_URL` du conteneur : un test
+        # qui la surcharge ne prouve rien de la configuration deployee.
+        run: make csrf-check
+
+      - name: Limitation de debit, a travers Caddy en HTTPS
+        # LOT 3, T8 — « les limites produisent les resultats attendus », critere de
+        # sortie litteral du lot. Douze controles, et TROIS temoins :
+        #
+        #   - les dix premieres demandes passent : sans ce temoin, une route
+        #     cassee donnerait la meme observation qu'une limite qui fonctionne ;
+        #   - la surveillance d'origine ne refuse JAMAIS : le §20.2 ecrit
+        #     « limitation » pour l'adresse et « alerte » pour l'origine, et
+        #     confondre les deux verbes bloquerait tout un bureau derriere un
+        #     partage d'adresse ;
+        #   - un succes efface le compteur d'echecs : sinon un administrateur qui
+        #     se trompe puis reussit resterait bloque quinze minutes.
+        #
+        # Et il compare les DEUX refus, corps et en-tetes : si le 429 n'arrivait
+        # que pour une adresse connue, il dirait « ce compte existe » — l'oracle
+        # que `T3` a ferme, rouvert par la limite elle-meme.
+        run: make debit-check
+
+      - name: Revocation au depart, a travers Caddy en HTTPS
+        # LOT 3, T9 — `MVP-L03-US006`, et le controle §30.22 de la recette du
+        # modele devient ACQUIS. Six controles, avec TROIS temoins :
+        #
+        #   - la session repond AVANT le depart : sans lui, un cookie casse
+        #     donnerait la meme observation qu'une revocation qui fonctionne ;
+        #   - `Active --> Archived` est refusee : le §24.1 n'a pas ce raccourci,
+        #     et sans ce refus l'etat `departed` serait decoratif ;
+        #   - l'archivage qui SUIT ne trouve plus rien : c'est ce qui prouve que
+        #     la revocation tient au DEPART, comme « immediatement » l'exige.
+        #
+        # Le 401 est mesure par un aller-retour HTTP reel, non deduit de
+        # l'ecriture de `revoked_at` : l'ecriture et le refus sont deux grandeurs
+        # differentes tant qu'on n'a pas interroge l'API.
+        run: make revocation-check
+
+      - name: Comptes de service et scopes
+        # LOT 3, T10 — `MVP-L03-US007`. Onze controles, et TROIS temoins : le bon
+        # scope passe, un proprietaire technique inconnu est REFUSE plutot que cree,
+        # et une duree au-dela du plafond leve plutot que d'etre ecretee.
+        #
+        # Il passe par `make compte-de-service`, donc par le script reel, et lit le
+        # jeton sur sa sortie — ce qui prouve au passage qu'il n'y figure QU'UNE
+        # fois. Et il verifie `SERVICE_TOKEN_MAX_DAYS` DANS le conteneur : `T7` a
+        # montre qu'une variable qui ne traverse pas la frontiere de processus
+        # produit un echec dont le message ne nomme pas la cause.
+        run: make service-check
+
+      - name: Les huit ecrans d'authentification, a travers Caddy en HTTPS
+        # LOT 3, T11. Sept controles, et le plus utile est le quatrieme : il
+        # EXERCE pour la premiere fois le repli `try_files` du `Caddyfile`, pose
+        # en T7 du LOT 1 qui l'anticipait mais n'avait jamais eu de chemin a
+        # replier. C'est le §7.16 — ce qui n'a jamais tourne n'est pas eprouve.
+        #
+        # Le TYPE MIME fait foi, jamais le code : Vite rend 200 + index.html pour
+        # tout chemin inconnu (§7.10), donc un 200 seul ne prouverait rien.
+        #
+        # Et il verifie que `/api/*` NE recoit PAS l'artefact statique : un repli
+        # SPA qui deborderait sur l'API repondrait 200 a sa place, ce que
+        # `DEC-470` interdit.
+        run: make ecrans-check
+
+      - name: Les sept evenements du 10.6, par des appels HTTP reels
+        # LOT 3, T12 — `MVP-L03-US008`. Six controles. Les sept types ne sont pas
+        # INSERES : ils sont produits par la demande d'un lien, sa consommation,
+        # une connexion, un echec, un verrouillage, une revocation et un
+        # changement de mot de passe. Inserer sept lignes prouverait que la table
+        # accepte sept valeurs, pas que les actions les produisent.
+        #
+        # Le compte des sept est IMPORTE de `TypeEvenementAuth` : un huitieme type
+        # ajoute au code ferait echouer ce controle, et c'est son role.
+        #
+        # Et il porte son TEMOIN : un mot de passe est insere expres dans
+        # `auth_event`, et le controle doit le trouver. Sans cela, l'absence
+        # prouverait l'absence de controle plutot que l'absence de fuite.
+        run: make evenements-check
+
+      - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
+        # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
+        # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes
+        # pour rien. Son code de sortie porte les DEUX verdicts.
+        #
+        # POURQUOI IL EXISTE : sept occurrences de la meme classe de defaut dans ce
+        # seul lot, dont une commise UNE SOUS-ETAPE APRES avoir ecrit la lecon. Le
+        # §7.2 dit quoi faire : quand une classe d'erreur resiste a la vigilance,
+        # change d'outil au lieu de promettre d'etre plus attentif.
+        #
+        # La mesure est EXACTE, pas heuristique : un avant/apres table par table,
+        # la liste des tables etant derivee du catalogue. Aucune liste de
+        # marqueurs, qui vieillirait au premier ajout.
+        run: make residu-check
 
       - name: Journaux des services en cas d'echec
         if: failure()

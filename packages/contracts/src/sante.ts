@@ -72,6 +72,74 @@ export const CHEMIN_VERSION: string = endpoint('version').chemin;
 export const CODES_READY: readonly number[] = endpoint('ready').codesExploitables;
 export const CODES_VERSION: readonly number[] = endpoint('version').codesExploitables;
 
+/**
+ * Le chemin de la demande de magic link — LOT 3, T3, story MVP-L03-US001.
+ *
+ * Lu du manifeste, jamais recopie : les huit ecrans de `T11` s'en serviront, et
+ * un chemin ecrit en dur dans un composant divergerait au premier renommage.
+ *
+ * IL N'Y A PAS DE `CODES_MAGIC_LINK` A EXPORTER, et c'est le critere de
+ * securite : le seul code exploitable est 202, identique que l'adresse existe ou
+ * non. Un ecran qui distinguerait deux cas trahirait ce que la reponse protege.
+ */
+export const CHEMIN_DEMANDE_MAGIC_LINK: string = endpoint('demandeDeMagicLink').chemin;
+
+/**
+ * Le chemin de la consommation — LOT 3, T4, story MVP-L03-US002.
+ *
+ * La page ouverte par le lien de l'e-mail lit le jeton dans SA query string, puis
+ * appelle ce chemin avec le jeton **en corps**. Elle ne doit jamais le
+ * retransmettre dans une URL.
+ *
+ * IL N'Y A QU'UN SEUL REFUS, 400, pour quatre causes distinctes : c'est voulu, et
+ * l'ecran « lien expire ou consomme » de T11 est unique pour la meme raison.
+ */
+export const CHEMIN_CONSOMMATION_MAGIC_LINK: string = endpoint('consommationDeMagicLink').chemin;
+
+/** Connexion administrateur locale — LOT 3, T5, story MVP-L03-US003. */
+export const CHEMIN_CONNEXION_ADMINISTRATEUR: string = endpoint('connexionAdministrateur').chemin;
+
+/**
+ * Changement du mot de passe administrateur — LOT 3, T5.
+ *
+ * L'ecran doit l'appeler AVANT toute autre action quand la connexion a rendu
+ * `changement_exige` a vrai : c'est `must_change` du modele 10.2.
+ */
+export const CHEMIN_CHANGEMENT_MOT_DE_PASSE: string = endpoint('changementDeMotDePasse').chemin;
+
+/**
+ * Lire la session courante — LOT 3, T6, story MVP-L03-US004.
+ *
+ * **NE DEMANDE JAMAIS DE JETON A CETTE ROUTE**, et n'en stocke aucun. Le jeton
+ * vit dans un cookie `HttpOnly` : aucun JavaScript ne peut le lire, et c'est ce
+ * qui rend tenable « aucune donnee d'authentification durable dans
+ * `localStorage` » (cahier 7.4). Un frontend qui recevrait un jeton finirait par
+ * le stocker.
+ *
+ * Cet appel RAFRAICHIT l'activite de la session : ne le boucle pas.
+ */
+export const CHEMIN_SESSION: string = endpoint('sessionCourante').chemin;
+
+/**
+ * L'en-tete par lequel le frontend renvoie le jeton anti-CSRF — LOT 3, T7.
+ *
+ * Le jeton s'obtient dans le corps de `CHEMIN_SESSION`, champ `jeton_csrf`. Il
+ * est lisible a dessein, et sans danger : il ne vaut qu'accompagne du cookie de
+ * session, qui reste `HttpOnly`.
+ */
+export const EN_TETE_JETON_CSRF: string = contrat.enTeteJetonCsrf;
+
+/**
+ * L'en-tete d'idempotence — LOT 3, T7. **Optionnel.**
+ *
+ * Fourni, il garantit qu'une meme cle rejouee ne produit qu'un effet. Emploie-le
+ * sur tout formulaire qu'un double clic pourrait soumettre deux fois.
+ */
+export const EN_TETE_CLE_IDEMPOTENCE: string = contrat.enTeteCleIdempotence;
+
+/** Se deconnecter — LOT 3, T6. Toujours 200. */
+export const CHEMIN_DECONNEXION: string = endpoint('deconnexion').chemin;
+
 // ---------------------------------------------------------------------------
 //  Les formes de reponse
 // ---------------------------------------------------------------------------

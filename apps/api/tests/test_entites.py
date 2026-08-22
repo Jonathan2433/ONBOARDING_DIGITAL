@@ -421,12 +421,39 @@ def _inserer_domaine(connexion: Connection, domain: str, entite: uuid.UUID | Non
     )
 
 
+#  CES TESTS COMPTAIENT `allowed_email_domain` SANS FILTRE, ET C'ETAIT JUSTE
+#  JUSQU'AU LOT 3.
+#
+#  `T3` a ajoute `make domaines-provision`, appelee par `make migrate` : la table
+#  porte desormais une ligne REELLE et permanente, le domaine initial du cahier
+#  §7.2. Trois de ces tests ont echoue, et ils avaient raison d'echouer -- ils
+#  supposaient une table vide.
+#
+#  Ce n'est pas de la donnee residuelle qu'on pourrait nettoyer : c'est une donnee
+#  de reference. Le correctif est donc dans les tests, qui comptent maintenant
+#  LEURS lignes. Aucun n'est affaibli : chacun compte toujours exactement ce qu'il
+#  vient d'inserer. §7.21 -- un controle ne devient pas faux tout seul.
+def _compter_domaines(connexion: Connection, *domaines: str) -> int:
+    """Nombre de lignes portant l'un des domaines NOMMES par l'appelant."""
+    return int(
+        connexion.execute(
+            text("SELECT count(*) FROM allowed_email_domain WHERE domain = ANY(:domaines)"),
+            {"domaines": list(domaines)},
+        ).scalar_one()
+    )
+
+
 @pytest.mark.integration
 def test_un_domaine_GLOBAL_a_une_entite_nulle(cx: Connection) -> None:
     """§5.4 : « nullable pour un domaine global ». C'est le point de la table."""
-    _inserer_domaine(cx, "exalt-company.com", None)
+    #  Un domaine PROPRE a ce test : `exalt-company.com` est desormais pose en
+    #  base par `make domaines-provision`, et `.one()` echouerait sur deux lignes.
+    _inserer_domaine(cx, "temoin-global-t2.test", None)
     ligne = cx.execute(
-        text("SELECT entity_id, active, period::text FROM allowed_email_domain")
+        text(
+            "SELECT entity_id, active, period::text FROM allowed_email_domain "
+            "WHERE domain = 'temoin-global-t2.test'"
+        )
     ).one()
     assert ligne.entity_id is None
     assert ligne.active is True, "`active` doit valoir true par defaut serveur"
@@ -445,7 +472,7 @@ def test_un_domaine_LOCAL_exige_une_entite_existante(cx: Connection) -> None:
 def test_un_domaine_local_sur_une_entite_reelle_est_accepte(cx: Connection) -> None:
     """Temoin du precedent."""
     _inserer_domaine(cx, "exalt-bordeaux.com", _creer_entite(cx))
-    assert cx.execute(text("SELECT count(*) FROM allowed_email_domain")).scalar_one() == 1
+    assert _compter_domaines(cx, "exalt-bordeaux.com") == 1
 
 
 @pytest.mark.integration
@@ -467,6 +494,7 @@ def test_un_domaine_non_normalise_est_refuse(cx: Connection) -> None:
 @pytest.mark.integration
 def test_les_domaines_normalises_sont_acceptes(cx: Connection) -> None:
     """Temoin : la contrainte ne refuse pas tout."""
-    for bon in ("exalt-company.com", "exalt.fr", "mail.exalt-company.co.uk"):
+    bons = ("temoin-normalise-t2.test", "exalt.fr", "mail.exalt-company.co.uk")
+    for bon in bons:
         _inserer_domaine(cx, bon, None)
-    assert cx.execute(text("SELECT count(*) FROM allowed_email_domain")).scalar_one() == 3
+    assert _compter_domaines(cx, *bons) == len(bons) == 3

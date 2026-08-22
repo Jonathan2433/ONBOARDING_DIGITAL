@@ -101,7 +101,13 @@ CLASSEMENT: dict[int, Classement] = {
         residuel=(
             "l'EXISTENCE ne l'est pas, et ne peut pas l'etre en base : l'appartenance doit "
             "exister AVANT qu'une affectation DSM ne la reference. Une contrainte a "
-            "l'insertion serait circulaire. C'est une regle de PROCESSUS"
+            "l'insertion serait circulaire. C'est une regle de PROCESSUS. **`T9` DU "
+            "LOT 3 EN COUVRE LA MOITIE UTILE** : quand le DSM d'un consultant part, "
+            "`enregistrer_un_depart` NOMME les consultants prives de DSM dans son "
+            "resultat. Il ne peut pas designer le remplacant -- decision humaine -- "
+            "mais il rend l'etat VISIBLE au lieu de le laisser silencieux. Le residuel "
+            "n'est donc plus « rien ne le voit » mais « rien ne le corrige "
+            "automatiquement »"
         ),
         lot="LOT 7, onboarding — ou un service anterieur",
     ),
@@ -152,7 +158,20 @@ CLASSEMENT: dict[int, Classement] = {
         preuve="`T7` — declencheur `circle_archivage_sans_membres_actifs`",
         tests=("test_archiver_un_cercle_a_MEMBRES_ACTIFS_est_refuse",),
     ),
-    11: Classement(11, REPORTE, lot="LOT 3 — `magic_link_request` n'existe pas au LOT 2"),
+    11: Classement(
+        11,
+        ACQUIS,
+        preuve=(
+            "LOT 3 `T3` — le service exige `entity_membership.membership_state = 'active'`, "
+            "cahier §7.2. `archived` est l'un des trois etats que ce filtre ecarte, et la "
+            "reponse reste IDENTIQUE a celle d'un profil actif : le refus ne se lit pas"
+        ),
+        tests=(
+            "test_un_profil_ARCHIVE_ne_recoit_AUCUN_lien",
+            "test_un_profil_ACTIF_recoit_un_lien",
+            "test_la_reponse_est_IDENTIQUE_pour_un_profil_archive",
+        ),
+    ),
     12: Classement(12, REPORTE, lot="LOT 8 — medias et autorisations de diffusion"),
     13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
     14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),
@@ -174,7 +193,29 @@ CLASSEMENT: dict[int, Classement] = {
     19: Classement(19, REPORTE, lot="LOT 10 — jobs et idempotence"),
     20: Classement(20, REPORTE, lot="LOT 12 — `audit_event` et atomicite"),
     21: Classement(21, REPORTE, lot="LOT 12 — purge RGPD"),
-    22: Classement(22, REPORTE, lot="LOT 3 — sessions et revocation"),
+    22: Classement(
+        22,
+        ACQUIS,
+        preuve=(
+            "LOT 3 `T9` — la revocation tient au DEPART, non au seul archivage : le §24.1 "
+            "n'a AUCUNE transition `Active --> Archived`, donc attendre l'archivage "
+            "laisserait une fenetre pendant laquelle un partant garde une session, ce que "
+            "le §7.4 et le §30.22 interdisent tous deux par le mot « immediatement ». Les "
+            "sessions sont revoquees, les liens actifs invalides, et les SIX relations "
+            "historisees du §25.2 autres que l'appartenance sont closes — dont les deux "
+            "porteuses de roles, ce que « et roles » exige. `make revocation-check` mesure "
+            "le 401 par un aller-retour HTTP reel a travers Caddy, et non par la lecture de "
+            "`revoked_at` : l'ecriture et le refus sont deux grandeurs differentes"
+        ),
+        tests=(
+            "test_LE_DEPART_revoque_les_sessions",
+            "test_UNE_SESSION_REVOQUEE_NE_REPOND_PLUS_mesure_en_HTTP",
+            "test_LE_DEPART_D_UN_DG_REUSSIT_malgre_le_declencheur",
+            "test_LA_REVOCATION_EST_ATOMIQUE_avec_le_changement_d_etat",
+            "test_L_ARCHIVAGE_est_IDEMPOTENT_apres_un_depart",
+            "test_UNE_TRANSITION_HORS_24_1_est_REFUSEE",
+        ),
+    ),
     23: Classement(23, REPORTE, lot="LOT 12 — anonymisation et durees de conservation"),
     24: Classement(24, REPORTE, lot="LOT 11 — exports"),
     25: Classement(
