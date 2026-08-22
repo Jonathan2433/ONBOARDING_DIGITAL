@@ -945,6 +945,12 @@ compte-de-service: ## Creer un compte de service et lui delivrer un jeton (NOM, 
 		--nom "$(NOM)" --proprietaire "$(PROPRIETAIRE)" --scopes "$(SCOPES)" \
 		$(if $(JOURS),--jours $(JOURS),) $(if $(ENTITE),--entite $(ENTITE),)
 
+ecrans-check: ## Prouver que les 8 ecrans sont servis, sans couleur hors jetons ni stockage
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-ecrans.py --base "$$origine"
+
 service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration agit, et l audit (US007)
 	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
