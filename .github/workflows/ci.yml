@@ -323,8 +323,35 @@ jobs:
         # `DEC-470` interdit.
         run: make ecrans-check
 
-      - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
-        run: make test-integration
+      - name: Les sept evenements du 10.6, par des appels HTTP reels
+        # LOT 3, T12 — `MVP-L03-US008`. Six controles. Les sept types ne sont pas
+        # INSERES : ils sont produits par la demande d'un lien, sa consommation,
+        # une connexion, un echec, un verrouillage, une revocation et un
+        # changement de mot de passe. Inserer sept lignes prouverait que la table
+        # accepte sept valeurs, pas que les actions les produisent.
+        #
+        # Le compte des sept est IMPORTE de `TypeEvenementAuth` : un huitieme type
+        # ajoute au code ferait echouer ce controle, et c'est son role.
+        #
+        # Et il porte son TEMOIN : un mot de passe est insere expres dans
+        # `auth_event`, et le controle doit le trouver. Sans cela, l'absence
+        # prouverait l'absence de controle plutot que l'absence de fuite.
+        run: make evenements-check
+
+      - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
+        # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
+        # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes
+        # pour rien. Son code de sortie porte les DEUX verdicts.
+        #
+        # POURQUOI IL EXISTE : sept occurrences de la meme classe de defaut dans ce
+        # seul lot, dont une commise UNE SOUS-ETAPE APRES avoir ecrit la lecon. Le
+        # §7.2 dit quoi faire : quand une classe d'erreur resiste a la vigilance,
+        # change d'outil au lieu de promettre d'etre plus attentif.
+        #
+        # La mesure est EXACTE, pas heuristique : un avant/apres table par table,
+        # la liste des tables etant derivee du catalogue. Aucune liste de
+        # marqueurs, qui vieillirait au premier ajout.
+        run: make residu-check
 
       - name: Journaux des services en cas d'echec
         if: failure()
