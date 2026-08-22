@@ -212,6 +212,8 @@ ETIQUETTE_LOCALE := onboarding-local
         web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
+        domaines-provision magic-link-check admin-local admin-check \
+        sessions-check sessions-temoin csrf-check \
         up-recette down-recette stack-check-recette recette-check
 
 # ---------------------------------------------------------------------------
@@ -298,6 +300,25 @@ icloud-verify: ## Verifier que l'exclusion iCloud est bien posee (echoue sinon)
 	else \
 		echo "  ok       aucune copie de conflit iCloud"; \
 	fi; \
+	if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then \
+		local=$$(git rev-parse HEAD^{tree}); \
+		amont=$$(git rev-parse '@{upstream}^{tree}'); \
+		sale=$$(git status --porcelain --untracked-files=no | wc -l | tr -d ' '); \
+		if [ "$$local" = "$$amont" ] && [ "$$sale" != "0" ]; then \
+			echo "  ARBRE DIVERGENT — $$sale fichier(s) modifie(s) alors que le commit"; \
+			echo "      est IDENTIQUE a l'amont. Signature d'une reecriture iCloud :"; \
+			git status --porcelain --untracked-files=no | sed 's/^/      /'; \
+			echo "      -> compare les mtime : un meme horodatage a la seconde sur"; \
+			echo "         plusieurs fichiers est une reecriture EN LOT, pas une edition."; \
+			echo "         Si le diff ne contient que des retraits de contenu deja"; \
+			echo "         commite : git restore <fichiers>. Voir ROAD-RSK-026."; \
+			manque=1; \
+		else \
+			echo "  ok       arbre coherent avec l'amont ($$sale fichier(s) modifie(s))"; \
+		fi; \
+	else \
+		echo "  ok       aucune branche amont : rien a comparer"; \
+	fi; \
 	exit $$manque
 
 # ---------------------------------------------------------------------------
@@ -362,7 +383,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -598,6 +619,7 @@ up: env ## Demarrer la stack : les 8 services (ENVIRONNEMENT=dev par defaut)
 	@echo "==> Demarrage des services d'infrastructure"
 	$(DC) up --detach --wait $(DRAPEAUX_UP) db redis minio mailpit
 	@$(MAKE) --no-print-directory minio-bucket ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory roles-provision ENVIRONNEMENT=$(ENVIRONNEMENT)
 	@echo "==> Demarrage des services applicatifs"
 	$(DC) up --detach --wait $(DRAPEAUX_UP)
 	@$(MAKE) --no-print-directory caddy-reload ENVIRONNEMENT=$(ENVIRONNEMENT)
@@ -800,11 +822,31 @@ stack-check: health ports ## Controler la stack : sante des 8 services et public
 # Le controle APRES le rafraichissement n'est pas redondant : un `build` qui
 # n'aurait pas pris produirait exactement la meme observation qu'un `build`
 # reussi. C'est la quatrieme proposition du §7.0.
-migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque d'abord)
-	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT)
-	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT)
+# LE RAFRAICHISSEMENT DU CODE NE VAUT QUE POUR LE DEVELOPPEMENT
+#
+#   `code-refresh` reconstruit `api` et `worker` pour qu'ils portent le code du
+#   depot. C'est juste en developpement, ou l'image est construite localement.
+#
+#   **EN RECETTE, C'EST UNE ERREUR, ET ELLE EST BRUYANTE.** La surcouche reference
+#   ses images **par empreinte** (`DEC-486`), et `docker compose build` refuse :
+#   « build tag cannot contain a digest ». Surtout, reconstruire localement
+#   DEFERAIT le principe meme de la recette -- elle doit executer l'artefact
+#   PUBLIE, ce que `--no-build` garde par ailleurs.
+#
+#   Le defaut date de `T1` du LOT 2, quand `code-refresh` a ete ajoute a `migrate`
+#   alors qu'un seul environnement existait. C'est le §7.21 : un controle juste
+#   hier, rendu faux par un environnement que nous avons ajoute nous-memes -- et
+#   il n'est apparu qu'en executant reellement la recette, §7.16.
+migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque en DEV)
+	@if [ "$(ENVIRONNEMENT)" = "dev" ]; then \
+		$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT); \
+		$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT); \
+	else \
+		echo "==> $(ENVIRONNEMENT) : aucun rafraichissement, l'image est PUBLIEE et epinglee"; \
+	fi
 	$(DC) exec -T --workdir /app/apps/api api alembic upgrade head
 	@$(MAKE) --no-print-directory migrate-status ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory domaines-provision ENVIRONNEMENT=$(ENVIRONNEMENT)
 
 # `--wait` n'est pas un confort : `up --detach` rend la main des que le conteneur
 # est DEMARRE, pas des qu'il est SAIN. Sans l'attente, la CI enchainerait
@@ -833,6 +875,42 @@ isolation-check: ## Verifier l isolation inter-entites du modele 2.5 et 25.3
 
 isolation-temoin: ## Temoin negatif : le controle d isolation sait-il echouer ?
 	@python3 infra/scripts/verifier-isolation.py --temoin \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+roles-provision: ## Approvisionner les deux roles du moindre privilege (QO-116, idempotent)
+	@python3 infra/scripts/provisionner-roles.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+# APPELEE PAR `make migrate`, ET NON PAR `make up`, et le motif est l'ordre :
+# elle ECRIT dans `allowed_email_domain`, donc elle exige une base migree. A
+# l'endroit ou `make up` appelle `roles-provision`, aucune migration n'a tourne.
+# Un appel qui « sauterait » quand la table manque produirait un succes
+# silencieux, ce que le §7.0 interdit.
+domaines-provision: ## Poser le domaine e-mail initial du cahier 7.2 (DEC-523, idempotent)
+	@python3 infra/scripts/provisionner-domaines.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+# CREE OU DEVERROUILLE. Elle ne touche JAMAIS un mot de passe existant sans
+# `--reinitialiser`, et le mot de passe engendre est affiche UNE SEULE FOIS.
+# C'est la parade au risque nomme au §7 de la fiche du LOT 3 : « le verrouillage
+# administrateur bloque Jonathan lui-meme ».
+#   make admin-local ADRESSE=jonathan@exalt-company.com
+#   make admin-local ADRESSE=... REINITIALISER=1
+admin-local: ## Creer ou deverrouiller un compte administrateur (ADRESSE=... , DEC-527)
+	@test -n "$(ADRESSE)" || { \
+		echo "  ECHEC : ADRESSE est obligatoire."; \
+		echo "          make admin-local ADRESSE=jonathan@exalt-company.com"; \
+		exit 1; }
+	@$(UV) run python infra/scripts/provisionner-administrateur.py \
+		--env-file "$(ENV_FILE)" --adresse "$(ADRESSE)" \
+		$(if $(REINITIALISER),--reinitialiser,) $(COMPOSE_FILES_NUS)
+
+secrets-check: ## Verifier qu aucune colonne ne peut porter un secret en clair (10.2, 10.3)
+	@python3 infra/scripts/verifier-secrets-en-clair.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+privileges-check: ## Verifier le moindre privilege PostgreSQL (QO-116) — DDL REFUSE au role d execution
+	@python3 infra/scripts/verifier-privileges.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
 migrations-check: ## Prouver qu une base VIDE se construit uniquement par migrations
@@ -884,6 +962,88 @@ web-check: ## Controler la page de statut telle qu'un navigateur la voit
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
 	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
 	sh infra/scripts/verifier-page-statut.sh "$$origine"
+
+# L'ORIGINE EST DERIVEE DU FICHIER D'ENVIRONNEMENT, comme pour `web-check` :
+# l'ecrire en dur ferait porter ce controle sur le developpement alors qu'il
+# tournerait sur la recette. C'etait le defaut de `web-check` avant `T9`.
+csrf-check: ## Prouver qu une ecriture sans protection est refusee, et l idempotence (US005)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-csrf.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+compte-de-service: ## Creer un compte de service et lui delivrer un jeton (NOM, PROPRIETAIRE, SCOPES)
+	@if [ -z "$(NOM)" ] || [ -z "$(PROPRIETAIRE)" ] || [ -z "$(SCOPES)" ]; then \
+		echo "  Usage : make compte-de-service NOM=<nom> PROPRIETAIRE=<adresse> SCOPES=<a:b,c:d> [JOURS=90] [ENTITE=<code>]"; \
+		echo "  Scopes du cahier 22 : people:read people:import media:process email:send reports:generate"; \
+		exit 2; \
+	fi
+	@$(UV) run python infra/scripts/provisionner-compte-de-service.py \
+		--nom "$(NOM)" --proprietaire "$(PROPRIETAIRE)" --scopes "$(SCOPES)" \
+		$(if $(JOURS),--jours $(JOURS),) $(if $(ENTITE),--entite $(ENTITE),)
+
+residu-check: ## Lancer la suite d integration et PROUVER qu elle ne laisse rien derriere
+	@$(UV) run python infra/scripts/verifier-residu.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+evenements-check: ## Prouver que les 7 evenements du 10.6 sont traces, sans rien de sensible (US008)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-evenements.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+ecrans-check: ## Prouver que les 8 ecrans sont servis, sans couleur hors jetons ni stockage
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-ecrans.py --base "$$origine"
+
+service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration agit, et l audit (US007)
+	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-revocation.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+debit-check: ## Prouver que les limites du 20.2 produisent les resultats attendus (US001, US003)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-debit.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+sessions-check: ## Prouver les trois attributs du cookie et l absence de jeton cote navigateur (US004)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-sessions.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+# LE TEMOIN N'EXIGE AUCUNE STACK : il eprouve le controle des sources dans les
+# DEUX sens — un usage reel doit etre vu, un commentaire ne doit pas l'etre.
+# Il est donc dans `make check`, la ou la stack n'est pas garantie.
+sessions-temoin: ## Temoin : le controle de stockage navigateur sait-il ECHOUER ? (7.25)
+	@$(UV) run python infra/scripts/verifier-sessions.py --temoin
+
+admin-check: ## Prouver que le verrouillage administrateur se declenche ET se leve (US003)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-connexion-admin.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+magic-link-check: ## Prouver que la reponse au magic link est IDENTIQUE, connue ou non (US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	python3 infra/scripts/verifier-magic-link.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 test-unit: ## Tests sans dependance externe
 	$(UV) run pytest -m "not integration"

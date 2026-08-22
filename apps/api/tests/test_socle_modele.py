@@ -42,7 +42,23 @@ from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.configuration.settings import Parametres
-from app.shared.database import moteur
+
+#  L'IMPORT DU POINT UNIQUE EST OBLIGATOIRE ICI, et c'est un correctif de `T2`
+#  du LOT 3. `test_le_modele_declare_exactement_les_tables_attendues` lit
+#  `metadonnees`, que `app.shared.modele` expose VIDE : ce sont les modules de
+#  modeles qui l'emplissent a leur import. Le test passait donc uniquement parce
+#  qu'un AUTRE fichier de test les avait importes avant lui -- lance seul, il
+#  rendait `set()` et echouait.
+#
+#  **Un test dont le resultat depend de l'ordre des autres peut mentir.** Il
+#  aurait pu passer en annoncant zero table.
+from app.modeles import MODULES_DE_MODELES as _modules_de_modeles
+
+#  CES TESTS CREENT DES TABLES pour eprouver le socle : ils emploient donc le
+#  moteur des MIGRATIONS, non celui de l'application. Depuis le LOT 3, `T1`, le
+#  role d'execution refuse le DDL avec « permission denied for schema public »,
+#  et c'est precisement ce que `make privileges-check` exige de lui.
+from app.shared.database import moteur_migrations
 from app.shared.modele import (
     CONVENTION_DE_NOMMAGE,
     LIMITE_IDENTIFIANT_POSTGRESQL,
@@ -249,7 +265,7 @@ def connexion(parametres_de_la_stack: Parametres) -> Iterator[Connection]:
     rien ne subsiste dans `onboarding_dev`, meme si un test echoue.
     """
     _exiger_postgresql(parametres_de_la_stack)
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         transaction = cx.begin()
         try:
             BaseDEssai.metadata.create_all(cx)
@@ -305,7 +321,7 @@ def test_la_base_est_en_collation_francaise(parametres_de_la_stack: Parametres) 
         "Legall",
     ]
 
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         provider, locale = cx.execute(
             text(
                 "SELECT datlocprovider::text, COALESCE(datlocale,'') "
@@ -348,7 +364,7 @@ def test_la_base_est_en_collation_francaise(parametres_de_la_stack: Parametres) 
 def test_btree_gist_est_installee(parametres_de_la_stack: Parametres) -> None:
     """`QO-112` : l'unique extension du lot est bien la, et elle seule."""
     _exiger_postgresql(parametres_de_la_stack)
-    with moteur(parametres_de_la_stack).connect() as cx:
+    with moteur_migrations(parametres_de_la_stack).connect() as cx:
         installees = set(
             cx.execute(text("SELECT extname FROM pg_extension WHERE extname <> 'plpgsql'"))
             .scalars()
@@ -487,6 +503,14 @@ TABLES_DECLAREES = {
     "framework_responsibility_assignment",
     "dsm_assignment",
     "technical_role_assignment",
+    # LOT 3, T2 — modele §10.1 a §10.6, les SEPT tables d'authentification
+    "user_account",
+    "admin_password_credential",
+    "magic_link_request",
+    "user_session",
+    "service_account",
+    "service_token",
+    "auth_event",
 }
 
 
@@ -522,6 +546,13 @@ def test_le_modele_declare_exactement_les_tables_attendues() -> None:
     fonction. Une table qui apparaitrait sans que ce test soit mis a jour serait
     une table creee sans decision.
     """
+    #  UN CONTROLE MUET DIRAIT « 0 table, aucune anomalie ». On exige donc que les
+    #  modules soient bien charges avant de comparer -- voir le commentaire de
+    #  l'import en tete de fichier.
+    assert len(_modules_de_modeles) >= 5, (
+        f"{len(_modules_de_modeles)} modules de modeles charges : "
+        f"les tables ne seraient pas toutes enregistrees"
+    )
     assert set(metadonnees.tables) == TABLES_DECLAREES, (
         f"tables declarees : {sorted(metadonnees.tables)}. "
         "Toute table nouvelle doit etre ajoutee a TABLES_DECLAREES ET a une migration."

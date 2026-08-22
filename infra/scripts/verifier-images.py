@@ -47,6 +47,7 @@ USAGE
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import subprocess
@@ -725,32 +726,84 @@ def attendre_http(url: str, essais: int = 150, delai: float = 1.0) -> tuple[int 
     return None, dernier
 
 
-# Les sept variables que l'API declare avec un defaut VIDE, et que le premier
+# Les variables que l'API declare avec un defaut VIDE, et que le premier
 # garde-fou du cahier 20.3 — « variable obligatoire absente ou vide » — exige
 # donc renseignees. Elles ne portent ici que des valeurs de controle : l'API
 # refuse de demarrer sans elles, mais n'a pas besoin qu'elles soient joignables
 # pour servir `live` et `version`.
+#
+# **ELLES SONT DERIVEES DE `Parametres.OBLIGATOIRES`, ET NON RECOPIEES.** Ma
+# version precedente en listait sept en dur. `T1` du LOT 3 en a ajoute QUATRE au
+# titre du moindre privilege (`QO-116`, `DEC-520`), et cette liste ne les a pas
+# recues : la publication de `353e570` a donc echoue avec un conteneur qui refusait
+# de demarrer — **ce qui est exactement ce que le garde-fou doit faire**.
+#
+# C'est le §7.16 : `make images-verify` LANCE les conteneurs, et je ne l'avais pas
+# rejoue. Et c'est `ECART-021` : une liste recopiee vieillit au premier ajout.
+# Deriver de la source rend l'oubli impossible.
+def _variables_obligatoires() -> tuple[str, ...]:
+    """Les variables obligatoires, LUES dans `settings.py` — sans l'importer.
+
+    **PAR `ast`, ET NON PAR UN IMPORT.** Ce script est invoque par `python3`, hors
+    de l'environnement virtuel : `images-check` est dans `make check` et ne
+    demande ni Docker ni dependance. Importer `Parametres` exigerait `pydantic`,
+    et casserait donc `make check` — mesure du 20/08/2026,
+    « ModuleNotFoundError: No module named 'pydantic' ».
+
+    Lire l'arbre syntaxique n'exige rien, et une forme inattendue fait ECHOUER la
+    lecture en la nommant, au lieu de rendre une liste vide qui passerait.
+    """
+    fichier = (
+        Path(__file__).resolve().parents[2]
+        / "apps"
+        / "api"
+        / "app"
+        / "configuration"
+        / "settings.py"
+    )
+    arbre = ast.parse(fichier.read_text(encoding="utf-8"))
+    for noeud in ast.walk(arbre):
+        cibles: list[ast.expr] = []
+        if isinstance(noeud, ast.AnnAssign):
+            cibles = [noeud.target]
+        elif isinstance(noeud, ast.Assign):
+            cibles = list(noeud.targets)
+        else:
+            continue
+        if not any(isinstance(c, ast.Name) and c.id == "OBLIGATOIRES" for c in cibles):
+            continue
+        #  La forme est `Field(default=(...), exclude=True)` : on cherche le
+        #  premier tuple entierement compose de chaines.
+        for interne in ast.walk(noeud):
+            if not isinstance(interne, ast.Tuple) or not interne.elts:
+                continue
+            valeurs = [
+                element.value
+                for element in interne.elts
+                if isinstance(element, ast.Constant) and isinstance(element.value, str)
+            ]
+            if len(valeurs) == len(interne.elts):
+                return tuple(valeurs)
+    message = (
+        f"`OBLIGATOIRES` introuvable ou de forme inattendue dans {fichier.name} : "
+        f"la derivation des variables obligatoires est impossible"
+    )
+    raise SystemExit(message)
+
+
+VARIABLES_DU_REFUS = _variables_obligatoires()
+
+#  Une valeur de controle par variable obligatoire, plus les deux reglages que le
+#  garde-fou du format de journal exige.
 CONFIGURATION_MINIMALE = (
     "APP_ENV=development",
     "LOG_FORMAT=json",
     "POSTGRES_DB=verification_t7",
-    "POSTGRES_USER=verification",
-    "POSTGRES_PASSWORD=verification-sans-valeur-reelle",
-    "REDIS_PASSWORD=verification-sans-valeur-reelle",
-    "MINIO_ROOT_USER=verification",
-    "MINIO_ROOT_PASSWORD=verification-sans-valeur-reelle",
-    "MINIO_BUCKET=verification-t7",
-)
-
-# Les sept variables nommees par le refus de demarrer, quand rien n'est fourni.
-VARIABLES_DU_REFUS = (
-    "POSTGRES_DB",
-    "POSTGRES_USER",
-    "POSTGRES_PASSWORD",
-    "REDIS_PASSWORD",
-    "MINIO_ROOT_USER",
-    "MINIO_ROOT_PASSWORD",
-    "MINIO_BUCKET",
+    *(
+        f"{nom}=verification-sans-valeur-reelle"
+        for nom in VARIABLES_DU_REFUS
+        if nom != "POSTGRES_DB"
+    ),
 )
 
 

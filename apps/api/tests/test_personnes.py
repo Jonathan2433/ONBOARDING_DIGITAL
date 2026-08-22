@@ -136,30 +136,44 @@ def test_person_est_GLOBALE_et_ne_porte_pas_entity_id(cx: Connection) -> None:
 
 
 @pytest.mark.integration
-def test_AUCUNE_table_d_authentification_n_existe(cx: Connection) -> None:
-    """Garde-fou de perimetre : l'authentification appartient au LOT 3.
+def test_les_SEPT_tables_d_authentification_existent_desormais(cx: Connection) -> None:
+    """**CE TEST A ETE INVERSE EN `T2` DU LOT 3, ET C'EST LA BONNE FACON DE LE FAIRE.**
 
-    Le §28 groupe « `person` et authentification » a son point 3, ce qui pourrait
-    faire croire qu'elles vont ensemble. Ce controle mesure que non.
+    Il s'appelait `test_AUCUNE_table_d_authentification_n_existe`, et il etait
+    JUSTE : ecrit en `T3` du LOT 2, il prouvait l'interdit du lot -- « creer une
+    seule table d'authentification » figurait au §11 de la fiche du LOT 2. Le §28
+    du modele groupe « `person` et authentification » a son point 3, ce qui pouvait
+    faire croire qu'elles allaient ensemble ; le controle mesurait que non.
+
+    **`T2` du LOT 3 l'a rendu faux DELIBEREMENT.** C'est le §7.21 dans sa forme la
+    plus pure : un controle ne devient pas faux tout seul, il le devient quand le
+    monde change autour de lui -- et ici le changement est le livrable attendu.
+
+    LE SUPPRIMER AURAIT ETE LE PIRE CHOIX. Il porte une information qui garde sa
+    valeur : **ces sept tables, et exactement celles-la**. Il exige donc desormais
+    leur presence, et **le compte est derive** de la declaration du module `auth`,
+    jamais recopie -- une huitieme table apparaitrait ici sans decision, et ce test
+    la nommerait.
     """
-    interdites = {
-        "user_account",
-        "admin_password_credential",
-        "magic_link_request",
-        "user_session",
-        "service_account",
-        "service_token",
-        "auth_event",
+    from app.auth import modeles as modeles_auth
+
+    attendues = {
+        classe.__tablename__
+        for nom in dir(modeles_auth)
+        if isinstance(classe := getattr(modeles_auth, nom), type)
+        and hasattr(classe, "__tablename__")
     }
+    assert len(attendues) == 7, f"{len(attendues)} tables declarees par `app.auth`, 7 attendues"
+
     presentes = set(
         cx.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         .scalars()
         .all()
     )
-    fautives = interdites & presentes
-    assert not fautives, (
-        f"tables d'authentification presentes : {sorted(fautives)}. "
-        "Elles appartiennent au LOT 3, porte G3."
+    manquantes = sorted(attendues - presentes)
+    assert not manquantes, (
+        f"table(s) d'authentification declaree(s) mais absente(s) de la base : {manquantes}. "
+        "La migration `0012` doit les creer."
     )
 
 

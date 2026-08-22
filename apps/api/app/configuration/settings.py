@@ -97,6 +97,24 @@ class Parametres(BaseSettings):
     POSTGRES_DB: str = ""
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
+    #  MOINDRE PRIVILEGE — LOT 3, T1, `QO-116`, `DEC-518`.
+    #
+    #  `POSTGRES_USER` est le compte que cree `initdb` : il est SUPERUTILISATEUR
+    #  et proprietaire du cluster. Rien ne peut l'empecher d'exister, et le
+    #  pretendre serait pire que le nommer. Ce qui change au LOT 3, c'est que
+    #  **l'application ne l'emploie plus** : il ne sert qu'a l'initialisation du
+    #  cluster et a l'approvisionnement des deux roles ci-dessous.
+    #
+    #  DEUX ROLES, ET LEUR SEPARATION EST LE POINT :
+    #    - MIGRATIONS possede les objets du schema et peut les modifier. Alembic
+    #      l'emploie, et lui seul ;
+    #    - RUNTIME ne peut que lire et ecrire des LIGNES. L'API et le worker
+    #      l'emploient. Il ne peut ni creer, ni supprimer, ni modifier une table,
+    #      et un temoin l'exige.
+    POSTGRES_MIGRATIONS_USER: str = ""
+    POSTGRES_MIGRATIONS_PASSWORD: str = ""
+    POSTGRES_RUNTIME_USER: str = ""
+    POSTGRES_RUNTIME_PASSWORD: str = ""
     DB_AUTO_CREATE: bool = False
 
     # --- Redis ---------------------------------------------------------------
@@ -116,6 +134,64 @@ class Parametres(BaseSettings):
     EMAIL_PROVIDER: str = "mailpit"
     SMTP_HOST: str = "mailpit"
     SMTP_PORT: int = 1025
+    #  LOT 3, T3 : ces cinq variables existaient dans `.env.example` depuis le
+    #  LOT 0, marquees `[lot] 3`, et n'etaient DECLAREES par personne. Les
+    #  declarer maintenant les soumet aux onze garde-fous -- dont celui du
+    #  `CHANGE_ME` residuel, qui ne porte que sur les variables que l'API
+    #  declare (`DEC-464`).
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = False
+    SMTP_FROM_ADDRESS: str = "no-reply@exalt-company.com"
+    SMTP_FROM_NAME: str = "eXalt Onboarding"
+
+    # --- Authentification (cahier §7.2, modele §10.3) -----------------------
+    #  `ALLOWED_EMAIL_DOMAINS` N'EST PAS DECLAREE ICI, ET C'EST DELIBERE.
+    #
+    #  L'API ne la lit pas : le modele §5.4 pose que c'est
+    #  `allowed_email_domain.active` qui « controle l'usage lors de
+    #  l'authentification », donc la TABLE fait autorite et la variable n'est que
+    #  la graine de `make domaines-provision`, qui lit le fichier
+    #  d'environnement directement (`DEC-523`).
+    #
+    #  La declarer donnerait « l'illusion qu'elle est validee » -- l'en-tete de
+    #  cette classe l'interdit -- et surtout elle creerait un SECOND analyseur de
+    #  la liste, a cote de celui du script : deux copies qui divergeraient au
+    #  premier changement de format, §7.27.
+    #
+    #  Le §10.3 ecrit « 15 minutes apres emission », et la contrainte
+    #  `expiration_a_quinze_minutes` de la migration `0012` l'impose EN BASE.
+    #  Cette variable ne peut donc pas etre un reglage : un garde-fou ci-dessous
+    #  refuse de demarrer si elle diverge du modele. Voir `_controles_universels`.
+    MAGIC_LINK_TTL_MINUTES: int = 15
+
+    # --- Sessions (cahier §7.4, modele §10.4) -------------------------------
+    #  LOT 3, T6 : ces quatre variables etaient dans `.env.example` depuis le
+    #  LOT 0, marquees `[lot] 3`, et n'etaient DECLAREES par personne.
+    #
+    #  **LA VALEUR DE `SameSite` ETAIT DEJA TRANCHEE.** Le cahier §7.4 exige
+    #  « cookie `HttpOnly`, `Secure` et `SameSite` » sans dire laquelle, et
+    #  `.env.example` ecrit `lax` depuis la sous-etape S5 du LOT 0. La deriver
+    #  aurait ete inventer ce qui etait decide -- §9.0.
+    SESSION_COOKIE_NAME: str = "exalt_session"
+    SESSION_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
+    SESSION_IDLE_DAYS: int = 7
+    SESSION_ABSOLUTE_DAYS: int = 30
+
+    # --- Comptes de service (cahier §22, modele §10.5) ----------------------
+    #
+    #  **`QO-072` EST CLOSE PAR CETTE VALEUR.** Le cahier §7.4 dit « la duree
+    #  maximale des jetons reste **a arbitrer avant leur creation** » et l'ouvre au
+    #  §29 sous le numero `QO-072`, echeance « LOT 3, story `MVP-L03-US007` ».
+    #  Arbitrage de Jonathan du 22/08/2026 : **90 jours** -- quatre renouvellements
+    #  par an, contre une cle fuitee qui cesse de fonctionner en trois mois.
+    #
+    #  **ELLE RESTE CONFIGURABLE**, ce que le §10.5 exige littéralement : « la duree
+    #  maximale des jetons reste **configurable** avant leur creation reelle ».
+    #  C'est l'inverse des seuils de debit du §20.2, que `T8` a poses en constantes
+    #  precisement parce que le cahier les ecrit et que les rendre reglables
+    #  inviterait a les abaisser. Ici le cahier demande le contraire.
+    SERVICE_TOKEN_MAX_DAYS: int = 90
 
     # --- Securite (cahier §7.4, §20.1) --------------------------------------
     SESSION_COOKIE_SECURE: bool = True
@@ -127,9 +203,31 @@ class Parametres(BaseSettings):
     # requete.
     OBLIGATOIRES: tuple[str, ...] = Field(
         default=(
+            #  LOT 3, T7 : **ELLE N'ETAIT OBLIGATOIRE QU'EN PRODUCTION**, ou le
+            #  garde-fou du §20.3 exige 32 caracteres. Depuis `T7`, elle est
+            #  CONSOMMEE sans repli possible : `jeton_pour` derive le jeton
+            #  anti-CSRF par HMAC et **leve** sur une cle vide -- il n'y a pas de
+            #  jeton « degrade » qui aurait un sens.
+            #
+            #  Sans cette ligne, une API demarree en developpement avec une cle
+            #  vide rendrait 500 sur la route de session : le defaut se
+            #  manifesterait a la premiere connexion, loin de sa cause. C'est
+            #  exactement ce qu'un garde-fou de demarrage existe pour eviter.
+            #
+            #  `empreinte_d_origine` (T3) degrade, elle, vers `None` : une origine
+            #  non minimisee valait mieux que pas de trace. Ce n'est plus le seul
+            #  usage.
+            "APP_SECRET_KEY",
             "POSTGRES_DB",
             "POSTGRES_USER",
             "POSTGRES_PASSWORD",
+            #  LOT 3, T1 : sans elles, l'API tenterait de se connecter avec un
+            #  utilisateur vide et echouerait a la premiere requete. Les declarer
+            #  obligatoires les fait echouer au DEMARRAGE, en les NOMMANT.
+            "POSTGRES_RUNTIME_USER",
+            "POSTGRES_RUNTIME_PASSWORD",
+            "POSTGRES_MIGRATIONS_USER",
+            "POSTGRES_MIGRATIONS_PASSWORD",
             "REDIS_PASSWORD",
             "MINIO_ROOT_USER",
             "MINIO_ROOT_PASSWORD",
@@ -178,6 +276,55 @@ class Parametres(BaseSettings):
             manquements.append("POSTGRES_PORT : hors de la plage 1-65535")
         if not 1 <= self.REDIS_PORT <= 65535:
             manquements.append("REDIS_PORT : hors de la plage 1-65535")
+        #     LOT 3, T3 — UNE VALEUR DONT LE DOMAINE VALIDE N'A QU'UN ELEMENT.
+        #
+        #     Ce n'est PAS un douzieme garde-fou : c'est ce meme controle n°3
+        #     applique a `MAGIC_LINK_TTL_MINUTES`. La contrainte
+        #     `expiration_a_quinze_minutes` de la migration `0012` impose 15
+        #     minutes EN BASE : porter la variable a 20 ne changerait pas le
+        #     comportement, PostgreSQL refuserait l'insertion, et son message ne
+        #     nommerait pas la variable en cause. Le defaut se manifesterait loin
+        #     de sa cause -- exactement ce qu'un garde-fou de demarrage evite.
+        #
+        #     L'import est LOCAL a dessein : le declarer en tete lierait ce module
+        #     a la couche SQLAlchemy, et les tests unitaires de configuration
+        #     echoueraient alors sur une erreur de modele qui ne les concerne pas.
+        from app.auth.modeles import (
+            JOURS_D_INACTIVITE_DE_SESSION,
+            JOURS_MAXIMUM_DE_SESSION,
+            MINUTES_DE_VALIDITE_DU_MAGIC_LINK,
+        )
+
+        if self.MAGIC_LINK_TTL_MINUTES != MINUTES_DE_VALIDITE_DU_MAGIC_LINK:
+            manquements.append(
+                "MAGIC_LINK_TTL_MINUTES : doit valoir "
+                f"{MINUTES_DE_VALIDITE_DU_MAGIC_LINK}, valeur imposee EN BASE par la "
+                "contrainte `expiration_a_quinze_minutes` (modele §10.3)"
+            )
+        #     LOT 3, T6 — LES DEUX DUREES DE SESSION, et l'une des deux est PLUS
+        #     exposee que l'autre.
+        #
+        #     `SESSION_ABSOLUTE_DAYS` est bornee EN BASE par la contrainte
+        #     `duree_absolue_bornee` : une valeur superieure ferait refuser
+        #     l'insertion, avec un message qui ne nommerait pas la variable.
+        #
+        #     `SESSION_IDLE_DAYS` n'a AUCUNE contrainte en base -- l'expiration
+        #     par inactivite se calcule, elle n'a pas de colonne (§10.4). Une
+        #     divergence y serait donc **silencieuse** : la plateforme
+        #     deconnecterait au bout de quatorze jours en affirmant sept. C'est
+        #     le cas le plus dangereux des deux, et c'est pourquoi il est garde.
+        if self.SESSION_ABSOLUTE_DAYS != JOURS_MAXIMUM_DE_SESSION:
+            manquements.append(
+                "SESSION_ABSOLUTE_DAYS : doit valoir "
+                f"{JOURS_MAXIMUM_DE_SESSION}, valeur imposee EN BASE par la contrainte "
+                "`duree_absolue_bornee` (modele §10.4)"
+            )
+        if self.SESSION_IDLE_DAYS != JOURS_D_INACTIVITE_DE_SESSION:
+            manquements.append(
+                "SESSION_IDLE_DAYS : doit valoir "
+                f"{JOURS_D_INACTIVITE_DE_SESSION} (cahier §7.4, modele §10.4). Aucune "
+                "contrainte en base ne le refuserait : une divergence serait SILENCIEUSE"
+            )
 
         # 4 — LOG_FORMAT vaut json
         if self.LOG_FORMAT != "json":
@@ -220,12 +367,37 @@ class Parametres(BaseSettings):
     # ------------------------------------------------------------------------
 
     def url_postgresql(self) -> str:
-        """URL SQLAlchemy vers PostgreSQL.
+        """URL SQLAlchemy de l'APPLICATION — le role d'execution, jamais le superutilisateur.
 
         Contient le mot de passe : ne jamais la journaliser telle quelle.
+
+        **CETTE METHODE EMPLOYAIT `POSTGRES_USER` JUSQU'AU LOT 3.** C'etait
+        `QO-116` : le cahier §20.1 pose le moindre privilege, et l'API se
+        connectait avec le compte proprietaire du cluster. Elle emploie desormais
+        `POSTGRES_RUNTIME_USER`, qui ne peut que lire et ecrire des lignes.
         """
+        return self._url(self.POSTGRES_RUNTIME_USER, self.POSTGRES_RUNTIME_PASSWORD)
+
+    def url_postgresql_migrations(self) -> str:
+        """URL SQLAlchemy des MIGRATIONS — le role qui possede les objets du schema.
+
+        Employee par `alembic/env.py`, et par lui seul. Elle porte le droit de
+        creer et de modifier des tables, que l'application n'a pas.
+        """
+        return self._url(self.POSTGRES_MIGRATIONS_USER, self.POSTGRES_MIGRATIONS_PASSWORD)
+
+    def url_postgresql_superutilisateur(self) -> str:
+        """URL du compte cree par `initdb`. **N'A QU'UN SEUL USAGE LEGITIME.**
+
+        Approvisionner les deux roles ci-dessus — `make roles-provision` — parce
+        que `CREATE ROLE` exige le superutilisateur. Toute autre utilisation est
+        une regression de `QO-116`, et `make privileges-check` la detecte.
+        """
+        return self._url(self.POSTGRES_USER, self.POSTGRES_PASSWORD)
+
+    def _url(self, utilisateur: str, mot_de_passe: str) -> str:
         return (
-            f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+psycopg://{utilisateur}:{mot_de_passe}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 

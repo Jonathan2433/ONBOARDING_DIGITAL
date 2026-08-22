@@ -42,6 +42,29 @@ if TYPE_CHECKING:  # pragma: no cover
 CATEGORIE_DIRECTION_GENERALE = "dg"
 RESPONSABILITE_DSM = "DSM"
 
+#  LOT 3, `T5` — LA DETTE QUE `T11` DU LOT 2 A LAISSEE, ET ELLE EST ACQUITTEE ICI.
+#
+#  Le §8.4 du modele exige que l'attributeur d'une categorie `dg` soit « ESM ou
+#  super-administrateur ». `T11` avait pose l'attributeur en parametre OBLIGATOIRE
+#  -- « un declencheur ne sait pas qui attribue, et inventer un attributeur
+#  fabriquerait une trace d'audit FAUSSE » -- et laisse la verification du droit a
+#  ce lot, « ou les roles d'administration existeront ».
+#
+#  LES DEUX DROITS NE VIVENT PAS DANS LA MEME TABLE, ET C'EST LE POINT :
+#
+#    ESM          responsabilite FRAMEWORK, `framework_responsibility_assignment`,
+#                 **portee sur UNE entite** (§8.4). Un ESM de Bordeaux n'attribue
+#                 donc rien a Lyon.
+#    SUPER_ADMIN  role TECHNIQUE, `technical_role_assignment`, **global**, et le
+#                 §8.6 impose `entity_id` NUL pour lui. La matrice §... le dit
+#                 aussi : « le super-administrateur constitue la seule exception
+#                 globale ».
+#
+#  Les confondre donnerait a un ESM une portee globale, ou refuserait au
+#  super-administrateur ce que la matrice lui accorde partout.
+RESPONSABILITE_ESM = "ESM"
+ROLE_SUPER_ADMINISTRATEUR = "SUPER_ADMIN"
+
 
 class ErreurDeService(RuntimeError):
     """Une regle metier que le service porte, et que la base ne peut pas porter seule."""
@@ -66,6 +89,53 @@ def responsabilite_dsm_active(
     ).scalar_one_or_none()
 
 
+def peut_attribuer_la_categorie_dg(
+    connexion: Connection, *, entite: uuid.UUID, personne: uuid.UUID
+) -> bool:
+    """La personne peut-elle attribuer la categorie `dg` DANS cette entite ?
+
+    §8.4 : « ESM ou super-administrateur ». Deux tables, deux portees, une seule
+    question -- et **les periodes sont exigees dans les deux cas** : le §25.2 pose
+    l'historisation de ces deux relations, et un role CLOTURE ne doit plus rien
+    accorder. C'est litteralement le controle §24.12 du cahier, « un role cloture
+    ne continue pas a accorder des permissions ».
+
+    `ends_at IS NULL` **ne suffirait pas** : une affectation FUTURE, dont
+    `starts_at` est a venir, a elle aussi `ends_at` nul. La colonne generee
+    `period` porte la plage complete, et `@>` repond a la vraie question -- « ce
+    droit est-il actif A CET INSTANT ».
+    """
+    return bool(
+        connexion.execute(
+            text(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM framework_responsibility_assignment "
+                "  WHERE person_id = :personne_esm AND entity_id = :entite "
+                "    AND responsibility_type = :type_responsabilite "
+                "    AND period @> :instant_esm"
+                ") OR EXISTS ("
+                "  SELECT 1 FROM technical_role_assignment "
+                "  WHERE person_id = :personne_super AND role_type = :type_role "
+                "    AND entity_id IS NULL "
+                "    AND period @> :instant_super"
+                ")"
+            ),
+            #  Des noms DISTINCTS pour chaque emploi : un meme parametre lie a
+            #  deux colonnes rend « inconsistent types deduced for parameter »,
+            #  et le message ne nomme ni la table ni la colonne. §7.25.
+            {
+                "personne_esm": personne,
+                "personne_super": personne,
+                "entite": entite,
+                "type_responsabilite": RESPONSABILITE_ESM,
+                "type_role": ROLE_SUPER_ADMINISTRATEUR,
+                "instant_esm": dt.datetime.now(tz=dt.UTC),
+                "instant_super": dt.datetime.now(tz=dt.UTC),
+            },
+        ).scalar_one()
+    )
+
+
 def attribuer_la_categorie_dg(
     connexion: Connection,
     *,
@@ -80,11 +150,31 @@ def attribuer_la_categorie_dg(
     Rend l'identifiant de la responsabilite `DSM`, creee ou deja existante.
 
     `attribue_par` est **obligatoire** et n'a pas de defaut : c'est tout le motif
-    pour lequel cette action est un service et non un declencheur. La matrice §8.4
-    veut « ESM ou super-administrateur » ; **cette verification releve du LOT 3**,
-    la base n'ayant aucune notion de l'appelant, et `QO-116` porte le sujet
-    voisin du moindre privilege.
+    pour lequel cette action est un service et non un declencheur.
+
+    **SON DROIT EST DESORMAIS VERIFIE** — LOT 3, `T5`. Le §8.4 veut « ESM ou
+    super-administrateur », et `peut_attribuer_la_categorie_dg` repond. La phrase
+    « cette verification releve du LOT 3 » etait juste quand elle a ete ecrite en
+    `T11` du LOT 2 ; elle ne l'est plus, et la corriger vaut mieux que de la
+    laisser vieillir — §7.21.
+
+    Raises:
+        ErreurDeService: si l'attributeur n'a pas le droit, ou si l'appartenance
+            est inconnue de cette entite.
     """
+    #  LE DROIT EST VERIFIE AVANT TOUT, ET AVANT MEME DE LIRE L'APPARTENANCE.
+    #
+    #  L'ordre n'est pas cosmetique : lire la ressource d'abord permettrait de
+    #  distinguer « appartenance inconnue » de « droit refuse », donc de sonder
+    #  l'existence d'une appartenance sans avoir le droit d'y toucher. Le §2.5
+    #  pose le refus par defaut.
+    if not peut_attribuer_la_categorie_dg(connexion, entite=entite, personne=attribue_par):
+        message = (
+            f"la personne {attribue_par} n'est ni ESM de l'entite {entite} ni "
+            "super-administrateur : le §8.4 lui refuse l'attribution de la categorie dg"
+        )
+        raise ErreurDeService(message)
+
     ligne = connexion.execute(
         text(
             "SELECT person_id, entity_id FROM entity_membership "

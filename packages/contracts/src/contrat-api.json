@@ -29,19 +29,29 @@
     "  fichier fait ECHOUER ce controle.",
     "",
     "CE QU'IL NE CONTIENT PAS",
-    "  Aucun type metier. Le modele de donnees appartient au LOT 2, qui n'est pas",
-    "  ouvert. Ce contrat ne porte que ce que l'API expose AUJOURD'HUI : les trois",
-    "  endpoints de sante du cahier 18.7 et la racine du prefixe versionne."
+    "  Aucun type metier. Les contenus, les collaborateurs et les parcours ont",
+    "  leurs lots. Ce contrat ne porte que ce que l'API expose AUJOURD'HUI : les",
+    "  trois endpoints de sante du cahier 18.7, la racine du prefixe versionne, et",
+    "  depuis le LOT 3 la demande de magic link.",
+    "",
+    "MISE A JOUR AU LOT 3, SOUS-ETAPE T3",
+    "  `demandeDeMagicLink` est le PREMIER endpoint non technique du projet. Le",
+    "  declarer ici n'est pas facultatif : `apps/api/tests/test_contrat.py` exige",
+    "  l'egalite dans les DEUX sens entre les chemins declares et les chemins",
+    "  servis. Une route ajoutee sans etre declaree fait echouer `make check`.",
+    "",
+    "  Son code 202 est le SEUL exploitable, et c'est le critere de securite de",
+    "  `MVP-L03-US001` : la reponse est identique que l'adresse existe ou non. Un",
+    "  second code utile — 404 sur adresse inconnue, par exemple — serait un",
+    "  oracle d'enumeration. Le 422 documente ne depend QUE de la forme de la",
+    "  requete, jamais du contenu de la base."
   ],
-
-  "version": "1.0",
-
+  "version": 1.6,
   "_commentaire_en_tete": [
     "L'en-tete de correlation, cahier 28.1. Le meme nom cote API, cote worker et",
     "cote frontend : c'est lui que l'utilisateur cite dans un signalement."
   ],
   "enTeteCorrelation": "X-Request-ID",
-
   "_commentaire_prefixe": [
     "DEC-465 place les endpoints de sante HORS du prefixe versionne : ils relevent",
     "de l'exploitation, et l'adresse que sonde un orchestrateur ne doit pas bouger",
@@ -49,7 +59,44 @@
     "chemins metier, et il n'y en a aucun au LOT 1."
   ],
   "prefixeVersionne": "/api/v1",
-
+  "_commentaire_csrf": [
+    "PROTECTION DES ECRITURES — LOT 3, T7, story MVP-L03-US005.",
+    "",
+    "DEUX BARRIERES, ET LEUR PORTEE DIFFERE.",
+    "",
+    "  1. l'en-tete `Origin` est controle sur TOUTES les ecritures. Le navigateur le",
+    "     pose lui-meme et aucun script ne peut le falsifier : c'est ce qui protege",
+    "     les trois routes qui PRECEDENT toute session — demander un lien, le",
+    "     consommer, se connecter — et pour lesquelles un jeton est impossible.",
+    "",
+    "  2. un JETON est exige des ecritures qui ont une session. Aujourd'hui, une",
+    "     seule : la deconnexion. Les routes metier des lots suivants s'y",
+    "     ajouteront.",
+    "",
+    "COMMENT LE FRONTEND OBTIENT LE JETON",
+    "  `GET /api/v1/auth/session` le rend dans son corps, champ `jeton_csrf`. Il est",
+    "  LISIBLE a dessein — c'est son objet — et sans danger : il ne vaut",
+    "  qu'accompagne du cookie de session, qui reste HttpOnly. C'est le patron du",
+    "  double envoi.",
+    "  Il est rendu par la route de SESSION et non par la connexion : un frontend",
+    "  qui recharge la page perd sa variable, et doit pouvoir le reobtenir sans se",
+    "  reconnecter.",
+    "",
+    "  Le renvoyer dans l'en-tete `X-CSRF-Token`. Un jeton d'une AUTRE session ne",
+    "  correspond pas : il est derive de la session par HMAC.",
+    "",
+    "IDEMPOTENCE — en-tete `Idempotency-Key`, OPTIONNEL",
+    "  Fourni, il garantit qu'une meme cle rejouee ne produit QU'UN effet. La seule",
+    "  route ou cela change quelque chose aujourd'hui est la demande de magic link :",
+    "  un double clic y enverrait deux e-mails, dont un seul fonctionne.",
+    "  Il est optionnel parce que le cahier 18.6 enumere six operations a rendre",
+    "  idempotentes, et aucune n'est une route de ce lot : l'exiger serait exiger",
+    "  plus que le cahier.",
+    "  Forme : 8 a 200 caracteres parmi `A-Z a-z 0-9 . _ : -`. Une cle malformee rend",
+    "  422, ce qui ne depend QUE de la requete."
+  ],
+  "enTeteJetonCsrf": "X-CSRF-Token",
+  "enTeteCleIdempotence": "Idempotency-Key",
   "endpoints": [
     {
       "cle": "live",
@@ -88,6 +135,142 @@
       "codesExploitables": [200],
       "forme": "Inconnue",
       "role": "Racine du contrat versionne. Vide au LOT 1 ; son contenu arrive au LOT 2."
+    },
+    {
+      "cle": "demandeDeMagicLink",
+      "chemin": "/api/v1/auth/magic-link",
+      "methode": "post",
+      "codesExploitables": [202, 403, 429, 503],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Demander un lien de connexion — LOT 3, T3, story MVP-L03-US001.",
+        "403 DEPUIS T7 : origine etrangere. Et si un `Idempotency-Key` est fourni, un",
+        "second appel avec la MEME cle rend le meme 202 SANS reemettre de lien.",
+        "202 EST LE SEUL CODE EXPLOITABLE, et c'est une regle de securite, non une",
+        "preference : le code, le corps et les en-tetes sont IDENTIQUES que l'adresse",
+        "existe ou non. Le frontend ne peut donc rien en deduire, et c'est voulu — il",
+        "affiche la meme confirmation dans tous les cas.",
+        "Le 422 que le schema documente ne depend que de la FORME de la requete —",
+        "champ absent, corps trop long — jamais du contenu de la base.",
+        "429 DEPUIS T8 : limitation de debit du cahier §20.2. Le corps ne nomme PAS la",
+        "dimension depassee -- le dire apprendrait laquelle contourner -- et",
+        "`details.secondes_avant_reprise` donne le reste de la fenetre. LE 429 ARRIVE",
+        "POUR TOUTE ADRESSE, connue ou non : sinon il dirait qu'un compte existe, et",
+        "l'egalite anti-enumeration de T3 serait rouverte par la limite elle-meme.",
+        "503 DEPUIS T8 : le compteur est injoignable. Le §20.1 impose le refus par",
+        "defaut -- laisser passer ferait d'une panne de Redis le moyen de desactiver la",
+        "protection."
+      ]
+    },
+    {
+      "cle": "consommationDeMagicLink",
+      "chemin": "/api/v1/auth/magic-link/consommation",
+      "methode": "post",
+      "codesExploitables": [200, 400, 403],
+      "forme": "ReponseDeConsommation",
+      "role": [
+        "Consommer un lien de connexion — LOT 3, T4, story MVP-L03-US002.",
+        "LE JETON VOYAGE DANS LE CORPS, JAMAIS DANS L'URL. Une chaine de requete finit",
+        "dans l'historique du navigateur, dans un en-tete Referer et dans tout journal",
+        "d'acces d'un mandataire. Le lien de l'e-mail porte bien le jeton en query",
+        "string, mais il ouvre une page du frontend : c'est elle qui appelle cette route",
+        "avec le jeton EN CORPS, et elle ne doit jamais le retransmettre dans une URL.",
+        "400 EST LE SEUL REFUS, et il est UNIQUE pour quatre causes : jeton inconnu,",
+        "expire, deja consomme, invalide par une demande plus recente. Le §3 de la fiche",
+        "du LOT 3 ne prevoit qu'UN ecran pour « lien expire ou consomme » : l'API n'a pas",
+        "a distinguer ce que l'interface ne distingue pas.",
+        "200 NE PORTE AUCUN ACCES : ni cookie, ni jeton de session. La session releve de",
+        "T6, story US004. Un ecran qui traiterait ce 200 comme une connexion etablie se",
+        "tromperait."
+      ]
+    },
+    {
+      "cle": "connexionAdministrateur",
+      "chemin": "/api/v1/auth/connexion",
+      "methode": "post",
+      "codesExploitables": [200, 400, 403, 429, 503],
+      "forme": "ReponseDeConnexion",
+      "role": [
+        "Connexion d'un compte administrateur local — LOT 3, T5, story MVP-L03-US003.",
+        "400 EST LE SEUL REFUS, et il est UNIQUE pour cinq causes : compte inconnu,",
+        "mot de passe faux, compte verrouille, compte desactive, compte sans mot de",
+        "passe actif. Un refus qui les distinguerait revelerait qu'une adresse porte un",
+        "compte administrateur — et, pire, apprendrait a un attaquant qu'il a REUSSI a",
+        "verrouiller le titulaire legitime.",
+        "200 NE PORTE AUCUN ACCES : ni cookie, ni jeton de session. La session releve de",
+        "T6. Le champ `changement_exige` porte `must_change` du modele 10.2 : l'ecran",
+        "doit imposer le changement avant toute autre action.",
+        "429 DEPUIS T8 : limitation de debit du cahier §20.2. Le corps ne nomme PAS la",
+        "dimension depassee -- le dire apprendrait laquelle contourner -- et",
+        "`details.secondes_avant_reprise` donne le reste de la fenetre. LE 429 ARRIVE",
+        "POUR TOUTE ADRESSE, connue ou non : sinon il dirait qu'un compte existe, et",
+        "l'egalite anti-enumeration de T3 serait rouverte par la limite elle-meme.",
+        "503 DEPUIS T8 : le compteur est injoignable. Le §20.1 impose le refus par",
+        "defaut -- laisser passer ferait d'une panne de Redis le moyen de desactiver la",
+        "protection."
+      ]
+    },
+    {
+      "cle": "changementDeMotDePasse",
+      "chemin": "/api/v1/auth/mot-de-passe",
+      "methode": "post",
+      "codesExploitables": [200, 400, 403],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Changement du mot de passe administrateur — LOT 3, T5.",
+        "LE MOT DE PASSE ACTUEL EST EXIGE. Sans session — elles relevent de T6 — c'est",
+        "la SEULE preuve que l'appelant est le titulaire ; une route qui changerait un",
+        "mot de passe sur la seule adresse serait une prise de controle de compte.",
+        "Son 400 a exactement la meme forme que celui de la connexion : sinon cette",
+        "route deviendrait l'oracle que l'autre n'est pas."
+      ]
+    },
+    {
+      "cle": "sessionCourante",
+      "chemin": "/api/v1/auth/session",
+      "methode": "get",
+      "codesExploitables": [200, 401],
+      "forme": "ReponseDeSession",
+      "role": [
+        "Lire la session courante — LOT 3, T6, story MVP-L03-US004.",
+        "ELLE NE REND JAMAIS LE JETON. Il vit dans un cookie HttpOnly, donc hors",
+        "d'atteinte de tout JavaScript — et c'est ce qui rend le critere du cahier 7.4",
+        "tenable : « aucune donnee d'authentification durable dans localStorage » ne se",
+        "tient pas par discipline, il se tient parce qu'un frontend qui recoit un jeton",
+        "finit par le stocker. Ne demande donc JAMAIS de jeton a cette route.",
+        "401 EST LE SEUL REFUS, et il est UNIQUE pour cinq causes : cookie absent, jeton",
+        "inconnu, session revoquee, duree absolue depassee, inactivite depassee. Les",
+        "distinguer apprendrait qu'un jeton a existe, et lequel des deux delais l'a",
+        "emporte.",
+        "Cet appel RAFRAICHIT l'activite : il n'est pas gratuit, et un frontend qui le",
+        "boucherait toutes les secondes maintiendrait une session vivante indefiniment."
+      ]
+    },
+    {
+      "cle": "deconnexion",
+      "chemin": "/api/v1/auth/deconnexion",
+      "methode": "post",
+      "codesExploitables": [200, 403],
+      "forme": "ReponseGenerique",
+      "role": [
+        "Se deconnecter — LOT 3, T6.",
+        "403 DEPUIS T7 : c'est la SEULE ecriture du lot qui exige un jeton CSRF, parce",
+        "qu'elle est la seule a disposer d'une session pour en deriver un. Sans cookie,",
+        "aucun jeton n'est exige — il n'y aurait rien a proteger.",
+        "TOUJOURS 200 sinon, meme sans session valide : un 401 apprendrait qu'un jeton a",
+        "existe, et une deconnexion n'a de toute facon rien a refuser.",
+        "La session est REVOQUEE, pas effacee — `revoked_at` et `revoke_reason` du",
+        "modele 10.4 — et le cookie est retire avec les MEMES attributs que la pose,",
+        "sans quoi le navigateur le laisserait en place."
+      ]
     }
+  ],
+  "_commentaire_debit": [
+    "LOT 3, T8 — LES SEUILS NE SONT PAS DANS CE CONTRAT, ET C'EST DELIBERE.",
+    "Le §20.2 les ecrit, `app/auth/debit.py` les porte, et un test RELIT le cahier",
+    "pour exiger qu'ils correspondent. Les recopier ici en ferait une troisieme",
+    "source, qui vieillirait au premier changement -- c'est la classe ECART-021.",
+    "Ce que le frontend doit savoir n'est pas la valeur du seuil mais la FORME de",
+    "la reponse : un 429 dont `details.secondes_avant_reprise` dit quand reessayer."
   ]
 }

@@ -15,11 +15,16 @@ DISCIPLINE
 
 from __future__ import annotations
 
+import pathlib
+import re
+import secrets
+
 import pytest
 
 from observabilite.masquage import (
     LONGUEUR_MAXIMALE_VALEUR,
     MASQUE,
+    PREFIXES_DE_JETON,
     cle_est_sensible,
     masquer,
 )
@@ -198,3 +203,113 @@ def test_aucune_valeur_secrete_ne_survit_a_un_aller_retour_complet() -> None:
     for secret in secrets:
         assert secret not in rendu
     assert "GET /health/ready" in rendu
+
+
+# ============================================================================
+#  LES JETONS QUE CE PROJET PRODUIT — LOT 3, sous-etape `T3`
+# ============================================================================
+#
+#  LA LECON `T4-1` EST APPLIQUEE A LA LETTRE : ces tests engendrent les jetons
+#  avec la MEME fonction que l'application, plutot que d'ecrire un exemple de
+#  documentation. C'est ainsi que le trou de `redis://:motdepasse@` avait ete
+#  trouve -- le filtre exigeait un nom d'utilisateur, et le format que ce projet
+#  produit n'en a pas.
+#
+#  Le fichier n'importe PAS `apps/api` : il reconstitue le jeton depuis les
+#  constantes de `masquage`, comme le fait `app.auth.jetons`. Le paquet
+#  d'observabilite ne peut pas dependre de l'API, c'est l'API qui depend de lui.
+
+
+def _jeton(prefixe: str) -> str:
+    """Un jeton de la forme que ce projet produit : prefixe + 43 base64url."""
+    return prefixe + secrets.token_urlsafe(32)
+
+
+@pytest.mark.parametrize("prefixe", PREFIXES_DE_JETON)
+def test_un_jeton_NU_du_projet_est_masque_dans_un_champ_anodin(prefixe: str) -> None:
+    """**LE MOTIF D'URL NE SUFFISAIT PAS, ET C'EST LE DEFAUT QUE `T3` A FERME.**
+
+    Le motif `https?://...[?&]token=` exige une URL COMPLETE. Un jeton recopie nu
+    dans un message d'erreur, un argument ou une trace passait donc a travers --
+    or c'est la forme la plus probable dans ces journaux.
+
+    Les trois prefixes sont eprouves, y compris ceux de `T6` et `T10` : une regle
+    declaree et jamais eprouvee est une regle dont on ne sait pas si elle marche.
+    """
+    jeton = _jeton(prefixe)
+    assert masquer(jeton, cle="message") == MASQUE
+    assert masquer({"detail": f"echec du jeton {jeton}"})["detail"] == MASQUE
+
+
+@pytest.mark.parametrize("prefixe", PREFIXES_DE_JETON)
+def test_un_magic_link_COMPLET_est_masque(prefixe: str) -> None:
+    """Cahier §28.2 : « aucun magic link complet ». La forme reelle du lien."""
+    lien = f"https://app.onboarding.localhost/connexion/lien?token={_jeton(prefixe)}"
+    assert masquer(lien, cle="url") == MASQUE
+
+
+def test_un_corps_de_courriel_portant_le_lien_est_masque() -> None:
+    """La forme que `T3` produit reellement : le lien au milieu d'un texte.
+
+    Un filtre qui n'attraperait que la valeur seule laisserait fuir le corps du
+    message, qui est precisement ce que le §28.2 interdit.
+    """
+    corps = (
+        "Bonjour,\n\nVoici votre lien de connexion :\n\n"
+        f"https://app.onboarding.localhost/connexion/lien?token={_jeton('oml_')}\n\n"
+        "Ce lien est valable 15 minutes."
+    )
+    assert masquer(corps, cle="corps") == MASQUE
+
+
+def test_le_MOTIF_de_la_regle_GITLEAKS_attrape_un_jeton_reellement_engendre() -> None:
+    """**CE TEST LIT `.gitleaks.toml` PLUTOT QUE DE FAIRE CONFIANCE A LA COPIE.**
+
+    Le TOML n'importe rien : la regle Gitleaks est necessairement une copie des
+    constantes de `masquage`. Une copie vieillit au premier changement (§7.27), et
+    la seule parade est un controle qui confronte la copie au reel.
+
+    Le §5 de la fiche du LOT 3 l'exige : « un nouveau format de jeton devra y
+    etre ajoute, sinon la regle ne le verrait pas ».
+    """
+    racine = pathlib.Path(__file__).resolve().parents[3]
+    configuration = racine / ".gitleaks.toml"
+    assert configuration.is_file(), f"introuvable : {configuration}"
+
+    motifs = re.findall(
+        r"^regex\s*=\s*'''(.+?)'''$",
+        configuration.read_text(encoding="utf-8"),
+        flags=re.MULTILINE,
+    )
+    assert motifs, "aucune regle `regex` lue dans .gitleaks.toml"
+
+    examines = 0
+    for prefixe in PREFIXES_DE_JETON:
+        jeton = _jeton(prefixe)
+        assert any(re.search(motif, jeton) for motif in motifs), (
+            f"aucune des {len(motifs)} regles Gitleaks n'attrape un jeton `{prefixe}`"
+        )
+        examines += 1
+    #  LE COMPTE EST CONFRONTE A UN ATTENDU : sans cela, une boucle vide
+    #  passerait pour un succes. §7.0, troisieme proposition.
+    assert examines == len(PREFIXES_DE_JETON) == 3
+
+
+def test_TEMOIN_la_regle_GITLEAKS_n_attrape_PAS_une_chaine_anodine() -> None:
+    """Sans ce temoin, une regle `.*` passerait le test precedent.
+
+    Une regle qui attrape tout n'est pas une regle : elle refuserait chaque
+    commit, donc on la desactiverait. §7.25.
+    """
+    racine = pathlib.Path(__file__).resolve().parents[3]
+    motifs = re.findall(
+        r"^regex\s*=\s*'''(.+?)'''$",
+        (racine / ".gitleaks.toml").read_text(encoding="utf-8"),
+        flags=re.MULTILINE,
+    )
+    #  Une chaine de 43 caracteres base64url SANS prefixe de ce projet. C'est
+    #  exactement ce qu'une regle fondee sur l'entropie refuserait a tort.
+    anodine = secrets.token_urlsafe(32)
+    assert not any(re.search(motif, anodine) for motif in motifs), (
+        f"une regle Gitleaks se declenche sur une chaine sans prefixe : {anodine!r}"
+    )

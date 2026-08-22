@@ -1,0 +1,134 @@
+/*
+ * Styles des huit ecrans d'authentification — LOT 3, sous-etape `T11`.
+ *
+ * AUCUNE VALEUR DE COULEUR N'EST ECRITE ICI, ET C'EST UN CRITERE
+ *
+ *   « aucune couleur hors des jetons de `packages/ui` ». Chaque couleur est une
+ *   `var(--…)` de `jetons.css`, dont les couples fond/texte sont RECALCULES contre
+ *   WCAG 2.2 AA par `jetons.test.ts`. Ecrire un `#5853FF` ici contournerait cette
+ *   mesure, et un controle relit ce fichier pour l'interdire.
+ *
+ *   Les espacements, rayons, ombres et tailles viennent de la meme source, pour la
+ *   meme raison : une valeur en dur ici ne serait plus jamais revue.
+ */
+
+.auth-cadre {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--police);
+}
+
+.auth-entete {
+  padding: var(--espace-l) var(--espace-l) 0;
+}
+
+.auth-marque {
+  margin: 0;
+  font-size: var(--taille-s);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--encre-douce);
+}
+
+.auth-principal {
+  flex: 1;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--espace-xl) var(--espace-l) var(--espace-xxl);
+}
+
+.auth-titre {
+  margin: 0 0 var(--espace-s);
+  font-size: var(--taille-xl);
+  line-height: 1.2;
+}
+
+.auth-introduction {
+  margin: 0 0 var(--espace-l);
+  color: var(--encre-douce);
+  font-size: var(--taille-m);
+}
+
+.auth-formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.auth-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.auth-etiquette {
+  font-size: var(--taille-s);
+  font-weight: 600;
+}
+
+.auth-saisie {
+  padding: var(--espace-s);
+  font: inherit;
+  font-size: var(--taille-m);
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+}
+
+.auth-saisie:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.auth-aide {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+/*
+ * Le message d'etat. Il porte `aria-live` cote JSX : une reponse d'API qui
+ * apparait sans etre annoncee est invisible pour un lecteur d'ecran, et c'est
+ * exactement le cas d'usage de cette page.
+ */
+.auth-message {
+  margin: var(--espace-m) 0 0;
+  padding: var(--espace-m);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+  border-left: 4px solid var(--marque-bleu);
+  font-size: var(--taille-m);
+}
+
+.auth-message[data-ton='refus'] {
+  border-left-color: var(--ko);
+}
+
+.auth-message[data-ton='succes'] {
+  border-left-color: var(--ok);
+}
+
+.auth-liens {
+  margin: var(--espace-xl) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-m);
+  font-size: var(--taille-s);
+}
+
+.auth-lien {
+  color: var(--marque-bleu-texte);
+  text-decoration: underline;
+}
+
+.auth-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}

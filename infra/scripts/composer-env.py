@@ -61,6 +61,11 @@ SECRETS_ALEATOIRES = (
     "POSTGRES_PASSWORD",
     "REDIS_PASSWORD",
     "MINIO_ROOT_PASSWORD",
+    #  LOT 3, T1 — les deux roles du moindre privilege (`QO-116`, `DEC-518`).
+    #  Leurs mots de passe sont distincts de celui du superutilisateur : les
+    #  derives l'un de l'autre reviendrait a n'avoir qu'un secret.
+    "POSTGRES_MIGRATIONS_PASSWORD",
+    "POSTGRES_RUNTIME_PASSWORD",
 )
 
 # Volontairement laissees en CHANGE_ME, et ce n'est pas un oubli : leurs valeurs

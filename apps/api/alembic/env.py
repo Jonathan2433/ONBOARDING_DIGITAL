@@ -40,7 +40,12 @@ configuration = context.config
 target_metadata = metadonnees
 
 parametres = charger_parametres()
-configuration.set_main_option("sqlalchemy.url", parametres.url_postgresql())
+#  LES MIGRATIONS EMPLOIENT LEUR PROPRE ROLE — LOT 3, T1, `QO-116`, `DEC-518`.
+#  `url_postgresql()` est desormais celle de l'APPLICATION, bornee au DML : elle
+#  ne pourrait pas creer une table. Employer la mauvaise ici ferait echouer la
+#  premiere migration avec « permission denied for schema public », et le message
+#  ne dirait pas que c'est le ROLE qui est en cause.
+configuration.set_main_option("sqlalchemy.url", parametres.url_postgresql_migrations())
 
 
 def executer_hors_ligne() -> None:

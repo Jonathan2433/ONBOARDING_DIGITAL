@@ -124,15 +124,15 @@ services:
   #        execution et la compare a celle demandee.
   # ---------------------------------------------------------------------------
   api:
-    image: ${IMAGE_API:-ghcr.io/jonathan2433/onboarding-digital/api@sha256:81d4be5fbab7ebf88c4613aad7d37b6de374e1f0006669e25c12a9929fc7081e}
+    image: ${IMAGE_API:-ghcr.io/jonathan2433/onboarding-digital/api@sha256:c1f246b0d758b40a0992798d6a6ad5ce132b786806cf29f0e49b587345e74a8f}
     mem_limit: 1g
 
   worker:
-    image: ${IMAGE_WORKER:-ghcr.io/jonathan2433/onboarding-digital/worker@sha256:378189e118301e51dcfc555fed23b6aa65347bd5c7896dd61dbea5e8b23e237a}
+    image: ${IMAGE_WORKER:-ghcr.io/jonathan2433/onboarding-digital/worker@sha256:a07d4edb3f8369bdacc2c7c2f490606459e1f6546e8e53c99d090c67e910bda2}
     mem_limit: 1g
 
   web:
-    image: ${IMAGE_WEB:-ghcr.io/jonathan2433/onboarding-digital/web@sha256:a6b656421246cbfb991d81c8ac6db17bd262b0f7fff6750c33ac67841cfae222}
+    image: ${IMAGE_WEB:-ghcr.io/jonathan2433/onboarding-digital/web@sha256:6bb0d01cb734ee07aea93a029cc0fc65a9ca2334dce423cc096f6ae23cf7b92d}
     # T7, DEC-479 — SELECTION EXPLICITE DE LA CIBLE, et elle est OBLIGATOIRE.
     #
     # L'empreinte ci-dessus designe deja la cible `execution` : le workflow ne
