@@ -434,6 +434,14 @@ class AuthEvent(ChampsCommuns, Base):
     )
     person_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     user_account_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
+    #  LOT 3, `T10`, migration `0013`. **LE DIAGRAMME §11 DECLARE
+    #  `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`**, et `T2` ne l'avait pas
+    #  porte : c'est `ECART-037`. Sans cette colonne, « chaque appel est audite »
+    #  exigerait un HUITIEME type d'evenement, or le §10.6 en declare SEPT et
+    #  `T12` auditera exactement ces sept. Avec elle, `LOGIN_SUCCESS` et
+    #  `LOGIN_FAILURE` suffisent -- le §10.6 les nomme « succes » et « echec »
+    #  sans les restreindre aux humains.
+    service_account_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     #  Une empreinte, jamais une adresse : meme motif que
     #  `magic_link_request.request_origin_hash`.
     request_origin_hash: Mapped[str | None] = mapped_column(
@@ -444,5 +452,13 @@ class AuthEvent(ChampsCommuns, Base):
     __table_args__ = (
         ForeignKeyConstraint(["person_id"], ["person.id"]),
         ForeignKeyConstraint(["user_account_id"], ["user_account.id"]),
+        ForeignKeyConstraint(["service_account_id"], ["service_account.id"]),
         contrainte_enumeration("event_type", TypeEvenementAuth, "event_type_valide"),
+        #  **LES DEUX NULS RESTENT PERMIS, ET C'EST INDISPENSABLE** : un magic link
+        #  demande pour une adresse inconnue, ou un jeton inconnu refuse, ne
+        #  designe personne. Interdire ce cas casserait la reponse generique.
+        CheckConstraint(
+            "person_id IS NULL OR service_account_id IS NULL",
+            name="ck_auth_event_un_seul_acteur",
+        ),
     )

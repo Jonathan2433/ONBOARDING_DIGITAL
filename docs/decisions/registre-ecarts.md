@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T9`
+**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T10`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 35 | 8 | 25 | 2 |
+| Total 37 | 8 | 27 | 2 |
 
 ---
 
@@ -53,8 +53,10 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
 | `ECART-034` | La fiche du lot annonçait « le cahier exige une limitation, **sans donner de seuil** » : le §20.2 en énumère **six**. Et les cinq variables de seuil de `.env.example` ne sont **consommées par personne** depuis le LOT 0 | Non — détecté avant d'inventer une valeur | **Clos** pour la fiche, **signalé** pour les variables |
 | `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
+| `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
+| `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
 
-**Prochain identifiant libre : `ECART-036`.**
+**Prochain identifiant libre : `ECART-038`.**
 
 ---
 
@@ -509,4 +511,34 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-036`.**
+## `ECART-036` — La fiche annonçait qu'aucun document n'énumère les scopes
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T10` |
+| Source | `docs/operations/fiche-lot-3.md` §8, ligne « **Liste des scopes** \| aucun document n'en énumère \| `T10` » |
+| Constat | **Le cahier §22 en énumère cinq** : `people:read`, `people:import`, `media:process`, `email:send`, `reports:generate`.<br>**Mais deux mots changent leur portée** : « Chaque compte de service possède des scopes explicites, **par exemple** : … ». La liste est donc **écrite et non fermée** — exactement la forme du §25.1 du modèle, « à prévoir **notamment** », où le LOT 2 a posé quatre unicités de plus, chacune **dérivée** d'une règle écrite. |
+| Impact | **Deux, et le second est le plus intéressant.**<br>**(a)** Suivre la fiche aurait conduit à inventer un vocabulaire, alors que le cahier en donne un.<br>**(b)** Mais conclure trop vite à `ECART-034` — « le cahier tranche, il suffit de recopier » — aurait conduit à une **liste blanche fermée**, qui contredirait « par exemple » et **bloquerait le LOT 9**, qui créera ses propres scopes d'import, et le LOT 11 pour les médias et les exports. Les deux erreurs sont symétriques, et la bonne lecture est entre elles. |
+| Cause | Un document dérivé qui affirme sans relire sa source. **Troisième occurrence de cette classe dans ce seul lot** : `ECART-034` (les seuils de débit, §8 de la même fiche), `ECART-035` (les invitations, backlog `US006`), et celle-ci. Le §8 de la fiche liste quatre points « que le corpus ne tranche pas » ; **deux des quatre étaient faux**, et un troisième — la durée des jetons — était déjà numéroté `QO-072` dans le cahier. |
+| Bloquant | Non. Détecté avant d'inventer, et le livrable applique les cinq du cahier |
+| Recommandation | **Valider sur la FORME, pas sur l'appartenance.** `MOTIF_SCOPE` exige `domaine:action` en minuscules ; les cinq du cahier sont déclarés comme le vocabulaire **connu**, et **deux tests relisent le cahier** — l'un pour les cinq valeurs, l'autre pour les mots « par exemple ». Si le cahier fermait un jour sa liste, le second test échouerait, et il devrait.<br>**Le mode d'échec d'un scope mal orthographié est bruyant**, et c'est ce qui rend la liste ouverte acceptable : rien n'accorde `people:raed`, donc l'appel qui l'exige est **refusé** — « refus par défaut », §20.1 — et non autorisé par erreur.<br>**Et une recommandation plus large, pour la porte `G3`** : le §8 de `fiche-lot-3.md` a été faux **trois fois sur quatre**. Un relecteur ne devrait pas s'y fier sans relire le cahier. |
+| Résolution | **Clos.** Les cinq scopes du §22 sont appliqués, la liste reste ouverte, `DEC-536` en trace la lecture, et la ligne du §8 de la fiche est corrigée. |
+
+---
+
+## `ECART-037` — `auth_event` ne portait pas le lien vers `service_account` que le §11 déclare
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T10`, en instruisant « chaque appel est audité » |
+| Source | Modèle §11, diagramme d'authentification : `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces` |
+| Constat | La table `auth_event` posée par `T2` (migration `0012`) porte `person_id` et `user_account_id`, **et rien vers `service_account`**. Le diagramme du §11 déclare pourtant la relation, au même titre que `USER_ACCOUNT ||--o{ AUTH_EVENT : produces`, qui elle est portée.<br>Le §10.6 ne liste aucune colonne — il énumère les **sept événements** — donc la seule déclaration de ce lien est le diagramme. |
+| Impact | **Le critère de `US007` — « chaque appel est audité » — devenait insatisfaisable sans inventer.** Les deux seules issues auraient été un **huitième type d'événement**, que le §10.6 interdit en en déclarant sept et que `T12` auditera précisément, ou un audit **anonyme** qui ne dirait pas quel compte a appelé.<br>Aucun impact sur les livrables antérieurs : rien n'écrivait d'événement pour un compte de service avant `T10`. |
+| Cause | Le §10.6 décrit `auth_event` **par ses événements**, pas par ses colonnes, et `T2` a suivi cette section. Le lien n'est déclaré que dans le **diagramme** du §11, une section que `T2` a lue pour les sept tables mais pas pour les arêtes. **Classe `ECART-023`** : un document a plusieurs endroits qui se complètent, et lire l'un sans l'autre laisse un trou. |
+| Bloquant | Non |
+| Recommandation | **Ajouter la colonne, ce qui est implémenter le modèle et non l'étendre** — migration `0013` : `service_account_id` nullable, sa clé étrangère, son index, et une contrainte `ck_auth_event_un_seul_acteur` qui interdit qu'un événement porte **à la fois** une personne et un compte de service. **Les deux nuls restent permis, et c'est indispensable** : un magic link demandé pour une adresse inconnue, ou un jeton inconnu refusé, ne désigne personne — `T3`, `T4` et `T9` en produisent, et l'interdire casserait la réponse générique.<br>**Recommandation pour `T12`** : quand l'audit des sept événements sera classé, vérifier que les deux acteurs sont couverts — un contrôle qui ne compterait que `person_id` déclarerait l'audit acquis en ignorant les comptes de service. |
+| Résolution | **Clos.** Migration `0013` appliquée, `make migrations-check` confirme qu'une base vide reconstruite par la seule chaîne donne un schéma **identique**. Le modèle SQLAlchemy porte la colonne, et `DEC-536` trace la lecture. |
+
+---
+
+**Prochain identifiant libre : `ECART-038`.**

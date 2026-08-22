@@ -1,17 +1,17 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 21 août 2026, LOT 3 sous-étape `T5`
+**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T5`
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
 |---|---:|---:|
-| Bloquantes avant données réelles ou production générale | 17 | 1 |
+| Bloquantes avant données réelles ou production générale | 17 | 2 |
 | Non bloquantes pour le développement | 12 | 1 |
 | Ouvertes par la réalisation, à partir de `QO-106` | 13 | 7 |
-| **Total** | **42** | **9** |
+| **Total** | **42** | **10** |
 
-**33 questions restent ouvertes**, sur **42** entrées — `QO-118` ajoutée le 21/08/2026 par `T5` du LOT 3 — et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`, et **remis à jour le 20/08/2026** à la
+**32 questions restent ouvertes**, sur **42** entrées — `QO-072` **close le 22/08/2026** par `T10` du LOT 3, la **première du corpus** à l'être par arbitrage de Jonathan — et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`, et **remis à jour le 20/08/2026** à la
 clôture de `QO-115` (`DEC-519`).
 
 > **Et la mise à jour du 20/08/2026 a d'abord été FAUSSE.** J'ai **décrémenté** le compte de closes de
@@ -46,7 +46,7 @@ de données réelles, soit l'ouverture générale.
 
 | ID | Question | Responsable | Bloque | Statut |
 |---|---|---|---|---|
-| `QO-072` | Durée maximale des jetons de comptes de service | Jonathan / sécurité | LOT 3, story `MVP-L03-US007` | Ouverte |
+| `QO-072` | Durée maximale des jetons de comptes de service | Jonathan / sécurité | LOT 3, story `MVP-L03-US007` | **CLOSE le 22/08/2026, sous-étape `T10`.** **Arbitrage de Jonathan : 90 jours.** Son motif, dans ses termes : redonner une clé au script **quatre fois par an**, contre une clé fuitée qui **cesse de fonctionner au bout de trois mois**. Les deux options écartées le sont pour leur conséquence, non pour leur principe — 30 jours fait tomber le script sur un renouvellement oublié, ce qui est son risque réel et non la sécurité ; 365 jours laisse une clé volée valable un an. **La valeur reste CONFIGURABLE**, par `SERVICE_TOKEN_MAX_DAYS`, ce que le modèle §10.5 exige littéralement — c'est l'inverse des seuils de débit du §20.2, que `T8` a posés en constantes parce que le cahier les écrit. Et **c'est un plafond, pas un défaut** : demander davantage lève, aucune durée n'est écrêtée en silence. `DEC-536` |
 | `QO-073` | Personnes morales exactes responsables de traitement | eXalt / juridique | Production générale | Ouverte |
 | `QO-074` | Contact RGPD ou DPO | eXalt | Production générale | Ouverte |
 | `QO-076` | Base légale exacte des traitements | eXalt / juridique | Production générale | Ouverte |

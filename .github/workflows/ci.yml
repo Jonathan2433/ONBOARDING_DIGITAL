@@ -297,6 +297,18 @@ jobs:
         # differentes tant qu'on n'a pas interroge l'API.
         run: make revocation-check
 
+      - name: Comptes de service et scopes
+        # LOT 3, T10 — `MVP-L03-US007`. Onze controles, et TROIS temoins : le bon
+        # scope passe, un proprietaire technique inconnu est REFUSE plutot que cree,
+        # et une duree au-dela du plafond leve plutot que d'etre ecretee.
+        #
+        # Il passe par `make compte-de-service`, donc par le script reel, et lit le
+        # jeton sur sa sortie — ce qui prouve au passage qu'il n'y figure QU'UNE
+        # fois. Et il verifie `SERVICE_TOKEN_MAX_DAYS` DANS le conteneur : `T7` a
+        # montre qu'une variable qui ne traverse pas la frontiere de processus
+        # produit un echec dont le message ne nomme pas la cause.
+        run: make service-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 
