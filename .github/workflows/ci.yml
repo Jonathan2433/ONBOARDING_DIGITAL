@@ -281,6 +281,22 @@ jobs:
         # que `T3` a ferme, rouvert par la limite elle-meme.
         run: make debit-check
 
+      - name: Revocation au depart, a travers Caddy en HTTPS
+        # LOT 3, T9 — `MVP-L03-US006`, et le controle §30.22 de la recette du
+        # modele devient ACQUIS. Six controles, avec TROIS temoins :
+        #
+        #   - la session repond AVANT le depart : sans lui, un cookie casse
+        #     donnerait la meme observation qu'une revocation qui fonctionne ;
+        #   - `Active --> Archived` est refusee : le §24.1 n'a pas ce raccourci,
+        #     et sans ce refus l'etat `departed` serait decoratif ;
+        #   - l'archivage qui SUIT ne trouve plus rien : c'est ce qui prouve que
+        #     la revocation tient au DEPART, comme « immediatement » l'exige.
+        #
+        # Le 401 est mesure par un aller-retour HTTP reel, non deduit de
+        # l'ecriture de `revoked_at` : l'ecriture et le refus sont deux grandeurs
+        # differentes tant qu'on n'a pas interroge l'API.
+        run: make revocation-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 
