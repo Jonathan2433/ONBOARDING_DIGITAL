@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 21 août 2026, LOT 3 sous-étape `T8`
+**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T9`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 34 | 7 | 25 | 2 |
+| Total 35 | 8 | 25 | 2 |
 
 ---
 
@@ -52,8 +52,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
 | `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
 | `ECART-034` | La fiche du lot annonçait « le cahier exige une limitation, **sans donner de seuil** » : le §20.2 en énumère **six**. Et les cinq variables de seuil de `.env.example` ne sont **consommées par personne** depuis le LOT 0 | Non — détecté avant d'inventer une valeur | **Clos** pour la fiche, **signalé** pour les variables |
+| `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
 
-**Prochain identifiant libre : `ECART-035`.**
+**Prochain identifiant libre : `ECART-036`.**
 
 ---
 
@@ -493,4 +494,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-035`.**
+## `ECART-035` — Le critère de `US006` nomme un objet que le modèle ne déclare pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 22 août 2026, LOT 3 sous-étape `T9`, en ouvrant la révocation au départ |
+| Source | Backlog, `MVP-L03-US006` : « L'archivage d'un collaborateur invalide sessions, **invitations** et futurs magic links dans la même action métier » |
+| Constat | **`invitation` n'existe pas comme objet de données.** Mesure : **0** occurrence dans `MODELE_DONNEES_EXALT.md`, **0** dans `MATRICE_ROLES_PERMISSIONS_EXALT.md`. Le cahier le nomme **quatre** fois, et jamais comme entité :<br>• §10.11, objet **audité** — « Sont notamment audités : … invitations » ;<br>• §18.6, opération **idempotente** — donc `async_job`, **LOT 11**, `DEC-532` ;<br>• §16.4 et §29, tâche planifiée d'**expiration** — « expiration des invitations et sessions ».<br>Aucun champ, aucun cycle de vie, aucune table. **Il n'y a rien à invalider.** |
+| Impact | **Aucun sur le livrable, et c'est le point.** Les deux autres objets du critère — sessions et futurs magic links — existent et sont traités. Inventer une table `invitation` aurait été §6.5, et **pire** : elle entrerait en collision avec ce que le LOT 9 construira réellement, exactement le piège que `DEC-532` a évité en refusant une seconde clé d'idempotence.<br>L'impact porte sur la **lecture du critère** : un relecteur du backlog conclurait à un critère non satisfait alors qu'il l'est au sens de ce qui existe. |
+| Cause | **Un critère écrit avant le modèle, et jamais reconfronté à lui.** `US006` énumère trois objets ; le modèle §10 n'en déclare que deux. Même famille que `ECART-032` — le backlog interdit plus large que ses trois sources — et que `ECART-034`, où une fiche annonçait une décision déjà prise. **Un document dérivé peut prescrire autre chose que sa source dès sa rédaction.**<br>**Et le critère de `US006` diverge d'une seconde façon**, qui n'est pas cet écart mais l'éclaire : il attache la révocation à l'**archivage**, quand le §30.22 l'attache au **départ** et que le §7.4 écrit « immédiatement ». Le §24.1 tranche — il n'existe aucune transition `Active --> Archived` — et `DEC-535` applique les deux. |
+| Bloquant | Non. Le livrable traite tout ce qui existe, et le §30.22 devient acquis |
+| Recommandation | **Ne pas créer de table `invitation`**, et le dire à l'endroit où quelqu'un cherchera : le module de service le porte en tête, et ce registre le trace. **À reprendre au LOT 9**, où le back-office créera les invitations : c'est là que « l'archivage invalide les invitations » deviendra applicable, et la révocation de `T9` devra alors recevoir une ligne de plus. Le rappel est écrit au §9 du compte rendu de `T9`.<br>**À annoncer à la porte `G3`**, pour qu'un relecteur de `US006` ne conclue pas à un critère manquant. |
+| Résolution | **Ouvert.** Aucune correction du backlog : il est **immuable** (§3). Le compte rendu de `T9` §1 dit explicitement lequel des trois objets n'existe pas et pourquoi il n'est pas inventé. |
+
+---
+
+**Prochain identifiant libre : `ECART-036`.**

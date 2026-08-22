@@ -79,6 +79,19 @@ MOTIF_SESSION_REFUSEE = "session_refusee"
 #  precisement ce que cette colonne permet.
 REVOCATION_DECONNEXION = "deconnexion"
 
+#  LOT 3, `T9`. **DEUX RAISONS ET NON UNE, PARCE QUE LA DISTINCTION EST
+#  EXPLOITABLE.** `T6` avait ecrit ici que « `T9` devra distinguer une
+#  deconnexion volontaire d'une revocation administrative » : le §10.4 declare
+#  `revoke_reason` justement pour cela, et un operateur qui lit `auth_event` doit
+#  pouvoir dire si la personne s'est deconnectee ou si son depart l'a fait.
+#
+#  Le §7.4 nomme DEUX causes -- « lors d'un depart **ou retrait d'acces** ». Seule
+#  la premiere est realisee par `T9` ; la seconde suppose un ecran de gestion des
+#  roles, qui n'existe pas. Le nom est donc pose sans etre employe, plutot que de
+#  faire passer un retrait d'acces pour un depart.
+REVOCATION_DEPART = "depart"
+REVOCATION_RETRAIT_D_ACCES = "retrait_d_acces"
+
 
 @dataclasses.dataclass(frozen=True)
 class Session:
@@ -150,6 +163,67 @@ def ouvrir_une_session(
         },
     ).scalar_one()
     return jeton, uuid.UUID(str(identifiant))
+
+
+def revoquer_toutes_les_sessions(
+    connexion: Connection,
+    *,
+    personne: uuid.UUID,
+    instant: dt.datetime,
+    raison: str,
+    empreinte_origine: str | None = None,
+) -> int:
+    """Revoquer TOUTES les sessions actives d'une personne. Rend leur nombre.
+
+    LOT 3, `T9`, story `MVP-L03-US006`.
+
+    **UN SEUL `UPDATE … RETURNING`, ET C'EST LE MEME MOTIF QUE `revoquer`.**
+    Lire les sessions puis les revoquer une a une laisserait une session ouverte
+    entre la lecture et l'ecriture : elle survivrait au depart. La clause `WHERE`
+    porte toutes les conditions, et les identifiants rendus sont exactement ceux
+    qui ont ete revoques -- **pas ceux qu'on croyait devoir revoquer**.
+
+    **UN EVENEMENT PAR SESSION, ET NON UN SEUL POUR LE LOT.** Le §10.6 declare
+    « session revoquee » au singulier : l'audit doit pouvoir dire combien de
+    sessions ont ete fermees et lesquelles. Un evenement global perdrait le
+    compte, et `T12` auditera cet evenement.
+
+    Elle n'efface rien : le §10.4 declare `revoked_at` et `revoke_reason`, donc la
+    trace du **quand** et du **pourquoi** est ce qui est demande.
+
+    Args:
+        raison: `REVOCATION_DEPART` ou `REVOCATION_RETRAIT_D_ACCES`. Le defaut est
+            volontairement absent : une revocation en masse sans motif serait
+            illisible dans l'audit.
+    """
+    revoquees = connexion.execute(
+        text(
+            "UPDATE user_session SET revoked_at = :instant, revoke_reason = :raison "
+            "WHERE person_id = :personne AND revoked_at IS NULL "
+            "RETURNING id"
+        ),
+        {"instant": instant, "raison": raison, "personne": personne},
+    ).fetchall()
+
+    for _ in revoquees:
+        connexion.execute(
+            text(
+                "INSERT INTO auth_event "
+                "(event_type, occurred_at, person_id, request_origin_hash, detail) "
+                "VALUES (:type_evenement, :instant, :personne, :origine, :detail)"
+            ),
+            {
+                "type_evenement": TypeEvenementAuth.SESSION_REVOKED.value,
+                "instant": instant,
+                "personne": personne,
+                "origine": empreinte_origine,
+                #  Le motif, jamais l'empreinte de session : le §28.2 ne veut pas
+                #  d'empreinte de jeton dans un journal, et l'audit n'en a pas
+                #  besoin pour dire ce qui s'est passe.
+                "detail": raison,
+            },
+        )
+    return len(revoquees)
 
 
 def lire_et_rafraichir(
