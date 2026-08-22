@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 22 août 2026, sous-étape `T10` du LOT 3
+**Dernière mise à jour :** 22 août 2026, sous-étape `T11` du LOT 3
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -45,6 +45,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 3 `DEC-533+`, sous-étape `T8`** | 2 | **Validées le 21/08/2026** |
 | **Réalisation du LOT 3 `DEC-535`, sous-étape `T9`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-536`, sous-étape `T10`** | 1 | **Validée le 22/08/2026** |
+| **Réalisation du LOT 3 `DEC-537`, sous-étape `T11`** | 1 | **Validée le 22/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -56,7 +57,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **204** | |
+| **Total** | **205** | |
 
 ---
 
@@ -574,7 +575,9 @@ ne l'a pas encore placée**.
 
 | `DEC-536` | **Comptes de service : plafond de 90 jours CONFIGURABLE, scopes valides par leur FORME, et l'audit passe par les deux types d'événement qui existent.** **(a)** `SERVICE_TOKEN_MAX_DAYS=90`, **`QO-072` close par arbitrage de Jonathan**. C'est un **plafond** : demander davantage **lève**, aucune durée n'est écrêtée. **(b)** Les **cinq** scopes du §22 sont le vocabulaire connu, et la validation porte sur la **forme** `domaine:action`, pas sur l'appartenance. **(c)** `couvre` est une **égalité exacte** : aucun joker, aucune hiérarchie. **(d)** `auth_event` reçoit `service_account_id` (migration `0013`, `ECART-037`), et les événements employés sont `LOGIN_SUCCESS` et `LOGIN_FAILURE` — **aucun huitième type**. **(e)** Un seul `UPDATE … RETURNING` pose `last_used_at` **et** vérifie la validité ; l'état du compte est vérifié **après**. **(f)** Le transport est `Authorization: Bearer`, dérivation déclarée, et le refus est **403** avec un gabarit unique pour **cinq** causes. **(g)** Aucune route ne consomme encore le scope, et c'est **nommé**. | **(a) LE CAHIER DEMANDE EXPRESSÉMENT QUE CETTE VALEUR SOIT CONFIGURABLE** — §10.5, « la durée maximale des jetons reste **configurable** avant leur création réelle » — et c'est **l'inverse** des seuils de débit du §20.2, que `DEC-533` a posés en constantes précisément parce que le cahier les écrit et que les rendre réglables inviterait à les abaisser. Ici le cahier demande le contraire, et la lire depuis l'environnement est donc la lecture juste. **Écrêter en silence** aurait été le piège : un appelant qui croit avoir obtenu un an et qui en a quatre-vingt-dix jours se fera surprendre en production. **(b) LA FICHE DISAIT QU'AUCUN DOCUMENT N'ÉNUMÉRAIT LES SCOPES** — `ECART-036`, et c'est la classe de `ECART-034` : le §22 en donne cinq. **Mais les deux mots « par exemple » disent que la liste n'est pas fermée**, exactement comme le « à prévoir **notamment** » du §25.1 où le LOT 2 a posé quatre unicités de plus. Une liste blanche fermée contredirait le cahier et bloquerait le LOT 9 — qui créera ses scopes d'import — et le LOT 11. **Le mode d'échec d'un scope mal orthographié est bruyant** : rien ne l'accorde, donc l'appel est **refusé**, ce qui est le « refus par défaut » du §20.1 et non un droit accordé par erreur. **(c)** Il serait tentant que `people:import` implique `people:read`. Le cahier n'écrit **aucune** hiérarchie, et en inventer une accorderait des droits que personne n'a accordés — ce que `RIGHTS-018` interdit : « scopes limités au besoin exact ». **(d) LE DIAGRAMME §11 DÉCLARE `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`**, et `T2` ne l'avait pas porté : ajouter la colonne **implémente** le modèle. Sans elle, « chaque appel est audité » exigerait un **huitième** type d'événement, or le §10.6 en déclare **sept** et `T12` auditera exactement ces sept. **(e)** Le §10.5 déclare « la dernière utilisation » et le critère dit « **chaque** appel » : une trace posée dans un second temps peut manquer, et lire puis écrire laisserait deux appels simultanés passer la lecture. **Sixième occurrence du compare-et-pose** après `T4`, `T5`, `T6`, `T7` et `T8`. **L'état du compte est vérifié APRÈS, et c'est le point délicat** : le mettre dans la clause `WHERE` aurait été plus court et aurait **perdu `last_used_at`** — or un compte désactivé qu'on continue de solliciter est exactement ce qu'un opérateur veut voir. **Et le refus d'un jeton périmé ou révoqué est ATTRIBUÉ à son compte**, par une seconde lecture sur le seul chemin de refus : c'est un correctif, et c'est **mon propre contrôle qui l'a trouvé** en comptant deux événements attribués au lieu de trois. Un refus anonyme n'audite rien d'utile. **(f)** Le corpus ne dit **pas** comment un jeton est présenté ; `Bearer` est ce que le standard réserve à ce cas, comme `429` en `T8` et `403` plutôt que `401` en `T7`. Et **le jeton ne voyage jamais dans l'URL** : une chaîne de requête finit dans l'historique, dans un `Referer` et dans tout journal de mandataire. **(g) AUCUN DOCUMENT N'ÉNUMÈRE LES ROUTES** qu'un compte de service peut appeler, et aucune route métier n'existe — le portail est le LOT 4. En inventer une pour « avoir quelque chose à montrer » serait §6.5, et créerait une surface à maintenir pour rien. Le mécanisme est livré et prouvé ; son premier consommateur viendra avec la première route métier. **Même parti que `T7` pour le CSRF.** | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-537`.**
+| `DEC-537` | **React Router est installé à `T11`, et les quatre autres bibliothèques du §17.1 restent hors du dépôt.** **(a)** `react-router` **8.3**, en `BrowserRouter`. **(b)** Les huit écrans sont déclarés dans **`routes.ts`**, source unique lue par le routeur, les tests et le contrôle, avec le **libellé exact du cahier** pour chacun. **(c)** Le fourre-tout rend la page `404` **sans rediriger**. **(d)** Aucune couleur hors des jetons de `packages/ui`, vérifié **commentaires retirés**. **(e)** `make ecrans-check`, 7 contrôles. | **(a) `DEC-456` NE L'INSTALLAIT PAS « FAUTE D'USAGE AVANT LE LOT 4 », ET `T11` CRÉE CET USAGE** une étape plus tôt : les huit écrans d'authentification appartiennent au LOT 3. La condition de `DEC-456` est donc remplie, et le cahier **§17.1 nomme React Router** dans sa pile — écrire un routeur maison serait ignorer ce qui **est** décidé, ce qui est le §6.5 à l'envers. **Les quatre autres restent dehors, et c'est le même raisonnement appliqué honnêtement** : deux formulaires de deux champs n'ont pas d'usage pour React Hook Form ni Zod — l'API est de toute façon « l'autorité finale » sur la validation, règle 5 — trois mutations ponctuelles n'ont pas d'usage pour TanStack Query, et aucun composant complexe n'appelle Radix UI. Les installer serait exactement la « surface d'audit de dépendances sans contrepartie » que `DEC-456` refuse, et `make audit` est à **zéro avis, zéro tolérance** depuis `DEC-493`. **`BrowserRouter` et non `HashRouter`** : les liens de magic link sont des URL réelles envoyées par courriel, et une ancre `#` n'atteindrait jamais le serveur. **(b)** Une liste recopiée vieillit au premier ajout — §7.27, six occurrences dans ce lot — donc le contrôle **relit le cahier** et exige que chaque libellé y figure **mot pour mot** : une reformulation « qui veut dire la même chose » ne serait pas vérifiable. Le compte lui-même est **dérivé** : six puces dont la dernière nomme trois pages, soit 5 + 3 = **huit**. **(c)** Rediriger vers `/404` changerait l'URL et ferait perdre à l'utilisateur l'adresse qu'il avait suivie — or c'est la seule information utile pour comprendre son erreur. **(d)** Les jetons sont **recalculés** contre WCAG 2.2 AA par `jetons.test.ts` (`DEC-491`) : écrire un hexadécimal dans la feuille contournerait cette mesure. Le contrôle **retire les commentaires** avant d'examiner, parce que le commentaire de tête cite un hexadécimal pour expliquer pourquoi on ne l'écrit pas — c'est le défaut de `T11` du LOT 2, un garde-fou qui se déclenchait sur le commentaire énonçant sa propre règle. **(e) LE CONTRÔLE EXERCE POUR LA PREMIÈRE FOIS LE REPLI `try_files`** du `Caddyfile.execution`, posé en `T7` du LOT 1 qui l'anticipait mais **n'avait jamais eu de chemin à replier** — §7.16. Et le **type MIME** fait foi, jamais le code : Vite rend 200 + `index.html` pour tout chemin inconnu (§7.10), donc un 200 seul ne prouverait rien. Il vérifie enfin que `/api/*` **ne reçoit pas** l'artefact statique : un repli qui déborderait sur l'API répondrait 200 à sa place, ce que `DEC-470` interdit. | Validée par Jonathan le 22/08/2026 |
+
+**Prochain identifiant libre : `DEC-538`.**
 
 ---
 
@@ -761,6 +764,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-533+` — réalisation du LOT 3, `T8` | 2 | 2 |
 | `DEC-535` — réalisation du LOT 3, `T9` | 1 | 1 |
 | `DEC-536` — réalisation du LOT 3, `T10` | 1 | 1 |
+| `DEC-537` — réalisation du LOT 3, `T11` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -772,7 +776,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **204** | **204** |
+| **Total** | **205** | **205** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

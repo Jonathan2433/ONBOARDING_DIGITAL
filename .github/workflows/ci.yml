@@ -309,6 +309,20 @@ jobs:
         # produit un echec dont le message ne nomme pas la cause.
         run: make service-check
 
+      - name: Les huit ecrans d'authentification, a travers Caddy en HTTPS
+        # LOT 3, T11. Sept controles, et le plus utile est le quatrieme : il
+        # EXERCE pour la premiere fois le repli `try_files` du `Caddyfile`, pose
+        # en T7 du LOT 1 qui l'anticipait mais n'avait jamais eu de chemin a
+        # replier. C'est le §7.16 — ce qui n'a jamais tourne n'est pas eprouve.
+        #
+        # Le TYPE MIME fait foi, jamais le code : Vite rend 200 + index.html pour
+        # tout chemin inconnu (§7.10), donc un 200 seul ne prouverait rien.
+        #
+        # Et il verifie que `/api/*` NE recoit PAS l'artefact statique : un repli
+        # SPA qui deborderait sur l'API repondrait 200 a sa place, ce que
+        # `DEC-470` interdit.
+        run: make ecrans-check
+
       - name: 5 · Tests d'integration PostgreSQL, Redis et MinIO
         run: make test-integration
 
