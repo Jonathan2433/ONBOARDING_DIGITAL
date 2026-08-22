@@ -25,7 +25,7 @@ chaque grandeur est accompagnée de la commande qui la produit.
 | ☑ | aucune adresse absente de la base ne peut se connecter | **acquis** | `make magic-link-check` — **15 contrôles**. La réponse est **identique** corps, code et en-têtes, connue ou non, et `make ecrans-check` prouve que **l'interface ne la défait pas** |
 | ☑ | les magic links ne figurent pas dans les logs | **acquis** | `make magic-link-check` dans `api` **et** `caddy`, l'absence de journal d'accès Caddy étant **gardée** (`DEC-525`). `make evenements-check` le revérifie sur les **valeurs** en base et en journal, **avec témoin** |
 | ☑ | les limites de débit produisent les résultats attendus | **acquis** | `make debit-check` — **12 contrôles, 3 témoins**, et les **deux** refus (adresse connue, inconnue) comparés **corps et en-têtes** |
-| ☐ | **Jonathan valide l'authentification** | **à décider** | ce document |
+| ☑ | **Jonathan valide l'authentification** | **VALIDÉ le 22/08/2026** | décision de Jonathan, tracée par `DEC-540` |
 
 ---
 
@@ -159,8 +159,8 @@ dit de ne rien pousser vers l'extérieur sans ton accord. Tu l'as donné le 22/0
 
 | | |
 |---|---|
-| ☐ | **Je valide le LOT 3.** Le tag `v0.3.0` peut être posé sur `main`, et le LOT 4 peut être ouvert |
-| ☐ | Je demande des corrections avant de valider — lesquelles : … |
+| ☑ | **Je valide le LOT 3.** — **décision de Jonathan du 22/08/2026**, tracée par `DEC-540` |
+| ~~☐~~ | ~~Je demande des corrections avant de valider~~ — sans objet |
 
 **Si tu valides**, la suite est :
 

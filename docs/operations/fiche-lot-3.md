@@ -4,7 +4,7 @@
 **Ouvert par Jonathan le :** 20 août 2026 — décision `DEC-518`
 **Rédigée le :** 20 août 2026, à la sortie de la porte `G2`
 **Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 20/08/2026** — « tout me convient »
-**Avancement :** **les DOUZE sous-étapes sont terminées.** La porte `G3` attend la décision de Jonathan
+**Avancement :** **LOT TERMINÉ.** Les douze sous-étapes, la porte **`G3` franchie le 22/08/2026** (`DEC-540`), tag `v0.3.0`
 **Traçabilité GitHub :** epic `#62`, jalon `G3`, huit stories `#63` à `#70`
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
@@ -181,7 +181,7 @@ Elles seront instruites à leur sous-étape, et **rien ne sera inventé** — §
 | ☑ | aucune adresse absente de la base ne peut se connecter | **`T3`, acquis le 21/08/2026** — et la réponse ne le révèle pas |
 | ☑ | **les magic links ne figurent pas dans les logs** | **`T4`, acquis le 21/08/2026** — dans `api` ET dans `caddy`, et l'absence de journal d'accès Caddy est **gardée** par un contrôle (`DEC-525`) |
 | ☑ | **les limites de débit produisent les résultats attendus** | **`T8`, acquis le 21/08/2026** — `make debit-check` : **12 contrôles, 0 échec**, à travers Caddy en HTTPS, avec **trois témoins** ; et les **deux** refus — adresse connue, adresse inconnue — sont comparés corps et en-têtes (`DEC-533`) |
-| ☐ | **Jonathan valide l'authentification** | **la porte.** Tout est prouvé et remis : [`checklist-validation-G3.md`](checklist-validation-G3.md) — six critères, onze contrôles, une démonstration guidée en sept gestes, et **un point qui demande son accord** parce qu'il pousse vers GHCR |
+| ☑ | **Jonathan valide l'authentification** | **VALIDÉ le 22/08/2026**, `DEC-540`. Le point qui demandait son accord — republier vers GHCR pour réépingler la recette — a été **accordé et fait** : `DEC-539`, et l'API de recette se connecte désormais avec le rôle d'**exécution**, mesuré |
 
 Et les critères du backlog : les **sept** `P0` sont `Done`, la `P1` est terminée **ou** a fait l'objet
 d'un arbitrage explicite, la démonstration est présentée, et Jonathan valide **explicitement** `G3`.

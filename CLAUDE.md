@@ -2,15 +2,15 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 21 août 2026, à la sortie de **`T2` du LOT 3**
-**Destinataire :** l'agent qui prend le relais pour **`T3` du LOT 3**
+**Mis à jour le :** 22 août 2026, au **franchissement de la porte `G3`**
+**Destinataire :** l'agent qui prend le relais pour le **LOT 4 — portail et accueil**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
 connaître**, **les erreurs à ne plus commettre**, et **par où commencer**. Lis-le en entier avant
 d'agir.
 
-> **TOUS LES NOMBRES DE CE DOCUMENT ONT ÉTÉ DÉRIVÉS LE 21/08/2026, PAS RECOPIÉS.** C'est la classe
+> **TOUS LES NOMBRES DE CE DOCUMENT ONT ÉTÉ DÉRIVÉS LE 22/08/2026, PAS RECOPIÉS.** C'est la classe
 > d'erreur la plus fréquente du projet — `ECART-021`, rejouée une douzaine de fois. Chaque grandeur
 > est accompagnée de la commande qui la produit. **Recompte avant de réutiliser.**
 
@@ -20,23 +20,23 @@ d'agir.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08/2026, tag `v0.1.0`) · **LOT 2** (`G2`, 20/08/2026, `DEC-517`, tag `v0.2.0`) |
-| **Lot en cours** | **LOT 3 — Authentification, sessions et sécurité applicative.** Ouvert le 20/08/2026 (`DEC-518`), découpage **validé le même jour**. Porte `G3`, tag `v0.3.0` prévu. Plan : [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md) |
-| Sous-étapes faites | **LOT 3 : `T1` et `T2`.** `T3` à `T12` restantes |
-| **Prochaine action** | **`T3` — la demande de magic link**, issue `#63` (`US001`). Son critère est une **ÉGALITÉ** : la réponse doit être identique pour une adresse connue et inconnue. **Compare le corps ET les en-têtes**, pas le seul code HTTP. Voir §9.2 |
-| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8, toutes les issues closes** · LOT 3 : **0 sur 8** |
+| Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `DEC-517`, `v0.2.0`) · **LOT 3** (`G3`, **22/08/2026**, `DEC-540`, **`v0.3.0`**) |
+| **Lot en cours** | **AUCUN.** Le LOT 4 — portail et accueil — **n'est pas ouvert** : son ouverture est la décision de Jonathan (`ROAD-003`). N'écris pas une ligne qui lui appartienne |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`) et la porte (`DEC-540`) |
+| **Prochaine action** | **attendre que Jonathan ouvre le LOT 4.** Puis lire [`ROADMAP_MVP_V1_V2_EXALT.md`](docs/product/ROADMAP_MVP_V1_V2_EXALT.md) §LOT 4, proposer un découpage en douze sous-étapes, et **le faire valider avant d'écrire du code** |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
-| Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. Tête de `develop` au 21/08 : `39a2c0d` |
-| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`) |
-| **Tests** | **531** : **415 pytest** — dont **237 d'intégration** — et **116 Vitest** (90 `ui`, 25 `web`, 1 `contracts`) |
-| Schéma PostgreSQL | **25 tables métier**, 375 colonnes, **127 contraintes**, **109 index**, **8 déclencheurs**, **10 exclusions**, **37 clés étrangères**, **12 migrations**, tête `0012` |
+| Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
+| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
+| **Tests** | **794** : **661 pytest** — dont **390 d'intégration** — et **133 Vitest** (90 `ui`, **42 `web`**, 1 `contracts`) |
+| Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~2 min de qualité + ~3 min 30 de stack |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **61 cibles** documentées. `make help` fait foi |
-| `.env.example` | **v1.3**, **83 variables**, 83 noms distincts, **9 `CHANGE_ME`** |
-| Registres | **105 décisions** `DEC-418+` · **33 écarts** (**7 ouverts**) · **41 questions** (**32 ouvertes**) · 34 risques |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **15**. Presque tous dans mes propres contrôles |
+| Makefile | **75 cibles** documentées. `make help` fait foi |
+| `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
+| Registres | **122 décisions** `DEC-418+` · **37 écarts** (**8 ouverts**) · **42 questions** (**32 ouvertes**) · 34 risques. `make docs-check` **dérive** ces totaux |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -80,9 +80,10 @@ Toute modification passe par une branche et une pull request vers `develop`.
 # 2. Les règles qui ne se négocient pas
 
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
-   `ARB-BACK-003`, `BACKLOG-006`). Le LOT 1 est ouvert. **Le LOT 2 ne l'est pas** : n'écris pas
-   une ligne qui lui appartienne — ni table, ni modèle SQLAlchemy métier, ni type métier dans
-   `packages/contracts`.
+   `ARB-BACK-003`, `BACKLOG-006`). **AUCUN LOT N'EST OUVERT** au 22/08/2026 : les LOTS 0 à 3 sont
+   terminés, et l'ouverture du LOT 4 est **la décision de Jonathan**. N'écris pas une ligne qui
+   appartienne au LOT 4 — ni écran de portail, ni route métier, ni type métier dans
+   `packages/contracts` — avant qu'il ne l'ait ouvert **et validé le découpage**.
 2. **Aucun secret dans Git.** Ni fichier, ni message de commit, ni titre de branche, ni
    description de pull request.
 3. **Aucune donnée réelle de collaborateur versionnée.** Aucun CSV réel, aucune photo.
@@ -453,9 +454,9 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`521` en usage | **`DEC-522`** |
-| `ECART-nnn` | `001`–`033` | **`ECART-034`** |
-| `QO-nnn` | `072`–`117`, **5 trous** | **`QO-118`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`540` en usage | **`DEC-541`** |
+| `ECART-nnn` | `001`–`037` | **`ECART-038`** |
+| `QO-nnn` | `072`–`118`, **5 trous** | **`QO-119`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
@@ -838,7 +839,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**130 défauts consignés au 21/08/2026** : **71** au LOT 1, **44** au LOT 2, **15** au LOT 3, plus 7 au
+**172 défauts consignés au 22/08/2026** : **71** au LOT 1, **44** au LOT 2, **15** au LOT 3, plus 7 au
 LOT 0 et 3 en `T0`. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
 mes propres contrôles** — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.
 
@@ -1538,6 +1539,116 @@ propre — comme `T2-5`, où un Mailpit vide et un volume effacé rendaient tous
 
 ---
 
+---
+
+## 7.29 Un document peut annoncer une décision À PRENDRE alors qu'elle est déjà prise
+
+**Apport du LOT 3, et c'est l'inverse de l'avertissement habituel du §9.0.** Trois fois, le §8 de
+`fiche-lot-3.md` m'a annoncé qu'une valeur restait à choisir :
+
+| Ce que la fiche annonçait | Ce que le cahier dit |
+|---|---|
+| « le cahier exige une limitation, **sans donner de seuil** » | le §20.2 en donne **six**, et `.env.example` en porte cinq depuis le LOT 0 (`ECART-034`) |
+| « **aucun document n'énumère** » les scopes | le §22 en donne **cinq** (`ECART-036`) |
+| « durée maximale d'un jeton : à instruire » | la question portait **déjà** le numéro **`QO-072`** dans le cahier §32 |
+
+**Suivre la fiche aurait produit des valeurs inventées qui contredisent le cahier**, lequel prévaut
+sur tout. Et en ouvrir une nouvelle question aurait créé une collision de numéro.
+
+> **La règle, sans jargon :** quand un document te dit qu'il te reste une décision à prendre,
+> **cherche-la d'abord dans le cahier**. Le §9.0 t'apprenait à vérifier avant de bâtir sur une
+> affirmation ; celle-ci t'apprend à vérifier avant de **décider**.
+
+**Et une nuance qui compte, sinon on tombe dans l'erreur symétrique.** Le §22 énumère cinq scopes
+**« par exemple »**. Conclure « le cahier tranche, il suffit de recopier » aurait produit une liste
+blanche **fermée**, qui bloquerait le LOT 9. Même forme que le « à prévoir **notamment** » du §25.1.
+**Les deux erreurs sont symétriques, et la bonne lecture est entre elles.**
+
+---
+
+## 7.30 Quand une classe d'erreur résiste SEPT fois, change d'outil
+
+**Apport de `T12`, et c'est le §7.2 appliqué à une classe qui a résisté tout un lot.**
+
+Une seule classe s'est rejouée **sept fois** : un nettoyage de test incomplet laisse un résidu, et le
+résidu fait échouer des tests **sans rapport**. `T3-3`, `T4-3`, `T4-5`, `T5-5`, `T6-2`, les six
+défauts de décor de `T9`, et `T10-2`.
+
+**La septième est celle qui décide** : j'avais écrit la leçon dans le compte rendu de `T9` — « la
+trace d'un refus sans acteur échappe à tout nettoyage par identité » — et je l'ai **recommise en
+`T10`**. Une huitième promesse de vigilance ne valait rien.
+
+**`make residu-check`** compare un **avant/après table par table**, la liste des tables **dérivée du
+catalogue**, et il **remplace** `make test-integration` dans la CI. Il nomme la table et l'écart.
+
+> **Et la mesure devait être EXACTE, pas heuristique.** Chercher des marqueurs — `t3api`, `%.test` —
+> aurait été une **liste** qui vieillit au premier ajout **et** une heuristique dans un contrôle, ce
+> que le §7.25 nomme un défaut. Un avant/après ne suppose rien de ce qui est « du test », et il
+> fonctionne aussi bien sur une base vide que sur le jeu de recette de 27 936 lignes.
+
+---
+
+## 7.31 Un garde-fou peut être exact pour un mode de défaillance et AVEUGLE à un autre
+
+**Apport de `T12`, et c'est le §7.0 quatrième proposition appliqué à un garde-fou qui existait déjà.**
+
+Quatre fichiers ont été **remis à une version antérieure** sans aucune action de session — même mtime
+**à la seconde** sur les quatre, signature d'une réécriture en lot. **`make icloud-verify` est passé
+au vert.**
+
+Il ne cherchait que les copies de conflit `* [0-9]` : **exact** pour ce mode de défaillance,
+**aveugle** à celui-ci — un fichier silencieusement réverté ne laisse aucune copie. Il donnait donc
+l'impression de couvrir iCloud tout en ne prouvant rien de cette classe.
+
+**Le remède a été d'ÉTENDRE le garde-fou existant, non d'en ajouter un parallèle** : la routine du
+§11 reste inchangée, et personne n'a une habitude de plus à prendre. Il compare l'**arbre** de `HEAD`
+à celui de l'amont et échoue si les deux sont identiques **alors que des fichiers sont modifiés** —
+combinaison qui n'a pas d'autre cause plausible.
+
+> **La règle, sans jargon :** quand un garde-fou passe au vert sur un problème réel, ne conclus pas
+> qu'il est cassé — demande-toi **quel mode de défaillance il couvre**, et lequel il ne voit pas. Un
+> garde-fou nommé « vérifie iCloud » ne vérifie que ce qu'il regarde.
+
+---
+
+## 7.32 N'écris pas de défense contre un état que la base interdit — exige qu'elle l'interdise
+
+**Apport de `T9`.** J'avais codé une garde : ne pas révoquer les sessions si la personne garde une
+appartenance active ailleurs. **Cet état est impossible** —
+`uq_entity_membership_person_id_occupante` est un index unique **partiel sur `person_id` seul**.
+
+La garde était du code mort, et **un champ de rapport qui ne peut jamais être vrai apprend à ne pas le
+lire** — c'est le §7.21 dans un autre costume.
+
+**Elle a été remplacée par un test qui exige que la base continue de l'interdire**, sur le **nom** de
+la contrainte violée. Si un lot ultérieur relâchait cet index, ce test échouerait — **et celui qui le
+relâche saurait qu'il doit relire la révocation.** Un test est un meilleur véhicule qu'un commentaire.
+
+---
+
+## 7.33 Un délai n'est pas une borne si la bibliothèque REPREND
+
+**Apport de `T8-7`, et il a bloqué l'intégration continue.**
+
+`socket_connect_timeout=1` avait l'air de borner l'attente. **redis-py 8 applique par défaut dix
+reprises** : le délai vaut pour **chaque** tentative, et le total mesure **4,06 s** sur un port fermé,
+contre 0,003 s avec la reprise bornée.
+
+| Conséquence | Où |
+|---|---|
+| **quatre secondes par requête** | sur le chemin d'une requête, le « refus par défaut » du §20.1 ne vaut que s'il est **rapide** — sinon une panne de Redis devient un vecteur de saturation |
+| **plus de quarante minutes** | la tâche « qualité » de la CI n'a pas de stack, et une fixture payait ce prix **deux fois par test** |
+
+> **C'est la sixième proposition du §7.0 sous un autre jour** : *un contrôle qui compare deux nombres
+> doit prouver qu'ils mesurent la même grandeur.* « Délai de connexion » et « attente totale » sont
+> deux grandeurs différentes, d'un **facteur dix**.
+
+**Et une leçon de méthode, désagréable.** J'avais formé cette hypothèse plus tôt, puis je l'avais
+**réfutée** — en mesurant les **descripteurs de fichier** au lieu du **temps**. La mesure était juste,
+la question était fausse. *Réfuter une hypothèse exige de mesurer la grandeur qu'elle prédit, pas une
+grandeur voisine.*
+
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **7 ouverts sur 33**
@@ -1599,110 +1710,97 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : `T3` du LOT 3, la demande de magic link
+# 9. Par où commencer : le LOT 4 n'est pas ouvert
 
-## 9.0 Ce que les sous-étapes ont démenti, et ce qu'il faut en retenir
+## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
-**Ce document a affirmé faux une dizaine de fois, et chaque fois c'était une affirmation jamais
-mesurée.** La liste s'allonge par des voies différentes, et c'est cela qui compte :
+**Ce document, les fiches de lot et le backlog ont affirmé faux une vingtaine de fois**, et chaque
+fois c'était une affirmation **jamais mesurée**. La liste s'allonge par des voies différentes, et
+c'est cela qui compte :
 
-- **une FICHE de lot** — six séparations énumérées là où le cahier en compte sept (`ECART-023`) ;
-- **des CONTRÔLES du dépôt** — justes quand ils ont été écrits, rendus faux par un second
-  environnement (`ECART-024`), par un avertissement de Compose (`ECART-033`), ou par nos propres
-  ajouts (§7.27) ;
-- **une MESURE antérieure** — un avis de sécurité « sans correctif » en avait reçu un, en un jour ;
-- **une leçon FRAÎCHEMENT écrite** : `T12` du LOT 2 a commis le §7.25 que `T11` venait de rédiger, et
-  `T2` du LOT 3 l'a commis à son tour. **Un piège documenté n'est pas un piège désarmé** — c'est la
-  quatrième fois que cette phrase s'applique ;
-- **une lecture de `git`** — `git rev-list --left-right --count` répond à une autre question que celle
-  qu'on croit poser. Ce qui fait foi est l'**arbre** ;
-- **mon propre avertissement** : j'ai dit à Jonathan qu'un `docker login` était requis. Il était déjà
-  fait. **Mesure avant de signaler, pas seulement avant d'agir.**
+- **une FICHE de lot**, six fois. Six séparations là où le cahier en compte sept (`ECART-023`) ; « le
+  cahier exige une limitation **sans donner de seuil** » alors que le §20.2 en donne six
+  (`ECART-034`) ; « **aucun document n'énumère** les scopes » alors que le §22 en donne cinq
+  (`ECART-036`) ; une question à ouvrir qui portait **déjà** le numéro `QO-072` ; et trois lignes du
+  §30 annonçant des reclassements **déjà faits** ou dus à un autre lot. **Le §8 de `fiche-lot-3.md` a
+  été faux trois fois sur quatre.**
+- **le BACKLOG** — `US006` exige d'invalider les **invitations**, qui n'existent nulle part dans le
+  modèle (`ECART-035`) ; `US005` attache la révocation à l'archivage quand le §24.1 n'a **aucune**
+  transition `Active --> Archived` ;
+- **le MODÈLE** — son diagramme §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT`, et la table posée
+  par `T2` ne portait pas ce lien (`ECART-037`) ;
+- **des CONTRÔLES du dépôt**, justes quand ils ont été écrits et rendus faux par un second
+  environnement, par un avertissement de Compose, ou par nos propres ajouts ;
+- **un GARDE-FOU qui passait au vert sur un vrai problème** : `make icloud-verify` ne cherchait que
+  les copies de conflit, et quatre fichiers ont été **remis à une version antérieure** sans qu'il ne
+  dise rien.
 
-**Vérifie avant de bâtir dessus — surtout quand ce document t'annonce que tu n'as rien à faire.**
+**Vérifie avant de bâtir dessus — surtout quand un document t'annonce qu'il te reste une décision à
+prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produit trois fois au LOT 3.
 
 ---
 
 ## 9.1 Où en est exactement le projet
 
-**Le LOT 3 est ouvert, son découpage est validé, et `T1` et `T2` sont faites.** Il reste **dix**
-sous-étapes.
+**Les LOTS 0 à 3 sont terminés.** `G3` a été franchie le 22/08/2026 (`DEC-540`), tag `v0.3.0`.
 
 | Fait | Ce que ça donne |
 |---|---|
-| `T1` | trois comptes PostgreSQL, `QO-116` **close**. Voir §5.9 — **lis-le avant toute requête** |
-| `T2` | les **sept** tables du §10, migration `0012`, et `make secrets-check` |
+| LOT 3 | l'authentification complète : magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service, **et les huit écrans** |
+| Recette | **réépinglée** sur les images de `3bc68b9`, et son API se connecte enfin avec le rôle d'**exécution** — `DEC-539`, mesuré |
+| Contrôles | **onze** contrôles de stack, tous dans la CI, chacun portant ses témoins |
 
-**Rien n'attend de décision de Jonathan.** `T3` peut commencer.
+**Rien n'attend de décision technique.** Ce qui attend est **l'ouverture du LOT 4 par Jonathan**.
 
 ---
 
-## 9.2 `T3` — ce qu'elle doit faire, et les quatre pièges connus
+## 9.2 Ce qu'il faudra faire quand il l'ouvrira
 
-**Story `MVP-L03-US001`, issue `#63`.** Critère du backlog : « la réponse est **générique** ; seuls les
-profils actifs et autorisés reçoivent un lien ; Mailpit capte le message en recette ».
+1. **Lire la roadmap §LOT 4** — portail et accueil — et le backlog `MVP-L04`. **Compter les stories
+   et les interfaces sur ces documents, jamais sur une fiche** : c'est la leçon la plus chère du
+   LOT 3.
+2. **Proposer un découpage en douze sous-étapes**, comme les LOTS 2 et 3, et **le faire valider avant
+   d'écrire une ligne**. Le LOT 3 l'a été le jour de son ouverture.
+3. **Vérifier les quatre points du §8 de la future fiche** contre le cahier **avant** d'instruire
+   quoi que ce soit. Trois fois sur quatre au LOT 3, la décision était déjà prise ailleurs.
 
-| Piège | Ce qu'il faut faire |
+**Et trois choses livrées au LOT 3 attendent leur premier consommateur** — le LOT 4 les fournira :
+
+| Livré, sans consommateur | Où c'est |
 |---|---|
-| **le critère est une ÉGALITÉ, pas un refus** | comparer le **corps ET les en-têtes** de deux réponses — adresse connue, adresse inconnue. Un même code HTTP avec un corps différent trahirait l'existence du compte |
-| **l'index partiel refusera un second lien actif** | le service **doit** invalider le précédent avant d'insérer. Ce n'est pas une option : la base l'impose (`DEC-521`) |
-| **`§30.11` devient acquis** | « un profil archivé ne reçoit pas de magic link ». `make recette-modele-check` **échouera** tant que son classement n'aura pas été mis à jour avec le test qui le prouve |
-| **le jeton ne doit jamais paraître** | ni en journal, ni en audit, ni dans un message d'erreur. Les trois barrières de `packages/observabilite` doivent recevoir **le format que ce lot produit** — leçon `T4-1` : un test de filtre énumère les formes que **ce projet** produit, pas des exemples de documentation |
-
-**Et un cinquième, structurel :** le temps **s'injecte**, il ne s'attend pas. Un test qui dormirait
-15 minutes serait inutilisable en intégration continue.
+| la **dépendance de scope** des comptes de service | `apps/api/app/auth/dependances.py`, `exiger_un_scope` |
+| la **protection CSRF sur les routes métier** | `apps/api/app/auth/routes.py`, `_proteger_du_csrf` |
+| le **rafraîchissement de session** | `GET …/auth/session` est aujourd'hui la seule écriture n'exigeant pas de jeton — **résiduel nommé, à réexaminer au LOT 4** |
 
 ---
 
-## 9.3 Les dix sous-étapes restantes
-
-| | Sous-étape | Story |
-|:--:|---|---|
-| `T3` | magic link — la **demande**, réponse générique | `US001` |
-| `T4` | magic link — la **consommation**, usage unique, 15 min | `US002` |
-| `T5` | compte **administrateur local** — hachage, verrouillage. **Porte aussi la vérification « ESM ou super-administrateur »** que `T11` du LOT 2 a laissée | `US003` |
-| `T6` | **sessions** — `HttpOnly`, `Secure`, `SameSite`, 7 j / 30 j | `US004` |
-| `T7` | **CSRF** et idempotence | `US005` |
-| `T8` | **limitation de débit** | `US001`, `US003` |
-| `T9` | **révocation au départ** — rend `§30.22` acquis | `US006` |
-| `T10` | comptes de service et **scopes** | `US007` (`P1`) |
-| `T11` | les **huit écrans** d'authentification | — |
-| `T12` | **audit** des événements, recette et checklist `G3` | `US008` |
-
-**Quatre décisions que le corpus ne tranche pas**, à instruire à leur sous-étape **sans rien inventer**
-(§6.5) : l'algorithme de hachage (`T5`), les seuils de débit (`T8`), la durée maximale d'un jeton de
-service et la **liste des scopes** (`T10`).
-
----
-
-## 9.4 Ce qui reste ouvert, et qu'il faut savoir
+## 9.3 Ce qui reste ouvert, et qu'il faut savoir
 
 | Élément | Ce qu'il faut savoir |
 |---|---|
-| **`ECART-012`** | **Attend Léa.** Jonathan lui en parle **directement**, sans note — son choix du 20/08/2026. Échu **avant le LOT 5** |
+| **`ECART-012`** | **Attend Léa.** Jonathan lui en parle directement, sans note. Échu **avant le LOT 5** |
 | **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
-| **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut, le livrable est conforme |
-| **La recette n'est pas éprouvée sous le nouveau régime** | Elle exécute l'artefact **publié et épinglé par empreinte** (`DEC-486`), de révision antérieure à `T1`. Son API se connecte encore en superutilisateur, **mesuré**. Il faut republier puis `make images-pin`. **Avant `G3`**, avec `make separations-check` |
+| **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut |
+| **`ECART-035`** | **Les invitations n'existent pas** dans le modèle. À reprendre au **LOT 9**, où le back-office les créera : la révocation de `T9` devra alors recevoir une ligne de plus |
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
-| **Row-Level Security** | Le §2.5 la cite comme « compatibilité future ». Rien ne la datant, elle n'est **pas** mise en place — et ce n'est pas un oubli |
-| **11 des 25 contrôles du §30** | Reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé |
-| `ROAD-RSK-033`, `ROAD-RSK-034` | 23 avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13** |
+| **`ROAD-RSK-033`, `034`** | 23 avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13** |
+| **11 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
 ---
 
-## 9.5 Ce que le LOT 3 ne doit pas faire
+## 9.4 Ce que le LOT 4 ne devra pas faire
 
-**Au-delà de son périmètre :** aucun écran ni route métier hors des **huit** pages d'authentification —
-le portail est le LOT 4, les collaborateurs le LOT 5 · aucune table d'un lot postérieur.
+**Au-delà de son périmètre :** aucune table d'un lot postérieur · aucun écran de collaborateur (LOT 5)
+ni de cercle (LOT 6) · aucun import CSV (LOT 9).
 
-**Les interdits absolus, qui ne dépendent d'aucun lot :** **aucun contournement de l'authentification**,
-à aucun moment, même en développement, même « le temps d'un test » — règle 6 · **aucun jeton ni mot de
-passe en clair** en base, en journal, en audit ou dans un message d'erreur · **aucun jeton dans
-`localStorage`** · aucune donnée réelle de collaborateur · aucune modification d'une migration déjà
-appliquée ni des cinq documents de cadrage · aucune exposition de PostgreSQL, Redis, MinIO ou Mailpit
-ailleurs que sur `127.0.0.1` · aucune référence d'image par `latest` seul · ni Kubernetes, ni PWA, ni
-hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
+**Les interdits absolus, qui ne dépendent d'aucun lot :** **aucun contournement de
+l'authentification**, à aucun moment, même en développement · **aucun jeton ni mot de passe en clair**
+en base, en journal, en audit ou dans un message d'erreur · **aucun jeton dans `localStorage`** ·
+aucune donnée réelle de collaborateur · aucune modification d'une migration déjà appliquée ni des cinq
+documents de cadrage · aucune exposition de PostgreSQL, Redis, MinIO ou Mailpit ailleurs que sur
+`127.0.0.1` · aucune référence d'image par `latest` seul · ni Kubernetes, ni PWA, ni hors ligne, ni
+Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 
 ---
 
@@ -1804,36 +1902,42 @@ hors ligne, ni Entra ID, Graph, Teams ou MFA · aucune ligne du prototype histor
 ```bash
 export PATH="$HOME/.local/bin:$PATH"        # gh et uv n'y sont PAS par defaut
 git switch develop && git pull && git log --oneline -3 && git status -sb
-gh issue list --milestone G3 --state all
 
-make icloud-verify        # PAS une formalite : le risque s'est materialise, §7.1
-make env-check            # .env contre .env.example — 4 variables manquaient en T1
-make check                # qualite complete : docs-check, images-check,
-                          # recette-modele-check, format, lint, mypy strict, tests
-make audit                # pip-audit et pnpm audit, zero tolerance depuis DEC-493
+make icloud-verify        # PAS une formalite : il compare desormais l'ARBRE a l'amont,
+                          # et il a manque une reversion silencieuse de 4 fichiers. §7.31
+make env-check            # .env contre .env.example — une variable a manque a CHAQUE lot
+make check                # qualite complete, tests compris
+make audit                # zero avis, zero tolerance depuis DEC-493
 
-make up                   # les 8 services, le bucket MinIO, LES DEUX ROLES, et
-                          # recharge Caddy. Ordre impose par DEC-477 et DEC-520
+make up                   # les 8 services, le bucket MinIO, les DEUX roles, Caddy recharge
 make stack-check          # sante + ports
-make migrate              # rafraichit le code embarque, PUIS applique
-make api-check            # les 3 endpoints de sante
-make web-check            # la page vue comme un navigateur la voit
+make migrate              # rafraichit le code embarque EN DEV, applique, pose le domaine
+make api-check && make web-check
 
-# Les contrôles de schéma, tous dans la CI
-make privileges-check     # EXIGE une base migrée — il le dit s'il en manque
-make secrets-check        # 2 familles d'empreintes, ni mot de passe ni jeton en clair
-make isolation-check      # 8 clés composites, 0 référence nue
-make isolation-temoin     # le témoin : le contrôle sait-il ÉCHOUER ?
-make historisation-check  # les 7 relations du §25.2, compte dérivé du modèle
-make migrations-check     # base VIDE, chaîne rejouée, et le schéma COMPARÉ
-make recette-modele-check # les 25 contrôles du §30, classés
-make alembic-check        # une seule tête de migration
-make code-check           # le conteneur exécute-t-il le code du dépôt ?
+# Les ONZE controles d'authentification du LOT 3, tous dans la CI
+make magic-link-check     # 15 — la reponse est IDENTIQUE, connue ou non
+make admin-check          # 10 — le verrou se declenche, `admin-local` le leve
+make sessions-check       # 13 — les trois attributs du cookie, le jeton hors navigateur
+make sessions-temoin      #      le temoin, SANS stack — il est dans `make check`
+make csrf-check           # 10 — 5 ecritures refusees, une cle rejouee sans effet
+make debit-check          # 12 — les seuils du 20.2, les DEUX refus compares
+make revocation-check     #  6 — le depart revoque, et l'API rend 401, MESURE
+make service-check        # 11 — un jeton hors scope refuse, l'expiration effective
+make ecrans-check         #  7 — les 8 chemins servis, aucune couleur hors jetons
+make evenements-check     #  6 — les 7 evenements du 10.6, sans rien de sensible
+make residu-check         #      la suite d'integration, ET la preuve qu'elle ne laisse rien
+                          #      Il REMPLACE `make test-integration`, il ne s'y ajoute pas.
 
-# Si tu touches aux images : `images-check` est STATIQUE, elle ne lance RIEN.
-make images-build && make images-verify    # celle qui LANCE. Voir §7.28
+# Les controles de schema
+make privileges-check && make secrets-check && make isolation-check && make isolation-temoin
+make historisation-check && make migrations-check && make recette-modele-check
+make alembic-check && make code-check
 
-# Recette, sur les images PUBLIÉES. `docker login ghcr.io` déjà fait au 21/08.
+# Si tu touches aux images : `images-check` est STATIQUE, elle ne lance RIEN. §7.28
+make images-build && make images-verify
+
+# Recette, sur les images PUBLIEES et epinglees (DEC-539, revision 3bc68b9).
+# `make migrate ENVIRONNEMENT=recette` NE reconstruit rien : l'image est publiee. §7.21
 make up-recette && make recette-check && make separations-check && make down-recette
 ```
 
@@ -1841,28 +1945,29 @@ make up-recette && make recette-check && make separations-check && make down-rec
 
 ```bash
 gh run list --limit 5 && gh pr checks <numero>
-gh run list --workflow=images.yml --limit 3   # elle a été ROUGE une fois, §7.28
+gh run list --workflow=images.yml --limit 3
 ```
 
-Si Docker ne répond pas : `open -a Docker`, puis attendre. Il s'est arrêté seul une fois.
+Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier ;
+1. **ce document**, en entier — son §7 porte **33 leçons** payées par **172 défauts consignés** ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
-3. [`fiche-lot-3.md`](docs/operations/fiche-lot-3.md) §3 : la sous-étape en cours ;
-4. le **compte rendu de la sous-étape précédente** — `compte-rendu-t2-lot-3.md` — dont le §12 dit ce
-   qu'elle laisse à la suivante ;
-5. [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt, et **neuf
+3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
+   prouvé, et surtout **ce qu'il n'a pas fait** ;
+4. le **compte rendu de la dernière sous-étape** — `compte-rendu-t12-lot-3.md` — dont le §7 dit ce
+   qu'il laisse à la suite ;
+5. [`exploitation-locale.md`](docs/operations/exploitation-locale.md) : lancement, arrêt, et **quinze
    symptômes de diagnostic réellement rencontrés** ;
 6. **vérifier l'état réel** par `git`, `gh` et les mesures — **pas** par ce que la doc affirme (§9.0).
 
 **Contrôle d'hygiène, à tout moment :**
 
 ```bash
-git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # 3 attendus, nommés au §11 ci-dessous
+git ls-files | grep -Ei '\.(csv|env|pem|key|mp4|html)$'   # 3 attendus, nommes ci-dessous
 git ls-files | grep -c 'V1.html'                          # doit valoir 0
-git status --short                                        # doit être vide
+git status --short                                        # doit etre vide
 ```
 
 Le premier montre **trois** fichiers, et les trois sont légitimes :
@@ -1870,18 +1975,11 @@ Le premier montre **trois** fichiers, et les trois sont légitimes :
 | Fichier | Pourquoi il est là |
 |---|---|
 | `docs/architecture/donnees/exemples/collaborateurs-exemple-fictif.csv` | explicitement **fictif**, LOT 0 |
-| `apps/web/index.html` | point d'entrée **imposé par Vite** depuis `T5`. `.gitignore` ne vise que `docs/prototype/V1.html`, jamais `*.html` |
-| `infra/compose/differences-recette.env` | **calque de différences versionné**, `T8`. **Aucune valeur sensible** — les cinq secrets sont **engendrés** à la création de `.env.recette`, et Gitleaks l'examine à chaque pull request |
+| `apps/web/index.html` | point d'entrée **imposé par Vite** depuis `T5` du LOT 1 |
+| `infra/compose/differences-recette.env` | **calque de différences versionné**, `T8` du LOT 1. **Aucune valeur sensible** |
 
-> **Ce paragraphe annonçait DEUX fichiers, et « toute troisième entrée est une anomalie ».** Il y en a
-> trois depuis `T8` du LOT 1, et personne ne l'avait mesuré : l'avertissement aurait **crié au loup sur
-> un fichier légitime**. C'est le §7.21 — *un avertissement faux est pire qu'une absence
-> d'avertissement*, parce qu'il apprend à passer outre.
->
-> **Toute entrée que ce tableau ne nomme pas est une anomalie** — c'est la formulation qui ne vieillit
-> pas, là où un nombre vieillit à la première addition.
-
----
+> **Toute entrée que ce tableau ne nomme pas est une anomalie** — c'est la formulation qui ne
+> vieillit pas, là où un nombre vieillit à la première addition.
 
 # 12. Une dernière chose
 
@@ -1905,7 +2003,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 - **reformuler sans jargon** quand il dit ne pas comprendre une question. C'est arrivé deux fois,
   et les deux fois c'était ma question qui était mauvaise, pas sa lecture.
 
-Le projet a une exigence de traçabilité inhabituellement élevée : **105 décisions depuis `DEC-418`**, et un compte
+Le projet a une exigence de traçabilité inhabituellement élevée : **122 décisions depuis `DEC-418`**, et un compte
 rendu par sous-étape qui consigne jusqu'aux défauts de mes propres contrôles. Ce n'est pas de la
 bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejetée d'un import de
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de

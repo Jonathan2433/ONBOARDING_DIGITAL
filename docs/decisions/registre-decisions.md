@@ -48,6 +48,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 3 `DEC-537`, sous-étape `T11`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-538`, sous-étape `T12`** | 1 | **Validée le 22/08/2026** |
 | **Recette réépinglée `DEC-539`, avant la porte `G3`** | 1 | **Validée le 22/08/2026** |
+| **Franchissement de la porte `G3` `DEC-540`** | 1 | **Validé le 22/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -59,7 +60,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **207** | |
+| **Total** | **208** | |
 
 ---
 
@@ -583,7 +584,9 @@ ne l'a pas encore placée**.
 
 | `DEC-539` | **La recette est réépinglée sur les images de `3bc68b9`, et `make migrate` ne reconstruit plus rien hors du développement.** **(a)** Les trois empreintes littérales de la surcouche de recette sont celles de la publication de `T12`. **(b)** `make migrate ENVIRONNEMENT=recette` **n'appelle plus `code-refresh`**. **(c)** Le résiduel nommé à la checklist `G3` est **clos**, mesuré. | **(a) LA RECETTE EXÉCUTAIT UNE RÉVISION ANTÉRIEURE À `T1`**, et son API se connectait en **superutilisateur** — mesuré avant, et c'est ce que la checklist annonçait comme le seul point restant. Après republication et réépinglage : `APP_REVISION = 3bc68b9`, et la seule connexion à `onboarding_recette` — hors la session de mesure elle-même, qu'il fallait exclure pour ne pas se tromper — est **`onboarding_recette_runtime`**. `make privileges-check ENVIRONNEMENT=recette` le dit : « qui ne peut que lire et écrire des lignes ». **L'épinglage durable est un COMMIT sur la surcouche**, non `.env.recette` que `make images-pin` écrit et qui n'est pas versionné — la cible le dit elle-même. **(b) UN DÉFAUT QUI NE POUVAIT APPARAÎTRE QU'EN EXÉCUTANT LA RECETTE.** `code-refresh` reconstruit `api` et `worker` pour qu'ils portent le code du dépôt : juste en développement, **erreur en recette**, où l'image est référencée par empreinte — `docker compose build` refuse avec « build tag cannot contain a digest ». Et surtout, reconstruire localement **déferait le principe même** de la recette, qui doit exécuter l'artefact **publié** (`DEC-486`). Le défaut date de `T1` du LOT 2, quand `code-refresh` a été ajouté à `migrate` alors qu'**un seul environnement existait** : c'est le §7.21, et il a fallu le §7.16 pour le révéler — *ce qui n'a jamais tourné n'est pas éprouvé.* **(c)** Et un second constat au passage, celui-là par un garde-fou qui a fonctionné : `.env.recette` déclarait **83 variables sur 84**, `SERVICE_TOKEN_MAX_DAYS` ajoutée par `T10` y manquant. `make env` ne réconcilie pas un fichier existant — c'est voulu, il porte des secrets — et `make env-check` est la parade posée par `ECART-022`. Elle a nommé la variable manquante. | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-540`.**
+| `DEC-540` | **La porte `G3` est franchie. Le LOT 3 est verrouillé, `develop` est fusionnée dans `main` par un MERGE COMMIT, et le tag `v0.3.0` est posé.** | **Décision de Jonathan du 22/08/2026**, sur la checklist [`checklist-validation-G3.md`](../operations/checklist-validation-G3.md) : six critères de sortie, **onze contrôles de stack**, une démonstration guidée en sept gestes, et une section entière sur ce que le lot **n'a pas** fait. **LE MERGE COMMIT N'EST PAS UNE PRÉFÉRENCE, C'EST `ECART-026`.** À `G2`, la fusion s'est rabattue sur un squash, ce qui a **coupé `main` de l'histoire de `develop`** : la fusion suivante a mis **9 fichiers en conflit alors que le contenu ne divergeait pas**. Et la résolution `git merge -X theirs` avait **réussi** — code 0, aucun conflit signalé — en gardant 41 lignes dupliquées du côté abandonné. **Le succès d'une fusion et sa justesse sont deux grandeurs différentes.** Le contrôle qui discrimine porte donc sur l'**arbre**, non sur le verdict de l'outil, et il a été exécuté **dans un arbre de travail jetable avant de toucher `main`** : l'arbre obtenu vaut `4a4f6699…`, **identique** à celui de `develop`, et zéro conflit. Mesuré avant, revérifié après. | Validée par Jonathan le 22/08/2026 |
+
+**Prochain identifiant libre : `DEC-541`.**
 
 ---
 
@@ -773,6 +776,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-537` — réalisation du LOT 3, `T11` | 1 | 1 |
 | `DEC-538` — réalisation du LOT 3, `T12` | 1 | 1 |
 | `DEC-539` — recette réépinglée avant `G3` | 1 | 1 |
+| `DEC-540` — franchissement de la porte `G3` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -784,7 +788,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **207** | **207** |
+| **Total** | **208** | **208** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
