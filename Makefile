@@ -935,6 +935,20 @@ csrf-check: ## Prouver qu une ecriture sans protection est refusee, et l idempot
 	$(UV) run python infra/scripts/verifier-csrf.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+compte-de-service: ## Creer un compte de service et lui delivrer un jeton (NOM, PROPRIETAIRE, SCOPES)
+	@if [ -z "$(NOM)" ] || [ -z "$(PROPRIETAIRE)" ] || [ -z "$(SCOPES)" ]; then \
+		echo "  Usage : make compte-de-service NOM=<nom> PROPRIETAIRE=<adresse> SCOPES=<a:b,c:d> [JOURS=90] [ENTITE=<code>]"; \
+		echo "  Scopes du cahier 22 : people:read people:import media:process email:send reports:generate"; \
+		exit 2; \
+	fi
+	@$(UV) run python infra/scripts/provisionner-compte-de-service.py \
+		--nom "$(NOM)" --proprietaire "$(PROPRIETAIRE)" --scopes "$(SCOPES)" \
+		$(if $(JOURS),--jours $(JOURS),) $(if $(ENTITE),--entite $(ENTITE),)
+
+service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration agit, et l audit (US007)
+	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

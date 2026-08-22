@@ -178,6 +178,21 @@ class Parametres(BaseSettings):
     SESSION_IDLE_DAYS: int = 7
     SESSION_ABSOLUTE_DAYS: int = 30
 
+    # --- Comptes de service (cahier §22, modele §10.5) ----------------------
+    #
+    #  **`QO-072` EST CLOSE PAR CETTE VALEUR.** Le cahier §7.4 dit « la duree
+    #  maximale des jetons reste **a arbitrer avant leur creation** » et l'ouvre au
+    #  §29 sous le numero `QO-072`, echeance « LOT 3, story `MVP-L03-US007` ».
+    #  Arbitrage de Jonathan du 22/08/2026 : **90 jours** -- quatre renouvellements
+    #  par an, contre une cle fuitee qui cesse de fonctionner en trois mois.
+    #
+    #  **ELLE RESTE CONFIGURABLE**, ce que le §10.5 exige littéralement : « la duree
+    #  maximale des jetons reste **configurable** avant leur creation reelle ».
+    #  C'est l'inverse des seuils de debit du §20.2, que `T8` a poses en constantes
+    #  precisement parce que le cahier les ecrit et que les rendre reglables
+    #  inviterait a les abaisser. Ici le cahier demande le contraire.
+    SERVICE_TOKEN_MAX_DAYS: int = 90
+
     # --- Securite (cahier §7.4, §20.1) --------------------------------------
     SESSION_COOKIE_SECURE: bool = True
     CSRF_PROTECTION_ENABLED: bool = True
