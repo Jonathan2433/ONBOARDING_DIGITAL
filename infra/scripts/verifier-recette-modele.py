@@ -101,7 +101,13 @@ CLASSEMENT: dict[int, Classement] = {
         residuel=(
             "l'EXISTENCE ne l'est pas, et ne peut pas l'etre en base : l'appartenance doit "
             "exister AVANT qu'une affectation DSM ne la reference. Une contrainte a "
-            "l'insertion serait circulaire. C'est une regle de PROCESSUS"
+            "l'insertion serait circulaire. C'est une regle de PROCESSUS. **`T9` DU "
+            "LOT 3 EN COUVRE LA MOITIE UTILE** : quand le DSM d'un consultant part, "
+            "`enregistrer_un_depart` NOMME les consultants prives de DSM dans son "
+            "resultat. Il ne peut pas designer le remplacant -- decision humaine -- "
+            "mais il rend l'etat VISIBLE au lieu de le laisser silencieux. Le residuel "
+            "n'est donc plus « rien ne le voit » mais « rien ne le corrige "
+            "automatiquement »"
         ),
         lot="LOT 7, onboarding — ou un service anterieur",
     ),

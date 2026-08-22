@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 22 août 2026, sous-étape `T11` du LOT 3
+**Dernière mise à jour :** 22 août 2026, sous-étape `T12` du LOT 3
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -46,6 +46,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 3 `DEC-535`, sous-étape `T9`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-536`, sous-étape `T10`** | 1 | **Validée le 22/08/2026** |
 | **Réalisation du LOT 3 `DEC-537`, sous-étape `T11`** | 1 | **Validée le 22/08/2026** |
+| **Réalisation du LOT 3 `DEC-538`, sous-étape `T12`** | 1 | **Validée le 22/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -57,7 +58,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **205** | |
+| **Total** | **206** | |
 
 ---
 
@@ -577,7 +578,9 @@ ne l'a pas encore placée**.
 
 | `DEC-537` | **React Router est installé à `T11`, et les quatre autres bibliothèques du §17.1 restent hors du dépôt.** **(a)** `react-router` **8.3**, en `BrowserRouter`. **(b)** Les huit écrans sont déclarés dans **`routes.ts`**, source unique lue par le routeur, les tests et le contrôle, avec le **libellé exact du cahier** pour chacun. **(c)** Le fourre-tout rend la page `404` **sans rediriger**. **(d)** Aucune couleur hors des jetons de `packages/ui`, vérifié **commentaires retirés**. **(e)** `make ecrans-check`, 7 contrôles. | **(a) `DEC-456` NE L'INSTALLAIT PAS « FAUTE D'USAGE AVANT LE LOT 4 », ET `T11` CRÉE CET USAGE** une étape plus tôt : les huit écrans d'authentification appartiennent au LOT 3. La condition de `DEC-456` est donc remplie, et le cahier **§17.1 nomme React Router** dans sa pile — écrire un routeur maison serait ignorer ce qui **est** décidé, ce qui est le §6.5 à l'envers. **Les quatre autres restent dehors, et c'est le même raisonnement appliqué honnêtement** : deux formulaires de deux champs n'ont pas d'usage pour React Hook Form ni Zod — l'API est de toute façon « l'autorité finale » sur la validation, règle 5 — trois mutations ponctuelles n'ont pas d'usage pour TanStack Query, et aucun composant complexe n'appelle Radix UI. Les installer serait exactement la « surface d'audit de dépendances sans contrepartie » que `DEC-456` refuse, et `make audit` est à **zéro avis, zéro tolérance** depuis `DEC-493`. **`BrowserRouter` et non `HashRouter`** : les liens de magic link sont des URL réelles envoyées par courriel, et une ancre `#` n'atteindrait jamais le serveur. **(b)** Une liste recopiée vieillit au premier ajout — §7.27, six occurrences dans ce lot — donc le contrôle **relit le cahier** et exige que chaque libellé y figure **mot pour mot** : une reformulation « qui veut dire la même chose » ne serait pas vérifiable. Le compte lui-même est **dérivé** : six puces dont la dernière nomme trois pages, soit 5 + 3 = **huit**. **(c)** Rediriger vers `/404` changerait l'URL et ferait perdre à l'utilisateur l'adresse qu'il avait suivie — or c'est la seule information utile pour comprendre son erreur. **(d)** Les jetons sont **recalculés** contre WCAG 2.2 AA par `jetons.test.ts` (`DEC-491`) : écrire un hexadécimal dans la feuille contournerait cette mesure. Le contrôle **retire les commentaires** avant d'examiner, parce que le commentaire de tête cite un hexadécimal pour expliquer pourquoi on ne l'écrit pas — c'est le défaut de `T11` du LOT 2, un garde-fou qui se déclenchait sur le commentaire énonçant sa propre règle. **(e) LE CONTRÔLE EXERCE POUR LA PREMIÈRE FOIS LE REPLI `try_files`** du `Caddyfile.execution`, posé en `T7` du LOT 1 qui l'anticipait mais **n'avait jamais eu de chemin à replier** — §7.16. Et le **type MIME** fait foi, jamais le code : Vite rend 200 + `index.html` pour tout chemin inconnu (§7.10), donc un 200 seul ne prouverait rien. Il vérifie enfin que `/api/*` **ne reçoit pas** l'artefact statique : un repli qui déborderait sur l'API répondrait 200 à sa place, ce que `DEC-470` interdit. | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-538`.**
+| `DEC-538` | **L'audit des sept événements passe par les types qui existent, et deux contrôles structurels remplacent une huitième promesse de vigilance.** **(a)** `make evenements-check` produit les **sept** types du §10.6 par des **appels HTTP réels**, le compte étant **importé** de `TypeEvenementAuth`. **(b)** Il porte son **témoin** : un mot de passe inséré exprès dans `auth_event`, que le contrôle doit trouver. **(c)** `make residu-check` compare un **avant/après table par table** et **remplace** `make test-integration` dans la CI. **(d)** `make icloud-verify` détecte désormais un **arbre divergent de l'amont**. **(e)** `§30.4` n'est pas reclassé : son résiduel est **enrichi**. | **(a) INSÉRER SEPT LIGNES PROUVERAIT QUE LA TABLE ACCEPTE SEPT VALEURS**, pas que les actions les produisent. Le scénario passe donc par la demande d'un lien, sa consommation, une connexion, un échec, un verrouillage, une révocation et un changement de mot de passe — chacun à travers Caddy en HTTPS. Le compte est **importé** et non écrit : un huitième type ajouté au code ferait échouer ce contrôle, **et c'est son rôle**. **Les deux acteurs sont exigés** — `person_id` et `service_account_id` depuis la migration `0013` : un contrôle qui ne compterait que le premier déclarerait l'audit acquis **en ignorant les comptes de service**, ce que le §22.1 interdit. **(b)** Sans témoin, l'absence de fuite prouverait l'absence de contrôle — §7.0, quatrième proposition. **(c) SEPT OCCURRENCES DE LA MÊME CLASSE DE DÉFAUT DANS CE SEUL LOT**, dont une commise **une sous-étape après avoir écrit la leçon** : le §7.2 dit quoi faire — *quand une classe d'erreur résiste à la vigilance, change d'outil au lieu de promettre d'être plus attentif.* Une huitième promesse ne vaudrait rien. **La mesure est EXACTE, pas heuristique** : chercher des marqueurs — `t3api`, `%.test` — serait une **liste** qui vieillit au premier ajout et une **heuristique** dans un contrôle, ce qui est un défaut (§7.25). Un avant/après table par table, la liste des tables étant **dérivée du catalogue**, fonctionne aussi bien sur une base vide que sur le jeu de recette de 27 936 lignes. Il **remplace** `test-integration` plutôt que de s'y ajouter : lancer la suite deux fois doublerait cinquante secondes pour rien, et son code de sortie porte **les deux verdicts**. **(d) LE GARDE-FOU EXISTAIT ET ÉTAIT AVEUGLE À UN MODE DE DÉFAILLANCE.** Quatre fichiers ont été remis à une version antérieure sans action de session — même mtime **à la seconde** sur les quatre, signature d'une réécriture en lot — et `make icloud-verify` est **passé au vert** : il ne cherchait que les copies de conflit `* [0-9]`, exact pour ce mode et **aveugle à celui-ci**. Étendre le garde-fou existant plutôt qu'en ajouter un parallèle garde la routine du §11 inchangée, et le **témoin négatif a été exécuté** dans un arbre de travail jetable : arbre identique à l'amont plus un fichier modifié → échec, fichiers nommés, chemin de diagnostic donné. **(e)** Le §30.4 a pour échéance le **LOT 7** et son résiduel est une règle de **processus** que rien ne peut acquérir en base. Le reclasser serait faux ; ne rien dire serait incomplet, car `T9` en couvre désormais la moitié utile — il **nomme** les consultants privés de DSM. Le résiduel passe donc de « rien ne le voit » à « rien ne le corrige automatiquement ». | Validée par Jonathan le 22/08/2026 |
+
+**Prochain identifiant libre : `DEC-539`.**
 
 ---
 
@@ -765,6 +768,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-535` — réalisation du LOT 3, `T9` | 1 | 1 |
 | `DEC-536` — réalisation du LOT 3, `T10` | 1 | 1 |
 | `DEC-537` — réalisation du LOT 3, `T11` | 1 | 1 |
+| `DEC-538` — réalisation du LOT 3, `T12` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -776,7 +780,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **205** | **205** |
+| **Total** | **206** | **206** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

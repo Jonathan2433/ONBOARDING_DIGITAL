@@ -300,6 +300,25 @@ icloud-verify: ## Verifier que l'exclusion iCloud est bien posee (echoue sinon)
 	else \
 		echo "  ok       aucune copie de conflit iCloud"; \
 	fi; \
+	if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then \
+		local=$$(git rev-parse HEAD^{tree}); \
+		amont=$$(git rev-parse '@{upstream}^{tree}'); \
+		sale=$$(git status --porcelain --untracked-files=no | wc -l | tr -d ' '); \
+		if [ "$$local" = "$$amont" ] && [ "$$sale" != "0" ]; then \
+			echo "  ARBRE DIVERGENT — $$sale fichier(s) modifie(s) alors que le commit"; \
+			echo "      est IDENTIQUE a l'amont. Signature d'une reecriture iCloud :"; \
+			git status --porcelain --untracked-files=no | sed 's/^/      /'; \
+			echo "      -> compare les mtime : un meme horodatage a la seconde sur"; \
+			echo "         plusieurs fichiers est une reecriture EN LOT, pas une edition."; \
+			echo "         Si le diff ne contient que des retraits de contenu deja"; \
+			echo "         commite : git restore <fichiers>. Voir ROAD-RSK-026."; \
+			manque=1; \
+		else \
+			echo "  ok       arbre coherent avec l'amont ($$sale fichier(s) modifie(s))"; \
+		fi; \
+	else \
+		echo "  ok       aucune branche amont : rien a comparer"; \
+	fi; \
 	exit $$manque
 
 # ---------------------------------------------------------------------------
@@ -944,6 +963,17 @@ compte-de-service: ## Creer un compte de service et lui delivrer un jeton (NOM, 
 	@$(UV) run python infra/scripts/provisionner-compte-de-service.py \
 		--nom "$(NOM)" --proprietaire "$(PROPRIETAIRE)" --scopes "$(SCOPES)" \
 		$(if $(JOURS),--jours $(JOURS),) $(if $(ENTITE),--entite $(ENTITE),)
+
+residu-check: ## Lancer la suite d integration et PROUVER qu elle ne laisse rien derriere
+	@$(UV) run python infra/scripts/verifier-residu.py \
+		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+evenements-check: ## Prouver que les 7 evenements du 10.6 sont traces, sans rien de sensible (US008)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-evenements.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 ecrans-check: ## Prouver que les 8 ecrans sont servis, sans couleur hors jetons ni stockage
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
