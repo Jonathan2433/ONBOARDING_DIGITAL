@@ -57,6 +57,9 @@ UI = RACINE / "packages" / "ui" / "src"
 ROUTES_APP = WEB / "App.tsx"
 JETONS_TS = UI / "jetons.ts"
 CADRE_CSS = WEB / "pages" / "application.css"
+ROUTES_TS = WEB / "routes.ts"
+NAVIGATION = WEB / "pages" / "NavigationPrincipale.tsx"
+CAHIER = RACINE / "docs" / "product" / "CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
 #  **LA CLASSIFICATION DES FEUILLES, DECLAREE ET EXIGEE.**
 #
@@ -123,6 +126,37 @@ def feuilles_chargees() -> set[str]:
                 resolue = (module.parent / cible).resolve()
                 chargees.add(resolue.relative_to(RACINE).as_posix())
     return chargees
+
+
+def lire_rubriques() -> list[dict[str, str]]:
+    """Les rubriques declarees dans `routes.ts`, lues et non supposees.
+
+    Lecture textuelle bornee au bloc `RUBRIQUES` : hors de ce bloc, `routes.ts`
+    porte aussi `ECRANS`, dont les entrees ont la meme forme. C'est la lecon de
+    `chemins_declares` dans `verifier-ecrans.py` -- une extraction doit dire d'ou
+    elle lit, sinon elle lit tout.
+    """
+    source = ROUTES_TS.read_text(encoding="utf-8")
+    try:
+        debut = source.index("export const RUBRIQUES")
+        fin = source.index("] as const;", debut)
+    except ValueError:
+        return []
+    bloc = source[debut:fin]
+    rubriques: list[dict[str, str]] = []
+    for entree in re.findall(r"\{(.*?)\}", bloc, re.S):
+        cle = re.search(r"cle:\s*'([^']+)'", entree)
+        libelle = re.search(r"libelleCorpus:\s*'([^']+)'", entree)
+        condition = re.search(r"condition:\s*'([^']+)'", entree)
+        if cle and libelle:
+            rubriques.append(
+                {
+                    "cle": cle.group(1),
+                    "libelleCorpus": libelle.group(1),
+                    "condition": condition.group(1) if condition else "",
+                }
+            )
+    return rubriques
 
 
 def largeurs_de_recette() -> list[int]:
@@ -273,11 +307,16 @@ def main() -> int:
         print("    ok       aucun chargement paresseux : le graphe d'imports est complet")
 
     # ---------------------------------------------------------------- 8
+    #  **CE CONTROLE A DIT « ok » EN AYANT MESURE ZERO ROUTE, ET C'ETAIT MON
+    #  DEFAUT.** Sa premiere version comptait les `<Route>` litteraux du bloc du
+    #  cadre ; `T4` les engendre depuis `RUBRIQUES` par `.map()`, si bien que le
+    #  motif ne trouvait plus rien -- et le controle annoncait « 0 route(s)
+    #  interne(s) » suivi de `ok`. C'est le §7.0 troisieme proposition dans sa
+    #  forme la plus crue : un compte affiche n'est un controle que s'il est
+    #  CONFRONTE a un attendu.
     controles += 1
-    #  Les routes internes sont DERIVEES de `App.tsx` : le bloc du cadre, et ce
-    #  qu'il contient. Une route interne posee en dehors ferait echouer.
     bloc_cadre = re.search(
-        r"<Route\s+path=\{CHEMINS\.entite\}\s+element=\{<CadreApplicatif\s*/>\}>(.*?)</Route>",
+        r"<Route\s+path=\{CHEMINS\.entite\}\s+element=\{<CadreApplicatif\s*/>\}>(.*?)\n\s*</Route>",
         app,
         re.S,
     )
@@ -288,11 +327,120 @@ def main() -> int:
         print("    ECHEC    aucune route de mise en page `CadreApplicatif` sous `CHEMINS.entite`")
         print("             -> l'entite active ne serait pas visible « sur toutes les pages")
         print("                internes », ce que le §23.3 et la roadmap exigent")
+    elif "RUBRIQUES.map" not in bloc_cadre.group(1):
+        echecs += 1
+        print("    ECHEC    les routes internes ne sont pas ENGENDREES depuis `RUBRIQUES`")
+        print("             -> une liste litterale de routes divergerait du menu, qui se")
+        print("                rend de `RUBRIQUES`. §7.27, et c'est deux sources pour un")
+        print("                meme etat.")
     else:
-        internes = re.findall(r"<Route\s+(index|path=\{[^}]+\})", bloc_cadre.group(1))
-        print(f"    ok       {len(internes)} route(s) interne(s) sous le cadre, derivee(s) de")
-        print("             `App.tsx` — toute page ajoutee dessous herite de l'en-tete")
-        print("             par construction. Ce compte augmentera a `T4`.")
+        print("    ok       les routes internes sont ENGENDREES depuis `RUBRIQUES` :")
+        print("             le menu et le routeur ne peuvent pas diverger")
+
+    # ---------------------------------------------------------------- 8 bis
+    controles += 1
+    rubriques = lire_rubriques()
+    if len(rubriques) < 1:
+        echecs += 1
+        print("    ECHEC    `RUBRIQUES` est vide ou illisible dans `routes.ts`")
+        print("             -> le menu et les routes internes seraient tous deux vides,")
+        print("                et le controle precedent passerait en ayant mesure ZERO.")
+    else:
+        conditionnelles = [r for r in rubriques if r["condition"]]
+        print(f"    ok       {len(rubriques)} rubriques declarees, dont")
+        print(
+            f"             {len(conditionnelles)} conditionnelle(s) : "
+            f"{', '.join(r['cle'] for r in conditionnelles)}"
+        )
+
+    # ---------------------------------------------------------------- 8 ter
+    controles += 1
+    cahier = CAHIER.read_text(encoding="utf-8")
+    absents = [r["libelleCorpus"] for r in rubriques if r["libelleCorpus"] not in cahier]
+    if arguments.temoin:
+        absents = ["libelle-temoin-absent-du-cahier"]
+    if absents:
+        echecs += 1
+        print(
+            f"    ECHEC    {len(absents)} libelle(s) introuvable(s) MOT POUR MOT dans le cahier :"
+        )
+        for libelle in absents:
+            print(f"             « {libelle} »")
+        print("             -> une reformulation qui « veut dire la meme chose » n'est pas")
+        print("                le corpus. §8.2, et c'est le parti de `ECRANS` en `T11`.")
+    else:
+        print(f"    ok       les {len(rubriques)} libelles sont dans le cahier §8.2, MOT POUR MOT")
+
+    # ---------------------------------------------------------------- 8 quater
+    controles += 1
+    #  **AUCUN `tabindex` POSITIF NULLE PART.** Il sortirait l'element de l'ordre
+    #  du document et ferait sauter le focus -- « l'ordre de tabulation suit
+    #  l'ordre visuel » deviendrait faux, et c'est le critere de sortie de `T4`.
+    positifs: list[str] = []
+    for module in sorted(WEB.rglob("*.tsx")):
+        if module.name.endswith(".test.tsx"):
+            continue
+        for valeur in re.findall(
+            r"tabIndex=\{?\s*[\"']?([0-9]+)", module.read_text(encoding="utf-8")
+        ):
+            if int(valeur) > 0:
+                positifs.append(f"{module.relative_to(RACINE).as_posix()} : tabIndex={valeur}")
+    if positifs:
+        echecs += 1
+        print(f"    ECHEC    {len(positifs)} `tabIndex` positif(s) : l'ordre de tabulation")
+        print("             ne suivrait plus l'ordre visuel")
+        for p in positifs:
+            print(f"             {p}")
+    else:
+        print("    ok       aucun `tabIndex` positif : l'ordre de tabulation est celui du")
+        print("             document, donc l'ordre visuel")
+
+    # ---------------------------------------------------------------- 8 quinquies
+    controles += 1
+    #  L'etat « page courante » doit etre selectionne par `aria-current` dans la
+    #  feuille, et non par une classe : sinon l'etat VISUEL et l'etat ANNONCE
+    #  viennent de deux sources et peuvent diverger.
+    if "aria-current" not in cadre:
+        echecs += 1
+        print("    ECHEC    la feuille ne selectionne pas sur `aria-current` : l'etat visuel")
+        print("             de la rubrique courante et l'etat annonce viendraient de deux")
+        print("             sources differentes")
+    else:
+        nav = NAVIGATION.read_text(encoding="utf-8") if NAVIGATION.exists() else ""
+        if "NavLink" not in nav:
+            echecs += 1
+            print("    ECHEC    la navigation n'emploie pas `NavLink` : `aria-current` devrait")
+            print("             alors etre pose a la main, ce qui le figerait")
+        else:
+            print("    ok       l'etat courant vient de `aria-current`, pose par `NavLink` et")
+            print("             selectionne par la feuille — une seule source")
+
+    # ---------------------------------------------------------------- 8 sexies
+    controles += 1
+    #  **LE LIEN D'EVITEMENT NE SAUTE RIEN SI SA CIBLE N'EST PAS FOCUSABLE.**
+    #  Mesure du 23/08/2026 dans un vrai navigateur : sans `tabIndex={-1}` sur le
+    #  `<main>`, activer le lien fait defiler la page et met le focus sur `<body>`
+    #  -- le Tab suivant repart donc du DEBUT du document, a travers le menu qu'on
+    #  venait de sauter. Le `href` et l'`id` correspondaient pourtant : le succes
+    #  du test et la justesse du livrable etaient deux grandeurs differentes.
+    cadre_source = (WEB / "pages" / "CadreApplicatif.tsx").read_text(encoding="utf-8")
+    a_le_lien = 'className="app-evitement"' in cadre_source
+    cible_focusable = re.search(r'id="contenu"[^>]*tabIndex=\{-1\}', cadre_source) is not None
+    if arguments.temoin:
+        cible_focusable = False
+    if a_le_lien and not cible_focusable:
+        echecs += 1
+        print("    ECHEC    le lien d'evitement existe et sa cible n'est PAS focusable")
+        print('             (`tabIndex={-1}` absent du `<main id="contenu">`)')
+        print("             -> il ferait defiler sans deplacer le focus, et le Tab suivant")
+        print("                repartirait du debut du document. Un lien d'evitement qui ne")
+        print("                saute rien est PIRE que pas de lien : il consomme un arret")
+        print("                de tabulation pour rien et apprend a ne pas s'en servir.")
+    elif a_le_lien:
+        print("    ok       le lien d'evitement a une cible FOCUSABLE — `tabIndex={-1}` sur")
+        print("             le `<main>`, donc le focus s'y deplace vraiment")
+    else:
+        print("    info     aucun lien d'evitement : rien a exiger de sa cible")
 
     # ---------------------------------------------------------------- 9
     controles += 1

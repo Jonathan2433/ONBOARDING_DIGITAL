@@ -22,9 +22,10 @@ import { StrictMode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { CHEMINS } from '../routes';
+import { CHEMINS, RUBRIQUES } from '../routes';
 import { CadreApplicatif } from './CadreApplicatif';
 import { PageEntite } from './PageEntite';
+import { PageRubrique } from './PageRubrique';
 
 afterEach(cleanup);
 
@@ -42,13 +43,29 @@ function json(charge: unknown, statut: number): Response {
   });
 }
 
-/** Monte le cadre AVEC sa page interne, comme `App.tsx` le fait. */
-function monter(code: string, strict = false): void {
+/**
+ * Monte le cadre AVEC ses six routes internes, comme `App.tsx` le fait.
+ *
+ * Les routes sont engendrees depuis `RUBRIQUES`, exactement comme dans
+ * l'application : un montage de test qui les enumererait a la main divergerait au
+ * premier ajout, et le test cesserait d'eprouver ce que l'application fait.
+ */
+function monter(code: string, strict = false, chemin?: string): void {
   const arbre = (
-    <MemoryRouter initialEntries={[`/entites/${code}`]}>
+    <MemoryRouter initialEntries={[chemin ?? `/entites/${code}`]}>
       <Routes>
         <Route path={CHEMINS.entite} element={<CadreApplicatif />}>
-          <Route index element={<PageEntite />} />
+          {RUBRIQUES.map((rubrique) =>
+            rubrique.suffixe === '' ? (
+              <Route key={rubrique.cle} index element={<PageEntite />} />
+            ) : (
+              <Route
+                key={rubrique.cle}
+                path={rubrique.suffixe}
+                element={<PageRubrique libelle={rubrique.libelle} lot={rubrique.lot} />}
+              />
+            ),
+          )}
         </Route>
       </Routes>
     </MemoryRouter>
@@ -108,6 +125,15 @@ describe("l'entite consultee vient de l'adresse", () => {
     //  La cible existe VRAIMENT : un lien d'evitement qui pointe dans le vide est
     //  pire que pas de lien, il consomme un arret de tabulation pour rien.
     expect(screen.getByRole('main').id).toBe('contenu');
+    //  **ET ELLE EST FOCUSABLE PAR PROGRAMME.** Ce test-ci manquait, et son
+    //  absence a laisse passer un lien d'evitement qui ne sautait rien : mesure du
+    //  23/08/2026, le focus partait sur `<body>` et le Tab suivant repartait du
+    //  debut du document. Le `href` et l'`id` correspondaient pourtant -- le
+    //  succes du test et la justesse du livrable etaient deux grandeurs
+    //  differentes (§7.0, quatrieme proposition).
+    //
+    //  `-1` et non `0` : focusable par programme, hors de l'ordre de tabulation.
+    expect(screen.getByRole('main').getAttribute('tabindex')).toBe('-1');
   });
 
   it('appelle le chemin de resolution, code ENCODE', async () => {
@@ -207,5 +233,70 @@ describe("l'entite consultee vient de l'adresse", () => {
     monter('bordeaux', true);
     await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
     expect(screen.queryByText(/Chargement impossible/)).toBeNull();
+  });
+});
+
+describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
+  it('rend le menu principal quand une entite est resolue', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+    );
+    monter('bordeaux');
+    await waitFor(() =>
+      expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy(),
+    );
+    //  Le menu vient APRES l'en-tete et AVANT le contenu, dans le DOM : c'est
+    //  l'ordre visuel, donc l'ordre de tabulation.
+    const reperes = [...document.querySelectorAll('header, nav, main')].map((e) => e.tagName);
+    expect(reperes).toEqual(['HEADER', 'NAV', 'MAIN']);
+  });
+
+  it("NE rend AUCUN menu quand l'entite est introuvable", async () => {
+    //  **UN MENU SANS ENTITE POINTERAIT VERS `/entites/undefined/...`.** Pire
+    //  qu'aucun menu : il donnerait six liens qui ne menent nulle part, tous
+    //  atteignables au clavier, ce que le critere de `T4` interdit en substance.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ erreur: { code: 'entite_introuvable' } }, 404))),
+    );
+    monter('inconnue');
+    await waitFor(() => expect(screen.getByRole('heading', { name: /introuvable/ })).toBeTruthy());
+    expect(screen.queryByRole('navigation')).toBeNull();
+  });
+
+  it('derive le titre de la page de `RUBRIQUES` — une source, pas deux', async () => {
+    for (const rubrique of RUBRIQUES) {
+      cleanup();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+      );
+      const chemin =
+        rubrique.suffixe === '' ? '/entites/bordeaux' : `/entites/bordeaux/${rubrique.suffixe}`;
+      monter('bordeaux', false, chemin);
+      //  **CHAQUE rubrique, non la premiere.** Un test qui n'en verifierait qu'une
+      //  passerait sur un titre constant, ce que `T3` avait justement.
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { name: rubrique.titre })).toBeTruthy(),
+      );
+    }
+  });
+
+  it("le lien d'evitement precede le menu, donc il le saute", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+    );
+    monter('bordeaux');
+    await waitFor(() => expect(screen.getByRole('navigation')).toBeTruthy());
+    //  C'est le SENS du lien d'evitement : il doit venir avant ce qu'il saute.
+    //  Pose en `T3`, il ne sautait que l'en-tete ; il saute desormais six liens.
+    const evitement = screen.getByRole('link', { name: /Aller au contenu/ });
+    const premierLienDuMenu = screen.getByRole('navigation').querySelector('a');
+    expect(premierLienDuMenu).toBeTruthy();
+    expect(evitement.compareDocumentPosition(premierLienDuMenu!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 });

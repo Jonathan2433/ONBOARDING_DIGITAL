@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T3` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T4` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -54,6 +54,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-543+`, sous-étape `T1`** | 2 | **Validées le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-545`, sous-étape `T2`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-546`, sous-étape `T3`** | 1 | **Validée le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-547`, sous-étape `T4`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -65,7 +66,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **214** | |
+| **Total** | **215** | |
 
 ---
 
@@ -603,7 +604,9 @@ ne l'a pas encore placée**.
 
 | `DEC-546` | **Un cadre applicatif porte l'entité active et l'unique `<h1>` ; les feuilles du design system sont enfin CHARGÉES ; `code-refresh` couvre `web`.** **(a)** `CadreApplicatif` est une **route de mise en page** : toute page interne hérite de l'en-tête par construction. **(b)** Le `<h1>` porte « Accueil de l'entité », libellé du §8.1, et **non** le nom de l'entité. **(c)** Trois layouts, deux points de rupture, **768 et 1 280**, tous deux dans les largeurs de recette. **(d)** `main.tsx` importe `jetons.css` **et** `composants.css`. **(e)** `code-refresh` reconstruit `web`. **(f)** `make cadre-check` et son témoin. | **(a) « L'ENTITÉ ACTIVE VISIBLE PARTOUT » DOIT ÊTRE STRUCTUREL, PAS DISCIPLINAIRE.** Le §23.3 exige « visible dans l'en-tête de l'application » et la roadmap « sur **toutes** les pages internes ». Demander à chaque page de l'afficher se tiendrait par la discipline ; une route de mise en page le tient par construction — §7.2, changer de forme plutôt que promettre de l'attention. Le contrôle **dérive** les routes internes de `App.tsx`, et il mordra à `T4`. **(b) MESURE À L'ÉCRAN : le nom apparaissait DEUX fois**, dans l'en-tête et en `<h1>`, et un lecteur d'écran l'entendait deux fois. **Deux mécanismes de titre ont été essayés et le premier est mesuré comme impossible ici** : `handle` + `useMatches` est la façon idiomatique, et `useMatches` **exige un data router** — « useMatches must be used within a data router » — alors que `App.tsx` emploie le routeur **déclaratif** choisi en `T11` pour que les liens de magic link soient de vraies URL. Migrer l'architecture de routage pour un titre serait disproportionné, et bâtir un mécanisme sans les rubriques qui le motivent serait livrer sans consommateur. **`T4` tranchera avec ses six rubriques en main**, et il a le choix mesuré. **(c)** Le §13.4 impose de recetter cinq largeurs ; ce ne sont pas des points de rupture. Les deux retenus séparent les trois layouts que la roadmap nomme et **tombent sur deux valeurs de cette liste**, pour que la recette mesure exactement les frontières. `cadre-check` relit `LARGEURS_RECETTE` et **exige** cette appartenance. **(d) LE DÉFAUT LE PLUS SÉRIEUX DE LA SOUS-ÉTAPE, ET IL DATE DE `T11` DU LOT 3** : rien n'importait les deux feuilles. Mesure sur l'application servie — **14 des 21 propriétés de `auth.css` ne résolvaient rien**, et les 7 autres seulement par accident, `styles.css` définissant les mêmes noms avec des valeurs identiques ; et les trois boutons des huit écrans rendaient `border-radius: 0px` avec le fond par défaut du navigateur. `packages/ui/src/index.ts` **écrivait les deux lignes d'import à poser**. Après correction : `--marque-bleu` vaut `#5853ff`, `--rayon-m` `12px`, et le bouton rend `rgb(88, 83, 255)` et `12px`. **(e)** `code-refresh` ne reconstruisait que `api` et `worker` ; le frontend servi est resté celui du LOT 1 pendant **tout le LOT 3 et les deux premières sous-étapes du LOT 4** — 9 fichiers dans le conteneur contre 24 dans le dépôt, mesuré. `ECART-042`. **(f)** Le contrôle exige que **toute `var(--x)` employée par une feuille chargée soit définie par une feuille chargée**, et que la feuille des composants soit chargée **dès qu'un module importe un composant** — exigence **dérivée**, non liste tenue à jour. Il **classe** chaque feuille du frontend, là où `verifier-ecrans.py` n'examinait qu'un chemin écrit en dur. Et il **dit ce qu'il ne mesure pas** : le débordement réel exige un moteur de rendu, le §17.1 nomme Playwright et **le LOT 12 le possède**. | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-547`.**
+| `DEC-547` | **`RUBRIQUES` est la source unique du menu, des routes et des titres ; le menu n'est fait que de liens ; les deux rubriques conditionnelles sont ABSENTES par défaut.** **(a)** Une seule déclaration, trois consommateurs. **(b)** Six `<Link>`, aucun gestionnaire de touches, aucun `tabindex`. **(c)** `aria-current` est le sélecteur CSS de l'état courant. **(d)** « Mon onboarding » et « Administration » sont absentes tant que leur condition n'a pas de source. **(e)** Le titre se dérive par `useLocation`, non par `handle`. **(f)** Les cinq rubriques sans contenu ont une page qui **dit quel lot l'apportera**. | **(a)** Le menu se rend de `RUBRIQUES`, les six routes en sont **engendrées** par `.map()`, et le `<h1>` s'en dérive. Trois copies auraient divergé — `DEC-466`. `make cadre-check` **exige** que `App.tsx` itère `RUBRIQUES` : une liste littérale de routes ferait échouer le contrôle. Et les six `libelleCorpus` sont confrontés au cahier §8.2 **mot pour mot**. **(b) LA FAÇON DE TENIR « TOUT ATTEIGNABLE AU CLAVIER » N'EST PAS D'AJOUTER DES GESTIONNAIRES DE TOUCHES, C'EST DE N'EMPLOYER QUE DES ÉLÉMENTS NATIVEMENT FOCUSABLES.** Six `<a href>`, l'ordre du DOM, et aucun code qui touche au focus — donc **aucun piège n'est possible**. §7.2. Un menu bâti sur des `<div onClick>` aurait exigé `tabindex`, des gestionnaires de flèches et un piège à éviter. Le contrôle **interdit tout `tabIndex` positif** : sans `tabindex` positif, l'ordre de focus séquentiel **est** l'ordre du document, c'est la spécification HTML — asserter l'un asserte l'autre. **Mesure au clavier réel** : huit Tab, huit arrêts, `outline: solid 2px` sur les huit, le focus **sort** du menu au sixième et le cycle reprend. **(c)** Le §14.2 interdit qu'une information soit « portée uniquement par la couleur ». La feuille sélectionne sur `aria-current`, posé par `NavLink` : l'état **annoncé** et l'état **visuel** viennent de la même source et ne peuvent pas diverger. Un trait sous la rubrique double la couleur. **(d) NI L'UNE NI L'AUTRE CONDITION N'EST CALCULABLE À `T4`** : **aucune table de parcours n'existe** — mesuré sur les 26 tables réelles, c'est le LOT 7 — et **aucune route ne rend les rôles de l'appelant**, c'est `T9`. La matrice §5 tranche pourtant *qui* voit l'Administration : `—` pour `ANON`, `EMP` et `NEW`, un périmètre pour les six rôles responsables. **Le défaut est donc l'absence**, ce qui est le « refus par défaut » du §20.1 : une rubrique montrée à tort suggère un droit qu'on n'a pas. Les tests éprouvent **les deux** états, séparément — les deux conditions sont indépendantes. **(e)** `handle` + `useMatches` **exige un data router**, mesuré en `T3`. `useLocation` n'a pas cette contrainte et surtout **n'ajoute aucune source** : le titre vient de `RUBRIQUES`, d'où le menu se rend déjà. Une migration vers `createBrowserRouter` aurait permis `handle` au prix de **dupliquer le libellé** entre la route et le menu. **(f)** Un lien de menu qui aboutit au fourre-tout `404` est atteignable et **inutile** : la navigation serait simulée, non prouvée. Ces pages ne portent aucun contenu métier — le §8.4 le donne, et il appartient aux LOTS 5 à 9 — elles disent **quel lot** l'apportera, ce qui est vrai et utile. | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-548`.**
 
 ---
 
@@ -799,6 +802,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-543+` — réalisation du LOT 4, `T1` | 2 | 2 |
 | `DEC-545` — réalisation du LOT 4, `T2` | 1 | 1 |
 | `DEC-546` — réalisation du LOT 4, `T3` | 1 | 1 |
+| `DEC-547` — réalisation du LOT 4, `T4` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -810,7 +814,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **214** | **214** |
+| **Total** | **215** | **215** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -65,6 +65,122 @@ export function cheminDeLEntite(code: string): string {
 }
 
 /**
+ * LES SIX RUBRIQUES DU MENU PRINCIPAL — LOT 4, `T4`, cahier §8.2.
+ *
+ * **UNE SEULE SOURCE, TROIS CONSOMMATEURS.** Le menu se rend d'ici, le `<h1>` de
+ * chaque page interne s'en derive, et `make cadre-check` confronte cette liste
+ * aux routes de `App.tsx`. Trois copies auraient divergé -- c'est `DEC-466` pour
+ * le masquage et `ECART-022` pour les modèles de configuration.
+ *
+ * `libelleCorpus` est la formulation **exacte** du §8.2 : c'est elle que le
+ * contrôle confronte au document, et non une reformulation qui « veut dire la
+ * même chose ». Même parti que `ECRANS` en `T11` du LOT 3.
+ *
+ * DEUX RUBRIQUES SONT CONDITIONNELLES, ET LEUR CONDITION N'A PAS ENCORE DE SOURCE
+ *
+ *   Le §8.2 les écrit : « Mon onboarding, **uniquement lorsqu'un parcours actif
+ *   existe** » et « Administration, **uniquement selon les permissions** ».
+ *
+ *   Ni l'une ni l'autre n'est calculable au `T4` :
+ *
+ *     le parcours actif    **aucune table de parcours n'existe** dans le schéma --
+ *                          mesuré sur les 26 tables réelles. C'est le LOT 7.
+ *     les permissions      la matrice §5 tranche QUI voit l'Administration -- elle
+ *                          est à `—` pour `ANON`, `EMP` et `NEW`, et porte un
+ *                          périmètre pour les six rôles responsables -- mais
+ *                          **aucune route ne rend les rôles de l'appelant**. C'est
+ *                          `T9`.
+ *
+ *   **Elles sont donc ABSENTES par défaut**, et c'est le « refus par défaut » du
+ *   §20.1 : une rubrique montrée à tort suggère un droit qu'on n'a pas. `T9`
+ *   branchera la source, et les tests éprouvent déjà **les deux** états.
+ *
+ * LES CHEMINS NE SONT NOMMÉS PAR AUCUN DOCUMENT
+ *
+ *   Le §8.1 donne l'arbre, le §8.2 les libellés ; aucun des deux ne donne d'URL.
+ *   Les suffixes sont donc dérivés des libellés, sans accent ni espace -- la seule
+ *   convention que le dépôt applique déjà, `/connexion/lien-envoye` en témoigne.
+ */
+export interface Rubrique {
+  readonly cle: string;
+  /** La formulation EXACTE du cahier §8.2. */
+  readonly libelleCorpus: string;
+  /** Le libellé affiché, sans la clause conditionnelle. */
+  readonly libelle: string;
+  /** Le suffixe sous `/entites/:code`. Vide pour l'accueil, qui est la route index. */
+  readonly suffixe: string;
+  /** Le titre de la page, porté par le cadre. */
+  readonly titre: string;
+  /** La condition du §8.2, mot pour mot, ou `undefined` si la rubrique est toujours visible. */
+  readonly condition?: string;
+  /** Le lot qui apportera son contenu. */
+  readonly lot: string;
+}
+
+export const RUBRIQUES: readonly Rubrique[] = [
+  {
+    cle: 'accueil',
+    libelleCorpus: 'Accueil',
+    libelle: 'Accueil',
+    suffixe: '',
+    titre: "Accueil de l'entite",
+    lot: 'LOT 4',
+  },
+  {
+    cle: 'framework',
+    libelleCorpus: 'Framework',
+    libelle: 'Framework',
+    suffixe: 'framework',
+    titre: 'Framework',
+    lot: 'LOT 6',
+  },
+  {
+    cle: 'trombinoscope',
+    libelleCorpus: 'Trombinoscope',
+    libelle: 'Trombinoscope',
+    suffixe: 'trombinoscope',
+    titre: 'Trombinoscope',
+    lot: 'LOT 5',
+  },
+  {
+    cle: 'evenements',
+    libelleCorpus: 'Événements',
+    libelle: 'Evenements',
+    suffixe: 'evenements',
+    titre: 'Evenements',
+    lot: 'LOT 8',
+  },
+  {
+    cle: 'monOnboarding',
+    libelleCorpus: 'Mon onboarding, uniquement lorsqu’un parcours actif existe',
+    libelle: 'Mon onboarding',
+    suffixe: 'mon-onboarding',
+    titre: 'Mon onboarding',
+    condition: 'uniquement lorsqu’un parcours actif existe',
+    lot: 'LOT 7',
+  },
+  {
+    cle: 'administration',
+    libelleCorpus: 'Administration, uniquement selon les permissions',
+    libelle: 'Administration',
+    suffixe: 'administration',
+    titre: 'Administration',
+    condition: 'uniquement selon les permissions',
+    lot: 'LOT 9',
+  },
+] as const;
+
+/**
+ * L'adresse d'une rubrique, pour un code d'entité donné.
+ *
+ * Le code est **encodé**, pour la raison écrite au-dessus de `cheminDeLEntite`.
+ */
+export function cheminDeRubrique(code: string, suffixe: string): string {
+  const base = cheminDeLEntite(code);
+  return suffixe === '' ? base : `${base}/${suffixe}`;
+}
+
+/**
  * Les huit ecrans, avec le libelle du corpus qui les produit.
  *
  * `libelleCorpus` est la formulation **exacte** du cahier : c'est elle que le test

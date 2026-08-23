@@ -83,13 +83,26 @@ def puces_du_cahier() -> list[str]:
 
 
 def libelles_declares() -> list[str]:
-    """Les `libelleCorpus` de `routes.ts`, lus par expression reguliere.
+    r"""Les `libelleCorpus` du bloc `ECRANS`, et **eux seuls**.
 
     Pas d'import : ce script tourne sous `python3`, et `routes.ts` est du
     TypeScript. Une lecture textuelle suffit, et elle ne demande aucun outil.
+
+    **CETTE EXTRACTION LISAIT TOUT LE FICHIER, ET `T4` DU LOT 4 L'A CASSEE.**
+    `RUBRIQUES` porte six `libelleCorpus` de plus -- les rubriques du menu du
+    §8.2 -- si bien que ce controle en comptait **14** au lieu de 8 et cherchait
+    « Framework » dans la liste des huit ecrans du §17.5.
+
+    Le plus instructif est que **la meme correction avait deja ete faite juste en
+    dessous** : `chemins_declares` est bornee au bloc `CHEMINS` depuis qu'elle a
+    attrape des `libelleCorpus` en croyant lire des URL. La correction avait ete
+    appliquee a **une instance, pas a la classe** -- c'est exactement le §7.34, un
+    motif ecrit contre un exemple ne couvre que cet exemple.
     """
     source = ROUTES.read_text(encoding="utf-8")
-    return re.findall(r"libelleCorpus:\s*'([^']+)'", source)
+    debut = source.index("export const ECRANS")
+    bloc = source[debut : source.index("] as const;", debut)]
+    return re.findall(r"libelleCorpus:\s*'([^']+)'", bloc)
 
 
 def chemins_declares() -> list[str]:
