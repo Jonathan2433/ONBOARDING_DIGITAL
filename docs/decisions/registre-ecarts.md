@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T10`
+**Dernière mise à jour :** 23 août 2026, à l'ouverture du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 37 | 8 | 27 | 2 |
+| Total 38 | 8 | 28 | 2 |
 
 ---
 
@@ -55,8 +55,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
 | `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
 | `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
+| `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
 
-**Prochain identifiant libre : `ECART-038`.**
+**Prochain identifiant libre : `ECART-039`.**
 
 ---
 
@@ -541,4 +542,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-038`.**
+## `ECART-038` — Les motifs de copie de conflit iCloud étaient aveugles aux fichiers
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, à l'ouverture du LOT 4, en diagnostiquant **cinq tests en échec** dont l'assertion disait `len(['0013', '0013']) == 1` — deux têtes de migration portant le même numéro |
+| Source | `.gitignore` lignes 141-142 et la cible `icloud-verify` du `Makefile`, **tous deux posés en `T1` du LOT 1** et jamais relus depuis |
+| Constat | **Le motif `* [0-9]` a été écrit contre un RÉPERTOIRE.** L'incident du 27/07/2026 était `node_modules 2` — un nom **sans extension**. Une copie de **fichier** s'appelle `modeles 2.py` : le chiffre y est suivi de l'extension, et `* [0-9]` ne correspond alors à **rien**. Mesuré : `git check-ignore` rendait `IGNORE` sur `node_modules 2` et `NON IGNORE` sur `modeles 2.py`.<br>iCloud a produit **142** copies de ce genre, dont **115 suivies par git** — 76 `.py`, 28 `.md`, 8 `.tsx`, 2 `.ts`, 1 `.css` — entrées dans le commit d'ouverture du LOT 4 par un `git add -A`.<br>**Second angle mort du même garde-fou :** le `find` d'`icloud-verify` portait `-maxdepth 3`, qui n'atteint pas `apps/api/alembic/versions/`, à la profondeur **4**. Même si le motif avait été juste, le contrôle n'aurait pas regardé là où les copies étaient.<br>**Troisième défaut, et il est de moi :** le contrôle d'arbre ajouté en `T12` du LOT 3 exigeait « arbre de `HEAD` identique à l'amont **et** fichiers modifiés ». C'est l'état **normal** de toute sous-étape en cours de travail — il s'est déclenché sur mes propres suppressions délibérées, et se serait déclenché à chaque début de sous-étape. |
+| Impact | **La chaîne de qualité était rouge et je ne l'ai pas lu.** `1007` tests collectés au lieu de `661`, cinq en échec, `make check` en code 2 — et j'ai commité quand même, mon `&&` portant sur un `echo` et non sur le `make` (§7.3, septième occurrence).<br>**L'historique poussé n'a jamais été atteint** : `git ls-tree -r origin/develop` et `origin/main` rendent **0** copie, mesuré. Le seul commit fautif était local et sur une branche sans pull request ouverte, donc amendable sans réécrire quoi que ce soit de partagé.<br>Les 115 copies étaient **identiques à l'octet** à leur original — vérifié une par une par SHA-256 avant toute suppression, parce qu'en `T11` iCloud avait mis un contenu **antérieur** dans l'original et non dans la copie. |
+| Cause | **`ECART-021` et §7.31 réunis.** Un garde-fou nommé « vérifie iCloud » ne vérifie que ce qu'il regarde : celui-ci était **exact** pour la duplication de répertoire et **aveugle** à la duplication de fichier. Et la règle est **recopiée en deux endroits** — `.gitignore` et le `Makefile` — deux copies d'une même règle qui divergent en silence, classe `DEC-466`. |
+| Bloquant | Non pour le corpus, **oui pour le commit** : il a fallu amender avant d'ouvrir la pull request |
+| Recommandation | **Quatre motifs au lieu de deux**, `* [0-9]` et `* [0-9][0-9]` pour les répertoires, `* [0-9].*` et `* [0-9][0-9].*` pour les fichiers ; `find` à **toutes les profondeurs**.<br>**Et surtout, la parade qui ne dépend pas de la mémoire : un TÉMOIN PERMANENT dans `icloud-verify`**, qui exige que `git check-ignore` ignore effectivement **quatre noms témoins** couvrant les quatre formes. Le motif ne peut plus redevenir aveugle sans que le garde-fou le dise. C'est la seule chose qui distingue cette correction d'une promesse de vigilance.<br>**Pour le faux positif :** le rendre **exact** plutôt que le supprimer ou l'affaiblir (§7.20). La signature réelle de l'incident de `T11` est qu'un fichier a **exactement** le contenu d'une version antérieure de l'historique — ce qu'aucune édition humaine ne produit à l'octet. `infra/scripts/verifier-reversion-icloud.py` mesure cela, et **rapporte** les grappes de mtime identiques à la seconde en le disant corroborant et non décisif, parce qu'un formateur produit la même grappe. |
+| Résolution | **Clos**, `DEC-542`. Les 115 copies retirées de l'index et du disque, le commit amendé, `661` tests collectés à nouveau et `make check` en **code 0**. Le témoin du détecteur de réversion a été **exécuté dans les deux sens** : code 1 en nommant le fichier et le commit sur une réversion fabriquée, code 0 après restauration. |
+
+---
+
+**Prochain identifiant libre : `ECART-039`.**

@@ -290,35 +290,37 @@ icloud-verify: ## Verifier que l'exclusion iCloud est bien posee (echoue sinon)
 		"") echo "  store pnpm introuvable"; manque=1;; \
 		*) echo "  ok       store pnpm hors iCloud : $$s";; \
 	esac; \
-	copies=$$(find . -maxdepth 3 \( -name '* [0-9]' -o -name '* [0-9][0-9]' \) \
-		-not -path './.git/*' -not -path './node_modules/*' 2>/dev/null); \
+	copies=$$(find . \( -name '* [0-9]' -o -name '* [0-9][0-9]' \
+		-o -name '* [0-9].*' -o -name '* [0-9][0-9].*' \) \
+		-not -path './.git/*' -not -path '*/node_modules/*' \
+		-not -path './.venv/*' -not -path '*/__pycache__/*' 2>/dev/null); \
 	if [ -n "$$copies" ]; then \
-		echo "  COPIE DE CONFLIT iCLOUD detectee :"; \
+		n=$$(echo "$$copies" | wc -l | tr -d ' '); \
+		echo "  COPIE DE CONFLIT iCLOUD detectee — $$n :"; \
 		echo "$$copies" | sed 's/^/      /'; \
-		echo "      -> iCloud a duplique un repertoire. Voir ROAD-RSK-026."; \
+		echo "      -> iCloud a duplique un fichier ou un repertoire. ROAD-RSK-026."; \
+		echo "      -> COMPARE le contenu avant de supprimer : le 23/08/2026 les"; \
+		echo "         115 copies etaient identiques a l'octet, mais en T11 iCloud"; \
+		echo "         avait mis un contenu ANTERIEUR dans l'original (§7.31)."; \
 		manque=1; \
 	else \
-		echo "  ok       aucune copie de conflit iCloud"; \
+		echo "  ok       aucune copie de conflit iCloud (toutes profondeurs)"; \
 	fi; \
-	if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then \
-		local=$$(git rev-parse HEAD^{tree}); \
-		amont=$$(git rev-parse '@{upstream}^{tree}'); \
-		sale=$$(git status --porcelain --untracked-files=no | wc -l | tr -d ' '); \
-		if [ "$$local" = "$$amont" ] && [ "$$sale" != "0" ]; then \
-			echo "  ARBRE DIVERGENT — $$sale fichier(s) modifie(s) alors que le commit"; \
-			echo "      est IDENTIQUE a l'amont. Signature d'une reecriture iCloud :"; \
-			git status --porcelain --untracked-files=no | sed 's/^/      /'; \
-			echo "      -> compare les mtime : un meme horodatage a la seconde sur"; \
-			echo "         plusieurs fichiers est une reecriture EN LOT, pas une edition."; \
-			echo "         Si le diff ne contient que des retraits de contenu deja"; \
-			echo "         commite : git restore <fichiers>. Voir ROAD-RSK-026."; \
-			manque=1; \
-		else \
-			echo "  ok       arbre coherent avec l'amont ($$sale fichier(s) modifie(s))"; \
-		fi; \
+	aveugles=; examines=0; \
+	for t in 'node_modules 2' 'modeles 2.py' 'fiche 12.md' 'a 2.cpython-312.pyc'; do \
+		examines=$$((examines + 1)); \
+		git check-ignore -q "$$t" || aveugles="$$aveugles [$$t]"; \
+	done; \
+	if [ -n "$$aveugles" ]; then \
+		echo "  MOTIF .gitignore AVEUGLE a :$$aveugles"; \
+		echo "      -> un nom non ignore entre dans un commit par « git add -A »."; \
+		echo "         Le 23/08/2026, « * [0-9] » seul — ecrit contre un REPERTOIRE,"; \
+		echo "         donc sans extension — a laisse passer 115 fichiers."; \
+		manque=1; \
 	else \
-		echo "  ok       aucune branche amont : rien a comparer"; \
+		echo "  ok       .gitignore ignore les $$examines formes de copie de conflit"; \
 	fi; \
+	python3 infra/scripts/verifier-reversion-icloud.py || manque=1; \
 	exit $$manque
 
 # ---------------------------------------------------------------------------

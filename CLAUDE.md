@@ -35,7 +35,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **75 cibles** documentées. `make help` fait foi |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **122 décisions** `DEC-418+` · **37 écarts** (**8 ouverts**) · **42 questions** (**32 ouvertes**) · 34 risques. `make docs-check` **dérive** ces totaux |
+| Registres | **125 décisions** `DEC-418+` · **38 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive**, et il a nommé les quatre incohérences que `ECART-038` a produites |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -839,8 +839,11 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**172 défauts consignés au 22/08/2026** : **71** au LOT 1, **44** au LOT 2, **15** au LOT 3, plus 7 au
-LOT 0 et 3 en `T0`. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
+**172 défauts NOMMÉS au 23/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3 — 71 + 44 + 57,
+dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
+il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
+à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
+donc pas dans la dérivation. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
 mes propres contrôles** — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.
 
 > **Le second nombre est DÉRIVÉ, et il l'est parce que j'ai d'abord écrit « 39 » de tête** — 33 + 6,
@@ -922,8 +925,12 @@ inspection manuelle. Risque résiduel **accepté** par `DEC-457`.
 make icloud-verify   # en DEBUT DE SESSION, ce n'est pas une formalite
 ```
 
-Le motif `* [0-9]` est exclu dans `.gitignore`, `.prettierignore`, Ruff et ESLint, et
-`icloud-verify` **échoue** s'il trouve une telle copie.
+**QUATRE** motifs sont exclus dans `.gitignore` — `* [0-9]` et `* [0-9][0-9]` pour les
+**répertoires**, `* [0-9].*` et `* [0-9][0-9].*` pour les **fichiers** — plus `.prettierignore`,
+Ruff et ESLint. `icloud-verify` **échoue** s'il trouve une telle copie, **à toutes les
+profondeurs**, et il **exige en plus** que `git check-ignore` ignore effectivement quatre noms
+témoins. **Les deux motifs de fichier manquaient jusqu'au 23/08/2026, et 115 fichiers sont entrés
+dans un commit** : `ECART-038`, `DEC-542`, et la leçon est au §7.34.
 
 ## 7.2 Les espaces dans le chemin — **4 occurrences, dont une en `T7`**
 
@@ -1648,6 +1655,59 @@ contre 0,003 s avec la reprise bornée.
 la question était fausse. *Réfuter une hypothèse exige de mesurer la grandeur qu'elle prédit, pas une
 grandeur voisine.*
 
+---
+
+## 7.34 Un motif écrit contre UN EXEMPLE ne couvre que cet exemple
+
+**Apport du 23/08/2026, à l'ouverture du LOT 4, et il a coûté un commit fautif de 115 fichiers.**
+
+Le §7.31 disait : un garde-fou peut être exact pour un mode de défaillance et aveugle à un autre.
+Voici la même chose **un niveau plus bas** — dans le **motif** lui-même.
+
+| Ce que le motif couvrait | Ce qu'il ne couvrait pas |
+|---|---|
+| `node_modules 2` — un **répertoire**, donc sans extension | `modeles 2.py` — un **fichier**, où le chiffre est suivi de l'extension |
+
+`* [0-9]` a été écrit en `T1` du LOT 1 contre l'incident réel de ce jour-là, une copie de
+**répertoire**. Il est resté juste treize mois pour ce cas, et **il n'a jamais rien couvert pour les
+fichiers**. Mesuré : `git check-ignore` rend `IGNORE` sur le premier nom et `NON IGNORE` sur le
+second. iCloud a produit **142** copies de fichiers, dont **115 sont entrées dans un commit par
+`git add -A`** — parmi elles une seconde migration `0013`, qui a donné **deux têtes Alembic du même
+numéro** et **1 007 tests collectés au lieu de 661**.
+
+> **La règle, sans jargon :** quand tu écris un motif, une liste blanche ou une règle de filtrage à
+> partir d'un **incident**, tu décris cet incident, pas sa classe. Demande-toi **quelles autres
+> formes la même cause produit** — ici, la même cause iCloud produit des copies de fichiers *et* de
+> répertoires — et **écris un témoin par forme**.
+
+**Et la seule part de la correction qui vaille : le TÉMOIN PERMANENT.** Corriger le motif corrige une
+instance ; `make icloud-verify` **exige** désormais que `git check-ignore` ignore effectivement
+**quatre noms témoins**, un par forme. Le motif ne peut plus redevenir aveugle sans que le garde-fou
+le dise, au début de chaque session. C'est aussi ce qui empêche les **deux copies de la même règle**
+— `.gitignore` et le `Makefile` — de diverger en silence. `ECART-038`, `DEC-542`.
+
+**Trois autres choses ont échoué le même jour, et chacune est une leçon déjà écrite ici :**
+
+1. **le `find` s'arrêtait à `-maxdepth 3`** quand les copies étaient à la profondeur 4. Même si le
+   motif avait été juste, le contrôle ne regardait pas là. **Un contrôle borné doit dire où il
+   s'arrête** — §7.0, troisième proposition : il n'annonçait pas ce qu'il avait examiné ;
+2. **le contrôle d'arbre que j'avais ajouté en `T12` était un FAUX POSITIF.** Il exigeait « arbre de
+   `HEAD` identique à l'amont **et** fichiers modifiés » — l'état **normal** de toute sous-étape en
+   cours de travail. Il ne visait pas la bonne grandeur : la signature réelle est qu'un fichier porte
+   **exactement, à l'octet, le contenu d'une version antérieure**, ce qu'aucune édition humaine ne
+   produit. Rendu exact et non affaibli (§7.20), dans `verifier-reversion-icloud.py`, avec son témoin
+   exécuté **dans les deux sens** ;
+3. **et j'ai lu `make check` en code 2 comme un succès**, pour la **septième** fois de la classe
+   §7.3 : mon `&&` portait sur le `echo` qui suivait, pas sur le `make`. Puis, dans la commande même
+   où j'annonçais lire le code correctement, un `echo` intermédiaire a écrasé `PIPESTATUS`.
+   **La seule forme immunisée, désormais la seule à employer :**
+
+```bash
+make check > /tmp/check.log 2>&1
+code=$?          # ligne SUIVANTE, aucun tuyau, aucune commande entre les deux
+echo "code=$code"
+```
+
 
 # 8. Ce qui reste ouvert
 
@@ -1879,6 +1939,10 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                                Mailpit, QO-085          (T8)
 │                  composer-env.py            ← modele + calque + secrets (T8)
 │                  epingler-images.py         ← make images-pin           (T8)
+│                  verifier-reversion-icloud.py ← un contenu de travail EGAL a une
+│                                                version anterieure = reecriture
+│                                                iCloud. Remplace un controle a FAUX
+│                                                POSITIFS. DEC-542, §7.34
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
@@ -1903,8 +1967,12 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 export PATH="$HOME/.local/bin:$PATH"        # gh et uv n'y sont PAS par defaut
 git switch develop && git pull && git log --oneline -3 && git status -sb
 
-make icloud-verify        # PAS une formalite : il compare desormais l'ARBRE a l'amont,
-                          # et il a manque une reversion silencieuse de 4 fichiers. §7.31
+make icloud-verify        # PAS une formalite : il a manque une reversion silencieuse de
+                          # 4 fichiers (§7.31), PUIS 115 copies de conflit de FICHIERS que
+                          # son motif ne couvrait pas (§7.34). Il porte desormais les 4
+                          # motifs, cherche a toutes les profondeurs, EXIGE que
+                          # `git check-ignore` les honore, et detecte une reversion en
+                          # comparant le contenu de travail aux versions de l'historique.
 make env-check            # .env contre .env.example — une variable a manque a CHAQUE lot
 make check                # qualite complete, tests compris
 make audit                # zero avis, zero tolerance depuis DEC-493
@@ -1952,7 +2020,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **33 leçons** payées par **172 défauts consignés** ;
+1. **ce document**, en entier — son §7 porte **35 leçons** payées par **172 défauts nommés** ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
