@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T6` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T7` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -57,6 +57,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-547`, sous-étape `T4`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-548`, sous-étape `T5`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-549`, sous-étape `T6`** | 1 | **Validée le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-550`, sous-étape `T7`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -68,7 +69,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **217** | |
+| **Total** | **218** | |
 
 ---
 
@@ -612,7 +613,9 @@ ne l'a pas encore placée**.
 
 | `DEC-549` | **La racine `/` est la page nationale ; la page de statut passe à `/statut`, même contenu.** Et la page nationale **n'emploie pas le cadre applicatif**, la liste **précède la carte dans le DOM**, et le frontend **ne refiltre pas** les entités actives. | **(a) ARBITRAGE DE JONATHAN, PRIS SUR LE SENS PARCE QUE LA MESURE AVAIT ÔTÉ LE COÛT.** Le cahier §4.1 dit « une page nationale **après authentification** », le diagramme du §8.1 la place juste après la connexion, et la séquence du §9.1 finit sur « Accueil national » — mais **aucun document ne nomme d'adresse**, et `/` servait la page de statut depuis `T5` du LOT 1. **Mesure avant de proposer** : `verifier-page-statut.sh` n'exige de `/` que la coquille React et le mandatement des endpoints de santé — il ne vérifie **jamais** le contenu de la page de statut. Déplacer celle-ci ne cassait donc rien, et les trois options ont pu être présentées avec leur seule conséquence d'usage. **Et le contrôle a été complété** : il vérifie désormais que `/statut` est **servie**, sans quoi rien n'aurait garanti que l'adresse existe — le repli SPA rend `text/html` pour tout chemin, donc le **type MIME** fait foi, pas le code HTTP. **(b) LA PAGE NATIONALE N'EMPLOIE PAS `CadreApplicatif`, ET C'EST STRUCTUREL** : le cadre résout une entité consultée et la porte dans son en-tête ; ici on est **au-dessus** de l'entité, on la choisit. L'employer exigerait une entité pour afficher la page dont l'objet est de la choisir. **(c) « LA LISTE PRÉCÈDE LA CARTE DANS LE DOM, PAS SEULEMENT À L'ŒIL »** — §8.3. Un ordre obtenu par `order` en CSS satisferait le regard sur mobile et laisserait la carte **avant** la liste pour un lecteur d'écran et pour la tabulation : l'échec produirait la même observation que le succès sur une capture. Le contrôle porte donc sur la **source**, exige qu'aucune règle CSS ne réordonne la liste, et **mordra à `T7`** quand la carte arrivera. **(d) LE FRONTEND NE REFILTRE RIEN.** `GET /api/v1/entities` filtre sur `status = active` — cahier §8.3 — et `make entites-check` le prouve. Refaire le filtre côté écran donnerait **deux règles**, et le jour où l'une change l'autre mentirait. Mesuré de bout en bout : sur quatre entités dont une `draft`, la page en affiche **trois**. **(e)** Quatre états, dont deux qu'on confond facilement : « **aucune entité active** » est un état **légitime** — une plateforme neuve — et le confondre avec une panne dirait à l'utilisateur une chose fausse. Un 401 propose de se reconnecter et **ne parle pas de réseau** ; une panne parle de réseau et **ne prétend rien** sur l'existence des entités. Les deux sont mesurés. | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-550`.**
+| `DEC-550` | **La carte de France est DÉCORATIVE et son illustration est un PROVISOIRE ASSUMÉ, remplaçable en une ligne quand `DEP-006` livrera.** **(a)** `aria-hidden`, `focusable="false"`, aucun élément interactif, ni `role="img"` ni `<title>`. **(b)** Elle vient **après** la liste dans le DOM, et aucune règle CSS ne les réordonne. **(c)** Le tracé est **dessiné à la main et approximatif**, et c'est dit. **(d)** Elle ne s'affiche que quand il y a des entités à illustrer. | **(a) LE CRITÈRE DE SORTIE EST EXACTEMENT CELA** : « la carte est décorative au sens de l'accessibilité : elle n'est pas le seul moyen d'atteindre une entité ». **Le prototype invitait à l'enfreindre** : sa `FranceMap` est une image base64 avec **un bouton posé dessus**, mesuré. Un élément interactif dans un sous-arbre `aria-hidden` est atteignable au clavier **sans être annoncé** — pire qu'un bouton absent. La liste au-dessus est le chemin, et elle est complète. **(b)** §8.3, « sur mobile, la liste précède la carte ». Un `order` en CSS satisferait le regard et laisserait la carte **avant** pour un lecteur d'écran : `make cadre-check` exige l'ordre **du DOM** et l'absence de `order`. **(c) TROIS MESURES ONT FERMÉ LE CHOIX AVANT DE COMMENCER** : `entity` ne porte **ni latitude ni longitude** — mesuré sur le schéma réel, donc une carte à marqueurs exigerait une colonne au modèle ou des positions inventées ; le prototype montre que l'intention **n'est pas** une carte de données ; et **`DEP-006` est OUVERTE, échéance ce lot** — « charte, logo et typographie officiels », Léa / eXalt. Réutiliser l'image du prototype est **interdit** par la règle 4, et ne rien livrer contredirait la roadmap. **Trois versions du tracé ont été faites et regardées à l'écran ; la troisième se lit « la France, à peu près » et pas mieux. Je me suis arrêté là** : auteurer une illustration de marque appartient à `DEP-006`, et continuer aurait été la règle §6.5 enfreinte sur une image au lieu d'une valeur. Ce qui est livré est ce que le critère demande — l'emplacement, sa place dans le DOM, son caractère décoratif — et l'illustration est un remplacement d'**une ligne**. **(d)** Une carte décorative sur un écran d'erreur ou vide occuperait la place du message sans rien apporter. | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-551`.**
 
 ---
 
@@ -811,6 +814,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-547` — réalisation du LOT 4, `T4` | 1 | 1 |
 | `DEC-548` — réalisation du LOT 4, `T5` | 1 | 1 |
 | `DEC-549` — réalisation du LOT 4, `T6` | 1 | 1 |
+| `DEC-550` — réalisation du LOT 4, `T7` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -822,7 +826,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **217** | **217** |
+| **Total** | **218** | **218** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

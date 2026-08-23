@@ -175,3 +175,80 @@ describe('la page nationale', () => {
     expect(screen.getByRole('main').getAttribute('tabindex')).toBe('-1');
   });
 });
+
+describe('la carte de France — LOT 4, `T7`, cahier §8.3', () => {
+  it('est rendue APRES la liste dans le DOM', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ entites: [BORDEAUX] }, 200))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByRole('navigation')).toBeTruthy());
+    const principal = screen.getByRole('main');
+    const liste = principal.querySelector('.nat-liste');
+    const carte = principal.querySelector('.nat-carte');
+    expect(liste).toBeTruthy();
+    expect(carte).toBeTruthy();
+    //  **CE TEST MORDAIT DEJA AVANT QUE LA CARTE N'EXISTE**, et il mord
+    //  maintenant sur l'ordre reel. §8.3 : « sur mobile, la liste precede la
+    //  carte » -- dans le DOM, pas seulement a l'oeil.
+    expect(liste!.compareDocumentPosition(carte!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("est DECORATIVE : hors de l'arbre d'accessibilite, et sans rien de focusable", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ entites: [BORDEAUX] }, 200))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByRole('main').querySelector('.nat-carte')).toBeTruthy());
+    const dessin = screen.getByRole('main').querySelector('.nat-carte svg');
+    expect(dessin?.getAttribute('aria-hidden')).toBe('true');
+    //  Un `<svg>` peut etre focusable dans certains moteurs : l'attribut le ferme.
+    expect(dessin?.getAttribute('focusable')).toBe('false');
+    //  **AUCUN ELEMENT FOCUSABLE DEDANS.** Le prototype posait un BOUTON sur son
+    //  image ; un element interactif dans un sous-arbre `aria-hidden` est
+    //  atteignable au clavier SANS etre annonce -- pire qu'un bouton absent.
+    const carte = screen.getByRole('main').querySelector('.nat-carte');
+    expect(carte!.querySelectorAll('a, button, input, [tabindex]')).toHaveLength(0);
+    //  Ni `role="img"` ni `<title>` : elle n'informe pas, la liste le fait.
+    expect(dessin?.getAttribute('role')).toBeNull();
+    expect(dessin?.querySelector('title')).toBeNull();
+  });
+
+  it("n'est PAS le seul moyen d'atteindre une entite — le critere de sortie", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByRole('navigation')).toBeTruthy());
+    //  Chaque entite a son lien dans la LISTE, et la carte n'en porte aucun.
+    const liens = [...screen.getByRole('navigation').querySelectorAll('a')];
+    expect(liens).toHaveLength(2);
+    const carte = screen.getByRole('main').querySelector('.nat-carte');
+    expect(carte!.querySelectorAll('a')).toHaveLength(0);
+  });
+
+  it("n'apparait PAS quand il n'y a rien a illustrer", async () => {
+    //  Une carte decorative sur un ecran d'erreur ou vide occuperait la place du
+    //  message sans rien apporter.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ entites: [] }, 200))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByText(/Aucune entite active/)).toBeTruthy());
+    expect(screen.getByRole('main').querySelector('.nat-carte')).toBeNull();
+  });
+
+  it("n'apparait PAS sur un ecran d'erreur", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ erreur: { code: 'session_refusee' } }, 401))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+    expect(screen.getByRole('main').querySelector('.nat-carte')).toBeNull();
+  });
+});

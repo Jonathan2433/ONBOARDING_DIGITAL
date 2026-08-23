@@ -42,6 +42,7 @@ import { Link } from 'react-router';
 import type { EntiteDuPortail } from '@onboarding/contracts';
 
 import { listerLesEntites } from '../api/portail';
+import { CarteDeFrance } from './CarteDeFrance';
 import { cheminDeLEntite, CHEMINS } from '../routes';
 
 type Etat =
@@ -141,14 +142,16 @@ export function PageNationale(): JSX.Element {
         ) : null}
 
         {/*
-          **L'EMPLACEMENT DE LA CARTE EST ICI, APRES LA LISTE.** `T7` l'occupera.
-          Rien n'est pose : une `<section>` vide serait un repere sans contenu,
-          qu'un lecteur d'ecran annoncerait pour rien.
+          **LA CARTE VIENT APRES LA LISTE, DANS LE DOM.** §8.3, « sur mobile, la
+          liste precede la carte ». `make cadre-check` l'exige et il exige aussi
+          qu'aucune regle CSS ne les reordonne : un `order` satisferait l'oeil et
+          laisserait la carte avant la liste pour un lecteur d'ecran.
 
-          Et le §8.3 ne dit de la carte qu'un mot, « illustrative ». Elle ne devra
-          donc jamais etre le SEUL moyen d'atteindre une entite -- la liste
-          ci-dessus l'est, et elle vient d'abord.
+          Elle n'est rendue que quand la liste existe : une carte decorative seule,
+          sur un ecran d'erreur ou de chargement, n'apporterait rien et occuperait
+          la place du message.
         */}
+        {etat.phase === 'liste' && etat.entites.length > 0 ? <CarteDeFrance /> : null}
       </main>
     </div>
   );
