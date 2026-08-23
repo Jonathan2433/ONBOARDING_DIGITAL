@@ -246,10 +246,14 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy(),
     );
-    //  Le menu vient APRES l'en-tete et AVANT le contenu, dans le DOM : c'est
-    //  l'ordre visuel, donc l'ordre de tabulation.
-    const reperes = [...document.querySelectorAll('header, nav, main')].map((e) => e.tagName);
-    expect(reperes).toEqual(['HEADER', 'NAV', 'MAIN']);
+    //  **L'ORDRE DU DOM EST L'ORDRE VISUEL, ET IL Y A DEUX REPERES DEPUIS `T5`.**
+    //  En-tete, menu du haut, contenu, barre du bas : c'est ce que l'oeil parcourt,
+    //  donc ce que le Tab parcourt. La barre est en DERNIER parce qu'elle est
+    //  ancree en bas de l'ecran.
+    const reperes = [...document.querySelectorAll('header, nav, main')].map(
+      (e) => e.tagName + (e.getAttribute('aria-label') ? `[${e.getAttribute('aria-label')}]` : ''),
+    );
+    expect(reperes).toEqual(['HEADER', 'NAV[Menu principal]', 'MAIN', 'NAV[Barre de navigation]']);
   });
 
   it("NE rend AUCUN menu quand l'entite est introuvable", async () => {
@@ -262,7 +266,9 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
     );
     monter('inconnue');
     await waitFor(() => expect(screen.getByRole('heading', { name: /introuvable/ })).toBeTruthy());
-    expect(screen.queryByRole('navigation')).toBeNull();
+    //  NI le menu du haut, NI la barre du bas : les deux ont besoin d'un code.
+    expect(screen.queryByRole('navigation', { name: 'Menu principal' })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Barre de navigation' })).toBeNull();
   });
 
   it('derive le titre de la page de `RUBRIQUES` — une source, pas deux', async () => {
@@ -289,11 +295,15 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
       vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
     );
     monter('bordeaux');
-    await waitFor(() => expect(screen.getByRole('navigation')).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy(),
+    );
     //  C'est le SENS du lien d'evitement : il doit venir avant ce qu'il saute.
-    //  Pose en `T3`, il ne sautait que l'en-tete ; il saute desormais six liens.
+    //  Pose en `T3`, il ne sautait que l'en-tete ; il saute desormais le menu.
     const evitement = screen.getByRole('link', { name: /Aller au contenu/ });
-    const premierLienDuMenu = screen.getByRole('navigation').querySelector('a');
+    const premierLienDuMenu = screen
+      .getByRole('navigation', { name: 'Menu principal' })
+      .querySelector('a');
     expect(premierLienDuMenu).toBeTruthy();
     expect(evitement.compareDocumentPosition(premierLienDuMenu!)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
