@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T3` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T4` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 42 | 8 | 32 | 2 |
+| Total 44 | 8 | 34 | 2 |
 
 ---
 
@@ -60,8 +60,10 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-040` | Le §8 de la fiche du LOT 4 annonçait « **où vit l'entité consultée** » comme un point que le corpus ne tranche pas. Il ne dit pas où elle est **stockée**, mais **quatre endroits** — §4.1, §8.1, §9.1, §9.2 — font tous atterrir sur la page nationale après connexion : une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Et le §23.3, section entière sur le changement d'entité, donne **cinq** règles que la fiche ne citait pas | Non — détecté avant de décider, et avant de poser une migration inutile | **Clos** — `DEC-545` |
 | `ECART-041` | **Les deux feuilles du design system n'étaient importées par personne.** `T10` du LOT 1 a livré `jetons.css` et `composants.css` ; `T11` du LOT 3 a employé le composant `Bouton` et écrit `auth.css` en `var(--…)`. **Rien ne chargeait les feuilles** : 14 des 21 propriétés ne résolvaient rien, et les trois boutons des huit écrans rendaient `border-radius: 0px` avec le fond par défaut du navigateur. `packages/ui/src/index.ts` écrivait les deux lignes d'import à poser | Non pour les données — **oui pour le rendu** : les huit écrans du LOT 3 n'ont jamais porté le design system | **Clos** — `DEC-546` |
 | `ECART-042` | **`make code-refresh` ne reconstruisait que `api` et `worker`.** Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh` : le frontend **servi** est resté celui du LOT 1 pendant tout le LOT 3 et les deux premières sous-étapes du LOT 4 — **9 fichiers dans le conteneur contre 24 dans le dépôt**, mesuré. Et `make ecrans-check` passait, parce qu'il vérifiait que les huit chemins rendent `text/html` avec le point de montage — ce que le **repli SPA** fait pour n'importe quel chemin | Non pour l'API — **oui pour toute conclusion tirée du frontend servi** | **Clos** — `DEC-546` |
+| `ECART-043` | **Le lien d'évitement posé en `T3` ne sautait rien.** Sa cible, le `<main>`, n'était pas focusable : mesuré dans un vrai navigateur, activer le lien faisait défiler la page et laissait le focus sur `<body>`, si bien que le Tab suivant repartait du **début** du document, à travers le menu qu'on venait de sauter. **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`** — les deux étaient vrais, et le mécanisme ne fonctionnait pas | Non — un arrêt de tabulation consommé pour rien, découvert avant que le menu n'existe vraiment | **Clos** — `tabIndex={-1}`, `DEC-547` |
+| `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
 
-**Prochain identifiant libre : `ECART-043`.**
+**Prochain identifiant libre : `ECART-045`.**
 
 ---
 
@@ -621,4 +623,34 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-043`.**
+## `ECART-043` — Le lien d'évitement ne sautait rien
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T4`, en mesurant la marche au clavier |
+| Source | `apps/web/src/pages/CadreApplicatif.tsx`, le lien posé en `T3` |
+| Constat | Mesure dans un vrai navigateur, en activant le lien : le hash devient bien `#contenu` et la page défile — **et le focus part sur `<body>`**. Le `<main>` ne portait **aucun `tabindex`**, et un `<main>` n'est pas focusable par défaut.<br>Conséquence : le Tab suivant repart du **début** du document, donc à travers le menu qu'on venait de sauter. **Le lien d'évitement ne sautait rien.**<br>Après correction — `tabIndex={-1}` sur le `<main>` — le focus atterrit sur `main#contenu`, mesuré ; et l'élément qui le suit dans l'ordre du document est le lien du contenu, **pas** une rubrique. |
+| Impact | Un arrêt de tabulation consommé pour rien, sur le premier élément de chaque page interne. **Un lien d'évitement qui ne saute rien est pire que pas de lien** : il apprend à ne pas s'en servir, ce qui est le §7.21 — un avertissement faux — dans un autre costume.<br>Découvert **avant** que le menu n'existe vraiment : à `T3` il n'y avait que l'en-tête à sauter, donc l'enjeu était mince. Il devenait réel à `T4`, avec six liens de plus. |
+| Cause | **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`.** Les deux étaient vrais. Le succès du test et la justesse du livrable étaient **deux grandeurs différentes** — §7.0, quatrième proposition — et c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.<br>Ce que le test ne regardait pas : **le focus se déplace-t-il ?** C'est la seule question qui compte pour un lien d'évitement. |
+| Bloquant | Non |
+| Recommandation | `tabIndex={-1}` sur la cible — **`-1` et non `0`** : focusable par programme, hors de l'ordre de tabulation. Un `0` ajouterait un arrêt sur le contenu entier.<br>**Et le test devient exact** : il exige `tabindex="-1"`, la condition nécessaire, en plus du `href` et de l'`id`. Le déplacement effectif du focus est **mesuré** au compte rendu, faute d'un moteur capable de le simuler en `jsdom`. |
+| Résolution | **Clos**, `DEC-547`. `make cadre-check` porte l'exigence, et son témoin l'éprouve. |
+
+---
+
+## `ECART-044` — Une extraction bornée à une instance, pas à sa classe
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T4`, en lançant `make ecrans-check` après avoir ajouté `RUBRIQUES` |
+| Source | `infra/scripts/verifier-ecrans.py`, fonction `libelles_declares` |
+| Constat | Elle lisait les `libelleCorpus` de **tout** `routes.ts`. `RUBRIQUES` en ajoute six — les rubriques du menu du §8.2 — si bien que le contrôle en a compté **14** au lieu de 8, et a cherché « Framework » dans la liste des huit écrans du §17.5.<br>**Et la même correction avait déjà été faite, une fonction plus bas.** Le docstring de `chemins_declares` le raconte : « UNE PREMIÈRE VERSION LISAIT TROP LARGE, ET C'EST LE CONTRÔLE QUI L'A DIT… L'extraction est donc **bornée au bloc `CHEMINS`** ». |
+| Impact | Aucun sur les livrables : le contrôle a **échoué bruyamment**, et c'est son rôle. Mais il a échoué sur un livrable **conforme**, ce qui coûte un diagnostic. |
+| Cause | **§7.34, littéralement.** La correction du même défaut avait été appliquée à l'extraction des **chemins** et pas à celle des **libellés** — une instance corrigée n'est pas la classe corrigée. C'est aussi le §7.21 : un contrôle juste hier, rendu faux par notre propre ajout. |
+| Bloquant | Non |
+| Recommandation | Borner l'extraction au bloc `ECRANS`, comme l'autre l'est au bloc `CHEMINS`.<br>**Recommandation générale** : quand une lecture textuelle porte sur un fichier qui déclare **plusieurs** collections de même forme, la borner au bloc **dès la première écriture**. `verifier-cadre.py` le fait pour `RUBRIQUES` — son `lire_rubriques` est bornée, et son docstring dit pourquoi. |
+| Résolution | **Clos.** |
+
+---
+
+**Prochain identifiant libre : `ECART-045`.**

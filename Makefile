@@ -1030,17 +1030,21 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "$$sortie" | grep -q 'NON DEFINIE' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'aucune route de mise en page' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q "N'EST PAS chargee" && attendus=$$((attendus + 1)); \
-	if [ "$$attendus" != "3" ]; then \
-		echo "  ECHEC    le temoin echoue, mais pas pour les 3 raisons attendues ($$attendus/3)"; \
+	echo "$$sortie" | grep -q 'MOT POUR MOT dans le cahier' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "sa cible n'est PAS focusable" && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "5" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 5 raisons attendues ($$attendus/5)"; \
 		echo "$$sortie" | sed 's/^/           /'; \
 		exit 1; \
 	fi; \
 	echo; \
 	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
-	echo "    ok       code=$$code, et les TROIS motifs attendus sont nommes :"; \
+	echo "    ok       code=$$code, et les CINQ motifs attendus sont nommes :"; \
 	echo "             une propriete non definie par une feuille chargee"; \
 	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
 	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
+	echo "             un libelle de rubrique absent du cahier mot pour mot"; \
+	echo "             une cible de lien d'evitement non focusable"; \
 	echo; \
 	echo "  --> le controle discrimine"
 

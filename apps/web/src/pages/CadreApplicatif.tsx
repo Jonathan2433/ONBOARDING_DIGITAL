@@ -40,12 +40,13 @@
  *   qui introduit la navigation.
  */
 import { type JSX, type ReactNode, useEffect, useState } from 'react';
-import { Link, Outlet, useOutletContext, useParams } from 'react-router';
+import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 
 import type { EntiteDuPortail } from '@onboarding/contracts';
 
 import { lireLEntite } from '../api/portail';
-import { CHEMINS } from '../routes';
+import { CHEMINS, cheminDeRubrique, RUBRIQUES } from '../routes';
+import { NavigationPrincipale } from './NavigationPrincipale';
 import './application.css';
 
 /** Ce que le cadre passe aux pages internes. */
@@ -59,32 +60,37 @@ export function useEntiteConsultee(): ContexteEntite {
 }
 
 /**
- * LE TITRE DE LA PAGE INTERNE — LOT 4, `T3`.
+ * LE TITRE DE LA PAGE, DERIVE DE `RUBRIQUES` — LOT 4, `T3` puis `T4`.
  *
- * « Accueil de l'entite » est le libelle du cahier §8.1, dont le diagramme nomme
- * ce noeud : `Choix de l'entite --> Accueil de l'entite`. Ce n'est pas une
- * formulation inventee.
+ * `T3` posait une constante, « Accueil de l'entite », faute d'avoir des rubriques
+ * a distinguer. `T4` en a six, donc le titre doit varier -- et le mecanisme est
+ * choisi avec elles en main, comme `T3` l'annoncait.
  *
- * **POURQUOI UNE CONSTANTE ET NON UN MECANISME.** Le cadre porte l'unique `<h1>`
- * du document -- une page qui ecrirait le sien en donnerait deux, ce que
- * `jsx-a11y` ne verifie pas parce que c'est une regle de document et non de JSX.
- * Il faudra donc, a `T4`, que chaque rubrique declare son titre.
+ * **DEUX OPTIONS ETAIENT MESUREES, ET C'EST LA SECONDE.** `handle` sur la route,
+ * lu par `useMatches`, est la facon idiomatique -- et `useMatches` **exige un data
+ * router**, « useMatches must be used within a data router », mesure de `T3`.
+ * `App.tsx` emploie le routeur DECLARATIF, choisi en `T11` du LOT 3 pour que les
+ * liens de magic link soient de vraies URL.
  *
- * **DEUX MECANISMES ONT ETE ESSAYES, ET LE PREMIER EST MESURE COMME IMPOSSIBLE
- * ICI** : `handle` sur la route, lu par `useMatches`, est la facon idiomatique --
- * et `useMatches` **exige un data router**, « useMatches must be used within a
- * data router », mesure du 23/08/2026. `App.tsx` emploie le routeur DECLARATIF,
- * `<BrowserRouter>` et `<Routes>`, choisi en `T11` du LOT 3 pour que les liens de
- * magic link soient de vraies URL. Migrer l'architecture de routage pour un titre
- * serait disproportionne, et le decider sans les rubriques qui le motivent serait
- * bâtir un mecanisme sans consommateur -- ce que `T10` du LOT 1 et `T11` de ce lot
- * refusent tous deux.
+ * `useLocation` n'a pas cette contrainte, et surtout **il n'ajoute aucune source
+ * de verite** : le titre vient de `RUBRIQUES`, d'ou le menu se rend deja. Une
+ * migration vers `createBrowserRouter` aurait permis `handle`, au prix de
+ * dupliquer le libelle entre la route et le menu -- ce que `DEC-466` refuse.
  *
- * **`T4` tranchera avec ses six rubriques en main**, et il aura le choix mesure :
- * migrer vers `createBrowserRouter`, ou deriver le titre du chemin par
- * `useLocation`. Le point est nomme au compte rendu de `T3`.
+ * **LE SUFFIXE EST COMPARE, PAS LE CHEMIN ENTIER**, parce que le code de l'entite
+ * varie. Et la comparaison porte sur le **dernier segment**, non sur une inclusion
+ * de chaine : `/entites/framework-sud` contient « framework » sans etre la
+ * rubrique Framework.
  */
-const TITRE_ACCUEIL_ENTITE = "Accueil de l'entite";
+function useTitreDeLaPage(defaut: string, code: string): string {
+  const { pathname } = useLocation();
+  for (const rubrique of RUBRIQUES) {
+    if (pathname === cheminDeRubrique(code, rubrique.suffixe)) {
+      return rubrique.titre;
+    }
+  }
+  return defaut;
+}
 
 type Etat =
   | { readonly phase: 'chargement' }
@@ -96,10 +102,15 @@ type Etat =
 function Squelette({
   titre,
   entite,
+  navigation,
   children,
 }: {
   readonly titre: string;
   readonly entite?: EntiteDuPortail;
+  //  **LA NAVIGATION EST FACULTATIVE, ET C'EST VOULU.** Les etats « introuvable »
+  //  et « erreur » n'ont pas d'entite, donc aucun code a mettre dans les liens :
+  //  un menu vers `/entites/undefined/...` serait pire qu'aucun menu.
+  readonly navigation?: ReactNode;
   readonly children: ReactNode;
 }): JSX.Element {
   return (
@@ -119,7 +130,30 @@ function Squelette({
           </p>
         )}
       </header>
-      <main className="app-principal" id="contenu">
+      {navigation}
+      {/*
+        **`tabIndex={-1}` N'EST PAS UN ORNEMENT : SANS LUI LE LIEN D'EVITEMENT NE
+        SAUTE RIEN.** Mesure du 23/08/2026 dans un vrai navigateur : en activant
+        le lien, le hash devient bien `#contenu` et la page defile -- mais le
+        focus part sur `<body>`, parce qu'un `<main>` n'est pas focusable. Le
+        Tab suivant repart donc du DEBUT du document, a travers le menu qu'on
+        venait de sauter.
+
+        Un lien d'evitement qui ne saute rien est PIRE que pas de lien : il
+        consomme un arret de tabulation pour rien, et il apprend a ne pas s'en
+        servir -- c'est le §7.21, un avertissement faux, dans un autre costume.
+
+        `-1` et non `0` : la cible doit etre focusable PAR PROGRAMME sans entrer
+        dans l'ordre de tabulation. Un `0` ajouterait un arret sur le contenu
+        entier, ce que personne ne demande.
+
+        **ET LE DEFAUT DATE DE `T3`, QUI A POSE CE LIEN.** Mon test verifiait que
+        le `href` vaut `#contenu` et que le `<main>` porte cet `id`. Les deux
+        etaient vrais, et le mecanisme ne fonctionnait pas : le succes du test et
+        la justesse du livrable etaient deux grandeurs differentes (§7.0,
+        quatrieme proposition).
+      */}
+      <main className="app-principal" id="contenu" tabIndex={-1}>
         <h1 className="app-titre">{titre}</h1>
         {children}
       </main>
@@ -135,6 +169,10 @@ export function CadreApplicatif(): JSX.Element {
   //  Motif etabli en `T2` : un `setState` synchrone dans un effet est refuse par
   //  `react-hooks/set-state-in-effect`, et le couplage etat/code est aussi ce qui
   //  empeche une reponse de l'entite precedente de rester affichee (§23.3).
+  //  **APPELE AVANT TOUT RETOUR ANTICIPE.** `react-hooks/rules-of-hooks` refuse un
+  //  hook place apres un retour conditionnel, et il a raison : l'ordre des appels
+  //  doit etre le meme a chaque rendu. Lecon de `T3`, deja payee deux fois.
+  const titreDeLaPage = useTitreDeLaPage("Accueil de l'entite", code ?? '');
   const [charge, setCharge] = useState<{ readonly code: string; readonly etat: Etat } | null>(null);
   const etat: Etat = !codeUtilisable
     ? { phase: 'introuvable' }
@@ -206,11 +244,15 @@ export function CadreApplicatif(): JSX.Element {
     );
   }
 
-  //  **LE `<h1>` NE REPETE PAS LE NOM DE L'ENTITE.** Mesure a l'ecran : avec le
-  //  nom en titre, il apparaissait DEUX fois -- une fois dans l'en-tete, une fois
-  //  en `<h1>` -- et un lecteur d'ecran l'entendait deux fois.
+  //  **LE `<h1>` NE REPETE PAS LE NOM DE L'ENTITE.** Mesure a l'ecran en `T3` :
+  //  avec le nom en titre, il apparaissait DEUX fois -- une fois dans l'en-tete,
+  //  une fois en `<h1>` -- et un lecteur d'ecran l'entendait deux fois.
   return (
-    <Squelette titre={TITRE_ACCUEIL_ENTITE} entite={etat.entite}>
+    <Squelette
+      titre={titreDeLaPage}
+      entite={etat.entite}
+      navigation={<NavigationPrincipale code={etat.entite.code} />}
+    >
       <Outlet context={{ entite: etat.entite } satisfies ContexteEntite} />
     </Squelette>
   );

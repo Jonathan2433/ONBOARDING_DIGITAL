@@ -45,13 +45,14 @@ import { Cadre } from './pages/Cadre';
 import { PageConnexion } from './pages/PageConnexion';
 import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur';
 import { CadreApplicatif } from './pages/CadreApplicatif';
+import { PageRubrique } from './pages/PageRubrique';
 import { PageDeconnexion } from './pages/PageDeconnexion';
 import { PageEntite } from './pages/PageEntite';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
-import { CHEMINS } from './routes';
+import { CHEMINS, RUBRIQUES } from './routes';
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -84,7 +85,28 @@ export function App(): JSX.Element {
             faire pour afficher l'entite, et rien a oublier.
           */}
           <Route path={CHEMINS.entite} element={<CadreApplicatif />}>
-            <Route index element={<PageEntite />} />
+            {/*
+              LES SIX ROUTES SONT ENGENDREES DEPUIS `RUBRIQUES` — LOT 4, `T4`.
+
+              **Aucune liste recopiee.** Le menu se rend de la meme source, et
+              `make cadre-check` confronte les deux : une rubrique ajoutee sans sa
+              route, ou l'inverse, fait echouer le controle. §7.27.
+
+              L'accueil est la route `index` -- son suffixe est vide -- et il porte
+              sa propre page ; les cinq autres portent la page de rubrique, dont le
+              contenu appartient a un lot ulterieur et qui le DIT.
+            */}
+            {RUBRIQUES.map((rubrique) =>
+              rubrique.suffixe === '' ? (
+                <Route key={rubrique.cle} index element={<PageEntite />} />
+              ) : (
+                <Route
+                  key={rubrique.cle}
+                  path={rubrique.suffixe}
+                  element={<PageRubrique libelle={rubrique.libelle} lot={rubrique.lot} />}
+                />
+              ),
+            )}
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**
