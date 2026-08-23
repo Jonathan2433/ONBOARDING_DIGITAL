@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, à l'ouverture du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T1` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -51,6 +51,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Franchissement de la porte `G3` `DEC-540`** | 1 | **Validé le 22/08/2026** |
 | **Ouverture du LOT 4 `DEC-541`** | 1 | **Validée le 22/08/2026** |
 | **Garde-fous iCloud corrigés `DEC-542`** | 1 | **Validée le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-543+`, sous-étape `T1`** | 2 | **Validées le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -62,7 +63,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **210** | |
+| **Total** | **212** | |
 
 ---
 
@@ -592,7 +593,11 @@ ne l'a pas encore placée**.
 
 | `DEC-542` | **Les copies de conflit iCloud sont couvertes par QUATRE motifs, un témoin permanent en exige l'effectivité, et la détection de réversion devient exacte.** **(a)** `.gitignore` porte `* [0-9]` et `* [0-9][0-9]` pour les répertoires **et** `* [0-9].*` et `* [0-9][0-9].*` pour les fichiers. **(b)** Le `find` d'`icloud-verify` cherche à **toutes les profondeurs**, et la cible **exige** que `git check-ignore` ignore effectivement **quatre noms témoins**. **(c)** Le contrôle d'arbre ajouté en `T12` est remplacé par `infra/scripts/verifier-reversion-icloud.py`. | **(a) LE MOTIF D'ORIGINE A ÉTÉ ÉCRIT CONTRE UN RÉPERTOIRE**, `node_modules 2`, qui n'a pas d'extension. Une copie de fichier s'appelle `modeles 2.py` : le chiffre y est suivi de l'extension. `git check-ignore` rendait `IGNORE` sur le premier et `NON IGNORE` sur le second — **115 fichiers sont ainsi entrés dans un commit par `git add -A`**, dont une seconde migration `0013` qui a rendu la chaîne de qualité rouge. `ECART-038`. **(b) LE TÉMOIN PERMANENT EST LA SEULE PART DE CETTE CORRECTION QUI NE SOIT PAS UNE PROMESSE DE VIGILANCE.** Corriger le motif corrige **une instance** ; exiger que quatre noms témoins soient effectivement ignorés corrige **la classe** — le motif ne peut plus redevenir aveugle sans que le garde-fou le dise, et il le dira à chaque `make icloud-verify`, c'est-à-dire au début de chaque session (§11). C'est aussi ce qui empêche les **deux copies de la même règle** — `.gitignore` et le `Makefile` — de diverger en silence, ce que `DEC-466` interdit. **(c) LE CONTRÔLE D'ARBRE DE `T12` ÉTAIT UN FAUX POSITIF, ET C'EST MOI QUI L'AVAIS ÉCRIT.** Il exigeait « arbre de `HEAD` identique à l'amont **et** fichiers modifiés » — l'état **normal** de toute sous-étape en cours de travail, donc une alarme à chaque début de sous-étape. Un garde-fou à faux positifs apprend à passer outre, si bien que le jour où il a raison il n'est plus lu (§7.25). Il n'a été ni supprimé ni affaibli mais **rendu exact** (§7.20) : la signature réelle de l'incident de `T11` est qu'un fichier porte **exactement**, à l'octet, le contenu d'une version antérieure de l'historique — ce qu'aucune édition humaine ne produit. Les grappes de mtime identiques à la seconde sont **rapportées** et non exigées, parce qu'un formateur produit la même grappe : corroborant, non décisif. **Le témoin a été exécuté dans les deux sens** — code 1 en nommant le fichier et le commit sur une réversion fabriquée sur `README.md`, code 0 après restauration. | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-543`.**
+| `DEC-543` | **Une route métier exige une session par `exiger_une_session`, qui réutilise le SEUL chemin de validation du projet, rafraîchit l'activité et pose `Cache-Control: no-store`.** **(a)** La dépendance appelle `lire_et_rafraichir`, sans second chemin en lecture seule. **(b)** Aucun contrôle de rôle : la matrice §5 n'en distingue aucun sur la page nationale. **(c)** `Cache-Control: no-store` est posé par la dépendance, pour toutes les routes qu'elle protège. **(d)** Le résiduel de `DEC-531` est **réexaminé, non archivé**. | **(a) DEUX CHEMINS DE VALIDATION DE SESSION AURAIENT DIVERGÉ**, et c'est ce que `DEC-466` interdit pour le masquage et `ECART-022` pour les modèles de configuration. **(b) LA MATRICE §5 MET `ANON` À TIRET ET LES HUIT RÔLES AUTHENTIFIÉS À LA COCHE** — `EMP`, `NEW`, `DSM`, `ESM`, `BOOST`, `OFFICE`, `ADM-E`, `SUPER`. La seule question est « une session valide, oui ou non » ; ajouter un contrôle de rôle exigerait **plus** que la matrice, ce qui est le défaut du §7.20. **Et `SERVICE` n'est pas une colonne de ce tableau** : le §22 dit « les comptes de service ne correspondent à **aucun rôle humain** », `RIGHTS-018` le redit, et lui ouvrir la page nationale serait inventer une ligne. J'ai failli consigner un écart sur cette absence — le §7.29 dans l'autre sens : avant de déclarer qu'un document a manqué quelque chose, cherche s'il l'a dit ailleurs. **(c)** Caddy est devant : sans cet en-tête, un mandataire partagé pourrait servir à un second appelant la réponse construite pour le premier. La route de session de `T6` le posait déjà, une route à la fois. **(d) LE RÉEXAMEN CONCLUT QUE L'ENTORSE SE GÉNÉRALISE PLUTÔT QU'ELLE NE DISPARAÎT.** `DEC-531` disait « à réexaminer au LOT 4 : si le rafraîchissement passe sur chaque requête, ce point disparaît ». Il ne disparaît pas — **chaque lecture métier écrit désormais `last_activity_at`** — et il reste acceptable pour la raison que `T6` avait mesurée : l'effet porte sur la session de l'appelant lui-même, si bien qu'un site tiers qui la déclencherait ne ferait que prolonger la session de sa victime. C'est aussi la sémantique que le mot « inactivité » exige. **Un test le MESURE** plutôt que de l'affirmer. | Validée par Jonathan le 23/08/2026 |
+
+| `DEC-544` | **`GET /api/v1/entities` rend les entités `active` SEULEMENT, quatre champs, dans un OBJET, avec un ordre TOTAL.** **(a)** Le filtre est `= active`, dérivé de `StatutEntite.ACTIVE`. **(b)** Quatre champs — `id`, `code`, `nom`, `ville` — et trois absences motivées. **(c)** `{"entites": [...]}` et non un tableau à la racine. **(d)** `ORDER BY display_name, code`. **(e)** L'endpoint est déclaré au manifeste du contrat, et deux primitives de validation sont **extraites** dans `formes.ts`. | **(a) « ACTIVE » N'EST PAS UNE INTERPRÉTATION DU BACKLOG, C'EST LE CAHIER §8.3** : « un accès à chaque entité **active** ». Deux sources concordantes. **Et le filtre porte sur TROIS états non actifs, pas sur les deux que la fiche nomme** — `draft` est le troisième, `ECART-039`. La forme positive `= active` couvre tout état futur là où `NOT IN (…)` vieillirait au premier ajout, et la valeur est **dérivée** de l'énumération, jamais littérale (§7.27). **(b)** `status` serait **constant** — toute ligne rendue est active — et un champ constant apprend à ne pas le lire ; `timezone` et `country_code` n'ont aucun consommateur au LOT 4, et livrer une donnée sans consommateur est ce que `T10` du LOT 1 refuse. `city` est exposée pour la **liste** que le §8.3 exige, **pas pour la carte** : `entity` ne porte ni latitude ni longitude, mesuré sur le schéma réel, et c'est ce qui laisse `T7` ouverte. **(c)** Un tableau à la racine ne peut pas recevoir de champ voisin, et il en faudra un : `T2` doit dire quelle entité est consultée. Aucune pagination, et c'est mesuré — le §30.25 borne la recette à 25 entités. **(d) `ORDER BY display_name` SEUL NE SUFFIT PAS** : rien n'impose l'unicité du nom d'affichage, et PostgreSQL serait libre de rendre deux homonymes dans un ordre différent d'un appel à l'autre. `code` est `UNIQUE`, donc l'ordre devient total, donc testable — un test l'exige sur trois appels. **(e)** Le contrôle du contrat a fait son travail **avant que je le lui demande** : ayant monté la route avant de la déclarer, il a échoué en nommant exactement `('/api/v1/entities', 'get')`. Le témoin a donc été exercé dans les deux sens sans mise en scène. Et `estObjet` / `exigerChaine`, privées à `sante.ts`, ont été **extraites** et non recopiées — deux exemplaires d'une même règle divergent en silence. `formes.ts` n'est **pas** réexporté : un consommateur qui validerait lui-même ne passerait plus par les validateurs du contrat. **Zod a été réexaminé et écarté** — trois formes ne le justifient pas davantage que deux, et `make audit` est à zéro tolérance depuis `DEC-493` (§7.22). | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-545`.**
 
 ---
 
@@ -785,6 +790,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-540` — franchissement de la porte `G3` | 1 | 1 |
 | `DEC-541` — ouverture du LOT 4 | 1 | 1 |
 | `DEC-542` — garde-fous iCloud corrigés | 1 | 1 |
+| `DEC-543+` — réalisation du LOT 4, `T1` | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -796,7 +802,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **210** | **210** |
+| **Total** | **212** | **212** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

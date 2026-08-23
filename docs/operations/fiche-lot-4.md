@@ -5,6 +5,7 @@
 **Ouvert par Jonathan le :** 22 août 2026 — décision `DEC-541`
 **Rédigée le :** 22 août 2026, au franchissement de la porte `G3`
 **Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 22/08/2026** — « parfait »
+**Avancement :** **`T1` terminée** le 23/08/2026. Onze sous-étapes restantes
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
 > a tenu aux LOTS 2 et 3, et elle tient ici.
@@ -74,7 +75,7 @@ pas s'ils protègent quoi que ce soit.
 
 | | Sous-étape | Story | Critère de sortie |
 |---|---|---|---|
-| **`T1`** | **Lister les entités, côté API.** `GET …/entities` : les entités **actives** seulement, et le contrat partagé. | `US001` | Une entité `suspended` ou `archived` **n'est pas rendue**, avec témoin · le contrat est lu par TypeScript **et** vérifié côté Python |
+| ~~**`T1`**~~ | ~~**Lister les entités, côté API.**~~ **TERMINÉE le 23/08/2026.** `DEC-543`, `DEC-544`. **Le critère nommait DEUX états non actifs, le modèle en déclare TROIS** — `draft` est le troisième, `ECART-039`, et c'est le §7.34 écrit la veille. Le filtre est écrit `= active`, **dérivé** de l'énumération, et un test **sans base** exige les quatre statuts connus : sans lui, mes trois témoins continueraient de passer en ne couvrant plus la classe. **Aucun contrôle de rôle**, et ce n'est pas un oubli : la matrice §5 met `ANON` à tiret et les **huit** rôles authentifiés à la coche — en ajouter un exigerait plus que la matrice. **`SERVICE` n'est pas une colonne de ce tableau**, le §22 dit « aucun rôle humain », et j'ai failli consigner un écart là où le corpus tranche. **Le résiduel de `DEC-531` est réexaminé** : l'entorse du `GET` qui écrit **se généralise** au lieu de disparaître, et un test la mesure. **Le piège `Annotated` est MESURÉ** — 422 sur `loc: ["query", "a"]`, donc un livrable qui *paraît* protégé. **674 tests** et **143 Vitest**, `make entites-check` — 10 contrôles, témoin négatif sur le conteneur reconstruit. Compte rendu : [`compte-rendu-t1-lot-4.md`](compte-rendu-t1-lot-4.md) | `US001` | ☑ |
 | **`T2`** | **L'entité consultée : où elle vit.** Le corpus dit « mémorisé **pour la session** » et ne dit pas où. Voir §8. | `US001`, `US002` | Le choix survit à un rechargement · **aucune permission locale n'est transférée**, prouvé sur une entité où la personne n'a aucun rôle |
 | **`T3`** | **Le cadre applicatif et les cinq largeurs.** Layouts mobile, tablette, bureau, et l'entité active **visible partout**. | `US004` | Aucun débordement horizontal à **320, 390, 768, 1 280, 1 920** px, mesuré · la liste des pages est **dérivée du routeur** |
 | **`T4`** | **La navigation principale, au clavier.** Les six rubriques du §8.2, dont deux conditionnelles. | `US004` | **Toutes** les actions atteignables au clavier · aucun piège de focus · l'ordre de tabulation suit l'ordre visuel |
