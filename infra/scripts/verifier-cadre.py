@@ -59,6 +59,7 @@ JETONS_TS = UI / "jetons.ts"
 CADRE_CSS = WEB / "pages" / "application.css"
 ROUTES_TS = WEB / "routes.ts"
 NAVIGATION = WEB / "pages" / "NavigationPrincipale.tsx"
+BARRE = WEB / "pages" / "BarreMobile.tsx"
 CAHIER = RACINE / "docs" / "product" / "CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
 #  **LA CLASSIFICATION DES FEUILLES, DECLAREE ET EXIGEE.**
@@ -441,6 +442,156 @@ def main() -> int:
         print("             le `<main>`, donc le focus s'y deplace vraiment")
     else:
         print("    info     aucun lien d'evitement : rien a exiger de sa cible")
+
+    # ---------------------------------------------------------------- 8 septies
+    controles += 1
+    #  **LES DEUX REPERES DE NAVIGATION NE COEXISTENT JAMAIS.** Le §8.2 reserve la
+    #  barre inferieure au mobile. Deux reperes visibles en meme temps donneraient
+    #  deux fois les memes liens dans l'ordre de tabulation, et un lecteur d'ecran
+    #  annoncerait deux navigations pour une seule page.
+    #
+    #  La verification porte sur les DEUX sens : le menu du haut cache par defaut
+    #  et montre au-dela de 768 px, la barre montree par defaut et cachee au-dela.
+    #  Un seul des deux suffirait a laisser les deux visibles quelque part.
+    bloc_tablette = re.search(r"@media \(min-width: 768px\) \{(.*?)\n\}", cadre, re.S)
+    menu_cache_par_defaut = re.search(r"\.app-navigation \{[^}]*display:\s*none", cadre) is not None
+    menu_montre_a_768 = (
+        bloc_tablette is not None
+        and re.search(r"\.app-navigation \{[^}]*display:\s*block", bloc_tablette.group(1))
+        is not None
+    )
+    barre_cachee_a_768 = (
+        bloc_tablette is not None
+        and re.search(r"\.app-barre \{[^}]*display:\s*none", bloc_tablette.group(1)) is not None
+    )
+    if arguments.temoin:
+        barre_cachee_a_768 = False
+    manques = [
+        nom
+        for nom, present in (
+            ("le menu du haut cache par defaut", menu_cache_par_defaut),
+            ("le menu du haut montre a partir de 768 px", menu_montre_a_768),
+            ("la barre cachee a partir de 768 px", barre_cachee_a_768),
+        )
+        if not present
+    ]
+    if manques:
+        echecs += 1
+        print(f"    ECHEC    {len(manques)} regle(s) manquante(s) pour que les DEUX reperes")
+        print("             de navigation ne coexistent jamais :")
+        for m in manques:
+            print(f"             {m}")
+    else:
+        print("    ok       les deux reperes de navigation ne coexistent JAMAIS : menu du")
+        print("             haut a partir de 768 px, barre en dessous — verifie dans les")
+        print("             DEUX sens")
+
+    # ---------------------------------------------------------------- 8 octies
+    controles += 1
+    #  **LE NOMBRE DE CELLULES DE LA BARRE EST BORNE PAR UNE MESURE.** A 320 px,
+    #  quatre cellules de 80 px logent les quatre libelles inconditionnels -- dont
+    #  « Trombinoscope » sur deux lignes -- et six cellules de 53 px mettraient
+    #  « Mon onboarding » sur TROIS lignes. Mesure du 23/08/2026, police reelle.
+    #
+    #  Le jour ou une rubrique INCONDITIONNELLE serait ajoutee, ce controle le
+    #  dira : c'est le seul endroit ou la mesure devient une exigence.
+    source_barre = BARRE.read_text(encoding="utf-8") if BARRE.exists() else ""
+    borne = re.search(r"CELLULES_MAXIMUM_A_320\s*=\s*(\d+)", source_barre)
+    inconditionnelles = [r for r in rubriques if not r["condition"]]
+    if not source_barre:
+        print("    info     aucune barre mobile : rien a borner")
+    elif borne is None:
+        echecs += 1
+        print("    ECHEC    `CELLULES_MAXIMUM_A_320` introuvable dans `BarreMobile.tsx`")
+    elif len(inconditionnelles) > int(borne.group(1)):
+        echecs += 1
+        print(
+            f"    ECHEC    {len(inconditionnelles)} rubriques inconditionnelles pour "
+            f"{borne.group(1)} cellules mesurees a 320 px"
+        )
+        print("             -> a 320 px, un libelle passerait sur trois lignes. Soit la")
+        print("                rubrique rejoint « Plus », soit la mesure est refaite.")
+    else:
+        print(
+            f"    ok       {len(inconditionnelles)} rubriques dans la barre pour "
+            f"{borne.group(1)} cellules mesurees a 320 px"
+        )
+
+    # ---------------------------------------------------------------- 8 nonies
+    controles += 1
+    #  **« PLUS » EST UN `<details>`, ET C'EST CE QUI REND LE PIEGE IMPOSSIBLE.**
+    #  Un bouton et son panneau exigeraient de gerer l'ouverture, `Escape` et le
+    #  RETOUR du focus -- le terrain meme ou naissent les pieges de focus. §7.2.
+    if not source_barre:
+        print("    info     aucune barre mobile : rien a exiger de son panneau")
+    elif "<details" not in source_barre or "<summary" not in source_barre:
+        echecs += 1
+        print("    ECHEC    l'acces « Plus » n'est pas un `<details>`/`<summary>`")
+        print("             -> il faudrait alors gerer le focus a la main, et c'est la que")
+        print("                naissent les pieges que `T4` a rendus impossibles")
+    elif re.search(r"\.focus\(\)|useRef|addEventListener", source_barre):
+        echecs += 1
+        print("    ECHEC    la barre manipule le focus ou ecoute des evenements : un piege")
+        print("             devient possible, ce que `<details>` evitait justement")
+    else:
+        print("    ok       « Plus » est un `<details>` et AUCUN code ne touche au focus :")
+        print("             aucun piege n'est possible")
+
+    # ---------------------------------------------------------------- 8 decies
+    controles += 1
+    #  **TOUT ELEMENT INTERACTIF DU CADRE A UNE REGLE `:focus-visible` AVEC UN
+    #  CONTOUR.** §14.2, « focus visible ».
+    #
+    #  Ce controle existe parce que la mesure au clavier n'est pas toujours
+    #  possible : le volet du navigateur a cesse de delivrer les evenements clavier
+    #  deux fois pendant `T5`. Une exigence statique EXACTE vaut mieux qu'une
+    #  mesure qu'on ne peut pas rejouer -- et elle tourne a chaque pull request,
+    #  ce qu'une mesure manuelle ne fait pas.
+    #
+    #  **LA LISTE EST DERIVEE DU TSX, PAS DU NOMMAGE, ET C'EST UNE CORRECTION.**
+    #
+    #  Ma premiere version cherchait les classes de la feuille contenant `-lien` ou
+    #  `-evitement`. Elle a signale `.app-liens` -- le `<ul>` CONTENEUR, qui n'est
+    #  pas focusable -- soit un FAUX POSITIF des sa premiere execution. Un
+    #  garde-fou a faux positifs apprend a passer outre, si bien que le jour ou il
+    #  a raison il n'est plus lu : §7.25.
+    #
+    #  La derivation exacte passe par le TYPE D'ELEMENT, qui est ce qui determine
+    #  la focusabilite : `<a>`, `<Link>`, `<NavLink>`, `<button>` et `<summary>`
+    #  sont focusables, un `<ul>` non. Le nommage ne le dit pas ; le TSX si.
+    interactives_par_element: set[str] = set()
+    for module in sorted(WEB.rglob("*.tsx")):
+        if module.name.endswith(".test.tsx"):
+            continue
+        source_tsx = module.read_text(encoding="utf-8")
+        interactives_par_element |= set(
+            re.findall(
+                r"<(?:a|Link|NavLink|button|summary)\s[^>]*className=\"(app-[a-z-]+)\"",
+                source_tsx,
+            )
+        )
+    interactives = sorted(interactives_par_element)
+    sans_focus = [
+        classe
+        for classe in interactives
+        if not re.search(rf"\.{classe}:focus-visible\s*\{{[^}}]*outline:", cadre)
+    ]
+    if arguments.temoin:
+        sans_focus = ["app-temoin-sans-focus"]
+    if len(interactives) < 3:
+        echecs += 1
+        print(f"    ECHEC    {len(interactives)} classe(s) interactive(s) trouvee(s), au moins 3")
+        print("             attendues -- la derivation par nommage ne marche plus")
+    elif sans_focus:
+        echecs += 1
+        print(f"    ECHEC    {len(sans_focus)} classe(s) interactive(s) SANS `:focus-visible`")
+        print("             portant un `outline` :")
+        for classe in sans_focus:
+            print(f"             .{classe}")
+        print("             -> un utilisateur au clavier ne saurait pas ou il est. §14.2.")
+    else:
+        print(f"    ok       les {len(interactives)} classes interactives ont une regle")
+        print("             `:focus-visible` avec un `outline` — §14.2, focus visible")
 
     # ---------------------------------------------------------------- 9
     controles += 1

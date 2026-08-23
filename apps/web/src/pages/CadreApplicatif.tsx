@@ -46,6 +46,7 @@ import type { EntiteDuPortail } from '@onboarding/contracts';
 
 import { lireLEntite } from '../api/portail';
 import { CHEMINS, cheminDeRubrique, RUBRIQUES } from '../routes';
+import { BarreMobile } from './BarreMobile';
 import { NavigationPrincipale } from './NavigationPrincipale';
 import './application.css';
 
@@ -103,6 +104,7 @@ function Squelette({
   titre,
   entite,
   navigation,
+  barre,
   children,
 }: {
   readonly titre: string;
@@ -111,6 +113,8 @@ function Squelette({
   //  et « erreur » n'ont pas d'entite, donc aucun code a mettre dans les liens :
   //  un menu vers `/entites/undefined/...` serait pire qu'aucun menu.
   readonly navigation?: ReactNode;
+  //  La barre mobile, meme raison : sans entite, ses liens n'auraient pas de code.
+  readonly barre?: ReactNode;
   readonly children: ReactNode;
 }): JSX.Element {
   return (
@@ -157,6 +161,14 @@ function Squelette({
         <h1 className="app-titre">{titre}</h1>
         {children}
       </main>
+      {/*
+        **LA BARRE VIENT EN DERNIER DANS LE DOM, ET C'EST L'ORDRE VISUEL.** Elle
+        est ancree en bas de l'ecran ; la mettre avant le contenu ferait diverger
+        l'ordre de tabulation de l'ordre visuel, ce que le critere de `T4`
+        interdit. Un utilisateur au clavier parcourt donc le contenu, puis la
+        barre -- exactement ce que son oeil parcourt.
+      */}
+      {barre}
     </div>
   );
 }
@@ -252,6 +264,7 @@ export function CadreApplicatif(): JSX.Element {
       titre={titreDeLaPage}
       entite={etat.entite}
       navigation={<NavigationPrincipale code={etat.entite.code} />}
+      barre={<BarreMobile code={etat.entite.code} />}
     >
       <Outlet context={{ entite: etat.entite } satisfies ContexteEntite} />
     </Squelette>

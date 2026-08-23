@@ -229,9 +229,157 @@
   border-bottom-color: var(--marque-bleu);
 }
 
+/* ─── la barre inferieure mobile — LOT 4, T5, cahier §8.2 ─────────────── */
+
+/* **ELLE N'EXISTE QUE SOUS 768 px.** Le §8.2 dit « SUR MOBILE ». Deux reperes de
+   navigation visibles en meme temps donneraient deux fois les memes liens dans
+   l'ordre de tabulation. Le menu du haut est cache symetriquement, plus bas. */
+.app-barre {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  border-top: 1px solid var(--trait);
+  background: var(--fond-doux);
+}
+
+.app-barre-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+}
+
+/* `flex: 1 1 0` et `min-width: 0` : les cellules se partagent la largeur a
+   EGALITE, et un libelle long se replie au lieu de pousser les autres. La mesure
+   du 23/08/2026 dit que quatre cellules de 80 px logent les quatre libelles, dont
+   « Trombinoscope » sur deux lignes. */
+.app-barre-cellule {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+}
+
+/* 44 px de haut au minimum — WCAG 2.2 AA « Target Size (Minimum) », 2.5.8. La
+   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`. */
+.app-barre-lien {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--espace-xs) 2px;
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  /* **`hyphens: auto` PLUTOT QU'UNE COUPURE N'IMPORTE OU, ET C'EST MESURE.**
+     `index.html` declare `lang="fr"`, donc le navigateur sait couper le francais.
+     Mesure du 23/08/2026, « Trombinoscope » dans une cellule de 76 px :
+
+         overflow-wrap: anywhere              « Trombinosc / ope »
+         hyphens: auto + break-word           « Trombino- / scope »
+
+     Meme hauteur -- deux lignes dans les deux cas -- et une coupure lisible au
+     lieu d'une coupure au hasard. `break-word` et non `anywhere` : la coupure
+     arbitraire reste le dernier recours, apres la cesure. */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  border-top: 3px solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* `<summary>` porte un marqueur par defaut ; on le retire des deux facons que les
+   navigateurs connaissent, sans quoi un triangle occuperait la cellule. */
+.app-barre-lien::-webkit-details-marker {
+  display: none;
+}
+
+.app-barre-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+  color: var(--encre);
+}
+
+/* Meme parti que le menu du haut : le SELECTEUR est `aria-current`, et le trait
+   double la couleur. §14.2, l'information n'est jamais portee par la seule
+   couleur. */
+.app-barre-lien[aria-current='page'] {
+  color: var(--encre);
+  border-top-color: var(--marque-bleu);
+}
+
+/* Le panneau « Plus » s'ouvre VERS LE HAUT : ancre au bas de l'ecran, il n'a pas
+   de place en dessous. */
+.app-barre-plus {
+  flex: 1 1 auto;
+  display: flex;
+}
+
+.app-barre-panneau {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--espace-xs);
+  list-style: none;
+  background: var(--fond);
+  border-top: 1px solid var(--trait);
+  box-shadow: var(--ombre-posee);
+}
+
+.app-barre-lien-secondaire {
+  display: block;
+  min-height: 44px;
+  padding: var(--espace-s);
+  color: var(--encre);
+  font-size: var(--taille-s);
+  line-height: 1.5;
+  text-decoration: none;
+  border-radius: var(--rayon-s);
+  box-sizing: border-box;
+}
+
+.app-barre-lien-secondaire:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+}
+
+/* Le contenu ne passe pas SOUS la barre : sans cette reserve, la fin de chaque
+   page serait masquee, et un lien en bas de contenu deviendrait inatteignable a
+   la souris comme au doigt. */
+.app-principal {
+  padding-bottom: calc(44px + 2 * var(--espace-m));
+}
+
 /* ─── tablette : a partir de 768 px ───────────────────────────────────── */
 
+/* **LE MENU DU HAUT N'EXISTE QUE SUR TABLETTE ET BUREAU.** Symetrique de la
+   barre : le §8.2 reserve la barre inferieure au mobile. */
+.app-navigation {
+  display: none;
+}
+
 @media (min-width: 768px) {
+  .app-navigation {
+    display: block;
+  }
+
+  /* Et la barre disparait : plus rien ne la couvre, donc plus de reserve. */
+  .app-barre {
+    display: none;
+  }
+
+  .app-principal {
+    padding-bottom: var(--espace-l);
+  }
+
   .app-entete {
     flex-direction: row;
     align-items: baseline;
