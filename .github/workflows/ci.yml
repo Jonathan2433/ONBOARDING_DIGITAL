@@ -338,6 +338,28 @@ jobs:
         # prouverait l'absence de controle plutot que l'absence de fuite.
         run: make evenements-check
 
+      - name: Le portail national ne propose QUE des entites actives
+        # LOT 4, T1 — `MVP-L04-US001`. Dix controles, a travers Caddy en HTTPS.
+        #
+        # IL EXAMINE LES QUATRE ETATS DU MODELE, ET IL DIT COMBIEN. Le critere de
+        # la fiche n'en nommait que DEUX -- `suspended` et `archived` -- alors que
+        # `StatutEntite` en declare quatre : `draft` etait le troisieme etat non
+        # actif, et le suivre a la lettre aurait laisse une entite en brouillon sur
+        # la page nationale AVEC UN CRITERE QUI SE LIT SATISFAIT. C'est ECART-039,
+        # et c'est le §7.34 -- un motif ecrit contre un exemple ne couvre que cet
+        # exemple. La liste est donc DERIVEE de l'enumeration, jamais recopiee.
+        #
+        # IL PORTE TROIS TEMOINS, et chacun repond a un echec qui produirait la
+        # meme observation qu'un succes :
+        #   la connexion REUSSIT et pose un cookie -- sans quoi une liste vide
+        #     serait indistinguable d'un filtrage correct ;
+        #   l'entite ACTIVE est rendue -- sans quoi les trois exclusions seraient
+        #     satisfaites par une route qui ne rend jamais rien ;
+        #   les deux refus sont COMPARES, corps ET en-tetes, la correlation etant
+        #     FIXEE plutot qu'un champ exclu. Seul `date` echappe -- l'horloge de
+        #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
+        run: make entites-check
+
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
         # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes

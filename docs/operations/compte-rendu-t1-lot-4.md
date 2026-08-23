@@ -160,7 +160,7 @@ ajoutée est une surface de plus. C'est le §7.22 — un résiduel se réévalue
 | Contrôle | Résultat |
 |---|---|
 | `make check` | **code 0** — **674** pytest (661 + 13), **143** Vitest (133 + 10) |
-| `make entites-check` | **code 0** — **10 contrôles**, 0 échec, à travers Caddy en HTTPS |
+| `make entites-check` | **code 0** — **10 contrôles**, 0 échec, à travers Caddy en HTTPS. **Dans la CI**, tâche « stack » |
 | `make residu-check` | **code 0** — 23 tables comptées, **aucun résidu** |
 | `make code-check` | **code 0** — les 56 fichiers du conteneur sont ceux du dépôt |
 | `make api-check` · `web-check` | **code 0** · **code 0** |

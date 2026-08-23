@@ -31,7 +31,7 @@ d'agir.
 | **Tests** | **817** : **674 pytest** — dont **401 d'intégration** — et **143 Vitest** (90 `ui`, **42 `web`**, **11 `contracts`**) |
 | Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
-| Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~2 min de qualité + ~3 min 30 de stack |
+| Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **76 cibles** documentées. `make help` fait foi |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
@@ -2014,9 +2014,9 @@ make evenements-check     #  6 — les 7 evenements du 10.6, sans rien de sensib
 make residu-check         #      la suite d'integration, ET la preuve qu'elle ne laisse rien
                           #      Il REMPLACE `make test-integration`, il ne s'y ajoute pas.
 
-# Le controle du LOT 4. Il EXIGE que le conteneur porte le code du depot : lance
-# `make code-refresh && make code-check` d'abord, sinon il eprouve un autre
-# artefact en paraissant sain. §7.28
+# Le controle du LOT 4, dans la CI comme les onze precedents. Il EXIGE que le
+# conteneur porte le code du depot : lance `make code-refresh && make code-check`
+# d'abord, sinon il eprouve un autre artefact en paraissant sain. §7.28
 make entites-check        # 10 — une entite par etat, les TROIS non actifs exclus,
                           #      et les deux refus compares corps ET en-tetes
 
