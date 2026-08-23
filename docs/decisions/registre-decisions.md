@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T2` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T3` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -53,6 +53,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Garde-fous iCloud corrigés `DEC-542`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-543+`, sous-étape `T1`** | 2 | **Validées le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-545`, sous-étape `T2`** | 1 | **Validée le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-546`, sous-étape `T3`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -64,7 +65,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **213** | |
+| **Total** | **214** | |
 
 ---
 
@@ -600,7 +601,9 @@ ne l'a pas encore placée**.
 
 | `DEC-545` | **L'entité consultée vit dans l'ADRESSE, `/entites/{code}`. Aucune colonne, aucun stockage navigateur, aucune migration.** **(a)** Le `code` est la clé publique. **(b)** Une entité non active rend **404, identique** à une entité absente. **(c)** Le changement d'entité **abandonne** la requête en cours. **(d)** La réponse est la **même** que l'appelant appartienne à l'entité ou non. | **(a) LE CAHIER DETERMINE LE PARCOURS, ET CELA FERME LA QUESTION QUE LA FICHE DISAIT OUVERTE.** Le §4.1 « une page nationale **après authentification** », le diagramme du §8.1, la séquence du §9.1 et l'énumération du §9.2 font **tous** atterrir sur la page nationale. Une mémoire serveur du dernier choix n'aurait donc **aucun consommateur** : elle servirait à sauter un écran que le cahier prescrit. Et « le choix est mémorisé pour la session » ne peut alors signifier qu'une chose — le choix persiste **pendant** qu'on navigue. `ECART-040`, et c'est le §7.29 pour la troisième fois en deux lots.<br>**Trois mécanismes ont été écartés, chacun pour une raison mesurée** : une colonne sur `user_session` n'aurait aucun consommateur **et** ferait que deux onglets se disputent une seule mémoire ; `localStorage` et `sessionStorage` sont interdits par le contrôle du frontend — plus strict que le cahier §7.4, et le relâcher exigerait de **juger** ce qui est une donnée d'authentification, donc d'introduire une **heuristique dans un contrôle**, ce que le §7.25 nomme un défaut ; un cookie dédié voyagerait sur chaque requête et se disputerait de la même façon.<br>**Le `code` est la clé, et c'est mesuré** : `code_unique` n'a **aucune clause partielle**, donc une entité archivée garde son code réservé et un code n'est **jamais réattribué**. Et il est **encodé** partout où il entre dans un chemin : `entity.code` est une chaîne libre de 64 caractères, sans motif imposé, et un `/` non encodé appellerait une autre route. **(b)** Le §8.3 donne accès aux entités **actives** : pour l'appelant, une entité `draft` n'est pas interdite, elle **n'existe pas**. Distinguer les deux apprendrait qu'un brouillon existe, et **le LOT 9 en créera avant publication**. Les deux réponses sont **comparées** — statut, corps et en-têtes, corrélation **fixée** — et l'égalité est vérifiée **après** avoir exigé 404, sans quoi deux `200` la satisferaient aussi : défaut `T8-1` du LOT 3. **(c)** Le §23.3 l'exige littéralement : « annule les requêtes et caches associés à l'entité précédente ». Sans `AbortController` **et** sans couplage de l'état au code, une réponse lente pour l'entité quittée arriverait **après** celle de la nouvelle et l'écraserait. **Le défaut n'apparaît que sous latence**, donc jamais en développement local — §7.16. Un test le fabrique. **(d)** La matrice §5 donne « Lecture de toutes les entités » à `EMP` : une réponse enrichie pour un membre laisserait le frontend **déduire** l'appartenance depuis une lecture que le cahier veut identique pour tous. Le test ferme aussi la porte à un filtrage introduit plus tard « pour bien faire ». | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-546`.**
+| `DEC-546` | **Un cadre applicatif porte l'entité active et l'unique `<h1>` ; les feuilles du design system sont enfin CHARGÉES ; `code-refresh` couvre `web`.** **(a)** `CadreApplicatif` est une **route de mise en page** : toute page interne hérite de l'en-tête par construction. **(b)** Le `<h1>` porte « Accueil de l'entité », libellé du §8.1, et **non** le nom de l'entité. **(c)** Trois layouts, deux points de rupture, **768 et 1 280**, tous deux dans les largeurs de recette. **(d)** `main.tsx` importe `jetons.css` **et** `composants.css`. **(e)** `code-refresh` reconstruit `web`. **(f)** `make cadre-check` et son témoin. | **(a) « L'ENTITÉ ACTIVE VISIBLE PARTOUT » DOIT ÊTRE STRUCTUREL, PAS DISCIPLINAIRE.** Le §23.3 exige « visible dans l'en-tête de l'application » et la roadmap « sur **toutes** les pages internes ». Demander à chaque page de l'afficher se tiendrait par la discipline ; une route de mise en page le tient par construction — §7.2, changer de forme plutôt que promettre de l'attention. Le contrôle **dérive** les routes internes de `App.tsx`, et il mordra à `T4`. **(b) MESURE À L'ÉCRAN : le nom apparaissait DEUX fois**, dans l'en-tête et en `<h1>`, et un lecteur d'écran l'entendait deux fois. **Deux mécanismes de titre ont été essayés et le premier est mesuré comme impossible ici** : `handle` + `useMatches` est la façon idiomatique, et `useMatches` **exige un data router** — « useMatches must be used within a data router » — alors que `App.tsx` emploie le routeur **déclaratif** choisi en `T11` pour que les liens de magic link soient de vraies URL. Migrer l'architecture de routage pour un titre serait disproportionné, et bâtir un mécanisme sans les rubriques qui le motivent serait livrer sans consommateur. **`T4` tranchera avec ses six rubriques en main**, et il a le choix mesuré. **(c)** Le §13.4 impose de recetter cinq largeurs ; ce ne sont pas des points de rupture. Les deux retenus séparent les trois layouts que la roadmap nomme et **tombent sur deux valeurs de cette liste**, pour que la recette mesure exactement les frontières. `cadre-check` relit `LARGEURS_RECETTE` et **exige** cette appartenance. **(d) LE DÉFAUT LE PLUS SÉRIEUX DE LA SOUS-ÉTAPE, ET IL DATE DE `T11` DU LOT 3** : rien n'importait les deux feuilles. Mesure sur l'application servie — **14 des 21 propriétés de `auth.css` ne résolvaient rien**, et les 7 autres seulement par accident, `styles.css` définissant les mêmes noms avec des valeurs identiques ; et les trois boutons des huit écrans rendaient `border-radius: 0px` avec le fond par défaut du navigateur. `packages/ui/src/index.ts` **écrivait les deux lignes d'import à poser**. Après correction : `--marque-bleu` vaut `#5853ff`, `--rayon-m` `12px`, et le bouton rend `rgb(88, 83, 255)` et `12px`. **(e)** `code-refresh` ne reconstruisait que `api` et `worker` ; le frontend servi est resté celui du LOT 1 pendant **tout le LOT 3 et les deux premières sous-étapes du LOT 4** — 9 fichiers dans le conteneur contre 24 dans le dépôt, mesuré. `ECART-042`. **(f)** Le contrôle exige que **toute `var(--x)` employée par une feuille chargée soit définie par une feuille chargée**, et que la feuille des composants soit chargée **dès qu'un module importe un composant** — exigence **dérivée**, non liste tenue à jour. Il **classe** chaque feuille du frontend, là où `verifier-ecrans.py` n'examinait qu'un chemin écrit en dur. Et il **dit ce qu'il ne mesure pas** : le débordement réel exige un moteur de rendu, le §17.1 nomme Playwright et **le LOT 12 le possède**. | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-547`.**
 
 ---
 
@@ -795,6 +798,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-542` — garde-fous iCloud corrigés | 1 | 1 |
 | `DEC-543+` — réalisation du LOT 4, `T1` | 2 | 2 |
 | `DEC-545` — réalisation du LOT 4, `T2` | 1 | 1 |
+| `DEC-546` — réalisation du LOT 4, `T3` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -806,7 +810,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **213** | **213** |
+| **Total** | **214** | **214** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
