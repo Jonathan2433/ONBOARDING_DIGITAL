@@ -49,6 +49,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 3 `DEC-538`, sous-étape `T12`** | 1 | **Validée le 22/08/2026** |
 | **Recette réépinglée `DEC-539`, avant la porte `G3`** | 1 | **Validée le 22/08/2026** |
 | **Franchissement de la porte `G3` `DEC-540`** | 1 | **Validé le 22/08/2026** |
+| **Ouverture du LOT 4 `DEC-541`** | 1 | **Validée le 22/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -60,7 +61,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **208** | |
+| **Total** | **209** | |
 
 ---
 
@@ -586,7 +587,9 @@ ne l'a pas encore placée**.
 
 | `DEC-540` | **La porte `G3` est franchie. Le LOT 3 est verrouillé, `develop` est fusionnée dans `main` par un MERGE COMMIT, et le tag `v0.3.0` est posé.** | **Décision de Jonathan du 22/08/2026**, sur la checklist [`checklist-validation-G3.md`](../operations/checklist-validation-G3.md) : six critères de sortie, **onze contrôles de stack**, une démonstration guidée en sept gestes, et une section entière sur ce que le lot **n'a pas** fait. **LE MERGE COMMIT N'EST PAS UNE PRÉFÉRENCE, C'EST `ECART-026`.** À `G2`, la fusion s'est rabattue sur un squash, ce qui a **coupé `main` de l'histoire de `develop`** : la fusion suivante a mis **9 fichiers en conflit alors que le contenu ne divergeait pas**. Et la résolution `git merge -X theirs` avait **réussi** — code 0, aucun conflit signalé — en gardant 41 lignes dupliquées du côté abandonné. **Le succès d'une fusion et sa justesse sont deux grandeurs différentes.** Le contrôle qui discrimine porte donc sur l'**arbre**, non sur le verdict de l'outil, et il a été exécuté **dans un arbre de travail jetable avant de toucher `main`** : l'arbre obtenu vaut `4a4f6699…`, **identique** à celui de `develop`, et zéro conflit. Mesuré avant, revérifié après. | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-541`.**
+| `DEC-541` | **Le LOT 4 — portail national, sélection d'entité et navigation — est ouvert.** Son découpage en **douze** sous-étapes est proposé dans [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §3, et **aucune ligne de code n'est écrite avant sa validation**. | **Décision de Jonathan du 22/08/2026**, au franchissement de `G3`. **Le lot compte SEPT stories, non huit** — cinq `P0`, deux `P1` — compté dans le backlog, pas recopié. **L'API vient en premier dans le découpage**, et ce n'est pas un goût : la roadmap dit « route guards **uniquement ergonomiques** · contrôles d'autorisation **systématiques dans l'API** », et la règle 5 fait de l'API l'autorité finale — commencer par l'interface produirait des écrans dont on ne saurait pas s'ils protègent quoi que ce soit. **Le §8 de la fiche ne déclare que DEUX points ouverts, et chacun a été cherché dans le cahier, la matrice, le modèle ET le backlog avant d'être déclaré tel** : la carte de France, dont le corpus ne dit que « illustrative » et pour laquelle `entity` porte `city` mais **ni latitude ni longitude** — mesuré sur le schéma réel ; et où vit l'entité consultée, `user_session` n'ayant **aucune colonne d'entité**. **Un troisième candidat a été écarté par la vérification** : je m'apprêtais à déclarer que les rubriques de navigation ne sont énumérées nulle part, et **le §8.2 les énumère** — six, dont deux conditionnelles, plus l'accès « Plus » de la barre mobile. C'est exactement le §7.29, la leçon que le LOT 3 a payée trois fois. | Validée par Jonathan le 22/08/2026 |
+
+**Prochain identifiant libre : `DEC-542`.**
 
 ---
 
@@ -777,6 +780,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-538` — réalisation du LOT 3, `T12` | 1 | 1 |
 | `DEC-539` — recette réépinglée avant `G3` | 1 | 1 |
 | `DEC-540` — franchissement de la porte `G3` | 1 | 1 |
+| `DEC-541` — ouverture du LOT 4 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -788,7 +792,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **208** | **208** |
+| **Total** | **209** | **209** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
