@@ -44,6 +44,7 @@ import { FrontiereErreur } from './FrontiereErreur';
 import { Cadre } from './pages/Cadre';
 import { PageConnexion } from './pages/PageConnexion';
 import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur';
+import { CadreApplicatif } from './pages/CadreApplicatif';
 import { PageDeconnexion } from './pages/PageDeconnexion';
 import { PageEntite } from './pages/PageEntite';
 import { PageLien } from './pages/PageLien';
@@ -67,8 +68,24 @@ export function App(): JSX.Element {
           <Route path={CHEMINS.interdit} element={<Page403 />} />
           <Route path={CHEMINS.introuvable} element={<Page404 />} />
           <Route path={CHEMINS.erreur} element={<PageErreur />} />
-          {/* LOT 4, `T2` : l'entite consultee vit dans l'adresse. */}
-          <Route path={CHEMINS.entite} element={<PageEntite />} />
+          {/*
+            LOT 4, `T2` puis `T3` — L'ENTITE CONSULTEE VIT DANS L'ADRESSE, ET LE
+            CADRE LA PORTE.
+
+            **C'est une route de MISE EN PAGE**, pas une page : `CadreApplicatif`
+            resout l'entite, l'affiche dans l'en-tete, et rend ses enfants par
+            `Outlet`. Toute page interne ajoutee dessous herite donc de
+            l'en-tete **par construction** -- ce que le cahier §23.3 exige, « doit
+            etre visible dans l'en-tete de l'application », et ce que le critere
+            de sortie de la roadmap redit, « l'entite active est visible sur
+            TOUTES les pages internes ».
+
+            `T4` posera ses six rubriques ici, en enfants. Elles n'auront rien a
+            faire pour afficher l'entite, et rien a oublier.
+          */}
+          <Route path={CHEMINS.entite} element={<CadreApplicatif />}>
+            <Route index element={<PageEntite />} />
+          </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**
             Rediriger vers `/404` changerait l'URL et ferait perdre a

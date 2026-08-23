@@ -385,7 +385,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -855,10 +855,19 @@ migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque en DEV
 # `api-check` sur une API en cours de demarrage, et l'echec serait intermittent
 # donc penible a attribuer. Un defaut qui ne se produit qu'une fois sur trois
 # coute plus cher qu'un defaut franc.
-code-refresh: ## Reconstruire et recreer api et worker pour qu'ils portent le code du depot
-	@echo "==> Reconstruction de api et worker (le code est cuit dans l'image)"
-	@$(DC) build api worker
-	@$(DC) up --detach --wait --no-deps api worker
+code-refresh: ## Reconstruire et recreer api, worker ET web pour qu'ils portent le code du depot
+	@echo "==> Reconstruction de api, worker et web (le code est cuit dans les images)"
+	@#  **`web` A ETE AJOUTE EN `T3` DU LOT 4, ET SON ABSENCE A COUTE CHER.**
+	@#  Cette cible ne reconstruisait que `api` et `worker`. Le conteneur `web`
+	@#  n'est rafraichi que par `make up`, et comme la routine de sous-etape
+	@#  emploie `code-refresh`, le frontend servi est reste celui du LOT 1
+	@#  pendant TOUT le LOT 3 et les deux premieres sous-etapes du LOT 4 :
+	@#  9 fichiers dans le conteneur contre 24 dans le depot, mesure.
+	@#  `make ecrans-check` passait quand meme, parce qu'il verifiait que les
+	@#  huit chemins rendent `text/html` avec le point de montage -- ce que le
+	@#  repli SPA fait pour N'IMPORTE QUEL chemin. §7.0, quatrieme proposition.
+	@$(DC) build api worker web
+	@$(DC) up --detach --wait --no-deps api worker web
 
 code-check: ## Verifier que le conteneur execute le code du depot, par empreinte
 	@python3 infra/scripts/verifier-code-embarque.py \
@@ -1005,6 +1014,35 @@ ecrans-check: ## Prouver que les 8 ecrans sont servis, sans couleur hors jetons 
 service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration agit, et l audit (US007)
 	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+cadre-check: ## Prouver le cadre applicatif : jetons resolus, layouts, routes internes (LOT 4, T3)
+	@#  STATIQUE : il n'ouvre aucune connexion, il est donc dans `make check`.
+	@#  Le debordement REEL exige un moteur de rendu -- LOT 12, Playwright.
+	@python3 infra/scripts/verifier-cadre.py
+
+cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
+	@sortie=$$(python3 infra/scripts/verifier-cadre.py --temoin 2>&1) && code=0 || code=$$?; \
+	if [ "$$code" = "0" ]; then \
+		echo "  ECHEC    le temoin est PASSE : le controle ne discrimine pas"; \
+		exit 1; \
+	fi; \
+	attendus=0; \
+	echo "$$sortie" | grep -q 'NON DEFINIE' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'aucune route de mise en page' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "N'EST PAS chargee" && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "3" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 3 raisons attendues ($$attendus/3)"; \
+		echo "$$sortie" | sed 's/^/           /'; \
+		exit 1; \
+	fi; \
+	echo; \
+	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
+	echo "    ok       code=$$code, et les TROIS motifs attendus sont nommes :"; \
+	echo "             une propriete non definie par une feuille chargee"; \
+	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
+	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
+	echo; \
+	echo "  --> le controle discrimine"
 
 entites-check: ## Prouver que la page nationale ne propose QUE des entites actives (LOT 4, US001)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \

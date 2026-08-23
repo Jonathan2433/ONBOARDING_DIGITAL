@@ -1,0 +1,220 @@
+/*
+ * Le cadre applicatif et les trois layouts — LOT 4, sous-etape T3.
+ *
+ * AUCUNE COULEUR LITTERALE, AUCUNE LARGEUR FIXE
+ *
+ *   Chaque couleur est une `var(--…)` de `jetons.css`, dont les couples
+ *   fond/texte sont recalcules contre WCAG 2.2 AA par `jetons.test.ts`.
+ *
+ *   Et aucune propriete `width` ou `min-width` en pixels : ce sont elles qui
+ *   font deborder une page. Les conteneurs emploient `max-width`, des unites
+ *   relatives et `min-width: 0` sur les enfants de flex -- sans ce dernier, un
+ *   contenu long refuse de se reduire et pousse la ligne au-dela du viewport,
+ *   ce qui est la cause la plus banale d'un debordement horizontal.
+ *
+ * TROIS LAYOUTS, DEUX POINTS DE RUPTURE, ET ILS SONT CONFRONTES
+ *
+ *   Le cahier §13.4 impose de recetter a 320, 390, 768, 1 280 et 1 920 px « et
+ *   plus ». Ce ne sont pas des points de rupture : c'est une liste de recette.
+ *   Les deux points de rupture retenus -- 768 px et 1 280 px -- sont ceux qui
+ *   separent les trois layouts que la roadmap nomme, « desktop, tablette et
+ *   mobile », et ils tombent sur deux valeurs de cette liste pour que la recette
+ *   mesure exactement les frontieres.
+ *
+ *   `make cadre-check` relit ces deux valeurs et EXIGE qu'elles appartiennent a
+ *   `LARGEURS_RECETTE` : un point de rupture pose ailleurs ferait echouer le
+ *   controle, parce qu'il ne serait plus recette.
+ *
+ * ACCESSIBILITE — cahier §14.2
+ *
+ *   - `:focus-visible` sur tout element interactif, jamais supprime ;
+ *   - le lien d'evitement est visible DES qu'il recoit le focus, et non
+ *     seulement au survol -- un utilisateur au clavier ne survole rien ;
+ *   - l'entite active porte son nom ET sa ville en deux elements : l'information
+ *     n'est portee ni par la couleur ni par la seule position ;
+ *   - `prefers-reduced-motion` neutralise les deux transitions de ce fichier.
+ */
+
+/* ─── mobile d'abord : de 320 px a 767 px ─────────────────────────────── */
+
+.app-cadre {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--police);
+}
+
+/* Le lien d'evitement : hors ecran, ramene DES le focus. */
+.app-evitement {
+  position: absolute;
+  left: var(--espace-s);
+  top: calc(-1 * var(--espace-xxl));
+  z-index: 10;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-s);
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  font-size: var(--taille-s);
+  text-decoration: none;
+  transition: top 120ms ease-in-out;
+}
+
+.app-evitement:focus-visible {
+  top: var(--espace-s);
+  outline: 2px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.app-entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-s);
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond-doux);
+}
+
+.app-marque {
+  margin: 0;
+  font-size: var(--taille-s);
+  font-weight: 600;
+  color: var(--encre-douce);
+  letter-spacing: 0.02em;
+}
+
+/* L'entite active. `min-width: 0` pour qu'un nom long se reduise au lieu de
+   pousser l'en-tete ; `overflow-wrap` pour qu'un mot sans espace se coupe. */
+.app-entite {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.app-entite-nom {
+  font-size: var(--taille-m);
+  font-weight: 700;
+  color: var(--encre);
+}
+
+.app-entite-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+.app-principal {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--espace-m) var(--espace-s);
+  box-sizing: border-box;
+}
+
+.app-titre {
+  margin: 0 0 var(--espace-s);
+  font-size: var(--taille-l);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.app-message {
+  margin: 0 0 var(--espace-s);
+  padding: var(--espace-s);
+  border-radius: var(--rayon-m);
+  border: 1px solid var(--trait);
+  background: var(--fond-doux);
+  font-size: var(--taille-s);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Le ton n'est JAMAIS seul porteur de sens : il double un libelle explicite. */
+.app-message[data-ton='erreur'] {
+  border-color: var(--ko);
+  color: var(--ko);
+}
+
+.app-liens {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+.app-lien {
+  color: var(--marque-bleu);
+  font-size: var(--taille-s);
+  text-decoration: underline;
+  border-radius: var(--rayon-s);
+  transition: color 120ms ease-in-out;
+}
+
+.app-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* Une image ne deborde jamais de son conteneur. */
+.app-principal img,
+.app-principal svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ─── tablette : a partir de 768 px ───────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .app-entete {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--espace-m);
+    padding: var(--espace-s) var(--espace-m);
+  }
+
+  .app-entite {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--espace-xs);
+  }
+
+  .app-principal {
+    padding: var(--espace-l) var(--espace-m);
+  }
+
+  .app-titre {
+    font-size: var(--taille-xl);
+  }
+}
+
+/* ─── bureau : a partir de 1280 px ────────────────────────────────────── */
+
+/* `max-width` en `rem` et `margin: auto` : au-dela de 1 920 px la page ne
+   s'etire pas indefiniment -- une ligne de 200 caracteres est illisible -- et
+   elle ne deborde jamais, puisque rien n'impose de largeur minimale. */
+@media (min-width: 1280px) {
+  .app-entete {
+    padding: var(--espace-m) var(--espace-l);
+  }
+
+  .app-principal {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: var(--espace-xl) var(--espace-l);
+  }
+}
+
+/* ─── §14.2 : alternatives aux animations ─────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-evitement,
+  .app-lien {
+    transition: none;
+  }
+}

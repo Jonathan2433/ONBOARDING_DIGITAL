@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T2` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T3` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 40 | 8 | 30 | 2 |
+| Total 42 | 8 | 32 | 2 |
 
 ---
 
@@ -58,8 +58,10 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
 | `ECART-039` | Le critère de sortie de `T1` du LOT 4 exige qu'« une entité `suspended` ou `archived` ne soit pas rendue » : `StatutEntite` en déclare **quatre**, et `draft` est un **troisième** état non actif. Suivre le critère à la lettre aurait produit un témoin incomplet — une entité en brouillon proposée sur la page nationale, avec un critère qui se lit satisfait | Non — détecté avant d'écrire le témoin | **Clos** — filtre positif, valeur dérivée, et un test qui exige les quatre statuts |
 | `ECART-040` | Le §8 de la fiche du LOT 4 annonçait « **où vit l'entité consultée** » comme un point que le corpus ne tranche pas. Il ne dit pas où elle est **stockée**, mais **quatre endroits** — §4.1, §8.1, §9.1, §9.2 — font tous atterrir sur la page nationale après connexion : une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Et le §23.3, section entière sur le changement d'entité, donne **cinq** règles que la fiche ne citait pas | Non — détecté avant de décider, et avant de poser une migration inutile | **Clos** — `DEC-545` |
+| `ECART-041` | **Les deux feuilles du design system n'étaient importées par personne.** `T10` du LOT 1 a livré `jetons.css` et `composants.css` ; `T11` du LOT 3 a employé le composant `Bouton` et écrit `auth.css` en `var(--…)`. **Rien ne chargeait les feuilles** : 14 des 21 propriétés ne résolvaient rien, et les trois boutons des huit écrans rendaient `border-radius: 0px` avec le fond par défaut du navigateur. `packages/ui/src/index.ts` écrivait les deux lignes d'import à poser | Non pour les données — **oui pour le rendu** : les huit écrans du LOT 3 n'ont jamais porté le design system | **Clos** — `DEC-546` |
+| `ECART-042` | **`make code-refresh` ne reconstruisait que `api` et `worker`.** Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh` : le frontend **servi** est resté celui du LOT 1 pendant tout le LOT 3 et les deux premières sous-étapes du LOT 4 — **9 fichiers dans le conteneur contre 24 dans le dépôt**, mesuré. Et `make ecrans-check` passait, parce qu'il vérifiait que les huit chemins rendent `text/html` avec le point de montage — ce que le **repli SPA** fait pour n'importe quel chemin | Non pour l'API — **oui pour toute conclusion tirée du frontend servi** | **Clos** — `DEC-546` |
 
-**Prochain identifiant libre : `ECART-041`.**
+**Prochain identifiant libre : `ECART-043`.**
 
 ---
 
@@ -589,4 +591,34 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-041`.**
+## `ECART-041` — Les feuilles du design system n'étaient importées par personne
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T3`, en cherchant où le cadre devait puiser ses jetons |
+| Source | `apps/web/src/main.tsx` et `App.tsx` — contre `packages/ui/src/index.ts`, qui écrit les deux lignes d'import à poser |
+| Constat | `T10` du LOT 1 a livré `jetons.css` — 34 propriétés, couples fond/texte recalculés contre WCAG 2.2 AA — et `composants.css`, qui définit `.ex-bouton`, `.ex-badge`, `.ex-carte`. `T11` du LOT 3 a écrit `auth.css` **entièrement en `var(--…)`** et a employé le composant `Bouton` dans **trois** écrans.<br>**Aucun module n'importait ces deux feuilles.** Mesure sur l'application servie : `--marque-bleu`, `--espace-m`, `--police`, `--rayon-m`, `--taille-xl` rendaient **la chaîne vide**. Sur les 21 propriétés qu'emploie `auth.css`, **14 ne résolvaient rien** ; les 7 autres résolvaient **par accident**, `styles.css` — posée en `T5` du LOT 1, avant les jetons — définissant les mêmes noms. Ces 7 valeurs sont **identiques** dans les deux feuilles, mesuré : la collision est bénigne.<br>Et le bouton « Recevoir un lien » rendait `background: rgba(19, 1, 1, 0.3)` et `border-radius: 0px` — le bouton **nu** du navigateur. |
+| Impact | **Les huit écrans d'authentification du LOT 3 n'ont jamais porté le design system.** Espacements, rayons, typographie et couleurs de marque étaient ceux du navigateur. Aucune donnée en jeu, aucune règle de sécurité : c'est un défaut de **rendu**, et il a vécu depuis le 21/08/2026.<br>Après correction : `--marque-bleu` vaut `#5853ff`, `--rayon-m` `12px`, `--espace-m` `16px`, et le bouton rend `rgb(88, 83, 255)` avec `border-radius: 12px`. |
+| Cause | **`make ecrans-check` exigeait qu'aucune couleur LITTÉRALE ne soit écrite dans `auth.css` — la SOURCE — jamais que les jetons RÉSOLVENT.** Le succès du contrôle et la justesse de la page sont deux grandeurs différentes, ce que le §7.24 nomme. Le contrôle était par ailleurs exact sur ce qu'il regardait, et son témoin fonctionnait : il ne regardait pas la bonne chose.<br>**Et il n'examinait qu'un chemin écrit en dur** — `apps/web/src/pages/auth.css` — soit une liste recopiée de un élément, §7.27 : une feuille nouvelle lui échappait. |
+| Bloquant | Non pour les livrables antérieurs, **oui pour `T3`** : mesurer un layout sur une page dont les espacements ne résolvent pas n'aurait rien prouvé |
+| Recommandation | **Charger les deux feuilles dans `main.tsx`**, et surtout **poser le contrôle qui manquait**. `make cadre-check` exige que **toute `var(--x)` employée par une feuille chargée soit définie par une feuille chargée**, le graphe des imports étant **dérivé** des modules et non supposé.<br>**Et il exige la feuille des composants dès qu'un module importe un composant** — exigence dérivée, sans liste à tenir. **Cette seconde exigence est née d'une erreur de ma part** : j'avais classé `composants.css` « hors-application » en croyant qu'aucun code ne l'employait, et la mesure a montré trois écrans qui l'emploient. Une classification est une supposition ; une dérivation, non.<br>Il **classe** enfin chaque feuille du frontend : une feuille non classée fait échouer le contrôle. |
+| Résolution | **Clos**, `DEC-546`. Mesuré dans un vrai navigateur, avant et après. |
+
+---
+
+## `ECART-042` — Le frontend servi était celui du LOT 1, et un contrôle passait quand même
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T3`, en mesurant les jetons sur l'application servie |
+| Source | La cible `code-refresh` du `Makefile`, contre le contenu réel du conteneur `onboarding-dev-web-1` |
+| Constat | `code-refresh` reconstruisait **`api` et `worker`**, pas `web`. Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh`.<br>**Mesure : 9 fichiers de frontend dans le conteneur, 24 dans le dépôt.** Son `App.tsx` était celui du LOT 1 : ni les huit écrans d'authentification de `T11`, ni la page d'entité de `T2`. Aucun montage lié, donc aucun rattrapage possible à chaud.<br>**Et `make ecrans-check` passait.** Il exige que les huit chemins rendent `text/html` contenant `id="racine"` — or le **repli SPA** `try_files {path} /index.html` sert exactement cela pour **n'importe quel** chemin. L'échec produisait la même observation que le succès. |
+| Impact | **Toute conclusion tirée du frontend servi entre le 21 et le 23/08/2026 portait sur le code du LOT 1.** Les sept contrôles de `ecrans-check` prouvaient que le **repli** fonctionne, non que les écrans existent. `make web-check` ne pouvait pas le voir davantage : la page de statut, elle, était bien dans l'image.<br>Aucun impact sur l'API : `make code-check` la couvrait, et c'est précisément l'asymétrie qui a laissé le trou. |
+| Cause | **Une cible dont le nom promet plus que ce qu'elle fait**, §7.28 — *lis ce que la cible fait, pas ce que son nom suggère* — et **un contrôle dont l'échec est indistinguable du succès**, §7.0 quatrième proposition. Les deux se sont couverts l'un l'autre : la cible laissait le conteneur en arrière, le contrôle disait que tout allait bien. |
+| Bloquant | Non pour l'API, **oui pour `T3`** : le critère dit « mesuré », et mesurer un cadre absent du conteneur n'aurait rien mesuré |
+| Recommandation | **`code-refresh` reconstruit désormais `web`**, et son commentaire dit pourquoi.<br>**Recommandation pour `T4`, non traitée ici** : `ecrans-check` devrait vérifier que les écrans **existent** dans ce qui est servi, et non seulement que le repli répond. En développement, demander le module d'un écran et exiger un type MIME **JavaScript** discriminerait — Vite rendant `index.html` en `text/html` pour un module absent, c'est le §7.10. Mais cela ne vaudrait que pour la cible `developpement`, et le faire valoir aussi pour l'artefact bâti demande d'y réfléchir : c'est le §7.21, un contrôle qui ne connaîtrait qu'un environnement. |
+| Résolution | **Clos** pour la cause immédiate, `DEC-546`. La recommandation sur `ecrans-check` est **nommée et reportée**, pas traitée. |
+
+---
+
+**Prochain identifiant libre : `ECART-043`.**
