@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 22 août 2026, sous-étape `T12` du LOT 3
+**Dernière mise à jour :** 23 août 2026, à l'ouverture du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -50,6 +50,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Recette réépinglée `DEC-539`, avant la porte `G3`** | 1 | **Validée le 22/08/2026** |
 | **Franchissement de la porte `G3` `DEC-540`** | 1 | **Validé le 22/08/2026** |
 | **Ouverture du LOT 4 `DEC-541`** | 1 | **Validée le 22/08/2026** |
+| **Garde-fous iCloud corrigés `DEC-542`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -61,7 +62,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **209** | |
+| **Total** | **210** | |
 
 ---
 
@@ -589,7 +590,9 @@ ne l'a pas encore placée**.
 
 | `DEC-541` | **Le LOT 4 — portail national, sélection d'entité et navigation — est ouvert.** Son découpage en **douze** sous-étapes est proposé dans [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §3, et **aucune ligne de code n'est écrite avant sa validation**. | **Décision de Jonathan du 22/08/2026**, au franchissement de `G3`. **Le lot compte SEPT stories, non huit** — cinq `P0`, deux `P1` — compté dans le backlog, pas recopié. **L'API vient en premier dans le découpage**, et ce n'est pas un goût : la roadmap dit « route guards **uniquement ergonomiques** · contrôles d'autorisation **systématiques dans l'API** », et la règle 5 fait de l'API l'autorité finale — commencer par l'interface produirait des écrans dont on ne saurait pas s'ils protègent quoi que ce soit. **Le §8 de la fiche ne déclare que DEUX points ouverts, et chacun a été cherché dans le cahier, la matrice, le modèle ET le backlog avant d'être déclaré tel** : la carte de France, dont le corpus ne dit que « illustrative » et pour laquelle `entity` porte `city` mais **ni latitude ni longitude** — mesuré sur le schéma réel ; et où vit l'entité consultée, `user_session` n'ayant **aucune colonne d'entité**. **Un troisième candidat a été écarté par la vérification** : je m'apprêtais à déclarer que les rubriques de navigation ne sont énumérées nulle part, et **le §8.2 les énumère** — six, dont deux conditionnelles, plus l'accès « Plus » de la barre mobile. C'est exactement le §7.29, la leçon que le LOT 3 a payée trois fois. | Validée par Jonathan le 22/08/2026 |
 
-**Prochain identifiant libre : `DEC-542`.**
+| `DEC-542` | **Les copies de conflit iCloud sont couvertes par QUATRE motifs, un témoin permanent en exige l'effectivité, et la détection de réversion devient exacte.** **(a)** `.gitignore` porte `* [0-9]` et `* [0-9][0-9]` pour les répertoires **et** `* [0-9].*` et `* [0-9][0-9].*` pour les fichiers. **(b)** Le `find` d'`icloud-verify` cherche à **toutes les profondeurs**, et la cible **exige** que `git check-ignore` ignore effectivement **quatre noms témoins**. **(c)** Le contrôle d'arbre ajouté en `T12` est remplacé par `infra/scripts/verifier-reversion-icloud.py`. | **(a) LE MOTIF D'ORIGINE A ÉTÉ ÉCRIT CONTRE UN RÉPERTOIRE**, `node_modules 2`, qui n'a pas d'extension. Une copie de fichier s'appelle `modeles 2.py` : le chiffre y est suivi de l'extension. `git check-ignore` rendait `IGNORE` sur le premier et `NON IGNORE` sur le second — **115 fichiers sont ainsi entrés dans un commit par `git add -A`**, dont une seconde migration `0013` qui a rendu la chaîne de qualité rouge. `ECART-038`. **(b) LE TÉMOIN PERMANENT EST LA SEULE PART DE CETTE CORRECTION QUI NE SOIT PAS UNE PROMESSE DE VIGILANCE.** Corriger le motif corrige **une instance** ; exiger que quatre noms témoins soient effectivement ignorés corrige **la classe** — le motif ne peut plus redevenir aveugle sans que le garde-fou le dise, et il le dira à chaque `make icloud-verify`, c'est-à-dire au début de chaque session (§11). C'est aussi ce qui empêche les **deux copies de la même règle** — `.gitignore` et le `Makefile` — de diverger en silence, ce que `DEC-466` interdit. **(c) LE CONTRÔLE D'ARBRE DE `T12` ÉTAIT UN FAUX POSITIF, ET C'EST MOI QUI L'AVAIS ÉCRIT.** Il exigeait « arbre de `HEAD` identique à l'amont **et** fichiers modifiés » — l'état **normal** de toute sous-étape en cours de travail, donc une alarme à chaque début de sous-étape. Un garde-fou à faux positifs apprend à passer outre, si bien que le jour où il a raison il n'est plus lu (§7.25). Il n'a été ni supprimé ni affaibli mais **rendu exact** (§7.20) : la signature réelle de l'incident de `T11` est qu'un fichier porte **exactement**, à l'octet, le contenu d'une version antérieure de l'historique — ce qu'aucune édition humaine ne produit. Les grappes de mtime identiques à la seconde sont **rapportées** et non exigées, parce qu'un formateur produit la même grappe : corroborant, non décisif. **Le témoin a été exécuté dans les deux sens** — code 1 en nommant le fichier et le commit sur une réversion fabriquée sur `README.md`, code 0 après restauration. | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-543`.**
 
 ---
 
@@ -781,6 +784,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-539` — recette réépinglée avant `G3` | 1 | 1 |
 | `DEC-540` — franchissement de la porte `G3` | 1 | 1 |
 | `DEC-541` — ouverture du LOT 4 | 1 | 1 |
+| `DEC-542` — garde-fous iCloud corrigés | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -792,7 +796,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **209** | **209** |
+| **Total** | **210** | **210** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
