@@ -5,7 +5,7 @@
 **Ouvert par Jonathan le :** 22 août 2026 — décision `DEC-541`
 **Rédigée le :** 22 août 2026, au franchissement de la porte `G3`
 **Statut de cette fiche :** **découpage VALIDÉ par Jonathan le 22/08/2026** — « parfait »
-**Avancement :** **`T1` terminée** le 23/08/2026. Onze sous-étapes restantes
+**Avancement :** **`T1` et `T2` terminées** le 23/08/2026. Dix sous-étapes restantes
 
 > **Aucune ligne de code de ce lot n'est écrite avant que tu n'aies validé le §3.** C'est la règle qui
 > a tenu aux LOTS 2 et 3, et elle tient ici.
@@ -76,7 +76,7 @@ pas s'ils protègent quoi que ce soit.
 | | Sous-étape | Story | Critère de sortie |
 |---|---|---|---|
 | ~~**`T1`**~~ | ~~**Lister les entités, côté API.**~~ **TERMINÉE le 23/08/2026.** `DEC-543`, `DEC-544`. **Le critère nommait DEUX états non actifs, le modèle en déclare TROIS** — `draft` est le troisième, `ECART-039`, et c'est le §7.34 écrit la veille. Le filtre est écrit `= active`, **dérivé** de l'énumération, et un test **sans base** exige les quatre statuts connus : sans lui, mes trois témoins continueraient de passer en ne couvrant plus la classe. **Aucun contrôle de rôle**, et ce n'est pas un oubli : la matrice §5 met `ANON` à tiret et les **huit** rôles authentifiés à la coche — en ajouter un exigerait plus que la matrice. **`SERVICE` n'est pas une colonne de ce tableau**, le §22 dit « aucun rôle humain », et j'ai failli consigner un écart là où le corpus tranche. **Le résiduel de `DEC-531` est réexaminé** : l'entorse du `GET` qui écrit **se généralise** au lieu de disparaître, et un test la mesure. **Le piège `Annotated` est MESURÉ** — 422 sur `loc: ["query", "a"]`, donc un livrable qui *paraît* protégé. **674 tests** et **143 Vitest**, `make entites-check` — 10 contrôles, témoin négatif sur le conteneur reconstruit. Compte rendu : [`compte-rendu-t1-lot-4.md`](compte-rendu-t1-lot-4.md) | `US001` | ☑ |
-| **`T2`** | **L'entité consultée : où elle vit.** Le corpus dit « mémorisé **pour la session** » et ne dit pas où. Voir §8. | `US001`, `US002` | Le choix survit à un rechargement · **aucune permission locale n'est transférée**, prouvé sur une entité où la personne n'a aucun rôle |
+| ~~**`T2`**~~ | ~~**L'entité consultée : où elle vit.**~~ **TERMINÉE le 23/08/2026.** `DEC-545`. **LE CAHIER L'AVAIT TRANCHÉ, et le §8 de cette fiche disait le contraire** : le §4.1, le §8.1, le §9.1 et le §9.2 font **tous** atterrir sur la page nationale après connexion, si bien qu'une mémoire serveur du dernier choix n'aurait **aucun consommateur**. `ECART-040`, et c'est le §7.29 pour la quatrième fois en deux lots. **L'entité vit donc dans l'ADRESSE** — aucune colonne, aucun stockage navigateur, **aucune migration**. **Le §23.3 existe et donne CINQ règles** que la fiche ne citait pas ; la quatrième, « annule les requêtes et caches associés à l'entité précédente », est implémentée et **testée sous latence fabriquée**. Une entité non active rend **404 identique** à une entité absente — le LOT 9 créera des brouillons. **683 tests** et **156 Vitest**, `entites-check` passe de 10 à **13 contrôles**. **Et mon nettoyage incomplet a cassé 23 tests du LOT 2** : `residu-check` a nommé la cause en un nombre. Compte rendu : [`compte-rendu-t2-lot-4.md`](compte-rendu-t2-lot-4.md) | `US001`, `US002` | ☑ |
 | **`T3`** | **Le cadre applicatif et les cinq largeurs.** Layouts mobile, tablette, bureau, et l'entité active **visible partout**. | `US004` | Aucun débordement horizontal à **320, 390, 768, 1 280, 1 920** px, mesuré · la liste des pages est **dérivée du routeur** |
 | **`T4`** | **La navigation principale, au clavier.** Les six rubriques du §8.2, dont deux conditionnelles. | `US004` | **Toutes** les actions atteignables au clavier · aucun piège de focus · l'ordre de tabulation suit l'ordre visuel |
 | **`T5`** | **La barre inférieure mobile**, et l'accès « Plus » du §8.2. | `US003` | Utilisable à **320 et 390** px · focus et libellés corrects · les rubriques principales restent atteignables |
@@ -154,17 +154,27 @@ recopié. Le §7.27 a été payé six fois au LOT 3.
 
 ---
 
-# 8. Ce que le corpus NE tranche PAS — deux points, vérifiés
+# 8. Ce que le corpus NE tranche PAS — UN point, l'autre était tranché
 
-**Chacun a été cherché dans le cahier, la matrice, le modèle et le backlog avant d'être déclaré
-ouvert.** Le §8 de la fiche du LOT 3 s'est trompé trois fois sur quatre en ne le faisant pas.
+> **CE §8 S'EST TROMPÉ, ET IL FAUT LE LIRE EN LE SACHANT.** Il annonçait **deux** points ouverts. Le
+> second — « où vit l'entité consultée » — **était tranché par le cahier**, et `T2` l'a établi le
+> 23/08/2026 : le §4.1, le §8.1, le §9.1 et le §9.2 font **tous** atterrir sur la page nationale après
+> connexion, si bien qu'une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Le
+> cahier a en outre une section entière, **§23.3 « Changement d'entité »**, avec **cinq** règles que ce
+> §8 ne citait pas. `ECART-040`, `DEC-545`.
+>
+> **Le §8 de la fiche du LOT 3 s'était trompé trois fois sur quatre. Celui-ci une fois sur deux.**
+> La leçon §7.29 est donc à appliquer au point qui reste : *cherche la décision dans le cahier avant
+> de la prendre — et cherche-la par ses SYNONYMES, pas par le mot que la fiche emploie.* Ici,
+> « mémorisé » ne donnait rien ; ce sont « changement d'entité » et le diagramme du §8.1 qui ont
+> tranché.
 
 | Point | Ce que le corpus dit exactement | Quand l'instruire |
 |---|---|---|
 | **La carte de France : format et coordonnées** | Le corpus la nomme **trois fois** et n'en dit qu'un mot : « **illustrative** ». Aucun format, aucune source de données. Et `entity` porte `city` et `country_code` mais **ni latitude ni longitude** — mesuré sur le schéma réel. Il faudra donc soit poser des positions, soit ne pas en poser | **`T7`.** Trois options se dessinent, et aucune n'est évidente : une carte **décorative** sans marqueurs, des positions **portées par le code** pour les villes connues, ou une colonne au modèle — qui serait une modification du schéma, donc à instruire |
-| **Où vit l'entité consultée** | `US001` dit « mémorisé **pour la session** ». `user_session` **n'a aucune colonne d'entité** — mesuré. Et `localStorage` est interdit pour les jetons, ce qui n'en fait pas un bon usage par défaut pour le reste | **`T2`.** Le choix engage : côté serveur, il survit au navigateur et coûte une colonne ; côté client, il est gratuit et se perd |
+| ~~**Où vit l'entité consultée**~~ | **CE POINT N'ÉTAIT PAS OUVERT.** `ECART-040` : le cahier détermine le parcours en quatre endroits, et l'entité vit donc dans l'**adresse** — aucune colonne, aucun stockage, aucune migration | **CLOS en `T2`**, `DEC-545` |
 
-**Aucun de ces deux points ne bloque le démarrage** : `T1` peut être écrite sans eux.
+**Le point qui reste ne bloque rien avant `T7`**, et le §23.3 du cahier — cinq règles sur le changement d'entité — est désormais cité au compte rendu de `T2`. Ses trois autres règles sont exigibles en `T3`, `T8` et `T9`.
 
 ---
 

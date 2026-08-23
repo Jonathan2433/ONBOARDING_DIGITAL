@@ -50,6 +50,8 @@ sys.path.insert(0, str(RACINE / "apps" / "api"))
 
 CHEMIN_CONNEXION = "/api/v1/auth/connexion"
 CHEMIN_ENTITES = "/api/v1/entities"
+CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
+CHEMIN_PAGE_ENTITE = "/entites/{code}"
 
 MARQUEUR = f"t1l4-{uuid.uuid4().hex[:12]}"
 DELAI_HTTP = 30
@@ -394,6 +396,83 @@ def main() -> int:
                         f"!= {entetes_b.get(nom)!r}"
                     )
 
+        # --- 9. `T2` : la resolution par le code, a travers Caddy
+        controles += 1
+        resolue = appeler(
+            arguments.base,
+            CHEMIN_UNE_ENTITE.format(code=f"{MARQUEUR}-active"),
+            contexte,
+            en_tetes=entetes_session,
+        )
+        charge_une = resolue.json()
+        if (
+            resolue.statut == 200
+            and isinstance(charge_une, dict)
+            and set(charge_une) == CHAMPS_ATTENDUS
+        ):
+            print("    ok       TEMOIN : l'entite ACTIVE est resolue par son code, 4 champs")
+        else:
+            echecs += 1
+            print(f"    ECHEC    resolution : {resolue.statut}, corps {resolue.corps[:140]!r}")
+
+        # --- 10. `T2` : une entite non active est INDISTINGUABLE d'une absente
+        controles += 1
+        correlation_404 = {**entetes_session, "X-Request-ID": "l4t2-egalite-des-404"}
+        non_actifs_examines = 0
+        divergents: list[str] = []
+        inconnue = appeler(
+            arguments.base,
+            CHEMIN_UNE_ENTITE.format(code=f"{MARQUEUR}-jamais-creee"),
+            contexte,
+            en_tetes=correlation_404,
+        )
+        for statut in (s for s in STATUTS_ENTITE if s != StatutEntite.ACTIVE.value):
+            non_actifs_examines += 1
+            refus = appeler(
+                arguments.base,
+                CHEMIN_UNE_ENTITE.format(code=f"{MARQUEUR}-{statut}"),
+                contexte,
+                en_tetes=correlation_404,
+            )
+            if refus.statut != 404 or refus.signature() != inconnue.signature():
+                divergents.append(f"{statut} -> {refus.statut}")
+        if inconnue.statut != 404:
+            echecs += 1
+            print(
+                f"    ECHEC    un code inconnu rend {inconnue.statut} et non 404 : "
+                f"l'egalite ci-dessous serait vide de sens"
+            )
+        elif divergents:
+            echecs += 1
+            print(f"    ECHEC    refus DISTINGUABLES d'une entite absente : {divergents}")
+        else:
+            print(
+                f"    ok       les {non_actifs_examines} etats non actifs rendent 404, "
+                f"IDENTIQUE a un code inconnu"
+            )
+            print("             — pour l'appelant une entite `draft` n'existe pas, elle")
+            print("             n'est pas « interdite ». Le LOT 9 en creera avant publication.")
+
+        # --- 11. `T2` : la page de l'entite est servie, donc le RECHARGEMENT tient
+        controles += 1
+        page = appeler(
+            arguments.base,
+            CHEMIN_PAGE_ENTITE.format(code=f"{MARQUEUR}-active"),
+            contexte,
+            en_tetes=entetes_session,
+        )
+        type_mime = page.en_tetes.get("content-type", "")
+        if page.statut == 200 and "text/html" in type_mime and b'id="racine"' in page.corps:
+            print("    ok       `/entites/<code>` est servi en `text/html` avec le point de")
+            print("             montage : le choix SURVIT A UN RECHARGEMENT, et un lien")
+            print("             partage ouvre la meme entite")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    page de l'entite : {page.statut} {type_mime!r} — le repli "
+                f"`try_files` du `Caddyfile` manque ?"
+            )
+
     except RuntimeError as arret:
         print(f"    info     arret : {arret}")
     finally:
@@ -404,6 +483,12 @@ def main() -> int:
             "(SELECT id FROM user_account WHERE person_id IN (SELECT id FROM person WHERE {ou}))",
             "user_account WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "person WHERE {ou}",
+            #  L'appartenance du controle « appartenir ou non ne change rien »
+            #  n'est PAS creee ici -- ce controle vit dans les tests -- mais la
+            #  ligne reste, parce qu'un decor futur pourrait en creer une et que
+            #  la supprimer d'abord ne coute rien. Elle reference `person` ET
+            #  `entity`, donc elle passe avant les deux.
+            "entity_membership WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "entity WHERE code LIKE '{prefixe}%'",
             #  Le refus SANS ACTEUR — un appel sans cookie — n'a ni personne ni
             #  compte de service : aucun filtre par identite ne l'attrape. §7.30.

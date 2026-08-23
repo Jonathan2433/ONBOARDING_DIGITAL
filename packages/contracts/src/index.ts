@@ -60,7 +60,15 @@ export type {
 //  LOT 4, T1 — la premiere forme METIER du contrat. `formes.ts` n'est PAS
 //  reexporte : un consommateur qui validerait lui-meme ne passerait plus par les
 //  validateurs du contrat, et le controle perdrait son objet.
-export { CHEMIN_ENTITES, CODES_ENTITES, validerLesEntites } from './portail.js';
+export {
+  CHEMIN_ENTITES,
+  cheminEntite,
+  CODES_ENTITE,
+  CODES_ENTITES,
+  GABARIT_CHEMIN_ENTITE,
+  validerLesEntites,
+  validerUneEntite,
+} from './portail.js';
 export type { EntiteDuPortail, ReponseDesEntites } from './portail.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';

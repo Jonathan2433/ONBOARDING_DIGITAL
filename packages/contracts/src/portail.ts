@@ -38,6 +38,33 @@ export const CHEMIN_ENTITES: string = endpoint('entitesDuPortail').chemin;
 /** Les codes exploitables : 200 et 401. Aucun 403 — la matrice ne distingue aucun role. */
 export const CODES_ENTITES: readonly number[] = endpoint('entitesDuPortail').codesExploitables;
 
+/** Le gabarit du chemin de resolution, tel que le manifeste le declare. */
+export const GABARIT_CHEMIN_ENTITE: string = endpoint('entiteConsultee').chemin;
+
+/** Les codes exploitables de la resolution : 200, 401 et 404. */
+export const CODES_ENTITE: readonly number[] = endpoint('entiteConsultee').codesExploitables;
+
+/**
+ * Le chemin de l'entite consultee, pour un code donne.
+ *
+ * **LE CODE EST ENCODE, ET CE N'EST PAS UNE PRECAUTION DE STYLE.** `entity.code`
+ * est une chaine libre de 64 caracteres -- le modele ne lui impose AUCUN motif,
+ * mesure sur le schema. Un code contenant `/`, `?` ou `#` changerait le chemin
+ * appele, et un code contenant `..` pourrait viser une autre route. Une
+ * concatenation naive donnerait donc une requete differente de celle qu'on croit
+ * emettre, ce qui est la classe de defaut du §7.0 quatrieme proposition.
+ *
+ * **ELLE LEVE SUR UN CODE VIDE** plutot que de rendre `/api/v1/entities/`, qui est
+ * le chemin de la LISTE : un code vide rendrait 200 avec toutes les entites au
+ * lieu d'un 404, donc un echec indistinguable d'un succes.
+ */
+export function cheminEntite(code: string): string {
+  if (code === '') {
+    throw new Error('code d entite vide : le chemin obtenu serait celui de la liste');
+  }
+  return GABARIT_CHEMIN_ENTITE.replace('{code}', encodeURIComponent(code));
+}
+
 /** Une entite du portail national. */
 export interface EntiteDuPortail {
   readonly id: string;
@@ -49,6 +76,11 @@ export interface EntiteDuPortail {
 /** La reponse de `GET /api/v1/entities`. */
 export interface ReponseDesEntites {
   readonly entites: readonly EntiteDuPortail[];
+}
+
+/** Valider la charge utile de `GET /api/v1/entities/{code}`. Leve si la forme diverge. */
+export function validerUneEntite(valeur: unknown): EntiteDuPortail {
+  return validerEntite(valeur);
 }
 
 function validerEntite(valeur: unknown): EntiteDuPortail {

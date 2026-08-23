@@ -292,6 +292,34 @@
         "apprend a ne pas le lire. `timezone` et `country_code` sont absents faute de",
         "consommateur au LOT 4."
       ]
+    },
+    {
+      "cle": "entiteConsultee",
+      "chemin": "/api/v1/entities/{code}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "EntiteDuPortail",
+      "role": [
+        "Resoudre l'entite consultee — LOT 4, T2, story MVP-L04-US001.",
+        "L'ENTITE CONSULTEE VIT DANS L'ADRESSE, ET LE CAHIER LE DETERMINE. Le §8.1,",
+        "le §9.1 et le §9.2 font tous atterrir sur la page nationale APRES connexion :",
+        "une memoire serveur du dernier choix n'aurait donc aucun consommateur, elle",
+        "servirait a sauter un ecran que le cahier prescrit. « Le choix est memorise",
+        "pour la session » ne peut alors signifier qu'une chose : le choix persiste",
+        "PENDANT qu'on navigue.",
+        "LE `code` EST LA CLE, et c'est mesure : `code_unique` n'a AUCUNE clause",
+        "partielle, donc une entite archivee garde son code reserve et un code n'est",
+        "jamais reattribue. C'est ce qu'on exige d'un identifiant d'adresse.",
+        "404 A UNE SEULE FORME POUR DEUX CAUSES : le code est inconnu, ou l'entite",
+        "existe sans etre active. Le §8.3 donne acces aux entites ACTIVES : pour",
+        "l'appelant, une entite `draft` n'est pas interdite, elle N'EXISTE PAS.",
+        "Distinguer les deux apprendrait qu'un brouillon existe, et le LOT 9 en creera",
+        "avant publication.",
+        "AUCUN 403, et c'est la meme raison qu'a T1 : la matrice §5 donne la lecture de",
+        "toutes les entites aux HUIT roles authentifies. La reponse est la MEME que",
+        "l'appelant appartienne a cette entite ou non -- c'est cela, « aucune permission",
+        "locale n'est transferee », au niveau que T2 peut atteindre."
+      ]
     }
   ],
   "_commentaire_debit": [
