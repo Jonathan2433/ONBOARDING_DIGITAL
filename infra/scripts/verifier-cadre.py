@@ -60,6 +60,7 @@ CADRE_CSS = WEB / "pages" / "application.css"
 ROUTES_TS = WEB / "routes.ts"
 NAVIGATION = WEB / "pages" / "NavigationPrincipale.tsx"
 BARRE = WEB / "pages" / "BarreMobile.tsx"
+NATIONALE = WEB / "pages" / "PageNationale.tsx"
 CAHIER = RACINE / "docs" / "product" / "CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
 #  **LA CLASSIFICATION DES FEUILLES, DECLAREE ET EXIGEE.**
@@ -592,6 +593,48 @@ def main() -> int:
     else:
         print(f"    ok       les {len(interactives)} classes interactives ont une regle")
         print("             `:focus-visible` avec un `outline` — §14.2, focus visible")
+
+    # ---------------------------------------------------------------- 8 undecies
+    controles += 1
+    #  **LA LISTE PRECEDE LA CARTE DANS LE DOM, PAS SEULEMENT A L'OEIL.**
+    #
+    #  §8.3 : « Sur mobile, la liste precede la carte. » Un ordre obtenu par
+    #  `order` en CSS satisferait le regard et laisserait la carte AVANT la liste
+    #  pour un lecteur d'ecran et pour la tabulation : l'echec produirait la meme
+    #  observation que le succes sur une capture d'ecran.
+    #
+    #  Le controle porte donc sur la SOURCE, et il exige les deux choses : que la
+    #  feuille ne reordonne pas la liste, et que la carte -- quand `T7` l'apportera
+    #  -- vienne apres elle dans le JSX. **Il mordra a `T7`**, et en attendant il
+    #  rapporte que la carte est absente plutot que de se taire.
+    source_nat = NATIONALE.read_text(encoding="utf-8") if NATIONALE.exists() else ""
+    if not source_nat:
+        print("    info     aucune page nationale : rien a ordonner")
+    else:
+        i_liste = source_nat.find('className="nat-liste"')
+        i_carte = source_nat.find('className="nat-carte')
+        reordonne = re.search(r"\.nat-liste[^{]*\{[^}]*order:", cadre) is not None
+        if arguments.temoin:
+            i_liste, i_carte = 999, 1
+        if i_liste < 0:
+            echecs += 1
+            print("    ECHEC    la page nationale ne porte pas de liste `nat-liste`")
+            print("             -> le §8.3 exige « une liste accessible des entites »")
+        elif i_carte >= 0 and i_carte < i_liste:
+            echecs += 1
+            print("    ECHEC    la carte precede la liste DANS LE DOM")
+            print("             -> le §8.3 exige l'inverse, et un lecteur d'ecran suit le")
+            print("                document, pas la mise en page")
+        elif reordonne:
+            echecs += 1
+            print("    ECHEC    la feuille reordonne `.nat-liste` par `order`")
+            print("             -> l'oeil serait satisfait, la tabulation non")
+        elif i_carte < 0:
+            print("    ok       la liste est la, et la carte n'existe pas encore : l'ordre")
+            print("             sera exige des que `T7` posera `nat-carte`")
+        else:
+            print("    ok       la liste PRECEDE la carte dans le DOM, et aucune regle CSS")
+            print("             ne les reordonne — §8.3")
 
     # ---------------------------------------------------------------- 9
     controles += 1
