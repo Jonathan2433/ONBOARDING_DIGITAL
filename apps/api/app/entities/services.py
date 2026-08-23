@@ -52,6 +52,52 @@ QUATRE COLONNES SUR SEPT, ET LE MOTIF DE CHACUNE DES TROIS ABSENCES
   reel -- et c'est ce qui rend le format de la carte un point ouvert de `T7`.
   Elle est exposee pour la **liste**, que le §8.3 exige, non pour la carte.
 
+L'ENTITE CONSULTEE VIT DANS L'ADRESSE, ET LE CAHIER LE DETERMINE — LOT 4, `T2`
+
+  Le §8 de la fiche annoncait « ou vit l'entite consultee » comme un point que le
+  corpus ne tranche pas. Il ne dit effectivement pas ou elle est STOCKEE. Mais il
+  determine entierement le PARCOURS, et cela suffit a fermer la question :
+
+      §8.1   LOGIN --> Accueil national --> Choix de l'entite --> Accueil de
+             l'entite --> {Framework, Trombinoscope, Evenements, ...}
+      §9.1   la sequence de connexion finit sur « Accueil national »
+      §9.2   « 1. connexion ; 2. affichage de l'accueil national ; 3. selection
+             d'une entite ; ... 6. retour possible a la liste des entites »
+      §4.1   « une page nationale APRES AUTHENTIFICATION »
+
+  **On atterrit TOUJOURS sur la page nationale.** Une memoire serveur du dernier
+  choix n'aurait donc aucun consommateur : elle servirait a sauter un ecran que le
+  cahier prescrit. Et « le choix est memorise pour la session » du backlog ne peut
+  alors signifier qu'une chose -- le choix persiste PENDANT qu'on navigue -- et non
+  « on saute la page nationale la prochaine fois ».
+
+  L'adresse est donc le seul mecanisme necessaire : aucune colonne nouvelle, aucun
+  stockage navigateur, et l'API recoit l'entite EXPLICITEMENT a chaque requete,
+  ce qui satisfait la regle 5 -- l'API est l'autorite finale -- sans ambiguite.
+  Le §23.3 « annule les requetes et caches associes a l'entite precedente » y est
+  naturel : une autre adresse est une autre cle de cache.
+
+  **C'est le §7.29, pour la troisieme fois en deux lots.** Quand un document
+  t'annonce qu'il te reste une decision a prendre, cherche-la d'abord dans le
+  cahier.
+
+LE `code` EST LA CLE PUBLIQUE, ET C'EST MESURE
+
+  `entity.code` porte `code_unique`, **sans clause partielle** : une entite
+  archivee garde son code reserve, comme le commentaire de la table le dit. Un
+  code n'est donc **jamais reattribue**, ce qui est exactement ce qu'on exige d'un
+  identifiant d'adresse. Un `uuid` ferait la meme chose mais serait opaque : le
+  §9.2 demande un « affichage clair de l'entite consultee », et une adresse
+  lisible y participe.
+
+UNE ENTITE NON ACTIVE REND LA MEME CHOSE QU'UNE ENTITE ABSENTE
+
+  Le §8.3 donne acces aux entites **actives**. Pour l'appelant, une entite `draft`,
+  `suspended` ou `archived` n'est donc pas « interdite » : elle **n'existe pas**.
+  Distinguer les deux cas apprendrait qu'un brouillon existe -- et le LOT 9 en
+  creera avant publication. Le refus est un **seul gabarit**, et un test compare
+  les deux reponses au lieu de les constater separement.
+
 L'ORDRE EST TOTAL, ET C'EST UNE NECESSITE, PAS UN GOUT
 
   `ORDER BY display_name` seul ne suffit pas : rien n'impose l'unicite du nom
@@ -114,3 +160,33 @@ def lister_les_entites_actives(connexion: Connection) -> list[EntiteListee]:
         )
         for ligne in lignes
     ]
+
+
+def resoudre_une_entite_active(connexion: Connection, code: str) -> EntiteListee | None:
+    """L'entite `active` portant ce code, ou `None`.
+
+    **`None` COUVRE DEUX CAS, ET C'EST VOULU** : le code est inconnu, ou l'entite
+    existe sans etre active. L'appelant rend le meme refus pour les deux -- voir
+    l'en-tete de module.
+
+    Le filtre est le meme que celui de la liste, **et c'est la seule raison pour
+    laquelle les deux fonctions ne partagent pas leur requete** : elles partagent
+    ce qui compte, la valeur `StatutEntite.ACTIVE`, derivee de l'enumeration. Une
+    requete commune parametree par une clause `WHERE` variable serait plus courte
+    et moins lisible qu'un test qui verifie que les deux filtrent pareil.
+    """
+    ligne = connexion.execute(
+        text(
+            "SELECT id, code, display_name, city FROM entity "
+            "WHERE code = :code AND status = :statut_actif"
+        ),
+        {"code": code, "statut_actif": StatutEntite.ACTIVE.value},
+    ).one_or_none()
+    if ligne is None:
+        return None
+    return EntiteListee(
+        id=uuid.UUID(str(ligne[0])),
+        code=str(ligne[1]),
+        display_name=str(ligne[2]),
+        city=str(ligne[3]),
+    )

@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T1` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T2` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 39 | 8 | 29 | 2 |
+| Total 40 | 8 | 30 | 2 |
 
 ---
 
@@ -57,8 +57,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
 | `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
 | `ECART-039` | Le critère de sortie de `T1` du LOT 4 exige qu'« une entité `suspended` ou `archived` ne soit pas rendue » : `StatutEntite` en déclare **quatre**, et `draft` est un **troisième** état non actif. Suivre le critère à la lettre aurait produit un témoin incomplet — une entité en brouillon proposée sur la page nationale, avec un critère qui se lit satisfait | Non — détecté avant d'écrire le témoin | **Clos** — filtre positif, valeur dérivée, et un test qui exige les quatre statuts |
+| `ECART-040` | Le §8 de la fiche du LOT 4 annonçait « **où vit l'entité consultée** » comme un point que le corpus ne tranche pas. Il ne dit pas où elle est **stockée**, mais **quatre endroits** — §4.1, §8.1, §9.1, §9.2 — font tous atterrir sur la page nationale après connexion : une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Et le §23.3, section entière sur le changement d'entité, donne **cinq** règles que la fiche ne citait pas | Non — détecté avant de décider, et avant de poser une migration inutile | **Clos** — `DEC-545` |
 
-**Prochain identifiant libre : `ECART-040`.**
+**Prochain identifiant libre : `ECART-041`.**
 
 ---
 
@@ -573,4 +574,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-040`.**
+## `ECART-040` — La fiche disait ouvert ce que le cahier avait tranché
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T2`, en instruisant le point avant d'écrire |
+| Source | [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §8 — contre le cahier §4.1, §8.1, §9.1, §9.2 et §23.3 |
+| Constat | La fiche annonçait : « **où vit l'entité consultée** — `US001` dit “mémorisé pour la session”, et `user_session` n'a **aucune colonne d'entité** ». Les deux moitiés sont exactes ; **la conclusion ne l'était pas**.<br>Le cahier ne dit pas où l'entité est **stockée**. Il détermine en revanche entièrement le **parcours**, et en quatre endroits concordants : §4.1 « une page nationale **après authentification** » ; le diagramme du §8.1 `LOGIN → Accueil national → Choix de l'entité → Accueil de l'entité` ; la séquence du §9.1, qui finit sur « Accueil national » ; et l'énumération du §9.2, « 1. connexion ; 2. affichage de l'**accueil national** ; 3. sélection d'une entité ».<br>**On atterrit toujours sur la page nationale.** Une mémoire serveur du dernier choix servirait donc à **sauter un écran que le cahier prescrit** : elle n'a aucun consommateur.<br>**Second manque de la fiche, distinct** : le cahier a une section entière, **§23.3 « Changement d'entité »**, qui donne **cinq** règles — dont « annule les requêtes et caches associés à l'entité précédente », qui est exécutable dès `T2`. La fiche ne la citait pas. |
+| Impact | **Une migration inutile sur une table d'authentification, et une décision demandée à Jonathan pour rien.** Le §8 de la fiche invitait à instruire un choix ; suivre cette invitation aurait produit une colonne `consulted_entity_id` sur `user_session`, une route d'écriture pour la poser, et le défaut d'ergonomie qui va avec — deux onglets partageant une seule mémoire.<br>**Et la quatrième règle du §23.3 aurait été manquée**, ce qui aurait laissé un défaut visible seulement sous latence : une réponse lente pour l'entité quittée écrasant celle de la nouvelle. |
+| Cause | **`ECART-034`, `ECART-036` et `ECART-039` à l'identique.** Un document dérivé annonce une décision à prendre là où le cahier a déjà tranché — ou n'a pas relu toutes les sections qui portent le sujet. **Quatrième occurrence de cette classe en deux lots**, et le §7.29 la nomme : *quand un document te dit qu'il te reste une décision à prendre, cherche-la d'abord dans le cahier.* |
+| Bloquant | Non — détecté avant de décider |
+| Recommandation | **Chercher le sujet par ses SYNONYMES, pas seulement par le mot de la fiche.** Ici, « mémorisé » ne donnait rien d'utile ; ce sont « changement d'entité », « entité consultée » et le diagramme du §8.1 qui ont tranché. Une recherche sur le seul terme de la fiche aurait conclu comme la fiche.<br>**Et vérifier si le cahier a une SECTION dédiée** : le §23.3 s'appelle « Changement d'entité » et la fiche instruisait le changement d'entité. |
+| Résolution | **Clos**, `DEC-545`. L'entité vit dans l'adresse ; aucune colonne, aucun stockage, aucune migration. La quatrième règle du §23.3 est implémentée et testée. |
+
+---
+
+**Prochain identifiant libre : `ECART-041`.**

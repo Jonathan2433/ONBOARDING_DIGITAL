@@ -27,7 +27,15 @@
  *   n'appartient pas au LOT 3.
  */
 
-/** Les chemins, source unique lue par le routeur, les tests et le controle. */
+/**
+ * Les chemins, source unique lue par le routeur, les tests et le controle.
+ *
+ * **`entite` PORTE UN PARAMETRE, ET C'EST LA DECISION DE `T2`.** L'entite
+ * consultee vit dans l'ADRESSE, parce que le cahier fait atterrir sur la page
+ * nationale apres connexion (§4.1, §8.1, §9.1, §9.2) : une memoire du dernier
+ * choix n'aurait aucun consommateur. Le detail est dans l'en-tete de
+ * `apps/api/app/entities/services.py`.
+ */
 export const CHEMINS = {
   statut: '/',
   connexion: '/connexion',
@@ -38,7 +46,23 @@ export const CHEMINS = {
   interdit: '/403',
   introuvable: '/404',
   erreur: '/erreur',
+  //  LOT 4, `T2`. Le `:code` est le `code` de l'entite -- `code_unique` n'a
+  //  AUCUNE clause partielle, donc un code n'est jamais reattribue, ce qui est
+  //  ce qu'on exige d'un identifiant d'adresse. Mesure sur le schema reel.
+  entite: '/entites/:code',
 } as const;
+
+/**
+ * L'adresse d'une entite, pour un code donne.
+ *
+ * **LE CODE EST ENCODE.** `entity.code` est une chaine libre de 64 caracteres --
+ * le modele ne lui impose AUCUN motif, mesure sur le schema. Un code contenant
+ * `/` changerait le chemin obtenu, ce qui donnerait une navigation differente de
+ * celle qu'on croit declencher.
+ */
+export function cheminDeLEntite(code: string): string {
+  return CHEMINS.entite.replace(':code', encodeURIComponent(code));
+}
 
 /**
  * Les huit ecrans, avec le libelle du corpus qui les produit.

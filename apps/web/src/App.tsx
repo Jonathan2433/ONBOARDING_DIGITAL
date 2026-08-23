@@ -45,6 +45,7 @@ import { Cadre } from './pages/Cadre';
 import { PageConnexion } from './pages/PageConnexion';
 import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur';
 import { PageDeconnexion } from './pages/PageDeconnexion';
+import { PageEntite } from './pages/PageEntite';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
@@ -66,6 +67,8 @@ export function App(): JSX.Element {
           <Route path={CHEMINS.interdit} element={<Page403 />} />
           <Route path={CHEMINS.introuvable} element={<Page404 />} />
           <Route path={CHEMINS.erreur} element={<PageErreur />} />
+          {/* LOT 4, `T2` : l'entite consultee vit dans l'adresse. */}
+          <Route path={CHEMINS.entite} element={<PageEntite />} />
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**
             Rediriger vers `/404` changerait l'URL et ferait perdre a

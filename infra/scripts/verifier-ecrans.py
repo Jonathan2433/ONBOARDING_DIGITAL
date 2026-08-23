@@ -218,7 +218,28 @@ def main() -> int:
     #  4. LES HUIT CHEMINS SONT SERVIS — ET LE TYPE MIME FAIT FOI
     #  --------------------------------------------------------------
     controles += 1
-    a_verifier = [chemin for chemin in chemins_declares() if chemin != "/"]
+    #  **LES CHEMINS PARAMETRES SONT ECARTES, ET LE CONTROLE LE DIT.**
+    #
+    #  `T2` du LOT 4 a ajoute `/entites/:code`. Ce n'est pas une adresse : c'est un
+    #  gabarit de React Router, et le `:` en est la grammaire -- pas une
+    #  heuristique sur du texte. Le tirer litteralement rendrait 200 par le repli
+    #  SPA, donc un `ok` obtenu pour une raison qui n'a rien a voir avec le
+    #  critere : exactement le defaut du §7.0 quatrieme proposition.
+    #
+    #  Le vrai chemin d'une entite est eprouve par `make entites-check`, qui
+    #  dispose d'un code REEL. Ici on **rapporte** ce qu'on n'a pas verifie, comme
+    #  le §7.20 l'exige -- taire une exclusion laisserait croire davantage que ce
+    #  qui est vrai.
+    tous = [chemin for chemin in chemins_declares() if chemin != "/"]
+    a_verifier = [chemin for chemin in tous if ":" not in chemin]
+    parametres_ecartes = [chemin for chemin in tous if ":" in chemin]
+    if parametres_ecartes:
+        print(
+            f"    info     {len(parametres_ecartes)} chemin(s) parametre(s) ecarte(s) : "
+            f"{', '.join(parametres_ecartes)}"
+        )
+        print("             ce ne sont pas des adresses. `make entites-check` les eprouve")
+        print("             avec un code reel.")
     mauvais: list[str] = []
     for chemin in a_verifier:
         statut, type_mime, corps = appeler(arguments.base, chemin, contexte)

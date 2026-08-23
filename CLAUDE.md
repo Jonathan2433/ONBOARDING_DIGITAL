@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 23 août 2026, à la sortie de **`T1` du LOT 4**
+**Mis à jour le :** 23 août 2026, à la sortie de **`T2` du LOT 4**
 **Destinataire :** l'agent qui poursuit le **LOT 4 — portail national et navigation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `DEC-517`, `v0.2.0`) · **LOT 3** (`G3`, **22/08/2026**, `DEC-540`, **`v0.3.0`**) |
-| **Lot en cours** | **LOT 4 — portail national, sélection d'entité et navigation.** Ouvert par Jonathan le 22/08/2026 (`DEC-541`), découpage en **douze** sous-étapes validé le même jour. **`T1` est terminée** |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : `T1`.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T2` — où vit l'entité consultée.** C'est l'un des **deux** points que le §8 de [`fiche-lot-4.md`](docs/operations/fiche-lot-4.md) laisse ouverts : `US001` dit « mémorisé **pour la session** » et `user_session` n'a **aucune colonne d'entité**. Lis le §11 du [compte rendu de `T1`](docs/operations/compte-rendu-t1-lot-4.md) avant de commencer |
+| **Lot en cours** | **LOT 4 — portail national, sélection d'entité et navigation.** Ouvert par Jonathan le 22/08/2026 (`DEC-541`), découpage en **douze** sous-étapes validé le même jour. **`T1` et `T2` sont terminées**, dix restent |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : `T1` et `T2`.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
+| **Prochaine action** | **`T3` — le cadre applicatif et les cinq largeurs.** Aucun débordement horizontal à **320, 390, 768, 1 280, 1 920** px, mesuré, et la liste des pages **dérivée du routeur**. Le §23.3 du cahier y devient exigible : « l'entité active **doit être visible dans l'en-tête** ». Lis le §10 du [compte rendu de `T2`](docs/operations/compte-rendu-t2-lot-4.md) avant de commencer |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
-| **Tests** | **817** : **674 pytest** — dont **401 d'intégration** — et **143 Vitest** (90 `ui`, **42 `web`**, **11 `contracts`**) |
+| **Tests** | **839** : **683 pytest** — dont **409 d'intégration** — et **156 Vitest** (90 `ui`, **49 `web`**, **17 `contracts`**) |
 | Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **76 cibles** documentées. `make help` fait foi |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **127 décisions** `DEC-418+` · **39 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis les quatre de `T1` |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 4**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **128 décisions** `DEC-418+` · **40 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 8**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -112,8 +112,8 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **découpage validé le 22/08/2026**. **`T1` est faite**, onze restent |
-| **Comment a-t-on fait `T1` du LOT 4 ?** | **`docs/operations/compte-rendu-t1-lot-4.md`** — la première route métier du projet. Son §11 dit ce que `T2` doit savoir |
+| **Que fait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **découpage validé le 22/08/2026**. **`T1` et `T2` sont faites**, dix restent. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
+| **Comment a-t-on fait `T1` et `T2` du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-4.md`** — la première route métier du projet, puis l'entité consultée. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** : le cahier l'avait tranché, `ECART-040` |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
 | **Comment a-t-on fait `T1` et `T2` du LOT 3 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-3.md`**. `T1` : le moindre privilège. `T2` : les sept tables du §10 |
 | Quelles sont les 7 tables d'authentification ? | Modèle **§10.1 à §10.6**, et `apps/api/app/auth/modeles.py` en porte la lecture |
@@ -1574,6 +1574,23 @@ sur tout. Et en ouvrir une nouvelle question aurait créé une collision de num�
 blanche **fermée**, qui bloquerait le LOT 9. Même forme que le « à prévoir **notamment** » du §25.1.
 **Les deux erreurs sont symétriques, et la bonne lecture est entre elles.**
 
+**QUATRIÈME OCCURRENCE, EN `T2` DU LOT 4 — ET ELLE AFFINE LA PARADE.** Le §8 de `fiche-lot-4.md`
+annonçait « où vit l'entité consultée » comme un point ouvert. Le cahier ne dit effectivement pas où
+elle est **stockée** — mais il détermine entièrement le **parcours**, en quatre endroits concordants,
+et cela ferme la question : on atterrit **toujours** sur la page nationale, donc une mémoire serveur
+du dernier choix n'aurait **aucun consommateur**. `ECART-040`.
+
+> **Ce qui manquait : chercher le sujet par ses SYNONYMES, pas par le mot que la fiche emploie.** Le
+> mot de la fiche était « mémorisé », et il ne donne rien d'utile. Ce sont **« changement d'entité »**,
+> **« entité consultée »** et le **diagramme du §8.1** qui ont tranché. Une recherche sur le seul
+> terme de la fiche aurait conclu comme la fiche.
+>
+> **Et demande-toi si le cahier a une SECTION dédiée.** Le §23.3 s'appelle « Changement d'entité », il
+> donne **cinq** règles, et la fiche instruisait le changement d'entité sans le citer. Une section
+> entière manquée n'est pas un détail : sa quatrième règle — « annule les requêtes et caches associés
+> à l'entité précédente » — était exécutable dès `T2`, et l'ignorer aurait laissé un défaut visible
+> seulement **sous latence**.
+
 ---
 
 ## 7.30 Quand une classe d'erreur résiste SEPT fois, change d'outil
@@ -1595,6 +1612,21 @@ catalogue**, et il **remplace** `make test-integration` dans la CI. Il nomme la 
 > aurait été une **liste** qui vieillit au premier ajout **et** une heuristique dans un contrôle, ce
 > que le §7.25 nomme un défaut. Un avant/après ne suppose rien de ce qui est « du test », et il
 > fonctionne aussi bien sur une base vide que sur le jeu de recette de 27 936 lignes.
+
+**HUITIÈME OCCURRENCE EN `T2` DU LOT 4, ET ELLE AJOUTE UN MÉCANISME QU'IL FAUT CONNAÎTRE.** Le
+nettoyage d'une fixture est **une seule transaction**. Un ordre de suppression fautif — j'avais oublié
+`entity_membership` avant `person` — la fait échouer, et **son échec l'annule ENTIÈREMENT** : rien
+n'est supprimé, pas même ce qui aurait pu l'être. Quatorze lignes sont restées commitées.
+
+**La conséquence a été bien plus large que l'erreur.** Au run suivant, **23 tests d'intégration du
+LOT 2 ont échoué** — `test_appartenance.py` et six autres fichiers — parce qu'ils comptent
+`entity_membership` **en absolu** dans une transaction en rollback, ce qui ne vaut que sur une base
+propre. **Aucun de ces 23 messages ne nommait la cause** ; ils disaient « assert 3 == 2 ».
+
+> C'est `make residu-check` qui l'a dite, en annonçant « **14 ligne(s) avant** ». Le contrôle posé en
+> `T12` du LOT 3 pour exactement cette classe a fonctionné — et c'est la seule raison pour laquelle le
+> diagnostic a pris deux minutes au lieu d'une heure. **Lis son « n ligne(s) avant » : sur une base
+> propre il vaut 0, et toute autre valeur est un résidu à nommer avant de le supprimer.**
 
 ---
 
@@ -1888,7 +1920,8 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                 app/entities/routes.py  ← GET /api/v1/entities : la PREMIERE
 │                                          route METIER du projet (LOT 4, T1)
 │                 app/entities/services.py ← le filtre `= active`, DERIVE de
-│                                          l'enumeration (DEC-544)
+│                                          l'enumeration (DEC-544), et la
+│                                          resolution par code (T2, DEC-545)
 │                 app/auth/dependances.py ← exiger_une_session ET exiger_un_scope :
 │                                          DEUX natures d'appelant (DEC-543)
 │                 app/{entities,people,clients,organization}/
@@ -1928,6 +1961,9 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                             entites du portail (LOT 4, T1)
 │                         formes.ts         ← estObjet / exigerChaine, EXTRAITES
 │                                             de sante.ts, un seul exemplaire
+│                         portail.ts porte aussi `cheminEntite`, qui ENCODE le
+│                         code et LEVE sur une chaine vide -- sinon le chemin
+│                         obtenu serait celui de la LISTE (T2)
 
 ├── infra/
 │   ├── compose/  base + surcouches dev ET recette (T8)
@@ -2017,8 +2053,10 @@ make residu-check         #      la suite d'integration, ET la preuve qu'elle ne
 # Le controle du LOT 4, dans la CI comme les onze precedents. Il EXIGE que le
 # conteneur porte le code du depot : lance `make code-refresh && make code-check`
 # d'abord, sinon il eprouve un autre artefact en paraissant sain. §7.28
-make entites-check        # 10 — une entite par etat, les TROIS non actifs exclus,
-                          #      et les deux refus compares corps ET en-tetes
+make entites-check        # 13 — une entite par etat, les TROIS non actifs exclus, les
+                          #      deux refus compares corps ET en-tetes, la resolution
+                          #      par code, et `/entites/<code>` servi : le choix
+                          #      SURVIT a un rechargement
 
 # Les controles de schema
 make privileges-check && make secrets-check && make isolation-check && make isolation-temoin

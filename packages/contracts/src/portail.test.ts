@@ -13,10 +13,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CHEMIN_ENTITES,
+  cheminEntite,
+  CODES_ENTITE,
   CODES_ENTITES,
   CONTRAT_API,
+  GABARIT_CHEMIN_ENTITE,
   PREFIXE_VERSIONNE,
   validerLesEntites,
+  validerUneEntite,
 } from './index';
 
 const UNE_ENTITE = {
@@ -95,5 +99,59 @@ describe('validerLesEntites', () => {
     //  bien une rupture et leve.
     const avecExtra = validerLesEntites({ entites: [{ ...UNE_ENTITE, statut: 'active' }] });
     expect(Object.keys(avecExtra.entites[0]!).sort()).toEqual(['code', 'id', 'nom', 'ville']);
+  });
+});
+
+describe("le chemin de l'entite consultee — LOT 4, T2", () => {
+  it('est lu du manifeste, pas recopie', () => {
+    const declare = CONTRAT_API.endpoints.find((e) => e.cle === 'entiteConsultee');
+    expect(declare).toBeDefined();
+    expect(GABARIT_CHEMIN_ENTITE).toBe(declare?.chemin);
+    expect(GABARIT_CHEMIN_ENTITE).toContain('{code}');
+  });
+
+  it('declare 200, 401 et 404 — et AUCUN 403', () => {
+    //  Pas de 403 : la matrice §5 ne distingue aucun role. Et 404 couvre DEUX
+    //  causes -- code inconnu, entite non active -- ce qui est le point : pour
+    //  l'appelant, une entite `draft` n'est pas interdite, elle n'existe pas.
+    expect([...CODES_ENTITE].sort((a, b) => a - b)).toEqual([200, 401, 404]);
+  });
+
+  it('substitue le code et vit sous le prefixe versionne', () => {
+    expect(cheminEntite('bordeaux')).toBe(`${PREFIXE_VERSIONNE}/entities/bordeaux`);
+    expect(cheminEntite('bordeaux').startsWith(PREFIXE_VERSIONNE)).toBe(true);
+  });
+
+  it('ENCODE le code, et ce n est pas une precaution de style', () => {
+    //  `entity.code` est une chaine libre de 64 caracteres : le modele ne lui
+    //  impose AUCUN motif, mesure sur le schema. Un `/` non encode appellerait une
+    //  autre route ; un `..` pourrait en viser une troisieme.
+    expect(cheminEntite('bord/eaux')).toBe(`${PREFIXE_VERSIONNE}/entities/bord%2Feaux`);
+    expect(cheminEntite('a?b#c')).toBe(`${PREFIXE_VERSIONNE}/entities/a%3Fb%23c`);
+    expect(cheminEntite('..')).not.toContain('/../');
+  });
+
+  it('LEVE sur un code vide plutot que de rendre le chemin de la LISTE', () => {
+    //  Sans ce refus, `cheminEntite('')` rendrait `/api/v1/entities/`, que l'API
+    //  sert comme la liste : un 200 avec TOUTES les entites au lieu d'un 404.
+    //  L'echec produirait exactement la meme observation qu'un succes.
+    expect(() => cheminEntite('')).toThrow(/vide/);
+  });
+
+  it('validerUneEntite accepte la forme attendue et refuse le reste', () => {
+    const entite = {
+      id: '0f8fad5b-d9cb-469f-a165-70867728950e',
+      code: 'bordeaux',
+      nom: 'eXalt Bordeaux',
+      ville: 'Bordeaux',
+    };
+    expect(validerUneEntite(entite)).toEqual(entite);
+    expect(() => validerUneEntite(null)).toThrow(TypeError);
+    expect(() => validerUneEntite({ erreur: { code: 'entite_introuvable' } })).toThrow(TypeError);
+    for (const champ of ['id', 'code', 'nom', 'ville']) {
+      const tronquee: Record<string, unknown> = { ...entite };
+      delete tronquee[champ];
+      expect(() => validerUneEntite(tronquee)).toThrow(TypeError);
+    }
   });
 });

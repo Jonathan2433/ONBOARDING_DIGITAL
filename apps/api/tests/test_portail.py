@@ -38,6 +38,7 @@ from sqlalchemy import text
 from app.auth.sessions import ouvrir_une_session, revoquer
 from app.configuration.settings import Parametres
 from app.entities.modeles import STATUTS_ENTITE, StatutEntite
+from app.entities.routes import LONGUEUR_MAXIMALE_CODE
 from app.entities.services import COLONNES_EXPOSEES
 from app.main import creer_application
 from app.shared.database import moteur
@@ -51,6 +52,7 @@ if TYPE_CHECKING:  # pragma: no cover
 ORIGINE_DE_TEST = "https://testserver"
 
 CHEMIN = "/api/v1/entities"
+CHEMIN_UNE = "/api/v1/entities/{code}"
 
 #  Les quatre champs que la reponse doit porter, et EXACTEMENT ceux-la. Une
 #  colonne ajoutee a la requete sans etre voulue ici fait echouer le test.
@@ -136,6 +138,16 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[tuple[Parametres, str,
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM user_session WHERE person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  **`T2` A AJOUTE UNE TABLE AU DECOR, ET LE NETTOYAGE ETAIT
+                #  INCOMPLET.** Le test « appartenir ou non ne change rien »
+                #  insere une appartenance ; la suppression de `person` a alors
+                #  rendu `ForeignKeyViolation` sur
+                #  `fk_entity_membership_person_id_person`. **Septieme occurrence
+                #  de cette classe dans le projet** -- §7.30 -- et c'est la base
+                #  qui l'a dite, pas moi. Elle est supprimee AVANT `person` et
+                #  AVANT `entity`, qu'elle reference toutes les deux.
+                "DELETE FROM entity_membership WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM person WHERE email_normalized LIKE :motif",
                 "DELETE FROM entity WHERE code LIKE :motif",
@@ -392,3 +404,158 @@ def test_la_lecture_RAFRAICHIT_l_activite_de_la_session(
         ).scalar_one()
 
     assert apres > avant, f"avant={avant} apres={apres}"
+
+
+# ===========================================================================
+#  `T2` — l'entite consultee, resolue depuis l'adresse
+# ===========================================================================
+
+
+def _appeler_une(
+    parametres: Parametres, code: str, jeton: str | None, entetes: dict[str, str] | None = None
+) -> Any:
+    with TestClient(creer_application(parametres), base_url=ORIGINE_DE_TEST) as client:
+        if jeton is not None:
+            client.cookies.set(parametres.SESSION_COOKIE_NAME, jeton)
+        return client.get(CHEMIN_UNE.format(code=code), headers=entetes or {})
+
+
+def test_la_borne_du_code_est_DERIVEE_de_la_colonne() -> None:
+    """Sans base : la borne du parametre de chemin vient de `entity.code`.
+
+    Ecrire `64` dans la route en ferait une seconde source, qui vieillirait au
+    premier `ALTER TABLE` -- §7.27. Ce test echoue si la derivation cesse de
+    donner la longueur reelle.
+    """
+    from sqlalchemy import String
+
+    from app.entities.modeles import Entity
+
+    type_de_colonne = Entity.__table__.c.code.type
+    #  `isinstance` plutot qu'un acces direct a `.length` : `mypy` strict refuse
+    #  l'attribut sur `TypeEngine`, et un `cast` mentirait. Le test exige donc que
+    #  la colonne SOIT une chaine bornee, ce qui est la propriete sur laquelle la
+    #  derivation repose.
+    assert isinstance(type_de_colonne, String)
+    assert type_de_colonne.length == LONGUEUR_MAXIMALE_CODE
+    assert LONGUEUR_MAXIMALE_CODE == 64
+
+
+@pytest.mark.integration
+def test_une_entite_ACTIVE_est_resolue_par_son_code(
+    decor: tuple[Parametres, str, dict[str, str]],
+) -> None:
+    """**LE TEMOIN CENTRAL de `T2`.** Sans lui, les 404 ci-dessous seraient
+    satisfaits par une route qui ne resout jamais rien."""
+    parametres, marqueur, codes = decor
+    reponse = _appeler_une(parametres, codes["active"], _session(parametres, marqueur))
+    assert reponse.status_code == 200, reponse.text
+    charge = reponse.json()
+    assert charge["code"] == codes["active"]
+    assert set(charge) == CHAMPS_ATTENDUS, set(charge)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("statut", ["draft", "suspended", "archived"])
+def test_une_entite_NON_ACTIVE_rend_404_COMME_un_code_inconnu(
+    decor: tuple[Parametres, str, dict[str, str]],
+    statut: str,
+) -> None:
+    """**LES DEUX REFUS SONT COMPARES, pas seulement constates.**
+
+    Le §8.3 donne acces aux entites ACTIVES : pour l'appelant, une entite `draft`
+    n'est pas interdite, elle **n'existe pas**. Distinguer les deux apprendrait
+    qu'un brouillon existe, et le LOT 9 en creera avant publication.
+    """
+    parametres, marqueur, codes = decor
+    jeton = _session(parametres, marqueur, f"-{statut}")
+    correlation = {"X-Request-ID": f"l4t2-egalite-{statut}"}
+
+    non_active = _appeler_une(parametres, codes[statut], jeton, correlation)
+    inconnue = _appeler_une(parametres, f"{marqueur}-jamais-creee", jeton, correlation)
+
+    #  L'egalite est verifiee APRES avoir exige 404 : deux 200 seraient identiques
+    #  eux aussi, et l'assertion passerait sur un livrable ouvert. Defaut `T8-1`.
+    assert non_active.status_code == 404, non_active.text
+    assert _signature(non_active) == _signature(inconnue)
+
+
+@pytest.mark.integration
+def test_resoudre_sans_cookie_REFUSE(
+    decor: tuple[Parametres, str, dict[str, str]],
+) -> None:
+    """Matrice §5 : `ANON` est a tiret. Et le refus ne dit rien de l'entite."""
+    parametres, _, codes = decor
+    reponse = _appeler_une(parametres, codes["active"], None)
+    assert reponse.status_code == 401, reponse.text
+    #  Ni le nom, ni la ville ne fuient dans un refus d'authentification.
+    assert "Bordeaux" not in reponse.text
+
+
+@pytest.mark.integration
+def test_la_reponse_est_la_MEME_que_la_personne_appartienne_ou_NON_a_l_entite(
+    decor: tuple[Parametres, str, dict[str, str]],
+) -> None:
+    """**« AUCUNE PERMISSION LOCALE N'EST TRANSFEREE », au niveau que `T2` atteint.**
+
+    La matrice §5 donne « Lecture de toutes les entites » a `EMP`, et la lecture
+    d'une entite ne depend donc d'aucune appartenance. Le prouver ici ferme la
+    porte a un filtrage introduit plus tard « pour bien faire » : consulter une
+    autre entite n'accorde rien et ne retire rien.
+
+    **Le contraire serait un defaut silencieux** : une reponse enrichie pour un
+    membre laisserait le frontend deduire l'appartenance depuis une lecture que le
+    cahier veut identique pour tous.
+    """
+    parametres, marqueur, codes = decor
+    correlation = {"X-Request-ID": "l4t2-appartenance-sans-effet"}
+
+    #  Une personne SANS aucune appartenance.
+    etranger = _session(parametres, marqueur, "-etranger")
+
+    #  Une personne MEMBRE de l'entite active.
+    membre = _session(parametres, marqueur, "-membre")
+    with moteur(parametres).begin() as cx:
+        cx.execute(
+            text(
+                "INSERT INTO entity_membership (person_id, entity_id, arrival_date, "
+                "  membership_state, professional_category, profile_visibility) "
+                "SELECT p.id, e.id, current_date - 30, 'active', 'consultant', 'draft' "
+                "FROM person p, entity e "
+                "WHERE p.email_normalized LIKE :personne AND e.code = :entite"
+            ),
+            {"personne": f"{marqueur}-membre%", "entite": codes["active"]},
+        )
+
+    vu_par_l_etranger = _appeler_une(parametres, codes["active"], etranger, correlation)
+    vu_par_le_membre = _appeler_une(parametres, codes["active"], membre, correlation)
+
+    assert vu_par_l_etranger.status_code == 200, vu_par_l_etranger.text
+    assert vu_par_le_membre.status_code == 200, vu_par_le_membre.text
+    assert _signature(vu_par_l_etranger) == _signature(vu_par_le_membre)
+
+
+@pytest.mark.integration
+def test_un_code_TROP_LONG_est_refuse_avant_toute_requete(
+    decor: tuple[Parametres, str, dict[str, str]],
+) -> None:
+    """La borne est celle de la colonne, et elle est DERIVEE.
+
+    Un code de 65 caracteres ne peut correspondre a aucune ligne : le refuser a
+    l'entree evite une requete inutile, et le 422 de FastAPI dit **quel**
+    parametre est en cause -- ce qu'un 404 ne dirait pas.
+    """
+    parametres, marqueur, _ = decor
+    trop_long = "z" * (LONGUEUR_MAXIMALE_CODE + 1)
+    reponse = _appeler_une(parametres, trop_long, _session(parametres, marqueur, "-long"))
+    assert reponse.status_code == 422, reponse.text
+
+
+@pytest.mark.integration
+def test_la_resolution_n_est_PAS_MISE_EN_CACHE(
+    decor: tuple[Parametres, str, dict[str, str]],
+) -> None:
+    """`Cache-Control: no-store`, pose par la dependance et non par la route."""
+    parametres, marqueur, codes = decor
+    reponse = _appeler_une(parametres, codes["active"], _session(parametres, marqueur, "-cache"))
+    assert reponse.headers.get("cache-control") == "no-store"

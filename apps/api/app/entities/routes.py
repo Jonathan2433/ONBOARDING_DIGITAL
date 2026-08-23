@@ -63,14 +63,48 @@ POURQUOI UN OBJET ET NON UN TABLEAU JSON A LA RACINE
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from pydantic import BaseModel
+from sqlalchemy import String
 
 from app.auth.dependances import exiger_une_session
-from app.entities.services import lister_les_entites_actives
+from app.entities.modeles import Entity
+from app.entities.services import lister_les_entites_actives, resoudre_une_entite_active
 from app.shared.database import moteur
+from app.shared.errors import ErreurApplicative
+
+
+def _longueur_du_code() -> int:
+    """La longueur de `entity.code`, DERIVEE de la colonne et non recopiee.
+
+    Ecrire `64` ici en ferait une seconde source, qui vieillirait au premier
+    `ALTER TABLE` -- §7.27.
+
+    **ELLE ECHOUE PLUTOT QUE DE SE REPLIER SUR UNE VALEUR PAR DEFAUT.** Un
+    `or 64` aurait satisfait `mypy` et donne un nombre **qu'on ne peut pas
+    tenir** : si la colonne cessait un jour d'etre une chaine bornee, la borne
+    silencieuse de 64 deviendrait une invention. Mieux vaut un demarrage refuse,
+    qui nomme la cause, qu'une valeur plausible -- c'est le septieme point du
+    §7.0, et c'est le meme esprit que les onze garde-fous du §20.3.
+    """
+    type_de_colonne = Entity.__table__.c.code.type
+    if not isinstance(type_de_colonne, String) or type_de_colonne.length is None:
+        message = (
+            f"`entity.code` n'est plus une chaine bornee : {type_de_colonne!r}. "
+            f"La borne du parametre de chemin ne peut plus en etre derivee."
+        )
+        raise RuntimeError(message)
+    return type_de_colonne.length
+
+
+LONGUEUR_MAXIMALE_CODE: Final[int] = _longueur_du_code()
+
+#  **UN SEUL GABARIT DE REFUS POUR DEUX CAUSES** : code inconnu, ou entite qui
+#  existe sans etre active. Voir l'en-tete de `app/entities/services.py`.
+CODE_ENTITE_INTROUVABLE: Final = "entite_introuvable"
+MESSAGE_ENTITE_INTROUVABLE: Final = "Cette entite n'existe pas ou n'est pas accessible."
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Parametres
@@ -150,6 +184,68 @@ def routeur_entites(parametres: Parametres) -> APIRouter:
                 )
                 for entite in entites
             ]
+        )
+
+    @routeur.get(
+        "/entities/{code}",
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=EntiteDuPortail,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": (
+                    "Aucune session valide. UNE SEULE forme pour cinq causes : cookie "
+                    "absent, jeton inconnu, session revoquee, duree absolue depassee, "
+                    "inactivite depassee."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour DEUX causes : le code est inconnu, ou "
+                    "l'entite existe sans etre active. Le §8.3 donne acces aux entites "
+                    "ACTIVES : pour l'appelant, une entite `draft` n'est pas interdite, "
+                    "elle n'existe pas. Distinguer les deux cas apprendrait qu'un "
+                    "brouillon existe, et le LOT 9 en creera avant publication."
+                )
+            },
+        },
+        summary="Resoudre l'entite consultee par son code",
+        description=(
+            "L'entite consultee vit dans l'ADRESSE, et le cahier le determine : le §8.1, "
+            "le §9.1 et le §9.2 font tous atterrir sur la page nationale apres "
+            "connexion, si bien qu'une memoire serveur du dernier choix n'aurait aucun "
+            "consommateur. Cette route resout le code que porte l'URL. "
+            "AUCUNE PERMISSION N'EST TRANSFEREE : la matrice §5 donne la lecture de "
+            "toutes les entites aux huit roles authentifies, donc la reponse est la MEME "
+            "que l'appelant appartienne a cette entite ou non."
+        ),
+    )
+    def resoudre_l_entite(
+        #   en defaut est la forme de FastAPI, et `B008` ne s'y
+        #  declenche pas : ruff connait les fabriques de FastAPI. Un `noqa`
+        #  inutile ici ferait echouer `RUF100`.
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite, unique et jamais reattribue",
+        ),
+    ) -> EntiteDuPortail:
+        """Resoudre l'entite consultee — cahier §9.2 etape 4, backlog `MVP-L04-US001`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+
+        if entite is None:
+            #  Le motif precis ne sort pas : deux causes, une seule reponse.
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return EntiteDuPortail(
+            id=entite.id,
+            code=entite.code,
+            nom=entite.display_name,
+            ville=entite.city,
         )
 
     return routeur

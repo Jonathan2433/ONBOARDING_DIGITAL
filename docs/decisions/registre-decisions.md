@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T1` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T2` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -52,6 +52,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Ouverture du LOT 4 `DEC-541`** | 1 | **Validée le 22/08/2026** |
 | **Garde-fous iCloud corrigés `DEC-542`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-543+`, sous-étape `T1`** | 2 | **Validées le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-545`, sous-étape `T2`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -63,7 +64,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **212** | |
+| **Total** | **213** | |
 
 ---
 
@@ -597,7 +598,9 @@ ne l'a pas encore placée**.
 
 | `DEC-544` | **`GET /api/v1/entities` rend les entités `active` SEULEMENT, quatre champs, dans un OBJET, avec un ordre TOTAL.** **(a)** Le filtre est `= active`, dérivé de `StatutEntite.ACTIVE`. **(b)** Quatre champs — `id`, `code`, `nom`, `ville` — et trois absences motivées. **(c)** `{"entites": [...]}` et non un tableau à la racine. **(d)** `ORDER BY display_name, code`. **(e)** L'endpoint est déclaré au manifeste du contrat, et deux primitives de validation sont **extraites** dans `formes.ts`. | **(a) « ACTIVE » N'EST PAS UNE INTERPRÉTATION DU BACKLOG, C'EST LE CAHIER §8.3** : « un accès à chaque entité **active** ». Deux sources concordantes. **Et le filtre porte sur TROIS états non actifs, pas sur les deux que la fiche nomme** — `draft` est le troisième, `ECART-039`. La forme positive `= active` couvre tout état futur là où `NOT IN (…)` vieillirait au premier ajout, et la valeur est **dérivée** de l'énumération, jamais littérale (§7.27). **(b)** `status` serait **constant** — toute ligne rendue est active — et un champ constant apprend à ne pas le lire ; `timezone` et `country_code` n'ont aucun consommateur au LOT 4, et livrer une donnée sans consommateur est ce que `T10` du LOT 1 refuse. `city` est exposée pour la **liste** que le §8.3 exige, **pas pour la carte** : `entity` ne porte ni latitude ni longitude, mesuré sur le schéma réel, et c'est ce qui laisse `T7` ouverte. **(c)** Un tableau à la racine ne peut pas recevoir de champ voisin, et il en faudra un : `T2` doit dire quelle entité est consultée. Aucune pagination, et c'est mesuré — le §30.25 borne la recette à 25 entités. **(d) `ORDER BY display_name` SEUL NE SUFFIT PAS** : rien n'impose l'unicité du nom d'affichage, et PostgreSQL serait libre de rendre deux homonymes dans un ordre différent d'un appel à l'autre. `code` est `UNIQUE`, donc l'ordre devient total, donc testable — un test l'exige sur trois appels. **(e)** Le contrôle du contrat a fait son travail **avant que je le lui demande** : ayant monté la route avant de la déclarer, il a échoué en nommant exactement `('/api/v1/entities', 'get')`. Le témoin a donc été exercé dans les deux sens sans mise en scène. Et `estObjet` / `exigerChaine`, privées à `sante.ts`, ont été **extraites** et non recopiées — deux exemplaires d'une même règle divergent en silence. `formes.ts` n'est **pas** réexporté : un consommateur qui validerait lui-même ne passerait plus par les validateurs du contrat. **Zod a été réexaminé et écarté** — trois formes ne le justifient pas davantage que deux, et `make audit` est à zéro tolérance depuis `DEC-493` (§7.22). | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-545`.**
+| `DEC-545` | **L'entité consultée vit dans l'ADRESSE, `/entites/{code}`. Aucune colonne, aucun stockage navigateur, aucune migration.** **(a)** Le `code` est la clé publique. **(b)** Une entité non active rend **404, identique** à une entité absente. **(c)** Le changement d'entité **abandonne** la requête en cours. **(d)** La réponse est la **même** que l'appelant appartienne à l'entité ou non. | **(a) LE CAHIER DETERMINE LE PARCOURS, ET CELA FERME LA QUESTION QUE LA FICHE DISAIT OUVERTE.** Le §4.1 « une page nationale **après authentification** », le diagramme du §8.1, la séquence du §9.1 et l'énumération du §9.2 font **tous** atterrir sur la page nationale. Une mémoire serveur du dernier choix n'aurait donc **aucun consommateur** : elle servirait à sauter un écran que le cahier prescrit. Et « le choix est mémorisé pour la session » ne peut alors signifier qu'une chose — le choix persiste **pendant** qu'on navigue. `ECART-040`, et c'est le §7.29 pour la troisième fois en deux lots.<br>**Trois mécanismes ont été écartés, chacun pour une raison mesurée** : une colonne sur `user_session` n'aurait aucun consommateur **et** ferait que deux onglets se disputent une seule mémoire ; `localStorage` et `sessionStorage` sont interdits par le contrôle du frontend — plus strict que le cahier §7.4, et le relâcher exigerait de **juger** ce qui est une donnée d'authentification, donc d'introduire une **heuristique dans un contrôle**, ce que le §7.25 nomme un défaut ; un cookie dédié voyagerait sur chaque requête et se disputerait de la même façon.<br>**Le `code` est la clé, et c'est mesuré** : `code_unique` n'a **aucune clause partielle**, donc une entité archivée garde son code réservé et un code n'est **jamais réattribué**. Et il est **encodé** partout où il entre dans un chemin : `entity.code` est une chaîne libre de 64 caractères, sans motif imposé, et un `/` non encodé appellerait une autre route. **(b)** Le §8.3 donne accès aux entités **actives** : pour l'appelant, une entité `draft` n'est pas interdite, elle **n'existe pas**. Distinguer les deux apprendrait qu'un brouillon existe, et **le LOT 9 en créera avant publication**. Les deux réponses sont **comparées** — statut, corps et en-têtes, corrélation **fixée** — et l'égalité est vérifiée **après** avoir exigé 404, sans quoi deux `200` la satisferaient aussi : défaut `T8-1` du LOT 3. **(c)** Le §23.3 l'exige littéralement : « annule les requêtes et caches associés à l'entité précédente ». Sans `AbortController` **et** sans couplage de l'état au code, une réponse lente pour l'entité quittée arriverait **après** celle de la nouvelle et l'écraserait. **Le défaut n'apparaît que sous latence**, donc jamais en développement local — §7.16. Un test le fabrique. **(d)** La matrice §5 donne « Lecture de toutes les entités » à `EMP` : une réponse enrichie pour un membre laisserait le frontend **déduire** l'appartenance depuis une lecture que le cahier veut identique pour tous. Le test ferme aussi la porte à un filtrage introduit plus tard « pour bien faire ». | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-546`.**
 
 ---
 
@@ -791,6 +794,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-541` — ouverture du LOT 4 | 1 | 1 |
 | `DEC-542` — garde-fous iCloud corrigés | 1 | 1 |
 | `DEC-543+` — réalisation du LOT 4, `T1` | 2 | 2 |
+| `DEC-545` — réalisation du LOT 4, `T2` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -802,7 +806,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **212** | **212** |
+| **Total** | **213** | **213** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
