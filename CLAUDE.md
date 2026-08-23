@@ -2,8 +2,8 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 22 août 2026, au **franchissement de la porte `G3`**
-**Destinataire :** l'agent qui prend le relais pour le **LOT 4 — portail et accueil**
+**Mis à jour le :** 23 août 2026, à la sortie de **`T1` du LOT 4**
+**Destinataire :** l'agent qui poursuit le **LOT 4 — portail national et navigation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `DEC-517`, `v0.2.0`) · **LOT 3** (`G3`, **22/08/2026**, `DEC-540`, **`v0.3.0`**) |
-| **Lot en cours** | **AUCUN.** Le LOT 4 — portail et accueil — **n'est pas ouvert** : son ouverture est la décision de Jonathan (`ROAD-003`). N'écris pas une ligne qui lui appartienne |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`) et la porte (`DEC-540`) |
-| **Prochaine action** | **attendre que Jonathan ouvre le LOT 4.** Puis lire [`ROADMAP_MVP_V1_V2_EXALT.md`](docs/product/ROADMAP_MVP_V1_V2_EXALT.md) §LOT 4, proposer un découpage en douze sous-étapes, et **le faire valider avant d'écrire du code** |
-| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** |
+| **Lot en cours** | **LOT 4 — portail national, sélection d'entité et navigation.** Ouvert par Jonathan le 22/08/2026 (`DEC-541`), découpage en **douze** sous-étapes validé le même jour. **`T1` est terminée** |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : `T1`.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
+| **Prochaine action** | **`T2` — où vit l'entité consultée.** C'est l'un des **deux** points que le §8 de [`fiche-lot-4.md`](docs/operations/fiche-lot-4.md) laisse ouverts : `US001` dit « mémorisé **pour la session** » et `user_session` n'a **aucune colonne d'entité**. Lis le §11 du [compte rendu de `T1`](docs/operations/compte-rendu-t1-lot-4.md) avant de commencer |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
-| **Tests** | **794** : **661 pytest** — dont **390 d'intégration** — et **133 Vitest** (90 `ui`, **42 `web`**, 1 `contracts`) |
+| **Tests** | **817** : **674 pytest** — dont **401 d'intégration** — et **143 Vitest** (90 `ui`, **42 `web`**, **11 `contracts`**) |
 | Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~2 min de qualité + ~3 min 30 de stack |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **75 cibles** documentées. `make help` fait foi |
+| Makefile | **76 cibles** documentées. `make help` fait foi |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **125 décisions** `DEC-418+` · **38 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive**, et il a nommé les quatre incohérences que `ECART-038` a produites |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **127 décisions** `DEC-418+` · **39 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis les quatre de `T1` |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 4**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -80,10 +80,10 @@ Toute modification passe par une branche et une pull request vers `develop`.
 # 2. Les règles qui ne se négocient pas
 
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
-   `ARB-BACK-003`, `BACKLOG-006`). **AUCUN LOT N'EST OUVERT** au 22/08/2026 : les LOTS 0 à 3 sont
-   terminés, et l'ouverture du LOT 4 est **la décision de Jonathan**. N'écris pas une ligne qui
-   appartienne au LOT 4 — ni écran de portail, ni route métier, ni type métier dans
-   `packages/contracts` — avant qu'il ne l'ait ouvert **et validé le découpage**.
+   `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 4 EST OUVERT** depuis le 22/08/2026 (`DEC-541`), son
+   découpage en douze sous-étapes est validé, et **`T1` est terminée**. N'écris **rien** qui
+   appartienne au LOT 5 — écrans de collaborateur — au LOT 6 — cercles — ni au LOT 9 — import CSV.
+   Et **une sous-étape à la fois** : la suivante est `T2`.
 2. **Aucun secret dans Git.** Ni fichier, ni message de commit, ni titre de branche, ni
    description de pull request.
 3. **Aucune donnée réelle de collaborateur versionnée.** Aucun CSV réel, aucune photo.
@@ -112,7 +112,9 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 3 ?** | **`docs/operations/fiche-lot-3.md`** — 12 sous-étapes, **découpage validé le 20/08/2026**. `T1` et `T2` **sont faites** |
+| **Que fait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **découpage validé le 22/08/2026**. **`T1` est faite**, onze restent |
+| **Comment a-t-on fait `T1` du LOT 4 ?** | **`docs/operations/compte-rendu-t1-lot-4.md`** — la première route métier du projet. Son §11 dit ce que `T2` doit savoir |
+| Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
 | **Comment a-t-on fait `T1` et `T2` du LOT 3 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-3.md`**. `T1` : le moindre privilège. `T2` : les sept tables du §10 |
 | Quelles sont les 7 tables d'authentification ? | Modèle **§10.1 à §10.6**, et `apps/api/app/auth/modeles.py` en porte la lecture |
 | Que faisait-on au LOT 2 ? | `docs/operations/fiche-lot-2.md` — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
@@ -519,6 +521,7 @@ API             migrate migrate-status api-check alembic-check
                 migrations-check recette-modele-check             ← LOT 2, T12
                 roles-provision privileges-check                  ← LOT 3, T1
                 secrets-check                                     ← LOT 3, T2
+                entites-check                                     ← LOT 4, T1
                 jeu-de-donnees                                    ← LOT 2, T12
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
@@ -1882,6 +1885,12 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │   ├── api/      app/{configuration,entities,health,shared}, alembic/, tests/, Dockerfile
 │                 app/modeles.py         ← importe TOUS les modeles (LOT 2, T2)
 │                 app/shared/modele.py   ← socle declaratif (LOT 2, T1, DEC-499)
+│                 app/entities/routes.py  ← GET /api/v1/entities : la PREMIERE
+│                                          route METIER du projet (LOT 4, T1)
+│                 app/entities/services.py ← le filtre `= active`, DERIVE de
+│                                          l'enumeration (DEC-544)
+│                 app/auth/dependances.py ← exiger_une_session ET exiger_un_scope :
+│                                          DEUX natures d'appelant (DEC-543)
 │                 app/{entities,people,clients,organization}/
 │                                        ← 18 tables METIER (LOT 2, T2 a T8)
 │                                          19 avec alembic_version : DIS LAQUELLE
@@ -1915,6 +1924,11 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │   │                     Bouton · Badge · Carte, 90 tests
 │   └── contracts/        contrat API partagé (T10, DEC-492)
 │                         contrat-api.json  ← SOURCE UNIQUE, lue par TS ET Python
+│                         portail.ts        ← la PREMIERE forme METIER : les
+│                                             entites du portail (LOT 4, T1)
+│                         formes.ts         ← estObjet / exigerChaine, EXTRAITES
+│                                             de sante.ts, un seul exemplaire
+
 ├── infra/
 │   ├── compose/  base + surcouches dev ET recette (T8)
 │   │             la surcouche NOMME sa cible de construction (DEC-479)
@@ -1943,6 +1957,10 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                                version anterieure = reecriture
 │                                                iCloud. Remplace un controle a FAUX
 │                                                POSITIFS. DEC-542, §7.34
+│                  verifier-entites.py        ← les 4 etats du modele, une entite
+│                                                par etat, a travers Caddy. Le
+│                                                critere n'en nommait que 2 :
+│                                                ECART-039        (LOT 4, T1)
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
@@ -1995,6 +2013,12 @@ make ecrans-check         #  7 — les 8 chemins servis, aucune couleur hors jet
 make evenements-check     #  6 — les 7 evenements du 10.6, sans rien de sensible
 make residu-check         #      la suite d'integration, ET la preuve qu'elle ne laisse rien
                           #      Il REMPLACE `make test-integration`, il ne s'y ajoute pas.
+
+# Le controle du LOT 4. Il EXIGE que le conteneur porte le code du depot : lance
+# `make code-refresh && make code-check` d'abord, sinon il eprouve un autre
+# artefact en paraissant sain. §7.28
+make entites-check        # 10 — une entite par etat, les TROIS non actifs exclus,
+                          #      et les deux refus compares corps ET en-tetes
 
 # Les controles de schema
 make privileges-check && make secrets-check && make isolation-check && make isolation-temoin

@@ -1006,6 +1006,13 @@ service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration ag
 	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+entites-check: ## Prouver que la page nationale ne propose QUE des entites actives (LOT 4, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-entites.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

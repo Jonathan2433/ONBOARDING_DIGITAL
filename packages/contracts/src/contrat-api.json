@@ -263,6 +263,35 @@
         "modele 10.4 — et le cookie est retire avec les MEMES attributs que la pose,",
         "sans quoi le navigateur le laisserait en place."
       ]
+    },
+    {
+      "cle": "entitesDuPortail",
+      "chemin": "/api/v1/entities",
+      "methode": "get",
+      "codesExploitables": [200, 401],
+      "forme": "ReponseDesEntites",
+      "role": [
+        "Lister les entites du portail national — LOT 4, T1, story MVP-L04-US001.",
+        "LA PREMIERE ROUTE METIER DU PROJET. Les LOTS 1 a 3 n'exposaient que de la",
+        "sante, la racine du contrat versionne et l'authentification.",
+        "LES ENTITES `active` SEULEMENT, et c'est le cahier 8.3 qui le dit en toutes",
+        "lettres : « un acces a chaque entite ACTIVE ». Le backlog US001 le redit.",
+        "Une entite `draft`, `suspended` ou `archived` n'est pas rendue -- TROIS etats",
+        "non actifs, non deux : la fiche n'en nommait que deux, et un motif ecrit",
+        "contre un exemple ne couvre que cet exemple.",
+        "401 EXIGE UNE SESSION, et cela vient de la matrice 5 : elle donne « Page",
+        "nationale et carte des entites » a ANON = tiret et aux HUIT roles",
+        "authentifies, tous a la coche. Aucun role a distinguer, donc aucun 403 : la",
+        "seule question est « une session valide, oui ou non ».",
+        "UN OBJET ET NON UN TABLEAU A LA RACINE. `{ entites: [...] }` peut recevoir un",
+        "champ voisin ; un tableau ne peut pas. T2 devra dire quelle entite est",
+        "consultee, et c'est le point que le §8 de la fiche laisse ouvert.",
+        "AUCUNE PAGINATION, et c'est mesure : le 30.25 borne la recette a 25 entites.",
+        "QUATRE CHAMPS -- id, code, nom, ville. `status` est absent parce que toute",
+        "ligne rendue est active : le champ serait constant, et un champ constant",
+        "apprend a ne pas le lire. `timezone` et `country_code` sont absents faute de",
+        "consommateur au LOT 4."
+      ]
     }
   ],
   "_commentaire_debit": [

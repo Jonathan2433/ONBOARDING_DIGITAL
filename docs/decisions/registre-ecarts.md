@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 août 2026, à l'ouverture du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T1` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 38 | 8 | 28 | 2 |
+| Total 39 | 8 | 29 | 2 |
 
 ---
 
@@ -56,8 +56,9 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
 | `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
 | `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
+| `ECART-039` | Le critère de sortie de `T1` du LOT 4 exige qu'« une entité `suspended` ou `archived` ne soit pas rendue » : `StatutEntite` en déclare **quatre**, et `draft` est un **troisième** état non actif. Suivre le critère à la lettre aurait produit un témoin incomplet — une entité en brouillon proposée sur la page nationale, avec un critère qui se lit satisfait | Non — détecté avant d'écrire le témoin | **Clos** — filtre positif, valeur dérivée, et un test qui exige les quatre statuts |
 
-**Prochain identifiant libre : `ECART-039`.**
+**Prochain identifiant libre : `ECART-040`.**
 
 ---
 
@@ -557,4 +558,19 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-039`.**
+## `ECART-039` — Le critère de `T1` nommait deux états là où le modèle en déclare trois
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T1`, en écrivant les témoins d'exclusion |
+| Source | [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §3, critère de sortie de `T1` — contre `apps/api/app/entities/modeles.py`, `StatutEntite` |
+| Constat | Le critère écrit : « Une entité `suspended` ou `archived` **n'est pas rendue**, avec témoin ». `StatutEntite` déclare **quatre** valeurs — `draft`, `active`, `suspended`, `archived` — donc **trois** états non actifs. `draft` n'est pas nommé.<br>Le cahier §8.3, lui, est exact : « un accès à chaque entité **active** ». C'est la **fiche**, document dérivé, qui a nommé deux exemples au lieu de la classe. |
+| Impact | **Un témoin incomplet, et un critère qui se lirait satisfait.** Écrire les deux témoins que la fiche nomme aurait laissé une entité `draft` proposée sur la page nationale, sans qu'aucun contrôle ne le dise. Le défaut aurait été découvert au LOT 9, quand le back-office créera des entités en brouillon.<br>Aucun impact sur les livrables antérieurs : `entity` existe depuis le LOT 2, mais aucune route ne la lisait. |
+| Cause | **`ECART-023` et §7.34 réunis.** Un document dérivé énumère des exemples ; les lire comme la classe est le défaut. Le §7.34, écrit **la veille** de cette sous-étape à propos d'un motif `.gitignore`, dit exactement ceci : *un motif écrit contre un exemple ne couvre que cet exemple.* La même erreur, un niveau plus haut — dans un critère au lieu d'un motif. |
+| Bloquant | Non — détecté avant d'écrire le témoin |
+| Recommandation | **Trois parades, toutes mécaniques, aucune ne repose sur la vigilance.** **(1)** le filtre est écrit `= active` et non `NOT IN (suspended, archived)` : la forme positive couvre tout état futur ; **(2)** la valeur comparée est **dérivée** de `StatutEntite.ACTIVE`, jamais la chaîne littérale (§7.27) ; **(3)** un test **sans base** exige que l'énumération contienne exactement les quatre valeurs connues — si un lot en ajoute une cinquième, il échoue et oblige à décider si elle est active ou non. **C'est la troisième qui corrige la classe** : sans elle, mes trois témoins d'exclusion continueraient de passer en ne couvrant plus l'ensemble des états.<br>**Recommandation pour les fiches suivantes** : quand un critère énumère des valeurs d'une énumération du code, écrire « tous les états non `X` » plutôt que deux exemples. |
+| Résolution | **Clos.** `make entites-check` crée **une entité par état**, la liste dérivée de l'énumération, et **annonce le nombre d'états examinés** — 3 non actifs, non 2. Le témoin négatif sur le conteneur reconstruit rend **exactement 3 échecs**. |
+
+---
+
+**Prochain identifiant libre : `ECART-040`.**
