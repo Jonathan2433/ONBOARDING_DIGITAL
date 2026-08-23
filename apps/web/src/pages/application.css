@@ -505,6 +505,56 @@
   }
 }
 
+/* ─── la carte de France illustrative — LOT 4, T7, cahier §8.3 ────────── */
+
+/* **AUCUN `order` ICI, ET C'EST LE POINT.** La carte vient apres la liste dans le
+   DOM, et la feuille ne doit surtout pas inverser : un lecteur d'ecran et la
+   tabulation suivent le document, pas la mise en page. `make cadre-check` echoue
+   si une regle `order` apparait sur `.nat-liste`. */
+.nat-carte {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 var(--espace-l);
+}
+
+/* `max-width` en `rem` et `height: auto` : la carte se reduit avec la page et ne
+   la pousse jamais. Elle n'a aucune largeur fixe.
+
+   **LE SELECTEUR EST DOUBLE, ET C'EST UN CORRECTIF MESURE.** Ecrit
+   `.nat-carte-dessin` seul, il perdait contre la regle posee en `T3` pour les
+   images :
+
+       .app-principal img, .app-principal svg { max-width: 100%; height: auto; }
+
+   Classe + type valent 0,1,1 contre 0,1,0 pour une classe seule : `max-width:
+   100%` l'emportait, et la carte mesurait **1 152 x 1 152 px** au lieu de 352 --
+   mesure dans un vrai navigateur, `max-width` calcule a `100%`. Deux classes
+   valent 0,2,0 et reprennent la main.
+
+   **Seule la mesure pouvait l'attraper** : la feuille contenait bien
+   `max-width: 22rem`, et aucun controle statique ne resout une cascade. C'est
+   pourquoi le critere de `T3` dit « mesure ». */
+.nat-carte .nat-carte-dessin {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  display: block;
+}
+
+/* Les couleurs viennent des jetons, et le remplissage est un aplat de marque :
+   `--marque-bleu` porte `--marque-bleu-texte` comme couple mesure contre WCAG,
+   mais ici rien ne porte de texte -- la carte est decorative. Le trait la detache
+   du fond dans les deux themes. */
+.nat-carte-terre {
+  fill: var(--marque-bleu);
+  stroke: var(--trait);
+  stroke-width: 1;
+  /* `opacity` plutot qu'une teinte nouvelle : aucune couleur n'est ecrite hors
+     des jetons, ce que `make ecrans-check` exige de la feuille voisine et que ce
+     fichier respecte aussi. */
+  opacity: 0.85;
+}
+
 /* ─── §14.2 : alternatives aux animations ─────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

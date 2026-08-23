@@ -61,6 +61,7 @@ ROUTES_TS = WEB / "routes.ts"
 NAVIGATION = WEB / "pages" / "NavigationPrincipale.tsx"
 BARRE = WEB / "pages" / "BarreMobile.tsx"
 NATIONALE = WEB / "pages" / "PageNationale.tsx"
+CARTE = WEB / "pages" / "CarteDeFrance.tsx"
 CAHIER = RACINE / "docs" / "product" / "CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
 #  **LA CLASSIFICATION DES FEUILLES, DECLAREE ET EXIGEE.**
@@ -98,6 +99,28 @@ IMPORT_COMPOSANTS = "packages/ui/src/composants.css"
 
 def sans_commentaires(source: str) -> str:
     return re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+
+
+def sans_commentaires_tsx(source: str) -> str:
+    """Le TSX sans ses commentaires — blocs, lignes, et accolades JSX.
+
+    **CE HELPER EXISTE PARCE QUE DEUX DE MES CONTROLES SE SONT DECLENCHES SUR
+    LEURS PROPRES COMMENTAIRES.** Le docstring de `CarteDeFrance.tsx` explique
+    qu'elle ne doit contenir « ni `<a>`, ni `<button>` » et « pas de `role="img"`,
+    pas de `<title>` » : mes motifs y ont trouve exactement ce qu'ils
+    interdisaient, et ont signale un livrable conforme.
+
+    **C'est le defaut `T11` du LOT 2 a l'identique**, et `verifier-ecrans.py`
+    l'avait deja resolu -- il retire les commentaires CSS avant de chercher. La
+    correction n'avait pas ete portee ici : §7.34, une instance corrigee n'est pas
+    la classe corrigee, et c'est la troisieme fois que cette classe revient.
+
+    L'ordre compte : les blocs d'abord, puis les accolades JSX, puis les lignes.
+    Une ligne `//` a l'interieur d'un bloc `/* */` doit disparaitre avec le bloc.
+    """
+    sans = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+    sans = re.sub(r"\{\s*/\*.*?\*/\s*\}", "", sans, flags=re.S)
+    return re.sub(r"^\s*//.*$", "", sans, flags=re.M)
 
 
 def proprietes_definies(source: str) -> set[str]:
@@ -607,12 +630,28 @@ def main() -> int:
     #  feuille ne reordonne pas la liste, et que la carte -- quand `T7` l'apportera
     #  -- vienne apres elle dans le JSX. **Il mordra a `T7`**, et en attendant il
     #  rapporte que la carte est absente plutot que de se taire.
-    source_nat = NATIONALE.read_text(encoding="utf-8") if NATIONALE.exists() else ""
+    #  Meme traitement : les commentaires de la page citent `nat-liste` et
+    #  `<CarteDeFrance`, et les compter comme du code fausserait leurs positions.
+    source_nat = (
+        sans_commentaires_tsx(NATIONALE.read_text(encoding="utf-8")) if NATIONALE.exists() else ""
+    )
     if not source_nat:
         print("    info     aucune page nationale : rien a ordonner")
     else:
         i_liste = source_nat.find('className="nat-liste"')
-        i_carte = source_nat.find('className="nat-carte')
+        #  **LE MARQUEUR EST L'USAGE DU COMPOSANT, PAS SA CLASSE CSS.**
+        #
+        #  Ma premiere version cherchait `className="nat-carte"` dans
+        #  `PageNationale.tsx`. `T7` a mis la carte dans son propre composant :
+        #  la page ne porte plus que `<CarteDeFrance />`, le motif ne trouvait
+        #  plus rien, et le controle annoncait « la carte n'existe pas encore »
+        #  SUIVI DE `ok` -- alors qu'elle existait. Meme classe qu'a `T4`, ou il
+        #  disait `ok` en ayant compte zero route : un controle dont la condition
+        #  ne decrit plus la realite ne mesure plus rien.
+        #
+        #  L'ordre se decide LA OU LES DEUX SONT ECRITS, c'est-a-dire dans la
+        #  page : c'est donc l'usage du composant qu'il faut situer.
+        i_carte = source_nat.find("<CarteDeFrance")
         reordonne = re.search(r"\.nat-liste[^{]*\{[^}]*order:", cadre) is not None
         if arguments.temoin:
             i_liste, i_carte = 999, 1
@@ -630,11 +669,52 @@ def main() -> int:
             print("    ECHEC    la feuille reordonne `.nat-liste` par `order`")
             print("             -> l'oeil serait satisfait, la tabulation non")
         elif i_carte < 0:
-            print("    ok       la liste est la, et la carte n'existe pas encore : l'ordre")
-            print("             sera exige des que `T7` posera `nat-carte`")
+            print("    ok       la liste est la, et la carte n'est pas encore posee : l'ordre")
+            print("             sera exige des que `<CarteDeFrance />` apparaitra")
         else:
             print("    ok       la liste PRECEDE la carte dans le DOM, et aucune regle CSS")
             print("             ne les reordonne — §8.3")
+
+    # ---------------------------------------------------------------- 8 duodecies
+    controles += 1
+    #  **LA CARTE EST DECORATIVE, ET C'EST LE CRITERE DE SORTIE DE `T7`** : « la
+    #  carte est decorative au sens de l'accessibilite : elle n'est pas le seul
+    #  moyen d'atteindre une entite ».
+    #
+    #  Trois exigences, et la troisieme est celle que le prototype invite a
+    #  enfreindre : il posait un BOUTON sur son image. Un element interactif dans
+    #  un sous-arbre `aria-hidden` est atteignable au clavier SANS etre annonce --
+    #  pire qu'un bouton absent.
+    #  **LES COMMENTAIRES SONT RETIRES AVANT L'EXAMEN.** Sans cela, le docstring
+    #  de la carte -- qui explique qu'elle ne doit porter ni `<a>` ni `<button>`,
+    #  ni `role="img"` ni `<title>` -- ferait echouer le controle sur un livrable
+    #  parfaitement conforme. §7.25, et c'est arrive.
+    source_carte = (
+        sans_commentaires_tsx(CARTE.read_text(encoding="utf-8")) if CARTE.exists() else ""
+    )
+    if not source_carte:
+        print("    info     aucune carte : rien a exiger d'elle")
+    else:
+        manques_carte = []
+        if 'aria-hidden="true"' not in source_carte:
+            manques_carte.append('`aria-hidden="true"` sur le dessin')
+        if 'focusable="false"' not in source_carte:
+            manques_carte.append('`focusable="false"` — un `<svg>` peut etre focusable')
+        if re.search(r"<(?:a|button|Link|NavLink|summary|input)\b", source_carte):
+            manques_carte.append("aucun element interactif ne doit y figurer")
+        if re.search(r"role=\"img\"|<title>", source_carte):
+            manques_carte.append('ni `role="img"` ni `<title>` : elle n\'informe pas')
+        if arguments.temoin:
+            manques_carte = ["temoin"]
+        if manques_carte:
+            echecs += 1
+            print(f"    ECHEC    {len(manques_carte)} exigence(s) manquante(s) pour que la carte")
+            print("             soit DECORATIVE :")
+            for m in manques_carte:
+                print(f"             {m}")
+        else:
+            print('    ok       la carte est decorative : `aria-hidden`, `focusable="false"`,')
+            print('             aucun element interactif, ni `role="img"` ni `<title>`')
 
     # ---------------------------------------------------------------- 9
     controles += 1
