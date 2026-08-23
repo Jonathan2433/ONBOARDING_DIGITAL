@@ -47,7 +47,7 @@ requete() {
   fi
 }
 
-attendus=6
+attendus=7
 examines=0
 fautes=0
 
@@ -132,6 +132,28 @@ else
   else
     verdict "$etiquette" non "type ${type_mime:-aucun}  module d'entree absent ou mal type"
   fi
+fi
+
+# --- 2 bis. La page de statut est encore JOIGNABLE, a sa nouvelle adresse ------
+# `T6` du LOT 4 a rendu la racine a la page NATIONALE, sur arbitrage de Jonathan :
+# le cahier §4.1 dit « une page nationale APRES AUTHENTIFICATION » et le §8.1 la
+# place juste apres la connexion. La page de statut vit desormais a `/statut`.
+#
+# CE CONTROLE EXISTE PARCE QUE CELUI DU DESSUS NE SUFFIT PLUS. Il verifie que `/`
+# rend la coquille React -- ce qui reste vrai, et resterait vrai si `/statut`
+# n'existait pas du tout. Le repli SPA sert `index.html` pour tout chemin inconnu
+# (T5-6) : le CODE HTTP ne discrimine donc rien, et c'est le TYPE MIME qui fait
+# foi, comme partout dans ce depot.
+#
+# Ce qu'il prouve : l'adresse est servie. Ce qu'il ne prouve PAS : que React y
+# monte la page de statut -- cela demanderait d'executer le JavaScript, donc un
+# moteur de rendu, donc Playwright, qui appartient au LOT 12.
+code=$(requete /statut)
+type_mime_statut=$(curl -k -s -S --max-time 10 -o /dev/null -w '%{content_type}' "$BASE/statut" 2>/dev/null)
+if [ "$code" = "200" ] && echo "$type_mime_statut" | grep -q 'text/html' && grep -q 'id="racine"' "$corps"; then
+  verdict "GET /statut                 " oui "HTTP $code  type $type_mime_statut  adresse servie"
+else
+  verdict "GET /statut                 " non "HTTP $code  type ${type_mime_statut:-aucun}  adresse NON servie"
 fi
 
 # --- 3. Meme origine : /health/ready est bien mandate vers l'API ---------------

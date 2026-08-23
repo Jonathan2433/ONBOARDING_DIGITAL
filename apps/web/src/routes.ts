@@ -37,7 +37,21 @@
  * `apps/api/app/entities/services.py`.
  */
 export const CHEMINS = {
-  statut: '/',
+  //  **LA RACINE EST LA PAGE NATIONALE DEPUIS `T6`, ET C'EST UN ARBITRAGE.**
+  //
+  //  Le cahier §4.1 dit « une page nationale APRES AUTHENTIFICATION » et le
+  //  diagramme du §8.1 la place juste apres la connexion. Aucun document ne
+  //  nomme d'adresse ; `/` servait la page de STATUT depuis `T5` du LOT 1.
+  //
+  //  Mesure avant de decider : `verifier-page-statut.sh` n'exige de `/` que la
+  //  coquille React et le mandatement des endpoints de sante -- il ne verifie
+  //  JAMAIS le contenu de la page de statut. Deplacer celle-ci ne cassait donc
+  //  rien, et l'arbitrage a pu se prendre sur le sens plutot que sur le cout.
+  //
+  //  Arbitrage de Jonathan du 23/08/2026 : la racine est la page nationale, la
+  //  page de statut passe a `/statut`, meme contenu.
+  national: '/',
+  statut: '/statut',
   connexion: '/connexion',
   lienEnvoye: '/connexion/lien-envoye',
   lien: '/connexion/lien',

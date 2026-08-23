@@ -50,6 +50,7 @@ import { PageDeconnexion } from './pages/PageDeconnexion';
 import { PageEntite } from './pages/PageEntite';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
+import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
 import { CHEMINS, RUBRIQUES } from './routes';
@@ -60,6 +61,13 @@ export function App(): JSX.Element {
     <FrontiereErreur>
       <BrowserRouter>
         <Routes>
+          {/*
+            **LA RACINE EST LA PAGE NATIONALE DEPUIS `T6`.** Cahier §4.1, « une
+            page nationale APRES AUTHENTIFICATION », et le diagramme du §8.1 qui
+            la place juste apres la connexion. Arbitrage de Jonathan du
+            23/08/2026 ; le detail du choix est au-dessus de `CHEMINS`.
+          */}
+          <Route path={CHEMINS.national} element={<PageNationale />} />
           <Route path={CHEMINS.statut} element={<PageStatut />} />
           <Route path={CHEMINS.connexion} element={<PageConnexion />} />
           <Route path={CHEMINS.lienEnvoye} element={<PageLienEnvoye />} />

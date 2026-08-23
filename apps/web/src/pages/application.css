@@ -434,12 +434,85 @@
   }
 }
 
+/* ─── la page nationale — LOT 4, T6, cahier §8.3 ──────────────────────── */
+
+/* **AUCUN `order`, AUCUN `row-reverse`.** Le critere de `T6` est que la liste
+   precede la carte DANS LE DOM, pas seulement a l'oeil : une inversion en CSS
+   satisferait le regard sur mobile et laisserait la carte avant la liste pour un
+   lecteur d'ecran et pour la tabulation. L'ordre visuel EST donc l'ordre du
+   document, ici comme partout dans ce fichier. */
+.nat-liste {
+  margin: 0 0 var(--espace-l);
+}
+
+.nat-liste-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--espace-s);
+}
+
+/* Une carte par entite, cible tactile pleine. Le §13.2 veut « cartes arrondies,
+   ombres douces » : les deux viennent des jetons, aucune valeur ecrite ici. */
+.nat-entite {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+  box-shadow: var(--ombre-douce);
+  color: var(--encre);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  transition: border-color 120ms ease-in-out;
+}
+
+.nat-entite:hover {
+  border-color: var(--marque-bleu);
+}
+
+.nat-entite:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.nat-entite-nom {
+  font-size: var(--taille-m);
+  font-weight: 700;
+}
+
+.nat-entite-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* Deux colonnes des la tablette, trois au bureau : la grille s'adapte sans
+   qu'aucune largeur ne soit ecrite en pixels. */
+@media (min-width: 768px) {
+  .nat-liste-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .nat-liste-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* ─── §14.2 : alternatives aux animations ─────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .app-evitement,
   .app-lien,
-  .app-navigation-lien {
+  .app-navigation-lien,
+  .app-barre-lien,
+  .nat-entite {
     transition: none;
   }
 }

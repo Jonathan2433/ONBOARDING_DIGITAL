@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T5` du LOT 4
+**Dernière mise à jour :** 23 août 2026, sous-étape `T6` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -56,6 +56,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-546`, sous-étape `T3`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-547`, sous-étape `T4`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-548`, sous-étape `T5`** | 1 | **Validée le 23/08/2026** |
+| **Réalisation du LOT 4 `DEC-549`, sous-étape `T6`** | 1 | **Validée le 23/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -67,7 +68,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **216** | |
+| **Total** | **217** | |
 
 ---
 
@@ -609,7 +610,9 @@ ne l'a pas encore placée**.
 
 | `DEC-548` | **La barre inférieure mobile porte les QUATRE rubriques inconditionnelles ; « Plus » n'apparaît que s'il a quelque chose à contenir ; les deux repères de navigation ne coexistent jamais.** **(a)** « Lorsque nécessaire » du §8.2 est **mesuré**, non supposé. **(b)** « Plus » est un `<details>`. **(c)** Le menu du haut disparaît sous 768 px, la barre au-delà. **(d)** Césure française sur les libellés. **(e)** Cible tactile de 44 px. | **(a) « LORSQUE NÉCESSAIRE » EST UNE MESURE.** Faite le 23/08/2026 dans un vrai navigateur, à `--taille-xs` = 12 px avec la police réelle : « Trombinoscope » fait **92 px** et « Mon onboarding » **96 px**. À 320 px, **quatre** cellules en font 80 — un seul libellé passe sur deux lignes — et **six** cellules en font 53, ce qui mettrait « Mon onboarding » sur **trois** lignes. La barre porte donc les quatre rubriques inconditionnelles, et « Plus » apparaît dès qu'une conditionnelle existe. **Les deux lectures possibles coïncident** — « les deux conditionnelles sont secondaires » et « ce qui ne tient pas va sous Plus » — donc aucun arbitrage n'était nécessaire, et la mesure l'a établi avant que je ne pose la question. **Et les libellés ne sont ni tronqués ni abrégés** : `US003` exige qu'ils soient « corrects », et un « Trombi… » ne l'est pas — abréger en « Trombi » serait inventer un libellé que le §8.2 ne donne pas. **(b) UN BOUTON ET SON PANNEAU AURAIENT EXIGÉ DE GÉRER L'OUVERTURE, `Escape` ET LE RETOUR DU FOCUS** — le terrain même où naissent les pièges de focus que `T4` a pris soin de rendre impossibles. `<details>`/`<summary>` est nativement focusable, s'ouvre par `Entrée` comme par `Espace`, et **aucun code ne touche au focus** : §7.2, changer de forme plutôt que promettre de l'attention. `cadre-check` **exige** que la barre ne contienne ni `.focus()`, ni `useRef`, ni `addEventListener`. **Ce que `<details>` ne fait pas est dit** : il ne se ferme pas sur `Escape` — ce n'est pas une modale, rien n'est piégé derrière. **(c)** Le §8.2 dit « **sur mobile** ». Deux repères visibles en même temps donneraient deux fois les mêmes liens dans l'ordre de tabulation, et un lecteur d'écran annoncerait deux navigations pour une page. Le contrôle le vérifie **dans les deux sens** — un seul suffirait à laisser les deux visibles quelque part. **Mesuré à 768 px : un seul repère visible.** **(d)** `index.html` déclare `lang="fr"`, donc le navigateur sait couper le français. Mesure : `overflow-wrap: anywhere` donne « Trombinosc / ope », `hyphens: auto` donne « **Trombino- / scope** », à hauteur identique. **(e)** WCAG 2.2 AA « Target Size (Minimum) », 2.5.8 : `min-height: 44px`, et la cible couvre **toute** la cellule. Mesuré : 80×44 à 320 px, 98×44 à 390 px, aucun libellé rogné. | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-549`.**
+| `DEC-549` | **La racine `/` est la page nationale ; la page de statut passe à `/statut`, même contenu.** Et la page nationale **n'emploie pas le cadre applicatif**, la liste **précède la carte dans le DOM**, et le frontend **ne refiltre pas** les entités actives. | **(a) ARBITRAGE DE JONATHAN, PRIS SUR LE SENS PARCE QUE LA MESURE AVAIT ÔTÉ LE COÛT.** Le cahier §4.1 dit « une page nationale **après authentification** », le diagramme du §8.1 la place juste après la connexion, et la séquence du §9.1 finit sur « Accueil national » — mais **aucun document ne nomme d'adresse**, et `/` servait la page de statut depuis `T5` du LOT 1. **Mesure avant de proposer** : `verifier-page-statut.sh` n'exige de `/` que la coquille React et le mandatement des endpoints de santé — il ne vérifie **jamais** le contenu de la page de statut. Déplacer celle-ci ne cassait donc rien, et les trois options ont pu être présentées avec leur seule conséquence d'usage. **Et le contrôle a été complété** : il vérifie désormais que `/statut` est **servie**, sans quoi rien n'aurait garanti que l'adresse existe — le repli SPA rend `text/html` pour tout chemin, donc le **type MIME** fait foi, pas le code HTTP. **(b) LA PAGE NATIONALE N'EMPLOIE PAS `CadreApplicatif`, ET C'EST STRUCTUREL** : le cadre résout une entité consultée et la porte dans son en-tête ; ici on est **au-dessus** de l'entité, on la choisit. L'employer exigerait une entité pour afficher la page dont l'objet est de la choisir. **(c) « LA LISTE PRÉCÈDE LA CARTE DANS LE DOM, PAS SEULEMENT À L'ŒIL »** — §8.3. Un ordre obtenu par `order` en CSS satisferait le regard sur mobile et laisserait la carte **avant** la liste pour un lecteur d'écran et pour la tabulation : l'échec produirait la même observation que le succès sur une capture. Le contrôle porte donc sur la **source**, exige qu'aucune règle CSS ne réordonne la liste, et **mordra à `T7`** quand la carte arrivera. **(d) LE FRONTEND NE REFILTRE RIEN.** `GET /api/v1/entities` filtre sur `status = active` — cahier §8.3 — et `make entites-check` le prouve. Refaire le filtre côté écran donnerait **deux règles**, et le jour où l'une change l'autre mentirait. Mesuré de bout en bout : sur quatre entités dont une `draft`, la page en affiche **trois**. **(e)** Quatre états, dont deux qu'on confond facilement : « **aucune entité active** » est un état **légitime** — une plateforme neuve — et le confondre avec une panne dirait à l'utilisateur une chose fausse. Un 401 propose de se reconnecter et **ne parle pas de réseau** ; une panne parle de réseau et **ne prétend rien** sur l'existence des entités. Les deux sont mesurés. | Validée par Jonathan le 23/08/2026 |
+
+**Prochain identifiant libre : `DEC-550`.**
 
 ---
 
@@ -807,6 +810,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-546` — réalisation du LOT 4, `T3` | 1 | 1 |
 | `DEC-547` — réalisation du LOT 4, `T4` | 1 | 1 |
 | `DEC-548` — réalisation du LOT 4, `T5` | 1 | 1 |
+| `DEC-549` — réalisation du LOT 4, `T6` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -818,7 +822,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **216** | **216** |
+| **Total** | **217** | **217** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

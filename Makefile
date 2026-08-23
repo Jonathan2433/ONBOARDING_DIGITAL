@@ -1034,14 +1034,15 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "$$sortie" | grep -q "sa cible n'est PAS focusable" && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'ne coexistent jamais' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'SANS .:focus-visible' && attendus=$$((attendus + 1)); \
-	if [ "$$attendus" != "7" ]; then \
-		echo "  ECHEC    le temoin echoue, mais pas pour les 7 raisons attendues ($$attendus/7)"; \
+	echo "$$sortie" | grep -q 'la carte precede la liste' && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "8" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 8 raisons attendues ($$attendus/8)"; \
 		echo "$$sortie" | sed 's/^/           /'; \
 		exit 1; \
 	fi; \
 	echo; \
 	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
-	echo "    ok       code=$$code, et les SEPT motifs attendus sont nommes :"; \
+	echo "    ok       code=$$code, et les HUIT motifs attendus sont nommes :"; \
 	echo "             une propriete non definie par une feuille chargee"; \
 	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
 	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
@@ -1049,6 +1050,7 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "             une cible de lien d'evitement non focusable"; \
 	echo "             les deux reperes de navigation qui pourraient coexister"; \
 	echo "             un element interactif sans regle :focus-visible"; \
+	echo "             la carte qui precederait la liste dans le DOM"; \
 	echo; \
 	echo "  --> le controle discrimine"
 
