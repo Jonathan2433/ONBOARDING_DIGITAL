@@ -28,6 +28,9 @@
  */
 
 import contrat from './contrat-api.json' with { type: 'json' };
+//  Les deux primitives vivent dans `formes.ts` depuis le LOT 4 : le portail en a
+//  besoin, et deux copies d'une meme regle divergent en silence (DEC-466).
+import { estObjet, exigerChaine } from './formes.js';
 
 /** Une entree du manifeste. */
 export interface EndpointContrat {
@@ -176,18 +179,6 @@ export interface Version {
 //  Validation manuelle et non Zod : `DEC-456` n'installe pas Zod avant le LOT 4,
 //  faute d'usage, et deux formes de reponse ne le justifient pas.
 // ---------------------------------------------------------------------------
-
-function estObjet(valeur: unknown): valeur is Record<string, unknown> {
-  return typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
-}
-
-function exigerChaine(source: Record<string, unknown>, cle: string): string {
-  const valeur = source[cle];
-  if (typeof valeur !== 'string') {
-    throw new TypeError(`champ « ${cle} » absent ou non textuel`);
-  }
-  return valeur;
-}
 
 function validerDependance(valeur: unknown): Dependance {
   if (!estObjet(valeur)) {

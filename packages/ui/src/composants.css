@@ -122,3 +122,77 @@
   font-weight: 700;
   line-height: 1.25;
 }
+
+/* ==========================================================================
+   Alerte — LOT 4, T11. Couvre les familles « alertes », « loaders » et
+   « etats vides » du backlog US007 : elles ne se distinguent que par le role
+   ARIA, et livrer trois composants pour une constante serait la surface sans
+   contrepartie que DEC-456 refuse.
+   ========================================================================== */
+
+.ex-alerte {
+  margin: 0;
+  padding: var(--espace-s) var(--espace-m);
+  border: 1px solid var(--trait);
+  border-left-width: 3px;
+  border-radius: var(--rayon-s);
+  background: var(--fond-doux);
+  color: var(--encre);
+  font-family: var(--police);
+  font-size: var(--taille-s);
+  line-height: 1.5;
+
+  /* Un identifiant de correlation ou un code d'entite n'ont pas d'espace, et
+     deborderaient a 320 px. Meme regle que partout depuis T3. */
+  overflow-wrap: anywhere;
+}
+
+/* LE TON EST UN RENFORT, JAMAIS L'INFORMATION. Il porte sur la BORDURE et non
+   sur le texte : `--ko` et `--ok` sont mesures contre le fond, mais un texte
+   entierement colore reduit la lisibilite sans rien ajouter, le message disant
+   deja ce qu'il faut savoir. WCAG 1.4.1, cahier §14.2. */
+.ex-alerte[data-ton='succes'] {
+  border-left-color: var(--ok);
+}
+
+.ex-alerte[data-ton='erreur'] {
+  border-left-color: var(--ko);
+}
+
+/* L'avertissement emploie le jaune de marque en BORDURE seulement. Le §13.2 en
+   fait une couleur de marque, et T10 du LOT 1 a mesure qu'il rend 1,37 de
+   contraste avec du texte clair : il ne peut donc jamais porter de texte sans
+   son apparie `--marque-jaune-texte`, et une bordure n'en porte pas. */
+.ex-alerte[data-ton='avertissement'] {
+  border-left-color: var(--marque-jaune);
+}
+
+/* ==========================================================================
+   Notification — LOT 4, T11. La seule des six familles qui n'existait nulle
+   part. Son conteneur est TOUJOURS rendu, meme vide : un `aria-live` ajoute au
+   DOM en meme temps que son texte n'est pas annonce de facon fiable.
+   ========================================================================== */
+
+.ex-notification {
+  margin: 0;
+  color: var(--encre-douce);
+  font-family: var(--police);
+  font-size: var(--taille-xs);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* VIDE, ELLE N'OCCUPE AUCUNE PLACE VISUELLE — mais elle reste dans le DOM et
+   dans l'arbre d'accessibilite. `display: none` la retirerait des deux, ce qui
+   annulerait precisement la raison de sa presence. */
+.ex-notification[data-vide='oui'] {
+  min-height: 0;
+}
+
+.ex-notification[data-ton='succes'] {
+  color: var(--ok);
+}
+
+.ex-notification[data-ton='echec'] {
+  color: var(--ko);
+}

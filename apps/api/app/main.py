@@ -35,7 +35,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import __version__
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
+from app.entities.routes import routeur_entites
 from app.health import routeur as routeur_sante
+from app.permissions.routes import routeur_permissions
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
 from app.shared.errors import (
     ErreurApplicative,
@@ -129,6 +131,13 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  `packages/contracts/src/contrat-api.json` n'est pas facultatif :
     #  `test_contrat.py` echoue si le schema servi et le manifeste divergent.
     routeur_v1.include_router(routeur_authentification(config))
+    #  LOT 4, T1 : la PREMIERE route metier du projet. Meme exigence de
+    #  declaration dans le manifeste du contrat -- `test_contrat.py` exige
+    #  l'egalite dans les DEUX sens entre chemins declares et chemins servis.
+    routeur_v1.include_router(routeur_entites(config))
+    #  LOT 4, T8 : les permissions de l'entite consultee. Monte APRES les
+    #  entites, dont il reutilise la resolution et le gabarit de 404.
+    routeur_v1.include_router(routeur_permissions(config))
     application.include_router(routeur_v1)
 
     return application

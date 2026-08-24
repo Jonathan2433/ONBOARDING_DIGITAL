@@ -44,12 +44,16 @@ import { FrontiereErreur } from './FrontiereErreur';
 import { Cadre } from './pages/Cadre';
 import { PageConnexion } from './pages/PageConnexion';
 import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur';
+import { CadreApplicatif } from './pages/CadreApplicatif';
+import { PageRubrique } from './pages/PageRubrique';
 import { PageDeconnexion } from './pages/PageDeconnexion';
+import { PageEntite } from './pages/PageEntite';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
+import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
-import { CHEMINS } from './routes';
+import { CHEMINS, RUBRIQUES } from './routes';
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -57,6 +61,13 @@ export function App(): JSX.Element {
     <FrontiereErreur>
       <BrowserRouter>
         <Routes>
+          {/*
+            **LA RACINE EST LA PAGE NATIONALE DEPUIS `T6`.** Cahier §4.1, « une
+            page nationale APRES AUTHENTIFICATION », et le diagramme du §8.1 qui
+            la place juste apres la connexion. Arbitrage de Jonathan du
+            23/08/2026 ; le detail du choix est au-dessus de `CHEMINS`.
+          */}
+          <Route path={CHEMINS.national} element={<PageNationale />} />
           <Route path={CHEMINS.statut} element={<PageStatut />} />
           <Route path={CHEMINS.connexion} element={<PageConnexion />} />
           <Route path={CHEMINS.lienEnvoye} element={<PageLienEnvoye />} />
@@ -66,6 +77,51 @@ export function App(): JSX.Element {
           <Route path={CHEMINS.interdit} element={<Page403 />} />
           <Route path={CHEMINS.introuvable} element={<Page404 />} />
           <Route path={CHEMINS.erreur} element={<PageErreur />} />
+          {/*
+            LOT 4, `T2` puis `T3` — L'ENTITE CONSULTEE VIT DANS L'ADRESSE, ET LE
+            CADRE LA PORTE.
+
+            **C'est une route de MISE EN PAGE**, pas une page : `CadreApplicatif`
+            resout l'entite, l'affiche dans l'en-tete, et rend ses enfants par
+            `Outlet`. Toute page interne ajoutee dessous herite donc de
+            l'en-tete **par construction** -- ce que le cahier §23.3 exige, « doit
+            etre visible dans l'en-tete de l'application », et ce que le critere
+            de sortie de la roadmap redit, « l'entite active est visible sur
+            TOUTES les pages internes ».
+
+            `T4` posera ses six rubriques ici, en enfants. Elles n'auront rien a
+            faire pour afficher l'entite, et rien a oublier.
+          */}
+          <Route path={CHEMINS.entite} element={<CadreApplicatif />}>
+            {/*
+              LES SIX ROUTES SONT ENGENDREES DEPUIS `RUBRIQUES` — LOT 4, `T4`.
+
+              **Aucune liste recopiee.** Le menu se rend de la meme source, et
+              `make cadre-check` confronte les deux : une rubrique ajoutee sans sa
+              route, ou l'inverse, fait echouer le controle. §7.27.
+
+              L'accueil est la route `index` -- son suffixe est vide -- et il porte
+              sa propre page ; les cinq autres portent la page de rubrique, dont le
+              contenu appartient a un lot ulterieur et qui le DIT.
+            */}
+            {RUBRIQUES.map((rubrique) =>
+              rubrique.suffixe === '' ? (
+                <Route key={rubrique.cle} index element={<PageEntite />} />
+              ) : (
+                <Route
+                  key={rubrique.cle}
+                  path={rubrique.suffixe}
+                  element={
+                    <PageRubrique
+                      cle={rubrique.cle}
+                      libelle={rubrique.libelle}
+                      lot={rubrique.lot}
+                    />
+                  }
+                />
+              ),
+            )}
+          </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**
             Rediriger vers `/404` changerait l'URL et ferait perdre a

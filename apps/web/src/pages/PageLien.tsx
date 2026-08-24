@@ -109,10 +109,21 @@ export function PageLien(): JSX.Element {
     return (
       <Cadre titre="Vous etes connecte">
         <p className="auth-message" data-ton="succes" role="status" aria-live="polite">
-          Votre session est ouverte. Le portail arrive dans une prochaine version ; en attendant,
-          aucune page ne vous attend ici.
+          Votre session est ouverte. Choisissez l&rsquo;entite que vous voulez consulter.
         </p>
+        {/*
+          **CE TEXTE DISAIT « aucune page ne vous attend ici », ET C'ETAIT VRAI
+          JUSQU'A `T6`.** Le cahier §8.1 fait suivre la connexion par l'accueil
+          national ; il existe desormais, et le lien y mene. Laisser l'ancien
+          message serait laisser une affirmation devenue fausse -- exactement ce
+          que le §9.0 de la passation reproche au corpus.
+        */}
         <ul className="auth-liens">
+          <li>
+            <Link className="auth-lien" to={CHEMINS.national}>
+              Choisir une entite
+            </Link>
+          </li>
           <li>
             <Link className="auth-lien" to={CHEMINS.deconnexion}>
               Se deconnecter

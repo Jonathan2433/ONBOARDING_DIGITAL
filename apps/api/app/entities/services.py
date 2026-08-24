@@ -1,0 +1,192 @@
+"""Lister les entites du portail national — story `MVP-L04-US001`.
+
+LOT 4, sous-etape `T1`.
+
+« ACTIVE » N'EST PAS UNE INTERPRETATION DU BACKLOG : C'EST LE CAHIER
+
+  Le backlog `US001` dit « seules les entites actives sont proposees ». On
+  pourrait le lire comme un raccourci de redaction ; le cahier §8.3 tranche en
+  toutes lettres, et c'est lui qui prevaut : la page nationale presente « une
+  liste accessible des entites », « une carte de France » et **« un acces a
+  chaque entite ACTIVE »**.
+
+  Deux sources concordantes, donc aucune invention.
+
+LE FILTRE PORTE SUR TROIS ETATS, PAS SUR LES DEUX QUE LA FICHE NOMME
+
+  `StatutEntite` en declare **quatre** : `draft`, `active`, `suspended`,
+  `archived`. Le critere de sortie de `T1` ecrit dans la fiche ne nomme que
+  « `suspended` ou `archived` » -- ce sont deux **exemples**, pas la classe.
+  `draft` est le troisieme etat non actif, et une entite en brouillon rendue par
+  cette route serait exactement le defaut que le critere veut empecher.
+
+  **C'est le §7.34 de la passation, ecrit la veille** : un motif ecrit contre un
+  exemple ne couvre que cet exemple. Le filtre est donc ecrit en `= active` et
+  non en `NOT IN (suspended, archived)`, et les temoins couvrent **les trois**
+  etats non actifs.
+
+  Et la valeur comparee est **derivee de l'enumeration**, `StatutEntite.ACTIVE`,
+  jamais la chaine litterale : une liste recopiee vieillit au premier ajout, et
+  c'est §7.27.
+
+QUATRE COLONNES SUR SEPT, ET LE MOTIF DE CHACUNE DES TROIS ABSENCES
+
+  `entity` porte `code`, `display_name`, `city`, `country_code`, `status`,
+  `timezone` et `activated_at`. Le §8.3 demande une liste et un acces ; il ne
+  demande rien d'autre. Sont donc exposees `id`, `code`, `display_name` et
+  `city`, et pas les trois autres :
+
+    `status`       toute ligne rendue est active par construction. Le champ ne
+                   porterait **aucune information**, et un champ constant apprend
+                   a ne pas le lire -- c'est le §7.21 sur les avertissements
+                   faux, dans un autre costume ;
+    `timezone`     aucun ecran du LOT 4 n'affiche d'heure locale. L'exposer
+                   maintenant serait livrer une donnee sans consommateur, ce que
+                   `T10` du LOT 1 et `T11` de ce lot refusent tous deux ;
+    `country_code` le §5.1 dit « `FR` dans le MVP ». Une carte **de France** n'a
+                   pas besoin de distinguer les pays, et l'ajouter le jour ou une
+                   entite etrangere existera sera une ligne.
+
+  `city` EST EXPOSEE ET LA CARTE N'EN VIT PAS. C'est la seule colonne
+  geographique de la table -- ni latitude ni longitude, mesure sur le schema
+  reel -- et c'est ce qui rend le format de la carte un point ouvert de `T7`.
+  Elle est exposee pour la **liste**, que le §8.3 exige, non pour la carte.
+
+L'ENTITE CONSULTEE VIT DANS L'ADRESSE, ET LE CAHIER LE DETERMINE — LOT 4, `T2`
+
+  Le §8 de la fiche annoncait « ou vit l'entite consultee » comme un point que le
+  corpus ne tranche pas. Il ne dit effectivement pas ou elle est STOCKEE. Mais il
+  determine entierement le PARCOURS, et cela suffit a fermer la question :
+
+      §8.1   LOGIN --> Accueil national --> Choix de l'entite --> Accueil de
+             l'entite --> {Framework, Trombinoscope, Evenements, ...}
+      §9.1   la sequence de connexion finit sur « Accueil national »
+      §9.2   « 1. connexion ; 2. affichage de l'accueil national ; 3. selection
+             d'une entite ; ... 6. retour possible a la liste des entites »
+      §4.1   « une page nationale APRES AUTHENTIFICATION »
+
+  **On atterrit TOUJOURS sur la page nationale.** Une memoire serveur du dernier
+  choix n'aurait donc aucun consommateur : elle servirait a sauter un ecran que le
+  cahier prescrit. Et « le choix est memorise pour la session » du backlog ne peut
+  alors signifier qu'une chose -- le choix persiste PENDANT qu'on navigue -- et non
+  « on saute la page nationale la prochaine fois ».
+
+  L'adresse est donc le seul mecanisme necessaire : aucune colonne nouvelle, aucun
+  stockage navigateur, et l'API recoit l'entite EXPLICITEMENT a chaque requete,
+  ce qui satisfait la regle 5 -- l'API est l'autorite finale -- sans ambiguite.
+  Le §23.3 « annule les requetes et caches associes a l'entite precedente » y est
+  naturel : une autre adresse est une autre cle de cache.
+
+  **C'est le §7.29, pour la troisieme fois en deux lots.** Quand un document
+  t'annonce qu'il te reste une decision a prendre, cherche-la d'abord dans le
+  cahier.
+
+LE `code` EST LA CLE PUBLIQUE, ET C'EST MESURE
+
+  `entity.code` porte `code_unique`, **sans clause partielle** : une entite
+  archivee garde son code reserve, comme le commentaire de la table le dit. Un
+  code n'est donc **jamais reattribue**, ce qui est exactement ce qu'on exige d'un
+  identifiant d'adresse. Un `uuid` ferait la meme chose mais serait opaque : le
+  §9.2 demande un « affichage clair de l'entite consultee », et une adresse
+  lisible y participe.
+
+UNE ENTITE NON ACTIVE REND LA MEME CHOSE QU'UNE ENTITE ABSENTE
+
+  Le §8.3 donne acces aux entites **actives**. Pour l'appelant, une entite `draft`,
+  `suspended` ou `archived` n'est donc pas « interdite » : elle **n'existe pas**.
+  Distinguer les deux cas apprendrait qu'un brouillon existe -- et le LOT 9 en
+  creera avant publication. Le refus est un **seul gabarit**, et un test compare
+  les deux reponses au lieu de les constater separement.
+
+L'ORDRE EST TOTAL, ET C'EST UNE NECESSITE, PAS UN GOUT
+
+  `ORDER BY display_name` seul ne suffit pas : rien n'impose l'unicite du nom
+  d'affichage, et PostgreSQL est libre de rendre deux homonymes dans un ordre
+  different d'un appel a l'autre. Le tri porte donc aussi sur `code`, qui est
+  **UNIQUE** par `code_unique` : l'ordre devient total, donc reproductible, donc
+  testable.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import uuid
+from typing import TYPE_CHECKING, Final
+
+from sqlalchemy import text
+
+from app.entities.modeles import StatutEntite
+
+if TYPE_CHECKING:  # pragma: no cover
+    from sqlalchemy.engine import Connection
+
+#  Les colonnes exposees, en une seule source. Le controle de `T1` compare la
+#  reponse servie a cette liste : une colonne ajoutee a la requete sans etre
+#  ajoutee ici -- ou l'inverse -- fait echouer le test.
+COLONNES_EXPOSEES: Final[tuple[str, ...]] = ("id", "code", "display_name", "city")
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EntiteListee:
+    """Une entite telle que la page nationale la voit."""
+
+    id: uuid.UUID
+    code: str
+    display_name: str
+    city: str
+
+
+def lister_les_entites_actives(connexion: Connection) -> list[EntiteListee]:
+    """Les entites `active`, triees par nom d'affichage puis par code.
+
+    Aucun filtre d'appelant : la matrice §5 donne la page nationale aux **huit**
+    roles authentifies, sans distinction. Le seul controle est l'existence d'une
+    session, et il est porte par `exiger_une_session`.
+    """
+    lignes = connexion.execute(
+        text(
+            "SELECT id, code, display_name, city FROM entity "
+            "WHERE status = :statut_actif "
+            "ORDER BY display_name, code"
+        ),
+        {"statut_actif": StatutEntite.ACTIVE.value},
+    ).fetchall()
+    return [
+        EntiteListee(
+            id=uuid.UUID(str(ligne[0])),
+            code=str(ligne[1]),
+            display_name=str(ligne[2]),
+            city=str(ligne[3]),
+        )
+        for ligne in lignes
+    ]
+
+
+def resoudre_une_entite_active(connexion: Connection, code: str) -> EntiteListee | None:
+    """L'entite `active` portant ce code, ou `None`.
+
+    **`None` COUVRE DEUX CAS, ET C'EST VOULU** : le code est inconnu, ou l'entite
+    existe sans etre active. L'appelant rend le meme refus pour les deux -- voir
+    l'en-tete de module.
+
+    Le filtre est le meme que celui de la liste, **et c'est la seule raison pour
+    laquelle les deux fonctions ne partagent pas leur requete** : elles partagent
+    ce qui compte, la valeur `StatutEntite.ACTIVE`, derivee de l'enumeration. Une
+    requete commune parametree par une clause `WHERE` variable serait plus courte
+    et moins lisible qu'un test qui verifie que les deux filtrent pareil.
+    """
+    ligne = connexion.execute(
+        text(
+            "SELECT id, code, display_name, city FROM entity "
+            "WHERE code = :code AND status = :statut_actif"
+        ),
+        {"code": code, "statut_actif": StatutEntite.ACTIVE.value},
+    ).one_or_none()
+    if ligne is None:
+        return None
+    return EntiteListee(
+        id=uuid.UUID(str(ligne[0])),
+        code=str(ligne[1]),
+        display_name=str(ligne[2]),
+        city=str(ligne[3]),
+    )

@@ -31,6 +31,12 @@ import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
 
 import { ErreurSante, lireEtatServices, lireVersion } from '../api/sante';
+import {
+  type EtatCopie,
+  messageDeCopie,
+  useCorrelationCopiable,
+  useEtatDeConnexion,
+} from '../reseau';
 import type { EtatServices, StatutDependance, Version } from '../api/sante';
 
 /** Services de la stack que l'API ne sonde pas, et qui ne peuvent donc pas figurer. */
@@ -46,36 +52,21 @@ type Vue =
     }
   | { readonly nom: 'erreur'; readonly message: string; readonly correlation: string | null };
 
-type EtatCopie = 'inactif' | 'faite' | 'impossible';
-
 export function PageStatut(): JSX.Element {
   const [vue, setVue] = useState<Vue>({ nom: 'chargement' });
   const [tentative, setTentative] = useState(0);
-  const [enLigne, setEnLigne] = useState<boolean>(() => navigator.onLine);
-  const [copie, setCopie] = useState<EtatCopie>('inactif');
-
-  // Perte et retour de connexion sur une page deja chargee (cahier §17.2).
-  useEffect(() => {
-    const passerEnLigne = (): void => {
-      setEnLigne(true);
-      // L'etat de chargement est pose ICI, dans le gestionnaire, et non dans
-      // l'effet d'interrogation : un `setState` synchrone dans un corps
-      // d'effet declenche un rendu en cascade, et `react-hooks` le refuse a
-      // juste titre. Ce que l'effet affichait etait devenu obsolete a la
-      // coupure ; c'est l'evenement qui le sait, pas l'effet.
-      setVue({ nom: 'chargement' });
-      setCopie('inactif');
-    };
-    const passerHorsLigne = (): void => {
-      setEnLigne(false);
-    };
-    window.addEventListener('online', passerEnLigne);
-    window.addEventListener('offline', passerHorsLigne);
-    return () => {
-      window.removeEventListener('online', passerEnLigne);
-      window.removeEventListener('offline', passerHorsLigne);
-    };
-  }, []);
+  //  **LES DEUX MECANISMES VIENNENT DE `../reseau`, ILS NE SONT PLUS ECRITS ICI.**
+  //  `T10` en a besoin dans le portail : les garder en double aurait laisse
+  //  diverger le nettoyage des ecouteurs et le repli du presse-papiers, qui sont
+  //  exactement les parties qu'on oublie. Le balisage, lui, reste propre a cette
+  //  page -- elle emploie les classes neutres de `styles.css`, ecrites avant que
+  //  `packages/ui` existe, et leur convergence est le travail de `T11`.
+  const { etatCopie: copie, copier, reinitialiser } = useCorrelationCopiable();
+  const auRetourDeConnexion = useCallback(() => {
+    setVue({ nom: 'chargement' });
+    reinitialiser();
+  }, [reinitialiser]);
+  const enLigne = useEtatDeConnexion(auRetourDeConnexion);
 
   useEffect(() => {
     // Hors connexion, interroger l'API ne produirait qu'une erreur de transport
@@ -127,20 +118,9 @@ export function PageStatut(): JSX.Element {
 
   const reessayer = useCallback((): void => {
     setVue({ nom: 'chargement' });
-    setCopie('inactif');
+    reinitialiser();
     setTentative((precedente) => precedente + 1);
-  }, []);
-
-  const copier = useCallback(async (texte: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(texte);
-      setCopie('faite');
-    } catch {
-      // Le presse-papiers peut etre refuse par le navigateur. L'identifiant
-      // reste selectionnable a la main : la copie n'est jamais le seul moyen.
-      setCopie('impossible');
-    }
-  }, []);
+  }, [reinitialiser]);
 
   return (
     <main className="bloc">
@@ -343,11 +323,12 @@ function Correlation({
         </button>
       </p>
       <p aria-live="polite">
-        {etatCopie === 'faite'
-          ? 'Identifiant copié dans le presse-papiers.'
-          : etatCopie === 'impossible'
-            ? 'Copie refusée par le navigateur : sélectionnez l’identifiant à la main.'
-            : ''}
+        {/*
+          **LE MESSAGE VIENT DE `messageDeCopie`, EN UN SEUL EXEMPLAIRE.** Deux
+          formulations du meme echec apprendraient a l'utilisateur que le
+          comportement diffère selon la page, alors que la cause est la même.
+        */}
+        {messageDeCopie(etatCopie)}
       </p>
     </section>
   );

@@ -15,10 +15,16 @@
  *   route ajoutee, retiree ou renommee sans mise a jour du manifeste fait donc
  *   echouer `make test-integration`.
  *
- * CE QU'IL NE CONTIENT PAS, ET CE N'EST PAS UN OUBLI
+ * CE QU'IL CONTIENT DEPUIS LE LOT 4
  *
- *   Aucun type metier : ni `Collaborateur`, ni `Cercle`, ni `Parcours`. Le modele
- *   de donnees appartient au LOT 2, qui n'est pas ouvert.
+ *   La liste des entites du portail national — la PREMIERE forme metier du
+ *   contrat. Le commentaire qui figurait ici disait « aucun type metier : le
+ *   modele de donnees appartient au LOT 2, qui n'est pas ouvert ». Les LOTS 2 et
+ *   3 sont faits, le LOT 4 est ouvert, et la page nationale est son premier
+ *   ecran.
+ *
+ *   Ni `Collaborateur` ni `Cercle` ni `Parcours` pour autant : ils appartiennent
+ *   aux LOTS 5, 6 et 7.
  */
 
 export {
@@ -50,5 +56,24 @@ export type {
   StatutGlobal,
   Version,
 } from './sante.js';
+
+//  LOT 4, T1 — la premiere forme METIER du contrat. `formes.ts` n'est PAS
+//  reexporte : un consommateur qui validerait lui-meme ne passerait plus par les
+//  validateurs du contrat, et le controle perdrait son objet.
+export {
+  CHEMIN_ENTITES,
+  cheminEntite,
+  cheminPermissions,
+  CODES_ENTITE,
+  CODES_ENTITES,
+  CODES_PERMISSIONS,
+  GABARIT_CHEMIN_ENTITE,
+  GABARIT_CHEMIN_PERMISSIONS,
+  ROLES_ADMINISTRATION,
+  validerLesEntites,
+  validerLesPermissions,
+  validerUneEntite,
+} from './portail.js';
+export type { EntiteDuPortail, PermissionsDeLEntite, ReponseDesEntites } from './portail.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';
