@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, **franchissement de la porte `G4`**
+**Dernière mise à jour :** 24 août 2026, **ouverture du LOT 5**
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -65,6 +65,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-555`, sous-étape `T11`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-556`, sous-étape `T12`** | 1 | **Soumise le 24/08/2026** |
 | **Franchissement de la porte `G4` `DEC-557`** | 1 | **Validée le 24/08/2026** |
+| **Ouverture du LOT 5 `DEC-558`** | 1 | **Validée le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -76,7 +77,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **225** | |
+| **Total** | **226** | |
 
 ---
 
@@ -699,7 +700,17 @@ Décision de Jonathan, prise le 24 août 2026 après lecture de
 
 ---
 
-**Prochain identifiant libre : `DEC-558`.**
+## Ouverture du LOT 5
+
+Décision de Jonathan, prise le 24 août 2026 immédiatement après le franchissement de `G4`.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-558` | **Le LOT 5 — collaborateurs, profils et organisation — est ouvert, son découpage en DOUZE sous-étapes est validé AVANT qu'une ligne ne soit écrite, et `T1` ne créera que TROIS des quatre tables du modèle.** **(a)** Douze sous-étapes, ordonnées par les dépendances du backlog : les tables, puis la lecture, puis l'écriture, puis les écrans. **(b)** `T1` crée `photo_authorization`, `media_asset` et `media_variant` ; **`media_usage` est nommée comme reportée**. **(c)** Le §30.12 est **reclassé** : notre propre contrôle le rattachait au LOT 8. **(d)** Deux points restent non tranchés par le corpus, et la fiche les nomme au §8. | **(a) L'ORDRE N'EST PAS UN CHOIX DE CONFORT, IL EST DANS LE BACKLOG.** `US002` dépend de `US001`, `US005` de `US004`, `US006` de `US004`, `US007` de `US006` : la chaîne est écrite. Et les écrans viennent **après** les routes qu'ils consomment, comme `T11` du LOT 4 arrivait après les écrans employant ses composants — livrer un écran avant sa donnée serait du code non éprouvé. **(b) `media_usage` NE SERT QU'À LA MÉDIATHÈQUE V1**, matrice §12.2 : « voir les usages », « détecter les médias inutilisés ». La créer maintenant serait une table **sans consommateur**, ce que `T10` du LOT 1 refuse et ce que `DEC-537` a réappliqué deux fois. **La nommer comme reportée n'est pas la même chose que l'oublier** : la fiche le dit, et le prochain lot qui la voudra saura qu'elle a été écartée délibérément. **(c) DEUX DOCUMENTS DE CE DÉPÔT SE CONTREDISAIENT.** `verifier-recette-modele.py` rattachait le §30.12 — « une photo sans autorisation ne peut pas être publiée » — au **LOT 8**, décrit comme « médias et autorisations de diffusion ». Or le LOT 8 de la roadmap est **« Événements et accueil dynamique »**, et ses médias sont ceux des événements ; c'est le **LOT 5** qui inclut « gestion des autorisations de photo », avec `US005` en **`P0`**. La roadmap et le backlog prévalent sur un script que nous avons écrit. `ECART-047`. **(d)** Le §7.29 apprend à chercher la section dédiée avant de décider ; il apprend aussi à dire ce qui n'est **nulle part**. `ECART-012` attend Léa et devient **visible** à ce lot ; et le format des miniatures n'est écrit dans aucun des cinq documents — mesuré, **zéro** occurrence de `webp` ou `avif`. | **Validée par Jonathan le 24/08/2026** |
+
+---
+
+**Prochain identifiant libre : `DEC-559`.**
 
 ---
 
@@ -906,6 +917,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-555` — réalisation du LOT 4, `T11` | 1 | 1 |
 | `DEC-556` — réalisation du LOT 4, `T12` | 1 | 1 |
 | `DEC-557` — franchissement de la porte `G4` | 1 | 1 |
+| `DEC-558` — ouverture du LOT 5 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -917,7 +929,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **225** | **225** |
+| **Total** | **226** | **226** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

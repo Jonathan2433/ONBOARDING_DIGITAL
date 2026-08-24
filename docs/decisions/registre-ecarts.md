@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T9` du LOT 4
+**Dernière mise à jour :** 24 août 2026, ouverture du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 46 | 9 | 34 | 3 |
+| Total 47 | 10 | 34 | 3 |
 
 ---
 
@@ -64,6 +64,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
 | `ECART-045` | **Quatre endroits justifient la sélection de `target: developpement` par « le rechargement à chaud », que `T5` du LOT 1 avait délibérément écarté.** Le conteneur `web` porte **0 montage**, mesuré : le serveur Vite surveille une copie figée dans l'image, donc rien de ce qu'il surveille ne change jamais. La sélection de cible reste juste — pour un **autre** motif, mesuré lui aussi | Non — documentaire, et le livrable est conforme | **Ouvert**, motifs à rectifier hors sous-étape |
 | `ECART-046` | **Le critère de `T9` demande « un appel direct à la route refusé par l'API », et le lot n'a AUCUNE route métier à refuser.** Ses trois routes — `/entities`, `/entities/{code}`, `/entities/{code}/permissions` — sont ouvertes aux huit rôles authentifiés par la matrice §5, et le §9.4 écarte tout écran d'administration. Le garde-fou est donc prouvé par **12 tests sur une application FastAPI jetable**, et non à travers Caddy | Non — le mécanisme est prouvé, c'est sa mise en service qui attend | **Accepté**, arbitrage de Jonathan du 24/08/2026, `DEC-553` |
+| `ECART-047` | **Notre propre contrôle rattache le §30.12 au LOT 8, alors que la roadmap et le backlog le placent au LOT 5.** `verifier-recette-modele.py` décrit le LOT 8 comme « médias et autorisations de diffusion » ; la roadmap l'appelle **« Événements et accueil dynamique »**, et ses médias sont ceux des événements. Le **LOT 5** inclut « gestion des autorisations de photo », et `US005` est **`P0`** | Non — la classification n'empêche rien, mais elle enverrait un relecteur au mauvais lot | **Ouvert**, à reclasser en `T1` du LOT 5 |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -95,7 +96,22 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-047`.**
+## `ECART-047` — Un contrôle de ce dépôt rattache une exigence au mauvais lot
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, à l'ouverture du LOT 5, en cherchant à quel lot appartiennent les tables de photo |
+| Source | `infra/scripts/verifier-recette-modele.py`, classement du contrôle §30.12 du modèle de données |
+| Constat | Il rattache « une photo sans autorisation ne peut pas être publiée » au **LOT 8**, avec pour échéance « médias et autorisations de diffusion ».<br>**Or le LOT 8 de la roadmap est « Événements et accueil dynamique »**, et les seuls médias qu'il nomme sont ceux d'un événement — « titre, description, lieu, début, fin et médias ». Le **LOT 5**, lui, inclut « photo facultative et avatar neutre » **et** « gestion des autorisations de photo » dans ses *Inclus*, avec deux critères de sortie qui en dépendent : « les miniatures sont inférieures à la cible de 100 Ko » et « **aucune photo non autorisée n'est publiée** ». Et `MVP-L05-US005` est **`P0`** : « Gérer une photo facultative avec autorisation ». |
+| Impact | **Aucun sur les livrables passés** : le contrôle classe, il n'interdit rien, et `make recette-modele-check` reste vert. L'impact est sur la **lecture** : un relecteur qui chercherait où sont traitées les autorisations de photo serait envoyé au LOT 8, où il ne trouverait rien. |
+| Cause | Le classement a été écrit en `T12` du LOT 2, sur la seule lecture du **modèle de données** — dont le §16 « Médias » est générique — sans confronter à la **roadmap**, qui répartit ces médias entre deux lots selon leur usage. **C'est le §7.24** : relire une règle ne suffit pas, il faut confronter les règles entre elles. |
+| Bloquant | Non |
+| Recommandation | **Reclasser en `T1` du LOT 5**, avec l'échéance « LOT 5 — autorisations de photo de profil », et le passer d'`ACQUIS` seulement quand `T6` aura son test nommé.<br>**Recommandation générale, et c'est elle qui vaut** : quand un contrôle de ce dépôt rattache une exigence à un lot, la source doit être la **roadmap**, qui est le document du découpage — pas le modèle, qui décrit des données sans dire quand elles arrivent. Les autres classements de ce script méritent la même confrontation. |
+| Résolution | **Ouvert.** À reclasser en `T1` du LOT 5. |
+
+---
+
+**Prochain identifiant libre : `ECART-048`.**
 
 ---
 
