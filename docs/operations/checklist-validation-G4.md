@@ -119,31 +119,46 @@ périmètre : il livre des écrans et de la navigation sur le socle du LOT 2.
 
 ---
 
-## 5. La recette — FAITE le 24/08/2026, et sur quelle révision
+## 5. La recette — FAITE le 24/08/2026, et elle exerce TOUT le code du lot
 
-| Mesure | Résultat |
+**Deux passes ont eu lieu.** La première, préparatoire, sur `1850d8d` — la fusion de `T8`. La seconde,
+**par Jonathan**, sur **`5455db3`**, la fusion de `T11`.
+
+| Mesure, seconde passe | Résultat |
 |---|---|
-| `make images-pin` | épinglée sur **`1850d8d`** — la dernière publication réussie au moment de la mesure |
-| `make up-recette` | **8/8 services sains** |
-| `make recette-check` | **0 échec** — un e-mail part du conteneur `api` de la recette, son Mailpit passe de 11 à **12**, et celui de dev **ne bouge pas** (180 → 180) |
+| `make images-pin` | épinglée sur **`5455db3`**, empreintes des trois images relevées, 3 sur 3 |
+| `make up-recette` | **8/8 services sains**, les deux rôles PostgreSQL du moindre privilège provisionnés |
+| `make recette-check` | **0 échec** — 7 publications, **toutes** sur la boucle locale |
 | `make separations-check` | **57 contrôles, 0 échec**, **7 séparations sur 7** |
-| révision réellement servie | `{"version":"0.0.0-dev","revision":"1850d8d","environnement":"recette"}` |
-| forme servie | l'**artefact bâti** — `/assets/index-CDe_VX_M.js`, et non le serveur Vite |
-| les routes du portail | `/`, `/statut`, `/connexion`, `/entites/x` → **200** ; `/api/v1/entities` → **401** sans session |
-| mémoire des deux stacks | **1 020,3 Mio** sur 7 936 alloués |
+| l'artefact exécuté | les trois conteneurs tournent sur l'**empreinte demandée**, pas sur une construction locale, et l'identité **transmise** est celle **gravée** dans l'image |
+| architecture | **3/3 conteneurs en `aarch64` natif** sur l'Apple Silicon |
+| cible `execution` | **0** occurrence de `/@vite/client` en recette, **1** en dev — le témoin prouve que la sonde n'est pas muette |
+| Mailpit | la recette passe de 14 à **15**, dev **ne bouge pas** (197 → 197) |
+| mémoire des deux stacks | **1 046,5 Mio** sur 7 936 alloués, soit **13,2 %** |
 
-> **CE QUE CETTE RECETTE N'EXERCE PAS, ET IL FAUT LE SAVOIR.** `1850d8d` est la fusion de **`T8`**.
-> Les sous-étapes **`T9`, `T10` et `T11`** — affichage conditionnel, états d'erreur, design system —
-> **ne sont pas dans ces images**. Le mécanisme de recette est prouvé ; le **contenu complet du
-> LOT 4** ne l'est pas encore en recette.
->
-> **La recette finale est un geste POST-FUSION**, et il t'appartient : publier suppose de pousser vers
-> l'extérieur, ce que je ne fais pas sans ton accord (§12). Une fois `T12` fusionnée et
-> `images.yml` passé :
+> **`5455db3` CONTIENT TOUT LE CODE DU LOT 4, ET C'EST MESURÉ.** `T12` n'a produit **aucun code** :
+> son commit ne touche que `CLAUDE.md`, `docs/README.md`, le registre des décisions, cette checklist,
+> son compte rendu et la fiche du lot. Le diff entre `5455db3` et `649575c` **hors documentation est
+> vide** :
 >
 > ```bash
-> make images-pin && make up-recette && make recette-check && make separations-check && make down-recette
+> git diff --stat 5455db3 649575c -- ':!docs' ':!CLAUDE.md'
 > ```
+>
+> **Cette recette n'a donc aucun angle mort de contenu**, contrairement à ce que la première passe
+> laissait ouvert. La correction est faite ici plutôt que laissée à la lecture : un document de porte
+> qui annonce un manque inexistant fait douter du reste.
+
+**Un résiduel apparaît dans la sortie, et il était déjà connu.** `make ports` signale **deux
+collisions avec des projets étrangers à ce dépôt** — `5432` avec `ticket_master`, `8080` avec
+`observatoire-ecom-studio`. Ce n'est pas un échec : nous ne maîtrisons pas les ports d'un projet
+tiers, et le contrôle le dit lui-même. C'est le §7.23, et le remède est d'arrêter l'un des deux.
+
+**Et un résiduel de fond, `ROAD-RSK-034` :** les **7 ports publiés** de dev restent joignables depuis
+la recette, parce que la règle `ACCEPT` d'un port publié précède les règles `DOCKER-ISOLATION` de
+Docker. Le cahier §22.2 exige un réseau **distinct**, ce qui est acquis ; il n'exige pas
+l'inatteignabilité. **La barrière qui rend cela acceptable est mesurée** : avec le secret de la
+recette, la base de dev **refuse**.
 
 ---
 
@@ -220,6 +235,7 @@ mais pas le balisage — si bien que le même message de copie s'affiche dans **
 
 **Si tu franchis**, trois gestes suivent, et aucun n'est automatique :
 
-1. la **recette finale** sur les images de `T12`, avec la commande du §5 ;
+1. ~~la recette finale~~ — **FAITE**, voir le §5 : elle a tourné sur `5455db3`, qui contient **tout
+   le code du lot**, `T12` n'ayant produit que de la documentation ;
 2. le tag **`v0.4.0`**, annoté, sur `main` — comme `v0.3.0` à `G3` ;
 3. l'ouverture du **LOT 5** et la validation de son découpage **avant** qu'une ligne ne soit écrite.
