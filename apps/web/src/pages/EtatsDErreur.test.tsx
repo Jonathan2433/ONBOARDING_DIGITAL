@@ -176,7 +176,7 @@ describe("l'écran d'erreur porte un réessai et une corrélation — §17.4", (
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     //  **AFFICHÉ EN CLAIR**, donc sélectionnable à la main : la copie n'est
     //  jamais le seul moyen.
-    expect(document.querySelector('.app-correlation-valeur')?.textContent).toBe(CORRELATION);
+    expect(screen.getByText(CORRELATION)).toBeTruthy();
 
     await act(async () => {
       screen.getByRole('button', { name: 'Copier' }).click();
@@ -184,9 +184,12 @@ describe("l'écran d'erreur porte un réessai et une corrélation — §17.4", (
     });
 
     expect(ecrits).toEqual([CORRELATION]);
-    await waitFor(() =>
-      expect(document.querySelector('.app-correlation-annonce')?.textContent).toContain('copié'),
-    );
+    //  **INTERROGÉ PAR LE TEXTE, PAS PAR UNE CLASSE.** `T11` a réécrit le panneau
+    //  sur le design system, et `.app-correlation-annonce` est devenue
+    //  `.ex-notification` : mes deux assertions de `T10` ont échoué sur un
+    //  livrable **meilleur**. Un test qui épingle une classe CSS épingle une
+    //  décision d'implémentation ; ce qui compte est ce que l'utilisateur lit.
+    await waitFor(() => expect(screen.getByText(/copié dans le presse-papiers/)).toBeTruthy());
   });
 
   it('reste utilisable quand le presse-papiers est REFUSÉ', async () => {
@@ -208,10 +211,9 @@ describe("l'écran d'erreur porte un réessai et une corrélation — §17.4", (
 
     //  **L'ÉCHEC EST DIT, ET L'IDENTIFIANT RESTE LÀ.** Un bouton qui échouerait en
     //  silence serait pire que pas de bouton — §7.21.
-    await waitFor(() =>
-      expect(document.querySelector('.app-correlation-annonce')?.textContent).toContain('refusée'),
-    );
-    expect(document.querySelector('.app-correlation-valeur')?.textContent).toBe(CORRELATION);
+    await waitFor(() => expect(screen.getByText(/Copie refusée par le navigateur/)).toBeTruthy());
+    //  Et l'identifiant reste là, sélectionnable à la main.
+    expect(screen.getByText(CORRELATION)).toBeTruthy();
   });
 
   it("n'affiche AUCUNE corrélation quand la requête n'a pas abouti", async () => {
@@ -225,7 +227,8 @@ describe("l'écran d'erreur porte un réessai et une corrélation — §17.4", (
     monter();
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
-    expect(document.querySelector('.app-correlation')).toBeNull();
+    //  Aucune corrélation affichée : ni la valeur, ni le titre de son bloc.
+    expect(screen.queryByRole('heading', { name: /correlation/i })).toBeNull();
     //  Le réessai, lui, reste proposé : c'est précisément le cas où il sert.
     expect(screen.getByRole('button', { name: 'Reessayer' })).toBeTruthy();
   });

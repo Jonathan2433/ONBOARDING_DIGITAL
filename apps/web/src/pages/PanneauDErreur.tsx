@@ -1,5 +1,5 @@
 /**
- * Ce que le §17.4 exige de tout écran d'erreur du portail — LOT 4, `T10`.
+ * Ce que le §17.4 exige de tout écran d'erreur du portail — LOT 4, `T10`, puis `T11`.
  *
  * SEPT EXIGENCES, ET CE PANNEAU EN PORTE QUATRE
  *
@@ -8,26 +8,27 @@
  *   **identifiant de corrélation copiable** ; **aucun écran blanc silencieux** ».
  *
  *   Ce panneau porte le **réessai**, la **corrélation copiable**, un **message
- *   toujours présent** — donc aucun écran blanc — et l'annonce du résultat de la
- *   copie. Les trois autres sont ailleurs : les pages 403/404/erreur sont dans
+ *   toujours présent** — donc aucun écran blanc — et l'**annonce** du résultat de
+ *   la copie. Les trois autres sont ailleurs : les pages 403/404/erreur dans
  *   `PagesErreur.tsx` (LOT 3, `T11`), l'error boundary dans `FrontiereErreur.tsx`
- *   (LOT 1), et les messages de champs dans les formulaires d'authentification.
- *   **Les notifications relèvent de `T11`**, qui consolide le design system.
+ *   (LOT 1), les messages de champs dans les formulaires d'authentification.
  *
- * LE RÉESSAI EST UN BOUTON QUI RÉESSAIE, PAS UNE PHRASE QUI LE SUGGÈRE
+ * `T11` L'A RÉÉCRIT SUR LE DESIGN SYSTEM, ET C'ÉTAIT UNE DUPLICATION QUE J'AVAIS FAITE
  *
- *   Avant `T10`, le portail écrivait « vérifiez votre connexion, puis réessayez »
- *   **sans rien pour réessayer** : l'utilisateur devait recharger la page, ce qui
- *   lui fait perdre son contexte. Une phrase qui demande une action que l'écran
- *   ne propose pas est de la même famille que l'avertissement faux du §7.21.
+ *   `T10` écrivait ici son propre `<button className="app-action">` alors que
+ *   `packages/ui` porte un `Bouton` depuis `T10` du LOT 1 — mesuré : trois écrans
+ *   d'authentification l'importaient, et le portail non. C'est exactement la
+ *   classe du §7.27, et je l'avais commise une sous-étape avant de la corriger.
  *
- * LA CORRÉLATION N'EST AFFICHÉE QUE SI ELLE EXISTE
- *
- *   Un échec de transport ne porte **aucune** corrélation : la requête n'a pas
- *   atteint l'API. Afficher un champ vide, ou un tiret, apprendrait à
- *   l'utilisateur à citer une valeur qui ne relie à rien.
+ *   Les quatre composants employés ici le sont parce que **ce panneau en avait
+ *   besoin**, non pour cocher une liste : `Bouton` pour les deux actions,
+ *   `Alerte` pour le message, `Carte` pour le bloc de corrélation — que
+ *   `PageStatut` rendait déjà en section titrée — et `Notification` pour le
+ *   résultat de la copie, qui est un **résultat d'action** et non un état.
  */
 import type { JSX } from 'react';
+
+import { Alerte, Bouton, Carte, Notification } from '@onboarding/ui';
 
 import { messageDeCopie, useCorrelationCopiable } from '../reseau';
 
@@ -38,7 +39,7 @@ export interface ProprietesPanneau {
   readonly correlation?: string | null;
   /** Ce que fait le bouton de réessai. Absent = aucun bouton, et non un bouton inerte. */
   readonly onReessayer?: (() => void) | undefined;
-  /** `alert` pour une erreur, `status` pour un état attendu comme le hors connexion. */
+  /** `alerte` pour une erreur, `information` pour un état attendu comme le hors connexion. */
   readonly urgence?: 'alerte' | 'information';
 }
 
@@ -49,37 +50,33 @@ export function PanneauDErreur({
   urgence = 'alerte',
 }: ProprietesPanneau): JSX.Element {
   const { etatCopie, copier } = useCorrelationCopiable();
-  const annonce = messageDeCopie(etatCopie);
 
   return (
     <div className="app-panneau-erreur" data-urgence={urgence}>
       {/*
-        `alert` interrompt la lecture, `status` non. Une erreur de chargement le
-        merite ; une perte de connexion, que l'utilisateur constate deja par
-        ailleurs, non. Le §14.2 veut l'information portee autrement que par la
-        seule couleur : le message la porte en entier.
+        `alerte` interrompt la lecture, `information` non. Une erreur de
+        chargement le merite ; une perte de connexion, que l'utilisateur constate
+        deja par ailleurs, non. Le §14.2 veut l'information portee autrement que
+        par la seule couleur : le message la porte en entier, et `Alerte` EXIGE
+        son texte dans son type.
       */}
-      <p
-        className="app-message"
-        data-ton={urgence === 'alerte' ? 'erreur' : 'neutre'}
-        role={urgence === 'alerte' ? 'alert' : 'status'}
-      >
+      <Alerte ton={urgence === 'alerte' ? 'erreur' : 'neutre'} urgence={urgence}>
         {message}
-      </p>
+      </Alerte>
 
       {onReessayer === undefined ? null : (
-        <p>
-          <button type="button" className="app-action" onClick={onReessayer}>
-            Reessayer
-          </button>
+        <p className="app-panneau-action">
+          <Bouton onClick={onReessayer}>Reessayer</Bouton>
         </p>
       )}
 
       {correlation === null || correlation === '' ? null : (
-        <div className="app-correlation">
+        //  **`Carte` PARCE QUE C'EST UNE SECTION TITREE**, exactement ce que
+        //  `PageStatut` rendait a la main depuis `T5` du LOT 1. Le titre est en
+        //  `h2` : le cadre porte l'unique `<h1>` du document.
+        <Carte titre="Identifiant de correlation" niveauTitre="h2">
           <p className="app-correlation-explication">
-            Identifiant de correlation, a citer dans tout signalement : il relie cette reponse aux
-            journaux de l&rsquo;API.
+            A citer dans tout signalement : il relie cette reponse aux journaux de l&rsquo;API.
           </p>
           <p>
             {/*
@@ -88,25 +85,27 @@ export function PanneauDErreur({
               pourquoi l'identifiant est rendu en clair dans un `<code>`.
             */}
             <code className="app-correlation-valeur">{correlation}</code>{' '}
-            <button
-              type="button"
-              className="app-action app-action-discrete"
+            <Bouton
+              variante="secondaire"
               onClick={() => {
                 void copier(correlation);
               }}
             >
               Copier
-            </button>
+            </Bouton>
           </p>
           {/*
-            `aria-live` sur un conteneur TOUJOURS present, et non sur un element
-            qui apparait : un `aria-live` ajoute au DOM en meme temps que son
-            contenu n'est pas annonce de facon fiable.
+            **`Notification` ET NON `Alerte`, ET LA DIFFERENCE EST STRUCTURELLE.**
+            C'est le RESULTAT d'une action, pas l'etat de l'ecran : son conteneur
+            doit donc etre present AVANT que son texte arrive, sans quoi
+            l'annonce n'est pas fiable. `Notification` rend toujours le sien,
+            meme vide -- ce qui est exactement le cas au premier rendu.
           */}
-          <p className="app-correlation-annonce" aria-live="polite">
-            {annonce}
-          </p>
-        </div>
+          <Notification
+            message={messageDeCopie(etatCopie)}
+            ton={etatCopie === 'impossible' ? 'echec' : 'succes'}
+          />
+        </Carte>
       )}
     </div>
   );

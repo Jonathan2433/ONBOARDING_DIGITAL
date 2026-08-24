@@ -42,6 +42,8 @@ import type { JSX } from 'react';
 import { droitsDeNavigation, RUBRIQUES, rubriqueEstVisible } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
+import { Alerte, Badge } from '@onboarding/ui';
+
 export interface ProprietesRubrique {
   readonly libelle: string;
   readonly lot: string;
@@ -62,21 +64,35 @@ export function PageRubrique({ libelle, lot, cle }: ProprietesRubrique): JSX.Ele
 
   if (!ouverte) {
     return (
-      <p className="app-message" data-ton="neutre" data-rubrique-fermee={libelle} role="status">
+      <Alerte urgence="information" data-rubrique-fermee={libelle}>
         La rubrique {libelle} n&rsquo;est pas ouverte pour vous dans {entite.nom}.{' '}
         {permissions !== null && !permissions.estEntitePrincipale
           ? "Ce n'est pas votre entite principale, et vos responsabilites ne s'y appliquent pas."
           : 'Elle depend de permissions que votre compte ne porte pas ici.'}{' '}
         Cet ecran est une explication, pas une barriere : c&rsquo;est l&rsquo;API qui refuse les
         actions non autorisees, meme demandees directement.
-      </p>
+      </Alerte>
     );
   }
 
   return (
-    <p className="app-message" data-ton="neutre" data-rubrique={libelle}>
-      La rubrique {libelle} de {entite.nom} arrive au {lot}. La navigation, elle, est en place :
-      cette page est atteignable au clavier comme les autres.
-    </p>
+    <>
+      {/*
+        **`Badge` ICI PARCE QUE C'EST VRAIMENT COURT.** « LOT 5 » tient sur une
+        ligne a toute largeur, y compris 320 px -- ce que la mention du §5.1 ne
+        faisait pas. Un badge est un etat, pas une phrase.
+
+        Le libelle est OBLIGATOIRE dans le type de `Badge` : un etat porte par sa
+        seule couleur serait incomprehensible pour une personne daltonienne comme
+        pour un lecteur d'ecran (WCAG 1.4.1, cahier §14.2).
+      */}
+      <p className="app-rubrique-etiquette">
+        <Badge ton="marque">{lot}</Badge>
+      </p>
+      <Alerte data-rubrique={libelle}>
+        La rubrique {libelle} de {entite.nom} arrive plus tard. La navigation, elle, est en place :
+        cette page est atteignable au clavier comme les autres.
+      </Alerte>
+    </>
   );
 }

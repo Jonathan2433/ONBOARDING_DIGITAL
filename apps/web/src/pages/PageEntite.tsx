@@ -30,19 +30,21 @@ import { Link } from 'react-router';
 import { CHEMINS } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
+import { Alerte } from '@onboarding/ui';
+
 export function PageEntite(): JSX.Element {
   const { entite } = useEntiteConsultee();
 
   return (
     <>
-      <p className="app-message" data-ton="neutre" data-code-entite={entite.code}>
+      <Alerte data-code-entite={entite.code}>
         Vous consultez {entite.nom}. Le choix vit dans l&rsquo;adresse : il survit a un
         rechargement, et un lien partage ouvre la meme entite.
-      </p>
-      <p className="app-message" data-ton="neutre">
+      </Alerte>
+      <Alerte>
         Les sections de l&rsquo;accueil — presentation, Framework, arrivees recentes et evenements —
         arrivent aux LOTS 5 a 7. La navigation principale arrive a la sous-etape suivante.
-      </p>
+      </Alerte>
       <ul className="app-liens">
         <li>
           <Link className="app-lien" to={CHEMINS.statut}>
