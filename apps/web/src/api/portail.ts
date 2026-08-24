@@ -21,6 +21,7 @@
  */
 import {
   CHEMIN_ENTITES,
+  EN_TETE_CORRELATION,
   cheminEntite,
   cheminPermissions,
   type EntiteDuPortail,
@@ -35,6 +36,19 @@ import {
 export interface ReponseDuPortail<T> {
   readonly statut: number;
   readonly corps: T | null;
+  /**
+   * L'identifiant de corrélation de la réponse, ou `null`.
+   *
+   * **LE §17.4 LE VEUT COPIABLE, DONC IL FAUT D'ABORD LE CAPTURER.** `sante.ts`
+   * le fait depuis `T5` du LOT 1 ; le client du portail ne le faisait pas, si
+   * bien qu'un utilisateur du portail n'avait rien à citer dans un signalement.
+   *
+   * **`null` a DEUX causes, et elles ne se confondent pas** : l'API n'a pas posé
+   * l'en-tête, ou la requête n'a jamais abouti — un échec de transport ne porte
+   * aucune corrélation, la requête n'ayant pas atteint l'API. Dans les deux cas
+   * l'écran n'affiche pas de champ vide : il n'affiche rien.
+   */
+  readonly correlation: string | null;
 }
 
 async function appeler<T>(
@@ -47,6 +61,9 @@ async function appeler<T>(
     requete.signal = signal;
   }
   const reponse = await fetch(chemin, requete);
+  //  **L'EN-TETE EST LU AVANT LE CORPS**, parce que le corps peut lever et que la
+  //  correlation est justement ce qu'on veut montrer quand quelque chose casse.
+  const correlation = reponse.headers.get(EN_TETE_CORRELATION);
 
   //  UN CORPS ABSENT OU D'UNE AUTRE FORME N'EST PAS UNE ERREUR RESEAU : le code
   //  HTTP reste rendu, et c'est l'appelant qui decide. Un 404 n'a pas de charge
@@ -57,7 +74,7 @@ async function appeler<T>(
   } catch {
     corps = null;
   }
-  return { statut: reponse.status, corps };
+  return { statut: reponse.status, corps, correlation };
 }
 
 /** Les entites actives du portail national — `GET /api/v1/entities`. */

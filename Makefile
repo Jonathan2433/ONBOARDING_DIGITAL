@@ -1054,14 +1054,15 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "$$sortie" | grep -q "pas une simple NAVIGATION" && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'predicat de visibilite est DUPLIQUE' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'roles sont ECRITS dans le frontend' && attendus=$$((attendus + 1)); \
-	if [ "$$attendus" != "13" ]; then \
-		echo "  ECHEC    le temoin echoue, mais pas pour les 13 raisons attendues ($$attendus/13)"; \
+	echo "$$sortie" | grep -q 'SUCCES est atteignable depuis un' && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "14" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 14 raisons attendues ($$attendus/14)"; \
 		echo "$$sortie" | sed 's/^/           /'; \
 		exit 1; \
 	fi; \
 	echo; \
 	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
-	echo "    ok       code=$$code, et les TREIZE motifs attendus sont nommes :"; \
+	echo "    ok       code=$$code, et les QUATORZE motifs attendus sont nommes :"; \
 	echo "             une propriete non definie par une feuille chargee"; \
 	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
 	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
@@ -1075,6 +1076,7 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "             un selecteur d'entite qui porterait de l'ECRITURE"; \
 	echo "             un predicat de visibilite duplique dans un composant"; \
 	echo "             un role d'administration ecrit en litteral dans le frontend"; \
+	echo "             un etat de succes atteignable depuis un \`catch\` (cahier 17.2)"; \
 	echo; \
 	echo "  --> le controle discrimine"
 

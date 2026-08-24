@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T9` du LOT 4
+**Dernière mise à jour :** 24 août 2026, sous-étape `T10` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -61,6 +61,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Aperçu visuel du frontend `DEC-551`**, hors sous-étape | 1 | **Validée le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-552`, sous-étape `T8`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-553`, sous-étape `T9`** | 1 | **Validée le 24/08/2026** |
+| **Réalisation du LOT 4 `DEC-554`, sous-étape `T10`** | 1 | **Soumise le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -72,7 +73,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **221** | |
+| **Total** | **222** | |
 
 ---
 
@@ -652,7 +653,18 @@ Décisions prises en livrant l'affichage conditionnel et le garde-fou d'autorisa
 
 ---
 
-**Prochain identifiant libre : `DEC-554`.**
+## Réalisation du LOT 4 — sous-étape `T10`
+
+Décisions prises en livrant les états d'erreur et la perte de connexion, story `MVP-L04-US006`,
+issue `#97`. Soumises à Jonathan le 24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-554` | **« N'affiche jamais “sauvegardé” » devient une exigence MÉCANIQUE, pas un test ; le hors connexion et le 401 sont des états DISTINCTS de l'erreur ; et le réessai est un bouton qui réessaie.** **(a)** `make cadre-check` confronte les états qui rendent `data-ton='succes'` aux états affectés dans un `catch`, et **exige que l'intersection soit vide**. **(b)** Trois états distincts là où il y en avait un : **hors connexion**, **session expirée** (401) et **erreur**. **(c)** Le réessai **relance les trois appels** par un compteur dans les dépendances de l'effet, et le retour de connexion le déclenche seul. **(d)** L'identifiant de corrélation est **capturé** par le client du portail et rendu **copiable**, avec l'échec de copie **dit**. **(e)** Les deux mécanismes — connexion et copie — sont **extraits** de `PageStatut` dans `reseau.ts` ; le **balisage** reste propre à chaque écran. **(f)** **Aucune branche 403 n'est ajoutée** : mesuré sur le contrat, aucune des trois routes du portail ne le déclare. | **(a) LE CRITÈRE NOMMAIT UN PIÈGE, ET LE §17.2 LE RÉSOUT.** La fiche écrit « un `fetch` qui échoue après l'envoi n'affiche jamais “sauvegardé” » — or ce lot est en **lecture seule**. Le cahier §17.2 dit ce que cela signifie : « aucune action n'est déclarée enregistrée **sans confirmation de l'API** ». Le succès doit donc venir de la **réponse**, et les écritures existent : celles du LOT 3. **Un test par écran vieillirait au premier écran ajouté** ; le contrôle, non — et il est **exact, pas heuristique** : il ne cherche aucun mot dans aucun message, il confronte deux ensembles **dérivés du code**. Éprouvé en injectant le défaut réel : `setEtat('connecte')` dans le `catch` de la connexion administrateur, et il a nommé le fichier **et** l'état. **(b) LE 401 A ÉTÉ VU AU NAVIGATEUR, ET LE MESSAGE ÉTAIT FAUX.** Ma session de démonstration avait expiré ; le cadre affichait « L'entité n'a pas pu être chargée. **Cela ne dit rien de son existence** » — l'utilisateur n'avait pas un problème de chargement, il était déconnecté, et le remède n'était pas « réessayer » mais « se reconnecter ». Même classe que `T8-4` : plausible, et seul l'écran l'a montré faux. **Et le hors connexion n'est pas un alias de l'erreur** : `navigator.onLine` ne dit pas « le service répond » — derrière un portail captif il rend `true`. Les confondre dirait de vérifier sa connexion alors que c'est l'API qui est tombée (§7.6). **(c) AVANT `T10`, LE PORTAIL ÉCRIVAIT « puis réessayez » SANS RIEN POUR RÉESSAYER.** L'utilisateur devait recharger, ce qui lui fait perdre son contexte. Une phrase qui demande une action que l'écran ne propose pas est de la famille de l'avertissement faux du §7.21. **Et l'état 401 n'en propose AUCUN**, pour la même raison inversée : réessayer ne peut pas aboutir sans nouvelle session. **(d) LE §17.4 DIT « COPIABLE », LA FICHE DISAIT « AFFICHÉ ».** Le cahier prévaut et demande davantage — classe de `ECART-023`. Le client du portail ne capturait pas l'en-tête, si bien qu'un utilisateur du portail n'avait **rien à citer** dans un signalement. **La copie n'est jamais le seul moyen** : le presse-papiers peut être refusé, l'identifiant reste en clair dans un `<code>`, et l'échec est **annoncé** — un bouton qui échouerait en silence serait pire que pas de bouton. **Et rien n'est affiché quand la requête n'a pas abouti** : un échec de transport ne porte aucune corrélation, et un champ vide apprendrait à citer une valeur qui ne relie à rien. **(e) L'EXTRACTION PORTE SUR LA LOGIQUE, PAS SUR LE BALISAGE.** Les deux écrans n'ont pas la même feuille — `PageStatut` emploie les classes neutres d'avant `packages/ui` — et les faire converger est le travail de `T11`. Ce qui divergerait en silence est le nettoyage des écouteurs, la remise à zéro de l'état de copie et le repli quand le presse-papiers est refusé : c'est cela qui est en un seul exemplaire. **La formulation du message de copie est celle que `PageStatut` portait déjà**, accents compris : deux de ses tests l'épinglent, et ils ont raison — c'est un texte vu par l'utilisateur. **(f)** Livrer une branche que rien ne peut atteindre est ce que `T10` du LOT 1 et `DEC-537` refusent. Les trois pages 403/404/erreur **existent et sont routées** depuis `T11` du LOT 3 ; le portail n'a simplement aucune route qui rende 403, et `ECART-046` le dit déjà. | Soumise le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-555`.**
 
 ---
 
@@ -855,6 +867,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-551` — aperçu visuel du frontend | 1 | 1 |
 | `DEC-552` — réalisation du LOT 4, `T8` | 1 | 1 |
 | `DEC-553` — réalisation du LOT 4, `T9` | 1 | 1 |
+| `DEC-554` — réalisation du LOT 4, `T10` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -866,7 +879,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **221** | **221** |
+| **Total** | **222** | **222** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
