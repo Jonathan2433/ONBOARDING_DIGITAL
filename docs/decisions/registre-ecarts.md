@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T4` du LOT 4
+**Dernière mise à jour :** 24 août 2026, outillage d'aperçu visuel du frontend
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 44 | 8 | 34 | 2 |
+| Total 45 | 9 | 34 | 2 |
 
 ---
 
@@ -62,8 +62,24 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-042` | **`make code-refresh` ne reconstruisait que `api` et `worker`.** Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh` : le frontend **servi** est resté celui du LOT 1 pendant tout le LOT 3 et les deux premières sous-étapes du LOT 4 — **9 fichiers dans le conteneur contre 24 dans le dépôt**, mesuré. Et `make ecrans-check` passait, parce qu'il vérifiait que les huit chemins rendent `text/html` avec le point de montage — ce que le **repli SPA** fait pour n'importe quel chemin | Non pour l'API — **oui pour toute conclusion tirée du frontend servi** | **Clos** — `DEC-546` |
 | `ECART-043` | **Le lien d'évitement posé en `T3` ne sautait rien.** Sa cible, le `<main>`, n'était pas focusable : mesuré dans un vrai navigateur, activer le lien faisait défiler la page et laissait le focus sur `<body>`, si bien que le Tab suivant repartait du **début** du document, à travers le menu qu'on venait de sauter. **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`** — les deux étaient vrais, et le mécanisme ne fonctionnait pas | Non — un arrêt de tabulation consommé pour rien, découvert avant que le menu n'existe vraiment | **Clos** — `tabIndex={-1}`, `DEC-547` |
 | `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
+| `ECART-045` | **Quatre endroits justifient la sélection de `target: developpement` par « le rechargement à chaud », que `T5` du LOT 1 avait délibérément écarté.** Le conteneur `web` porte **0 montage**, mesuré : le serveur Vite surveille une copie figée dans l'image, donc rien de ce qu'il surveille ne change jamais. La sélection de cible reste juste — pour un **autre** motif, mesuré lui aussi | Non — documentaire, et le livrable est conforme | **Ouvert**, motifs à rectifier hors sous-étape |
 
-**Prochain identifiant libre : `ECART-045`.**
+## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, en instruisant la question de Jonathan « comment vérifier le front en visuel en work in progress ? » |
+| Source | `DEC-479` au registre des décisions, et les commentaires de `docker-compose.base.yml` (l. 473), `docker-compose.dev.yml` (l. 76) et `docker-compose.recette.yml` (l. 146) |
+| Constat | Les quatre justifient la **sélection explicite** de `target: developpement` par la même conséquence : sans elle, « la stack de développement perdrait **le rechargement à chaud** en restant parfaitement saine ». Or `T5` du LOT 1 a **délibérément écarté** le bind mount du code source, et l'a écrit : « `DEC-447` reste intact, les modifications passent par le `make up` qui reconstruit. **Le rechargement à chaud n'est exigé par aucun critère du lot.** »<br>**Mesure du 24/08/2026 :** `docker inspect onboarding-dev-web-1` rend **`0 montage(s)`**. Le serveur Vite tourne bien — `node ./node_modules/vite/bin/vite.js` — et il surveille une copie **figée dans l'image à la construction**. Il rechargerait à chaud, s'il y avait quelque chose à recharger. |
+| Impact | **Aucun sur le livrable, et c'est ce qui rend l'écart intéressant.** La sélection de cible est **nécessaire**, mais pour un bénéfice différent, mesuré le même jour : le développement sert `/src/main.tsx`, la forme **serveur Vite**, là où `execution` servirait `/assets/….js`. Or `verifier-page-statut.sh` **distingue les deux formes** depuis `T9` du LOT 1 — c'est la leçon du §7.21. Sans la ligne `target`, Docker bâtirait la dernière étape, `execution`, et ce contrôle changerait de sens en silence. Le garde-fou `make images-check` reste donc pleinement justifié. |
+| Cause | **§7.24, première leçon : relire une règle ne suffit pas, il faut confronter les règles entre elles.** `DEC-479` a été rédigée en `T7` du LOT 1 ; le bloc « ce que `T5` a délibérément écarté » se trouve **quatorze décisions plus haut dans le même fichier**. Chacune est défendable seule ; ensemble, elles affirment une capacité absente. Et la formule a été **recopiée trois fois** dans les fichiers Compose — §7.34 : un motif écrit une fois se propage sans être revérifié. |
+| Bloquant | Non |
+| Recommandation | **Ne pas ajouter de bind mount pour rendre les motifs vrais** — ce serait corriger le livrable pour sauver la prose, et `T5` a tranché sur un motif qui tient toujours : le §7.17 a mesuré qu'iCloud **remplace les répertoires**, et un conteneur ne re-résout pas la source d'un montage lié après sa création. Le rechargement à chaud coûterait un `make caddy-recreate` pour `web` à chaque réécriture iCloud.<br>**Rectifier les quatre motifs** pour qu'ils nomment la conséquence réelle — la forme servie, que les contrôles distinguent. Hors sous-étape, avec les autres corrections documentaires.<br>**Et la parade durable, celle qui ne dépend pas de la mémoire :** `make apercu` (`DEC-551`) **dit** que le conteneur n'a aucun montage et qu'il faut la relancer après chaque modification. Un outil qui énonce la limite vaut mieux qu'un commentaire qui l'ignore. |
+| Résolution | **Ouvert.** Documentaire, sans effet sur le livrable. |
+
+---
+
+**Prochain identifiant libre : `ECART-046`.**
 
 ---
 
