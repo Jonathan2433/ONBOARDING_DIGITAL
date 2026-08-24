@@ -1050,14 +1050,16 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "$$sortie" | grep -q 'SANS .:focus-visible' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'la carte precede la liste' && attendus=$$((attendus + 1)); \
 	echo "$$sortie" | grep -q 'soit DECORATIVE' && attendus=$$((attendus + 1)); \
-	if [ "$$attendus" != "9" ]; then \
-		echo "  ECHEC    le temoin echoue, mais pas pour les 9 raisons attendues ($$attendus/9)"; \
+	echo "$$sortie" | grep -q 'repli(s) fautif(s)' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "pas une simple NAVIGATION" && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "11" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 11 raisons attendues ($$attendus/11)"; \
 		echo "$$sortie" | sed 's/^/           /'; \
 		exit 1; \
 	fi; \
 	echo; \
 	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
-	echo "    ok       code=$$code, et les NEUF motifs attendus sont nommes :"; \
+	echo "    ok       code=$$code, et les ONZE motifs attendus sont nommes :"; \
 	echo "             une propriete non definie par une feuille chargee"; \
 	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
 	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
@@ -1067,6 +1069,8 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "             un element interactif sans regle :focus-visible"; \
 	echo "             la carte qui precederait la liste dans le DOM"; \
 	echo "             une carte qui ne serait pas decorative"; \
+	echo "             un repli qui ne serait pas un \`<details>\`/\`<summary>\`"; \
+	echo "             un selecteur d'entite qui porterait de l'ECRITURE"; \
 	echo; \
 	echo "  --> le controle discrimine"
 
@@ -1075,6 +1079,13 @@ entites-check: ## Prouver que la page nationale ne propose QUE des entites activ
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
 	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
 	$(UV) run python infra/scripts/verifier-entites.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+permissions-check: ## Prouver que le changement d'entite recharge les droits sans en transferer (LOT 4, US002)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-permissions.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)

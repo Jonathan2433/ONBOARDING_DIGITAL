@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, outillage d'aperçu visuel du frontend
+**Dernière mise à jour :** 24 août 2026, sous-étape `T8` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -59,6 +59,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-549`, sous-étape `T6`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-550`, sous-étape `T7`** | 1 | **Validée le 23/08/2026** |
 | **Aperçu visuel du frontend `DEC-551`**, hors sous-étape | 1 | **Validée le 24/08/2026** |
+| **Réalisation du LOT 4 `DEC-552`, sous-étape `T8`** | 1 | **Soumise le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -70,7 +71,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **219** | |
+| **Total** | **220** | |
 
 ---
 
@@ -628,7 +629,18 @@ outille la vérification, elle ne livre aucun critère.
 
 ---
 
-**Prochain identifiant libre : `DEC-552`.**
+## Réalisation du LOT 4 — sous-étape `T8`
+
+Décisions prises en rendant le changement d'entité exigible de bout en bout, story
+`MVP-L04-US002`, issue `#93`. Soumises à Jonathan le 24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-552` | **Les permissions de l'entité consultée sont résolues par un `GET`, elles portent les codes du §3 de la matrice et RIEN de plus, leur ordre est structurel, et le changement d'entité reste une NAVIGATION — des liens, jamais un formulaire.** **(a)** `GET /api/v1/entities/{code}/permissions` rend `entite`, `code`, `est_entite_principale` et `roles`. **Aucune liste d'actions autorisées.** **(b)** La résolution a **trois branches, toutes écrites dans la matrice** : `SUPER_ADMIN` actif → exception globale ; entité consultée = entité principale → union des responsabilités ; sinon → **`EMP` seulement**. **(c)** La correspondance entre le vocabulaire du modèle — `BOOSTER`, `ENTITY_ADMIN` — et celui de la matrice — `BOOST`, `ADM-E` — est **déclarée**, et un test **exige qu'elle couvre les deux énumérations en entier**. **(d)** L'ordre des rôles vient de l'**itération de l'énumération**, pas d'un tri. **(e)** Le sélecteur d'entité est un `<details>` de `<Link>`, **aucun `<button>`, `<select>`, `<form>` ni gestionnaire d'événement** — et `make cadre-check` le vérifie. **(f)** Les permissions du contexte valent `null` quand elles sont **inconnues**, et `null` n'est pas « aucun droit ». | **(a) LA RÉPONSE EST BORNÉE PARCE QUE LA MATRICE EN DÉCLARE DES DIZAINES, PAR RESSOURCE.** Les énumérer ici serait la règle §6.5 enfreinte, et le §5.1 dit d'ailleurs où cela se joue : « les contrôles côté API utilisent l'entité de la **ressource** ». `est_entite_principale` n'est pas une commodité : c'est la seule information du §5.1 qui **ne se lit pas** dans la liste des rôles — une personne sans responsabilité rend `["EMP"]` dans son entité principale **et** ailleurs, et le §5.1 interdit de *proposer* des actions hors de l'entité principale. **Un `GET` tient les deux premières règles du §23.3 par construction** : depuis `DEC-545` l'entité vit dans l'adresse, donc il n'existe **aucun endroit** où l'entité principale pourrait être modifiée. Le §7.32 dit quoi faire d'un état que la conception rend impossible : ne pas écrire la défense, **exiger qu'il le reste** — les quatre tables de rattachement sont relevées par empreinte avant/après le parcours complet. **(b) AUCUNE QUATRIÈME BRANCHE N'A ÉTÉ AJOUTÉE**, et le §23.2 — « restriction la plus forte » — n'en est pas une : il porte sur des interdictions liées à **la ressource ou à l'état**, et ce lot est en lecture seule. **Trois garanties sont déjà structurelles, mesurées le 24/08/2026** : `ck_technical_role_assignment_portee_selon_le_role` impose `SUPER_ADMIN ⇒ entity_id IS NULL`, donc « la seule exception globale » est une contrainte de base ; `framework_responsibility_assignment.entity_id` est **NOT NULL**, donc « aucune permission locale n'est transférée » n'est pas une précaution de notre code ; et `uq_entity_membership_person_id_occupante` rend l'entité principale **unique par construction**. Les trois sont éprouvées par des tests qui exigent le **nom** de la contrainte violée. **(c) DEUX DOCUMENTS VALIDÉS EMPLOIENT DEUX VOCABULAIRES POUR LES MÊMES CHOSES.** Chaque paire est appariée par leurs **descriptions concordantes** — « Booster, responsable d'un cercle » face à un `BOOSTER` dont le §8.4 exige `circle_id` — mais l'appariement reste une **interprétation** que ni l'un ni l'autre ne porte seul. C'est exactement le cas où le §7.27 prescrit de déclarer **et** d'exiger la correspondance au réel. **(d) LE TRI ÉTAIT INVISIBLE À TOUT CONTRÔLE, ET C'EST MESURÉ.** Le `sorted` retiré du service, les quinze contrôles de `make permissions-check` passaient **trois fois sur trois** : l'itération d'un `set` est stable au sein d'un processus, et les deux appels tombent sur le même worker. Renforcer le contrôle n'y pouvait rien — deux ensembles égaux s'itèrent identiquement en CPython, et l'ordre ne varierait qu'**entre processus**, ce qu'aucune exécution unique n'observe. **La conclusion a donc porté sur le code, pas sur le contrôle** : l'ordre vient de l'énumération, donc le perdre exigerait de supprimer la boucle. **(e) UN `<select onChange>` AURAIT ÉTÉ DEUX PIÈGES.** Son événement se déclenche à la **flèche** sur certains navigateurs, donc parcourir la liste au clavier aurait navigué à chaque touche ; et il aurait ouvert l'endroit où une écriture pourrait s'installer plus tard sans que rien ne le signale. Le `<details>` reprend le motif de `DEC-548` : le repli est natif, donc aucun `aria-expanded` à maintenir et **aucune gestion de focus à écrire** — le terrain où `ECART-043` est né. **(f) `null` N'EST PAS UN OBJET VIDE.** Rendre `{roles: []}` quand l'appel a échoué ferait passer « je ne sais pas » pour « aucun droit », et `T9` masquerait des rubriques sur une **ignorance**. C'est le §7.21 par anticipation : un champ dont la valeur par défaut est la plus restrictive apprend à ne pas le lire. | Soumise le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-553`.**
 
 ---
 
@@ -829,6 +841,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-549` — réalisation du LOT 4, `T6` | 1 | 1 |
 | `DEC-550` — réalisation du LOT 4, `T7` | 1 | 1 |
 | `DEC-551` — aperçu visuel du frontend | 1 | 1 |
+| `DEC-552` — réalisation du LOT 4, `T8` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -840,7 +853,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **219** | **219** |
+| **Total** | **220** | **220** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

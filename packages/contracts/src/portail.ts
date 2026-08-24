@@ -59,10 +59,15 @@ export const CODES_ENTITE: readonly number[] = endpoint('entiteConsultee').codes
  * lieu d'un 404, donc un echec indistinguable d'un succes.
  */
 export function cheminEntite(code: string): string {
+  return gabaritPourCode(GABARIT_CHEMIN_ENTITE, code);
+}
+
+/** La garde et l'encodage, en UN SEUL exemplaire — deux copies divergeraient. */
+function gabaritPourCode(gabarit: string, code: string): string {
   if (code === '') {
     throw new Error('code d entite vide : le chemin obtenu serait celui de la liste');
   }
-  return GABARIT_CHEMIN_ENTITE.replace('{code}', encodeURIComponent(code));
+  return gabarit.replace('{code}', encodeURIComponent(code));
 }
 
 /** Une entite du portail national. */
@@ -105,4 +110,72 @@ export function validerLesEntites(valeur: unknown): ReponseDesEntites {
     throw new TypeError('champ « entites » absent ou non tableau');
   }
   return { entites: entites.map(validerEntite) };
+}
+
+/** Le gabarit du chemin des permissions, lu du manifeste. */
+export const GABARIT_CHEMIN_PERMISSIONS: string = endpoint('permissionsDeLEntite').chemin;
+
+/** Les codes exploitables des permissions : 200, 401 et 404 — les memes que la resolution. */
+export const CODES_PERMISSIONS: readonly number[] =
+  endpoint('permissionsDeLEntite').codesExploitables;
+
+/**
+ * Le chemin des permissions de l'entite consultee.
+ *
+ * **MEME ENCODAGE, MEME LEVEE QUE `cheminEntite`, ET POUR UNE RAISON DE PLUS.**
+ * Un code vide donnerait ici `/api/v1/entities//permissions`, que le routeur
+ * n'apparie a rien : un 404 indistinguable de « cette entite n'existe pas ».
+ *
+ * Les deux fonctions partagent donc leur garde, et elle est ecrite une seule
+ * fois : deux copies d'une meme regle divergent, c'est `DEC-466` et `ECART-022`.
+ */
+export function cheminPermissions(code: string): string {
+  return gabaritPourCode(GABARIT_CHEMIN_PERMISSIONS, code);
+}
+
+/** Les codes de role du §3 de la matrice, tels que l'API les rend. */
+export interface PermissionsDeLEntite {
+  readonly entite: string;
+  readonly code: string;
+  readonly estEntitePrincipale: boolean;
+  readonly roles: readonly string[];
+}
+
+/**
+ * Valider la charge utile de `GET /api/v1/entities/{code}/permissions`.
+ *
+ * **`estEntitePrincipale` EST EXIGE, ET SON ABSENCE NE DOIT PAS VALOIR `false`.**
+ * Un `valeur['est_entite_principale'] === true` rendrait `false` sur un champ
+ * ABSENT, donc sur une reponse malformee -- et `false` est precisement la valeur
+ * la plus restrictive, celle qui masque le plus d'actions. L'echec produirait
+ * alors la meme observation qu'un succes legitime hors entite principale, ce que
+ * le §7.0 quatrieme proposition interdit. Le type est donc verifie.
+ *
+ * **ET `roles` EXIGE LE TABLEAU.** Meme motif que `validerLesEntites` : une
+ * reponse `{}` rendrait une liste vide, indistinguable d'un « aucun droit »
+ * legitime.
+ */
+export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
+  if (!estObjet(valeur)) {
+    throw new TypeError('permissions non objet');
+  }
+  const principale = valeur['est_entite_principale'];
+  if (typeof principale !== 'boolean') {
+    throw new TypeError('champ « est_entite_principale » absent ou non booleen');
+  }
+  const roles = valeur['roles'];
+  if (!Array.isArray(roles)) {
+    throw new TypeError('champ « roles » absent ou non tableau');
+  }
+  return {
+    entite: exigerChaine(valeur, 'entite'),
+    code: exigerChaine(valeur, 'code'),
+    estEntitePrincipale: principale,
+    roles: roles.map((role, rang) => {
+      if (typeof role !== 'string') {
+        throw new TypeError(`role ${String(rang)} non chaine`);
+      }
+      return role;
+    }),
+  };
 }

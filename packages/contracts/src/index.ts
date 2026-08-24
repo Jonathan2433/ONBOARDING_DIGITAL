@@ -63,12 +63,16 @@ export type {
 export {
   CHEMIN_ENTITES,
   cheminEntite,
+  cheminPermissions,
   CODES_ENTITE,
   CODES_ENTITES,
+  CODES_PERMISSIONS,
   GABARIT_CHEMIN_ENTITE,
+  GABARIT_CHEMIN_PERMISSIONS,
   validerLesEntites,
+  validerLesPermissions,
   validerUneEntite,
 } from './portail.js';
-export type { EntiteDuPortail, ReponseDesEntites } from './portail.js';
+export type { EntiteDuPortail, PermissionsDeLEntite, ReponseDesEntites } from './portail.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';
