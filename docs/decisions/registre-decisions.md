@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 23 août 2026, sous-étape `T7` du LOT 4
+**Dernière mise à jour :** 24 août 2026, outillage d'aperçu visuel du frontend
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -58,6 +58,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-548`, sous-étape `T5`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-549`, sous-étape `T6`** | 1 | **Validée le 23/08/2026** |
 | **Réalisation du LOT 4 `DEC-550`, sous-étape `T7`** | 1 | **Validée le 23/08/2026** |
+| **Aperçu visuel du frontend `DEC-551`**, hors sous-étape | 1 | **Validée le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -69,7 +70,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **218** | |
+| **Total** | **219** | |
 
 ---
 
@@ -615,7 +616,19 @@ ne l'a pas encore placée**.
 
 | `DEC-550` | **La carte de France est DÉCORATIVE et son illustration est un PROVISOIRE ASSUMÉ, remplaçable en une ligne quand `DEP-006` livrera.** **(a)** `aria-hidden`, `focusable="false"`, aucun élément interactif, ni `role="img"` ni `<title>`. **(b)** Elle vient **après** la liste dans le DOM, et aucune règle CSS ne les réordonne. **(c)** Le tracé est **dessiné à la main et approximatif**, et c'est dit. **(d)** Elle ne s'affiche que quand il y a des entités à illustrer. | **(a) LE CRITÈRE DE SORTIE EST EXACTEMENT CELA** : « la carte est décorative au sens de l'accessibilité : elle n'est pas le seul moyen d'atteindre une entité ». **Le prototype invitait à l'enfreindre** : sa `FranceMap` est une image base64 avec **un bouton posé dessus**, mesuré. Un élément interactif dans un sous-arbre `aria-hidden` est atteignable au clavier **sans être annoncé** — pire qu'un bouton absent. La liste au-dessus est le chemin, et elle est complète. **(b)** §8.3, « sur mobile, la liste précède la carte ». Un `order` en CSS satisferait le regard et laisserait la carte **avant** pour un lecteur d'écran : `make cadre-check` exige l'ordre **du DOM** et l'absence de `order`. **(c) TROIS MESURES ONT FERMÉ LE CHOIX AVANT DE COMMENCER** : `entity` ne porte **ni latitude ni longitude** — mesuré sur le schéma réel, donc une carte à marqueurs exigerait une colonne au modèle ou des positions inventées ; le prototype montre que l'intention **n'est pas** une carte de données ; et **`DEP-006` est OUVERTE, échéance ce lot** — « charte, logo et typographie officiels », Léa / eXalt. Réutiliser l'image du prototype est **interdit** par la règle 4, et ne rien livrer contredirait la roadmap. **Trois versions du tracé ont été faites et regardées à l'écran ; la troisième se lit « la France, à peu près » et pas mieux. Je me suis arrêté là** : auteurer une illustration de marque appartient à `DEP-006`, et continuer aurait été la règle §6.5 enfreinte sur une image au lieu d'une valeur. Ce qui est livré est ce que le critère demande — l'emplacement, sa place dans le DOM, son caractère décoratif — et l'illustration est un remplacement d'**une ligne**. **(d)** Une carte décorative sur un écran d'erreur ou vide occuperait la place du message sans rien apporter. | Validée par Jonathan le 23/08/2026 |
 
-**Prochain identifiant libre : `DEC-551`.**
+## Aperçu visuel du frontend — hors sous-étape
+
+Décision prise le 24 août 2026, en réponse à la question de Jonathan « comment puis-je vérifier
+le front en visuel en work in progress ? ». Elle n'appartient à aucune sous-étape du LOT 4 : elle
+outille la vérification, elle ne livre aucun critère.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-551` | **`make apercu` pose un décor FICTIF marqué `apercu-`, imprime le chemin d'accès complet, et ÉNONCE ses deux limites. `make apercu-fin` le retire.** **(a)** Deux entités actives et **un compte administrateur local**, tous préfixés `apercu-`, ce qui rend le retrait exact sans liste à tenir. **(b)** Le mot de passe est **engendré à chaque appel** et imprimé une seule fois : il n'est écrit ni dans le dépôt, ni dans un fichier, ni dans un journal. **(c)** La sortie dit que le conteneur `web` n'a **aucun montage**, donc qu'il faut relancer `make apercu` après chaque modification du frontend. **(d)** Elle dit aussi que **`make check` échouera** tant que le décor est en place, et pourquoi. | **(a) Le décor doit être COMMITÉ pour qu'un navigateur le voie**, et c'est ce qui le rend dangereux : les tests d'intégration du LOT 2 comptent `person` et `entity` **en absolu**, dans une transaction en rollback. Mesuré le 24/08/2026 : avec le décor en place, `make check` sort en **2**, `12 failed, 671 passed`, dont `assert 6 == 5` sur `SELECT count(*) FROM person`. C'est le mécanisme exact du défaut `T2-2`. Un préfixe unique rend le retrait **dérivable** — `LIKE 'apercu-%'` — là où une liste d'identifiants vieillirait au premier ajout (§7.27). **(b)** Un mot de passe fixe dans un script est un secret dans Git, quelle que soit sa portée ; et le §7.14 réserve à Jonathan toute saisie d'identifiant. Un mot de passe jetable, imprimé une fois, n'est ni l'un ni l'autre. **(c) et (d) sont la seule part durable de cette décision.** L'outil énonce ce qu'il ne fait pas, parce que les deux limites sont **contre-intuitives** : la cible `developpement` est sélectionnée précisément pour le serveur Vite, et quatre documents du projet en déduisent un rechargement à chaud qui n'existe pas — `ECART-045`, mesuré à **0 montage**. Un outil qui dit sa limite vaut mieux qu'un commentaire qui l'ignore, et mieux qu'une promesse de vigilance (§7.2). | Validée par Jonathan le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-552`.**
 
 ---
 
@@ -815,6 +828,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-548` — réalisation du LOT 4, `T5` | 1 | 1 |
 | `DEC-549` — réalisation du LOT 4, `T6` | 1 | 1 |
 | `DEC-550` — réalisation du LOT 4, `T7` | 1 | 1 |
+| `DEC-551` — aperçu visuel du frontend | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -826,7 +840,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **218** | **218** |
+| **Total** | **219** | **219** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

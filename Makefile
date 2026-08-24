@@ -1015,6 +1015,20 @@ service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration ag
 	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
 
+apercu: ## Regarder le portail dans un navigateur : rafraichit le code, pose un decor de demonstration, imprime l'adresse
+	@#  **CETTE CIBLE EXISTE PARCE QUE LE FRONTEND SERVI N'EST PAS CELUI DU
+	@#  DEPOT TANT QU'ON NE L'A PAS RECONSTRUIT.** Le conteneur `web` n'a AUCUN
+	@#  montage : le code est cuit dans l'image. C'est ce qui a fait vivre le
+	@#  frontend du LOT 1 pendant un mois -- `ECART-042`.
+	@#
+	@#  Le decor est FICTIF et porte un marqueur : `make apercu-fin` le retire.
+	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT) | tail -1
+	@python3 infra/scripts/poser-decor-apercu.py --env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+apercu-fin: ## Retirer le decor de demonstration pose par `make apercu`
+	@python3 infra/scripts/poser-decor-apercu.py --retirer --env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
 cadre-check: ## Prouver le cadre applicatif : jetons resolus, layouts, routes internes (LOT 4, T3)
 	@#  STATIQUE : il n'ouvre aucune connexion, il est donc dans `make check`.
 	@#  Le debordement REEL exige un moteur de rendu -- LOT 12, Playwright.
