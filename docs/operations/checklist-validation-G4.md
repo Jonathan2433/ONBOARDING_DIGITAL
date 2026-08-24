@@ -19,13 +19,18 @@ casse.
 
 ## 1. Les six critères de sortie de la roadmap
 
-| # | Critère | Comment il est tenu | Prouvé par |
+> **Les contrôles sont cités par ce qu'ILS DISENT, jamais par leur rang.** Un numéro d'ordre est un
+> index recopié : il vieillit dès qu'un contrôle est inséré avant lui, et le lecteur chercherait alors
+> la mauvaise ligne. Cherche donc la **phrase** dans la sortie de `make cadre-check` — c'est le §7.27
+> appliqué à un document.
+
+| # | Critère | Comment il est tenu | La ligne de `cadre-check` qui le prouve |
 |---|---|---|---|
-| 1 | « la liste précède la carte sur mobile » | l'ordre du **DOM**, et aucune règle CSS ne les réordonne — un `order` satisferait l'œil et pas la tabulation | `cadre-check`, contrôle 23 |
-| 2 | « la navigation est intégralement utilisable au clavier » | `:focus-visible` sur les **7** classes interactives, **aucun** `tabIndex` positif, lien d'évitement à cible **focusable**, les **2** replis en `<details>` sans manipulation de focus | `cadre-check`, contrôles 11, 13, 16, 22 |
-| 3 | « l'entité active est visible sur toutes les pages internes » | **structurel** : les routes internes sont **enfants** de la route de mise en page `CadreApplicatif`, et c'est elle qui porte l'en-tête. La liste est **dérivée de `App.tsx`** | `cadre-check`, contrôle 8 |
-| 4 | « les menus reflètent les permissions **sans les remplacer** » | le prédicat de visibilité est en **un seul** exemplaire, les **3** rôles viennent du **manifeste** lu par TS *et* Python, et l'API refuse par **403** — 12 tests sur de vraies requêtes HTTP | `cadre-check` 18-19, `test_garde_de_role.py` |
-| 5 | « les erreurs réseau n'indiquent jamais à tort qu'une action est sauvegardée » | **mécanique** : les états rendant `data-ton='succes'` et les états affectés dans un `catch` doivent avoir une intersection **vide** — 3 écrans à état de succès, 3 avec `catch` | `cadre-check`, contrôle 20 |
+| 1 | « la liste précède la carte sur mobile » | l'ordre du **DOM**, et aucune règle CSS ne les réordonne — un `order` satisferait l'œil et pas la tabulation | `la liste PRECEDE la carte dans le DOM` |
+| 2 | « la navigation est intégralement utilisable au clavier » | `:focus-visible` sur les **7** classes interactives, **aucun** `tabIndex` positif, lien d'évitement à cible **focusable**, les **2** replis en `<details>` sans manipulation de focus | `aucun tabIndex positif` · `cible FOCUSABLE` · `repli(s) sont des <details>` · `classes interactives ont une regle` |
+| 3 | « l'entité active est visible sur toutes les pages internes » | **structurel** : les routes internes sont **enfants** de la route de mise en page `CadreApplicatif`, et c'est elle qui porte l'en-tête. La liste est **dérivée de `App.tsx`** | `les routes internes sont ENGENDREES depuis RUBRIQUES` |
+| 4 | « les menus reflètent les permissions **sans les remplacer** » | le prédicat de visibilité est en **un seul** exemplaire, les **3** rôles viennent du **manifeste** lu par TS *et* Python, et l'API refuse par **403** — 12 tests sur de vraies requêtes HTTP | `le predicat de visibilite est UNIQUE` · `roles d'administration viennent du MANIFESTE` · plus `test_garde_de_role.py` |
+| 5 | « les erreurs réseau n'indiquent jamais à tort qu'une action est sauvegardée » | **mécanique** : les états rendant `data-ton='succes'` et les états affectés dans un `catch` doivent avoir une intersection **vide** — 3 écrans à état de succès, 3 avec `catch` | `aucun etat de SUCCES n'est atteignable depuis un catch` |
 | 6 | « **Jonathan valide les parcours de navigation** » | **ta décision.** La démonstration guidée du §3 est là pour cela | — |
 
 ```bash
@@ -49,7 +54,7 @@ uv run pytest apps/api/tests/test_garde_de_role.py -q
 |---|---:|---|
 | `make entites-check` | 13 | une entité `draft`, `suspended` ou `archived` proposée par le portail ; deux refus qui ne seraient pas identiques |
 | `make permissions-check` | 15 | une permission locale **transférée** ; un rôle clôturé ou futur qui accorderait ; une écriture dans les 4 tables de rattachement |
-| `make cadre-check` | 25 | tout ce que le §1 énumère, plus : une couleur hors jetons, un composant exporté **sans consommateur**, une largeur fixe en pixels |
+| `make cadre-check` | 25 | tout ce que le §1 énumère, plus : une couleur hors jetons, un composant exporté **sans consommateur**, une largeur fixe en pixels. **Le nombre est dérivé de sa propre sortie**, `--> N controles du cadre applicatif` |
 | `make cadre-temoin` | 15 motifs | que `cadre-check` cesse de discriminer |
 | `make residu-check` | — | qu'un test laisse une ligne derrière lui |
 

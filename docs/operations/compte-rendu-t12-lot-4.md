@@ -44,14 +44,20 @@ la navigation**, et n'a produit **aucune migration** — pas une seule des douze
 coché sur ma parole — chacun renvoie à un contrôle **numéroté** de `cadre-check`, lui-même éprouvé par
 `cadre-temoin` sur **15 motifs**.
 
-| # | Critère | Contrôle |
+| # | Critère | La ligne de `cadre-check` qui le prouve |
 |---|---|---|
-| 1 | la liste précède la carte sur mobile | `cadre-check` **23** — l'ordre du **DOM**, et aucun `order` CSS |
-| 2 | navigation intégralement utilisable au clavier | `cadre-check` **11, 13, 16, 22** |
-| 3 | l'entité active visible sur **toutes** les pages internes | `cadre-check` **8** — les routes internes sont **enfants** de la route de mise en page, liste **dérivée de `App.tsx`** |
-| 4 | les menus reflètent les permissions **sans les remplacer** | `cadre-check` **18, 19** + **12 tests** du garde-fou sur de vraies requêtes HTTP |
-| 5 | les erreurs réseau n'indiquent jamais à tort qu'une action est sauvegardée | `cadre-check` **20** |
+| 1 | la liste précède la carte sur mobile | `la liste PRECEDE la carte dans le DOM` — et aucun `order` CSS |
+| 2 | navigation intégralement utilisable au clavier | `aucun tabIndex positif` · `cible FOCUSABLE` · `repli(s) sont des <details>` · `classes interactives ont une regle` |
+| 3 | l'entité active visible sur **toutes** les pages internes | `les routes internes sont ENGENDREES depuis RUBRIQUES` — elles sont **enfants** de la route de mise en page |
+| 4 | les menus reflètent les permissions **sans les remplacer** | `le predicat de visibilite est UNIQUE` · `roles d'administration viennent du MANIFESTE` · plus **12 tests** du garde-fou |
+| 5 | les erreurs réseau n'indiquent jamais à tort qu'une action est sauvegardée | `aucun etat de SUCCES n'est atteignable depuis un catch` |
 | 6 | **Jonathan valide les parcours de navigation** | sa décision — la démonstration guidée est au §3 de la checklist |
+
+> **Les contrôles sont cités par ce qu'ILS DISENT, et non par leur rang.** Ma première version écrivait
+> « `cadre-check` 23 » : un numéro d'ordre est un **index recopié**, qui vieillit dès qu'un contrôle est
+> inséré avant lui — et le lecteur chercherait alors la mauvaise ligne. C'est le §7.27 appliqué à un
+> document de porte, et je l'ai vu en **vérifiant** que les neuf numéros cités tombaient bien sur les
+> bonnes lignes : ils y tombaient, et c'est précisément ce qui a montré la fragilité.
 
 **Le troisième est le plus intéressant, parce qu'il est structurel et non testé.** L'entité n'est pas
 « affichée sur chaque page » par discipline : les routes internes sont **engendrées** depuis
