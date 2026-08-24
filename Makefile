@@ -209,7 +209,8 @@ ETIQUETTE_LOCALE := onboarding-local
         lint format format-check typecheck test check clean clean-deps \
         env env-check up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
-        web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
+        web-check caddy-reload caddy-recreate docs-check sources-check sources-temoin \
+        audit alembic-check test-frontend \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
@@ -377,6 +378,19 @@ test-frontend: ## Tests frontend seuls (Vitest, sans dependance externe)
 docs-check: ## Verifier l'integrite des documents immuables et les sequences d'identifiants
 	@python3 infra/scripts/verifier-documentation.py
 
+# Existe a cause de T1 du LOT 5 : le module `apps/api/app/media/` a ete ecrit et
+# teste, `make check` est sorti en 0, et `git add -A` ne l'a PAS ajoute -- la
+# ligne `media/` de .gitignore, ecrite au LOT 0 contre les medias DEPOSES, vaut a
+# toute profondeur et attrapait le module du meme nom. Classe §7.34 : un motif
+# ecrit contre un exemple ne couvre que cet exemple. Le controle est dans `make
+# check` et non dans `icloud-verify` parce que le moment ou il faut le savoir est
+# la PULL REQUEST, pas le debut de session.
+sources-check: ## Verifier qu'aucun fichier source du disque n'est ignore par git
+	@python3 infra/scripts/verifier-sources-suivies.py
+
+sources-temoin: ## Temoin negatif du controle des sources suivies
+	@python3 infra/scripts/verifier-sources-suivies.py --temoin
+
 # Controle 10 des onze du cahier 23.1. La tolerance d'un avis nomme est declaree
 # dans pnpm-workspace.yaml, avec son motif mesure : voir DEC-474.
 audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
@@ -385,7 +399,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check sources-check sources-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 

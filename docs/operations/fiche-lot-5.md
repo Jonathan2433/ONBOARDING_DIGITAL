@@ -4,6 +4,7 @@
 **Ouvert par :** Jonathan, le 24 août 2026 (`DEC-558`)
 **Porte de sortie :** `G5`
 **Découpage :** douze sous-étapes, **validé le 24 août 2026 avant qu'une ligne ne soit écrite**
+**Avancement :** **`T1` terminée** le 24/08/2026. Onze sous-étapes restantes
 
 ---
 
@@ -92,7 +93,7 @@ employant ses composants.
 
 | | Objet | Story | Critère de sortie |
 |---|---|---|---|
-| **`T1`** | **Les trois tables de média et d'autorisation de photo**, et le §30.12 reclassé | — | migration **rejouable** · le §30.12 rattaché au bon lot **avec un test nommé** |
+| ~~**`T1`**~~ | ~~**Les trois tables de média et d'autorisation de photo**, et le §30.12 reclassé~~ **TERMINÉE le 24/08/2026.** `DEC-559`. **DEUX SECTIONS DU MODÈLE ONT DÛ ÊTRE CONFRONTÉES** : le §16.2 ne donne pas d'`entity_id` à `media_variant`, mais le §25.3 prescrit le couple `(id, entity_id)` pour toute table **locale** — et sans lui la clé serait **simple**, donc une variante pourrait pointer l'actif d'une autre entité. `isolation-check` compte désormais **neuf** clés composites. **`photo_authorization` reste globale**, et la dérivation du contrôle le confirme. **Un déclencheur rend `deleted` terminal** — le §24.3 le dit par son diagramme, et un `CHECK` ne peut pas l'exprimer. **Une seule unicité, dérivée** du §16.2 ; **aucune** sur `photo_authorization`, et un test **fige l'absence** pour que `T6` la traite. **La borne « photo 10 Mo » n'est PAS en base** : une photo est une image, la distinction est un **usage**, et `media_usage` est reportée. **Deux garde-fous du LOT 2 ont fait leur travail** : `noms_de_contraintes_trop_longs` a attrapé un nom de **66 caractères** que PostgreSQL aurait tronqué en silence, et `TABLES_DECLAREES` a échoué sur les trois tables nouvelles — c'est son objet. **729 tests** dont 20 nouveaux, migration **`0014`** rejouable sur base vide avec une signature **identique**. Compte rendu : [`compte-rendu-t1-lot-5.md`](compte-rendu-t1-lot-5.md) | — | ☑ |
 | **`T2`** | **Le trombinoscope en lecture** : route paginée 25/50/100 | `US001` | les trois tailles · le maximum de 100 **refusé au-delà** · **aucune donnée non autorisée** rendue |
 | **`T3`** | **Recherche et filtres** — six axes combinables | `US002` | 300 ms · performance **mesurée sur 5 000 profils** · **aucun N+1**, compté et non supposé |
 | **`T4`** | **La fiche profil** et les règles de visibilité | `US004` | chaque champ visible **ou** masqué selon la matrice, **les deux sens** testés |
