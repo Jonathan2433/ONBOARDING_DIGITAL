@@ -43,7 +43,11 @@ export type { ProprietesBadge, TonBadge } from './Badge.js';
 export { Bouton } from './Bouton.js';
 export type { ProprietesBouton, VarianteBouton } from './Bouton.js';
 export { Carte } from './Carte.js';
+export { Alerte } from './Alerte.js';
+export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';
+export { Notification } from './Notification.js';
+export type { ProprietesNotification, TonNotification } from './Notification.js';
 export {
   atteintSeuil,
   contraste,

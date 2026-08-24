@@ -41,6 +41,8 @@ import { Link } from 'react-router';
 
 import type { EntiteDuPortail } from '@onboarding/contracts';
 
+import { Alerte } from '@onboarding/ui';
+
 import { listerLesEntites } from '../api/portail';
 import { CarteDeFrance } from './CarteDeFrance';
 import { cheminDeLEntite, CHEMINS } from '../routes';
@@ -90,17 +92,15 @@ export function PageNationale(): JSX.Element {
         <h1 className="app-titre">Choisir une entite</h1>
 
         {etat.phase === 'chargement' ? (
-          <p className="app-message" role="status" aria-live="polite">
-            Chargement des entites…
-          </p>
+          <Alerte urgence="information">Chargement des entites…</Alerte>
         ) : null}
 
         {etat.phase === 'erreur' ? (
-          <p className="app-message" data-ton="erreur" role="alert">
+          <Alerte ton="erreur" urgence="alerte">
             {etat.statut === 401
               ? 'Votre session a expire. Reconnectez-vous pour choisir une entite.'
               : "La liste des entites n'a pas pu etre chargee. Cela ne dit rien de leur existence : verifiez votre connexion, puis reessayez."}
-          </p>
+          </Alerte>
         ) : null}
 
         {etat.phase === 'erreur' && etat.statut === 401 ? (
@@ -116,10 +116,10 @@ export function PageNationale(): JSX.Element {
         {etat.phase === 'liste' && etat.entites.length === 0 ? (
           //  **UN ETAT LEGITIME, PAS UNE PANNE.** Le dire autrement apprendrait a
           //  l'utilisateur une chose fausse.
-          <p className="app-message" data-ton="neutre">
+          <Alerte>
             Aucune entite active pour le moment. Il n&rsquo;y a rien a choisir, et ce n&rsquo;est
             pas une erreur.
-          </p>
+          </Alerte>
         ) : null}
 
         {etat.phase === 'liste' && etat.entites.length > 0 ? (

@@ -44,6 +44,8 @@ import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-ro
 
 import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contracts';
 
+import { Alerte } from '@onboarding/ui';
+
 import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
@@ -216,10 +218,25 @@ function Squelette({
           //
           //  `role="status"` et non `alert` : ce n'est pas une erreur, c'est un
           //  contexte. Un `alert` interromprait la lecture a chaque changement.
-          <p className="app-consultation" role="status" data-consultation="seule">
+          //  **`Alerte` ET NON `Badge`, ET C'EST L'ECRAN QUI L'A TRANCHE.** Ma
+          //  premiere version de `T11` employait `Badge`, au motif que c'est « un
+          //  etat court et permanent ». Mesure a l'ecran : a 1 280 px il tient sur
+          //  une ligne et passe ; a 375 px il fait TROIS LIGNES dans une pastille,
+          //  ce qui est visuellement faux.
+          //
+          //  **Un composant dont la justesse depend de la largeur est le mauvais
+          //  composant pour une phrase.** Le texte fait ici vingt mots -- il porte
+          //  l'information ET son motif, ce que le §14.2 exige -- donc c'est une
+          //  `Alerte`. `Badge` reste pour ce qui est vraiment court, et il en a un
+          //  emploi : l'etiquette de lot de `PageRubrique`.
+          //
+          //  `ton="avertissement"` : ce n'est ni un succes ni une erreur, c'est une
+          //  restriction. Et `urgence="information"` -- `role="status"` -- parce
+          //  qu'un `alert` interromprait la lecture a chaque changement d'entite.
+          <Alerte ton="avertissement" urgence="information" data-consultation="seule">
             Consultation uniquement, sans modification&nbsp;: cette entite n&rsquo;est pas votre
             entite principale.
-          </p>
+          </Alerte>
         ) : null}
       </header>
       {navigation}
@@ -445,9 +462,7 @@ export function CadreApplicatif(): JSX.Element {
   if (etat.phase === 'chargement') {
     return (
       <Squelette titre="Ouverture de l&rsquo;entite">
-        <p className="app-message" role="status" aria-live="polite">
-          Chargement…
-        </p>
+        <Alerte urgence="information">Chargement…</Alerte>
       </Squelette>
     );
   }
@@ -455,9 +470,7 @@ export function CadreApplicatif(): JSX.Element {
   if (etat.phase === 'introuvable') {
     return (
       <Squelette titre="Entite introuvable">
-        <p className="app-message" data-ton="neutre">
-          Cette entite n&rsquo;existe pas ou n&rsquo;est pas accessible.
-        </p>
+        <Alerte>Cette entite n&rsquo;existe pas ou n&rsquo;est pas accessible.</Alerte>
         <ul className="app-liens">
           <li>
             <Link className="app-lien" to={CHEMINS.statut}>
@@ -483,10 +496,10 @@ export function CadreApplicatif(): JSX.Element {
           **ET AUCUN BOUTON DE REESSAI.** Reessayer ne peut pas aboutir sans
           nouvelle session : le proposer serait l'avertissement faux du §7.21.
         */}
-        <p className="app-message" data-ton="neutre" role="status">
+        <Alerte urgence="information">
           Votre session a expire ou a ete revoquee. Reconnectez-vous pour continuer ; cette adresse
           vous ramenera a la meme entite.
-        </p>
+        </Alerte>
         <ul className="app-liens">
           <li>
             <Link className="app-lien" to={CHEMINS.connexion}>

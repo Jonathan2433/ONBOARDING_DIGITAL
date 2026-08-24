@@ -761,6 +761,60 @@ def main() -> int:
             f"{ecrans_avec_succes} ecran(s) a etat de succes, {ecrans_avec_catch} avec `catch`"
         )
 
+    # --------------------------------------------------------- 8 sexdecies
+    controles += 1
+    #  **CHAQUE COMPOSANT EXPORTE EST TESTE ET EMPLOYE.** C'est le critere de
+    #  sortie de `T11`, mot pour mot : « chaque composant livre est EMPLOYE par un
+    #  ecran de ce lot ». Et c'est ce que `T10` du LOT 1 a etabli : livrer un
+    #  composant sans ecran qui l'emploie, c'est livrer du code non eprouve.
+    #
+    #  **LA LISTE EST DERIVEE DE `index.ts`, PAS ECRITE.** Une liste litterale ici
+    #  vieillirait au premier composant ajoute -- §7.27 -- et c'est precisement le
+    #  cas que le controle doit attraper.
+    #
+    #  **LA MESURE A TROUVE DEUX ORPHELINS AVANT MEME D'ETRE UN CONTROLE** :
+    #  `Badge` et `Carte`, livres en `T10` du LOT 1, n'etaient importes par AUCUN
+    #  ecran. Trois seulement l'etaient -- `Bouton`, par les ecrans
+    #  d'authentification. Le controle existe pour que cela ne se reproduise pas.
+    source_index = (UI / "index.ts").read_text(encoding="utf-8")
+    composants = sorted(
+        set(re.findall(r"^export \{ ([A-Z][A-Za-z]*) \} from '\./", source_index, flags=re.M))
+    )
+    tests_ui = " ".join(
+        chemin.read_text(encoding="utf-8") for chemin in sorted(UI.glob("*.test.tsx"))
+    )
+    #  Les imports du frontend, et non le simple mot : `Carte` apparaissait dans
+    #  `CarteDeFrance.tsx` sans y etre importe, ce qui aurait rendu le controle
+    #  aveugle a l'orphelin qu'il devait trouver.
+    imports_frontend = ""
+    for module in sorted(WEB.rglob("*.ts*")):
+        if module.name.endswith((".test.ts", ".test.tsx")):
+            continue
+        source = module.read_text(encoding="utf-8")
+        for bloc in re.findall(r"import \{([^}]*)\} from '@onboarding/ui'", source, flags=re.S):
+            imports_frontend += bloc + ","
+    non_testes = [c for c in composants if f"<{c}" not in tests_ui]
+    non_employes = [c for c in composants if not re.search(rf"\b{c}\b", imports_frontend)]
+    if arguments.temoin:
+        non_employes.append("Temoin")
+    if not composants:
+        echecs += 1
+        print("    ECHEC    aucun composant exporte trouve : le controle ne prouverait rien")
+    elif non_testes or non_employes:
+        echecs += 1
+        print(f"    ECHEC    sur {len(composants)} composant(s) exporte(s) :")
+        if non_testes:
+            print(f"             NON TESTES  : {non_testes}")
+        if non_employes:
+            print(f"             NON EMPLOYES par un ecran : {non_employes}")
+            print("             -> critere de `T11` : « chaque composant livre est EMPLOYE")
+            print("                par un ecran de ce lot ». Sinon c'est du code non eprouve")
+    else:
+        print(
+            f"    ok       les {len(composants)} composants exportes sont TESTES et EMPLOYES : "
+            f"{', '.join(composants)}"
+        )
+
     # ---------------------------------------------------------------- 8 decies
     controles += 1
     #  **TOUT ELEMENT INTERACTIF DU CADRE A UNE REGLE `:focus-visible` AVEC UN
@@ -787,7 +841,17 @@ def main() -> int:
     for module in sorted(WEB.rglob("*.tsx")):
         if module.name.endswith(".test.tsx"):
             continue
-        source_tsx = module.read_text(encoding="utf-8")
+        #  **LES COMMENTAIRES SONT RETIRES AVANT L'EXAMEN, ET C'EST LA TROISIEME
+        #  FOIS QUE CETTE CLASSE SE REJOUE.** `T7` l'avait corrigee pour deux
+        #  autres controles de ce meme fichier ; celui-ci lisait encore la source
+        #  brute. Mesure du 24/08/2026 : le docstring de `PanneauDErreur.tsx`
+        #  raconte que `T10` ecrivait `<button className="app-action">` -- pour
+        #  expliquer qu'il ne le fait PLUS -- et le controle a exige une regle
+        #  `:focus-visible` pour une classe que plus aucun element ne porte.
+        #
+        #  Un garde-fou qui refuse du code correct apprend a passer outre, §7.25.
+        #  Et §7.34 : une instance corrigee n'est pas la classe corrigee.
+        source_tsx = sans_commentaires_tsx(module.read_text(encoding="utf-8"))
         interactives_par_element |= set(
             re.findall(
                 r"<(?:a|Link|NavLink|button|summary)\s[^>]*className=\"(app-[a-z-]+)\"",

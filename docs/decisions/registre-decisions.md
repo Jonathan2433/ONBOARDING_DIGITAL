@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T10` du LOT 4
+**Dernière mise à jour :** 24 août 2026, sous-étape `T11` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -62,6 +62,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-552`, sous-étape `T8`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-553`, sous-étape `T9`** | 1 | **Validée le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-554`, sous-étape `T10`** | 1 | **Soumise le 24/08/2026** |
+| **Réalisation du LOT 4 `DEC-555`, sous-étape `T11`** | 1 | **Soumise le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -73,7 +74,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **222** | |
+| **Total** | **223** | |
 
 ---
 
@@ -664,7 +665,18 @@ issue `#97`. Soumises à Jonathan le 24 août 2026.
 
 ---
 
-**Prochain identifiant libre : `DEC-555`.**
+## Réalisation du LOT 4 — sous-étape `T11`
+
+Décisions prises en consolidant le design system, story `MVP-L04-US007`, issue `#98`. Soumises à
+Jonathan le 24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-555` | **Deux composants sont ajoutés — `Alerte` et `Notification` — les trois existants reçoivent enfin un consommateur, et « chaque composant livré est employé » devient un CONTRÔLE.** **(a)** `Alerte` couvre **trois** familles du backlog — alertes, loaders, états vides — qui ne diffèrent que par le `role` ARIA. **(b)** `Notification` rend **toujours** son conteneur, même vide. **(c)** `make cadre-check` **dérive** de `index.ts` la liste des composants exportés et exige que chacun soit **testé** et **importé par un écran**. **(d)** Les onze `app-message` du portail deviennent des `Alerte`, et le `<button className="app-action">` que `T10` avait écrit devient un `Bouton`. **(e)** `Badge` porte l'étiquette de lot, `Carte` le bloc de corrélation. **(f)** Le CSS devenu mort est **supprimé** — six blocs. | **(a) LA MESURE A DÉSIGNÉ CE COMPOSANT, PAS L'INTUITION.** `className="app-message"` apparaissait **onze fois** dans le frontend, de loin le motif le plus répété, avec à chaque fois le même trio ton/rôle/texte. **Et il couvre trois familles parce qu'elles ne se distinguent pas par leur structure** : ce sont toutes un message avec un rôle — `alert` interrompt, `status` non, aucun rôle pour un texte informatif. Livrer trois composants dont deux ne différeraient que par une constante serait la « surface sans contrepartie » que `DEC-456` refuse, et un lecteur aurait trois endroits à lire pour une seule règle. **Le texte est obligatoire dans le type**, comme pour `Badge` : WCAG 1.4.1. **Et `aria-live` n'est pas écrit** — `role="alert"` l'implique par la spécification ARIA, et une redondance qui peut diverger est un défaut, c'est la leçon du `<details>` de `T8`. **(b) C'EST SA RAISON D'ÊTRE, ET ELLE EST STRUCTURELLE.** Un `aria-live` ajouté au DOM **en même temps que son texte** n'est pas annoncé de façon fiable : les lecteurs d'écran observent les mutations d'une région **déjà connue**. Une `Alerte` n'a pas ce problème — elle apparaît avec son état. C'est ce qui les distingue vraiment : une alerte décrit **l'état de l'écran**, une notification le **résultat d'une action**. **Aucune disparition automatique** : WCAG 2.2.1 demande de pouvoir prolonger toute limite de temps, et « temporaire » au §17.3 veut dire lié à l'action, pas minuté. **(c) LA MESURE A TROUVÉ DEUX ORPHELINS AVANT QUE LE CONTRÔLE N'EXISTE** : `Badge` et `Carte`, livrés en `T10` du LOT 1, n'étaient importés par **aucun** écran — seul `Bouton` l'était, par les trois écrans d'authentification. C'est exactement ce que le critère de `T11` interdit et ce que `T10` du LOT 1 avait établi : livrer un composant sans écran qui l'emploie, c'est livrer du code non éprouvé. **La liste est dérivée de `index.ts`**, jamais écrite — une liste littérale vieillirait au premier composant ajouté, et c'est précisément le cas à attraper (§7.27). Et la détection porte sur les **imports**, non sur le mot : `Carte` apparaissait dans `CarteDeFrance.tsx` sans y être importé, ce qui aurait rendu le contrôle aveugle à l'orphelin qu'il devait trouver. **(d) LA DUPLICATION DU BOUTON ÉTAIT LA MIENNE, D'UNE SOUS-ÉTAPE.** `T10` a écrit `app-action` alors que `packages/ui` portait un `Bouton` depuis treize mois — mesuré : trois écrans l'importaient, le portail non. §7.27, commis une étape avant de le corriger. **(e) `Badge` A CHANGÉ DE PLACE APRÈS MESURE À L'ÉCRAN.** Ma première version le mettait sur la mention du §5.1, au motif que c'est « un état court et permanent ». À 1 280 px il tenait sur une ligne ; **à 375 px il faisait trois lignes dans une pastille**. Un composant dont la justesse dépend de la largeur est le mauvais composant pour une phrase de vingt mots : la mention est devenue une `Alerte`, et `Badge` porte l'étiquette de lot — « LOT 6 » tient sur une ligne à toute largeur. **`Carte` n'est pas forcée** : le bloc de corrélation est une section titrée, exactement ce que `PageStatut` rendait à la main depuis `T5` du LOT 1. **(f)** Du CSS que personne n'applique est du code non éprouvé, et le laisser laisserait croire qu'il sert. **Sa suppression a fait échouer `cadre-check`, et c'était un faux positif de MON contrôle** : il lisait la source TSX brute et se déclenchait sur le docstring qui **raconte** que `T10` écrivait `app-action`. Troisième occurrence de cette classe dans ce même fichier, corrigée deux fois ailleurs — §7.34, une instance corrigée n'est pas la classe corrigée. | Soumise le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-556`.**
 
 ---
 
@@ -868,6 +880,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-552` — réalisation du LOT 4, `T8` | 1 | 1 |
 | `DEC-553` — réalisation du LOT 4, `T9` | 1 | 1 |
 | `DEC-554` — réalisation du LOT 4, `T10` | 1 | 1 |
+| `DEC-555` — réalisation du LOT 4, `T11` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -879,7 +892,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **222** | **222** |
+| **Total** | **223** | **223** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
