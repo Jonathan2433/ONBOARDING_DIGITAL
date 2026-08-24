@@ -30,7 +30,7 @@
  */
 
 import { estObjet, exigerChaine } from './formes.js';
-import { endpoint } from './sante.js';
+import { CONTRAT_API, endpoint } from './sante.js';
 
 /** Le chemin de la liste des entites, lu du manifeste et non recopie. */
 export const CHEMIN_ENTITES: string = endpoint('entitesDuPortail').chemin;
@@ -179,3 +179,16 @@ export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
     }),
   };
 }
+
+/**
+ * Les rôles qui ouvrent la rubrique « Administration » — LOT 4, `T9`.
+ *
+ * **LUS DU MANIFESTE, JAMAIS RECOPIÉS.** Le frontend masque, l'API refuse, et les
+ * deux doivent parler de la **même** liste : deux copies divergeraient au premier
+ * rôle ajouté (§7.27), et le manifeste est précisément la source unique que
+ * TypeScript **et** Python lisent (`DEC-492`).
+ *
+ * Sa dérivation — le §20 de la matrice, trois colonnes et non deux — est écrite
+ * dans le manifeste lui-même, à côté de la valeur.
+ */
+export const ROLES_ADMINISTRATION: readonly string[] = CONTRAT_API.rolesAdministration;

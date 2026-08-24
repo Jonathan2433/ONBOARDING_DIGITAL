@@ -40,7 +40,7 @@
 import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 
-import { cheminDeRubrique, RUBRIQUES } from '../routes';
+import { cheminDeRubrique, RUBRIQUES, rubriqueEstVisible } from '../routes';
 
 export interface ProprietesNavigation {
   /** Le `code` de l'entite consultee. */
@@ -63,15 +63,12 @@ export function NavigationPrincipale({
   aUnParcoursActif = false,
   peutAdministrer = false,
 }: ProprietesNavigation): JSX.Element {
-  const visibles = RUBRIQUES.filter((rubrique) => {
-    if (rubrique.cle === 'monOnboarding') {
-      return aUnParcoursActif;
-    }
-    if (rubrique.cle === 'administration') {
-      return peutAdministrer;
-    }
-    return true;
-  });
+  //  **LE PREDICAT VIENT DE `routes.ts`, IL N'EST PLUS RECOPIE ICI.** `T4`
+  //  l'avait ecrit deux fois -- ici et dans `BarreMobile.tsx` -- et deux copies
+  //  d'une meme regle divergent au premier ajout (`DEC-466`, §7.27).
+  const visibles = RUBRIQUES.filter((rubrique) =>
+    rubriqueEstVisible(rubrique, { aUnParcoursActif, peutAdministrer }),
+  );
 
   return (
     //  `aria-label` parce qu'il y aura un second repere de navigation a `T5`, la

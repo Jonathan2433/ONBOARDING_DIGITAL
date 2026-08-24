@@ -97,6 +97,24 @@
   ],
   "enTeteJetonCsrf": "X-CSRF-Token",
   "enTeteCleIdempotence": "Idempotency-Key",
+  "_commentaire_administration": [
+    "LES ROLES QUI OUVRENT LA RUBRIQUE « ADMINISTRATION » — LOT 4, T8 et T9.",
+    "DERIVES DU 20 DE LA MATRICE, PAS CHOISIS. Le cahier 8.2 ecrit",
+    "« Administration, uniquement selon les permissions » sans dire lesquelles.",
+    "Le 20 de la matrice s'appelle « Roles, responsabilites et comptes",
+    "administrateurs », et son tableau donne une colonne a TROIS roles : ESM,",
+    "ADM-E et SUPER. Aucune des trois colonnes n'est vide -- les trois",
+    "partagent au moins « consulter l'historique des roles ».",
+    "TROIS, ET NON DEUX : l'intuition dit « administrateur d'entite et",
+    "super-administrateur », et le 20 met l'ESM dans le tableau avec MEME PLUS",
+    "d'actions que ADM-E. Ecrire deux roles aurait masque le menu a celui qui",
+    "en a le plus besoin.",
+    "POURQUOI ICI ET NON DANS LES DEUX LANGAGES : le frontend masque, l'API",
+    "refuse, et les deux doivent parler de la MEME liste. Deux copies",
+    "divergeraient au premier role ajoute (7.27), et le manifeste est",
+    "precisement la source unique lue par TypeScript ET par Python (DEC-492)."
+  ],
+  "rolesAdministration": ["ESM", "ADM-E", "SUPER"],
   "endpoints": [
     {
       "cle": "live",

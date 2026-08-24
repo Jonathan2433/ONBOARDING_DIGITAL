@@ -69,6 +69,7 @@ export {
   CODES_PERMISSIONS,
   GABARIT_CHEMIN_ENTITE,
   GABARIT_CHEMIN_PERMISSIONS,
+  ROLES_ADMINISTRATION,
   validerLesEntites,
   validerLesPermissions,
   validerUneEntite,

@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 24 août 2026, outillage d'aperçu visuel du frontend
+**Dernière mise à jour :** 24 août 2026, sous-étape `T9` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 45 | 9 | 34 | 2 |
+| Total 46 | 9 | 34 | 3 |
 
 ---
 
@@ -63,6 +63,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-043` | **Le lien d'évitement posé en `T3` ne sautait rien.** Sa cible, le `<main>`, n'était pas focusable : mesuré dans un vrai navigateur, activer le lien faisait défiler la page et laissait le focus sur `<body>`, si bien que le Tab suivant repartait du **début** du document, à travers le menu qu'on venait de sauter. **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`** — les deux étaient vrais, et le mécanisme ne fonctionnait pas | Non — un arrêt de tabulation consommé pour rien, découvert avant que le menu n'existe vraiment | **Clos** — `tabIndex={-1}`, `DEC-547` |
 | `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
 | `ECART-045` | **Quatre endroits justifient la sélection de `target: developpement` par « le rechargement à chaud », que `T5` du LOT 1 avait délibérément écarté.** Le conteneur `web` porte **0 montage**, mesuré : le serveur Vite surveille une copie figée dans l'image, donc rien de ce qu'il surveille ne change jamais. La sélection de cible reste juste — pour un **autre** motif, mesuré lui aussi | Non — documentaire, et le livrable est conforme | **Ouvert**, motifs à rectifier hors sous-étape |
+| `ECART-046` | **Le critère de `T9` demande « un appel direct à la route refusé par l'API », et le lot n'a AUCUNE route métier à refuser.** Ses trois routes — `/entities`, `/entities/{code}`, `/entities/{code}/permissions` — sont ouvertes aux huit rôles authentifiés par la matrice §5, et le §9.4 écarte tout écran d'administration. Le garde-fou est donc prouvé par **12 tests sur une application FastAPI jetable**, et non à travers Caddy | Non — le mécanisme est prouvé, c'est sa mise en service qui attend | **Accepté**, arbitrage de Jonathan du 24/08/2026, `DEC-553` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -79,7 +80,22 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-046`.**
+## `ECART-046` — Un garde-fou prouvé, sans route à garder
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, LOT 4 sous-étape `T9`, en instruisant le critère de sortie |
+| Source | Fiche du LOT 4, critère de `T9` ; roadmap LOT 4 « Démonstration attendue » ; §9.4 de la passation |
+| Constat | Le critère écrit « Un menu masqué **et** un appel direct à la route **refusé par l'API** — les deux, sinon le lot n'a rien prouvé ». La roadmap ajoute « une tentative de **modification** dans l'autre entité est refusée par l'API ».<br>**Or le lot est en lecture seule et n'expose aucune route à refuser.** Ses trois routes métier sont ouvertes aux **huit** rôles authentifiés par la matrice §5 — mesuré : aucune ne porte de condition de rôle. Et le §9.4 écarte explicitement « aucun écran d'administration — seule sa **visibilité conditionnelle** est ici ».<br>Le seul candidat était « consulter l'historique des rôles », dernière ligne du §20 de la matrice et seule action que les trois rôles partagent. |
+| Impact | **Le mécanisme est prouvé, sa mise en service attend.** `exiger_un_role_dans_l_entite` est éprouvé par **12 tests** sur une vraie application FastAPI : 401 sans session, 403 pour un employé, 200 pour l'ESM de son entité, 403 pour **le même ESM ailleurs**, 403 pour un rôle clôturé, 200 pour le super-administrateur partout, 404 sur une entité non active, et un 500 bruyant si la route est montée sans son paramètre de chemin.<br>**Ce qui n'est pas prouvé : la traversée de Caddy.** Les quinze contrôles de `make permissions-check` la couvrent pour la *résolution* des permissions ; le *refus par rôle*, non. |
+| Cause | Le découpage a placé l'affichage conditionnel en `T9` et les écrans qui le consommeront aux LOTS 5 à 9. **Ce n'est pas une erreur de découpage** : la roadmap met bien « contrôles d'autorisation systématiques dans l'API » dans le LOT 4, et un mécanisme peut précéder ses consommateurs. C'est **exactement** ce que `T9` du LOT 3 a fait avec `exiger_un_scope`, livré et nommé sans consommateur. |
+| Bloquant | Non |
+| Recommandation | **Ne pas créer de route pour satisfaire un critère.** Une route inventée serait un écran d'administration en germe, que le découpage renvoie au LOT 9, et la règle §6.5 l'interdit.<br>**Au LOT 5**, la première route métier écrivante devra porter ce garde-fou, et le contrôle de stack de ce lot-là devra prouver le refus **à travers Caddy** — c'est la seule chose qui manque ici.<br>**Et une chose à ne pas perdre :** les six vérifications du §2.6 que le garde-fou fait sont nommées dans son en-tête, ainsi que les **deux** qui ne s'appliquent pas — « le périmètre exact de la ressource » et « les contraintes métier supplémentaires ». Le LOT 5, qui aura des ressources, devra les ajouter. |
+| Résolution | **Accepté.** Arbitrage de Jonathan du 24/08/2026, `DEC-553`. À revoir au LOT 5. |
+
+---
+
+**Prochain identifiant libre : `ECART-047`.**
 
 ---
 

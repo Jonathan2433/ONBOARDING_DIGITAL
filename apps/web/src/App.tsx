@@ -111,7 +111,13 @@ export function App(): JSX.Element {
                 <Route
                   key={rubrique.cle}
                   path={rubrique.suffixe}
-                  element={<PageRubrique libelle={rubrique.libelle} lot={rubrique.lot} />}
+                  element={
+                    <PageRubrique
+                      cle={rubrique.cle}
+                      libelle={rubrique.libelle}
+                      lot={rubrique.lot}
+                    />
+                  }
                 />
               ),
             )}

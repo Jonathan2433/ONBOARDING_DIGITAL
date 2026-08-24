@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T8` du LOT 4
+**Dernière mise à jour :** 24 août 2026, sous-étape `T9` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -60,6 +60,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-550`, sous-étape `T7`** | 1 | **Validée le 23/08/2026** |
 | **Aperçu visuel du frontend `DEC-551`**, hors sous-étape | 1 | **Validée le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-552`, sous-étape `T8`** | 1 | **Soumise le 24/08/2026** |
+| **Réalisation du LOT 4 `DEC-553`, sous-étape `T9`** | 1 | **Validée le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -71,7 +72,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **220** | |
+| **Total** | **221** | |
 
 ---
 
@@ -640,7 +641,18 @@ Décisions prises en rendant le changement d'entité exigible de bout en bout, s
 
 ---
 
-**Prochain identifiant libre : `DEC-553`.**
+## Réalisation du LOT 4 — sous-étape `T9`
+
+Décisions prises en livrant l'affichage conditionnel et le garde-fou d'autorisation, story
+`MVP-L04-US005`, issue `#96`. Le point de périmètre a été arbitré par Jonathan le 24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-553` | **Le masquage est ergonomique, le refus est dans l'API, et les deux lisent la MÊME liste — qui vit dans le manifeste du contrat. Aucune route métier n'est créée pour porter le garde-fou.** **(a)** Les rôles qui ouvrent « Administration » sont **`ESM`, `ADM-E` et `SUPER`**, déclarés dans `contrat-api.json` et lus par TypeScript **et** par Python. **(b)** `exiger_un_role_dans_l_entite` refuse **403**, avec un gabarit unique, après avoir vérifié **six** des huit points du §2.6 — les deux autres ne s'appliquent pas à ce lot, et c'est dit. **(c)** Le prédicat de visibilité vit en **un seul exemplaire**, dans `routes.ts`. **(d)** « Mon onboarding » est masqué pour tout le monde, parce que sa condition est **trivialement fausse** : aucune table de parcours n'existe. **(e)** La page d'une rubrique fermée **explique** et ne dit pas « accès refusé ». **(f)** **Aucune route métier n'est montée** pour le garde-fou : il est prouvé par 12 tests sur une application FastAPI jetable, et son premier consommateur sera le LOT 5. | **(a) LE §8.2 NE DIT PAS QUELLES PERMISSIONS, ET LE §20 DE LA MATRICE LE DIT.** Sa section s'appelle « Rôles, responsabilités et comptes administrateurs », et son tableau donne une colonne à **trois** rôles. **`ESM` est celui qu'on perdrait** : l'intuition dit « administrateur d'entité et super-administrateur », alors que le §20 donne à l'ESM **quatre actions d'attribution que `ADM-E` n'a pas**. Écrire deux rôles aurait masqué le menu à celui qui en a le plus besoin. **Et la liste vit dans le manifeste parce que ma première version l'écrivait DEUX FOIS** — en TypeScript et dans le test Python — soit deux dérivations du même §20 sans rien pour les confronter (§7.27). `DEC-492` avait posé le manifeste précisément pour cela. **(b) LE 403 EST CHOISI CONTRE LE 404.** Un 404 dirait « cette entité n'existe pas », ce qui est faux : l'appelant la consulte légitimement, il y a les droits `EMP`. Et cela ne fuite rien — la matrice §5 donne la lecture de l'entité aux huit rôles authentifiés. Le 404 reste, lui, réservé aux entités non actives, comme partout depuis `T2`. **Le motif du refus ne sort pas** : distinguer « vous n'êtes pas ESM » de « vous n'êtes pas chez vous » serait un oracle, on apprendrait où sont les administrateurs en changeant d'entité. **(c) `T4` AVAIT ÉCRIT LE PRÉDICAT DEUX FOIS**, dans le menu et dans la barre mobile. Deux copies divergent, et l'utilisateur verrait « Administration » dans l'un et pas dans l'autre. `make cadre-check` interdit désormais à tout composant de comparer une clé de rubrique. **(d) HORS DE PORTÉE N'EST PAS FAUX.** Le §8.2 conditionne « Mon onboarding » à un parcours actif ; aucune table de parcours n'existe, donc la condition est fausse pour tout le monde. Ce n'est pas une invention, c'est l'évaluation correcte d'une condition sur un domaine vide — et un test l'épingle, pour que le lot qui créera les parcours doive le changer délibérément (§7.32). **(e) DIRE « ACCÈS REFUSÉ » SERAIT FAUX** : rien n'a été refusé, la page s'affiche. La roadmap écrit « route guards **uniquement ergonomiques** », et un garde-fou qui se prétendrait barrière apprendrait à lui faire confiance. La page dit donc où est la vraie barrière. **(f) ARBITRAGE DE JONATHAN, ET LE RÉSIDUEL EST NOMMÉ.** Le §9.4 écarte tout écran d'administration de ce lot ; le seul candidat était « consulter l'historique des rôles » (§20), qui aurait donné un contenu réel mais ouvert le LOT 9. Le précédent tranche : `T9` du LOT 3 a livré `exiger_un_scope` de la même façon, prouvé sur une application jetable et nommé sans consommateur. **Ce que cela ne prouve pas est consigné en `ECART-046`** : la traversée de Caddy. | Validée par Jonathan le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-554`.**
 
 ---
 
@@ -842,6 +854,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-550` — réalisation du LOT 4, `T7` | 1 | 1 |
 | `DEC-551` — aperçu visuel du frontend | 1 | 1 |
 | `DEC-552` — réalisation du LOT 4, `T8` | 1 | 1 |
+| `DEC-553` — réalisation du LOT 4, `T9` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -853,7 +866,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **220** | **220** |
+| **Total** | **221** | **221** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

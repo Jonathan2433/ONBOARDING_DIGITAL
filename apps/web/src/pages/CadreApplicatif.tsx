@@ -45,7 +45,7 @@ import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-ro
 import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contracts';
 
 import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
-import { CHEMINS, cheminDeRubrique, RUBRIQUES } from '../routes';
+import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
 import { NavigationPrincipale } from './NavigationPrincipale';
 import { SelecteurDEntite } from './SelecteurDEntite';
@@ -411,6 +411,13 @@ export function CadreApplicatif(): JSX.Element {
     );
   }
 
+  //  **LE FRONTEND NE REAPPLIQUE PAS LE §5.1.** L'API a deja reduit les roles a
+  //  `EMP` hors de l'entite principale, donc ceux qu'on recoit sont deja ceux qui
+  //  s'appliquent. Refaire le calcul ici donnerait deux implementations d'une
+  //  meme regle -- et la regle 5 du projet dit que l'API est l'autorite finale,
+  //  pas la copie.
+  const droits = droitsDeNavigation(courante?.permissions?.roles ?? null);
+
   //  **LE `<h1>` NE REPETE PAS LE NOM DE L'ENTITE.** Mesure a l'ecran en `T3` :
   //  avec le nom en titre, il apparaissait DEUX fois -- une fois dans l'en-tete,
   //  une fois en `<h1>` -- et un lecteur d'ecran l'entendait deux fois.
@@ -423,8 +430,13 @@ export function CadreApplicatif(): JSX.Element {
       consultationSeule={
         courante?.permissions == null ? undefined : !courante.permissions.estEntitePrincipale
       }
-      navigation={<NavigationPrincipale code={etat.entite.code} />}
-      barre={<BarreMobile code={etat.entite.code} />}
+      //  **LES DROITS SONT DERIVES DES ROLES QUE L'API A RENDUS, ET UNE SEULE
+      //  FOIS.** Les deux reperes de navigation -- le menu et la barre -- doivent
+      //  montrer la MEME chose : les calculer separement donnerait deux verites
+      //  possibles, et un utilisateur verrait « Administration » dans l'un et pas
+      //  dans l'autre. Meme motif que le predicat unique de `routes.ts`.
+      navigation={<NavigationPrincipale code={etat.entite.code} {...droits} />}
+      barre={<BarreMobile code={etat.entite.code} {...droits} />}
     >
       <Outlet
         context={

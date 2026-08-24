@@ -47,6 +47,7 @@ CE QU'IL NE MESURE PAS, ET IL LE DIT
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import sys
@@ -63,6 +64,7 @@ BARRE = WEB / "pages" / "BarreMobile.tsx"
 NATIONALE = WEB / "pages" / "PageNationale.tsx"
 CARTE = WEB / "pages" / "CarteDeFrance.tsx"
 SELECTEUR = WEB / "pages" / "SelecteurDEntite.tsx"
+MANIFESTE = RACINE / "packages" / "contracts" / "src" / "contrat-api.json"
 
 #  Les formes d'ECRITURE interdites au selecteur d'entite. Nommees UNE FOIS : la
 #  premiere version les ecrivait dans la comprehension ET dans le message, donc
@@ -626,6 +628,76 @@ def main() -> int:
         else:
             print("    ok       le changement d'entite est une NAVIGATION : des `<Link>`, et")
             print(f"             AUCUN des {len(MOTIFS_D_ECRITURE)} motifs d'ecriture cherches")
+
+    # ------------------------------------------------------------ 8 terdecies
+    controles += 1
+    #  **UN SEUL ENDROIT DECIDE SI UNE RUBRIQUE EST VISIBLE.** `T4` avait ecrit le
+    #  predicat DEUX fois -- dans `NavigationPrincipale.tsx` et dans
+    #  `BarreMobile.tsx` -- sous la forme de deux `if` sur la cle de la rubrique.
+    #  `T9` l'a extrait dans `routes.ts`, et ce controle empeche qu'il se duplique
+    #  a nouveau : deux copies divergent, et l'utilisateur verrait « Administration »
+    #  dans le menu et pas dans la barre (§7.27, `DEC-466`).
+    #
+    #  **LES CLES SONT DERIVEES DE `RUBRIQUES`, PAS ECRITES.** Une liste litterale
+    #  ici serait exactement le defaut que le controle interdit.
+    cles_conditionnelles = [r["cle"] for r in lire_rubriques() if r.get("condition")]
+    fautifs_predicat = []
+    if arguments.temoin:
+        fautifs_predicat.append("Temoin.tsx compare la cle `administration`")
+    for module in sorted(WEB.rglob("*.tsx")):
+        if module.name.endswith(".test.tsx") or module.name == "PageRubrique.tsx":
+            continue
+        source = sans_commentaires_tsx(module.read_text(encoding="utf-8"))
+        for cle in cles_conditionnelles:
+            if f"=== '{cle}'" in source or f'=== "{cle}"' in source:
+                fautifs_predicat.append(f"{module.name} compare la cle `{cle}`")
+    if not cles_conditionnelles:
+        echecs += 1
+        print("    ECHEC    aucune rubrique conditionnelle : le controle ne prouverait rien")
+    elif fautifs_predicat:
+        echecs += 1
+        print(f"    ECHEC    le predicat de visibilite est DUPLIQUE : {fautifs_predicat}")
+        print("             -> `rubriqueEstVisible` de `routes.ts` est le seul endroit ou")
+        print("                cette decision se prend ; deux copies divergeraient")
+    else:
+        print(
+            f"    ok       le predicat de visibilite est UNIQUE : aucun composant ne compare "
+            f"les {len(cles_conditionnelles)} cles conditionnelles"
+        )
+
+    # -------------------------------------------------------- 8 quaterdecies
+    controles += 1
+    #  **LES ROLES D'ADMINISTRATION NE SONT PAS ECRITS DANS LE FRONTEND.** Ils
+    #  viennent du manifeste du contrat, lu par TypeScript ET par Python
+    #  (`DEC-492`) : le frontend masque, l'API refuse, et les deux doivent parler
+    #  de la MEME liste. Une liste litterale cote client divergerait au premier
+    #  role ajoute, et le masquage cesserait de correspondre au refus.
+    #
+    #  Les codes cherches sont DERIVES du manifeste, jamais recopies ici.
+    manifeste = json.loads(MANIFESTE.read_text(encoding="utf-8"))
+    codes_administration = manifeste.get("rolesAdministration", [])
+    litteraux = []
+    if arguments.temoin:
+        litteraux.append("Temoin.tsx ecrit `ADM-E` en litteral")
+    for module in sorted(WEB.rglob("*.ts*")):
+        if module.name.endswith((".test.ts", ".test.tsx")):
+            continue
+        source = sans_commentaires_tsx(module.read_text(encoding="utf-8"))
+        for code in codes_administration:
+            if f"'{code}'" in source or f'"{code}"' in source:
+                litteraux.append(f"{module.name} ecrit `{code}` en litteral")
+    if not codes_administration:
+        echecs += 1
+        print("    ECHEC    le manifeste ne declare aucun `rolesAdministration`")
+    elif litteraux:
+        echecs += 1
+        print(f"    ECHEC    des roles sont ECRITS dans le frontend : {litteraux}")
+        print("             -> ils doivent venir du manifeste, source unique de TS ET Python")
+    else:
+        print(
+            f"    ok       les {len(codes_administration)} roles d'administration viennent du "
+            f"MANIFESTE, aucun litteral dans le frontend"
+        )
 
     # ---------------------------------------------------------------- 8 decies
     controles += 1
