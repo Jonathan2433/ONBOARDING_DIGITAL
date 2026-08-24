@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T12` du LOT 4
+**Dernière mise à jour :** 24 août 2026, **franchissement de la porte `G4`**
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -64,6 +64,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-554`, sous-étape `T10`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-555`, sous-étape `T11`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-556`, sous-étape `T12`** | 1 | **Soumise le 24/08/2026** |
+| **Franchissement de la porte `G4` `DEC-557`** | 1 | **Validée le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -75,7 +76,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **224** | |
+| **Total** | **225** | |
 
 ---
 
@@ -687,7 +688,18 @@ Décisions prises en préparant la porte `G4`. Soumises à Jonathan le 24 août 
 
 ---
 
-**Prochain identifiant libre : `DEC-557`.**
+## Franchissement de la porte `G4`
+
+Décision de Jonathan, prise le 24 août 2026 après lecture de
+[`checklist-validation-G4.md`](../operations/checklist-validation-G4.md).
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-557` | **La porte `G4` est franchie. Le LOT 4 est clos, `develop` est fusionnée dans `main` par un MERGE COMMIT, et le tag `v0.4.0` est posé sur `main`. Trois points restent ouverts et sont assumés.** **(a)** Les **six** critères de sortie de la roadmap sont satisfaits : cinq par des contrôles de l'intégration continue, le sixième par la validation de Jonathan. **(b)** La fusion vers `main` est un **merge commit**, jamais un squash. **(c)** `DEP-006` reste ouverte, `ECART-045` ouvert et `ECART-046` accepté — les trois sont nommés à la checklist. **(d)** Le LOT 5 n'est **pas** ouvert par cette décision : son ouverture et la validation de son découpage sont un acte distinct. | **(a) « PROUVÉ » VEUT DIRE « ÉCHOUE EN CI SI ON LE CASSE ».** Les cinq premiers critères ne sont pas cochés sur une affirmation : chacun est tenu par une ligne nommée de `make cadre-check`, elle-même éprouvée par `make cadre-temoin` sur **15 motifs**. Et les contrôles sont cités par **ce qu'ils disent**, jamais par leur rang — un numéro d'ordre est un index recopié, qui vieillit au premier contrôle inséré (§7.27). **Les quatorze grandeurs de la checklist ont été confrontées une par une à la mesure**, et les neuf phrases citées à la sortie réelle : 9 sur 9. **(b) LE MERGE COMMIT EST CE QUI FAIT DE `develop` UN ANCÊTRE DE `main`**, et son absence a coûté **neuf fichiers en conflit insolubles** à `G2` — `ECART-026`, `DEC-495`. « Historique linéaire requis » est donc **retiré sur `main`** et exigé sur `develop` seulement. L'**arbre** est vérifié après fusion, jamais le verdict de `git` : « aucun conflit » et « le résultat est celui que je veux » sont deux grandeurs différentes (§7.24). **(c) TROIS POINTS OUVERTS VALENT MIEUX QU'UN LOT QUI PARAÎT COMPLET.** `DEP-006` — charte, logo et typographie officiels — avait ce lot pour échéance et n'a pas livré : les jetons sont **relevés du prototype et recalculés** contre WCAG 2.2 AA, deux sources concordantes, mais ce ne sont pas les officiels. `ECART-045` est documentaire, et le corriger en ajoutant un montage serait corriger le livrable pour sauver la prose. `ECART-046` est accepté sur arbitrage : le garde-fou d'autorisation est prouvé par 12 tests, **pas à travers Caddy**, faute de route métier à refuser. **(d)** Règle 1 du projet : seul le lot que Jonathan ouvre peut être réalisé. Confondre « la porte est franchie » et « le lot suivant est ouvert » retirerait à Jonathan un arbitrage qui lui appartient — et le découpage doit être validé **avant** qu'une ligne ne soit écrite. | **Validée par Jonathan le 24/08/2026** |
+
+---
+
+**Prochain identifiant libre : `DEC-558`.**
 
 ---
 
@@ -893,6 +905,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-554` — réalisation du LOT 4, `T10` | 1 | 1 |
 | `DEC-555` — réalisation du LOT 4, `T11` | 1 | 1 |
 | `DEC-556` — réalisation du LOT 4, `T12` | 1 | 1 |
+| `DEC-557` — franchissement de la porte `G4` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -904,7 +917,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **224** | **224** |
+| **Total** | **225** | **225** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
