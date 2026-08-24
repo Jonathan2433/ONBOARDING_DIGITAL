@@ -105,6 +105,122 @@
   color: var(--encre-douce);
 }
 
+/* ==========================================================================
+   Le selecteur d'entite et la mention du §5.1 — LOT 4, T8
+   ========================================================================== */
+
+/* `<details>` porte son propre etat ouvert/ferme : aucun `aria-expanded` a
+   maintenir, et le navigateur gere Entree et Espace. Meme motif qu'en T5. */
+.app-selecteur {
+  min-width: 0;
+}
+
+/* `list-style: none` retire le triangle par defaut ; le chevron est ecrit en
+   `::after` pour qu'il tourne avec l'etat, et il est DECORATIF -- l'etat reel
+   est porte par `<details>` lui-meme, donc annonce sans lui. */
+.app-selecteur-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  background: var(--fond);
+  color: var(--encre);
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.app-selecteur-bouton::-webkit-details-marker {
+  display: none;
+}
+
+.app-selecteur-bouton::after {
+  content: '\25be';
+  color: var(--encre-douce);
+}
+
+.app-selecteur[open] > .app-selecteur-bouton::after {
+  content: '\25b4';
+}
+
+.app-selecteur-bouton:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.app-selecteur-liste > ul {
+  margin: var(--espace-xs) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* La liste peut depasser la hauteur utile a vingt-cinq entites -- borne du
+     controle §30.25 de la recette. Elle defile DANS son conteneur, jamais la
+     page : c'est la regle des largeurs de T3. */
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.app-selecteur-lien {
+  display: flex;
+  flex-direction: column;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-s);
+  color: var(--encre);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.app-selecteur-lien:hover {
+  background: var(--fond-doux);
+}
+
+.app-selecteur-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+}
+
+/* L'ENTITE COURANTE : selecteur d'ATTRIBUT, pas de classe. Une classe serait une
+   seconde source de verite a maintenir a cote de `aria-current`, et les deux
+   divergeraient. Meme regle qu'en T4 pour le menu principal. */
+.app-selecteur-lien[aria-current='true'] {
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  font-weight: 700;
+}
+
+.app-selecteur-lien[aria-current='true'] .app-selecteur-ville {
+  color: var(--marque-bleu-texte);
+}
+
+.app-selecteur-nom {
+  font-size: var(--taille-xs);
+  font-weight: 600;
+}
+
+.app-selecteur-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* La mention du §5.1. Le jaune de marque porte un texte APPARIE et mesure --
+   `--marque-jaune-texte` -- parce que le jaune rend 1,37 de contraste avec du
+   texte clair (T10 du LOT 1, DEC-491). L'information n'est donc pas portee par
+   la seule couleur : le texte la dit en entier. */
+.app-consultation {
+  margin: 0;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-s);
+  background: var(--marque-jaune);
+  color: var(--marque-jaune-texte);
+  font-size: var(--taille-xs);
+  overflow-wrap: anywhere;
+}
+
 .app-principal {
   flex: 1 1 auto;
   min-width: 0;

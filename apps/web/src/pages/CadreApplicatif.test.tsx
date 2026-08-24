@@ -17,7 +17,7 @@
  *      l'entite precedente ». Le defaut n'apparait que sous latence ;
  *   5. **le code est encode dans le chemin appele.**
  */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -50,7 +50,7 @@ function json(charge: unknown, statut: number): Response {
  * l'application : un montage de test qui les enumererait a la main divergerait au
  * premier ajout, et le test cesserait d'eprouver ce que l'application fait.
  */
-function monter(code: string, strict = false, chemin?: string): void {
+function monter(code: string, strict = false, chemin?: string): ReturnType<typeof render> {
   const arbre = (
     <MemoryRouter initialEntries={[chemin ?? `/entites/${code}`]}>
       <Routes>
@@ -70,7 +70,9 @@ function monter(code: string, strict = false, chemin?: string): void {
       </Routes>
     </MemoryRouter>
   );
-  render(strict ? <StrictMode>{arbre}</StrictMode> : arbre);
+  //  Le resultat est RENDU, pour que `T8` puisse demonter et remonter : son
+  //  temoin de latence a besoin de quitter une entite pendant qu'un appel dort.
+  return render(strict ? <StrictMode>{arbre}</StrictMode> : arbre);
 }
 
 describe("l'entite consultee vient de l'adresse", () => {
@@ -308,5 +310,248 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
     expect(evitement.compareDocumentPosition(premierLienDuMenu!)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+  });
+});
+
+// ============================================================================
+//  LOT 4, T8 — les permissions rechargees, et la mention du §5.1
+// ============================================================================
+
+const LILLE = {
+  id: '1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d',
+  code: 'lille',
+  nom: 'eXalt Lille',
+  ville: 'Lille',
+};
+
+/**
+ * Un `fetch` qui repond SELON L'URL.
+ *
+ * **LES TESTS DE `T2` ET `T3` RENDAIENT LA MEME CHARGE A TOUT APPEL, ET C'EST
+ * POURQUOI ILS ONT CONTINUE DE PASSER APRES `T8`.** Le cadre lance desormais
+ * TROIS appels ; les deux nouveaux recevaient une entite au lieu de leur propre
+ * forme, leurs validateurs levaient, et le code degradait proprement -- selecteur
+ * absent, mention absente. Les 89 tests restaient verts **sans rien eprouver du
+ * nouveau comportement**.
+ *
+ * C'est le §7.0, troisieme et quatrieme propositions a la fois : un stub qui
+ * repond n'importe quoi a n'importe qui ne dit pas combien d'appels il a servis,
+ * et l'echec y produit la meme observation que le succes.
+ */
+function fetchParUrl(reponses: Record<string, () => Promise<Response>>): ReturnType<typeof vi.fn> {
+  const vus: string[] = [];
+  const stub = vi.fn((cible: unknown) => {
+    const url = String(cible);
+    vus.push(url);
+    for (const [motif, produire] of Object.entries(reponses)) {
+      if (url.endsWith(motif)) {
+        return produire();
+      }
+    }
+    return Promise.resolve(json({ erreur: { code: 'inattendu', message: url } }, 404));
+  });
+  Object.defineProperty(stub, 'urlsVues', { value: vus });
+  return stub;
+}
+
+function permissions(code: string, principale: boolean, roles: readonly string[]): unknown {
+  return {
+    entite: '0f8fad5b-d9cb-469f-a165-70867728950e',
+    code,
+    est_entite_principale: principale,
+    roles,
+  };
+}
+
+describe('les permissions de l entite consultee — T8', () => {
+  it('affiche la mention du §5.1 HORS de l entite principale', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissions('bordeaux', false, ['EMP']), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-consultation="seule"]')).not.toBeNull(),
+    );
+    //  La formulation vient du §4 de la matrice, « Consultation uniquement, sans
+    //  modification ». Ce n'est pas un libelle invente.
+    expect(screen.getByRole('status').textContent).toContain('Consultation uniquement');
+  });
+
+  it('ne l affiche PAS dans l entite principale — le temoin dans l autre sens', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () =>
+          Promise.resolve(json(permissions('bordeaux', true, ['EMP', 'ESM']), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    //  On attend que le selecteur soit la : sans cette attente, l'absence de la
+    //  mention serait celle d'un rendu qui n'a pas encore recu les droits, et le
+    //  test passerait pour la mauvaise raison.
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+  });
+
+  it('ne l affiche PAS quand les droits sont INCONNUS — `undefined` n est pas `false`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json({ erreur: { code: 'panne' } }, 500)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    //  Les droits ont echoue. Afficher « consultation uniquement » ici dirait a
+    //  l'utilisateur une chose qu'on ne sait pas, et la masquer par defaut
+    //  laisserait croire l'inverse : le cadre n'affiche donc RIEN, et la page
+    //  reste utilisable. C'est ce que le `null` du contexte impose a `T9`.
+    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+  });
+
+  it('appelle les TROIS routes avec le code de l adresse, et lui seul', async () => {
+    const stub = fetchParUrl({
+      '/permissions': () => Promise.resolve(json(permissions('lille', false, ['EMP']), 200)),
+      '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+      lille: () => Promise.resolve(json(LILLE, 200)),
+    });
+    vi.stubGlobal('fetch', stub);
+    monter('lille');
+
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Lille'));
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+
+    const vues = (stub as unknown as { urlsVues: string[] }).urlsVues;
+    expect(vues).toContain('/api/v1/entities/lille');
+    expect(vues).toContain('/api/v1/entities/lille/permissions');
+    expect(vues).toContain('/api/v1/entities');
+    //  AUCUN appel ne porte un autre code : c'est « aucun reste de la
+    //  precedente » au niveau des requetes emises.
+    expect(vues.some((u) => u.includes('bordeaux'))).toBe(false);
+  });
+
+  it('une reponse TARDIVE de permissions ne s applique pas a la nouvelle entite', async () => {
+    //  **LE TEMOIN DECISIF, ET IL A FALLU DEUX VERSIONS POUR QU'IL DISCRIMINE.**
+    //  §23.3, quatrieme regle : « annule les requetes et caches associes a
+    //  l'entite precedente ».
+    //
+    //  Premiere version : je montais Bordeaux, je DEMONTAIS, je montais Lille.
+    //  Mesure du 24/08/2026 -- la garde sur le code retiree du cadre, les 99
+    //  tests passaient quand meme. Le demontage cree DEUX instances aux etats
+    //  separes : la reponse de Bordeaux ne pouvait de toute facon pas atteindre
+    //  l'arbre de Lille, et React ignore un `setState` apres demontage. Le test
+    //  ne modelisait pas le defaut qu'il pretendait attraper -- §7.25, « un
+    //  temoin qui n'exerce pas un controle ne prouve rien de ce controle ».
+    //
+    //  Le vrai parcours est un CLIC dans le selecteur : une seule instance de
+    //  cadre, dont le parametre `code` change. C'est ce que fait cette version,
+    //  et elle eprouve le selecteur du meme geste.
+    let libererBordeaux: (() => void) | null = null;
+    const stub = vi.fn((cible: unknown) => {
+      const url = String(cible);
+      if (url === '/api/v1/entities') {
+        return Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200));
+      }
+      if (url === '/api/v1/entities/bordeaux/permissions') {
+        return new Promise<Response>((resoudre) => {
+          libererBordeaux = () => resoudre(json(permissions('bordeaux', false, ['EMP']), 200));
+        });
+      }
+      if (url === '/api/v1/entities/lille/permissions') {
+        return Promise.resolve(json(permissions('lille', true, ['EMP', 'ESM']), 200));
+      }
+      return Promise.resolve(json(url.endsWith('lille') ? LILLE : BORDEAUX, 200));
+    });
+    vi.stubGlobal('fetch', stub);
+
+    monter('bordeaux');
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    //  Le selecteur est la, et Bordeaux attend toujours ses droits.
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+
+    //  On navigue vers Lille EN CLIQUANT, comme un utilisateur.
+    const versLille = screen
+      .getAllByRole('link')
+      .find((lien) => lien.getAttribute('href') === '/entites/lille');
+    expect(versLille).toBeTruthy();
+    await act(async () => {
+      versLille?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    });
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Lille'));
+
+    //  Et SEULEMENT MAINTENANT la reponse de Bordeaux arrive. Lille est dans son
+    //  entite principale : si les droits de Bordeaux s'appliquaient, la mention
+    //  « consultation uniquement » apparaitrait.
+    await act(async () => {
+      libererBordeaux?.();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('banner').textContent).toContain('eXalt Lille');
+    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+  });
+});
+
+describe("l'ordre d'arrivee des trois reponses ne change rien — T8", () => {
+  it('applique les droits arrives AVANT l entite — LE DEFAUT VU AU NAVIGATEUR', async () => {
+    //  **CE TEST N'EXISTE PAS PAR PRUDENCE : IL EXISTE PARCE QUE LE DEFAUT A ETE
+    //  VU A L'ECRAN.** Le 24/08/2026, `GET /entities/{code}/permissions` rendait
+    //  `est_entite_principale: false` et la mention du §5.1 n'apparaissait pas.
+    //  Le journal reseau montrait deux appels de permissions -- un abandonne, un
+    //  a 200 -- dont le second revenait AVANT l'entite. La premiere version du
+    //  cadre n'ecrivait les droits que dans une variante `trouvee` deja
+    //  existante : ils etaient perdus definitivement.
+    //
+    //  **ET AUCUN DES CINQ TESTS DE `T8` NE L'ATTRAPAIT**, parce qu'un `fetch`
+    //  bouchonne resout dans l'ordre de creation des promesses, et le cadre
+    //  demande l'entite en premier. Il fallait donc RETENIR l'entite pour
+    //  reproduire l'ordre reel -- ce que fait ce test, et ce qu'aucun autre ne
+    //  fait.
+    let libererEntite: (() => void) | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((cible: unknown) => {
+        const url = String(cible);
+        if (url === '/api/v1/entities/bordeaux/permissions') {
+          return Promise.resolve(json(permissions('bordeaux', false, ['EMP']), 200));
+        }
+        if (url === '/api/v1/entities') {
+          return Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200));
+        }
+        return new Promise<Response>((resoudre) => {
+          libererEntite = () => resoudre(json(BORDEAUX, 200));
+        });
+      }),
+    );
+    monter('bordeaux');
+
+    //  Les droits et la liste sont arrives ; l'entite, non. Rien ne s'affiche
+    //  encore, et c'est correct : le §23.3 veut l'entite dans l'en-tete.
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Chargement'));
+
+    await act(async () => {
+      libererEntite?.();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    //  **LES DROITS ARRIVES AVANT DOIVENT AVOIR SURVECU.**
+    expect(document.querySelector('[data-consultation="seule"]')).not.toBeNull();
+    //  Et la liste aussi : le selecteur est la.
+    expect(document.querySelector('details')).not.toBeNull();
   });
 });

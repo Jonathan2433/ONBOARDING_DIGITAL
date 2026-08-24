@@ -22,9 +22,12 @@
 import {
   CHEMIN_ENTITES,
   cheminEntite,
+  cheminPermissions,
   type EntiteDuPortail,
+  type PermissionsDeLEntite,
   type ReponseDesEntites,
   validerLesEntites,
+  validerLesPermissions,
   validerUneEntite,
 } from '@onboarding/contracts';
 
@@ -75,4 +78,24 @@ export function lireLEntite(
   signal?: AbortSignal,
 ): Promise<ReponseDuPortail<EntiteDuPortail>> {
   return appeler(cheminEntite(code), validerUneEntite, signal);
+}
+
+/**
+ * Les droits de l'appelant dans l'entite consultee — LOT 4, `T8`.
+ *
+ * **C'EST LA TROISIEME REGLE DU §23.3 QUI EXISTE PAR CET APPEL** : « recharge les
+ * permissions ». Sans lui, le frontend n'aurait rien a recharger, et la regle
+ * serait une intention sans porteur.
+ *
+ * **LE SIGNAL EST LE MEME QUE CELUI DE L'ENTITE, ET CE N'EST PAS UN DETAIL.** Les
+ * deux appels d'un meme changement d'entite doivent etre abandonnes ENSEMBLE :
+ * un abandon partiel laisserait arriver les permissions de l'entite quittee sur
+ * l'entite nouvelle, ce qui est precisement ce que la quatrieme regle interdit --
+ * et l'ecran afficherait des droits qui ne sont pas ceux du contexte.
+ */
+export function lireLesPermissions(
+  code: string,
+  signal?: AbortSignal,
+): Promise<ReponseDuPortail<PermissionsDeLEntite>> {
+  return appeler(cheminPermissions(code), validerLesPermissions, signal);
 }

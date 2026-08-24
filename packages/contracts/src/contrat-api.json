@@ -320,6 +320,43 @@
         "l'appelant appartienne a cette entite ou non -- c'est cela, « aucune permission",
         "locale n'est transferee », au niveau que T2 peut atteindre."
       ]
+    },
+    {
+      "cle": "permissionsDeLEntite",
+      "chemin": "/api/v1/entities/{code}/permissions",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "PermissionsDeLEntite",
+      "role": [
+        "Les droits de l'appelant DANS l'entite consultee — LOT 4, T8, story MVP-L04-US002.",
+        "LA REGLE N'EST PAS INVENTEE : LA MATRICE 5.1 LA DONNE ENTIERE. « Lorsqu'une",
+        "personne consulte une entite differente de son entite principale : elle",
+        "possede uniquement les droits EMP ; ses responsabilites DSM, ESM, Booster,",
+        "responsable de bureau ou administrateur d'entite ne s'appliquent pas. » Et le",
+        "super-administrateur constitue la seule exception globale.",
+        "DANS l'entite principale, les droits se CUMULENT -- matrice 23.1.",
+        "UN GET, ET C'EST L'ARGUMENT DE CONCEPTION. Les deux premieres regles du",
+        "23.3 sont des interdictions d'ecriture : « ne modifie pas l'entite principale",
+        "de la personne », « ne transfere pas ses responsabilites ». Depuis DEC-545",
+        "l'entite consultee vit dans l'ADRESSE, donc changer d'entite est une",
+        "NAVIGATION : il n'existe aucun endroit ou l'entite principale pourrait etre",
+        "modifiee. Le controle compare l'etat des quatre tables de rattachement avant",
+        "et apres un changement complet.",
+        "LA REPONSE PORTE LES CODES DU 3 DE LA MATRICE, ET PAS UNE LISTE D'ACTIONS.",
+        "La matrice en declare des dizaines, par ressource, et les inventer ici serait",
+        "la regle 6.5 enfreinte. Le 5.1 dit d'ailleurs ou cela se joue : « les",
+        "controles cote API utilisent l'entite de la RESSOURCE ».",
+        "est_entite_principale N'EST PAS UNE COMMODITE : c'est la seule information du",
+        "5.1 qui ne se lit pas dans la liste des roles. Une personne sans",
+        "responsabilite rend [EMP] dans son entite principale ET ailleurs, et le",
+        "frontend doit savoir laquelle des deux -- le 5.1 lui interdit de PROPOSER des",
+        "actions hors de l'entite principale.",
+        "L'ORDRE DES ROLES EST CELUI DU TABLEAU 3, porte par l'enumeration et non par",
+        "un tri : le tri etait invisible a tout controle, mesure le 24/08/2026.",
+        "404 EST LE MEME QUE CELUI DE entiteConsultee, en corps ET en en-tetes.",
+        "Deux routes qui distingueraient differemment apprendraient, par comparaison,",
+        "qu'un brouillon existe."
+      ]
     }
   ],
   "_commentaire_debit": [

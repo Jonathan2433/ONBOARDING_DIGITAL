@@ -62,6 +62,12 @@ NAVIGATION = WEB / "pages" / "NavigationPrincipale.tsx"
 BARRE = WEB / "pages" / "BarreMobile.tsx"
 NATIONALE = WEB / "pages" / "PageNationale.tsx"
 CARTE = WEB / "pages" / "CarteDeFrance.tsx"
+SELECTEUR = WEB / "pages" / "SelecteurDEntite.tsx"
+
+#  Les formes d'ECRITURE interdites au selecteur d'entite. Nommees UNE FOIS : la
+#  premiere version les ecrivait dans la comprehension ET dans le message, donc
+#  deux exemplaires qui auraient diverge au premier ajout (§7.27).
+MOTIFS_D_ECRITURE = ("<button", "<select", "<form", "<input", "onChange", "onClick")
 CAHIER = RACINE / "docs" / "product" / "CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
 #  **LA CLASSIFICATION DES FEUILLES, DECLAREE ET EXIGEE.**
@@ -542,24 +548,84 @@ def main() -> int:
         )
 
     # ---------------------------------------------------------------- 8 nonies
+    #  **TOUT REPLI DU CADRE EST UN `<details>` SANS GESTION DE FOCUS.** Un bouton
+    #  et son panneau exigeraient de gerer l'ouverture, `Escape` et le RETOUR du
+    #  focus -- le terrain meme ou naissent les pieges de focus. §7.2.
+    #
+    #  **LA LISTE DES REPLIS EST DERIVEE, PAS ECRITE.** La premiere version de ce
+    #  controle ne portait que sur `BarreMobile.tsx`, parce que « Plus » etait le
+    #  seul repli du jour. `T8` en a ajoute un second -- le selecteur d'entite --
+    #  et une exigence ecrite contre UN exemple ne couvre que cet exemple (§7.34).
+    #  Tout module du frontend qui emploie `<details>` est donc examine, et le
+    #  controle ANNONCE combien il en a trouve.
+    replis = {
+        module: source
+        for module in sorted(WEB.rglob("*.tsx"))
+        if not module.name.endswith(".test.tsx")
+        for source in [module.read_text(encoding="utf-8")]
+        if "<details" in source
+    }
     controles += 1
-    #  **« PLUS » EST UN `<details>`, ET C'EST CE QUI REND LE PIEGE IMPOSSIBLE.**
-    #  Un bouton et son panneau exigeraient de gerer l'ouverture, `Escape` et le
-    #  RETOUR du focus -- le terrain meme ou naissent les pieges de focus. §7.2.
-    if not source_barre:
-        print("    info     aucune barre mobile : rien a exiger de son panneau")
-    elif "<details" not in source_barre or "<summary" not in source_barre:
-        echecs += 1
-        print("    ECHEC    l'acces « Plus » n'est pas un `<details>`/`<summary>`")
-        print("             -> il faudrait alors gerer le focus a la main, et c'est la que")
-        print("                naissent les pieges que `T4` a rendus impossibles")
-    elif re.search(r"\.focus\(\)|useRef|addEventListener", source_barre):
-        echecs += 1
-        print("    ECHEC    la barre manipule le focus ou ecoute des evenements : un piege")
-        print("             devient possible, ce que `<details>` evitait justement")
+    if not replis:
+        print("    info     aucun `<details>` dans le frontend : rien a exiger d'un repli")
     else:
-        print("    ok       « Plus » est un `<details>` et AUCUN code ne touche au focus :")
-        print("             aucun piege n'est possible")
+        fautifs = []
+        if arguments.temoin:
+            fautifs.append("Temoin.tsx : `<details>` SANS `<summary>`")
+        for module, source in replis.items():
+            nom = module.name
+            if "<summary" not in source:
+                fautifs.append(f"{nom} : `<details>` sans `<summary>`")
+            elif re.search(r"\.focus\(\)|useRef|addEventListener", sans_commentaires_tsx(source)):
+                fautifs.append(f"{nom} : manipule le focus ou ecoute des evenements")
+        if fautifs:
+            echecs += 1
+            print(f"    ECHEC    {len(fautifs)} repli(s) fautif(s) sur {len(replis)} :")
+            for faute in fautifs:
+                print(f"             {faute}")
+            print("             -> il faudrait gerer le focus a la main, et c'est la que")
+            print("                naissent les pieges que `<details>` rend impossibles")
+        else:
+            print(
+                f"    ok       les {len(replis)} repli(s) sont des `<details>`/`<summary>` et "
+                f"AUCUN code n'y touche au focus : aucun piege n'est possible"
+            )
+            print(f"             modules examines : {', '.join(m.name for m in replis)}")
+
+    # -------------------------------------------------------------- 8 undecies
+    controles += 1
+    #  **CHANGER D'ENTITE EST UNE NAVIGATION, DONC DES LIENS ET RIEN D'AUTRE.**
+    #  `DEC-545` : l'entite consultee vit dans l'adresse. Les regles 1 et 2 du
+    #  §23.3 -- « ne modifie pas l'entite principale », « ne transfere pas ses
+    #  responsabilites » -- sont alors tenues par CONSTRUCTION : il n'y a aucune
+    #  ecriture, donc aucun endroit ou l'une des deux pourrait s'installer plus
+    #  tard. Un `<button onClick>` ou un `<select onChange>` ouvrirait cet endroit,
+    #  et le livrable resterait fonctionnel -- l'echec serait donc invisible.
+    #
+    #  C'est une exigence d'ABSENCE : elle ne se declare pas, elle se verifie.
+    if not SELECTEUR.exists():
+        echecs += 1
+        print(f"    ECHEC    {SELECTEUR.name} absent : le changement d'entite n'a pas de porteur")
+    else:
+        source_selecteur = sans_commentaires_tsx(SELECTEUR.read_text(encoding="utf-8"))
+        interdits = [motif for motif in MOTIFS_D_ECRITURE if motif in source_selecteur]
+        if arguments.temoin:
+            interdits = ["<select-de-temoin"]
+        if interdits:
+            echecs += 1
+            print(
+                f"    ECHEC    le selecteur d'entite porte de l'ECRITURE, donc il n'est "
+                f"pas une simple NAVIGATION : {interdits}"
+            )
+            print("             -> `DEC-545` en fait une NAVIGATION ; un gestionnaire d'evenement")
+            print("                ouvrirait l'endroit ou les regles 1 et 2 du §23.3 pourraient")
+            print("                etre enfreintes sans que rien ne le signale")
+        elif "<Link" not in source_selecteur:
+            echecs += 1
+            print("    ECHEC    le selecteur d'entite ne rend aucun `<Link>`")
+        else:
+            print("    ok       le changement d'entite est une NAVIGATION : des `<Link>`, et")
+            print(f"             AUCUN des {len(MOTIFS_D_ECRITURE)} motifs d'ecriture cherches")
 
     # ---------------------------------------------------------------- 8 decies
     controles += 1

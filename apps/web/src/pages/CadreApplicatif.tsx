@@ -42,17 +42,28 @@
 import { type JSX, type ReactNode, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 
-import type { EntiteDuPortail } from '@onboarding/contracts';
+import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contracts';
 
-import { lireLEntite } from '../api/portail';
+import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
 import { CHEMINS, cheminDeRubrique, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
 import { NavigationPrincipale } from './NavigationPrincipale';
+import { SelecteurDEntite } from './SelecteurDEntite';
 import './application.css';
 
-/** Ce que le cadre passe aux pages internes. */
+/**
+ * Ce que le cadre passe aux pages internes.
+ *
+ * **`permissions` PEUT ETRE `null`, ET C'EST UNE INFORMATION.** L'entite est
+ * resolue avant l'affichage -- sans elle, il n'y a pas de page. Les permissions,
+ * elles, peuvent manquer alors que la page est utilisable : l'appel a echoue, ou
+ * il n'est pas encore revenu. Rendre un objet vide a la place ferait passer
+ * « je ne sais pas » pour « aucun droit », et `T9` masquerait des rubriques sur
+ * une ignorance. Le `null` oblige l'appelant a traiter le cas.
+ */
 export interface ContexteEntite {
   readonly entite: EntiteDuPortail;
+  readonly permissions: PermissionsDeLEntite | null;
 }
 
 /** À employer dans une page interne pour lire l'entité que le cadre a résolue. */
@@ -99,16 +110,56 @@ type Etat =
   | { readonly phase: 'introuvable' }
   | { readonly phase: 'erreur' };
 
+/**
+ * L'etat du cadre pour UN code d'entite.
+ *
+ * **LES DEUX ENRICHISSEMENTS VIVENT A COTE DE LA PHASE, PAS DEDANS, ET C'EST UN
+ * DEFAUT MESURE QUI L'A IMPOSE.** La premiere version de `T8` les portait dans
+ * la variante `trouvee`, si bien qu'une reponse de permissions arrivee AVANT
+ * celle de l'entite ne trouvait pas d'etat `trouvee` ou se poser : elle etait
+ * perdue definitivement.
+ *
+ * **Ce n'est pas un cas theorique, il a ete VU dans un navigateur** le
+ * 24/08/2026 : l'API rendait bien `est_entite_principale: false`, et la mention
+ * du §5.1 n'apparaissait pas. Le journal reseau montrait deux appels de
+ * permissions -- un abandonne, un a 200 -- et le second revenait avant l'entite.
+ *
+ * **Et mes tests ne l'attrapaient pas**, parce qu'un `fetch` bouchonne resout
+ * dans l'ordre de creation des promesses : l'entite gagnait toujours. C'est le
+ * §7.16 -- ce qui n'a jamais tourne ailleurs n'est pas eprouve -- et le §7.24,
+ * le succes d'un test et la justesse du livrable sont deux grandeurs
+ * differentes. Un test qui fixe l'ordre INVERSE a ete ajoute.
+ */
+interface Charge {
+  readonly code: string;
+  readonly etat: Etat;
+  readonly autres: readonly EntiteDuPortail[];
+  readonly permissions: PermissionsDeLEntite | null;
+}
+
 /** Le squelette, partage par les quatre etats — un seul `<main>`, un seul `<h1>`. */
 function Squelette({
   titre,
   entite,
+  selecteur,
+  consultationSeule,
   navigation,
   barre,
   children,
 }: {
   readonly titre: string;
   readonly entite?: EntiteDuPortail;
+  //  Le selecteur d'entite. Facultatif comme la navigation, et pour la meme
+  //  raison : sans entite resolue, il n'a pas d'entite courante a marquer.
+  readonly selecteur?: ReactNode;
+  //  **`undefined` N'EST PAS `false`.** `undefined` veut dire « les droits ne sont
+  //  pas connus », `false` veut dire « vous etes dans votre entite principale ».
+  //  Les confondre afficherait la mention du §5.1 sur une ignorance, ou la
+  //  masquerait alors qu'elle s'applique.
+  //  `| undefined` EXPLICITE : `exactOptionalPropertyTypes` est actif, et il
+  //  distingue « propriete absente » de « propriete a `undefined` ». Ici les
+  //  trois etats sont voulus, donc le type doit les porter tous les trois.
+  readonly consultationSeule?: boolean | undefined;
   //  **LA NAVIGATION EST FACULTATIVE, ET C'EST VOULU.** Les etats « introuvable »
   //  et « erreur » n'ont pas d'entite, donc aucun code a mettre dans les liens :
   //  un menu vers `/entites/undefined/...` serait pire qu'aucun menu.
@@ -133,6 +184,22 @@ function Squelette({
             <span className="app-entite-ville">{entite.ville}</span>
           </p>
         )}
+        {selecteur}
+        {consultationSeule === true ? (
+          //  **LA FORMULATION VIENT DU §4 DE LA MATRICE, PAS DE MOI.** Sa legende
+          //  definit `Lecture` : « Consultation uniquement, sans modification ».
+          //  Et ce qu'elle dit est la consequence du §5.1 -- « aucune action de
+          //  creation, modification, publication, archivage, restauration ou
+          //  export n'est proposee » -- donc l'utilisateur doit savoir POURQUOI
+          //  les actions manqueront, sans quoi il les croira cassees.
+          //
+          //  `role="status"` et non `alert` : ce n'est pas une erreur, c'est un
+          //  contexte. Un `alert` interromprait la lecture a chaque changement.
+          <p className="app-consultation" role="status" data-consultation="seule">
+            Consultation uniquement, sans modification&nbsp;: cette entite n&rsquo;est pas votre
+            entite principale.
+          </p>
+        ) : null}
       </header>
       {navigation}
       {/*
@@ -185,19 +252,83 @@ export function CadreApplicatif(): JSX.Element {
   //  hook place apres un retour conditionnel, et il a raison : l'ordre des appels
   //  doit etre le meme a chaque rendu. Lecon de `T3`, deja payee deux fois.
   const titreDeLaPage = useTitreDeLaPage("Accueil de l'entite", code ?? '');
-  const [charge, setCharge] = useState<{ readonly code: string; readonly etat: Etat } | null>(null);
+  const [charge, setCharge] = useState<Charge | null>(null);
+  //  **UN SEUL TEST DE CODE, ET TOUT EN DERIVE.** Une charge qui n'appartient
+  //  plus au code demande n'est pas seulement obsolete pour la phase : elle l'est
+  //  aussi pour la liste et les droits. Les lire separement laisserait passer les
+  //  droits de l'entite quittee -- ce que le §23.3 interdit.
+  const courante: Charge | null = charge !== null && charge.code === code ? charge : null;
   const etat: Etat = !codeUtilisable
     ? { phase: 'introuvable' }
-    : charge !== null && charge.code === code
-      ? charge.etat
-      : { phase: 'chargement' };
+    : (courante?.etat ?? { phase: 'chargement' });
 
   useEffect(() => {
     if (!codeUtilisable) {
       return undefined;
     }
     const abandon = new AbortController();
-    const poser = (phase: Etat): void => setCharge({ code, etat: phase });
+    //  **CHAQUE MISE A JOUR EST UNE FUSION, JAMAIS UN REMPLACEMENT.** Les trois
+    //  appels avancent independamment, dans un ordre que RIEN ne garantit. La
+    //  fonction de fusion part de la charge du MEME code s'il y en a une, et
+    //  d'une charge vide sinon : les droits peuvent donc arriver AVANT l'entite
+    //  sans etre perdus.
+    //
+    //  **CE N'EST PAS UNE PRECAUTION, C'EST UN DEFAUT VU AU NAVIGATEUR** le
+    //  24/08/2026. La premiere version portait la liste et les droits DANS la
+    //  variante `trouvee`, et ne les y ecrivait que si cette variante existait
+    //  deja. L'API rendait `est_entite_principale: false`, et la mention du §5.1
+    //  n'apparaissait pas : le journal reseau montrait deux appels de permissions
+    //  -- un abandonne, un a 200 -- dont le second revenait avant l'entite.
+    //
+    //  Et mes tests ne l'attrapaient pas : un `fetch` bouchonne resout dans
+    //  l'ordre de creation des promesses, si bien que l'entite gagnait toujours.
+    //  §7.24 -- le succes d'un test et la justesse du livrable sont deux
+    //  grandeurs differentes.
+    //  **CE QUI DISCRIMINE N'EST PAS LE CODE DANS L'ETAT, C'EST L'EFFET COURANT,
+    //  ET IL A FALLU DEUX ESSAIS POUR LE VOIR.**
+    //
+    //  Essai 1 -- repartir d'une charge vide quand le code de l'etat differe :
+    //  une reponse tardive de Bordeaux ECRASAIT l'etat de Lille par un
+    //  `{ code: 'bordeaux', phase: 'chargement' }`, et l'en-tete perdait l'entite.
+    //
+    //  Essai 2 -- ignorer toute reponse dont le code differe de celui de l'etat :
+    //  la PREMIERE reponse du nouvel effet est dans ce cas elle aussi -- l'etat
+    //  porte encore Bordeaux quand Lille repond -- donc Lille etait ignoree, et
+    //  l'ecran restait bloque sur « Chargement ».
+    //
+    //  Les deux essais confondaient deux situations que le code seul ne separe
+    //  pas. Le nettoyage de l'effet, lui, les separe exactement : un effet
+    //  nettoye est PAR DEFINITION supersede. `obsolete` est donc pose par le
+    //  nettoyage, et chaque reponse le consulte.
+    //
+    //  Les deux essais ont ete trouves par le temoin de latence de
+    //  `CadreApplicatif.test.tsx`, chacun avec un message different -- « perdait
+    //  eXalt Lille », puis un delai d'attente. Un temoin qui attrape les
+    //  regressions de deux correctifs successifs vaut ce qu'il a coute.
+    let obsolete = false;
+    const fusionner = (apport: Partial<Omit<Charge, 'code'>>): void => {
+      if (obsolete) {
+        return;
+      }
+      setCharge((precedent) => {
+        const base: Charge =
+          precedent !== null && precedent.code === code
+            ? precedent
+            : { code, etat: { phase: 'chargement' }, autres: [], permissions: null };
+        return { ...base, ...apport, code };
+      });
+    };
+    const poser = (phase: Etat): void => fusionner({ etat: phase });
+    //  **LES TROIS APPELS PARTAGENT UN SEUL SIGNAL, ET C'EST LA QUATRIEME REGLE
+    //  DU §23.3.** « Annule les requetes et caches associes a l'entite
+    //  precedente » -- au pluriel. Un signal par appel laisserait abandonner l'un
+    //  et pas l'autre, si bien que les permissions de l'entite quittee
+    //  arriveraient sur l'entite nouvelle. Le defaut n'apparaitrait que SOUS
+    //  LATENCE, donc jamais en local (§7.16).
+    //
+    //  **ET `Promise.all` N'EST PAS EMPLOYE, DELIBEREMENT.** Il ferait attendre
+    //  l'affichage de l'entite -- que le §23.3 exige dans l'en-tete -- que la
+    //  liste et les droits soient revenus.
     void lireLEntite(code, abandon.signal).then(
       (reponse) => {
         if (reponse.statut === 200 && reponse.corps !== null) {
@@ -215,7 +346,31 @@ export function CadreApplicatif(): JSX.Element {
         return cause;
       },
     );
-    return () => abandon.abort();
+    //  **`fusionner` PORTE LE CODE, DONC UNE REPONSE LENTE NE PEUT PAS MIGRER.**
+    //  Une liste lente pour Bordeaux ne s'appliquera pas a Paris : la charge
+    //  fusionnee porte toujours le code de l'effet qui l'a demandee, et le rendu
+    //  ne lit que la charge dont le code correspond a l'adresse. L'abandon reduit
+    //  la fenetre, il ne la ferme pas -- un `fetch` resolu n'est plus annulable.
+    void listerLesEntites(abandon.signal).then(
+      (reponse) => {
+        if (reponse.statut === 200 && reponse.corps !== null) {
+          fusionner({ autres: reponse.corps.entites });
+        }
+      },
+      (cause: unknown) => cause,
+    );
+    void lireLesPermissions(code, abandon.signal).then(
+      (reponse) => {
+        if (reponse.statut === 200 && reponse.corps !== null) {
+          fusionner({ permissions: reponse.corps });
+        }
+      },
+      (cause: unknown) => cause,
+    );
+    return () => {
+      obsolete = true;
+      abandon.abort();
+    };
   }, [code, codeUtilisable]);
 
   if (etat.phase === 'chargement') {
@@ -263,10 +418,22 @@ export function CadreApplicatif(): JSX.Element {
     <Squelette
       titre={titreDeLaPage}
       entite={etat.entite}
+      selecteur={<SelecteurDEntite courante={etat.entite} entites={courante?.autres ?? []} />}
+      //  `undefined` tant que les droits ne sont pas revenus — voir le type.
+      consultationSeule={
+        courante?.permissions == null ? undefined : !courante.permissions.estEntitePrincipale
+      }
       navigation={<NavigationPrincipale code={etat.entite.code} />}
       barre={<BarreMobile code={etat.entite.code} />}
     >
-      <Outlet context={{ entite: etat.entite } satisfies ContexteEntite} />
+      <Outlet
+        context={
+          {
+            entite: etat.entite,
+            permissions: courante?.permissions ?? null,
+          } satisfies ContexteEntite
+        }
+      />
     </Squelette>
   );
 }

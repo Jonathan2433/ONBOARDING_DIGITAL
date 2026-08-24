@@ -382,6 +382,33 @@ jobs:
         #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
         run: make entites-check
 
+      - name: 4bis · Le changement d'entite recharge les droits, sans en transferer
+        # LOT 4, T8 — story `MVP-L04-US002`. Les CINQ regles du cahier §23.3 et de
+        # la matrice §23.3 deviennent exigibles ici, et la matrice §5.1 donne la
+        # regle entiere : hors de son entite principale, une personne « possede
+        # UNIQUEMENT les droits `EMP` ».
+        #
+        # QUINZE CONTROLES, ET LE DECOR EST CONCU POUR QUE CHAQUE ECHEC PRODUISE
+        # UNE OBSERVATION DIFFERENTE DU SUCCES -- en deux appels seulement :
+        #   entite A, principale   ESM actif           -> attendu PRESENT
+        #                          ENTITY_ADMIN actif  -> attendu PRESENT
+        #                          OFFICE_MANAGER clos -> attendu ABSENT (§24.12)
+        #                          DSM futur           -> attendu ABSENT
+        #   entite B, autre        ENTITY_ADMIN actif   -> attendu ABSENT (§5.1)
+        #
+        # LE DROIT DE B EXISTE VRAIMENT EN BASE, et un controle le VERIFIE avant :
+        # sans lui, l'absence de `ADM-E` dans B serait indistinguable d'une absence
+        # de donnee. C'est la difference entre « un role absent est absent » et « un
+        # role PRESENT ne s'applique pas ».
+        #
+        # ET LES REGLES 1 ET 2 SONT DES INTERDICTIONS D'ECRITURE, donc on ne les
+        # croit pas : les quatre tables de rattachement sont relevees par empreinte
+        # md5 AVANT et APRES le parcours, et comparees. L'empreinte porte son propre
+        # temoin -- si elle ne bougeait pas apres huit insertions, elle ne mesurerait
+        # rien. Ce qui change PAR CONCEPTION est nomme en sortie, pas tu :
+        # `user_session.last_activity_at`, entorse acceptee par `DEC-531`.
+        run: make permissions-check
+
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
         # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes
