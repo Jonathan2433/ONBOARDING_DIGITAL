@@ -112,6 +112,31 @@ jobs:
       - name: Documents immuables et sequences d'identifiants
         run: make docs-check
 
+      - name: Aucun fichier source ignore par git
+        # LOT 5, T1. STATIQUE : ni demon Docker, ni base -- git et python3
+        # suffisent, donc la tache qualite.
+        #
+        # IL EST NE D'UN DEFAUT MESURE, et le defaut etait SILENCIEUX dans le
+        # sens dangereux : le module `apps/api/app/media/` a ete ecrit, ses
+        # vingt tests passaient, `make check` est sorti en 0, `make
+        # icloud-verify` en 0 -- et `git add -A` NE L'A PAS AJOUTE. La ligne 60
+        # de .gitignore portait `media/`, motif ecrit au LOT 0 contre les medias
+        # DEPOSES, et qui vaut a toute profondeur : il attrapait le module
+        # source du meme nom. La migration et les tests seraient partis SANS le
+        # module qu'ils exercent.
+        #
+        # Tous nos controles lisent le DISQUE ; git lit son INDEX. Deux
+        # grandeurs differentes -- §7.0 sixieme proposition appliquee non pas a
+        # deux nombres mais a deux SOURCES. C'est pourquoi il est ICI : le
+        # moment ou il faut le savoir est la pull request.
+        #
+        # `sources-temoin` l'eprouve dans les DEUX sens, avec un vrai fichier
+        # source a un vrai chemin ignore -- un temoin qui n'exerce pas un
+        # controle ne prouve rien de ce controle (§7.25).
+        run: |
+          make sources-check
+          make sources-temoin
+
       - name: Le cadre applicatif, ses jetons et ses routes internes
         # LOT 4, T3. STATIQUE : aucun demon Docker, donc dans la tache qualite.
         #
