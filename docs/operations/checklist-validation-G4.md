@@ -211,10 +211,12 @@ mais pas le balisage — si bien que le même message de copie s'affiche dans **
 
 ---
 
-## 9. Ta décision
+## 9. Ta décision — **PRISE le 24 août 2026**
 
-- [ ] **`G4` franchie.** Le LOT 5 — collaborateurs, profils et organisation — peut être ouvert.
-- [ ] **`G4` refusée**, avec les points à reprendre.
+- [x] **`G4` franchie.** `DEC-557`. Le LOT 5 — collaborateurs, profils et organisation — **peut** être
+      ouvert ; son ouverture et la validation de son découpage restent un acte distinct, et Jonathan
+      seul le pose (règle 1).
+- [ ] ~~`G4` refusée~~
 
 **Si tu franchis**, trois gestes suivent, et aucun n'est automatique :
 
