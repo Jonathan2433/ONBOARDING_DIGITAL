@@ -106,6 +106,82 @@
 }
 
 /* ==========================================================================
+   Le panneau d'erreur — LOT 4, T10, cahier §17.4
+   ========================================================================== */
+
+.app-panneau-erreur {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  min-width: 0;
+}
+
+/* Le bouton d'action. `min-height` a 44 px : c'est la cible tactile minimale du
+   §13.4, la meme que les cellules de la barre mobile depuis T5. */
+.app-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--espace-xs) var(--espace-l);
+  border: 1px solid transparent;
+  border-radius: var(--rayon-s);
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  font-size: var(--taille-s);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.app-action:focus-visible {
+  outline: 2px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.app-action-discrete {
+  min-height: 32px;
+  padding: 2px var(--espace-s);
+  border-color: var(--trait);
+  background: var(--fond);
+  color: var(--encre);
+  font-weight: 500;
+}
+
+.app-correlation {
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  background: var(--fond-doux);
+}
+
+.app-correlation > p {
+  margin: 0 0 var(--espace-xs);
+}
+
+.app-correlation > p:last-child {
+  margin-bottom: 0;
+}
+
+.app-correlation-explication {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* `overflow-wrap` : un identifiant de correlation est un UUID de 36 caracteres
+   sans espace, et il deborderait a 320 px sans cela. */
+.app-correlation-valeur {
+  font-family: var(--police-monospace);
+  font-size: var(--taille-xs);
+  overflow-wrap: anywhere;
+}
+
+.app-correlation-annonce {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* ==========================================================================
    Le selecteur d'entite et la mention du §5.1 — LOT 4, T8
    ========================================================================== */
 

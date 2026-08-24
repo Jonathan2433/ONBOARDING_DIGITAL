@@ -39,15 +39,17 @@
  *   d'agir et sait ou il est. L'annonce d'un changement de route relevera de `T4`,
  *   qui introduit la navigation.
  */
-import { type JSX, type ReactNode, useEffect, useState } from 'react';
+import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-router';
 
 import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contracts';
 
 import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
+import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
 import { NavigationPrincipale } from './NavigationPrincipale';
+import { PanneauDErreur } from './PanneauDErreur';
 import { SelecteurDEntite } from './SelecteurDEntite';
 import './application.css';
 
@@ -108,6 +110,16 @@ type Etat =
   | { readonly phase: 'chargement' }
   | { readonly phase: 'trouvee'; readonly entite: EntiteDuPortail }
   | { readonly phase: 'introuvable' }
+  //  **401 EST UN ETAT DISTINCT, ET CE N'EST PAS UN RAFFINEMENT.** Defaut vu au
+  //  navigateur le 24/08/2026 : ma session avait expire, l'API rendait 401, et le
+  //  cadre affichait « L'entite n'a pas pu etre chargee. Cela ne dit rien de son
+  //  existence » -- une phrase FAUSSE. L'utilisateur n'a pas un probleme de
+  //  chargement, il est deconnecte, et le remede n'est pas « reessayer » mais
+  //  « se reconnecter ».
+  //
+  //  C'est la meme classe que `T8-4` : le message etait plausible, et seul
+  //  l'ecran l'a montre faux.
+  | { readonly phase: 'session' }
   | { readonly phase: 'erreur' };
 
 /**
@@ -135,6 +147,15 @@ interface Charge {
   readonly etat: Etat;
   readonly autres: readonly EntiteDuPortail[];
   readonly permissions: PermissionsDeLEntite | null;
+  /**
+   * L'identifiant de corrélation de la réponse d'entité — §17.4, `T10`.
+   *
+   * **CELLE DE L'ENTITE, ET NON LA DERNIERE VUE.** Les trois appels en portent
+   * chacun une ; montrer la plus récente donnerait à l'utilisateur un identifiant
+   * qui ne relie pas à l'échec qu'il constate. C'est l'appel dont l'échec ferme
+   * l'écran qui compte.
+   */
+  readonly correlation: string | null;
 }
 
 /** Le squelette, partage par les quatre etats — un seul `<main>`, un seul `<h1>`. */
@@ -253,11 +274,25 @@ export function CadreApplicatif(): JSX.Element {
   //  doit etre le meme a chaque rendu. Lecon de `T3`, deja payee deux fois.
   const titreDeLaPage = useTitreDeLaPage("Accueil de l'entite", code ?? '');
   const [charge, setCharge] = useState<Charge | null>(null);
+  //  **LE COMPTEUR DE TENTATIVES EST DANS LES DEPENDANCES DE L'EFFET**, et c'est
+  //  ce qui fait qu'un bouton peut vraiment reessayer : incrementer relance
+  //  l'effet, donc les trois appels, avec un signal neuf. Meme mecanisme que
+  //  `PageStatut` depuis `T5` du LOT 1.
+  const [tentative, setTentative] = useState(0);
   //  **UN SEUL TEST DE CODE, ET TOUT EN DERIVE.** Une charge qui n'appartient
   //  plus au code demande n'est pas seulement obsolete pour la phase : elle l'est
   //  aussi pour la liste et les droits. Les lire separement laisserait passer les
   //  droits de l'entite quittee -- ce que le §23.3 interdit.
   const courante: Charge | null = charge !== null && charge.code === code ? charge : null;
+
+  //  **LE RETOUR DE CONNEXION RELANCE, ET C'EST LE §17.2.** « Apres perte de
+  //  connexion sur une page deja chargee, l'utilisateur voit un etat explicite » --
+  //  et ce que l'ecran affichait est devenu obsolete a la coupure.
+  const reessayer = useCallback((): void => {
+    setCharge(null);
+    setTentative((precedente) => precedente + 1);
+  }, []);
+  const enLigne = useEtatDeConnexion(reessayer);
   const etat: Etat = !codeUtilisable
     ? { phase: 'introuvable' }
     : (courante?.etat ?? { phase: 'chargement' });
@@ -314,7 +349,13 @@ export function CadreApplicatif(): JSX.Element {
         const base: Charge =
           precedent !== null && precedent.code === code
             ? precedent
-            : { code, etat: { phase: 'chargement' }, autres: [], permissions: null };
+            : {
+                code,
+                etat: { phase: 'chargement' },
+                autres: [],
+                permissions: null,
+                correlation: null,
+              };
         return { ...base, ...apport, code };
       });
     };
@@ -331,12 +372,15 @@ export function CadreApplicatif(): JSX.Element {
     //  liste et les droits soient revenus.
     void lireLEntite(code, abandon.signal).then(
       (reponse) => {
+        const suite: Partial<Omit<Charge, 'code'>> = { correlation: reponse.correlation };
         if (reponse.statut === 200 && reponse.corps !== null) {
-          poser({ phase: 'trouvee', entite: reponse.corps });
+          fusionner({ ...suite, etat: { phase: 'trouvee', entite: reponse.corps } });
         } else if (reponse.statut === 404) {
-          poser({ phase: 'introuvable' });
+          fusionner({ ...suite, etat: { phase: 'introuvable' } });
+        } else if (reponse.statut === 401) {
+          fusionner({ ...suite, etat: { phase: 'session' } });
         } else {
-          poser({ phase: 'erreur' });
+          fusionner({ ...suite, etat: { phase: 'erreur' } });
         }
       },
       (cause: unknown) => {
@@ -371,7 +415,32 @@ export function CadreApplicatif(): JSX.Element {
       obsolete = true;
       abandon.abort();
     };
-  }, [code, codeUtilisable]);
+  }, [code, codeUtilisable, tentative]);
+
+  //  **LE HORS CONNEXION PASSE AVANT TOUT LE RESTE, ET C'EST DELIBERE.** Sans
+  //  reseau, « chargement » tournerait indefiniment et « erreur » dirait que
+  //  l'entite n'a pas pu etre chargee -- vrai, mais inutile : la cause est connue
+  //  et l'utilisateur ne peut rien faire d'autre qu'attendre. Le §17.2 veut « un
+  //  etat EXPLICITE ».
+  //
+  //  **ET C'EST UN ETAT DISTINCT DE L'ERREUR, PAS UN ALIAS.** `navigator.onLine`
+  //  ne dit pas « le service repond » : un navigateur derriere un portail captif
+  //  rend `true`. Les confondre dirait de verifier sa connexion alors que c'est
+  //  l'API qui est tombee -- §7.6, ne masque pas une cause que tu vas interpreter.
+  if (!enLigne) {
+    return (
+      <Squelette titre="Hors connexion">
+        <PanneauDErreur
+          urgence="information"
+          message={
+            "La connexion reseau est perdue. Ce que cet ecran affiche date d'avant la coupure : " +
+            'rien de nouveau ne peut etre charge, et aucune action ne peut aboutir. ' +
+            'Le chargement reprend de lui-meme au retour de la connexion.'
+          }
+        />
+      </Squelette>
+    );
+  }
 
   if (etat.phase === 'chargement') {
     return (
@@ -400,13 +469,52 @@ export function CadreApplicatif(): JSX.Element {
     );
   }
 
+  if (etat.phase === 'session') {
+    return (
+      <Squelette titre="Session expiree">
+        {/*
+          **AUCUNE REDIRECTION, ET C'EST LA REGLE DEJA POSEE.** `DEC-537` a
+          tranche pour le fourre-tout 404 : « rend la page sans rediriger », parce
+          que changer l'URL ferait perdre a l'utilisateur l'adresse qu'il suivait.
+          Ici c'est la meme chose et cela compte davantage : l'adresse porte
+          l'entite qu'il consultait, et il voudra y revenir apres s'etre
+          reconnecte.
+
+          **ET AUCUN BOUTON DE REESSAI.** Reessayer ne peut pas aboutir sans
+          nouvelle session : le proposer serait l'avertissement faux du §7.21.
+        */}
+        <p className="app-message" data-ton="neutre" role="status">
+          Votre session a expire ou a ete revoquee. Reconnectez-vous pour continuer ; cette adresse
+          vous ramenera a la meme entite.
+        </p>
+        <ul className="app-liens">
+          <li>
+            <Link className="app-lien" to={CHEMINS.connexion}>
+              Se reconnecter
+            </Link>
+          </li>
+        </ul>
+      </Squelette>
+    );
+  }
+
   if (etat.phase === 'erreur') {
     return (
       <Squelette titre="Chargement impossible">
-        <p className="app-message" data-ton="erreur" role="alert">
-          L&rsquo;entite n&rsquo;a pas pu etre chargee. Cela ne dit rien de son existence : verifiez
-          votre connexion, puis reessayez.
-        </p>
+        {/*
+          **AVANT `T10`, CE MESSAGE DISAIT « puis reessayez » SANS RIEN POUR
+          REESSAYER.** L'utilisateur devait recharger la page, ce qui lui fait
+          perdre son contexte. Une phrase qui demande une action que l'ecran ne
+          propose pas est de la famille de l'avertissement faux du §7.21.
+        */}
+        <PanneauDErreur
+          message={
+            "L'entite n'a pas pu etre chargee. Cela ne dit rien de son existence : " +
+            'le service a peut-etre refuse la demande, ou la reponse n a pas abouti.'
+          }
+          correlation={courante?.correlation ?? null}
+          onReessayer={reessayer}
+        />
       </Squelette>
     );
   }

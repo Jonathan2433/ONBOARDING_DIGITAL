@@ -699,6 +699,68 @@ def main() -> int:
             f"MANIFESTE, aucun litteral dans le frontend"
         )
 
+    # ------------------------------------------------------------ 8 quindecies
+    controles += 1
+    #  **AUCUN ETAT DE SUCCES N'EST ATTEIGNABLE DEPUIS UN `catch`.** C'est le
+    #  §17.2 du cahier, mot pour mot : « aucune action n'est declaree enregistree
+    #  SANS CONFIRMATION DE L'API ». Et c'est le critere de sortie de `T10` : « un
+    #  `fetch` qui echoue APRES L'ENVOI n'affiche JAMAIS "sauvegarde" ».
+    #
+    #  **LA MESURE EST EXACTE, PAS HEURISTIQUE, ET C'EST ELLE QUI FAIT LE
+    #  CONTROLE.** On ne cherche pas des mots dans des messages -- ce serait une
+    #  heuristique, donc un defaut (§7.25). On confronte DEUX ensembles derives du
+    #  code :
+    #
+    #    les etats qui rendent `data-ton='succes'`, lus de l'expression du ton ;
+    #    les etats affectes DANS un bloc `catch`, lus des corps de `catch`.
+    #
+    #  Leur intersection doit etre VIDE. Un succes atteignable depuis un `catch`
+    #  est litteralement une action declaree aboutie sans reponse de l'API.
+    #
+    #  **ET LE CONTROLE EXIGE D'AVOIR TROUVE LES DEUX ENSEMBLES.** Un fichier ou
+    #  l'extraction ne trouverait rien passerait sinon en silence -- l'echec
+    #  produirait la meme observation que le succes (§7.0). Il ANNONCE donc combien
+    #  d'ecrans portent un `catch`, et combien portent un etat de succes.
+    ecrans_avec_catch = 0
+    ecrans_avec_succes = 0
+    fautifs_succes = []
+    for module in sorted(WEB.rglob("*.tsx")):
+        if module.name.endswith(".test.tsx"):
+            continue
+        source = sans_commentaires_tsx(module.read_text(encoding="utf-8"))
+        etats_de_succes = set(re.findall(r"===\s*'([^']+)'\s*\?\s*'succes'", source))
+        etats_dans_catch = set()
+        for bloc in re.findall(r"\bcatch\b[^{]*\{(.*?)\n\s{4}\}", source, flags=re.S):
+            etats_dans_catch |= set(re.findall(r"set[A-Z]\w*\(\s*'([^']+)'", bloc))
+        if etats_dans_catch:
+            ecrans_avec_catch += 1
+        if etats_de_succes:
+            ecrans_avec_succes += 1
+        fautifs = etats_de_succes & etats_dans_catch
+        if fautifs:
+            fautifs_succes.append(f"{module.name} : {sorted(fautifs)}")
+    if arguments.temoin:
+        fautifs_succes.append("Temoin.tsx : ['confirme'] atteignable depuis un `catch`")
+    if fautifs_succes:
+        echecs += 1
+        print(
+            f"    ECHEC    un etat de SUCCES est atteignable depuis un `catch` : {fautifs_succes}"
+        )
+        print("             -> §17.2, « aucune action n'est declaree enregistree SANS")
+        print("                confirmation de l'API ». Une panne de transport deviendrait")
+        print("                un « sauvegarde » que rien ne justifie")
+    elif ecrans_avec_succes == 0 or ecrans_avec_catch == 0:
+        echecs += 1
+        print(
+            f"    ECHEC    l'extraction n'a rien trouve : {ecrans_avec_succes} ecran(s) a etat "
+            f"de succes, {ecrans_avec_catch} avec `catch`. Le controle ne prouverait rien"
+        )
+    else:
+        print(
+            f"    ok       aucun etat de SUCCES n'est atteignable depuis un `catch` — "
+            f"{ecrans_avec_succes} ecran(s) a etat de succes, {ecrans_avec_catch} avec `catch`"
+        )
+
     # ---------------------------------------------------------------- 8 decies
     controles += 1
     #  **TOUT ELEMENT INTERACTIF DU CADRE A UNE REGLE `:focus-visible` AVEC UN
