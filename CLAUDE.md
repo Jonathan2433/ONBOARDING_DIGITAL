@@ -2,8 +2,8 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 22 août 2026, au **franchissement de la porte `G3`**
-**Destinataire :** l'agent qui prend le relais pour le **LOT 4 — portail et accueil**
+**Mis à jour le :** 24 août 2026, à la sortie de **`T12` du LOT 4** — les DOUZE sont faites
+**Destinataire :** l'agent qui poursuit le **LOT 4 — portail national et navigation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `DEC-517`, `v0.2.0`) · **LOT 3** (`G3`, **22/08/2026**, `DEC-540`, **`v0.3.0`**) |
-| **Lot en cours** | **AUCUN.** Le LOT 4 — portail et accueil — **n'est pas ouvert** : son ouverture est la décision de Jonathan (`ROAD-003`). N'écris pas une ligne qui lui appartienne |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`) et la porte (`DEC-540`) |
-| **Prochaine action** | **attendre que Jonathan ouvre le LOT 4.** Puis lire [`ROADMAP_MVP_V1_V2_EXALT.md`](docs/product/ROADMAP_MVP_V1_V2_EXALT.md) §LOT 4, proposer un découpage en douze sous-étapes, et **le faire valider avant d'écrire du code** |
-| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** |
+| **Lot en cours** | **LOT 4 — portail national, sélection d'entité et navigation.** Ouvert par Jonathan le 22/08/2026 (`DEC-541`), découpage en **douze** sous-étapes validé le même jour. **LES DOUZE SOUS-ÉTAPES SONT TERMINÉES.** La porte `G4` attend Jonathan |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
+| **Prochaine action** | **LA PORTE `G4` — elle attend Jonathan, et rien d'autre.** Lis [`checklist-validation-G4.md`](docs/operations/checklist-validation-G4.md) : ses neuf sections portent les six critères avec **le contrôle qui prouve chacun**, une démonstration guidée en huit gestes, et les grandeurs **avec la commande qui les produit**. **Trois gestes suivent le franchissement, et aucun n'est automatique** : la recette finale sur les images de `T12` — la précédente a tourné sur `1850d8d`, la fusion de `T8`, et `T9` à `T11` n'y sont **pas** — le tag `v0.4.0` annoté sur `main`, et l'ouverture du LOT 5 avec son découpage validé **avant** qu'une ligne ne soit écrite |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
-| **Tests** | **794** : **661 pytest** — dont **390 d'intégration** — et **133 Vitest** (90 `ui`, **42 `web`**, 1 `contracts`) |
+| **Tests** | **944** : **709 pytest** — dont **426 d'intégration** — et **235 Vitest** (**97 `ui`**, **121 `web`**, **17 `contracts`**) |
 | Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
-| Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~2 min de qualité + ~3 min 30 de stack |
+| Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **75 cibles** documentées. `make help` fait foi |
+| Makefile | **81 cibles** documentées. `make help` fait foi |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **122 décisions** `DEC-418+` · **37 écarts** (**8 ouverts**) · **42 questions** (**32 ouvertes**) · 34 risques. `make docs-check` **dérive** ces totaux |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57**. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **139 décisions** `DEC-418+` · **44 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 19 — DÉRIVÉS le 24/08/2026, et le « 8 » qui figurait ici était faux**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -80,10 +80,10 @@ Toute modification passe par une branche et une pull request vers `develop`.
 # 2. Les règles qui ne se négocient pas
 
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
-   `ARB-BACK-003`, `BACKLOG-006`). **AUCUN LOT N'EST OUVERT** au 22/08/2026 : les LOTS 0 à 3 sont
-   terminés, et l'ouverture du LOT 4 est **la décision de Jonathan**. N'écris pas une ligne qui
-   appartienne au LOT 4 — ni écran de portail, ni route métier, ni type métier dans
-   `packages/contracts` — avant qu'il ne l'ait ouvert **et validé le découpage**.
+   `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 4 EST OUVERT** depuis le 22/08/2026 (`DEC-541`), son
+   découpage en douze sous-étapes est validé, et **`T1` est terminée**. N'écris **rien** qui
+   appartienne au LOT 5 — écrans de collaborateur — au LOT 6 — cercles — ni au LOT 9 — import CSV.
+   Et **une sous-étape à la fois** : la suivante est `T2`.
 2. **Aucun secret dans Git.** Ni fichier, ni message de commit, ni titre de branche, ni
    description de pull request.
 3. **Aucune donnée réelle de collaborateur versionnée.** Aucun CSV réel, aucune photo.
@@ -112,13 +112,16 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 3 ?** | **`docs/operations/fiche-lot-3.md`** — 12 sous-étapes, **découpage validé le 20/08/2026**. `T1` et `T2` **sont faites** |
+| **Que fait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
+| **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
+| Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
 | **Comment a-t-on fait `T1` et `T2` du LOT 3 ?** | **`docs/operations/compte-rendu-t{1,2}-lot-3.md`**. `T1` : le moindre privilège. `T2` : les sept tables du §10 |
 | Quelles sont les 7 tables d'authentification ? | Modèle **§10.1 à §10.6**, et `apps/api/app/auth/modeles.py` en porte la lecture |
 | Que faisait-on au LOT 2 ? | `docs/operations/fiche-lot-2.md` — 12 sous-étapes, **`T1` barrée**. Découpage validé le 18/08/2026 |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
+| **Que valide Jonathan à la porte `G4` ?** | **`docs/operations/checklist-validation-G4.md`** — les **six** critères avec le contrôle qui prouve chacun, huit gestes de démonstration, et **ce que le lot n'a PAS fait** |
 | **Que valide Jonathan à la porte `G2` ?** | **`docs/operations/checklist-validation-G2.md`** — les 7 critères, les 25 contrôles du §30 **classés**, et une démonstration guidée |
 | Que validait-il à `G1` ? | `docs/operations/checklist-validation-G1.md` — 33 contrôles |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
@@ -519,6 +522,11 @@ API             migrate migrate-status api-check alembic-check
                 migrations-check recette-modele-check             ← LOT 2, T12
                 roles-provision privileges-check                  ← LOT 3, T1
                 secrets-check                                     ← LOT 3, T2
+                entites-check                                     ← LOT 4, T1
+                permissions-check                                 ← LOT 4, T8
+                (T9 n'ajoute AUCUNE cible : son garde-fou est prouve par
+                 12 tests, pas par un controle de stack. Voir ECART-046)
+                cadre-check cadre-temoin                          ← LOT 4, T3
                 jeu-de-donnees                                    ← LOT 2, T12
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
@@ -654,7 +662,8 @@ obligatoire absente, `CHANGE_ME` résiduel, valeur typée invalide, `LOG_FORMAT`
 ## 5.6 Hôtes locaux et HTTPS
 
 ```text
-app.onboarding.localhost   → 127.0.0.1   page de statut, OPERATIONNELLE depuis T5
+app.onboarding.localhost   → 127.0.0.1   page NATIONALE depuis T6 du LOT 4 (DEC-549)
+                                         la page de statut est passee a /statut
                                          + /health/* et /api/* mandates vers l'API (DEC-470)
 api.onboarding.localhost   → 127.0.0.1   API, operationnelle depuis T3
 ```
@@ -839,8 +848,11 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**172 défauts consignés au 22/08/2026** : **71** au LOT 1, **44** au LOT 2, **15** au LOT 3, plus 7 au
-LOT 0 et 3 en `T0`. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
+**172 défauts NOMMÉS au 23/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3 — 71 + 44 + 57,
+dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
+il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
+à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
+donc pas dans la dérivation. Ils sont tous dans les comptes rendus de sous-étape, et **presque tous étaient dans
 mes propres contrôles** — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.
 
 > **Le second nombre est DÉRIVÉ, et il l'est parce que j'ai d'abord écrit « 39 » de tête** — 33 + 6,
@@ -922,8 +934,12 @@ inspection manuelle. Risque résiduel **accepté** par `DEC-457`.
 make icloud-verify   # en DEBUT DE SESSION, ce n'est pas une formalite
 ```
 
-Le motif `* [0-9]` est exclu dans `.gitignore`, `.prettierignore`, Ruff et ESLint, et
-`icloud-verify` **échoue** s'il trouve une telle copie.
+**QUATRE** motifs sont exclus dans `.gitignore` — `* [0-9]` et `* [0-9][0-9]` pour les
+**répertoires**, `* [0-9].*` et `* [0-9][0-9].*` pour les **fichiers** — plus `.prettierignore`,
+Ruff et ESLint. `icloud-verify` **échoue** s'il trouve une telle copie, **à toutes les
+profondeurs**, et il **exige en plus** que `git check-ignore` ignore effectivement quatre noms
+témoins. **Les deux motifs de fichier manquaient jusqu'au 23/08/2026, et 115 fichiers sont entrés
+dans un commit** : `ECART-038`, `DEC-542`, et la leçon est au §7.34.
 
 ## 7.2 Les espaces dans le chemin — **4 occurrences, dont une en `T7`**
 
@@ -1564,6 +1580,23 @@ sur tout. Et en ouvrir une nouvelle question aurait créé une collision de num�
 blanche **fermée**, qui bloquerait le LOT 9. Même forme que le « à prévoir **notamment** » du §25.1.
 **Les deux erreurs sont symétriques, et la bonne lecture est entre elles.**
 
+**QUATRIÈME OCCURRENCE, EN `T2` DU LOT 4 — ET ELLE AFFINE LA PARADE.** Le §8 de `fiche-lot-4.md`
+annonçait « où vit l'entité consultée » comme un point ouvert. Le cahier ne dit effectivement pas où
+elle est **stockée** — mais il détermine entièrement le **parcours**, en quatre endroits concordants,
+et cela ferme la question : on atterrit **toujours** sur la page nationale, donc une mémoire serveur
+du dernier choix n'aurait **aucun consommateur**. `ECART-040`.
+
+> **Ce qui manquait : chercher le sujet par ses SYNONYMES, pas par le mot que la fiche emploie.** Le
+> mot de la fiche était « mémorisé », et il ne donne rien d'utile. Ce sont **« changement d'entité »**,
+> **« entité consultée »** et le **diagramme du §8.1** qui ont tranché. Une recherche sur le seul
+> terme de la fiche aurait conclu comme la fiche.
+>
+> **Et demande-toi si le cahier a une SECTION dédiée.** Le §23.3 s'appelle « Changement d'entité », il
+> donne **cinq** règles, et la fiche instruisait le changement d'entité sans le citer. Une section
+> entière manquée n'est pas un détail : sa quatrième règle — « annule les requêtes et caches associés
+> à l'entité précédente » — était exécutable dès `T2`, et l'ignorer aurait laissé un défaut visible
+> seulement **sous latence**.
+
 ---
 
 ## 7.30 Quand une classe d'erreur résiste SEPT fois, change d'outil
@@ -1585,6 +1618,21 @@ catalogue**, et il **remplace** `make test-integration` dans la CI. Il nomme la 
 > aurait été une **liste** qui vieillit au premier ajout **et** une heuristique dans un contrôle, ce
 > que le §7.25 nomme un défaut. Un avant/après ne suppose rien de ce qui est « du test », et il
 > fonctionne aussi bien sur une base vide que sur le jeu de recette de 27 936 lignes.
+
+**HUITIÈME OCCURRENCE EN `T2` DU LOT 4, ET ELLE AJOUTE UN MÉCANISME QU'IL FAUT CONNAÎTRE.** Le
+nettoyage d'une fixture est **une seule transaction**. Un ordre de suppression fautif — j'avais oublié
+`entity_membership` avant `person` — la fait échouer, et **son échec l'annule ENTIÈREMENT** : rien
+n'est supprimé, pas même ce qui aurait pu l'être. Quatorze lignes sont restées commitées.
+
+**La conséquence a été bien plus large que l'erreur.** Au run suivant, **23 tests d'intégration du
+LOT 2 ont échoué** — `test_appartenance.py` et six autres fichiers — parce qu'ils comptent
+`entity_membership` **en absolu** dans une transaction en rollback, ce qui ne vaut que sur une base
+propre. **Aucun de ces 23 messages ne nommait la cause** ; ils disaient « assert 3 == 2 ».
+
+> C'est `make residu-check` qui l'a dite, en annonçant « **14 ligne(s) avant** ». Le contrôle posé en
+> `T12` du LOT 3 pour exactement cette classe a fonctionné — et c'est la seule raison pour laquelle le
+> diagnostic a pris deux minutes au lieu d'une heure. **Lis son « n ligne(s) avant » : sur une base
+> propre il vaut 0, et toute autre valeur est un résidu à nommer avant de le supprimer.**
 
 ---
 
@@ -1648,6 +1696,103 @@ contre 0,003 s avec la reprise bornée.
 la question était fausse. *Réfuter une hypothèse exige de mesurer la grandeur qu'elle prédit, pas une
 grandeur voisine.*
 
+---
+
+## 7.34 Un motif écrit contre UN EXEMPLE ne couvre que cet exemple
+
+**Apport du 23/08/2026, à l'ouverture du LOT 4, et il a coûté un commit fautif de 115 fichiers.**
+
+Le §7.31 disait : un garde-fou peut être exact pour un mode de défaillance et aveugle à un autre.
+Voici la même chose **un niveau plus bas** — dans le **motif** lui-même.
+
+| Ce que le motif couvrait | Ce qu'il ne couvrait pas |
+|---|---|
+| `node_modules 2` — un **répertoire**, donc sans extension | `modeles 2.py` — un **fichier**, où le chiffre est suivi de l'extension |
+
+`* [0-9]` a été écrit en `T1` du LOT 1 contre l'incident réel de ce jour-là, une copie de
+**répertoire**. Il est resté juste treize mois pour ce cas, et **il n'a jamais rien couvert pour les
+fichiers**. Mesuré : `git check-ignore` rend `IGNORE` sur le premier nom et `NON IGNORE` sur le
+second. iCloud a produit **142** copies de fichiers, dont **115 sont entrées dans un commit par
+`git add -A`** — parmi elles une seconde migration `0013`, qui a donné **deux têtes Alembic du même
+numéro** et **1 007 tests collectés au lieu de 661**.
+
+> **La règle, sans jargon :** quand tu écris un motif, une liste blanche ou une règle de filtrage à
+> partir d'un **incident**, tu décris cet incident, pas sa classe. Demande-toi **quelles autres
+> formes la même cause produit** — ici, la même cause iCloud produit des copies de fichiers *et* de
+> répertoires — et **écris un témoin par forme**.
+
+**Et la seule part de la correction qui vaille : le TÉMOIN PERMANENT.** Corriger le motif corrige une
+instance ; `make icloud-verify` **exige** désormais que `git check-ignore` ignore effectivement
+**quatre noms témoins**, un par forme. Le motif ne peut plus redevenir aveugle sans que le garde-fou
+le dise, au début de chaque session. C'est aussi ce qui empêche les **deux copies de la même règle**
+— `.gitignore` et le `Makefile` — de diverger en silence. `ECART-038`, `DEC-542`.
+
+**Trois autres choses ont échoué le même jour, et chacune est une leçon déjà écrite ici :**
+
+1. **le `find` s'arrêtait à `-maxdepth 3`** quand les copies étaient à la profondeur 4. Même si le
+   motif avait été juste, le contrôle ne regardait pas là. **Un contrôle borné doit dire où il
+   s'arrête** — §7.0, troisième proposition : il n'annonçait pas ce qu'il avait examiné ;
+2. **le contrôle d'arbre que j'avais ajouté en `T12` était un FAUX POSITIF.** Il exigeait « arbre de
+   `HEAD` identique à l'amont **et** fichiers modifiés » — l'état **normal** de toute sous-étape en
+   cours de travail. Il ne visait pas la bonne grandeur : la signature réelle est qu'un fichier porte
+   **exactement, à l'octet, le contenu d'une version antérieure**, ce qu'aucune édition humaine ne
+   produit. Rendu exact et non affaibli (§7.20), dans `verifier-reversion-icloud.py`, avec son témoin
+   exécuté **dans les deux sens** ;
+3. **et j'ai lu `make check` en code 2 comme un succès**, pour la **septième** fois de la classe
+   §7.3 : mon `&&` portait sur le `echo` qui suivait, pas sur le `make`. Puis, dans la commande même
+   où j'annonçais lire le code correctement, un `echo` intermédiaire a écrasé `PIPESTATUS`.
+   **La seule forme immunisée, désormais la seule à employer :**
+
+```bash
+make check > /tmp/check.log 2>&1
+code=$?          # ligne SUIVANTE, aucun tuyau, aucune commande entre les deux
+echo "code=$code"
+```
+
+
+## 7.35 Quand une propriété n'est observable par AUCUN contrôle, change le code
+
+**Apport de `T8` du LOT 4, et c'est la seule issue que les six propositions du §7.0 ne donnaient
+pas.**
+
+Ma résolution de permissions rendait `tuple(sorted(ensemble))`, et un contrôle vérifiait l'ordre.
+J'ai retiré le tri pour éprouver le contrôle : **les quinze contrôles sont passés trois fois sur
+trois.**
+
+| Version du contrôle | Verdict avec le défaut |
+|---|---|
+| deux appels comparés entre eux | **vert** — l'itération d'un `set` est stable **au sein d'un processus**, et les deux appels tombent sur le même worker |
+| « la réponse doit être triée » | **vert** — l'ordre du `set` de ce décor **coïncide** avec l'ordre alphabétique |
+| plus loin | impossible : deux ensembles égaux s'itèrent **identiquement** en CPython, quel que soit l'ordre d'insertion |
+
+**L'ordre ne varie qu'entre PROCESSUS** — le hachage des chaînes est aléatoire par processus — et
+aucune exécution unique, ni de stack ni unitaire, n'observe cela.
+
+> **La règle, sans jargon :** quand tu découvres qu'aucun contrôle ne peut voir la disparition d'une
+> propriété, **arrête de renforcer le contrôle**. Les §7.20 et §7.21 t'apprenaient à rendre un
+> contrôle **exact** ; celle-ci dit quoi faire quand l'exactitude ne suffit pas — **rendre la
+> propriété structurelle**, de sorte que la perdre exige de casser le code plutôt que de retirer un
+> appel.
+
+Ici l'ordre vient désormais de l'**itération de l'énumération** : `tuple(m for m in RoleDeLaMatrice
+if m in roles)`. Le perdre exigerait de supprimer la boucle. C'est le §7.32 — « n'écris pas de
+défense contre un état que la base interdit » — transposé du schéma au code applicatif.
+
+**Et un bénéfice qui n'était pas cherché :** l'ordre obtenu est celui du **tableau §3 de la
+matrice**, donc celui du document, meilleur qu'alphabétique.
+
+**Deux corollaires mesurés le même jour :**
+
+- **mes deux autres contrôles RETRIAIENT la réponse avant de la comparer**, donc ils étaient aveugles
+  à l'ordre eux aussi. `sorted(reponse) == attendu` ne dit rien de l'ordre de `reponse` : compare la
+  réponse **telle qu'elle est**, à un attendu **dérivé** ;
+- **un défaut du livrable n'a été vu que dans un NAVIGATEUR.** Les droits arrivés **avant** l'entité
+  étaient perdus ; l'API rendait la bonne valeur, l'écran ne l'affichait pas. Aucun des cinq tests ne
+  l'attrapait, parce qu'un `fetch` bouchonné résout dans l'ordre de **création des promesses** et que
+  le cadre demande l'entité en premier. **Un stub qui ne fixe pas l'ordre en fixe un quand même —
+  celui de ton code.** Écris un test par ordre d'arrivée que la production peut produire.
+
+---
 
 # 8. Ce qui reste ouvert
 
@@ -1822,6 +1967,13 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │   ├── api/      app/{configuration,entities,health,shared}, alembic/, tests/, Dockerfile
 │                 app/modeles.py         ← importe TOUS les modeles (LOT 2, T2)
 │                 app/shared/modele.py   ← socle declaratif (LOT 2, T1, DEC-499)
+│                 app/entities/routes.py  ← GET /api/v1/entities : la PREMIERE
+│                                          route METIER du projet (LOT 4, T1)
+│                 app/entities/services.py ← le filtre `= active`, DERIVE de
+│                                          l'enumeration (DEC-544), et la
+│                                          resolution par code (T2, DEC-545)
+│                 app/auth/dependances.py ← exiger_une_session ET exiger_un_scope :
+│                                          DEUX natures d'appelant (DEC-543)
 │                 app/{entities,people,clients,organization}/
 │                                        ← 18 tables METIER (LOT 2, T2 a T8)
 │                                          19 avec alembic_version : DIS LAQUELLE
@@ -1855,6 +2007,14 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │   │                     Bouton · Badge · Carte, 90 tests
 │   └── contracts/        contrat API partagé (T10, DEC-492)
 │                         contrat-api.json  ← SOURCE UNIQUE, lue par TS ET Python
+│                         portail.ts        ← la PREMIERE forme METIER : les
+│                                             entites du portail (LOT 4, T1)
+│                         formes.ts         ← estObjet / exigerChaine, EXTRAITES
+│                                             de sante.ts, un seul exemplaire
+│                         portail.ts porte aussi `cheminEntite`, qui ENCODE le
+│                         code et LEVE sur une chaine vide -- sinon le chemin
+│                         obtenu serait celui de la LISTE (T2)
+
 ├── infra/
 │   ├── compose/  base + surcouches dev ET recette (T8)
 │   │             la surcouche NOMME sa cible de construction (DEC-479)
@@ -1879,6 +2039,14 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                                Mailpit, QO-085          (T8)
 │                  composer-env.py            ← modele + calque + secrets (T8)
 │                  epingler-images.py         ← make images-pin           (T8)
+│                  verifier-reversion-icloud.py ← un contenu de travail EGAL a une
+│                                                version anterieure = reecriture
+│                                                iCloud. Remplace un controle a FAUX
+│                                                POSITIFS. DEC-542, §7.34
+│                  verifier-entites.py        ← les 4 etats du modele, une entite
+│                                                par etat, a travers Caddy. Le
+│                                                critere n'en nommait que 2 :
+│                                                ECART-039        (LOT 4, T1)
 │                  Tous en Python : le motif est en §7.2
 └── docs/
     ├── product/ · architecture/     ← IMMUABLES
@@ -1903,8 +2071,12 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 export PATH="$HOME/.local/bin:$PATH"        # gh et uv n'y sont PAS par defaut
 git switch develop && git pull && git log --oneline -3 && git status -sb
 
-make icloud-verify        # PAS une formalite : il compare desormais l'ARBRE a l'amont,
-                          # et il a manque une reversion silencieuse de 4 fichiers. §7.31
+make icloud-verify        # PAS une formalite : il a manque une reversion silencieuse de
+                          # 4 fichiers (§7.31), PUIS 115 copies de conflit de FICHIERS que
+                          # son motif ne couvrait pas (§7.34). Il porte desormais les 4
+                          # motifs, cherche a toutes les profondeurs, EXIGE que
+                          # `git check-ignore` les honore, et detecte une reversion en
+                          # comparant le contenu de travail aux versions de l'historique.
 make env-check            # .env contre .env.example — une variable a manque a CHAQUE lot
 make check                # qualite complete, tests compris
 make audit                # zero avis, zero tolerance depuis DEC-493
@@ -1927,6 +2099,19 @@ make ecrans-check         #  7 — les 8 chemins servis, aucune couleur hors jet
 make evenements-check     #  6 — les 7 evenements du 10.6, sans rien de sensible
 make residu-check         #      la suite d'integration, ET la preuve qu'elle ne laisse rien
                           #      Il REMPLACE `make test-integration`, il ne s'y ajoute pas.
+
+# Le controle du LOT 4, dans la CI comme les onze precedents. Il EXIGE que le
+# conteneur porte le code du depot : lance `make code-refresh && make code-check`
+# d'abord, sinon il eprouve un autre artefact en paraissant sain. §7.28
+make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EMP` SEULEMENT
+                          #      ailleurs ALORS QUE LE DROIT LOCAL EXISTE, un role clos et
+                          #      une affectation FUTURE qui n'accordent rien, le
+                          #      super-administrateur partout, et les QUATRE tables de
+                          #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
+make entites-check        # 13 — une entite par etat, les TROIS non actifs exclus, les
+                          #      deux refus compares corps ET en-tetes, la resolution
+                          #      par code, et `/entites/<code>` servi : le choix
+                          #      SURVIT a un rechargement
 
 # Les controles de schema
 make privileges-check && make secrets-check && make isolation-check && make isolation-temoin
@@ -1952,7 +2137,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **33 leçons** payées par **172 défauts consignés** ;
+1. **ce document**, en entier — son §7 porte **36 leçons** payées par **186 défauts nommés** — 71 + 44 + 57 + 14, dérivés ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

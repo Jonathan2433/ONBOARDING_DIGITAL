@@ -20,9 +20,11 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { Alerte } from './Alerte.js';
 import { Badge } from './Badge.js';
 import { Bouton } from './Bouton.js';
 import { Carte } from './Carte.js';
+import { Notification } from './Notification.js';
 // `?raw` de Vite plutot que `node:fs` : le contenu arrive comme une chaine, sans
 // ajouter @types/node au projet. C'est Vite qui lit le disque, et Vitest emploie
 // la meme chaine de transformation. Meme motif qu'en T5 pour `types: vite/client`.
@@ -167,5 +169,78 @@ describe('la feuille des composants ne contourne pas les jetons', () => {
   it('garde un focus visible et ne l annule jamais', () => {
     expect(CSS).toContain(':focus-visible');
     expect(CSS).not.toMatch(/outline\s*:\s*(none|0)\s*;/);
+  });
+});
+
+// ============================================================================
+//  Alerte et Notification — LOT 4, `T11`
+// ============================================================================
+
+describe('Alerte', () => {
+  it('rend un `<p>` et exige un texte — WCAG 1.4.1', () => {
+    render(<Alerte>Le service est indisponible.</Alerte>);
+    const noeud = screen.getByText('Le service est indisponible.');
+    expect(noeud.tagName).toBe('P');
+    //  Le ton par defaut est neutre : une alerte n'est pas rouge par defaut.
+    expect(noeud.getAttribute('data-ton')).toBe('neutre');
+  });
+
+  it("le `role` suit l'urgence, et `aucune` n'en pose AUCUN", () => {
+    const { unmount } = render(<Alerte urgence="alerte">Erreur.</Alerte>);
+    expect(screen.getByRole('alert').textContent).toBe('Erreur.');
+    unmount();
+
+    const seconde = render(<Alerte urgence="information">Chargement…</Alerte>);
+    expect(screen.getByRole('status').textContent).toBe('Chargement…');
+    seconde.unmount();
+
+    render(<Alerte>Rien d urgent.</Alerte>);
+    //  **AUCUN ROLE PAR DEFAUT.** Un texte informatif qui s'annoncerait a chaque
+    //  rendu serait du bruit -- et c'est le cas le plus frequent.
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByText('Rien d urgent.').getAttribute('role')).toBeNull();
+  });
+
+  it("n'ecrit PAS d `aria-live`, que le role implique deja", () => {
+    render(<Alerte urgence="alerte">Erreur.</Alerte>);
+    //  `role="alert"` implique `aria-live="assertive"` par la specification ARIA.
+    //  L'ecrire en plus serait une redondance qui peut diverger — la lecon du
+    //  selecteur de `T8`, ou `aria-expanded` aurait double l'etat de `<details>`.
+    expect(screen.getByRole('alert').getAttribute('aria-live')).toBeNull();
+  });
+
+  it('porte les quatre tons, et le texte reste present dans les quatre', () => {
+    for (const ton of ['neutre', 'succes', 'erreur', 'avertissement'] as const) {
+      const { unmount } = render(<Alerte ton={ton}>Message {ton}</Alerte>);
+      const noeud = screen.getByText(`Message ${ton}`);
+      expect(noeud.getAttribute('data-ton')).toBe(ton);
+      unmount();
+    }
+  });
+});
+
+describe('Notification', () => {
+  it('rend son conteneur MEME VIDE — sans quoi elle ne serait pas annoncee', () => {
+    render(<Notification message="" />);
+    //  **C'EST LA RAISON D'ETRE DU COMPOSANT.** Un `aria-live` ajoute au DOM en
+    //  meme temps que son texte n'est pas annonce de facon fiable : les lecteurs
+    //  d'ecran observent les mutations d'une region DEJA connue.
+    const noeud = screen.getByRole('status');
+    expect(noeud.getAttribute('data-vide')).toBe('oui');
+    expect(noeud.textContent).toBe('');
+  });
+
+  it('annonce son message, et se declare non vide', () => {
+    render(<Notification message="Identifiant copie." ton="succes" />);
+    const noeud = screen.getByRole('status');
+    expect(noeud.textContent).toBe('Identifiant copie.');
+    expect(noeud.getAttribute('data-vide')).toBe('non');
+    expect(noeud.getAttribute('data-ton')).toBe('succes');
+  });
+
+  it("n'est JAMAIS `alert` — une notification n'interrompt pas la lecture", () => {
+    render(<Notification message="Termine." ton="succes" />);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

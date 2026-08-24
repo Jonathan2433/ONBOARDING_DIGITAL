@@ -138,8 +138,19 @@ pnpm-debug.log*
 # duplicata fige de node_modules. Le nom d'une copie de conflit est le nom
 # d'origine suivi d'une espace et d'un chiffre. Ces copies ne doivent jamais
 # etre versionnees, ni traitees par un outil. Voir ROAD-RSK-026.
+#
+# LE 23/08/2026, CES DEUX SEULS MOTIFS SE SONT REVELES AVEUGLES AUX FICHIERS.
+# Ils ont ete ecrits contre un REPERTOIRE — « node_modules 2 », qui n'a pas
+# d'extension. Une copie de FICHIER s'appelle « modeles 2.py » : le chiffre y
+# est suivi de l'extension, et « * [0-9] » ne correspond alors a rien. iCloud a
+# produit 142 copies de ce genre, dont 115 sont entrees dans un commit par
+# « git add -A ». Les deux motifs « .* » les couvrent. La parade qui ne depend
+# pas de la memoire est dans « make icloud-verify », qui EXIGE desormais que
+# ces quatre motifs ignorent effectivement quatre noms temoins.
 * [0-9]
 * [0-9][0-9]
+* [0-9].*
+* [0-9][0-9].*
 
 # ─────────────────────────────────────────────────────────────
 # Outillage d'agent

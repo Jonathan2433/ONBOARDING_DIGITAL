@@ -112,6 +112,28 @@ jobs:
       - name: Documents immuables et sequences d'identifiants
         run: make docs-check
 
+      - name: Le cadre applicatif, ses jetons et ses routes internes
+        # LOT 4, T3. STATIQUE : aucun demon Docker, donc dans la tache qualite.
+        #
+        # IL EST NE D'UN DEFAUT MESURE : `auth.css`, posee en T11 du LOT 3,
+        # employait 21 proprietes personnalisees dont 14 ne resolvaient RIEN --
+        # rien n'importait `jetons.css`. Les huit ecrans rendaient leurs
+        # espacements, rayons et typographie avec les defauts du navigateur, et
+        # `make ecrans-check` passait : il exigeait qu'aucune couleur LITTERALE
+        # ne soit ecrite dans la source, jamais que les jetons RESOLVENT. Le
+        # succes d'un controle et la justesse d'une page sont deux grandeurs
+        # differentes (§7.24).
+        #
+        # Il classe aussi CHAQUE feuille du frontend : `verifier-ecrans.py`
+        # n'examinait qu'un chemin ecrit en dur, si bien qu'une feuille nouvelle
+        # lui echappait. Une feuille non classee fait desormais echouer.
+        #
+        # `cadre-temoin` l'eprouve, et il exige les DEUX motifs attendus plutot
+        # qu'un simple code non nul.
+        run: |
+          make cadre-check
+          make cadre-temoin
+
       - name: 1 · Formatage
         run: make format-check
 
@@ -337,6 +359,55 @@ jobs:
         # `auth_event`, et le controle doit le trouver. Sans cela, l'absence
         # prouverait l'absence de controle plutot que l'absence de fuite.
         run: make evenements-check
+
+      - name: Le portail national ne propose QUE des entites actives
+        # LOT 4, T1 — `MVP-L04-US001`. Dix controles, a travers Caddy en HTTPS.
+        #
+        # IL EXAMINE LES QUATRE ETATS DU MODELE, ET IL DIT COMBIEN. Le critere de
+        # la fiche n'en nommait que DEUX -- `suspended` et `archived` -- alors que
+        # `StatutEntite` en declare quatre : `draft` etait le troisieme etat non
+        # actif, et le suivre a la lettre aurait laisse une entite en brouillon sur
+        # la page nationale AVEC UN CRITERE QUI SE LIT SATISFAIT. C'est ECART-039,
+        # et c'est le §7.34 -- un motif ecrit contre un exemple ne couvre que cet
+        # exemple. La liste est donc DERIVEE de l'enumeration, jamais recopiee.
+        #
+        # IL PORTE TROIS TEMOINS, et chacun repond a un echec qui produirait la
+        # meme observation qu'un succes :
+        #   la connexion REUSSIT et pose un cookie -- sans quoi une liste vide
+        #     serait indistinguable d'un filtrage correct ;
+        #   l'entite ACTIVE est rendue -- sans quoi les trois exclusions seraient
+        #     satisfaites par une route qui ne rend jamais rien ;
+        #   les deux refus sont COMPARES, corps ET en-tetes, la correlation etant
+        #     FIXEE plutot qu'un champ exclu. Seul `date` echappe -- l'horloge de
+        #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
+        run: make entites-check
+
+      - name: 4bis · Le changement d'entite recharge les droits, sans en transferer
+        # LOT 4, T8 — story `MVP-L04-US002`. Les CINQ regles du cahier §23.3 et de
+        # la matrice §23.3 deviennent exigibles ici, et la matrice §5.1 donne la
+        # regle entiere : hors de son entite principale, une personne « possede
+        # UNIQUEMENT les droits `EMP` ».
+        #
+        # QUINZE CONTROLES, ET LE DECOR EST CONCU POUR QUE CHAQUE ECHEC PRODUISE
+        # UNE OBSERVATION DIFFERENTE DU SUCCES -- en deux appels seulement :
+        #   entite A, principale   ESM actif           -> attendu PRESENT
+        #                          ENTITY_ADMIN actif  -> attendu PRESENT
+        #                          OFFICE_MANAGER clos -> attendu ABSENT (§24.12)
+        #                          DSM futur           -> attendu ABSENT
+        #   entite B, autre        ENTITY_ADMIN actif   -> attendu ABSENT (§5.1)
+        #
+        # LE DROIT DE B EXISTE VRAIMENT EN BASE, et un controle le VERIFIE avant :
+        # sans lui, l'absence de `ADM-E` dans B serait indistinguable d'une absence
+        # de donnee. C'est la difference entre « un role absent est absent » et « un
+        # role PRESENT ne s'applique pas ».
+        #
+        # ET LES REGLES 1 ET 2 SONT DES INTERDICTIONS D'ECRITURE, donc on ne les
+        # croit pas : les quatre tables de rattachement sont relevees par empreinte
+        # md5 AVANT et APRES le parcours, et comparees. L'empreinte porte son propre
+        # temoin -- si elle ne bougeait pas apres huit insertions, elle ne mesurerait
+        # rien. Ce qui change PAR CONCEPTION est nomme en sortie, pas tu :
+        # `user_session.last_activity_at`, entorse acceptee par `DEC-531`.
+        run: make permissions-check
 
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne

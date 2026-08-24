@@ -290,35 +290,37 @@ icloud-verify: ## Verifier que l'exclusion iCloud est bien posee (echoue sinon)
 		"") echo "  store pnpm introuvable"; manque=1;; \
 		*) echo "  ok       store pnpm hors iCloud : $$s";; \
 	esac; \
-	copies=$$(find . -maxdepth 3 \( -name '* [0-9]' -o -name '* [0-9][0-9]' \) \
-		-not -path './.git/*' -not -path './node_modules/*' 2>/dev/null); \
+	copies=$$(find . \( -name '* [0-9]' -o -name '* [0-9][0-9]' \
+		-o -name '* [0-9].*' -o -name '* [0-9][0-9].*' \) \
+		-not -path './.git/*' -not -path '*/node_modules/*' \
+		-not -path './.venv/*' -not -path '*/__pycache__/*' 2>/dev/null); \
 	if [ -n "$$copies" ]; then \
-		echo "  COPIE DE CONFLIT iCLOUD detectee :"; \
+		n=$$(echo "$$copies" | wc -l | tr -d ' '); \
+		echo "  COPIE DE CONFLIT iCLOUD detectee — $$n :"; \
 		echo "$$copies" | sed 's/^/      /'; \
-		echo "      -> iCloud a duplique un repertoire. Voir ROAD-RSK-026."; \
+		echo "      -> iCloud a duplique un fichier ou un repertoire. ROAD-RSK-026."; \
+		echo "      -> COMPARE le contenu avant de supprimer : le 23/08/2026 les"; \
+		echo "         115 copies etaient identiques a l'octet, mais en T11 iCloud"; \
+		echo "         avait mis un contenu ANTERIEUR dans l'original (§7.31)."; \
 		manque=1; \
 	else \
-		echo "  ok       aucune copie de conflit iCloud"; \
+		echo "  ok       aucune copie de conflit iCloud (toutes profondeurs)"; \
 	fi; \
-	if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then \
-		local=$$(git rev-parse HEAD^{tree}); \
-		amont=$$(git rev-parse '@{upstream}^{tree}'); \
-		sale=$$(git status --porcelain --untracked-files=no | wc -l | tr -d ' '); \
-		if [ "$$local" = "$$amont" ] && [ "$$sale" != "0" ]; then \
-			echo "  ARBRE DIVERGENT — $$sale fichier(s) modifie(s) alors que le commit"; \
-			echo "      est IDENTIQUE a l'amont. Signature d'une reecriture iCloud :"; \
-			git status --porcelain --untracked-files=no | sed 's/^/      /'; \
-			echo "      -> compare les mtime : un meme horodatage a la seconde sur"; \
-			echo "         plusieurs fichiers est une reecriture EN LOT, pas une edition."; \
-			echo "         Si le diff ne contient que des retraits de contenu deja"; \
-			echo "         commite : git restore <fichiers>. Voir ROAD-RSK-026."; \
-			manque=1; \
-		else \
-			echo "  ok       arbre coherent avec l'amont ($$sale fichier(s) modifie(s))"; \
-		fi; \
+	aveugles=; examines=0; \
+	for t in 'node_modules 2' 'modeles 2.py' 'fiche 12.md' 'a 2.cpython-312.pyc'; do \
+		examines=$$((examines + 1)); \
+		git check-ignore -q "$$t" || aveugles="$$aveugles [$$t]"; \
+	done; \
+	if [ -n "$$aveugles" ]; then \
+		echo "  MOTIF .gitignore AVEUGLE a :$$aveugles"; \
+		echo "      -> un nom non ignore entre dans un commit par « git add -A »."; \
+		echo "         Le 23/08/2026, « * [0-9] » seul — ecrit contre un REPERTOIRE,"; \
+		echo "         donc sans extension — a laisse passer 115 fichiers."; \
+		manque=1; \
 	else \
-		echo "  ok       aucune branche amont : rien a comparer"; \
+		echo "  ok       .gitignore ignore les $$examines formes de copie de conflit"; \
 	fi; \
+	python3 infra/scripts/verifier-reversion-icloud.py || manque=1; \
 	exit $$manque
 
 # ---------------------------------------------------------------------------
@@ -383,7 +385,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -853,10 +855,19 @@ migrate: ## Appliquer les migrations Alembic (rafraichit le code embarque en DEV
 # `api-check` sur une API en cours de demarrage, et l'echec serait intermittent
 # donc penible a attribuer. Un defaut qui ne se produit qu'une fois sur trois
 # coute plus cher qu'un defaut franc.
-code-refresh: ## Reconstruire et recreer api et worker pour qu'ils portent le code du depot
-	@echo "==> Reconstruction de api et worker (le code est cuit dans l'image)"
-	@$(DC) build api worker
-	@$(DC) up --detach --wait --no-deps api worker
+code-refresh: ## Reconstruire et recreer api, worker ET web pour qu'ils portent le code du depot
+	@echo "==> Reconstruction de api, worker et web (le code est cuit dans les images)"
+	@#  **`web` A ETE AJOUTE EN `T3` DU LOT 4, ET SON ABSENCE A COUTE CHER.**
+	@#  Cette cible ne reconstruisait que `api` et `worker`. Le conteneur `web`
+	@#  n'est rafraichi que par `make up`, et comme la routine de sous-etape
+	@#  emploie `code-refresh`, le frontend servi est reste celui du LOT 1
+	@#  pendant TOUT le LOT 3 et les deux premieres sous-etapes du LOT 4 :
+	@#  9 fichiers dans le conteneur contre 24 dans le depot, mesure.
+	@#  `make ecrans-check` passait quand meme, parce qu'il verifiait que les
+	@#  huit chemins rendent `text/html` avec le point de montage -- ce que le
+	@#  repli SPA fait pour N'IMPORTE QUEL chemin. §7.0, quatrieme proposition.
+	@$(DC) build api worker web
+	@$(DC) up --detach --wait --no-deps api worker web
 
 code-check: ## Verifier que le conteneur execute le code du depot, par empreinte
 	@python3 infra/scripts/verifier-code-embarque.py \
@@ -1003,6 +1014,87 @@ ecrans-check: ## Prouver que les 8 ecrans sont servis, sans couleur hors jetons 
 service-check: ## Prouver qu un jeton hors scope est refuse, que l expiration agit, et l audit (US007)
 	@$(UV) run python infra/scripts/verifier-comptes-de-service.py \
 		--env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+apercu: ## Regarder le portail dans un navigateur : rafraichit le code, pose un decor de demonstration, imprime l'adresse
+	@#  **CETTE CIBLE EXISTE PARCE QUE LE FRONTEND SERVI N'EST PAS CELUI DU
+	@#  DEPOT TANT QU'ON NE L'A PAS RECONSTRUIT.** Le conteneur `web` n'a AUCUN
+	@#  montage : le code est cuit dans l'image. C'est ce qui a fait vivre le
+	@#  frontend du LOT 1 pendant un mois -- `ECART-042`.
+	@#
+	@#  Le decor est FICTIF et porte un marqueur : `make apercu-fin` le retire.
+	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=$(ENVIRONNEMENT)
+	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=$(ENVIRONNEMENT) | tail -1
+	@python3 infra/scripts/poser-decor-apercu.py --env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+apercu-fin: ## Retirer le decor de demonstration pose par `make apercu`
+	@python3 infra/scripts/poser-decor-apercu.py --retirer --env-file "$(ENV_FILE)" $(COMPOSE_FILES_NUS)
+
+cadre-check: ## Prouver le cadre applicatif : jetons resolus, layouts, routes internes (LOT 4, T3)
+	@#  STATIQUE : il n'ouvre aucune connexion, il est donc dans `make check`.
+	@#  Le debordement REEL exige un moteur de rendu -- LOT 12, Playwright.
+	@python3 infra/scripts/verifier-cadre.py
+
+cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
+	@sortie=$$(python3 infra/scripts/verifier-cadre.py --temoin 2>&1) && code=0 || code=$$?; \
+	if [ "$$code" = "0" ]; then \
+		echo "  ECHEC    le temoin est PASSE : le controle ne discrimine pas"; \
+		exit 1; \
+	fi; \
+	attendus=0; \
+	echo "$$sortie" | grep -q 'NON DEFINIE' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'aucune route de mise en page' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "N'EST PAS chargee" && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'MOT POUR MOT dans le cahier' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "sa cible n'est PAS focusable" && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'ne coexistent jamais' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'SANS .:focus-visible' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'la carte precede la liste' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'soit DECORATIVE' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'repli(s) fautif(s)' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q "pas une simple NAVIGATION" && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'predicat de visibilite est DUPLIQUE' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'roles sont ECRITS dans le frontend' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'SUCCES est atteignable depuis un' && attendus=$$((attendus + 1)); \
+	echo "$$sortie" | grep -q 'NON EMPLOYES par un ecran' && attendus=$$((attendus + 1)); \
+	if [ "$$attendus" != "15" ]; then \
+		echo "  ECHEC    le temoin echoue, mais pas pour les 15 raisons attendues ($$attendus/15)"; \
+		echo "$$sortie" | sed 's/^/           /'; \
+		exit 1; \
+	fi; \
+	echo; \
+	echo "  Temoin de \`cadre-check\` — §7.25, un temoin doit NOMMER ce qu'il attend"; \
+	echo "    ok       code=$$code, et les QUINZE motifs attendus sont nommes :"; \
+	echo "             une propriete non definie par une feuille chargee"; \
+	echo "             l'absence de route de mise en page sous CHEMINS.entite"; \
+	echo "             la feuille des composants non chargee alors qu'ils sont employes"; \
+	echo "             un libelle de rubrique absent du cahier mot pour mot"; \
+	echo "             une cible de lien d'evitement non focusable"; \
+	echo "             les deux reperes de navigation qui pourraient coexister"; \
+	echo "             un element interactif sans regle :focus-visible"; \
+	echo "             la carte qui precederait la liste dans le DOM"; \
+	echo "             une carte qui ne serait pas decorative"; \
+	echo "             un repli qui ne serait pas un \`<details>\`/\`<summary>\`"; \
+	echo "             un selecteur d'entite qui porterait de l'ECRITURE"; \
+	echo "             un predicat de visibilite duplique dans un composant"; \
+	echo "             un role d'administration ecrit en litteral dans le frontend"; \
+	echo "             un etat de succes atteignable depuis un \`catch\` (cahier 17.2)"; \
+	echo "             un composant exporte qu'aucun ecran n'emploie (critere T11)"; \
+	echo; \
+	echo "  --> le controle discrimine"
+
+entites-check: ## Prouver que la page nationale ne propose QUE des entites actives (LOT 4, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-entites.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+permissions-check: ## Prouver que le changement d'entite recharge les droits sans en transferer (LOT 4, US002)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-permissions.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \

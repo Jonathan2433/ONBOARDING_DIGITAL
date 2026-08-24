@@ -83,13 +83,26 @@ def puces_du_cahier() -> list[str]:
 
 
 def libelles_declares() -> list[str]:
-    """Les `libelleCorpus` de `routes.ts`, lus par expression reguliere.
+    r"""Les `libelleCorpus` du bloc `ECRANS`, et **eux seuls**.
 
     Pas d'import : ce script tourne sous `python3`, et `routes.ts` est du
     TypeScript. Une lecture textuelle suffit, et elle ne demande aucun outil.
+
+    **CETTE EXTRACTION LISAIT TOUT LE FICHIER, ET `T4` DU LOT 4 L'A CASSEE.**
+    `RUBRIQUES` porte six `libelleCorpus` de plus -- les rubriques du menu du
+    §8.2 -- si bien que ce controle en comptait **14** au lieu de 8 et cherchait
+    « Framework » dans la liste des huit ecrans du §17.5.
+
+    Le plus instructif est que **la meme correction avait deja ete faite juste en
+    dessous** : `chemins_declares` est bornee au bloc `CHEMINS` depuis qu'elle a
+    attrape des `libelleCorpus` en croyant lire des URL. La correction avait ete
+    appliquee a **une instance, pas a la classe** -- c'est exactement le §7.34, un
+    motif ecrit contre un exemple ne couvre que cet exemple.
     """
     source = ROUTES.read_text(encoding="utf-8")
-    return re.findall(r"libelleCorpus:\s*'([^']+)'", source)
+    debut = source.index("export const ECRANS")
+    bloc = source[debut : source.index("] as const;", debut)]
+    return re.findall(r"libelleCorpus:\s*'([^']+)'", bloc)
 
 
 def chemins_declares() -> list[str]:
@@ -218,7 +231,28 @@ def main() -> int:
     #  4. LES HUIT CHEMINS SONT SERVIS — ET LE TYPE MIME FAIT FOI
     #  --------------------------------------------------------------
     controles += 1
-    a_verifier = [chemin for chemin in chemins_declares() if chemin != "/"]
+    #  **LES CHEMINS PARAMETRES SONT ECARTES, ET LE CONTROLE LE DIT.**
+    #
+    #  `T2` du LOT 4 a ajoute `/entites/:code`. Ce n'est pas une adresse : c'est un
+    #  gabarit de React Router, et le `:` en est la grammaire -- pas une
+    #  heuristique sur du texte. Le tirer litteralement rendrait 200 par le repli
+    #  SPA, donc un `ok` obtenu pour une raison qui n'a rien a voir avec le
+    #  critere : exactement le defaut du §7.0 quatrieme proposition.
+    #
+    #  Le vrai chemin d'une entite est eprouve par `make entites-check`, qui
+    #  dispose d'un code REEL. Ici on **rapporte** ce qu'on n'a pas verifie, comme
+    #  le §7.20 l'exige -- taire une exclusion laisserait croire davantage que ce
+    #  qui est vrai.
+    tous = [chemin for chemin in chemins_declares() if chemin != "/"]
+    a_verifier = [chemin for chemin in tous if ":" not in chemin]
+    parametres_ecartes = [chemin for chemin in tous if ":" in chemin]
+    if parametres_ecartes:
+        print(
+            f"    info     {len(parametres_ecartes)} chemin(s) parametre(s) ecarte(s) : "
+            f"{', '.join(parametres_ecartes)}"
+        )
+        print("             ce ne sont pas des adresses. `make entites-check` les eprouve")
+        print("             avec un code reel.")
     mauvais: list[str] = []
     for chemin in a_verifier:
         statut, type_mime, corps = appeler(arguments.base, chemin, contexte)

@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 22 août 2026, LOT 3 sous-étape `T10`
+**Dernière mise à jour :** 24 août 2026, sous-étape `T9` du LOT 4
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 37 | 8 | 27 | 2 |
+| Total 46 | 9 | 34 | 3 |
 
 ---
 
@@ -55,8 +55,47 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
 | `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
 | `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
+| `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
+| `ECART-039` | Le critère de sortie de `T1` du LOT 4 exige qu'« une entité `suspended` ou `archived` ne soit pas rendue » : `StatutEntite` en déclare **quatre**, et `draft` est un **troisième** état non actif. Suivre le critère à la lettre aurait produit un témoin incomplet — une entité en brouillon proposée sur la page nationale, avec un critère qui se lit satisfait | Non — détecté avant d'écrire le témoin | **Clos** — filtre positif, valeur dérivée, et un test qui exige les quatre statuts |
+| `ECART-040` | Le §8 de la fiche du LOT 4 annonçait « **où vit l'entité consultée** » comme un point que le corpus ne tranche pas. Il ne dit pas où elle est **stockée**, mais **quatre endroits** — §4.1, §8.1, §9.1, §9.2 — font tous atterrir sur la page nationale après connexion : une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Et le §23.3, section entière sur le changement d'entité, donne **cinq** règles que la fiche ne citait pas | Non — détecté avant de décider, et avant de poser une migration inutile | **Clos** — `DEC-545` |
+| `ECART-041` | **Les deux feuilles du design system n'étaient importées par personne.** `T10` du LOT 1 a livré `jetons.css` et `composants.css` ; `T11` du LOT 3 a employé le composant `Bouton` et écrit `auth.css` en `var(--…)`. **Rien ne chargeait les feuilles** : 14 des 21 propriétés ne résolvaient rien, et les trois boutons des huit écrans rendaient `border-radius: 0px` avec le fond par défaut du navigateur. `packages/ui/src/index.ts` écrivait les deux lignes d'import à poser | Non pour les données — **oui pour le rendu** : les huit écrans du LOT 3 n'ont jamais porté le design system | **Clos** — `DEC-546` |
+| `ECART-042` | **`make code-refresh` ne reconstruisait que `api` et `worker`.** Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh` : le frontend **servi** est resté celui du LOT 1 pendant tout le LOT 3 et les deux premières sous-étapes du LOT 4 — **9 fichiers dans le conteneur contre 24 dans le dépôt**, mesuré. Et `make ecrans-check` passait, parce qu'il vérifiait que les huit chemins rendent `text/html` avec le point de montage — ce que le **repli SPA** fait pour n'importe quel chemin | Non pour l'API — **oui pour toute conclusion tirée du frontend servi** | **Clos** — `DEC-546` |
+| `ECART-043` | **Le lien d'évitement posé en `T3` ne sautait rien.** Sa cible, le `<main>`, n'était pas focusable : mesuré dans un vrai navigateur, activer le lien faisait défiler la page et laissait le focus sur `<body>`, si bien que le Tab suivant repartait du **début** du document, à travers le menu qu'on venait de sauter. **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`** — les deux étaient vrais, et le mécanisme ne fonctionnait pas | Non — un arrêt de tabulation consommé pour rien, découvert avant que le menu n'existe vraiment | **Clos** — `tabIndex={-1}`, `DEC-547` |
+| `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
+| `ECART-045` | **Quatre endroits justifient la sélection de `target: developpement` par « le rechargement à chaud », que `T5` du LOT 1 avait délibérément écarté.** Le conteneur `web` porte **0 montage**, mesuré : le serveur Vite surveille une copie figée dans l'image, donc rien de ce qu'il surveille ne change jamais. La sélection de cible reste juste — pour un **autre** motif, mesuré lui aussi | Non — documentaire, et le livrable est conforme | **Ouvert**, motifs à rectifier hors sous-étape |
+| `ECART-046` | **Le critère de `T9` demande « un appel direct à la route refusé par l'API », et le lot n'a AUCUNE route métier à refuser.** Ses trois routes — `/entities`, `/entities/{code}`, `/entities/{code}/permissions` — sont ouvertes aux huit rôles authentifiés par la matrice §5, et le §9.4 écarte tout écran d'administration. Le garde-fou est donc prouvé par **12 tests sur une application FastAPI jetable**, et non à travers Caddy | Non — le mécanisme est prouvé, c'est sa mise en service qui attend | **Accepté**, arbitrage de Jonathan du 24/08/2026, `DEC-553` |
 
-**Prochain identifiant libre : `ECART-038`.**
+## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, en instruisant la question de Jonathan « comment vérifier le front en visuel en work in progress ? » |
+| Source | `DEC-479` au registre des décisions, et les commentaires de `docker-compose.base.yml` (l. 473), `docker-compose.dev.yml` (l. 76) et `docker-compose.recette.yml` (l. 146) |
+| Constat | Les quatre justifient la **sélection explicite** de `target: developpement` par la même conséquence : sans elle, « la stack de développement perdrait **le rechargement à chaud** en restant parfaitement saine ». Or `T5` du LOT 1 a **délibérément écarté** le bind mount du code source, et l'a écrit : « `DEC-447` reste intact, les modifications passent par le `make up` qui reconstruit. **Le rechargement à chaud n'est exigé par aucun critère du lot.** »<br>**Mesure du 24/08/2026 :** `docker inspect onboarding-dev-web-1` rend **`0 montage(s)`**. Le serveur Vite tourne bien — `node ./node_modules/vite/bin/vite.js` — et il surveille une copie **figée dans l'image à la construction**. Il rechargerait à chaud, s'il y avait quelque chose à recharger. |
+| Impact | **Aucun sur le livrable, et c'est ce qui rend l'écart intéressant.** La sélection de cible est **nécessaire**, mais pour un bénéfice différent, mesuré le même jour : le développement sert `/src/main.tsx`, la forme **serveur Vite**, là où `execution` servirait `/assets/….js`. Or `verifier-page-statut.sh` **distingue les deux formes** depuis `T9` du LOT 1 — c'est la leçon du §7.21. Sans la ligne `target`, Docker bâtirait la dernière étape, `execution`, et ce contrôle changerait de sens en silence. Le garde-fou `make images-check` reste donc pleinement justifié. |
+| Cause | **§7.24, première leçon : relire une règle ne suffit pas, il faut confronter les règles entre elles.** `DEC-479` a été rédigée en `T7` du LOT 1 ; le bloc « ce que `T5` a délibérément écarté » se trouve **quatorze décisions plus haut dans le même fichier**. Chacune est défendable seule ; ensemble, elles affirment une capacité absente. Et la formule a été **recopiée trois fois** dans les fichiers Compose — §7.34 : un motif écrit une fois se propage sans être revérifié. |
+| Bloquant | Non |
+| Recommandation | **Ne pas ajouter de bind mount pour rendre les motifs vrais** — ce serait corriger le livrable pour sauver la prose, et `T5` a tranché sur un motif qui tient toujours : le §7.17 a mesuré qu'iCloud **remplace les répertoires**, et un conteneur ne re-résout pas la source d'un montage lié après sa création. Le rechargement à chaud coûterait un `make caddy-recreate` pour `web` à chaque réécriture iCloud.<br>**Rectifier les quatre motifs** pour qu'ils nomment la conséquence réelle — la forme servie, que les contrôles distinguent. Hors sous-étape, avec les autres corrections documentaires.<br>**Et la parade durable, celle qui ne dépend pas de la mémoire :** `make apercu` (`DEC-551`) **dit** que le conteneur n'a aucun montage et qu'il faut la relancer après chaque modification. Un outil qui énonce la limite vaut mieux qu'un commentaire qui l'ignore. |
+| Résolution | **Ouvert.** Documentaire, sans effet sur le livrable. |
+
+---
+
+## `ECART-046` — Un garde-fou prouvé, sans route à garder
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, LOT 4 sous-étape `T9`, en instruisant le critère de sortie |
+| Source | Fiche du LOT 4, critère de `T9` ; roadmap LOT 4 « Démonstration attendue » ; §9.4 de la passation |
+| Constat | Le critère écrit « Un menu masqué **et** un appel direct à la route **refusé par l'API** — les deux, sinon le lot n'a rien prouvé ». La roadmap ajoute « une tentative de **modification** dans l'autre entité est refusée par l'API ».<br>**Or le lot est en lecture seule et n'expose aucune route à refuser.** Ses trois routes métier sont ouvertes aux **huit** rôles authentifiés par la matrice §5 — mesuré : aucune ne porte de condition de rôle. Et le §9.4 écarte explicitement « aucun écran d'administration — seule sa **visibilité conditionnelle** est ici ».<br>Le seul candidat était « consulter l'historique des rôles », dernière ligne du §20 de la matrice et seule action que les trois rôles partagent. |
+| Impact | **Le mécanisme est prouvé, sa mise en service attend.** `exiger_un_role_dans_l_entite` est éprouvé par **12 tests** sur une vraie application FastAPI : 401 sans session, 403 pour un employé, 200 pour l'ESM de son entité, 403 pour **le même ESM ailleurs**, 403 pour un rôle clôturé, 200 pour le super-administrateur partout, 404 sur une entité non active, et un 500 bruyant si la route est montée sans son paramètre de chemin.<br>**Ce qui n'est pas prouvé : la traversée de Caddy.** Les quinze contrôles de `make permissions-check` la couvrent pour la *résolution* des permissions ; le *refus par rôle*, non. |
+| Cause | Le découpage a placé l'affichage conditionnel en `T9` et les écrans qui le consommeront aux LOTS 5 à 9. **Ce n'est pas une erreur de découpage** : la roadmap met bien « contrôles d'autorisation systématiques dans l'API » dans le LOT 4, et un mécanisme peut précéder ses consommateurs. C'est **exactement** ce que `T9` du LOT 3 a fait avec `exiger_un_scope`, livré et nommé sans consommateur. |
+| Bloquant | Non |
+| Recommandation | **Ne pas créer de route pour satisfaire un critère.** Une route inventée serait un écran d'administration en germe, que le découpage renvoie au LOT 9, et la règle §6.5 l'interdit.<br>**Au LOT 5**, la première route métier écrivante devra porter ce garde-fou, et le contrôle de stack de ce lot-là devra prouver le refus **à travers Caddy** — c'est la seule chose qui manque ici.<br>**Et une chose à ne pas perdre :** les six vérifications du §2.6 que le garde-fou fait sont nommées dans son en-tête, ainsi que les **deux** qui ne s'appliquent pas — « le périmètre exact de la ressource » et « les contraintes métier supplémentaires ». Le LOT 5, qui aura des ressources, devra les ajouter. |
+| Résolution | **Accepté.** Arbitrage de Jonathan du 24/08/2026, `DEC-553`. À revoir au LOT 5. |
+
+---
+
+**Prochain identifiant libre : `ECART-047`.**
 
 ---
 
@@ -541,4 +580,109 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-038`.**
+## `ECART-038` — Les motifs de copie de conflit iCloud étaient aveugles aux fichiers
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, à l'ouverture du LOT 4, en diagnostiquant **cinq tests en échec** dont l'assertion disait `len(['0013', '0013']) == 1` — deux têtes de migration portant le même numéro |
+| Source | `.gitignore` lignes 141-142 et la cible `icloud-verify` du `Makefile`, **tous deux posés en `T1` du LOT 1** et jamais relus depuis |
+| Constat | **Le motif `* [0-9]` a été écrit contre un RÉPERTOIRE.** L'incident du 27/07/2026 était `node_modules 2` — un nom **sans extension**. Une copie de **fichier** s'appelle `modeles 2.py` : le chiffre y est suivi de l'extension, et `* [0-9]` ne correspond alors à **rien**. Mesuré : `git check-ignore` rendait `IGNORE` sur `node_modules 2` et `NON IGNORE` sur `modeles 2.py`.<br>iCloud a produit **142** copies de ce genre, dont **115 suivies par git** — 76 `.py`, 28 `.md`, 8 `.tsx`, 2 `.ts`, 1 `.css` — entrées dans le commit d'ouverture du LOT 4 par un `git add -A`.<br>**Second angle mort du même garde-fou :** le `find` d'`icloud-verify` portait `-maxdepth 3`, qui n'atteint pas `apps/api/alembic/versions/`, à la profondeur **4**. Même si le motif avait été juste, le contrôle n'aurait pas regardé là où les copies étaient.<br>**Troisième défaut, et il est de moi :** le contrôle d'arbre ajouté en `T12` du LOT 3 exigeait « arbre de `HEAD` identique à l'amont **et** fichiers modifiés ». C'est l'état **normal** de toute sous-étape en cours de travail — il s'est déclenché sur mes propres suppressions délibérées, et se serait déclenché à chaque début de sous-étape. |
+| Impact | **La chaîne de qualité était rouge et je ne l'ai pas lu.** `1007` tests collectés au lieu de `661`, cinq en échec, `make check` en code 2 — et j'ai commité quand même, mon `&&` portant sur un `echo` et non sur le `make` (§7.3, septième occurrence).<br>**L'historique poussé n'a jamais été atteint** : `git ls-tree -r origin/develop` et `origin/main` rendent **0** copie, mesuré. Le seul commit fautif était local et sur une branche sans pull request ouverte, donc amendable sans réécrire quoi que ce soit de partagé.<br>Les 115 copies étaient **identiques à l'octet** à leur original — vérifié une par une par SHA-256 avant toute suppression, parce qu'en `T11` iCloud avait mis un contenu **antérieur** dans l'original et non dans la copie. |
+| Cause | **`ECART-021` et §7.31 réunis.** Un garde-fou nommé « vérifie iCloud » ne vérifie que ce qu'il regarde : celui-ci était **exact** pour la duplication de répertoire et **aveugle** à la duplication de fichier. Et la règle est **recopiée en deux endroits** — `.gitignore` et le `Makefile` — deux copies d'une même règle qui divergent en silence, classe `DEC-466`. |
+| Bloquant | Non pour le corpus, **oui pour le commit** : il a fallu amender avant d'ouvrir la pull request |
+| Recommandation | **Quatre motifs au lieu de deux**, `* [0-9]` et `* [0-9][0-9]` pour les répertoires, `* [0-9].*` et `* [0-9][0-9].*` pour les fichiers ; `find` à **toutes les profondeurs**.<br>**Et surtout, la parade qui ne dépend pas de la mémoire : un TÉMOIN PERMANENT dans `icloud-verify`**, qui exige que `git check-ignore` ignore effectivement **quatre noms témoins** couvrant les quatre formes. Le motif ne peut plus redevenir aveugle sans que le garde-fou le dise. C'est la seule chose qui distingue cette correction d'une promesse de vigilance.<br>**Pour le faux positif :** le rendre **exact** plutôt que le supprimer ou l'affaiblir (§7.20). La signature réelle de l'incident de `T11` est qu'un fichier a **exactement** le contenu d'une version antérieure de l'historique — ce qu'aucune édition humaine ne produit à l'octet. `infra/scripts/verifier-reversion-icloud.py` mesure cela, et **rapporte** les grappes de mtime identiques à la seconde en le disant corroborant et non décisif, parce qu'un formateur produit la même grappe. |
+| Résolution | **Clos**, `DEC-542`. Les 115 copies retirées de l'index et du disque, le commit amendé, `661` tests collectés à nouveau et `make check` en **code 0**. Le témoin du détecteur de réversion a été **exécuté dans les deux sens** : code 1 en nommant le fichier et le commit sur une réversion fabriquée, code 0 après restauration. |
+
+---
+
+## `ECART-039` — Le critère de `T1` nommait deux états là où le modèle en déclare trois
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T1`, en écrivant les témoins d'exclusion |
+| Source | [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §3, critère de sortie de `T1` — contre `apps/api/app/entities/modeles.py`, `StatutEntite` |
+| Constat | Le critère écrit : « Une entité `suspended` ou `archived` **n'est pas rendue**, avec témoin ». `StatutEntite` déclare **quatre** valeurs — `draft`, `active`, `suspended`, `archived` — donc **trois** états non actifs. `draft` n'est pas nommé.<br>Le cahier §8.3, lui, est exact : « un accès à chaque entité **active** ». C'est la **fiche**, document dérivé, qui a nommé deux exemples au lieu de la classe. |
+| Impact | **Un témoin incomplet, et un critère qui se lirait satisfait.** Écrire les deux témoins que la fiche nomme aurait laissé une entité `draft` proposée sur la page nationale, sans qu'aucun contrôle ne le dise. Le défaut aurait été découvert au LOT 9, quand le back-office créera des entités en brouillon.<br>Aucun impact sur les livrables antérieurs : `entity` existe depuis le LOT 2, mais aucune route ne la lisait. |
+| Cause | **`ECART-023` et §7.34 réunis.** Un document dérivé énumère des exemples ; les lire comme la classe est le défaut. Le §7.34, écrit **la veille** de cette sous-étape à propos d'un motif `.gitignore`, dit exactement ceci : *un motif écrit contre un exemple ne couvre que cet exemple.* La même erreur, un niveau plus haut — dans un critère au lieu d'un motif. |
+| Bloquant | Non — détecté avant d'écrire le témoin |
+| Recommandation | **Trois parades, toutes mécaniques, aucune ne repose sur la vigilance.** **(1)** le filtre est écrit `= active` et non `NOT IN (suspended, archived)` : la forme positive couvre tout état futur ; **(2)** la valeur comparée est **dérivée** de `StatutEntite.ACTIVE`, jamais la chaîne littérale (§7.27) ; **(3)** un test **sans base** exige que l'énumération contienne exactement les quatre valeurs connues — si un lot en ajoute une cinquième, il échoue et oblige à décider si elle est active ou non. **C'est la troisième qui corrige la classe** : sans elle, mes trois témoins d'exclusion continueraient de passer en ne couvrant plus l'ensemble des états.<br>**Recommandation pour les fiches suivantes** : quand un critère énumère des valeurs d'une énumération du code, écrire « tous les états non `X` » plutôt que deux exemples. |
+| Résolution | **Clos.** `make entites-check` crée **une entité par état**, la liste dérivée de l'énumération, et **annonce le nombre d'états examinés** — 3 non actifs, non 2. Le témoin négatif sur le conteneur reconstruit rend **exactement 3 échecs**. |
+
+---
+
+## `ECART-040` — La fiche disait ouvert ce que le cahier avait tranché
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T2`, en instruisant le point avant d'écrire |
+| Source | [`fiche-lot-4.md`](../operations/fiche-lot-4.md) §8 — contre le cahier §4.1, §8.1, §9.1, §9.2 et §23.3 |
+| Constat | La fiche annonçait : « **où vit l'entité consultée** — `US001` dit “mémorisé pour la session”, et `user_session` n'a **aucune colonne d'entité** ». Les deux moitiés sont exactes ; **la conclusion ne l'était pas**.<br>Le cahier ne dit pas où l'entité est **stockée**. Il détermine en revanche entièrement le **parcours**, et en quatre endroits concordants : §4.1 « une page nationale **après authentification** » ; le diagramme du §8.1 `LOGIN → Accueil national → Choix de l'entité → Accueil de l'entité` ; la séquence du §9.1, qui finit sur « Accueil national » ; et l'énumération du §9.2, « 1. connexion ; 2. affichage de l'**accueil national** ; 3. sélection d'une entité ».<br>**On atterrit toujours sur la page nationale.** Une mémoire serveur du dernier choix servirait donc à **sauter un écran que le cahier prescrit** : elle n'a aucun consommateur.<br>**Second manque de la fiche, distinct** : le cahier a une section entière, **§23.3 « Changement d'entité »**, qui donne **cinq** règles — dont « annule les requêtes et caches associés à l'entité précédente », qui est exécutable dès `T2`. La fiche ne la citait pas. |
+| Impact | **Une migration inutile sur une table d'authentification, et une décision demandée à Jonathan pour rien.** Le §8 de la fiche invitait à instruire un choix ; suivre cette invitation aurait produit une colonne `consulted_entity_id` sur `user_session`, une route d'écriture pour la poser, et le défaut d'ergonomie qui va avec — deux onglets partageant une seule mémoire.<br>**Et la quatrième règle du §23.3 aurait été manquée**, ce qui aurait laissé un défaut visible seulement sous latence : une réponse lente pour l'entité quittée écrasant celle de la nouvelle. |
+| Cause | **`ECART-034`, `ECART-036` et `ECART-039` à l'identique.** Un document dérivé annonce une décision à prendre là où le cahier a déjà tranché — ou n'a pas relu toutes les sections qui portent le sujet. **Quatrième occurrence de cette classe en deux lots**, et le §7.29 la nomme : *quand un document te dit qu'il te reste une décision à prendre, cherche-la d'abord dans le cahier.* |
+| Bloquant | Non — détecté avant de décider |
+| Recommandation | **Chercher le sujet par ses SYNONYMES, pas seulement par le mot de la fiche.** Ici, « mémorisé » ne donnait rien d'utile ; ce sont « changement d'entité », « entité consultée » et le diagramme du §8.1 qui ont tranché. Une recherche sur le seul terme de la fiche aurait conclu comme la fiche.<br>**Et vérifier si le cahier a une SECTION dédiée** : le §23.3 s'appelle « Changement d'entité » et la fiche instruisait le changement d'entité. |
+| Résolution | **Clos**, `DEC-545`. L'entité vit dans l'adresse ; aucune colonne, aucun stockage, aucune migration. La quatrième règle du §23.3 est implémentée et testée. |
+
+---
+
+## `ECART-041` — Les feuilles du design system n'étaient importées par personne
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T3`, en cherchant où le cadre devait puiser ses jetons |
+| Source | `apps/web/src/main.tsx` et `App.tsx` — contre `packages/ui/src/index.ts`, qui écrit les deux lignes d'import à poser |
+| Constat | `T10` du LOT 1 a livré `jetons.css` — 34 propriétés, couples fond/texte recalculés contre WCAG 2.2 AA — et `composants.css`, qui définit `.ex-bouton`, `.ex-badge`, `.ex-carte`. `T11` du LOT 3 a écrit `auth.css` **entièrement en `var(--…)`** et a employé le composant `Bouton` dans **trois** écrans.<br>**Aucun module n'importait ces deux feuilles.** Mesure sur l'application servie : `--marque-bleu`, `--espace-m`, `--police`, `--rayon-m`, `--taille-xl` rendaient **la chaîne vide**. Sur les 21 propriétés qu'emploie `auth.css`, **14 ne résolvaient rien** ; les 7 autres résolvaient **par accident**, `styles.css` — posée en `T5` du LOT 1, avant les jetons — définissant les mêmes noms. Ces 7 valeurs sont **identiques** dans les deux feuilles, mesuré : la collision est bénigne.<br>Et le bouton « Recevoir un lien » rendait `background: rgba(19, 1, 1, 0.3)` et `border-radius: 0px` — le bouton **nu** du navigateur. |
+| Impact | **Les huit écrans d'authentification du LOT 3 n'ont jamais porté le design system.** Espacements, rayons, typographie et couleurs de marque étaient ceux du navigateur. Aucune donnée en jeu, aucune règle de sécurité : c'est un défaut de **rendu**, et il a vécu depuis le 21/08/2026.<br>Après correction : `--marque-bleu` vaut `#5853ff`, `--rayon-m` `12px`, `--espace-m` `16px`, et le bouton rend `rgb(88, 83, 255)` avec `border-radius: 12px`. |
+| Cause | **`make ecrans-check` exigeait qu'aucune couleur LITTÉRALE ne soit écrite dans `auth.css` — la SOURCE — jamais que les jetons RÉSOLVENT.** Le succès du contrôle et la justesse de la page sont deux grandeurs différentes, ce que le §7.24 nomme. Le contrôle était par ailleurs exact sur ce qu'il regardait, et son témoin fonctionnait : il ne regardait pas la bonne chose.<br>**Et il n'examinait qu'un chemin écrit en dur** — `apps/web/src/pages/auth.css` — soit une liste recopiée de un élément, §7.27 : une feuille nouvelle lui échappait. |
+| Bloquant | Non pour les livrables antérieurs, **oui pour `T3`** : mesurer un layout sur une page dont les espacements ne résolvent pas n'aurait rien prouvé |
+| Recommandation | **Charger les deux feuilles dans `main.tsx`**, et surtout **poser le contrôle qui manquait**. `make cadre-check` exige que **toute `var(--x)` employée par une feuille chargée soit définie par une feuille chargée**, le graphe des imports étant **dérivé** des modules et non supposé.<br>**Et il exige la feuille des composants dès qu'un module importe un composant** — exigence dérivée, sans liste à tenir. **Cette seconde exigence est née d'une erreur de ma part** : j'avais classé `composants.css` « hors-application » en croyant qu'aucun code ne l'employait, et la mesure a montré trois écrans qui l'emploient. Une classification est une supposition ; une dérivation, non.<br>Il **classe** enfin chaque feuille du frontend : une feuille non classée fait échouer le contrôle. |
+| Résolution | **Clos**, `DEC-546`. Mesuré dans un vrai navigateur, avant et après. |
+
+---
+
+## `ECART-042` — Le frontend servi était celui du LOT 1, et un contrôle passait quand même
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T3`, en mesurant les jetons sur l'application servie |
+| Source | La cible `code-refresh` du `Makefile`, contre le contenu réel du conteneur `onboarding-dev-web-1` |
+| Constat | `code-refresh` reconstruisait **`api` et `worker`**, pas `web`. Le conteneur `web` n'est rafraîchi que par `make up`, et la routine de sous-étape emploie `code-refresh`.<br>**Mesure : 9 fichiers de frontend dans le conteneur, 24 dans le dépôt.** Son `App.tsx` était celui du LOT 1 : ni les huit écrans d'authentification de `T11`, ni la page d'entité de `T2`. Aucun montage lié, donc aucun rattrapage possible à chaud.<br>**Et `make ecrans-check` passait.** Il exige que les huit chemins rendent `text/html` contenant `id="racine"` — or le **repli SPA** `try_files {path} /index.html` sert exactement cela pour **n'importe quel** chemin. L'échec produisait la même observation que le succès. |
+| Impact | **Toute conclusion tirée du frontend servi entre le 21 et le 23/08/2026 portait sur le code du LOT 1.** Les sept contrôles de `ecrans-check` prouvaient que le **repli** fonctionne, non que les écrans existent. `make web-check` ne pouvait pas le voir davantage : la page de statut, elle, était bien dans l'image.<br>Aucun impact sur l'API : `make code-check` la couvrait, et c'est précisément l'asymétrie qui a laissé le trou. |
+| Cause | **Une cible dont le nom promet plus que ce qu'elle fait**, §7.28 — *lis ce que la cible fait, pas ce que son nom suggère* — et **un contrôle dont l'échec est indistinguable du succès**, §7.0 quatrième proposition. Les deux se sont couverts l'un l'autre : la cible laissait le conteneur en arrière, le contrôle disait que tout allait bien. |
+| Bloquant | Non pour l'API, **oui pour `T3`** : le critère dit « mesuré », et mesurer un cadre absent du conteneur n'aurait rien mesuré |
+| Recommandation | **`code-refresh` reconstruit désormais `web`**, et son commentaire dit pourquoi.<br>**Recommandation pour `T4`, non traitée ici** : `ecrans-check` devrait vérifier que les écrans **existent** dans ce qui est servi, et non seulement que le repli répond. En développement, demander le module d'un écran et exiger un type MIME **JavaScript** discriminerait — Vite rendant `index.html` en `text/html` pour un module absent, c'est le §7.10. Mais cela ne vaudrait que pour la cible `developpement`, et le faire valoir aussi pour l'artefact bâti demande d'y réfléchir : c'est le §7.21, un contrôle qui ne connaîtrait qu'un environnement. |
+| Résolution | **Clos** pour la cause immédiate, `DEC-546`. La recommandation sur `ecrans-check` est **nommée et reportée**, pas traitée. |
+
+---
+
+## `ECART-043` — Le lien d'évitement ne sautait rien
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T4`, en mesurant la marche au clavier |
+| Source | `apps/web/src/pages/CadreApplicatif.tsx`, le lien posé en `T3` |
+| Constat | Mesure dans un vrai navigateur, en activant le lien : le hash devient bien `#contenu` et la page défile — **et le focus part sur `<body>`**. Le `<main>` ne portait **aucun `tabindex`**, et un `<main>` n'est pas focusable par défaut.<br>Conséquence : le Tab suivant repart du **début** du document, donc à travers le menu qu'on venait de sauter. **Le lien d'évitement ne sautait rien.**<br>Après correction — `tabIndex={-1}` sur le `<main>` — le focus atterrit sur `main#contenu`, mesuré ; et l'élément qui le suit dans l'ordre du document est le lien du contenu, **pas** une rubrique. |
+| Impact | Un arrêt de tabulation consommé pour rien, sur le premier élément de chaque page interne. **Un lien d'évitement qui ne saute rien est pire que pas de lien** : il apprend à ne pas s'en servir, ce qui est le §7.21 — un avertissement faux — dans un autre costume.<br>Découvert **avant** que le menu n'existe vraiment : à `T3` il n'y avait que l'en-tête à sauter, donc l'enjeu était mince. Il devenait réel à `T4`, avec six liens de plus. |
+| Cause | **Mon test de `T3` vérifiait que le `href` vaut `#contenu` et que le `<main>` porte cet `id`.** Les deux étaient vrais. Le succès du test et la justesse du livrable étaient **deux grandeurs différentes** — §7.0, quatrième proposition — et c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé.<br>Ce que le test ne regardait pas : **le focus se déplace-t-il ?** C'est la seule question qui compte pour un lien d'évitement. |
+| Bloquant | Non |
+| Recommandation | `tabIndex={-1}` sur la cible — **`-1` et non `0`** : focusable par programme, hors de l'ordre de tabulation. Un `0` ajouterait un arrêt sur le contenu entier.<br>**Et le test devient exact** : il exige `tabindex="-1"`, la condition nécessaire, en plus du `href` et de l'`id`. Le déplacement effectif du focus est **mesuré** au compte rendu, faute d'un moteur capable de le simuler en `jsdom`. |
+| Résolution | **Clos**, `DEC-547`. `make cadre-check` porte l'exigence, et son témoin l'éprouve. |
+
+---
+
+## `ECART-044` — Une extraction bornée à une instance, pas à sa classe
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 août 2026, LOT 4 sous-étape `T4`, en lançant `make ecrans-check` après avoir ajouté `RUBRIQUES` |
+| Source | `infra/scripts/verifier-ecrans.py`, fonction `libelles_declares` |
+| Constat | Elle lisait les `libelleCorpus` de **tout** `routes.ts`. `RUBRIQUES` en ajoute six — les rubriques du menu du §8.2 — si bien que le contrôle en a compté **14** au lieu de 8, et a cherché « Framework » dans la liste des huit écrans du §17.5.<br>**Et la même correction avait déjà été faite, une fonction plus bas.** Le docstring de `chemins_declares` le raconte : « UNE PREMIÈRE VERSION LISAIT TROP LARGE, ET C'EST LE CONTRÔLE QUI L'A DIT… L'extraction est donc **bornée au bloc `CHEMINS`** ». |
+| Impact | Aucun sur les livrables : le contrôle a **échoué bruyamment**, et c'est son rôle. Mais il a échoué sur un livrable **conforme**, ce qui coûte un diagnostic. |
+| Cause | **§7.34, littéralement.** La correction du même défaut avait été appliquée à l'extraction des **chemins** et pas à celle des **libellés** — une instance corrigée n'est pas la classe corrigée. C'est aussi le §7.21 : un contrôle juste hier, rendu faux par notre propre ajout. |
+| Bloquant | Non |
+| Recommandation | Borner l'extraction au bloc `ECRANS`, comme l'autre l'est au bloc `CHEMINS`.<br>**Recommandation générale** : quand une lecture textuelle porte sur un fichier qui déclare **plusieurs** collections de même forme, la borner au bloc **dès la première écriture**. `verifier-cadre.py` le fait pour `RUBRIQUES` — son `lire_rubriques` est bornée, et son docstring dit pourquoi. |
+| Résolution | **Clos.** |
+
+---
+
+**Prochain identifiant libre : `ECART-045`.**

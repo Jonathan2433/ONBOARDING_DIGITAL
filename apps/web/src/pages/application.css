@@ -1,0 +1,691 @@
+/*
+ * Le cadre applicatif et les trois layouts — LOT 4, sous-etape T3.
+ *
+ * AUCUNE COULEUR LITTERALE, AUCUNE LARGEUR FIXE
+ *
+ *   Chaque couleur est une `var(--…)` de `jetons.css`, dont les couples
+ *   fond/texte sont recalcules contre WCAG 2.2 AA par `jetons.test.ts`.
+ *
+ *   Et aucune propriete `width` ou `min-width` en pixels : ce sont elles qui
+ *   font deborder une page. Les conteneurs emploient `max-width`, des unites
+ *   relatives et `min-width: 0` sur les enfants de flex -- sans ce dernier, un
+ *   contenu long refuse de se reduire et pousse la ligne au-dela du viewport,
+ *   ce qui est la cause la plus banale d'un debordement horizontal.
+ *
+ * TROIS LAYOUTS, DEUX POINTS DE RUPTURE, ET ILS SONT CONFRONTES
+ *
+ *   Le cahier §13.4 impose de recetter a 320, 390, 768, 1 280 et 1 920 px « et
+ *   plus ». Ce ne sont pas des points de rupture : c'est une liste de recette.
+ *   Les deux points de rupture retenus -- 768 px et 1 280 px -- sont ceux qui
+ *   separent les trois layouts que la roadmap nomme, « desktop, tablette et
+ *   mobile », et ils tombent sur deux valeurs de cette liste pour que la recette
+ *   mesure exactement les frontieres.
+ *
+ *   `make cadre-check` relit ces deux valeurs et EXIGE qu'elles appartiennent a
+ *   `LARGEURS_RECETTE` : un point de rupture pose ailleurs ferait echouer le
+ *   controle, parce qu'il ne serait plus recette.
+ *
+ * ACCESSIBILITE — cahier §14.2
+ *
+ *   - `:focus-visible` sur tout element interactif, jamais supprime ;
+ *   - le lien d'evitement est visible DES qu'il recoit le focus, et non
+ *     seulement au survol -- un utilisateur au clavier ne survole rien ;
+ *   - l'entite active porte son nom ET sa ville en deux elements : l'information
+ *     n'est portee ni par la couleur ni par la seule position ;
+ *   - `prefers-reduced-motion` neutralise les deux transitions de ce fichier.
+ */
+
+/* ─── mobile d'abord : de 320 px a 767 px ─────────────────────────────── */
+
+.app-cadre {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--police);
+}
+
+/* Le lien d'evitement : hors ecran, ramene DES le focus. */
+.app-evitement {
+  position: absolute;
+  left: var(--espace-s);
+  top: calc(-1 * var(--espace-xxl));
+  z-index: 10;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-s);
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  font-size: var(--taille-s);
+  text-decoration: none;
+  transition: top 120ms ease-in-out;
+}
+
+.app-evitement:focus-visible {
+  top: var(--espace-s);
+  outline: 2px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.app-entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-s);
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond-doux);
+}
+
+.app-marque {
+  margin: 0;
+  font-size: var(--taille-s);
+  font-weight: 600;
+  color: var(--encre-douce);
+  letter-spacing: 0.02em;
+}
+
+/* L'entite active. `min-width: 0` pour qu'un nom long se reduise au lieu de
+   pousser l'en-tete ; `overflow-wrap` pour qu'un mot sans espace se coupe. */
+.app-entite {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.app-entite-nom {
+  font-size: var(--taille-m);
+  font-weight: 700;
+  color: var(--encre);
+}
+
+.app-entite-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* ==========================================================================
+   Le panneau d'erreur — LOT 4, T10, cahier §17.4
+   ========================================================================== */
+
+/* L'etiquette de lot d'une rubrique : un badge, donc rien a styler d'autre que
+   sa place. LOT 4, T11. */
+.app-rubrique-etiquette {
+  margin: 0 0 var(--espace-s);
+}
+
+.app-panneau-erreur {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  min-width: 0;
+}
+
+.app-correlation > p {
+  margin: 0 0 var(--espace-xs);
+}
+
+.app-correlation > p:last-child {
+  margin-bottom: 0;
+}
+
+.app-correlation-explication {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* `overflow-wrap` : un identifiant de correlation est un UUID de 36 caracteres
+   sans espace, et il deborderait a 320 px sans cela. */
+.app-correlation-valeur {
+  font-family: var(--police-monospace);
+  font-size: var(--taille-xs);
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   Le selecteur d'entite et la mention du §5.1 — LOT 4, T8
+   ========================================================================== */
+
+/* `<details>` porte son propre etat ouvert/ferme : aucun `aria-expanded` a
+   maintenir, et le navigateur gere Entree et Espace. Meme motif qu'en T5. */
+.app-selecteur {
+  min-width: 0;
+}
+
+/* `list-style: none` retire le triangle par defaut ; le chevron est ecrit en
+   `::after` pour qu'il tourne avec l'etat, et il est DECORATIF -- l'etat reel
+   est porte par `<details>` lui-meme, donc annonce sans lui. */
+.app-selecteur-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  background: var(--fond);
+  color: var(--encre);
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.app-selecteur-bouton::-webkit-details-marker {
+  display: none;
+}
+
+.app-selecteur-bouton::after {
+  content: '\25be';
+  color: var(--encre-douce);
+}
+
+.app-selecteur[open] > .app-selecteur-bouton::after {
+  content: '\25b4';
+}
+
+.app-selecteur-bouton:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.app-selecteur-liste > ul {
+  margin: var(--espace-xs) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* La liste peut depasser la hauteur utile a vingt-cinq entites -- borne du
+     controle §30.25 de la recette. Elle defile DANS son conteneur, jamais la
+     page : c'est la regle des largeurs de T3. */
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.app-selecteur-lien {
+  display: flex;
+  flex-direction: column;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-s);
+  color: var(--encre);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.app-selecteur-lien:hover {
+  background: var(--fond-doux);
+}
+
+.app-selecteur-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+}
+
+/* L'ENTITE COURANTE : selecteur d'ATTRIBUT, pas de classe. Une classe serait une
+   seconde source de verite a maintenir a cote de `aria-current`, et les deux
+   divergeraient. Meme regle qu'en T4 pour le menu principal. */
+.app-selecteur-lien[aria-current='true'] {
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+  font-weight: 700;
+}
+
+.app-selecteur-lien[aria-current='true'] .app-selecteur-ville {
+  color: var(--marque-bleu-texte);
+}
+
+.app-selecteur-nom {
+  font-size: var(--taille-xs);
+  font-weight: 600;
+}
+
+.app-selecteur-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+.app-principal {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--espace-m) var(--espace-s);
+  box-sizing: border-box;
+}
+
+.app-titre {
+  margin: 0 0 var(--espace-s);
+  font-size: var(--taille-l);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.app-liens {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+.app-lien {
+  color: var(--marque-bleu);
+  font-size: var(--taille-s);
+  text-decoration: underline;
+  border-radius: var(--rayon-s);
+  transition: color 120ms ease-in-out;
+}
+
+.app-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* Une image ne deborde jamais de son conteneur. */
+.app-principal img,
+.app-principal svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ─── le menu principal — LOT 4, T4, cahier §8.2 ──────────────────────── */
+
+/* Il defile HORIZONTALEMENT dans son conteneur plutot que d'elargir la page.
+   `overflow-x: auto` borne le debordement au menu ; sans lui, six rubriques a
+   320 px pousseraient le document. Et `-webkit-overflow-scrolling` n'est PAS
+   pose : le defilement au clavier doit rester celui du navigateur. */
+.app-navigation {
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond);
+  overflow-x: auto;
+}
+
+.app-navigation-liste {
+  margin: 0;
+  padding: 0 var(--espace-s);
+  list-style: none;
+  display: flex;
+  gap: var(--espace-xs);
+  /* `max-content` : la liste prend la largeur de son contenu et defile, au lieu
+     de comprimer les libelles jusqu'a les rendre illisibles. */
+  min-width: max-content;
+}
+
+/* La cible tactile fait au moins 44 px de haut — recommandation WCAG 2.2 AA
+   « Target Size (Minimum) », 2.5.8. `--espace-s` deux fois plus la hauteur de
+   ligne du texte y suffisent, et le `min-height` le garantit si un jeton change. */
+.app-navigation-lien {
+  display: block;
+  min-height: 44px;
+  padding: var(--espace-s) var(--espace-xs);
+  color: var(--encre-douce);
+  font-size: var(--taille-s);
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  box-sizing: border-box;
+  transition: color 120ms ease-in-out;
+}
+
+.app-navigation-lien:hover {
+  color: var(--encre);
+}
+
+/* Le focus est VISIBLE et il ne dépend pas de la couleur seule : un contour
+   franc, decale, que `prefers-reduced-motion` ne touche pas. §14.2. */
+.app-navigation-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+  color: var(--encre);
+}
+
+/* **LE SELECTEUR EST `aria-current`, PAS UNE CLASSE.** L'etat annonce aux
+   technologies d'assistance et l'etat visuel viennent donc du MEME attribut :
+   ils ne peuvent pas diverger. Et l'etat n'est pas porte par la seule couleur --
+   le trait sous la rubrique le double, ce que le §14.2 exige. */
+.app-navigation-lien[aria-current='page'] {
+  color: var(--encre);
+  font-weight: 700;
+  border-bottom-color: var(--marque-bleu);
+}
+
+/* ─── la barre inferieure mobile — LOT 4, T5, cahier §8.2 ─────────────── */
+
+/* **ELLE N'EXISTE QUE SOUS 768 px.** Le §8.2 dit « SUR MOBILE ». Deux reperes de
+   navigation visibles en meme temps donneraient deux fois les memes liens dans
+   l'ordre de tabulation. Le menu du haut est cache symetriquement, plus bas. */
+.app-barre {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  border-top: 1px solid var(--trait);
+  background: var(--fond-doux);
+}
+
+.app-barre-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+}
+
+/* `flex: 1 1 0` et `min-width: 0` : les cellules se partagent la largeur a
+   EGALITE, et un libelle long se replie au lieu de pousser les autres. La mesure
+   du 23/08/2026 dit que quatre cellules de 80 px logent les quatre libelles, dont
+   « Trombinoscope » sur deux lignes. */
+.app-barre-cellule {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+}
+
+/* 44 px de haut au minimum — WCAG 2.2 AA « Target Size (Minimum) », 2.5.8. La
+   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`. */
+.app-barre-lien {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--espace-xs) 2px;
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  /* **`hyphens: auto` PLUTOT QU'UNE COUPURE N'IMPORTE OU, ET C'EST MESURE.**
+     `index.html` declare `lang="fr"`, donc le navigateur sait couper le francais.
+     Mesure du 23/08/2026, « Trombinoscope » dans une cellule de 76 px :
+
+         overflow-wrap: anywhere              « Trombinosc / ope »
+         hyphens: auto + break-word           « Trombino- / scope »
+
+     Meme hauteur -- deux lignes dans les deux cas -- et une coupure lisible au
+     lieu d'une coupure au hasard. `break-word` et non `anywhere` : la coupure
+     arbitraire reste le dernier recours, apres la cesure. */
+  hyphens: auto;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  border-top: 3px solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* `<summary>` porte un marqueur par defaut ; on le retire des deux facons que les
+   navigateurs connaissent, sans quoi un triangle occuperait la cellule. */
+.app-barre-lien::-webkit-details-marker {
+  display: none;
+}
+
+.app-barre-lien:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+  color: var(--encre);
+}
+
+/* Meme parti que le menu du haut : le SELECTEUR est `aria-current`, et le trait
+   double la couleur. §14.2, l'information n'est jamais portee par la seule
+   couleur. */
+.app-barre-lien[aria-current='page'] {
+  color: var(--encre);
+  border-top-color: var(--marque-bleu);
+}
+
+/* Le panneau « Plus » s'ouvre VERS LE HAUT : ancre au bas de l'ecran, il n'a pas
+   de place en dessous. */
+.app-barre-plus {
+  flex: 1 1 auto;
+  display: flex;
+}
+
+.app-barre-panneau {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--espace-xs);
+  list-style: none;
+  background: var(--fond);
+  border-top: 1px solid var(--trait);
+  box-shadow: var(--ombre-posee);
+}
+
+.app-barre-lien-secondaire {
+  display: block;
+  min-height: 44px;
+  padding: var(--espace-s);
+  color: var(--encre);
+  font-size: var(--taille-s);
+  line-height: 1.5;
+  text-decoration: none;
+  border-radius: var(--rayon-s);
+  box-sizing: border-box;
+}
+
+.app-barre-lien-secondaire:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: -2px;
+}
+
+/* Le contenu ne passe pas SOUS la barre : sans cette reserve, la fin de chaque
+   page serait masquee, et un lien en bas de contenu deviendrait inatteignable a
+   la souris comme au doigt. */
+.app-principal {
+  padding-bottom: calc(44px + 2 * var(--espace-m));
+}
+
+/* ─── tablette : a partir de 768 px ───────────────────────────────────── */
+
+/* **LE MENU DU HAUT N'EXISTE QUE SUR TABLETTE ET BUREAU.** Symetrique de la
+   barre : le §8.2 reserve la barre inferieure au mobile. */
+.app-navigation {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .app-navigation {
+    display: block;
+  }
+
+  /* Et la barre disparait : plus rien ne la couvre, donc plus de reserve. */
+  .app-barre {
+    display: none;
+  }
+
+  .app-principal {
+    padding-bottom: var(--espace-l);
+  }
+
+  .app-entete {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--espace-m);
+    padding: var(--espace-s) var(--espace-m);
+  }
+
+  .app-entite {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--espace-xs);
+  }
+
+  .app-principal {
+    padding: var(--espace-l) var(--espace-m);
+  }
+
+  .app-titre {
+    font-size: var(--taille-xl);
+  }
+
+  .app-navigation-liste {
+    padding: 0 var(--espace-m);
+    gap: var(--espace-s);
+  }
+}
+
+/* ─── bureau : a partir de 1280 px ────────────────────────────────────── */
+
+/* `max-width` en `rem` et `margin: auto` : au-dela de 1 920 px la page ne
+   s'etire pas indefiniment -- une ligne de 200 caracteres est illisible -- et
+   elle ne deborde jamais, puisque rien n'impose de largeur minimale. */
+@media (min-width: 1280px) {
+  .app-entete {
+    padding: var(--espace-m) var(--espace-l);
+  }
+
+  .app-principal {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: var(--espace-xl) var(--espace-l);
+  }
+
+  /* Le menu s'aligne sur le contenu, meme borne, meme centrage : au-dela de
+     1 920 px il ne part pas seul dans la marge. */
+  .app-navigation-liste {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: 0 var(--espace-l);
+    gap: var(--espace-m);
+  }
+}
+
+/* ─── la page nationale — LOT 4, T6, cahier §8.3 ──────────────────────── */
+
+/* **AUCUN `order`, AUCUN `row-reverse`.** Le critere de `T6` est que la liste
+   precede la carte DANS LE DOM, pas seulement a l'oeil : une inversion en CSS
+   satisferait le regard sur mobile et laisserait la carte avant la liste pour un
+   lecteur d'ecran et pour la tabulation. L'ordre visuel EST donc l'ordre du
+   document, ici comme partout dans ce fichier. */
+.nat-liste {
+  margin: 0 0 var(--espace-l);
+}
+
+.nat-liste-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--espace-s);
+}
+
+/* Une carte par entite, cible tactile pleine. Le §13.2 veut « cartes arrondies,
+   ombres douces » : les deux viennent des jetons, aucune valeur ecrite ici. */
+.nat-entite {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+  box-shadow: var(--ombre-douce);
+  color: var(--encre);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  transition: border-color 120ms ease-in-out;
+}
+
+.nat-entite:hover {
+  border-color: var(--marque-bleu);
+}
+
+.nat-entite:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.nat-entite-nom {
+  font-size: var(--taille-m);
+  font-weight: 700;
+}
+
+.nat-entite-ville {
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+/* Deux colonnes des la tablette, trois au bureau : la grille s'adapte sans
+   qu'aucune largeur ne soit ecrite en pixels. */
+@media (min-width: 768px) {
+  .nat-liste-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .nat-liste-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ─── la carte de France illustrative — LOT 4, T7, cahier §8.3 ────────── */
+
+/* **AUCUN `order` ICI, ET C'EST LE POINT.** La carte vient apres la liste dans le
+   DOM, et la feuille ne doit surtout pas inverser : un lecteur d'ecran et la
+   tabulation suivent le document, pas la mise en page. `make cadre-check` echoue
+   si une regle `order` apparait sur `.nat-liste`. */
+.nat-carte {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 var(--espace-l);
+}
+
+/* `max-width` en `rem` et `height: auto` : la carte se reduit avec la page et ne
+   la pousse jamais. Elle n'a aucune largeur fixe.
+
+   **LE SELECTEUR EST DOUBLE, ET C'EST UN CORRECTIF MESURE.** Ecrit
+   `.nat-carte-dessin` seul, il perdait contre la regle posee en `T3` pour les
+   images :
+
+       .app-principal img, .app-principal svg { max-width: 100%; height: auto; }
+
+   Classe + type valent 0,1,1 contre 0,1,0 pour une classe seule : `max-width:
+   100%` l'emportait, et la carte mesurait **1 152 x 1 152 px** au lieu de 352 --
+   mesure dans un vrai navigateur, `max-width` calcule a `100%`. Deux classes
+   valent 0,2,0 et reprennent la main.
+
+   **Seule la mesure pouvait l'attraper** : la feuille contenait bien
+   `max-width: 22rem`, et aucun controle statique ne resout une cascade. C'est
+   pourquoi le critere de `T3` dit « mesure ». */
+.nat-carte .nat-carte-dessin {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  display: block;
+}
+
+/* Les couleurs viennent des jetons, et le remplissage est un aplat de marque :
+   `--marque-bleu` porte `--marque-bleu-texte` comme couple mesure contre WCAG,
+   mais ici rien ne porte de texte -- la carte est decorative. Le trait la detache
+   du fond dans les deux themes. */
+.nat-carte-terre {
+  fill: var(--marque-bleu);
+  stroke: var(--trait);
+  stroke-width: 1;
+  /* `opacity` plutot qu'une teinte nouvelle : aucune couleur n'est ecrite hors
+     des jetons, ce que `make ecrans-check` exige de la feuille voisine et que ce
+     fichier respecte aussi. */
+  opacity: 0.85;
+}
+
+/* ─── §14.2 : alternatives aux animations ─────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-evitement,
+  .app-lien,
+  .app-navigation-lien,
+  .app-barre-lien,
+  .nat-entite {
+    transition: none;
+  }
+}
