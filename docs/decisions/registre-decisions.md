@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T11` du LOT 4
+**Dernière mise à jour :** 24 août 2026, sous-étape `T12` du LOT 4
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -63,6 +63,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-553`, sous-étape `T9`** | 1 | **Validée le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-554`, sous-étape `T10`** | 1 | **Soumise le 24/08/2026** |
 | **Réalisation du LOT 4 `DEC-555`, sous-étape `T11`** | 1 | **Soumise le 24/08/2026** |
+| **Réalisation du LOT 4 `DEC-556`, sous-étape `T12`** | 1 | **Soumise le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -74,7 +75,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **223** | |
+| **Total** | **224** | |
 
 ---
 
@@ -676,7 +677,17 @@ Jonathan le 24 août 2026.
 
 ---
 
-**Prochain identifiant libre : `DEC-556`.**
+## Réalisation du LOT 4 — sous-étape `T12`
+
+Décisions prises en préparant la porte `G4`. Soumises à Jonathan le 24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-556` | **AUCUN contrôle du §30 n'est reclassé, et c'est mesuré ; cinq des six critères de sortie sont MÉCANIQUEMENT prouvés, le sixième est celui de Jonathan ; et la recette est faite sur une révision NOMMÉE, qui n'est pas la finale.** **(a)** `make recette-modele-check` reste à **12 acquis, 1 partiel, 11 reportés, 1 inapplicable** — inchangé. **(b)** Les critères 1 à 5 sont tenus par des contrôles de l'intégration continue, chacun désigné par son numéro dans `cadre-check`. **(c)** La recette a tourné sur **`1850d8d`**, la fusion de `T8` — dernière publication réussie au moment de la mesure — et la checklist `G4` **dit** que `T9` à `T11` n'y sont pas. **(d)** La recette finale est nommée comme un geste **post-fusion** appartenant à Jonathan. | **(a) LE CRITÈRE DE `T12` DIT « les contrôles du §30 qui deviennent acquis le sont avec un test nommé ». AUCUN NE LE DEVIENT.** Et le motif est structurel, pas un oubli : le §30 du modèle énumère des invariants **de données** — photos, onboarding, imports, jobs, audit, purge, anonymisation, exports — alors que le LOT 4 livre des **écrans et de la navigation**, sans **aucune migration**. Fabriquer un reclassement pour cocher le critère serait exactement ce que le §7.0 interdit : une affirmation qui produirait la même observation qu'un vrai acquis. **(b) « PROUVÉ » VEUT DIRE « ÉCHOUE EN CI SI ON LE CASSE ».** Les cinq critères ne sont pas cochés sur ma parole : chacun renvoie à un contrôle numéroté de `cadre-check`, lui-même éprouvé par `cadre-temoin` sur **15 motifs**. Le cinquième méritait le plus d'attention — « les erreurs réseau n'indiquent jamais à tort qu'une action est sauvegardée » sur un lot en **lecture seule** — et le §17.2 l'a résolu en désignant les écritures du LOT 3. **(c) DIRE SUR QUOI LA RECETTE A TOURNÉ EST PLUS UTILE QUE DE DIRE QU'ELLE A TOURNÉ.** `make images-pin` épingle sur la dernière publication **réussie** ; celle de `T9` était encore en cours. La recette prouve donc le **mécanisme** — 8/8 sains, 57 contrôles de séparation, 7 séparations sur 7, l'artefact **bâti** servi et non le serveur Vite, l'API à 401 sans session — et **pas le contenu complet du lot**. Taire cette nuance aurait laissé croire davantage que ce qui est vrai, ce que le §7.20 interdit. **(d)** Publier est une action vers l'extérieur, et le §12 dit de ne rien y pousser sans son accord. La commande est écrite dans la checklist, prête, et c'est lui qui la lance. | Soumise le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-557`.**
 
 ---
 
@@ -881,6 +892,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-553` — réalisation du LOT 4, `T9` | 1 | 1 |
 | `DEC-554` — réalisation du LOT 4, `T10` | 1 | 1 |
 | `DEC-555` — réalisation du LOT 4, `T11` | 1 | 1 |
+| `DEC-556` — réalisation du LOT 4, `T12` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -892,7 +904,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **223** | **223** |
+| **Total** | **224** | **224** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
