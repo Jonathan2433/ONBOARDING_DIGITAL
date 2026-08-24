@@ -383,8 +383,13 @@ docs-check: ## Verifier l'integrite des documents immuables et les sequences d'i
 # ligne `media/` de .gitignore, ecrite au LOT 0 contre les medias DEPOSES, vaut a
 # toute profondeur et attrapait le module du meme nom. Classe §7.34 : un motif
 # ecrit contre un exemple ne couvre que cet exemple. Le controle est dans `make
-# check` et non dans `icloud-verify` parce que le moment ou il faut le savoir est
-# la PULL REQUEST, pas le debut de session.
+# check` ET NOMME DANS `ci.yml`, et non dans `icloud-verify`, parce que le moment
+# ou il faut le savoir est la PULL REQUEST, pas le debut de session.
+#
+# ATTENTION : `ci.yml` N'INVOQUE PAS `make check`. Il appelle les cibles UNE PAR
+# UNE -- trente-huit invocations. Une cible ajoutee a `make check` n'entre donc
+# PAS dans l'integration continue. C'est le defaut T1-5 : j'avais mesure sur un
+# grep qui matchait `make check` dans un COMMENTAIRE du workflow.
 sources-check: ## Verifier qu'aucun fichier source du disque n'est ignore par git
 	@python3 infra/scripts/verifier-sources-suivies.py
 

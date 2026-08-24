@@ -851,7 +851,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**195 défauts NOMMÉS au 24/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **4** au LOT 5 — 71 + 44 + 57 + 19 + 4,
+**196 défauts NOMMÉS au 24/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **5** au LOT 5 — 71 + 44 + 57 + 19 + 5,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -1830,8 +1830,15 @@ produits à toute profondeur — `dist/`, `node_modules/`, les caches — resten
 c'est leur intention.
 
 **`make sources-check` exige qu'aucun fichier source du disque ne soit ignoré par git**, la liste
-**dérivée du disque** à chaque exécution. Il est dans **`make check`**, donc dans la CI : le moment
-où il faut le savoir est la **pull request**, pas le début de session. **Éprouvé sur le défaut qui
+**dérivée du disque** à chaque exécution. Il est dans **`make check`** *et* **nommé explicitement
+dans `ci.yml`** : le moment où il faut le savoir est la **pull request**, pas le début de session.
+
+> **Et le « donc dans la CI » que j'avais d'abord écrit était FAUX** — `T1-5`, cinquième défaut de
+> cette sous-étape. **`ci.yml` n'invoque pas `make check`** : il appelle les cibles **une par une**,
+> trente-six d'entre elles. Ma première mesure avait matché le mot `make check` dans un
+> **commentaire** du workflow. C'est le §7.28 — lis ce que la cible fait, pas ce que son nom suggère —
+> et le §7.11 : **vérifie ce que la documentation affirme, même quand c'est toi qui l'écris.**
+> **Une cible ajoutée à `make check` n'entre PAS dans la CI de ce projet.** Ajoute-la à `ci.yml`. **Éprouvé sur le défaut qui
 l'a fait naître** — remis à `media/`, il rend 1 et nomme les deux fichiers avec leur ligne — et son
 témoin l'exerce **dans les deux sens**. Les deux seules exceptions, `AGENTS.md` et
 `docs/prototype/V1.html`, sont déclarées avec leur motif, et **le contrôle échoue aussi si l'une
@@ -2201,7 +2208,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **37 leçons** payées par **195 défauts nommés** — 71 + 44 + 57 + 19 + 4, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **37 leçons** payées par **196 défauts nommés** — 71 + 44 + 57 + 19 + 5, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

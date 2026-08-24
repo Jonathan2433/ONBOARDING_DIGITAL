@@ -175,8 +175,9 @@ profondeur restent non ancrés, parce que c'est leur intention.
 
 **Et la seule part qui vaille est le contrôle.** `make sources-check` balaye le disque et exige que
 `git check-ignore` ne refuse **aucun** fichier source, la liste **dérivée du disque** à chaque
-exécution. Il est dans **`make check`**, donc dans la CI : le moment où il faut le savoir est la
-**pull request**, pas le début de session.
+exécution. Il est dans **`make check`** *et* **nommé explicitement dans `ci.yml`** : le moment où il
+faut le savoir est la **pull request**, pas le début de session. Voir `T1-5` — le « donc dans la
+CI » que j'avais d'abord écrit était faux.
 
 | Épreuve | Résultat |
 |---|---|
@@ -208,6 +209,39 @@ marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en 
 qui est précisément ce qui s'est produit. Il nomme chaque ligne — éprouvé, il rend
 « 2 marqueurs au lieu d'un seul (ligne 114 -> ECART-048 ; ligne 704 -> ECART-045) ».
 
+### `T1-5` — « donc dans la CI » était faux, et c'est moi qui venais de l'écrire
+
+J'ai écrit, au commit, à la pull request, au registre et dans `CLAUDE.md` : « il est dans
+`make check`, **donc dans la CI** ». Puis j'ai voulu le vérifier.
+
+```text
+$ grep -oE 'make [a-z][a-z0-9-]*' .github/workflows/ci.yml | sort -u | grep check
+make check          <-- mais c'etait un COMMENTAIRE
+```
+
+**`ci.yml` n'invoque pas `make check`.** Il appelle les cibles **une par une** — trente-six
+invocations réelles avant cette sous-étape. Ma première mesure avait matché le texte `make check`
+dans un **commentaire** du workflow, et j'en avais tiré une conclusion inverse de la vérité.
+
+| Ce que j'ai mesuré d'abord | Ce que dit la mesure juste |
+|---|---|
+| `grep` sur tout le fichier | matche les **commentaires** |
+| « `make check` apparaît, donc il est invoqué » | **36 invocations**, aucune n'est `check` |
+
+> **C'est le §7.28 — lis ce que la cible fait, pas ce que son nom suggère — et le §7.11 : vérifie ce
+> que la documentation affirme, y compris quand c'est toi qui viens de l'écrire.** Et c'est aussi le
+> §7.6 dans un autre costume : un `grep` qui ne distingue pas le code du commentaire est un contrôle
+> dont on interprète le silence.
+
+**Corrigé dans le sens qui rend l'affirmation vraie** : `make sources-check` et
+`make sources-temoin` sont **nommées dans `ci.yml`**, dans la tâche qualité — elles n'exigent ni
+démon Docker ni base, seulement `git` et `python3`. Elles restent aussi dans `make check`, pour le
+local. **Mesure après correction : 38 invocations, `sources-check` et `sources-temoin` présentes.**
+
+**Et une conséquence à retenir pour toute la suite du projet, écrite dans le `Makefile` lui-même :
+une cible ajoutée à `make check` n'entre PAS dans l'intégration continue.** Il faut l'ajouter à
+`ci.yml`.
+
 ---
 
 ## 8. Mesures
@@ -224,7 +258,7 @@ qui est précisément ce qui s'est produit. Il nomme chaque ligne — éprouvé,
 | `migrations-check` | **0** — la chaîne rejouée sur base **vide** rend une signature **identique** |
 | `recette-modele-check` | **0** — §30.12 reclassé, 12 acquis · 1 partiel · 11 reportés · 1 inapplicable |
 | `residu-check` | **0** — 26 tables comptées, **0 ligne avant** |
-| `sources-check` · `sources-temoin` | **0** · **0** — 338 fichiers source examinés, **1** sur le défaut d'origine |
+| `sources-check` · `sources-temoin` | **0** · **0** — 338 fichiers source examinés, **1** sur le défaut d'origine. **Nommées dans `ci.yml`**, tâche qualité |
 | `docs-check` | **0** — 143 décisions, 48 écarts, **6** séquences, marqueur unique par registre |
 | `make check` | **0** — 729 pytest, 235 Vitest, et les deux cibles nouvelles dedans |
 
