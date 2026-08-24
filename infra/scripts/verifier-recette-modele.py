@@ -172,7 +172,27 @@ CLASSEMENT: dict[int, Classement] = {
             "test_la_reponse_est_IDENTIQUE_pour_un_profil_archive",
         ),
     ),
-    12: Classement(12, REPORTE, lot="LOT 8 — medias et autorisations de diffusion"),
+    #  **RECLASSE EN `T1` DU LOT 5, ET C'ETAIT UNE ERREUR DE CE SCRIPT.** Il
+    #  rattachait ce controle au LOT 8, decrit comme « medias et autorisations de
+    #  diffusion ». Or le LOT 8 de la roadmap est **« Evenements et accueil
+    #  dynamique »**, et les seuls medias qu'il nomme sont ceux d'un evenement --
+    #  « titre, description, lieu, debut, fin et medias ».
+    #
+    #  C'est le **LOT 5** qui inclut « photo facultative et avatar neutre » ET
+    #  « gestion des autorisations de photo » dans ses *Inclus*, avec DEUX criteres
+    #  de sortie qui en dependent et `MVP-L05-US005` en **`P0`**.
+    #
+    #  **Cause : le classement avait ete fait sur la seule lecture du MODELE**,
+    #  dont le §16 « Medias » est generique, sans confronter a la ROADMAP qui
+    #  repartit ces medias entre deux lots selon leur USAGE. §7.24 -- relire une
+    #  regle ne suffit pas, il faut confronter les regles entre elles. `ECART-047`.
+    #
+    #  **IL RESTE `REPORTE`, ET C'EST DELIBERE.** `T1` cree les tables ; c'est `T6`
+    #  qui posera le service refusant la publication sans autorisation active --
+    #  le §25.4 rangeant cette regle parmi celles qui exigent « service ou trigger
+    #  controle ». Le passer `ACQUIS` maintenant nommerait un test qui n'existe pas,
+    #  et le controle exige que chaque preuve nomme un test QUI EXISTE.
+    12: Classement(12, REPORTE, lot="LOT 5 `T6` — autorisations de photo de profil"),
     13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
     14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),
     15: Classement(15, REPORTE, lot="LOT 7 — reouverture d'une tache"),

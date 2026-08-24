@@ -95,13 +95,29 @@ def nommer(prefixe: str, numero: int) -> str:
     return f"{prefixe}-{numero:03d}"
 
 
-def marqueur_declare(texte: str, prefixe: str) -> int | None:
-    """Lire le « prochain identifiant libre » declare par un registre."""
+def marqueurs_declares(texte: str, prefixe: str) -> list[tuple[int, int]]:
+    """TOUS les « prochain identifiant libre » declares, avec leur ligne.
+
+    LA PREMIERE VERSION FAISAIT UN `search`, DONC ELLE LISAIT LE PREMIER ET NE
+    VOYAIT JAMAIS LES AUTRES. Elle etait exacte pour le mode de defaillance
+    d'ECART-021 — un marqueur unique reste en arriere — et AVEUGLE a celui-ci :
+    le registre des ecarts en portait DEUX, `ECART-048` en tete et `ECART-045`
+    a la toute fin, trois de retard. Or la fin du fichier est l'endroit ou
+    regarde naturellement qui cherche le prochain numero. C'est le §7.31 : un
+    garde-fou peut etre exact pour un mode de defaillance et aveugle a un autre.
+
+    Un seul marqueur par registre est EXIGE, et non pas seulement leur accord :
+    deux marqueurs qui concordent aujourd'hui divergent le jour ou une
+    sous-etape n'en met qu'un a jour, ce qui est exactement ce qui s'est passe.
+    """
     motif = re.compile(
         r"[Pp]rochain identifiant libre\s*:?\s*\*{0,2}\s*`?" + re.escape(prefixe) + r"-0*(\d+)`?"
     )
-    trouve = motif.search(texte)
-    return int(trouve.group(1)) if trouve else None
+    trouves: list[tuple[int, int]] = []
+    for numero_de_ligne, ligne in enumerate(texte.splitlines(), start=1):
+        for valeur in motif.findall(ligne):
+            trouves.append((numero_de_ligne, int(valeur)))
+    return trouves
 
 
 def index_declare(texte: str, prefixe: str) -> int | None:
@@ -170,11 +186,15 @@ def controler_sequences() -> tuple[int, int]:
             continue
 
         attendu = max(en_usage) + 1
-        du_registre = marqueur_declare(texte, prefixe)
+        marqueurs = marqueurs_declares(texte, prefixe)
+        du_registre = marqueurs[0][1] if marqueurs else None
         de_l_index = index_declare(index, prefixe)
 
         ecarts = []
-        if du_registre != attendu:
+        if len(marqueurs) > 1:
+            ou = " ; ".join(f"ligne {ligne} -> {nommer(prefixe, v)}" for ligne, v in marqueurs)
+            ecarts.append(f"{len(marqueurs)} marqueurs au lieu d'un seul ({ou})")
+        elif du_registre != attendu:
             annonce = nommer(prefixe, du_registre) if du_registre else "rien"
             ecarts.append(f"le registre annonce {annonce}")
         if de_l_index != attendu:
