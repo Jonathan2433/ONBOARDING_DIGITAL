@@ -129,9 +129,22 @@ def main() -> int:
         print(f"  ECHEC    decor impossible : {sortie[:250]}")
         return 1
 
+    #  **`REINITIALISER=1` EST TOUJOURS PASSE, ET C'EST UN DEFAUT CORRIGE.**
+    #  `make admin-local` est idempotent : au SECOND appel il ne recree rien, donc
+    #  il n'imprime plus aucun mot de passe -- et `make apercu` cessait de repondre
+    #  a la seule question qu'il existe pour repondre, « comment j'entre ».
+    #
+    #  Mesure du 24/08/2026 : premier appel, un mot de passe ; second appel,
+    #  « (voir `make admin-local` ci-dessus) », une note que personne ne peut
+    #  suivre. C'est le §7.21 -- un message qu'on ne peut pas actionner apprend a
+    #  ne pas lire l'outil.
+    #
+    #  Reinitialiser est sans risque ICI et nulle part ailleurs : le compte porte
+    #  le prefixe `apercu-`, il est cree par ce script, et `make apercu-fin` le
+    #  supprime. Ce n'est pas une reinitialisation d'un compte reel.
     make = shutil.which("make") or "/usr/bin/make"
     admin = subprocess.run(  # noqa: S603
-        [make, "admin-local", f"ADRESSE={adresse}"],
+        [make, "admin-local", f"ADRESSE={adresse}", "REINITIALISER=1"],
         capture_output=True,
         text=True,
         cwd=RACINE,
@@ -142,6 +155,17 @@ def main() -> int:
     for ligne in (admin.stdout + admin.stderr).splitlines():
         if "mot de passe :" in ligne:
             mot_de_passe = ligne.split("mot de passe :")[1].strip()
+    #  **L'ABSENCE DE MOT DE PASSE EST UN ECHEC, PAS UNE NOTE.** Un apercu dans
+    #  lequel on ne peut pas entrer ne sert a rien : mieux vaut le dire fort que
+    #  d'imprimer un chemin d'acces incomplet en sortant en 0.
+    if not mot_de_passe:
+        print()
+        print("  ECHEC    aucun mot de passe obtenu de `make admin-local` :")
+        for ligne in (admin.stdout + admin.stderr).splitlines()[-6:]:
+            print(f"           {ligne}")
+        print("           -> sans lui, l'apercu est inutilisable. Le decor reste pose ;")
+        print("              `make apercu-fin` le retire.")
+        return 1
 
     hote = env.get("CADDY_SITE_APP", "app.onboarding.localhost")
     port = env.get("CADDY_HTTPS_HOST_PORT", "443")
@@ -155,7 +179,7 @@ def main() -> int:
     print("  ┌─ POUR REGARDER ───────────────────────────────────────────────")
     print(f"  │  1. ouvre        {base}/connexion/administrateur")
     print(f"  │  2. adresse      {adresse}")
-    print(f"  │  3. mot de passe {mot_de_passe or '(voir `make admin-local` ci-dessus)'}")
+    print(f"  │  3. mot de passe {mot_de_passe}")
     print(f"  │  4. puis         {base}/   ← la page nationale")
     print("  │")
     print("  │  Safari, Chrome et Edge acceptent le certificat local ; Firefox")
