@@ -231,3 +231,88 @@ export const ECRANS: readonly Ecran[] = [
   { cle: 'introuvable', libelleCorpus: '404', chemin: CHEMINS.introuvable },
   { cle: 'erreur', libelleCorpus: 'erreur générale', chemin: CHEMINS.erreur },
 ] as const;
+
+/**
+ * LES RÔLES QUI OUVRENT « ADMINISTRATION » — LOT 4, `T9`.
+ *
+ * **RÉEXPORTÉS DU CONTRAT, JAMAIS ÉCRITS ICI.** Le frontend masque, l'API refuse,
+ * et les deux doivent parler de la **même** liste : deux copies divergeraient au
+ * premier rôle ajouté (§7.27). Le manifeste est la source unique lue par
+ * TypeScript **et** par Python (`DEC-492`), et sa dérivation — le §20 de la
+ * matrice, **trois** colonnes et non deux — y est écrite à côté de la valeur.
+ *
+ * **La première version de `T9` écrivait la liste ici ET dans le test Python.**
+ * Deux dérivations du même §20, dans deux langages, sans rien pour les confronter.
+ */
+export { ROLES_ADMINISTRATION } from '@onboarding/contracts';
+
+//  Le `export {}` ci-dessus REEXPORTE sans mettre le nom dans la portee de ce
+//  module : l'import est donc necessaire en plus, et son absence aurait ete
+//  attrapee par `tsc`.
+import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
+
+/**
+ * **AUCUN PARCOURS D'ONBOARDING NE PEUT EXISTER AU LOT 4, ET C'EST MESURÉ.**
+ *
+ * Le §8.2 conditionne « Mon onboarding » à « lorsqu'un parcours actif existe ».
+ * Le schéma ne porte **aucune** table de parcours ni de fiche d'arrivée : elles
+ * appartiennent aux LOTS 7 et 8. La condition est donc **trivialement fausse**,
+ * pour tout le monde.
+ *
+ * Ce n'est pas une invention, c'est l'évaluation correcte d'une condition sur un
+ * domaine vide. Et ce n'est pas non plus un `false` en dur qu'on oublierait : un
+ * test l'épingle, si bien que le lot qui créera les parcours devra le changer
+ * **délibérément**. §7.32 — un test est un meilleur véhicule qu'un commentaire.
+ */
+export const UN_PARCOURS_ACTIF_EST_POSSIBLE = false;
+
+/** Ce dont la navigation a besoin pour décider ce qu'elle montre. */
+export interface DroitsDeNavigation {
+  readonly aUnParcoursActif: boolean;
+  readonly peutAdministrer: boolean;
+}
+
+/**
+ * Dériver les droits de navigation des rôles que l'API a rendus.
+ *
+ * **LE FRONTEND NE RÉAPPLIQUE PAS LE §5.1, ET C'EST VOLONTAIRE.** L'API a déjà
+ * réduit les rôles à `EMP` hors de l'entité principale : les rôles reçus sont
+ * donc **déjà** ceux qui s'appliquent ici. Refaire le calcul côté client
+ * donnerait deux implémentations d'une même règle, qui divergeraient — et la
+ * règle 5 du projet dit que l'API est l'autorité finale, pas la copie.
+ *
+ * **`null` REND TOUT À `false`, ET C'EST LE REFUS PAR DÉFAUT DU §20.1.** Mais la
+ * raison mérite d'être dite, parce qu'elle est l'inverse de celle qui gouverne la
+ * mention du §5.1 dans l'en-tête : cette mention **affirme** quelque chose à
+ * l'utilisateur, et on n'affirme pas sur une ignorance. Un menu, lui, ne fait que
+ * **proposer** : ne pas proposer coûte un clic, et l'API reste l'autorité. Les
+ * deux choix sont donc opposés pour une raison, pas par inadvertance.
+ */
+export function droitsDeNavigation(roles: readonly string[] | null): DroitsDeNavigation {
+  return {
+    aUnParcoursActif: UN_PARCOURS_ACTIF_EST_POSSIBLE,
+    peutAdministrer: roles !== null && roles.some((role) => ROLES_ADMINISTRATION.includes(role)),
+  };
+}
+
+/**
+ * Une rubrique est-elle visible, compte tenu des droits ?
+ *
+ * **UN SEUL EXEMPLAIRE DE CE PRÉDICAT, ET C'EST UNE CORRECTION.** `T4` l'avait
+ * écrit **deux fois** — dans `NavigationPrincipale.tsx` et dans `BarreMobile.tsx`
+ * — sous la forme de deux `if` sur la clé de la rubrique. Deux copies d'une même
+ * règle divergent au premier ajout, c'est `DEC-466` et `ECART-022`, et le §7.27 le
+ * dit d'une liste comme d'un prédicat.
+ */
+export function rubriqueEstVisible(rubrique: Rubrique, droits: DroitsDeNavigation): boolean {
+  if (rubrique.cle === 'monOnboarding') {
+    return droits.aUnParcoursActif;
+  }
+  if (rubrique.cle === 'administration') {
+    return droits.peutAdministrer;
+  }
+  //  Une rubrique sans condition est toujours visible. Et une rubrique QUI EN
+  //  PORTE UNE sans être traitée ci-dessus serait un défaut : le contrôle
+  //  `cadre-check` exige que les deux ensembles coïncident.
+  return rubrique.condition === undefined;
+}

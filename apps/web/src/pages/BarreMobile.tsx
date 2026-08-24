@@ -59,7 +59,7 @@
 import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 
-import { cheminDeRubrique, RUBRIQUES } from '../routes';
+import { cheminDeRubrique, RUBRIQUES, rubriqueEstVisible } from '../routes';
 
 export interface ProprietesBarre {
   readonly code: string;
@@ -84,16 +84,15 @@ export function BarreMobile({
   aUnParcoursActif = false,
   peutAdministrer = false,
 }: ProprietesBarre): JSX.Element {
+  //  **LE MEME PREDICAT QUE LE MENU PRINCIPAL, ET UN SEUL EXEMPLAIRE.** Les
+  //  secondaires sont les rubriques CONDITIONNELLES que les droits ouvrent ; les
+  //  principales, celles qui n'ont pas de condition. Les deux ensembles sont donc
+  //  disjoints et leur union est `RUBRIQUES` -- ce que `cadre-check` exige.
+  const droits = { aUnParcoursActif, peutAdministrer };
   const principales = RUBRIQUES.filter((rubrique) => rubrique.condition === undefined);
-  const secondaires = RUBRIQUES.filter((rubrique) => {
-    if (rubrique.cle === 'monOnboarding') {
-      return aUnParcoursActif;
-    }
-    if (rubrique.cle === 'administration') {
-      return peutAdministrer;
-    }
-    return false;
-  });
+  const secondaires = RUBRIQUES.filter(
+    (rubrique) => rubrique.condition !== undefined && rubriqueEstVisible(rubrique, droits),
+  );
 
   return (
     //  `aria-label` distinct de celui du menu principal : deux reperes de

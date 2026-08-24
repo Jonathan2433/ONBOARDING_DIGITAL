@@ -62,7 +62,9 @@ function monter(code: string, strict = false, chemin?: string): ReturnType<typeo
               <Route
                 key={rubrique.cle}
                 path={rubrique.suffixe}
-                element={<PageRubrique libelle={rubrique.libelle} lot={rubrique.lot} />}
+                element={
+                  <PageRubrique cle={rubrique.cle} libelle={rubrique.libelle} lot={rubrique.lot} />
+                }
               />
             ),
           )}
@@ -553,5 +555,77 @@ describe("l'ordre d'arrivee des trois reponses ne change rien — T8", () => {
     expect(document.querySelector('[data-consultation="seule"]')).not.toBeNull();
     //  Et la liste aussi : le selecteur est la.
     expect(document.querySelector('details')).not.toBeNull();
+  });
+});
+
+describe('le garde-fou de route est ERGONOMIQUE, et il le dit — T9', () => {
+  function fetchAvecRoles(roles: readonly string[], principale: boolean): ReturnType<typeof vi.fn> {
+    return vi.fn((cible: unknown) => {
+      const url = String(cible);
+      if (url.endsWith('/permissions')) {
+        return Promise.resolve(json(permissions('bordeaux', principale, roles), 200));
+      }
+      if (url === '/api/v1/entities') {
+        return Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200));
+      }
+      return Promise.resolve(json(BORDEAUX, 200));
+    });
+  }
+
+  it("l'adresse tapée à la main atteint la page, et la page EXPLIQUE — §24.20", async () => {
+    //  **LE MENU EST MASQUÉ, ET L'UTILISATEUR TAPE L'ADRESSE QUAND MÊME.** C'est
+    //  la « requête construite manuellement » du §24.20, côté navigation.
+    vi.stubGlobal('fetch', fetchAvecRoles(['EMP'], true));
+    monter('bordeaux', false, '/entites/bordeaux/administration');
+
+    await waitFor(() => expect(document.querySelector('[data-rubrique-fermee]')).not.toBeNull());
+    const message = screen.getByRole('status').textContent ?? '';
+    //  **IL NE REND PAS DE VERDICT SUR L'APPELANT.** Rien n'a ete refuse : la
+    //  page s'affiche. Ma premiere assertion cherchait `/refus[ée]/i` et
+    //  echouait sur ma propre phrase, « c'est l'API qui refuse les actions non
+    //  autorisees » -- un controle trop large qui refuse du texte correct, §7.25.
+    //  L'exigence exacte porte sur le VERDICT, pas sur le mot.
+    expect(message).not.toMatch(/acc[eè]s refus/i);
+    expect(message).not.toMatch(/non autoris[ée] a/i);
+    //  Et il dit ou est la vraie barriere. **Le fragment est choisi SANS
+    //  apostrophe** : le JSX emploie `&rsquo;`, donc le texte rendu porte une
+    //  apostrophe typographique, et une assertion ecrite avec `'` echouait sur un
+    //  livrable correct. §7.10 -- inspecte ce qui est rendu, pas ce que tu as tape.
+    expect(message).toContain('API qui refuse les actions non autorisees');
+    //  Le menu, lui, ne propose pas la rubrique.
+    expect(screen.queryByRole('link', { name: 'Administration' })).toBeNull();
+  });
+
+  it('la même adresse AVEC le rôle affiche la rubrique — le témoin dans l autre sens', async () => {
+    //  Sans ce témoin, le test précédent serait satisfait par une page qui refuse
+    //  toujours, et le garde-fou ne prouverait rien.
+    vi.stubGlobal('fetch', fetchAvecRoles(['EMP', 'ADM-E'], true));
+    monter('bordeaux', false, '/entites/bordeaux/administration');
+
+    await waitFor(() => expect(document.querySelector('[data-rubrique]')).not.toBeNull());
+    expect(document.querySelector('[data-rubrique-fermee]')).toBeNull();
+    //  **`getAllByRole` ET NON `getByRole`.** « Administration » apparait DEUX
+    //  fois -- dans le menu principal et dans la barre mobile -- et c'est correct :
+    //  les deux reperes montrent la meme chose. Ma premiere assertion employait
+    //  `getByRole`, qui echoue sur une ambiguite, donc sur un livrable conforme.
+    expect(screen.getAllByRole('link', { name: 'Administration' }).length).toBe(2);
+  });
+
+  it('hors entité principale, le message nomme la BONNE cause — §5.1', async () => {
+    //  Le même refus a deux causes possibles, et l'utilisateur doit savoir
+    //  laquelle : « vous n'avez pas ce droit » et « vous n'êtes pas chez vous »
+    //  n'appellent pas la même action de sa part.
+    vi.stubGlobal('fetch', fetchAvecRoles(['EMP'], false));
+    monter('bordeaux', false, '/entites/bordeaux/administration');
+
+    await waitFor(() => expect(document.querySelector('[data-rubrique-fermee]')).not.toBeNull());
+    //  **ON LIT L'ELEMENT VISE, PAS « le » `role="status"`.** Il y en a DEUX ici,
+    //  et c'est coherent : l'en-tete porte la mention du §5.1, la rubrique porte
+    //  son explication. `getByRole('status')` echouait donc sur une ambiguite
+    //  legitime -- meme classe que l'assertion precedente.
+    const ferme = document.querySelector('[data-rubrique-fermee]');
+    expect(ferme?.textContent).toContain('pas votre entite principale');
+    //  Et l'en-tete porte bien la mention du §5.1, les deux coexistent.
+    expect(document.querySelector('[data-consultation="seule"]')).not.toBeNull();
   });
 });
