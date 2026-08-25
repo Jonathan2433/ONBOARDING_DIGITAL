@@ -242,6 +242,22 @@ local. **Mesure après correction : 38 invocations, `sources-check` et `sources-
 une cible ajoutée à `make check` n'entre PAS dans l'intégration continue.** Il faut l'ajouter à
 `ci.yml`.
 
+### `T1-6` — la pull request empilée s'est fermée d'office, et n'avait aucune CI
+
+J'avais ouvert la pull request de `T1` sur `feat/ouverture-lot-5`, non encore fusionnée, pour que son
+diff montre **exactement** la sous-étape. C'était le bon objectif et le mauvais moyen.
+
+| Conséquence | Mesure |
+|---|---|
+| **aucune intégration continue** | `ci.yml` filtre `branches: [develop, main]`. Une pull request visant une autre base n'en déclenche **aucune** — et ce n'était pas « pas encore là », c'était structurel. `gh pr checks` répondait « no checks reported », ce qui ne distingue pas les deux (§7.21) |
+| **fermée d'office** | la fusion de #124 avec `--delete-branch` a supprimé la branche de base, et GitHub a **clos** #126. `gh pr reopen` refuse : « Could not open the pull request » — **et `gh` a rendu 0 malgré l'échec**, septième occurrence de la classe §7.3 : c'est le message qui fait foi, pas le code |
+
+**Repris en #128**, rebasé `--onto origin/develop e9355aa`. Le rebase a rendu **0**, ce qui ne prouve
+rien : le contrôle porte sur le **diff**, pas sur le verdict de l'outil (§7.24). Vérifié — **19
+fichiers, exactement `T1`**, l'ouverture du LOT 5 n'y figure plus, et le module `media/` est présent.
+
+L'étape 6 de la boucle du §6.1 porte désormais **« JAMAIS EMPILÉE »**.
+
 ---
 
 ## 8. Mesures

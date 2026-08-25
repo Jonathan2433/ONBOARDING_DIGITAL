@@ -20,14 +20,14 @@ d'agir.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, tag `v0.4.0` **à poser**) |
+| Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
 | **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1` est terminée**, onze restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
 | **Prochaine action** | **`T2` du LOT 5 — le trombinoscope paginé** (`US001`, issue #116). Le §18.2 du cahier donne « 25 par défaut ; options 25, 50 et 100 ; **maximum 100** » : le contrôle devra exiger le **refus au-delà**, pas seulement l'acceptation des trois. Et le §5.1 de la matrice s'applique à cette route comme aux autres — l'API a déjà de quoi le faire, `exiger_un_role_dans_l_entite` attendant son premier consommateur. Lis le §9 du [compte rendu de `T1`](docs/operations/compte-rendu-t1-lot-5.md) |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
-| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
+| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
 | **Tests** | **944** : **709 pytest** — dont **426 d'intégration** — et **235 Vitest** (**97 `ui`**, **121 `web`**, **17 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **14 migrations**, tête `0014`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
@@ -789,13 +789,26 @@ charger une liste de manifestes. Vérifié le 29/07/2026 sur cette machine.
 3. Contrôler         en lecture seule, après modification, avec témoins
 4. Rapporter         au format imposé, avec les sorties réelles
 5. Attendre          la validation explicite de Jonathan
-6. Fusionner         une pull request par sous-étape, squash
+6. Fusionner         une pull request par sous-étape, squash, JAMAIS EMPILEE
 7. REFERMER l'issue  A LA MAIN : `Closes #N` ne marche pas depuis develop, voir §7.19
 ```
 
 **L'étape 7 n'est pas une formalité et elle a été oubliée à la fusion de `T7`.** Le commentaire de
 fermeture est aussi l'endroit où cocher les critères d'acceptation avec leurs preuves, ce que le
 backlog §11 exige.
+
+**Et l'étape 6 porte « JAMAIS EMPILÉE » depuis `T1` du LOT 5, où le coût a été payé.** J'avais ouvert
+la pull request de `T1` sur la branche d'ouverture du lot, non encore fusionnée, pour que son diff
+montre exactement la sous-étape. Deux conséquences, toutes deux mesurées :
+
+| Conséquence | Mesure |
+|---|---|
+| **aucune intégration continue** | `ci.yml` filtre `branches: [develop, main]` : une pull request visant une autre base n'en déclenche **aucune**. Ce n'était pas « pas encore là » — c'était structurel |
+| **fermée d'office, sans avertissement** | la fusion de la base avec `--delete-branch` a **supprimé** la branche de base, et GitHub a **clos** la pull request. `gh pr reopen` refuse ensuite : « Could not open the pull request » |
+
+**Une sous-étape part toujours de `develop`.** Si elle dépend d'un travail non fusionné, attends la
+fusion — et le rebase se fait `--onto origin/develop <ancienne base>`, puis on vérifie le **diff**,
+pas le verdict du rebase (§7.24).
 
 ## 6.2 Le format de rapport imposé
 
@@ -851,7 +864,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**196 défauts NOMMÉS au 24/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **5** au LOT 5 — 71 + 44 + 57 + 19 + 5,
+**197 défauts NOMMÉS au 25/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **6** au LOT 5 — 71 + 44 + 57 + 19 + 6,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2208,7 +2221,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **37 leçons** payées par **196 défauts nommés** — 71 + 44 + 57 + 19 + 5, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **37 leçons** payées par **197 défauts nommés** — 71 + 44 + 57 + 19 + 6, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
