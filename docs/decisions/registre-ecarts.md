@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 24 août 2026, ouverture du LOT 5
+**Dernière mise à jour :** 24 août 2026, sous-étape `T1` du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 47 | 10 | 34 | 3 |
+| Total 48 | 9 | 36 | 3 |
 
 ---
 
@@ -64,7 +64,8 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-044` | **`verifier-ecrans.py` lisait les `libelleCorpus` du fichier ENTIER.** `RUBRIQUES` en a ajouté six, et le contrôle en a compté **14** au lieu de 8, cherchant « Framework » dans la liste des huit écrans du §17.5. **La même correction avait déjà été faite juste en dessous** : `chemins_declares` est bornée au bloc `CHEMINS` depuis qu'elle attrapait des libellés en croyant lire des URL. La correction avait été appliquée à **une instance, pas à la classe** | Non — détecté par le contrôle lui-même, qui a échoué bruyamment | **Clos** — extraction bornée au bloc `ECRANS` |
 | `ECART-045` | **Quatre endroits justifient la sélection de `target: developpement` par « le rechargement à chaud », que `T5` du LOT 1 avait délibérément écarté.** Le conteneur `web` porte **0 montage**, mesuré : le serveur Vite surveille une copie figée dans l'image, donc rien de ce qu'il surveille ne change jamais. La sélection de cible reste juste — pour un **autre** motif, mesuré lui aussi | Non — documentaire, et le livrable est conforme | **Ouvert**, motifs à rectifier hors sous-étape |
 | `ECART-046` | **Le critère de `T9` demande « un appel direct à la route refusé par l'API », et le lot n'a AUCUNE route métier à refuser.** Ses trois routes — `/entities`, `/entities/{code}`, `/entities/{code}/permissions` — sont ouvertes aux huit rôles authentifiés par la matrice §5, et le §9.4 écarte tout écran d'administration. Le garde-fou est donc prouvé par **12 tests sur une application FastAPI jetable**, et non à travers Caddy | Non — le mécanisme est prouvé, c'est sa mise en service qui attend | **Accepté**, arbitrage de Jonathan du 24/08/2026, `DEC-553` |
-| `ECART-047` | **Notre propre contrôle rattache le §30.12 au LOT 8, alors que la roadmap et le backlog le placent au LOT 5.** `verifier-recette-modele.py` décrit le LOT 8 comme « médias et autorisations de diffusion » ; la roadmap l'appelle **« Événements et accueil dynamique »**, et ses médias sont ceux des événements. Le **LOT 5** inclut « gestion des autorisations de photo », et `US005` est **`P0`** | Non — la classification n'empêche rien, mais elle enverrait un relecteur au mauvais lot | **Ouvert**, à reclasser en `T1` du LOT 5 |
+| `ECART-047` | **Notre propre contrôle rattache le §30.12 au LOT 8, alors que la roadmap et le backlog le placent au LOT 5.** `verifier-recette-modele.py` décrit le LOT 8 comme « médias et autorisations de diffusion » ; la roadmap l'appelle **« Événements et accueil dynamique »**, et ses médias sont ceux des événements. Le **LOT 5** inclut « gestion des autorisations de photo », et `US005` est **`P0`** | Non — la classification n'empêche rien, mais elle enverrait un relecteur au mauvais lot | **Clos en `T1` du LOT 5** — le §30.12 est rattaché à `T6`, et il reste `REPORTE` |
+| `ECART-048` | **Deux garde-fous de ce dépôt étaient exacts pour un mode de défaillance et aveugles à un autre.** **(1)** Le motif `media/` de `.gitignore`, écrit au LOT 0 contre les **médias déposés**, attrapait `apps/api/app/media/` — le module source de `T1`. Écrit, testé, `make check` à **0**, et `git add -A` **ne l'a pas ajouté**. **(2)** `make docs-check` faisait un `search` du marqueur « prochain identifiant libre » : il lisait le **premier** et ne voyait jamais les autres. Ce registre en portait **deux**, `ECART-048` en tête et **`ECART-045`** à la toute fin — trois de retard, dans le garde-fou écrit **pour** `ECART-021` | Non — le premier a été vu avant la poussée, le second n'a jamais fait attribuer un numéro en double | **Clos en `T1` du LOT 5** — `DEC-560`, avec `make sources-check` et son témoin |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -107,11 +108,24 @@ formulée, et son caractère bloquant est explicité.
 | Cause | Le classement a été écrit en `T12` du LOT 2, sur la seule lecture du **modèle de données** — dont le §16 « Médias » est générique — sans confronter à la **roadmap**, qui répartit ces médias entre deux lots selon leur usage. **C'est le §7.24** : relire une règle ne suffit pas, il faut confronter les règles entre elles. |
 | Bloquant | Non |
 | Recommandation | **Reclasser en `T1` du LOT 5**, avec l'échéance « LOT 5 — autorisations de photo de profil », et le passer d'`ACQUIS` seulement quand `T6` aura son test nommé.<br>**Recommandation générale, et c'est elle qui vaut** : quand un contrôle de ce dépôt rattache une exigence à un lot, la source doit être la **roadmap**, qui est le document du découpage — pas le modèle, qui décrit des données sans dire quand elles arrivent. Les autres classements de ce script méritent la même confrontation. |
-| Résolution | **Ouvert.** À reclasser en `T1` du LOT 5. |
+| Résolution | **Clos en `T1` du LOT 5.** `verifier-recette-modele.py` rattache désormais le §30.12 à « LOT 5 `T6` — autorisations de photo de profil », et le garde **`REPORTE`** : le passer `ACQUIS` nommerait un test qui n'existe pas. C'est `T6` qui l'acquerra. |
+
+## `ECART-048` — Deux garde-fous exacts pour un mode de défaillance, aveugles à un autre
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 24 août 2026, LOT 5 sous-étape `T1`, **le premier en lisant `git status --short` après un `git commit`** — les deux fichiers du module `media` n'y figuraient pas ; le second en cherchant le prochain numéro d'écart à la fin du registre |
+| Source | `.gitignore` ligne 60, `media/`, écrite au LOT 0 · `infra/scripts/verifier-documentation.py`, fonction `marqueur_declare` · `docs/decisions/registre-ecarts.md` ligne 704 |
+| Constat | **1. Un motif de `.gitignore` attrapait du code source.** `media/`, sans barre oblique de tête, vaut **à toute profondeur** : il ignorait `apps/api/app/media/__init__.py` et `apps/api/app/media/modeles.py`. Le module a été écrit, ses 20 tests passaient, `make check` est sorti en **0**, `make icloud-verify` en **0**, et `git add -A` n'a rien ajouté. **Mesuré** : `git check-ignore -v` rend `.gitignore:60:media/` sur les deux fichiers.<br>**2. Le contrôle des marqueurs d'identifiant lisait le premier et ignorait les suivants.** `marqueur_declare` faisait un `re.search`. Ce registre portait **deux** marqueurs : `ECART-048` ligne 114, juste, et **`ECART-045` ligne 704**, à la toute fin — **trois de retard**. Or la fin du fichier est l'endroit que déroule naturellement qui cherche le prochain numéro. **Mesuré sur les six registres** : cinq en portaient un seul, celui-ci en portait deux |
+| Impact | **1.** Aucun sur les livrables passés, et le défaut a été vu **avant toute poussée**. Il était en revanche **silencieux dans le sens dangereux** : rien n'échouait, `make check` était vert, et la pull request aurait porté une migration et vingt tests **sans le module qu'ils exercent** — la CI aurait échoué à l'import, donc bruyamment, mais après le temps d'un cycle.<br>**2.** Aucun numéro n'a été attribué en double. C'est le dommage exact de `ECART-021` remis en place, dans le garde-fou écrit **pour** `ECART-021` |
+| Cause | **La même dans les deux cas, et c'est le §7.31 : un garde-fou peut être exact pour un mode de défaillance et aveugle à un autre.** Le motif `media/` est exact contre un répertoire de **données** déposé localement, et aveugle au fait qu'un **module source** peut porter le même nom. `marqueur_declare` est exact contre le mode de `ECART-021` — un marqueur unique resté en arrière — et aveugle à celui-ci, deux marqueurs dont un périmé.<br>**Et le premier est la seconde occurrence de la classe §7.34** : `* [0-9]` avait été écrit contre une copie de **répertoire** et ne couvrait pas les **fichiers** ; `media/` a été écrit contre un répertoire de **données** et ne prévoyait pas les **modules**. Les deux décrivent l'incident du jour, pas sa classe |
+| Bloquant | Non |
+| Recommandation | **Ancrer, et surtout POSER LE CONTRÔLE** — corriger un motif corrige une instance.<br>**1.** Les huit motifs qui nomment un répertoire de données locales sont ancrés à la racine ; les motifs de vrais artefacts produits à toute profondeur restent non ancrés, parce que c'est leur intention. **`make sources-check`** exige qu'aucun fichier source du disque ne soit ignoré, la liste **dérivée du disque** à chaque exécution, et il est dans **`make check`** *et* **nommé explicitement dans `ci.yml`** — `ci.yml` n'invoque **pas** `make check`, il appelle trente-six cibles une par une, et l'avoir cru est le défaut `T1-5`. **Éprouvé sur le défaut qui l'a fait naître** : remis à `media/`, il rend 1 et nomme les deux fichiers avec leur ligne.<br>**2.** `marqueurs_declares` rend **tous** les marqueurs avec leur ligne, et un **seul** est exigé — non pas seulement leur accord : deux marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en met qu'un à jour, ce qui est précisément ce qui s'est produit.<br>**Recommandation générale** : quand un garde-fou passe au vert sur un problème réel, ne conclus pas qu'il est cassé — demande-toi **quel mode de défaillance il couvre**, et lequel il ne voit pas. |
+| Résolution | **Clos en `T1` du LOT 5**, `DEC-560`. `make sources-check` et `make sources-temoin` sont dans `make check` ; `make docs-check` nomme désormais chaque ligne portant un marqueur. |
 
 ---
 
-**Prochain identifiant libre : `ECART-048`.**
+**Prochain identifiant libre : `ECART-049`.**
 
 ---
 
@@ -699,6 +713,3 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Borner l'extraction au bloc `ECRANS`, comme l'autre l'est au bloc `CHEMINS`.<br>**Recommandation générale** : quand une lecture textuelle porte sur un fichier qui déclare **plusieurs** collections de même forme, la borner au bloc **dès la première écriture**. `verifier-cadre.py` le fait pour `RUBRIQUES` — son `lire_rubriques` est bornée, et son docstring dit pourquoi. |
 | Résolution | **Clos.** |
 
----
-
-**Prochain identifiant libre : `ECART-045`.**

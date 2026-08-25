@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 24 août 2026, **ouverture du LOT 5**
+**Dernière mise à jour :** 24 août 2026, sous-étape `T1` du LOT 5
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -66,6 +66,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 4 `DEC-556`, sous-étape `T12`** | 1 | **Soumise le 24/08/2026** |
 | **Franchissement de la porte `G4` `DEC-557`** | 1 | **Validée le 24/08/2026** |
 | **Ouverture du LOT 5 `DEC-558`** | 1 | **Validée le 24/08/2026** |
+| **Réalisation du LOT 5 `DEC-559+`, sous-étape `T1`** | 2 | **Soumises le 24/08/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -77,7 +78,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **226** | |
+| **Total** | **228** | |
 
 ---
 
@@ -710,7 +711,19 @@ Décision de Jonathan, prise le 24 août 2026 immédiatement après le franchiss
 
 ---
 
-**Prochain identifiant libre : `DEC-559`.**
+## Réalisation du LOT 5 — sous-étape `T1`
+
+Décisions prises en posant les tables de média et d'autorisation de photo. Soumises à Jonathan le
+24 août 2026.
+
+| ID | Décision | Motif | Statut |
+|---|---|---|---|
+| `DEC-559` | **Trois tables, un déclencheur, une unicité dérivée — et ce que le §25.4 range hors de la base n'y est PAS mis.** **(a)** `media_asset`, `media_variant` et `photo_authorization` ; **`media_usage` reportée**. **(b)** `media_variant` porte un `entity_id` que le §16.2 n'écrit pas, et sa clé vers `media_asset` est **composite**. **(c)** `photo_authorization` reste **globale**, sans `entity_id`. **(d)** Un déclencheur rend `deleted` **terminal**. **(e)** Une seule unicité, **dérivée** : une variante par type et par actif. **(f)** La borne « photo 10 Mo » n'est **pas** en base. | **(a)** Voir `DEC-558`. **(b) DEUX SECTIONS DU MÊME DOCUMENT, ET IL FAUT LES CONFRONTER.** Le §16.2 dit « chaque variante porte : dimensions ; format ; taille ; checksum ; `object_key` propre » — aucun `entity_id`. Mais le **§25.3** prescrit : « les tables **locales** exposent un couple unique `(id, entity_id)` », et une variante appartient à un actif qui appartient à une entité : elle est locale **en substance**. Sans cette colonne, la clé serait **simple**, et une variante pourrait pointer l'actif d'une **autre** entité — exactement ce que le §25.3 existe pour empêcher. C'est le §7.24, et lire la seule §16.2 aurait produit une table sans garde-fou d'isolation. **`make isolation-check` compte désormais NEUF clés composites**, et `test_isolation.py` exige un test de refus par clé. **(c)** Elle lie une personne — table **globale** — à un actif. Lui donner un `entity_id` ferait de l'autorisation une donnée d'entité, ce que le §12.2 n'écrit pas et que le sens contredit : c'est la personne qui autorise sa photo. La dérivation d'`isolation-check` la classe globale, en lisant les sections du modèle. **(d) LE §24.3 LE DIT PAR SON DIAGRAMME** : `Deleted --> [*]`, aucune transition n'en sort. Même motif que `person.account_state = 'anonymized'` au LOT 2 — ce que la suppression a effacé n'est plus là pour être restauré. **Un `CHECK` ne peut pas l'exprimer** : il ne voit pas l'ancienne valeur. Et le témoin exige que les **autres** transitions restent permises, sans quoi un déclencheur refusant tout changement passerait le test. **(e) LE §25.1 ÉCRIT `INDEX` POUR `media_asset`, ET `UNIQUE` TREIZE FOIS AILLEURS DANS LA MÊME LISTE** : la distinction est délibérée, et un test **fige la non-unicité** pour qu'un lot ultérieur doive la décider. L'unicité de `media_variant`, elle, est **dérivée** : le §16.2 intitule sa liste « Versions générées » et en donne **cinq**, nommées — deux miniatures du même actif seraient deux réponses à une même question. Le §25.1 s'ouvrant par « à prévoir **notamment** », c'est ce que `T2` du LOT 3 a fait quatre fois. **Et AUCUNE unicité sur `photo_authorization`** : « au plus une autorisation active par personne » n'est écrit ni au §12.2, ni au §25.1, ni au §25.4. L'inventer serait le §6.5, et un test **fige l'absence** pour que `T6` la traite explicitement. **(f) UNE PHOTO EST UNE IMAGE.** Le §16.1 pose « photo 10 Mo » et « image 20 Mo » : la distinction n'est pas un `media_type` — il n'en existe que trois — mais un **usage**, que `media_usage` porterait avec `usage_type = 'PROFILE_PHOTO'`. Cette table étant reportée, la base n'exprime que les bornes par type, et **la borne de 10 Mo est nommée comme appartenant au service**, en `T5`, pour qu'on ne la croie pas acquise. C'est le LOT 2 à la lettre : le modèle décrit une **action**, seule l'**implication** est applicable en base. | Soumise le 24/08/2026 |
+| `DEC-560` | **Deux garde-fous de ce dépôt étaient exacts pour un mode de défaillance et aveugles à un autre : les deux sont rendus exacts, et le second reçoit un contrôle qui n'existait pas.** **(a)** Les huit motifs de `.gitignore` qui nomment un répertoire de **données locales** — `secrets/`, `uploads/`, `media/`, `data/`, `volumes/`, `backups/`, `restic-repo/`, `logs/` — sont **ancrés à la racine** : `/media/` et non `media/`. **(b)** `make sources-check` et `make sources-temoin` sont créées, entrent dans `make check`, et sont **nommées explicitement dans `ci.yml`**. **(c)** `make docs-check` exige désormais **un seul** marqueur « prochain identifiant libre » par registre, et nomme chaque ligne quand il en trouve plusieurs. | **(a) LE MOTIF `media/` A ÉTÉ ÉCRIT AU LOT 0 CONTRE LES MÉDIAS DÉPOSÉS, ET IL VAUT À TOUTE PROFONDEUR** : il attrapait `apps/api/app/media/`, le module source de `T1`. Le module a été écrit, testé, `make check` est sorti en **0**, et `git add -A` **ne l'a pas ajouté** — les deux fichiers n'apparaissaient pas dans `git status --short`. C'est le §7.34 à la lettre, et la seconde occurrence de sa classe : le motif `* [0-9]` avait été écrit contre une copie de **répertoire** et était aveugle aux **fichiers** ; celui-ci a été écrit contre un répertoire de **données** et est aveugle au fait qu'un **module** peut porter le même nom. **Mesuré avant de corriger** : aucun de ces huit répertoires n'existe ailleurs qu'à la racine dans ce dépôt — `apps/api/app/media` excepté — donc l'ancrage ne coûte rien. Les motifs de **vrais artefacts** produits à toute profondeur — `dist/`, `build/`, `node_modules/`, les caches — restent **non ancrés**, parce que c'est leur intention. **(b) CORRIGER LE MOTIF NE CORRIGE QU'UNE INSTANCE ; LE CONTRÔLE EST LA SEULE PART QUI VAILLE.** Il balaye le disque, relève tout fichier portant une extension de source, et **exige que `git check-ignore` n'en refuse aucun** — la liste est **dérivée du disque** à chaque exécution, elle ne peut pas vieillir (§7.27). Les **deux** seules exceptions, `AGENTS.md` et `docs/prototype/V1.html`, sont **déclarées avec leur motif** et le contrôle **échoue aussi si l'une cesse d'être ignorée** : une exception morte avalerait la réapparition du cas qu'elle couvrait (§7.22). Il est dans **`make check`** **et nommé dans `ci.yml`**, et non dans `icloud-verify`, parce que le moment où il faut le savoir est la **pull request** et non le début de session. **`ci.yml` n'invoque PAS `make check`** — il appelle trente-six cibles une par une, et l'avoir cru est le défaut `T1-5` : ma première mesure avait matché `make check` dans un **commentaire** du workflow. §7.28 et §7.11. **Éprouvé sur le défaut qui l'a fait naître** : remis à `media/`, il rend **1** et nomme les deux fichiers avec la ligne 60. Et son témoin l'exerce **dans les deux sens**, avec un vrai fichier source à un vrai chemin ignoré — un témoin qui n'exerce pas un contrôle ne prouve rien de ce contrôle (§7.25). **Le résiduel est NOMMÉ dans la sortie** : `dist` et `build` sont des noms qu'un module pourrait porter, et un module ainsi nommé échapperait au contrôle (§7.20). **(c) `marqueur_declare` FAISAIT UN `search`, DONC IL LISAIT LE PREMIER MARQUEUR ET NE VOYAIT JAMAIS LES AUTRES.** Le registre des écarts en portait **deux** : `ECART-048` en tête, ligne 114, et `ECART-045` à la **toute fin**, ligne 704 — **trois de retard**, et c'est la fin du fichier que déroule naturellement qui cherche le prochain numéro. Exactement le dommage de `ECART-021`, dans le garde-fou écrit **pour** `ECART-021`. **Un seul marqueur est exigé, et non pas seulement leur accord** : deux marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en met qu'un à jour, ce qui est précisément ce qui s'est produit. **Mesuré sur les six registres** avant correction : cinq en portaient un, un en portait deux. | Soumise le 24/08/2026 |
+
+---
+
+**Prochain identifiant libre : `DEC-561`.**
 
 ---
 
@@ -918,6 +931,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-556` — réalisation du LOT 4, `T12` | 1 | 1 |
 | `DEC-557` — franchissement de la porte `G4` | 1 | 1 |
 | `DEC-558` — ouverture du LOT 5 | 1 | 1 |
+| `DEC-559+` — réalisation du LOT 5, `T1` | 2 | 2 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -929,7 +943,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **226** | **226** |
+| **Total** | **228** | **228** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -19,6 +19,7 @@ from __future__ import annotations
 from app.auth import modeles as auth_modeles
 from app.clients import modeles as clients_modeles
 from app.entities import modeles as entities_modeles
+from app.media import modeles as media_modeles
 from app.organization import modeles as organization_modeles
 from app.people import modeles as people_modeles
 from app.shared.modele import Base, metadonnees
@@ -31,6 +32,8 @@ MODULES_DE_MODELES = (
     people_modeles,
     clients_modeles,
     organization_modeles,
+    #  LOT 5, T1 : les trois tables de media et d autorisation de photo.
+    media_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]

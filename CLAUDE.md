@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 24 août 2026, à l'**ouverture du LOT 5** — le LOT 4 est clos, `G4` franchie
+**Mis à jour le :** 24 août 2026, à la sortie de **`T1` du LOT 5**
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -20,22 +20,22 @@ d'agir.
 
 | | |
 |---|---|
-| Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, tag `v0.4.0` **à poser**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **Aucune sous-étape n'est commencée** |
+| Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1` est terminée**, onze restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T1` du LOT 5 — les trois tables de média et d'autorisation de photo**, et le §30.12 **reclassé**. Lis [`fiche-lot-5.md`](docs/operations/fiche-lot-5.md) en entier : son §2.1 nomme un piège mesuré — **`OFFICE` n'a AUCUN droit sur les profils**, sa colonne du §6.1 est entièrement à tiret — et son §8 nomme les **deux** points que le corpus ne tranche pas. **`media_usage` n'est PAS créée** : elle ne sert qu'à la médiathèque V1, et une table sans consommateur est ce que `DEC-537` refuse |
+| **Prochaine action** | **`T2` du LOT 5 — le trombinoscope paginé** (`US001`, issue #116). Le §18.2 du cahier donne « 25 par défaut ; options 25, 50 et 100 ; **maximum 100** » : le contrôle devra exiger le **refus au-delà**, pas seulement l'acceptation des trois. Et le §5.1 de la matrice s'applique à cette route comme aux autres — l'API a déjà de quoi le faire, `exiger_un_role_dans_l_entite` attendant son premier consommateur. Lis le §9 du [compte rendu de `T1`](docs/operations/compte-rendu-t1-lot-5.md) |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
-| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), **`v0.3.0` (`G3`)** |
+| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
 | **Tests** | **944** : **709 pytest** — dont **426 d'intégration** — et **235 Vitest** (**97 `ui`**, **121 `web`**, **17 `contracts`**) |
-| Schéma PostgreSQL | **25 tables**, **8 déclencheurs**, **13 migrations**, tête `0013`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
+| Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **14 migrations**, tête `0014`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **81 cibles** documentées. `make help` fait foi |
+| Makefile | **83 cibles** documentées — `sources-check` et `sources-temoin` sont nouvelles, `ECART-048`. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **141 décisions** `DEC-418+` · **44 écarts** (**8 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
+| Registres | **143 décisions** `DEC-418+` · **48 écarts** (**9 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 19 — DÉRIVÉS le 24/08/2026, et le « 8 » qui figurait ici était faux**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -508,12 +508,14 @@ réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 > `T2`. MinIO vient de **quay.io**, Mailpit de **ghcr.io** : leurs registres de publication, non
 > limités. Si une inspection d'image échoue, **lis l'erreur** avant de conclure à une absence.
 
-## 5.3 Les 53 cibles du `Makefile`, et le paramètre qui les commande
+## 5.3 Les cibles du `Makefile`, et le paramètre qui les commande
+
+> **Cette liste est indicative et `make help` fait foi.** Elle a annoncé « 53 cibles » alors qu'il y en avait 81 : un nombre recopié dans un titre vieillit à la première addition, et celui-là a vieilli de trente. **Dérive-le** : `grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile`.
 
 ```text
 Environnement   tools versions tree icloud-exclude icloud-verify install
 Qualité         lint format format-check typecheck test test-unit test-integration check
-                docs-check audit
+                docs-check sources-check sources-temoin audit
 Stack           env env-check up down destroy ps logs health ports minio-bucket
                 stack-check persistence-test caddy-reload caddy-recreate
 API             migrate migrate-status api-check alembic-check
@@ -787,13 +789,26 @@ charger une liste de manifestes. Vérifié le 29/07/2026 sur cette machine.
 3. Contrôler         en lecture seule, après modification, avec témoins
 4. Rapporter         au format imposé, avec les sorties réelles
 5. Attendre          la validation explicite de Jonathan
-6. Fusionner         une pull request par sous-étape, squash
+6. Fusionner         une pull request par sous-étape, squash, JAMAIS EMPILEE
 7. REFERMER l'issue  A LA MAIN : `Closes #N` ne marche pas depuis develop, voir §7.19
 ```
 
 **L'étape 7 n'est pas une formalité et elle a été oubliée à la fusion de `T7`.** Le commentaire de
 fermeture est aussi l'endroit où cocher les critères d'acceptation avec leurs preuves, ce que le
 backlog §11 exige.
+
+**Et l'étape 6 porte « JAMAIS EMPILÉE » depuis `T1` du LOT 5, où le coût a été payé.** J'avais ouvert
+la pull request de `T1` sur la branche d'ouverture du lot, non encore fusionnée, pour que son diff
+montre exactement la sous-étape. Deux conséquences, toutes deux mesurées :
+
+| Conséquence | Mesure |
+|---|---|
+| **aucune intégration continue** | `ci.yml` filtre `branches: [develop, main]` : une pull request visant une autre base n'en déclenche **aucune**. Ce n'était pas « pas encore là » — c'était structurel |
+| **fermée d'office, sans avertissement** | la fusion de la base avec `--delete-branch` a **supprimé** la branche de base, et GitHub a **clos** la pull request. `gh pr reopen` refuse ensuite : « Could not open the pull request » |
+
+**Une sous-étape part toujours de `develop`.** Si elle dépend d'un travail non fusionné, attends la
+fusion — et le rebase se fait `--onto origin/develop <ancienne base>`, puis on vérifie le **diff**,
+pas le verdict du rebase (§7.24).
 
 ## 6.2 Le format de rapport imposé
 
@@ -849,7 +864,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**172 défauts NOMMÉS au 23/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3 — 71 + 44 + 57,
+**197 défauts NOMMÉS au 25/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **6** au LOT 5 — 71 + 44 + 57 + 19 + 6,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -1795,6 +1810,65 @@ matrice**, donc celui du document, meilleur qu'alphabétique.
 
 ---
 
+## 7.36 Un contrôle vert n'atteste pas que ton code EST DANS le commit
+
+**Apport de `T1` du LOT 5, et c'est le seul défaut de ce projet qu'aucune des sept propositions du
+§7.0 ne pouvait attraper — parce qu'il ne porte pas sur ce que les contrôles mesurent, mais sur ce
+qu'ils mesurent SANS LE SAVOIR : le disque, et non l'index de git.**
+
+J'ai écrit `apps/api/app/media/`, ses vingt tests passaient, `make check` est sorti en **0**,
+`make icloud-verify` en **0**. Puis `git add -A` **n'a pas ajouté le module**, et `git status
+--short` ne le montrait pas.
+
+| Ce qui l'a causé | Mesure |
+|---|---|
+| `.gitignore` ligne 60 portait `media/`, **sans barre oblique de tête** | un motif de répertoire sans `/` interne vaut **à toute profondeur** |
+| écrit au LOT 0 contre les **médias déposés** localement | il attrapait `apps/api/app/media/`, un **module source** du même nom |
+| **`git check-ignore -v`** sur les deux fichiers | `.gitignore:60:media/` — la cause en une ligne |
+
+**C'est la deuxième occurrence de la classe §7.34.** Le motif `* [0-9]` avait été écrit contre une
+copie de **répertoire** et ne couvrait pas les **fichiers**. Celui-ci a été écrit contre un
+répertoire de **données** et ne prévoyait pas les **modules**. Les deux décrivent l'incident du
+jour, pas sa classe — et les deux sont restés justes pour leur cas pendant plus d'un an.
+
+> **La règle, sans jargon :** tous tes contrôles lisent le **disque**. Git lit son **index**. Ce
+> sont deux grandeurs différentes — le §7.0 sixième proposition, appliquée non pas à deux nombres
+> mais à deux **sources**. Un `make check` vert ne dit rien de ce qui sera commité. **Lis
+> `git status --short` après chaque `git add`, et compare-le à ce que tu viens d'écrire.**
+
+**Et la seule part de la correction qui vaille est le contrôle, pas le motif.** Les huit motifs qui
+nomment un répertoire de **données locales** sont ancrés à la racine — `/media/` et non `media/`,
+mesuré : aucun de ces huit répertoires n'existe ailleurs dans ce dépôt. Ceux de **vrais artefacts**
+produits à toute profondeur — `dist/`, `node_modules/`, les caches — restent non ancrés, parce que
+c'est leur intention.
+
+**`make sources-check` exige qu'aucun fichier source du disque ne soit ignoré par git**, la liste
+**dérivée du disque** à chaque exécution. Il est dans **`make check`** *et* **nommé explicitement
+dans `ci.yml`** : le moment où il faut le savoir est la **pull request**, pas le début de session.
+
+> **Et le « donc dans la CI » que j'avais d'abord écrit était FAUX** — `T1-5`, cinquième défaut de
+> cette sous-étape. **`ci.yml` n'invoque pas `make check`** : il appelle les cibles **une par une**,
+> trente-six d'entre elles. Ma première mesure avait matché le mot `make check` dans un
+> **commentaire** du workflow. C'est le §7.28 — lis ce que la cible fait, pas ce que son nom suggère —
+> et le §7.11 : **vérifie ce que la documentation affirme, même quand c'est toi qui l'écris.**
+> **Une cible ajoutée à `make check` n'entre PAS dans la CI de ce projet.** Ajoute-la à `ci.yml`. **Éprouvé sur le défaut qui
+l'a fait naître** — remis à `media/`, il rend 1 et nomme les deux fichiers avec leur ligne — et son
+témoin l'exerce **dans les deux sens**. Les deux seules exceptions, `AGENTS.md` et
+`docs/prototype/V1.html`, sont déclarées avec leur motif, et **le contrôle échoue aussi si l'une
+cesse d'être ignorée** (§7.22). Le résiduel est **nommé dans la sortie** : `dist` et `build` sont
+des noms qu'un module pourrait porter.
+
+**Et un second garde-fou du même jour, de la même classe §7.31.** `make docs-check` faisait un
+`re.search` du marqueur « prochain identifiant libre » : il lisait le **premier** et ne voyait
+jamais les autres. Le registre des écarts en portait **deux** — `ECART-048` en tête, et
+**`ECART-045` à la toute fin**, trois de retard. C'est le dommage exact de `ECART-021`, **dans le
+garde-fou écrit pour `ECART-021`**, et c'est la fin du fichier que déroule qui cherche un numéro.
+Le contrôle exige désormais **un seul** marqueur par registre, et non pas seulement leur accord :
+deux marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en met qu'un à
+jour — ce qui est précisément ce qui s'est passé. `ECART-048`, `DEC-560`.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **7 ouverts sur 33**
@@ -1956,7 +2030,7 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 .
 ├── CLAUDE.md                    ← ce document. AGENTS.md est un lien symbolique, NON VERSIONNÉ
 ├── README.md · CONTRIBUTING.md
-├── Makefile                     ← 50 cibles, paramétrées par ENVIRONNEMENT (T8, DEC-485)
+├── Makefile                     ← cibles parametrees par ENVIRONNEMENT (T8, DEC-485)
 ├── .env.example                 ← v1.2, 79 variables, aucun secret (ECART-022)
 ├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
 ├── .gitleaks.toml               ← regles taillees sur les formats de CE projet (T6)
@@ -2040,6 +2114,12 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                                Mailpit, QO-085          (T8)
 │                  composer-env.py            ← modele + calque + secrets (T8)
 │                  epingler-images.py         ← make images-pin           (T8)
+│                  verifier-sources-suivies.py ← AUCUN fichier source du disque ne
+│                                                doit etre ignore par git. Existe parce
+│                                                que `media/` attrapait le module
+│                                                `apps/api/app/media/` : make check a
+│                                                0, et `git add -A` n'ajoutait rien.
+│                                                ECART-048, §7.36
 │                  verifier-reversion-icloud.py ← un contenu de travail EGAL a une
 │                                                version anterieure = reecriture
 │                                                iCloud. Remplace un controle a FAUX
@@ -2079,6 +2159,9 @@ make icloud-verify        # PAS une formalite : il a manque une reversion silenc
                           # `git check-ignore` les honore, et detecte une reversion en
                           # comparant le contenu de travail aux versions de l'historique.
 make env-check            # .env contre .env.example — une variable a manque a CHAQUE lot
+                          # `sources-check` et `docs-check` sont dans `make check` : le moment
+                          # ou il faut savoir qu'un motif de .gitignore attrape du source est
+                          # la PULL REQUEST, pas le debut de session. §7.36
 make check                # qualite complete, tests compris
 make audit                # zero avis, zero tolerance depuis DEC-493
 
@@ -2138,7 +2221,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **36 leçons** payées par **186 défauts nommés** — 71 + 44 + 57 + 14, dérivés ;
+1. **ce document**, en entier — son §7 porte **37 leçons** payées par **197 défauts nommés** — 71 + 44 + 57 + 19 + 6, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
