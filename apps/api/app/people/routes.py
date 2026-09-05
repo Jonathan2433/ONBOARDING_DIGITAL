@@ -53,6 +53,7 @@ from app.entities.routes import (
 )
 from app.entities.services import resoudre_une_entite_active
 from app.people.modeles import SituationProfessionnelle
+from app.people.profil import CercleDuProfil, FicheProfil, ResponsabiliteDuProfil, lire_la_fiche
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
     TAILLE_PAR_DEFAUT,
@@ -86,6 +87,53 @@ class CollaborateurDuTrombinoscope(BaseModel):
     preferred_name: str | None
     professional_category: str
     arrival_date: dt.date
+
+
+class CercleDeLaFiche(BaseModel):
+    """Un cercle, principal ou secondaire — §10.2."""
+
+    code: str
+    nom: str
+    jeton_de_couleur: str
+
+
+class ResponsabiliteDeLaFiche(BaseModel):
+    """Une responsabilite Framework et sa portee — §8.4.
+
+    `cercle` et `bureau` s'excluent : le §8.4 l'impose par contrainte, et le type
+    dit lequel des deux est renseigne.
+    """
+
+    type: str
+    cercle: str | None
+    bureau: str | None
+
+
+class FicheDuProfil(BaseModel):
+    """Les champs du §10.2, moins la photo.
+
+    **AUCUN CHAMP N'EST MASQUE**, et ce n'est pas un oubli : la matrice ne definit
+    aucune visibilite par champ. Le motif complet est dans l'en-tete de
+    `app/people/profil.py`, et un test fige l'absence pour qu'un lot ulterieur
+    doive la decider. `ECART-051`.
+    """
+
+    id: uuid.UUID
+    person_id: uuid.UUID
+    first_name: str
+    last_name: str
+    preferred_name: str | None
+    professional_category: str
+    arrival_date: dt.date
+    short_bio: str | None
+    fun_fact: str | None
+    metier: str | None
+    statut: str | None
+    client: str | None
+    dsm: str | None
+    cercle_principal: CercleDeLaFiche | None
+    cercles_secondaires: list[CercleDeLaFiche]
+    responsabilites: list[ResponsabiliteDeLaFiche]
 
 
 class ReponseDuTrombinoscope(BaseModel):
@@ -248,4 +296,129 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             pages=pages,
         )
 
+    @routeur.get(
+        "/entities/{code}/people/{appartenance}",
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=FicheDuProfil,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": (
+                    "Aucune session valide. UNE SEULE forme pour cinq causes : cookie "
+                    "absent, jeton inconnu, session revoquee, duree absolue depassee, "
+                    "inactivite depassee."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour QUATRE causes : le code d'entite est inconnu, "
+                    "l'entite n'est pas active, l'appartenance n'existe pas ou appartient "
+                    "a une AUTRE entite, ou son profil n'est pas listable. Distinguer "
+                    "apprendrait qu'un brouillon existe."
+                )
+            },
+        },
+        summary="Consulter la fiche profil complete d'un collaborateur",
+        description=(
+            "Les champs du cahier §10.2, moins la photo — elle attend `T5` et `T6`. "
+            "Exige une session : la matrice §5 donne « Fiches collaborateur », « Statut "
+            "mission/intercontrat » et « Client actif » en LECTURE aux huit roles "
+            "authentifies, sans distinction. "
+            "AUCUN CHAMP N'EST MASQUE : la matrice ne definit aucune visibilite par "
+            "champ, et en inventer une serait le §6.5 — voir `ECART-051`. "
+            "La population est celle du trombinoscope : une fiche accessible alors que "
+            "la liste l'exclut rendrait le filtre de la liste decoratif."
+        ),
+    )
+    def lire_le_profil(
+        #  Les DEUX parametres sont en `Annotated`, et pas seulement le second :
+        #  Python refuse un parametre sans defaut apres un parametre qui en a un.
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite, unique et jamais reattribue",
+            ),
+        ],
+        #  `Annotated` et non un defaut : ruff n'exempte `Path` de `B008` que pour
+        #  les annotations qu'il reconnait, et `uuid.UUID` n'en fait pas partie.
+        #  La forme est sure ici -- `Path` et `uuid` sont importes au niveau
+        #  module, donc resolvables (le piege de `T1` du LOT 4 tenait a une
+        #  variable de FERMETURE), et un test sans session le prouve par un 401.
+        appartenance: Annotated[
+            uuid.UUID,
+            Path(description="L'identifiant de l'appartenance, rendu par le trombinoscope"),
+        ],
+    ) -> FicheDuProfil:
+        """Consulter une fiche profil — cahier §10.2, backlog `MVP-L05-US004`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            fiche = lire_la_fiche(
+                connexion,
+                entite=entite.id,
+                appartenance=appartenance,
+                instant=dt.datetime.now(tz=dt.UTC),
+            )
+
+        if fiche is None:
+            #  **LE MEME REFUS QUE POUR UNE ENTITE INCONNUE**, et c'est delibere :
+            #  quatre causes, une seule reponse. Un refus distinct pour « cette
+            #  appartenance existe mais son profil est masque » apprendrait
+            #  l'existence de la personne.
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return _en_reponse(fiche)
+
     return routeur
+
+
+def _cercle(cercle: CercleDuProfil) -> CercleDeLaFiche:
+    return CercleDeLaFiche(
+        code=cercle.code, nom=cercle.nom, jeton_de_couleur=cercle.jeton_de_couleur
+    )
+
+
+def _responsabilite(responsabilite: ResponsabiliteDuProfil) -> ResponsabiliteDeLaFiche:
+    return ResponsabiliteDeLaFiche(
+        type=responsabilite.type, cercle=responsabilite.cercle, bureau=responsabilite.bureau
+    )
+
+
+def _en_reponse(fiche: FicheProfil) -> FicheDuProfil:
+    """Le domaine vers la reponse HTTP, champ par champ.
+
+    **AUCUN `**dataclasses.asdict()`**, et c'est deliberé : une conversion
+    automatique ferait passer un champ NOUVEAU du domaine vers la reponse sans que
+    personne ne l'ait decide. Le §10.2 enumere les champs ; les enumerer ici aussi
+    rend toute addition visible en revue.
+    """
+    return FicheDuProfil(
+        id=fiche.id,
+        person_id=fiche.person_id,
+        first_name=fiche.first_name,
+        last_name=fiche.last_name,
+        preferred_name=fiche.preferred_name,
+        professional_category=fiche.professional_category,
+        arrival_date=fiche.arrival_date,
+        short_bio=fiche.short_bio,
+        fun_fact=fiche.fun_fact,
+        metier=fiche.metier,
+        statut=fiche.statut,
+        client=fiche.client,
+        dsm=fiche.dsm,
+        cercle_principal=(
+            None if fiche.cercle_principal is None else _cercle(fiche.cercle_principal)
+        ),
+        cercles_secondaires=[_cercle(c) for c in fiche.cercles_secondaires],
+        responsabilites=[_responsabilite(r) for r in fiche.responsabilites],
+    )

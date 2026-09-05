@@ -95,4 +95,9 @@ export type {
   ReponseDuTrombinoscope,
 } from './trombinoscope.js';
 
+//  LOT 5, T4 — la fiche profil. La frontiere `snake_case` -> `camelCase` est ICI,
+//  comme pour le trombinoscope, et le validateur n'est pas contournable.
+export { cheminProfil, CODES_PROFIL, GABARIT_CHEMIN_PROFIL, validerLaFiche } from './profil.js';
+export type { CercleDuProfil, FicheDuProfil, ResponsabiliteDuProfil } from './profil.js';
+
 export const PACKAGE_NAME = '@onboarding/contracts';

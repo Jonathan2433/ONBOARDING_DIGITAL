@@ -21,21 +21,21 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1`, `T2` et `T3` sont terminées**, neuf restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1` à `T4` sont terminées**, huit restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T4` du LOT 5 — la fiche profil et les règles de visibilité** (`US004`, issue #119). Le critère est « chaque champ visible **ou** masqué selon la matrice, **les deux sens** testés ». Le §10.2 donne treize champs, et le §6.1 de la matrice dit qui les voit. **`fn_normaliser_pour_recherche` existe** depuis `T3` — c'est la seule normalisation de recherche du projet, et elle doit le rester. Lis le §8 du [compte rendu de `T3`](docs/operations/compte-rendu-t3-lot-5.md). **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` |
+| **Prochaine action** | **`T5` du LOT 5 — les miniatures de photo** (`US005`, issue #120). Le critère est « **< 100 Ko mesuré** · la photo **originale jamais servie** dans la liste ». Les trois tables de `T1` l'attendent, `media_variant` porte déjà ses cinq types, et **aucun champ de la fiche ne mentionne la photo** — un test l'exige, pour que son apparition soit une décision. **`fn_normaliser_pour_recherche` existe** depuis `T3` — c'est la seule normalisation de recherche du projet, et elle doit le rester. Lis le §8 du [compte rendu de `T3`](docs/operations/compte-rendu-t3-lot-5.md). **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 022** : **761 pytest** — dont **465 d'intégration** — et **261 Vitest** (**97 `ui`**, **121 `web`**, **43 `contracts`**) |
+| **Tests** | **1 093** : **806 pytest** — dont **504 d'intégration** — et **287 Vitest** (**97 `ui`**, **121 `web`**, **69 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **15 migrations**, tête `0015`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **84 cibles** documentées — `trombinoscope-check` est nouvelle. **`ECART-049` : 25 d'entre elles ne sont PAS dans `.PHONY`**. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
+| Makefile | **85 cibles** documentées — `profil-check` est nouvelle. **`ECART-049` : 25 d'entre elles ne sont PAS dans `.PHONY`**. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **145 décisions** `DEC-418+` · **50 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
+| Registres | **146 décisions** `DEC-418+` · **51 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 19 — DÉRIVÉS le 24/08/2026, et le « 8 » qui figurait ici était faux**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -527,6 +527,7 @@ API             migrate migrate-status api-check alembic-check
                 secrets-check                                     ← LOT 3, T2
                 entites-check                                     ← LOT 4, T1
                 trombinoscope-check                               ← LOT 5, T2
+                profil-check                                      ← LOT 5, T4
                 permissions-check                                 ← LOT 4, T8
                 (T9 n'ajoute AUCUNE cible : son garde-fou est prouve par
                  12 tests, pas par un controle de stack. Voir ECART-046)
@@ -2166,6 +2167,11 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                          « masquage du profil » n'est
 │                                          implemente NULLE PART, donc un
 │                                          partant reste `published`
+│                 app/people/profil.py    ← la FICHE (LOT 5, T4). Quatre
+│                                          contraintes d'EXCLUSION rendent les
+│                                          LEFT JOIN surs, et un test exige
+│                                          qu'elles existent toujours. AUCUN
+│                                          champ n'est masque : ECART-051
 │                 app/people/routes.py    ← GET .../people. `taille` est un
 │                                          IntEnum et NON un Literal : un
 │                                          parametre d'URL arrive en CHAINE,
@@ -2322,6 +2328,9 @@ make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EM
                           #      une affectation FUTURE qui n'accordent rien, le
                           #      super-administrateur partout, et les QUATRE tables de
                           #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
+make profil-check         # 10 — il RELIE la fiche a la liste : l'identifiant vient du
+                          #      trombinoscope, et un profil EXCLU rend le MEME 404. Les six
+                          #      champs sensibles sont TOUS renseignes (ECART-051)
 make trombinoscope-check  # 23 — les TROIS tailles SERVIES (le temoin qui a trouve T2-3),
                           #      huit refus au format du 18.3, la recomposition des pages
                           #      qui exige un ordre TOTAL, et les quatre etats exclus

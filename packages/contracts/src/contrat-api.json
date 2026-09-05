@@ -412,6 +412,40 @@
         "a l'autre tout en rendant le meme compte.",
         "LE 404 EST LE MEME QUE CELUI DE entiteConsultee, en corps ET en en-tetes."
       ]
+    },
+    {
+      "cle": "ficheDuProfil",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "FicheDuProfil",
+      "role": [
+        "La fiche profil complete d'un collaborateur — LOT 5, T4, story MVP-L05-US004.",
+        "AUCUN CHAMP N'EST MASQUE, ET C'EST MESURE. Le critere de T4 dit « chaque champ",
+        "visible OU masque selon la matrice ». La matrice ne definit AUCUNE visibilite",
+        "par champ : « regles de visibilite » ne parait que dans les deux copies du",
+        "critere de US004 lui-meme, et le seul « masquer » de la matrice porte sur les",
+        "ACTIONS -- « le frontend peut masquer ou afficher les ACTIONS [...] mais l'API",
+        "reste l'autorite finale ». Les regles applicables sont celles du §5, qui donne",
+        "« Fiches collaborateur », « Statut mission/intercontrat » et « Client actif »",
+        "en LECTURE aux HUIT roles authentifies. Inventer un masquage serait le §6.5, et",
+        "un test FIGE l'absence pour qu'un lot ulterieur doive la decider. ECART-051.",
+        "TREIZE CHAMPS AU §10.2, MOINS LA PHOTO. Elle attend T5 -- ses variantes -- et",
+        "T6 -- son autorisation : sans autorisation active, le §12.2 impose un avatar",
+        "neutre, et la fiche ne porte aujourd'hui AUCUNE trace de photo.",
+        "LA CARDINALITE EST PROUVEE PAR LE SCHEMA, PAS SUPPOSEE. Metier, statut, client,",
+        "DSM et cercle principal sont uniques a un instant donne parce que des",
+        "contraintes d'EXCLUSION interdisent le chevauchement des periodes. Les jointures",
+        "ne peuvent donc pas multiplier les lignes, et un test exige que ces quatre",
+        "contraintes continuent d'exister.",
+        "LA POPULATION EST CELLE DU TROMBINOSCOPE : appartenance `active`, profil",
+        "`published`. Une fiche accessible alors que la liste l'exclut rendrait le filtre",
+        "de la liste decoratif.",
+        "LE 404 COUVRE QUATRE CAUSES, ET C'EST DELIBERE : code d'entite inconnu, entite",
+        "non active, appartenance inexistante ou d'une AUTRE entite, profil non listable.",
+        "Un refus distinct pour « existe mais masque » apprendrait l'existence de la",
+        "personne."
+      ]
     }
   ],
   "_commentaire_debit": [

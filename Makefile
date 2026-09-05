@@ -1125,6 +1125,20 @@ trombinoscope-check: ## Prouver que le trombinoscope est pagine et ne rend QUE d
 	$(UV) run python infra/scripts/verifier-trombinoscope.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+# LOT 5, T4. Comme le precedent, il EXIGE que le conteneur porte le code du depot.
+#
+# SON CONTROLE LE PLUS UTILE RELIE LA FICHE A LA LISTE : il prend l'identifiant
+# que le TROMBINOSCOPE rend, verifie que sa fiche est servie, puis prend un
+# profil que la liste EXCLUT et verifie que sa fiche est refusee. Sans ce lien,
+# une fiche accessible pour un profil masque rendrait le filtre de la liste
+# decoratif, et aucun controle de la liste seule ne le verrait.
+profil-check: ## Prouver que la fiche profil ne masque aucun champ et suit la population de la liste (LOT 5, US004)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-profil.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 permissions-check: ## Prouver que le changement d'entite recharge les droits sans en transferer (LOT 4, US002)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
