@@ -407,6 +407,31 @@ jobs:
         #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
         run: make entites-check
 
+      - name: Le trombinoscope pagine, servi a travers Caddy
+        # LOT 5, T2, story MVP-L05-US001.
+        #
+        # SON CONTROLE LE PLUS UTILE EST UN TEMOIN, PAS UN REFUS. Ma premiere
+        # version typait `taille` en Literal[25, 50, 100] ; un parametre d'URL
+        # arrive en CHAINE, et Pydantic refuse « 25 » contre un Literal
+        # d'entiers. La route refusait donc les TROIS tailles valides des
+        # qu'elles etaient ecrites -- et les HUIT epreuves de refus passaient
+        # toutes, puisqu'elles demandaient un refus et l'obtenaient, pour la
+        # mauvaise raison. Seul le temoin qui exige que 25, 50 et 100 SOIENT
+        # servies discrimine les deux situations. Defaut T2-3, §7.0.
+        #
+        # LA PAGINATION EST PROUVEE PAR RECOMPOSITION : compter 25 lignes sur
+        # une page ne prouve rien, un ordre non total rendant le meme compte
+        # tout en repetant des lignes. Le controle parcourt toutes les pages et
+        # exige que chaque identifiant apparaisse UNE fois. Le decor porte des
+        # HOMONYMES, sans quoi le tri par nom suffirait et le troisieme critere
+        # -- la cle primaire -- ne serait pas exerce.
+        #
+        # DEUX FILTRES, ET AUCUN N'EST REDONDANT : `departed` et `archived`
+        # gardent `published` dans le decor, parce que c'est l'etat REEL de la
+        # base apres un depart -- le §22.5 etape 5 « masquage du profil » n'est
+        # implemente nulle part.
+        run: make trombinoscope-check
+
       - name: 4bis · Le changement d'entite recharge les droits, sans en transferer
         # LOT 4, T8 — story `MVP-L04-US002`. Les CINQ regles du cahier §23.3 et de
         # la matrice §23.3 deviennent exigibles ici, et la matrice §5.1 donne la

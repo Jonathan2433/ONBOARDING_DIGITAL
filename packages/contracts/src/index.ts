@@ -76,4 +76,17 @@ export {
 } from './portail.js';
 export type { EntiteDuPortail, PermissionsDeLEntite, ReponseDesEntites } from './portail.js';
 
+//  LOT 5, T2 — le trombinoscope pagine. Meme montage : la frontiere
+//  `snake_case` -> `camelCase` est ICI, en un seul endroit, et le validateur
+//  n'est pas contournable puisque `formes.ts` n'est pas reexporte.
+export {
+  cheminTrombinoscope,
+  CODES_TROMBINOSCOPE,
+  GABARIT_CHEMIN_TROMBINOSCOPE,
+  TAILLE_PAR_DEFAUT,
+  TAILLES_DE_PAGE,
+  validerLeTrombinoscope,
+} from './trombinoscope.js';
+export type { CollaborateurDuTrombinoscope, ReponseDuTrombinoscope } from './trombinoscope.js';
+
 export const PACKAGE_NAME = '@onboarding/contracts';

@@ -375,6 +375,43 @@
         "Deux routes qui distingueraient differemment apprendraient, par comparaison,",
         "qu'un brouillon existe."
       ]
+    },
+    {
+      "cle": "trombinoscopeDeLEntite",
+      "chemin": "/api/v1/entities/{code}/people",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDuTrombinoscope",
+      "role": [
+        "Le trombinoscope pagine d'une entite — LOT 5, T2, story MVP-L05-US001.",
+        "QUI PEUT LIRE : LA MATRICE 5 NE DISTINGUE AUCUN ROLE. Le tableau du 5 donne",
+        "« Trombinoscope » a ANON = tiret et aux HUIT roles authentifies, tous a",
+        "« Lecture ». Une session suffit donc, et aucun role n'est examine. Le 5.1 n'y",
+        "change rien : hors de son entite principale une personne n'a que EMP, et EMP",
+        "a « Lecture » sur cette ressource. Aucun 403 dans les codes exploitables.",
+        "CE QUI EST RENDU : QUATRE ETATS SONT EXCLUS, ET LES DEUX FILTRES SONT",
+        "NECESSAIRES. Le 6.1 de la matrice distingue « consulter un profil ACTIF »,",
+        "coche pour les huit, de « consulter un profil ARCHIVE », reserve a ESM, ADM-E",
+        "et SUPER. Le trombinoscope porte la PREMIERE ligne ; la consultation d'un",
+        "archive est un acte delibere qui appartient a T8. Seules les appartenances",
+        "`active` dont le profil est `published` sont rendues.",
+        "Les DEUX filtres sont necessaires, et c'est MESURE : le 22.5 etape 5 prescrit",
+        "« masquage du profil » au depart, et AUCUN code ne pose `profile_visibility` —",
+        "un partant reste donc `published` en base. Filtrer la seule visibilite le",
+        "listerait ; filtrer le seul etat listerait un profil `draft` non valide.",
+        "TROIS TAILLES, ET UNE LISTE BLANCHE. Le cahier 18.2 dit « 25 par defaut ;",
+        "options 25, 50 et 100 ; maximum 100 ». Arbitrage du 25/08/2026 : l'API",
+        "n'accepte QUE ces trois valeurs. Une API stricte s'assouplit sans rien casser ;",
+        "l'inverse casse ceux qui s'y etaient fies. Le 422 porte le format du 18.3.",
+        "LE TYPE EST UN IntEnum ET NON UN Literal, ET LE MOTIF EST MESURE : un",
+        "parametre d'URL arrive en CHAINE, et Literal[25, 50, 100] REFUSE « 25 ». La",
+        "route refusait les trois tailles valides des qu'elles etaient ecrites, et",
+        "seuls les temoins le voyaient — les huit tests de refus passaient tous.",
+        "L'ORDRE EST NOM PUIS PRENOM, arbitrage du 25/08/2026, et TOTAL par la cle",
+        "primaire : sans troisieme critere, deux homonymes se repeteraient d'une page",
+        "a l'autre tout en rendant le meme compte.",
+        "LE 404 EST LE MEME QUE CELUI DE entiteConsultee, en corps ET en en-tetes."
+      ]
     }
   ],
   "_commentaire_debit": [

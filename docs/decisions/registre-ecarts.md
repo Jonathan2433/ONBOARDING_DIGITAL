@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 24 août 2026, sous-étape `T1` du LOT 5
+**Dernière mise à jour :** 26 août 2026, sous-étape `T2` du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 48 | 9 | 36 | 3 |
+| Total 49 | 10 | 36 | 3 |
 
 ---
 
@@ -66,6 +66,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-046` | **Le critère de `T9` demande « un appel direct à la route refusé par l'API », et le lot n'a AUCUNE route métier à refuser.** Ses trois routes — `/entities`, `/entities/{code}`, `/entities/{code}/permissions` — sont ouvertes aux huit rôles authentifiés par la matrice §5, et le §9.4 écarte tout écran d'administration. Le garde-fou est donc prouvé par **12 tests sur une application FastAPI jetable**, et non à travers Caddy | Non — le mécanisme est prouvé, c'est sa mise en service qui attend | **Accepté**, arbitrage de Jonathan du 24/08/2026, `DEC-553` |
 | `ECART-047` | **Notre propre contrôle rattache le §30.12 au LOT 8, alors que la roadmap et le backlog le placent au LOT 5.** `verifier-recette-modele.py` décrit le LOT 8 comme « médias et autorisations de diffusion » ; la roadmap l'appelle **« Événements et accueil dynamique »**, et ses médias sont ceux des événements. Le **LOT 5** inclut « gestion des autorisations de photo », et `US005` est **`P0`** | Non — la classification n'empêche rien, mais elle enverrait un relecteur au mauvais lot | **Clos en `T1` du LOT 5** — le §30.12 est rattaché à `T6`, et il reste `REPORTE` |
 | `ECART-048` | **Deux garde-fous de ce dépôt étaient exacts pour un mode de défaillance et aveugles à un autre.** **(1)** Le motif `media/` de `.gitignore`, écrit au LOT 0 contre les **médias déposés**, attrapait `apps/api/app/media/` — le module source de `T1`. Écrit, testé, `make check` à **0**, et `git add -A` **ne l'a pas ajouté**. **(2)** `make docs-check` faisait un `search` du marqueur « prochain identifiant libre » : il lisait le **premier** et ne voyait jamais les autres. Ce registre en portait **deux**, `ECART-048` en tête et **`ECART-045`** à la toute fin — trois de retard, dans le garde-fou écrit **pour** `ECART-021` | Non — le premier a été vu avant la poussée, le second n'a jamais fait attribuer un numéro en double | **Clos en `T1` du LOT 5** — `DEC-560`, avec `make sources-check` et son témoin |
+| `ECART-049` | **Vingt-cinq des quatre-vingt-quatre cibles documentées du `Makefile` ne sont pas déclarées `.PHONY`** — dont `entites-check`, `permissions-check`, `residu-check`, `migrations-check`, `apercu` et `code-refresh`. Une cible absente de `.PHONY` **ne s'exécute plus** le jour où un fichier porte son nom, et `make` le dit alors « up to date » | Non — aucun de ces noms n'existe comme fichier aujourd'hui, mesuré | **Ouvert.** La correction juste est de **dériver** `.PHONY` des cibles documentées, non d'y recopier 25 noms |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -123,9 +124,22 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Ancrer, et surtout POSER LE CONTRÔLE** — corriger un motif corrige une instance.<br>**1.** Les huit motifs qui nomment un répertoire de données locales sont ancrés à la racine ; les motifs de vrais artefacts produits à toute profondeur restent non ancrés, parce que c'est leur intention. **`make sources-check`** exige qu'aucun fichier source du disque ne soit ignoré, la liste **dérivée du disque** à chaque exécution, et il est dans **`make check`** *et* **nommé explicitement dans `ci.yml`** — `ci.yml` n'invoque **pas** `make check`, il appelle trente-six cibles une par une, et l'avoir cru est le défaut `T1-5`. **Éprouvé sur le défaut qui l'a fait naître** : remis à `media/`, il rend 1 et nomme les deux fichiers avec leur ligne.<br>**2.** `marqueurs_declares` rend **tous** les marqueurs avec leur ligne, et un **seul** est exigé — non pas seulement leur accord : deux marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en met qu'un à jour, ce qui est précisément ce qui s'est produit.<br>**Recommandation générale** : quand un garde-fou passe au vert sur un problème réel, ne conclus pas qu'il est cassé — demande-toi **quel mode de défaillance il couvre**, et lequel il ne voit pas. |
 | Résolution | **Clos en `T1` du LOT 5**, `DEC-560`. `make sources-check` et `make sources-temoin` sont dans `make check` ; `make docs-check` nomme désormais chaque ligne portant un marqueur. |
 
+## `ECART-049` — Un quart des cibles documentées n'est pas déclaré `.PHONY`
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 26 août 2026, LOT 5 sous-étape `T2`, en voulant y ajouter `trombinoscope-check` — l'ancre attendue n'existait pas, `entites-check` n'y figurant pas non plus |
+| Source | `Makefile`, bloc `.PHONY` |
+| Constat | **84 cibles documentées, 59 dans `.PHONY`, donc 25 absentes**, dérivé et non recopié : `apercu`, `apercu-fin`, `cadre-check`, `cadre-temoin`, `code-check`, `code-refresh`, `compte-de-service`, `debit-check`, `ecrans-check`, `entites-check`, `evenements-check`, `historisation-check`, `isolation-check`, `isolation-temoin`, `jeu-de-donnees`, `migrations-check`, `permissions-check`, `privileges-check`, `recette-modele-check`, `residu-check`, `revocation-check`, `roles-provision`, `secrets-check`, `service-check`, `trombinoscope-check` |
+| Impact | **Aucun aujourd'hui, et c'est mesuré** : aucun de ces noms n'existe comme fichier à la racine. Le risque est **latent et silencieux** : le jour où un fichier porte l'un de ces noms, `make <cible>` répond « up to date » et **ne fait rien**, sans erreur. Une cible de contrôle qui ne s'exécute pas et sort en 0 est exactement la classe de défaut du §7.0 première proposition |
+| Cause | **`.PHONY` est une liste RECOPIÉE, et elle vieillit à chaque cible ajoutée.** C'est `ECART-021` appliqué au `Makefile` : le bloc a été tenu à jour jusqu'au LOT 3, puis les sous-étapes suivantes ont ajouté leurs cibles sans y penser — le `Makefile` ne le signale pas, et aucun contrôle ne le lit |
+| Bloquant | Non |
+| Recommandation | **Dériver `.PHONY` des cibles documentées, ne pas y recopier 25 noms de plus** — une liste corrigée à la main aura le même sort dans six sous-étapes. GNU Make 3.81 accepte `$(shell …)`, et `make help` grepe déjà le `Makefile` de la même façon.<br>**Attention au §7.2 dans la formulation** : `$(MAKEFILE_LIST)` porte le chemin du dépôt, qui **contient une espace**, et doit donc être cité.<br>**Recommandation générale** : quand un fichier de construction porte une liste qui décrit ses propres cibles, cette liste est **dérivable** — et une liste dérivable qu'on recopie est un `ECART-021` en puissance (§7.27). |
+| Résolution | **Ouvert.** À traiter hors `T2` : y toucher pour 84 cibles pendant une sous-étape fonctionnelle élargirait son périmètre. |
+
 ---
 
-**Prochain identifiant libre : `ECART-049`.**
+**Prochain identifiant libre : `ECART-050`.**
 
 ---
 

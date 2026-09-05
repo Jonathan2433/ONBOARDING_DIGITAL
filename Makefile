@@ -1108,6 +1108,23 @@ entites-check: ## Prouver que la page nationale ne propose QUE des entites activ
 	$(UV) run python infra/scripts/verifier-entites.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+# LOT 5, T2. Il EXIGE que le conteneur porte le code du depot : lance
+# `make code-refresh && make code-check` d'abord, sinon il eprouve un autre
+# artefact en paraissant sain (§7.28).
+#
+# SON CONTROLE LE PLUS UTILE EST UN TEMOIN, PAS UN REFUS. Ma premiere version de
+# la route typait `taille` en `Literal[25, 50, 100]` ; un parametre d'URL arrive
+# en CHAINE, et Pydantic refuse « 25 » contre un Literal d'entiers. La route
+# refusait donc les TROIS tailles valides, et les huit epreuves de refus
+# passaient toutes -- elles demandaient un refus et l'obtenaient, pour la
+# mauvaise raison. Defaut T2-3.
+trombinoscope-check: ## Prouver que le trombinoscope est pagine et ne rend QUE des profils publies (LOT 5, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-trombinoscope.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 permissions-check: ## Prouver que le changement d'entite recharge les droits sans en transferer (LOT 4, US002)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
