@@ -866,7 +866,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**215 défauts NOMMÉS au 26/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **24** au LOT 5 — 71 + 44 + 57 + 19 + 24,
+**219 défauts NOMMÉS au 26/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **28** au LOT 5 — 71 + 44 + 57 + 19 + 28,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -1980,6 +1980,17 @@ elles, se prouvent :
 > `ANALYZE`, PostgreSQL raisonne sur des tables qu'il croit vides » — est faux dans ce contexte : il
 > les croit vides quand même.
 
+**Et la conclusion se paie une seconde fois si l'on n'y va pas jusqu'au bout.** J'avais gardé un
+plafond d'« effondrement » de 3 000 ms — large, assumé, et **calibré sur ma machine** : il passait
+chez moi et a rendu **3 663, 4 791 et 3 511 ms** sur l'exécuteur de la CI. Or c'est la conséquence
+directe de ce qui précède : si le plan n'est pas celui de la production, **la durée ne l'est pas non
+plus**. Le test n'exige donc plus **aucune** durée. Il exige la **justesse au volume** — la requête
+rend exactement ce qu'une requête SQL directe rend — et il **rapporte** tout le reste.
+
+> **La règle, sans jargon :** quand tu as établi qu'un banc d'essai ne peut pas mesurer une
+> grandeur, n'en garde pas un seuil « prudent ». Un seuil sur une grandeur non mesurable ne mesure
+> que la machine, et il finira par échouer ailleurs que chez toi.
+
 **Enfin, un piège de nettoyage qui vaut d'être connu :** un `VACUUM` lancé pendant qu'une
 transaction de fixture est **déjà ouverte** ne récupère **rien** — son instantané l'en empêche. Il
 faut une connexion séparée, en autovalidation, **avant** d'ouvrir celle qui mesure.
@@ -2363,7 +2374,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **39 leçons** payées par **215 défauts nommés** — 71 + 44 + 57 + 19 + 24, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **39 leçons** payées par **219 défauts nommés** — 71 + 44 + 57 + 19 + 28, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

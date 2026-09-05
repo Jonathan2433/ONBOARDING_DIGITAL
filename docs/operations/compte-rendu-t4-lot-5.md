@@ -110,7 +110,26 @@ utile **relie la fiche à la liste** :
 
 ---
 
-## 6. Mesures
+## 6. Trois défauts, et le premier est celui de `T3` que la CI a révélé
+
+| | |
+|---|---|
+| **`T4-1`** | **le plafond d'effondrement de `T3` mesurait MA MACHINE.** 3 000 ms passait chez moi, la CI a rendu **3 663, 4 791 et 3 511 ms**. Et c'est la conséquence de ce que `T3` avait déjà prouvé : le planificateur ne voyant pas les lignes non validées, **le plan mesuré n'est pas celui de la production — donc la durée non plus**. Exiger une durée, c'était exiger une grandeur dont on avait déjà établi qu'elle ne mesure pas le critère |
+| `T4-2` | ma requête de référence pour la **justesse au volume** n'appliquait que la recherche, alors que le cas comparé portait aussi un filtre de statut : elle rendait 9 là où la route rendait 4. Le contrôle échouait sur un livrable conforme parce que **les deux membres ne mesuraient pas la même chose** |
+| `T4-3` | et ce même contrôle annonçait « **5 cas confrontés** » quand il en comparait **deux** — un `continue` bien placé, un compte faux. Le nombre est désormais **confronté à un attendu** (§7.0, troisième proposition) |
+
+**`T4-1` change ce que `T3` prouve, et il faut le dire.** Le test de recherche **n'exige plus aucune
+durée**. Il exige la **justesse au volume** — la recherche rend exactement ce qu'une requête SQL
+directe rend, grandeur qui ne dépend ni de la machine ni du planificateur — et il **rapporte** le
+P95, le maximum, le premier appel à froid, le plan et `Rows Removed by Join Filter`.
+
+> **Le budget du §25.2 se vérifie donc en RECETTE**, sous charge réelle et sur des données
+> **validées** — la seule condition où le planificateur voit ce qu'il verra en service. C'est déjà
+> ce que `ECART-050` disait ; la CI l'a rendu incontournable.
+
+---
+
+## 7. Mesures
 
 | Grandeur | Valeur, dérivée |
 |---|---|
@@ -125,7 +144,7 @@ utile **relie la fiche à la liste** :
 
 ---
 
-## 7. Ce que `T4` laisse à la suite
+## 8. Ce que `T4` laisse à la suite
 
 - **`T5` et `T6`** — la photo. Aucun champ de la fiche n'en porte trace aujourd'hui, et un test
   l'exige ;
