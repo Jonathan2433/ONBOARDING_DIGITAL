@@ -83,10 +83,16 @@ export {
   cheminTrombinoscope,
   CODES_TROMBINOSCOPE,
   GABARIT_CHEMIN_TROMBINOSCOPE,
+  LONGUEUR_MAXIMALE_RECHERCHE,
+  STATUTS_PROFESSIONNELS,
   TAILLE_PAR_DEFAUT,
   TAILLES_DE_PAGE,
   validerLeTrombinoscope,
 } from './trombinoscope.js';
-export type { CollaborateurDuTrombinoscope, ReponseDuTrombinoscope } from './trombinoscope.js';
+export type {
+  CollaborateurDuTrombinoscope,
+  FiltresDuTrombinoscope,
+  ReponseDuTrombinoscope,
+} from './trombinoscope.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';

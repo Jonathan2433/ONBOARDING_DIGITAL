@@ -73,8 +73,43 @@ export interface ReponseDuTrombinoscope {
   readonly pages: number;
 }
 
+/**
+ * Les cinq axes de filtre du cahier §9.3 — LOT 5, `T3`.
+ *
+ * **LE SIXIEME AXE DU CAHIER — « entite » — N'EST PAS ICI**, et ce n'est pas un
+ * oubli : c'est le `code` de la route. Le trombinoscope est per-entite, et
+ * ajouter un parametre `entite=` sur une adresse deja bornee par `{code}` serait
+ * redondant au mieux, une fuite inter-entites au pire.
+ */
+export interface FiltresDuTrombinoscope {
+  readonly recherche?: string;
+  readonly cercle?: string;
+  readonly dsm?: string;
+  readonly metier?: string;
+  readonly client?: string;
+  readonly statut?: string;
+}
+
+/**
+ * Les deux statuts professionnels du cahier §9.3.
+ *
+ * **ECRITS ICI PARCE QUE LE MANIFESTE NE PORTE PAS DE PARAMETRES DE REQUETE**, et
+ * le dire vaut mieux que de laisser croire qu'ils sont derives. L'API refuse
+ * toute autre valeur : c'est elle l'autorite, et cette liste ne sert qu'a ce que
+ * l'ecran ne PROPOSE que des valeurs valides.
+ */
+export const STATUTS_PROFESSIONNELS: readonly string[] = ['mission', 'intercontract'];
+
+/** La borne du terme cherche, telle que l'API la refuse au-dela. */
+export const LONGUEUR_MAXIMALE_RECHERCHE = 128;
+
 /** Le chemin d'une entite, son code ENCODE — meme motif que `cheminEntite`. */
-export function cheminTrombinoscope(code: string, page?: number, taille?: number): string {
+export function cheminTrombinoscope(
+  code: string,
+  page?: number,
+  taille?: number,
+  filtres?: FiltresDuTrombinoscope,
+): string {
   if (code === '') {
     //  Sans cette garde, le chemin obtenu serait celui d'une AUTRE ressource.
     throw new TypeError('code d’entite vide');
@@ -91,6 +126,18 @@ export function cheminTrombinoscope(code: string, page?: number, taille?: number
   }
   if (taille !== undefined) {
     parametres.push(`taille=${encodeURIComponent(String(taille))}`);
+  }
+  //  **L'ORDRE DES AXES EST CELUI DE L'INTERFACE, ET IL EST STABLE.** Deux appels
+  //  aux memes filtres doivent rendre la MEME adresse : sinon deux cles de cache
+  //  differentes designeraient la meme page, et le §23.3 quatrieme regle —
+  //  « annule les requetes et caches associes » — deviendrait inapplicable.
+  for (const axe of ['recherche', 'cercle', 'dsm', 'metier', 'client', 'statut'] as const) {
+    const valeur = filtres?.[axe];
+    //  Une chaine VIDE est ecartee : `?recherche=` demanderait a l'API de
+    //  chercher le vide, qui correspond a tout le monde.
+    if (valeur !== undefined && valeur !== '') {
+      parametres.push(`${axe}=${encodeURIComponent(valeur)}`);
+    }
   }
   return parametres.length === 0 ? base : `${base}?${parametres.join('&')}`;
 }

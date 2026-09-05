@@ -58,6 +58,7 @@ import ssl
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -92,6 +93,10 @@ VOLUME = 60
 #  Les six lignes du decor d'exclusion. `departed` et `archived` gardent
 #  `published` A DESSEIN : voir l'en-tete.
 EXCLUSIONS: tuple[tuple[str, str, str], ...] = (
+    #  **UN ACCENT DANS LE NOM, ET C'EST DELIBERE** : sans lui, une recherche qui
+    #  ignorerait la casse mais PAS les accents rendrait la meme observation
+    #  qu'une recherche correcte (LOT 5, `T3`).
+    ("zzélodie", "active", "published"),
     ("zzvisible", "active", "published"),
     ("zzbrouillon", "active", "draft"),
     ("zzmasque", "active", "hidden"),
@@ -104,6 +109,23 @@ EXCLUSIONS: tuple[tuple[str, str, str], ...] = (
 #  travers Caddy, une reponse porte un `date` qui change d'une requete a
 #  l'autre. Lui faire dire le vrai plutot que de l'affaiblir -- §7.20.
 EN_TETES_NON_COMPARABLES = frozenset({"date"})
+
+
+def listables() -> list[str]:
+    """Les noms du decor que la route doit rendre — DERIVES, jamais recopies.
+
+    Ajouter une ligne aux `EXCLUSIONS` sans toucher ici ferait echouer tous les
+    comptes ; les deriver supprime la question (§7.27). C'est ce qui s'est passe
+    quand `T3` a ajoute `zzelodie` : quatre controles ont echoue d'un coup.
+    """
+    return [
+        nom for nom, etat, visibilite in EXCLUSIONS if (etat, visibilite) == ("active", "published")
+    ]
+
+
+def attendu_total() -> int:
+    """Le volume plus les lignes listables du decor d'exclusions."""
+    return VOLUME + len(listables())
 
 
 def lire_env(chemin: str) -> dict[str, str]:
@@ -440,13 +462,14 @@ def main() -> int:
 
         # --- 6. les CINQ exclusions ------------------------------------------
         controles += 1
+        attendus = set(listables())
         indesirables = sorted(
-            nom for nom, _e, _v in EXCLUSIONS if nom != "zzvisible" and nom in toutes
+            nom for nom, _e, _v in EXCLUSIONS if nom not in attendus and nom in toutes
         )
         if not indesirables:
             print(
-                f"    ok       les {len(EXCLUSIONS) - 1} etats non listables sont ABSENTS — "
-                "dont `departed` et `archived`, qui sont RESTES `published`"
+                f"    ok       les {len(EXCLUSIONS) - len(attendus)} etats non listables sont "
+                "ABSENTS — dont `departed` et `archived`, qui sont RESTES `published`"
             )
         else:
             echecs += 1
@@ -460,7 +483,7 @@ def main() -> int:
             )
             corps = reponse.json()
             servies = len(corps.get("collaborateurs", [])) if isinstance(corps, dict) else -1
-            attendu = min(taille, VOLUME + 1)
+            attendu = min(taille, attendu_total())
             if reponse.statut == 200 and servies == attendu:
                 print(f"    ok       taille={taille} servie : {servies} ligne(s)")
             else:
@@ -522,7 +545,7 @@ def main() -> int:
                 pages = int(corps.get("pages", 0))
                 vus += [ligne["id"] for ligne in corps.get("collaborateurs", [])]
                 page += 1
-            if len(vus) == total == len(set(vus)) == VOLUME + 1:
+            if len(vus) == total == len(set(vus)) == attendu_total():
                 print(
                     f"    ok       taille={taille} : {pages} page(s) recomposent "
                     f"{total} lignes, chacune UNE fois"
@@ -535,16 +558,139 @@ def main() -> int:
                     "un ordre non total repete ou saute"
                 )
 
-        # --- 11. l'ordre est nom puis prenom, collation FRANCAISE ------------
+        # --- 11. l'ordre est nom puis prenom, et LA BASE EST LA REFERENCE ----
+        #
+        #  **NE PAS RETRIER EN PYTHON.** Ma premiere version comparait l'ordre
+        #  rendu a `sorted()`, qui trie par OCTETS : « zzelodie » avec accent y
+        #  passe APRES « zzvisible », alors que la collation ICU `fr-FR` de la
+        #  base la classe AVANT. Deux collations, donc deux grandeurs differentes
+        #  (§7.0 sixieme proposition) -- et le controle echouait sur un livrable
+        #  conforme des que le decor a porte un accent.
+        #
+        #  La reference est donc l'ordre que PostgreSQL produit lui-meme. Ce n'est
+        #  PAS circulaire : la route pourrait n'avoir aucun `ORDER BY`, ou trier
+        #  par prenom, et les deux listes differeraient.
         controles += 1
-        ordre = _premiers_noms(arguments.base, chemin, contexte, biscuit)
-        if ordre == sorted(ordre, key=_cle_francaise):
-            print("    ok       ordre nom puis prenom, stable a travers les pages")
+        ordre = [
+            f"{nom}|{prenom}"
+            for nom, prenom in _premiers_noms(arguments.base, chemin, contexte, biscuit)
+        ]
+        code_ordre, brut = psql(
+            compose,
+            env,
+            "SELECT p.last_name || '|' || p.first_name "  # noqa: S608
+            "FROM entity_membership em JOIN person p ON p.id = em.person_id "
+            "WHERE em.entity_id = (SELECT id FROM entity WHERE code = "
+            f"'{code_entite}') "
+            "AND em.membership_state = 'active' AND em.profile_visibility = 'published' "
+            "ORDER BY p.last_name, p.first_name, em.id LIMIT 100",
+        )
+        reference = [ligne.strip() for ligne in brut.splitlines() if ligne.strip()]
+        if code_ordre == 0 and ordre and ordre == reference:
+            print(
+                f"    ok       ordre nom puis prenom : {len(ordre)} lignes IDENTIQUES a "
+                "l'ordre que PostgreSQL produit (collation ICU fr-FR)"
+            )
         else:
             echecs += 1
-            print(f"    ECHEC    ordre non trie : {ordre[:8]}")
+            print(f"    ECHEC    ordre divergent — API {ordre[:3]} contre base {reference[:3]}")
 
-        # --- 12. le 404 est IDENTIQUE a celui de la route d'entite ----------
+        # --- 12. T3 : la recherche IGNORE les accents, dans les deux sens ----
+        for terme, attendu in (
+            ("zzelodie", "zzélodie"),
+            ("zzélodie", "zzélodie"),
+            ("ZZELODIE", "zzélodie"),
+            ("zzvisible", "zzvisible"),
+        ):
+            controles += 1
+            #  **LE TERME EST PERCENT-ENCODE**, et ce n'est pas un detail : `urllib`
+            #  encode la ligne de requete en ASCII et LEVE sur un accent brut --
+            #  « 'ascii' codec can't encode character '\xe9' ». Un navigateur
+            #  encode de lui-meme ; mon controle ne le faisait pas, et il
+            #  n'eprouvait donc pas le decodage cote API. C'est le meme geste que
+            #  `encodeURIComponent` dans `cheminTrombinoscope`.
+            corps = appeler(
+                arguments.base,
+                f"{chemin}?recherche={urllib.parse.quote(terme)}",
+                contexte,
+                en_tetes=biscuit,
+            ).json()
+            rendus = noms(corps)
+            if rendus == [attendu]:
+                print(f"    ok       recherche « {terme} » -> {attendu}")
+            else:
+                echecs += 1
+                print(f"    ECHEC    recherche « {terme} » : {rendus}, [{attendu}] attendu")
+
+        # --- 13. T3 : un terme absent rend une liste VIDE, pas une erreur ----
+        controles += 1
+        absent = appeler(
+            arguments.base, f"{chemin}?recherche=zzzz-nexiste-pas", contexte, en_tetes=biscuit
+        )
+        corps = absent.json()
+        vide = isinstance(corps, dict) and corps.get("total") == 0 and corps.get("pages") == 0
+        if absent.statut == 200 and vide:
+            print("    ok       un terme absent rend 200 avec total 0 — pas une erreur")
+        else:
+            echecs += 1
+            print(f"    ECHEC    terme absent : {absent.statut}, {str(corps)[:110]}")
+
+        # --- 14. T3 : les filtres mal formes sont refuses au format du §18.3 --
+        for axe in ("cercle", "dsm", "metier", "client"):
+            controles += 1
+            refus = appeler(
+                arguments.base, f"{chemin}?{axe}=pas-un-uuid", contexte, en_tetes=biscuit
+            )
+            corps = refus.json()
+            erreur = corps.get("erreur", {}) if isinstance(corps, dict) else {}
+            if refus.statut == 422 and erreur.get("champ") == f"query.{axe}":
+                print(f"    ok       {axe}=pas-un-uuid refuse, champ nomme")
+            else:
+                echecs += 1
+                print(f"    ECHEC    {axe} mal forme : {refus.statut}, {str(corps)[:100]}")
+
+        # --- 15. T3 : les DEUX statuts valides passent, les autres non -------
+        #  **PAS `valeur` COMME NOM DE BOUCLE** : ce module porte une FONCTION
+        #  `valeur()`, et une variable locale du meme nom la masque dans TOUTE la
+        #  fonction -- Python decide de la portee a la compilation. L'echec
+        #  surgissait alors ligne 343, cent lignes AVANT ce code, sur un
+        #  `valeur(debut)` devenu inatteignable.
+        for statut_demande, attendu_statut in (
+            ("mission", 200),
+            ("intercontract", 200),
+            ("employe", 422),
+            ("MISSION", 422),
+        ):
+            controles += 1
+            reponse = appeler(
+                arguments.base, f"{chemin}?statut={statut_demande}", contexte, en_tetes=biscuit
+            )
+            if reponse.statut == attendu_statut:
+                print(f"    ok       statut={statut_demande} -> {attendu_statut}")
+            else:
+                echecs += 1
+                print(
+                    f"    ECHEC    statut={statut_demande} : {reponse.statut}, "
+                    f"{attendu_statut} attendu — les DEUX valides doivent PASSER, "
+                    "sinon un type qui refuse tout passerait ce controle"
+                )
+
+        # --- 16. T3 : un terme trop long est refuse, la borne EXACTE passe ---
+        for longueur, attendu_statut in ((128, 200), (129, 422)):
+            controles += 1
+            reponse = appeler(
+                arguments.base,
+                f"{chemin}?recherche={'a' * longueur}",
+                contexte,
+                en_tetes=biscuit,
+            )
+            if reponse.statut == attendu_statut:
+                print(f"    ok       terme de {longueur} caracteres -> {attendu_statut}")
+            else:
+                echecs += 1
+                print(f"    ECHEC    terme de {longueur} : {reponse.statut}")
+
+        # --- 17. le 404 est IDENTIQUE a celui de la route d'entite ----------
         controles += 1
         inconnu = f"{MARQUEUR}-inexistant"
         a = appeler(
@@ -606,11 +752,6 @@ def _premiers_noms(
     if not isinstance(corps, dict):
         return []
     return [(ligne["last_name"], ligne["first_name"]) for ligne in corps.get("collaborateurs", [])]
-
-
-def _cle_francaise(couple: tuple[str, str]) -> tuple[str, str]:
-    """Le tri attendu, sans accent dans ce decor — les accents sont eprouves en pytest."""
-    return couple
 
 
 if __name__ == "__main__":

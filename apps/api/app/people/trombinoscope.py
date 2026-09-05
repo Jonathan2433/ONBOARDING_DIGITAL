@@ -88,17 +88,49 @@ LES TROIS TAILLES SONT UNE LISTE BLANCHE, ET C'EST UN ARBITRAGE
   `message`, `champ`, `details` et identifiant de correlation. Aucun code de refus
   n'est ecrit dans ce module.
 
-CE QUE `T2` NE FAIT PAS, ET IL FAUT LE DIRE
+LA RECHERCHE ET LES FILTRES — `T3`
 
-  Le §10.1 veut un recto « photo et identite » et un verso « informations
-  professionnelles principales ». Cette route rend l'**identite** et ce que
-  `entity_membership` porte lui-meme ; elle ne joint ni le metier, ni le statut,
-  ni le client, ni le DSM, ni les cercles.
+  **L'AXE « ENTITE » EST LA ROUTE, PAS UN FILTRE.** Le cahier §9.3 etape 3 nomme
+  six axes : « entite, metier, cercle, DSM, client ou statut ». Le trombinoscope
+  est per-entite -- le §8.1 y fait atterrir depuis la page nationale, et `T2` a
+  mis le code dans l'adresse (`DEC-545`). L'axe « entite » **est** ce code : y
+  ajouter un parametre `entite=` sur une route deja bornee par `{code}` serait
+  redondant au mieux, et une fuite inter-entites au pire, ce que le §25.3 existe
+  pour empecher. **Cinq filtres de requete, donc, et le sixieme est le chemin.**
 
-  Ce n'est pas un oubli : ce sont exactement les **six axes de filtre** de `T3`,
-  dont le critere de sortie est « aucun N+1, compte et non suppose ». Les joindre
-  ici ferait le travail de `T3` sans son controle de performance. La photo, elle,
-  attend `T5` -- ses variantes -- et `T6` -- son autorisation.
+  **CINQ FILTRES, QUATRE TABLES** : `professional_status_assignment` porte
+  `status` **et** `client_id`. Le client actif n'est pas une relation separee,
+  c'est une colonne du statut -- mesure sur le schema reel.
+
+  **`EXISTS` ET NON `JOIN`, ET CE N'EST PAS UN GOUT.** Une personne peut avoir un
+  cercle principal **et plusieurs secondaires** (§8.2). Une jointure la rendrait
+  autant de fois qu'elle a de cercles : le `total` serait faux, et la pagination
+  repeterait des lignes. `EXISTS` dit exactement ce que le filtre veut dire --
+  « au moins une affectation correspond » -- et ne multiplie rien.
+
+  **LA PERIODE EST `period @> :instant`, JAMAIS `ends_at IS NULL`.** Une
+  affectation **future** a elle aussi `ends_at` nul : la lecon est ecrite dans
+  `app/organization/services.py`, et le §24.12 du cahier l'exige -- « un role
+  cloture ne continue pas a accorder des permissions ». L'instant est **injecte**,
+  jamais lu de l'horloge dans la requete.
+
+  **LA RECHERCHE PORTE SUR PRENOM ET NOM, NORMALISES DES DEUX COTES.** Arbitrage
+  du 26/08/2026 : les accents sont ignores -- « elodie » trouve « Élodie ». Ni
+  l'e-mail ni le nom prefere ne sont cherches : le §26.1 ecrit « index de
+  recherche sur **prenom et nom** », et les ajouter serait le §6.5.
+
+  La normalisation est **une seule fonction SQL**, `fn_normaliser_pour_recherche`,
+  appliquee a la colonne **et** au terme. Deux normalisations -- l'une en Python,
+  l'autre en SQL -- divergeraient au premier caractere oublie, et la recherche
+  rendrait silencieusement moins de resultats. Voir la migration `0015`.
+
+CE QUE `T3` NE FAIT TOUJOURS PAS
+
+  La ligne rendue ne porte **ni photo, ni metier, ni statut affiches**. Les cinq
+  relations servent a **filtrer**, pas a enrichir la reponse : le §10.1 veut un
+  verso « informations professionnelles principales », et c'est `T10` qui
+  l'affichera, avec ce que `T4` aura defini pour la fiche. La photo attend `T5`
+  et `T6`.
 """
 
 from __future__ import annotations
@@ -114,6 +146,8 @@ from sqlalchemy import text
 from app.people.modeles import EtatAppartenance, VisibiliteProfil
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Mapping
+
     from sqlalchemy.engine import Connection
 
 
@@ -152,6 +186,14 @@ TAILLES_DE_PAGE: Final[tuple[int, ...]] = tuple(membre.value for membre in Taill
 TAILLE_PAR_DEFAUT: Final[TailleDePage] = TailleDePage.VINGT_CINQ
 TAILLE_MAXIMALE: Final[int] = max(TAILLES_DE_PAGE)
 
+#  **UNE BORNE SUR LE TERME CHERCHE, ET ELLE N'EST PAS COSMETIQUE.** Sans elle,
+#  une requete peut porter un terme de plusieurs mega-octets, que la base
+#  normalisera caractere par caractere sur CHAQUE ligne. Le §20.2 borne le debit ;
+#  ceci borne le cout d'UNE requete. 128 caracteres depassent largement le plus
+#  long nom compose du catalogue -- mesure : `first_name` et `last_name` sont des
+#  `text`, sans borne en base, mais aucun nom reel n'approche cette longueur.
+LONGUEUR_MAXIMALE_RECHERCHE: Final[int] = 128
+
 #  Les DEUX etats qui font qu'un profil est dans l'annuaire. Derives des
 #  enumerations, jamais ecrits en litteral -- une liste recopiee vieillit au
 #  premier ajout de valeur (§7.27).
@@ -171,18 +213,13 @@ COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
     "arrival_date",
 )
 
-#  **UNE SEULE SOURCE POUR LE FILTRE, PARTAGEE PAR LES DEUX REQUETES.** Le
+#  **UNE SEULE SOURCE ET UNE SEULE CLAUSE, PARTAGEES PAR LES DEUX REQUETES.** Le
 #  comptage et la page doivent porter sur la MEME population : deux clauses
 #  recopiees donneraient un total qui ne correspond pas aux lignes rendues, et
 #  l'ecart ne se verrait qu'a la derniere page. C'est la lecon de
 #  `resoudre_une_entite_active`, poussee d'un cran -- la elles partageaient la
 #  valeur, ici elles partagent la clause entiere.
-_FILTRE: Final[str] = (
-    "FROM entity_membership AS em JOIN person AS p ON p.id = em.person_id "
-    "WHERE em.entity_id = :entite "
-    "AND em.membership_state = :etat "
-    "AND em.profile_visibility = :visibilite"
-)
+_SOURCE: Final[str] = "FROM entity_membership AS em JOIN person AS p ON p.id = em.person_id"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -217,9 +254,113 @@ class PageDuTrombinoscope:
     total: int
 
 
-def _parametres(entite: uuid.UUID) -> dict[str, object]:
-    """Les trois valeurs du filtre, en une seule construction."""
-    return {"entite": entite, "etat": ETAT_LISTE, "visibilite": VISIBILITE_LISTEE}
+@dataclasses.dataclass(frozen=True, slots=True)
+class Filtres:
+    """Les cinq axes de filtre du §9.3, plus la recherche. Tous facultatifs.
+
+    Le sixieme axe du cahier -- « entite » -- n'est pas ici : c'est le `{code}` de
+    la route. Voir l'en-tete de module.
+    """
+
+    recherche: str | None = None
+    cercle: uuid.UUID | None = None
+    dsm: uuid.UUID | None = None
+    metier: uuid.UUID | None = None
+    client: uuid.UUID | None = None
+    statut: str | None = None
+
+    def actifs(self) -> tuple[str, ...]:
+        """Les noms des axes reellement demandes — pour que le controle COMPTE."""
+        return tuple(
+            champ.name
+            for champ in dataclasses.fields(self)
+            if getattr(self, champ.name) is not None
+        )
+
+
+#  Un axe -> la clause `EXISTS` qui l'exprime. **DECLAREE, ET CONFRONTEE AU REEL** :
+#  un test exige que les cles de cette table soient EXACTEMENT les champs de
+#  `Filtres` hors `recherche`. Un axe ajoute a l'un sans l'autre fait echouer
+#  (§7.27).
+#
+#  Chaque clause porte `archived_at IS NULL` et `period @> :instant` : une
+#  affectation archivee ou hors periode n'accorde rien (§24.12 du cahier).
+_CLAUSES: Final[Mapping[str, str]] = {
+    "cercle": (
+        "EXISTS (SELECT 1 FROM circle_membership x "
+        " WHERE x.entity_membership_id = em.id AND x.archived_at IS NULL "
+        "   AND x.period @> :instant AND x.circle_id = :cercle)"
+    ),
+    "dsm": (
+        "EXISTS (SELECT 1 FROM dsm_assignment x "
+        " WHERE x.consultant_membership_id = em.id AND x.archived_at IS NULL "
+        "   AND x.period @> :instant AND x.dsm_person_id = :dsm)"
+    ),
+    "metier": (
+        "EXISTS (SELECT 1 FROM membership_job_assignment x "
+        " WHERE x.entity_membership_id = em.id AND x.archived_at IS NULL "
+        "   AND x.period @> :instant AND x.job_catalog_id = :metier)"
+    ),
+    #  `client` et `statut` interrogent la MEME table : le client actif est une
+    #  colonne du statut professionnel, pas une relation separee.
+    "client": (
+        "EXISTS (SELECT 1 FROM professional_status_assignment x "
+        " WHERE x.entity_membership_id = em.id AND x.archived_at IS NULL "
+        "   AND x.period @> :instant AND x.client_id = :client)"
+    ),
+    "statut": (
+        "EXISTS (SELECT 1 FROM professional_status_assignment x "
+        " WHERE x.entity_membership_id = em.id AND x.archived_at IS NULL "
+        "   AND x.period @> :instant AND x.status = :statut)"
+    ),
+}
+
+#  La recherche : la MEME fonction des deux cotes, sinon ils ne se rencontrent
+#  pas. Voir la migration `0015`.
+_CLAUSE_RECHERCHE: Final[str] = (
+    "fn_normaliser_pour_recherche(p.first_name || ' ' || p.last_name) "
+    "LIKE '%' || fn_normaliser_pour_recherche(:recherche) || '%'"
+)
+
+
+def _ou(filtres: Filtres, instant: dt.datetime) -> tuple[str, str, dict[str, object]]:
+    """DEUX clauses `WHERE` et leurs parametres, assemblees ensemble.
+
+    **La separation n'est pas cosmetique** : la premiere porte sur
+    `entity_membership` seul et entre donc dans la CTE, qui borne le travail a
+    l'entite ; la seconde a besoin des colonnes de `person` et ne peut s'appliquer
+    qu'apres la jointure. Les melanger obligerait a joindre `person` a l'interieur
+    de la CTE, ce qui rendrait la materialisation inutile.
+
+    **AUCUNE VALEUR N'EST INTERPOLEE.** Seule la PRESENCE d'une clause est
+    dynamique ; les valeurs passent toutes en parametres lies. C'est ce qui rend
+    l'assemblage sur -- et c'est pourquoi les clauses sont des constantes de ce
+    module et non des chaines construites a l'appel.
+    """
+    membres = [
+        "em.entity_id = :entite",
+        "em.membership_state = :etat",
+        "em.profile_visibility = :visibilite",
+    ]
+    valeurs: dict[str, object] = {
+        "entite": None,
+        "etat": ETAT_LISTE,
+        "visibilite": VISIBILITE_LISTEE,
+    }
+    personne = ""
+    if filtres.recherche is not None:
+        personne = _CLAUSE_RECHERCHE
+        valeurs["recherche"] = filtres.recherche
+    besoin_d_instant = False
+    for axe, clause in _CLAUSES.items():
+        valeur = getattr(filtres, axe)
+        if valeur is not None:
+            membres.append(clause)
+            valeurs[axe] = valeur
+            besoin_d_instant = True
+    if besoin_d_instant:
+        valeurs["instant"] = instant
+    return " AND ".join(membres), personne, valeurs
 
 
 def lister_le_trombinoscope(
@@ -228,6 +369,8 @@ def lister_le_trombinoscope(
     entite: uuid.UUID,
     page: int,
     taille: int,
+    instant: dt.datetime,
+    filtres: Filtres | None = None,
 ) -> PageDuTrombinoscope:
     """La page demandee du trombinoscope d'une entite, et le total.
 
@@ -238,6 +381,15 @@ def lister_le_trombinoscope(
     Aucun filtre d'appelant : la matrice §5 donne « Lecture » aux huit roles
     authentifies, sans distinction. Le seul controle est l'existence d'une
     session, et il est porte par `exiger_une_session`.
+
+    **DEUX REQUETES, QUOI QU'IL ARRIVE.** Le comptage et la page, et rien de plus :
+    aucune boucle n'interroge la base par ligne. C'est ce que le critere de `T3`
+    appelle « aucun N+1, **compte** et non suppose », et un test le compte
+    reellement, en ecoutant le pilote.
+
+    **`instant` EST INJECTE.** Les cinq filtres portent sur des relations
+    historisees, et `now()` dans la requete rendrait le resultat impossible a
+    eprouver sur une affectation future ou close.
     """
     if page < 1:
         message = f"page doit valoir au moins 1, recu {page}"
@@ -246,13 +398,25 @@ def lister_le_trombinoscope(
         message = f"taille doit etre l'une de {TAILLES_DE_PAGE}, recu {taille}"
         raise ValueError(message)
 
-    parametres = _parametres(entite)
-    total = int(connexion.execute(text(f"SELECT count(*) {_FILTRE}"), parametres).scalar_one())
+    ou_membres, ou_personne, parametres = _ou(filtres or Filtres(), instant)
+    parametres["entite"] = entite
+    #  **UNE SEULE CLAUSE, ET PAS DE CTE.** J'ai essaye une CTE `MATERIALIZED`
+    #  pour borner le travail a l'entite, croyant corriger un plan degrade. Elle
+    #  n'a rien corrige -- le plan degrade rejetait toujours 45 879 lignes -- et
+    #  le motif etait faux : le planificateur estime `rows=1` parce qu'il ne VOIT
+    #  PAS les lignes non validees du banc d'essai, ce qui n'arrive pas en
+    #  service. Le changement a ete retire, comme les statistiques etendues avant
+    #  lui : garder un correctif dont le motif est faux ET l'effet nul laisse
+    #  croire qu'une cause est traitee.
+    ou = " AND ".join(clause for clause in (ou_membres, ou_personne) if clause)
+    source = f"{_SOURCE} WHERE {ou}"
+
+    total = int(connexion.execute(text(f"SELECT count(*) {source}"), parametres).scalar_one())
 
     lignes = connexion.execute(
         text(
             "SELECT em.id, em.person_id, p.first_name, p.last_name, p.preferred_name, "
-            f"em.professional_category, em.arrival_date {_FILTRE} "
+            f"em.professional_category, em.arrival_date {source} "
             #  L'ordre est TOTAL : `em.id` est cle primaire. Voir l'en-tete.
             "ORDER BY p.last_name, p.first_name, em.id "
             "LIMIT :taille OFFSET :decalage"
