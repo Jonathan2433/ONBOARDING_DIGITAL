@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 26 août 2026, sous-étape `T2` du LOT 5
+**Dernière mise à jour :** 26 août 2026, sous-étape `T3` du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 49 | 10 | 36 | 3 |
+| Total 50 | 10 | 37 | 3 |
 
 ---
 
@@ -67,6 +67,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-047` | **Notre propre contrôle rattache le §30.12 au LOT 8, alors que la roadmap et le backlog le placent au LOT 5.** `verifier-recette-modele.py` décrit le LOT 8 comme « médias et autorisations de diffusion » ; la roadmap l'appelle **« Événements et accueil dynamique »**, et ses médias sont ceux des événements. Le **LOT 5** inclut « gestion des autorisations de photo », et `US005` est **`P0`** | Non — la classification n'empêche rien, mais elle enverrait un relecteur au mauvais lot | **Clos en `T1` du LOT 5** — le §30.12 est rattaché à `T6`, et il reste `REPORTE` |
 | `ECART-048` | **Deux garde-fous de ce dépôt étaient exacts pour un mode de défaillance et aveugles à un autre.** **(1)** Le motif `media/` de `.gitignore`, écrit au LOT 0 contre les **médias déposés**, attrapait `apps/api/app/media/` — le module source de `T1`. Écrit, testé, `make check` à **0**, et `git add -A` **ne l'a pas ajouté**. **(2)** `make docs-check` faisait un `search` du marqueur « prochain identifiant libre » : il lisait le **premier** et ne voyait jamais les autres. Ce registre en portait **deux**, `ECART-048` en tête et **`ECART-045`** à la toute fin — trois de retard, dans le garde-fou écrit **pour** `ECART-021` | Non — le premier a été vu avant la poussée, le second n'a jamais fait attribuer un numéro en double | **Clos en `T1` du LOT 5** — `DEC-560`, avec `make sources-check` et son témoin |
 | `ECART-049` | **Vingt-cinq des quatre-vingt-quatre cibles documentées du `Makefile` ne sont pas déclarées `.PHONY`** — dont `entites-check`, `permissions-check`, `residu-check`, `migrations-check`, `apercu` et `code-refresh`. Une cible absente de `.PHONY` **ne s'exécute plus** le jour où un fichier porte son nom, et `make` le dit alors « up to date » | Non — aucun de ces noms n'existe comme fichier aujourd'hui, mesuré | **Ouvert.** La correction juste est de **dériver** `.PHONY` des cibles documentées, non d'y recopier 25 noms |
+| `ECART-050` | **La fiche donne « 300 ms » comme critère de performance de `T3`, alors que le cahier porte DEUX durées qui ne mesurent pas la même chose.** Le §9.3 étape 2 dit « temporisation d'environ **300 ms** » — un délai de **saisie**, donc un comportement d'écran ; le §25.2 dit « Recherche trombinoscope | moins de **800 ms** » au P95 — un budget d'**API**. Les critères de sortie du LOT 5 reprennent le second | Non — le 300 ms est plus strict, donc l'appliquer n'aurait rien cassé ; mais le critère réel n'aurait jamais été vérifié, et la temporisation serait restée sans porteur | **Clos en `T3`** — le test mesure les **800 ms au P95**, et la temporisation est rattachée à `T10` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -137,9 +138,22 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Dériver `.PHONY` des cibles documentées, ne pas y recopier 25 noms de plus** — une liste corrigée à la main aura le même sort dans six sous-étapes. GNU Make 3.81 accepte `$(shell …)`, et `make help` grepe déjà le `Makefile` de la même façon.<br>**Attention au §7.2 dans la formulation** : `$(MAKEFILE_LIST)` porte le chemin du dépôt, qui **contient une espace**, et doit donc être cité.<br>**Recommandation générale** : quand un fichier de construction porte une liste qui décrit ses propres cibles, cette liste est **dérivable** — et une liste dérivable qu'on recopie est un `ECART-021` en puissance (§7.27). |
 | Résolution | **Ouvert.** À traiter hors `T2` : y toucher pour 84 cibles pendant une sous-étape fonctionnelle élargirait son périmètre. |
 
+## `ECART-050` — Un critère qui nomme la mauvaise durée
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 26 août 2026, LOT 5 sous-étape `T3`, en cherchant à quelle grandeur comparer la mesure |
+| Source | `docs/operations/fiche-lot-5.md`, ligne de `T3` : « 300 ms · performance **mesurée sur 5 000 profils** » |
+| Constat | Le corpus porte **deux** durées pour la recherche, et ce ne sont pas les mêmes.<br>**§9.3 étape 2** : « saisie avec recherche déclenchée à chaque frappe et **temporisation** d'environ 300 ms » — un délai avant de **partir**, donc un comportement d'**écran**. Le backlog `US002` l'écrit de même : « la recherche **démarre** après environ 300 ms ».<br>**§25.2, objectifs au P95** : « Recherche trombinoscope \| moins de **800 ms** » — un budget de **réponse**. Les critères de sortie du LOT 5 le reprennent : « recherche sous **800 ms** au P95 ». |
+| Impact | **Aucun sur le livrable, et c'est ce qui rend l'écart insidieux.** 300 ms est plus strict que 800 : mesurer contre 300 aurait passé — sur une machine peu chargée. Mais **le critère écrit au cahier n'aurait jamais été vérifié en tant que tel**, et surtout la **temporisation de saisie** — qui est une vraie exigence, celle qui évite d'interroger l'API à chaque frappe — serait restée **sans porteur**, `T3` la croyant faite |
+| Cause | **§7.0 sixième proposition** : deux nombres qui semblent mesurer la même chose. « Le délai avant de chercher » et « le temps pour répondre » portent tous deux sur la recherche et s'expriment tous deux en millisecondes, mais l'un est un **compte à rebours d'écran** et l'autre une **durée de traitement**.<br>La fiche a été écrite le jour de l'ouverture du lot, à partir du bloc « Inclus » du cahier §LOT 5, qui ne porte que le 300 ms — le 800 ms est trente pages plus loin, dans le chapitre performance |
+| Bloquant | Non |
+| Recommandation | **`T3` mesure les 800 ms au P95, et `T10` portera la temporisation de 300 ms.** Le test le dit dans son docstring, pour qu'un relecteur de la fiche ne conclue pas au contraire.<br>**Recommandation générale** : quand un critère porte un nombre, cherche **toutes** les occurrences de la grandeur dans le corpus avant de mesurer. Deux nombres dans la même unité, sur le même sujet, ne mesurent pas forcément la même chose — et le plus visible n'est pas forcément celui du critère. |
+| Résolution | **Clos en `T3` du LOT 5**, et la résolution est plus nuancée que « on mesure les 800 ms ».<br>**Le §25.2 est un objectif de PRODUCTION**, mesurable en recette ou en exploitation sous charge réelle. Une horloge de poste de développement, dans une suite qui vient d'engendrer et d'annuler plusieurs jeux de 28 000 lignes, ne mesure pas cette grandeur — le croire serait le §7.0 sixième proposition **une seconde fois**. Mesuré : le même code rend **2 ms** isolément et **1 400 ms** en fin de suite.<br>Le test prouve donc les deux choses qu'un test *peut* prouver : **aucun effondrement**, avec un plafond large et assumé comme celui de `test_jeu_de_recette.py` au LOT 2 ; et **le plan ne parcourt pas `person`** — `Rows Removed by Join Filter` borné par l'effectif de l'entité, jamais par la table. Il **rapporte** le P95 face au budget du cahier, sans l'exiger.<br>La temporisation de 300 ms est rattachée à **`T10`**. |
+
 ---
 
-**Prochain identifiant libre : `ECART-050`.**
+**Prochain identifiant libre : `ECART-051`.**
 
 ---
 

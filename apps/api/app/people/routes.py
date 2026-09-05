@@ -52,8 +52,11 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.people.modeles import SituationProfessionnelle
 from app.people.trombinoscope import (
+    LONGUEUR_MAXIMALE_RECHERCHE,
     TAILLE_PAR_DEFAUT,
+    Filtres,
     TailleDePage,
     lister_le_trombinoscope,
 )
@@ -167,6 +170,25 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             TailleDePage,
             Query(description="Elements par page — les trois valeurs du cahier §18.2, seules"),
         ] = TAILLE_PAR_DEFAUT,
+        recherche: Annotated[
+            str | None,
+            Query(
+                max_length=LONGUEUR_MAXIMALE_RECHERCHE,
+                description="Cherche dans le prenom ET le nom, accents ignores",
+            ),
+        ] = None,
+        cercle: Annotated[uuid.UUID | None, Query(description="Identifiant d'un cercle")] = None,
+        dsm: Annotated[
+            uuid.UUID | None, Query(description="Identifiant de la personne DSM")
+        ] = None,
+        metier: Annotated[
+            uuid.UUID | None, Query(description="Identifiant d'un metier du catalogue")
+        ] = None,
+        client: Annotated[uuid.UUID | None, Query(description="Identifiant d'un client")] = None,
+        statut: Annotated[
+            SituationProfessionnelle | None,
+            Query(description="`mission` ou `intercontract` — cahier §9.3"),
+        ] = None,
     ) -> ReponseDuTrombinoscope:
         """Lister le trombinoscope — cahier §10.1 et §18.2, backlog `MVP-L05-US001`."""
         with moteur(parametres).begin() as connexion:
@@ -185,7 +207,22 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             #  HTTP-agnostique -- il recoit un entier, pas un type de la couche
             #  web. C'est aussi ce que le pilote attend en parametre lie.
             resultat = lister_le_trombinoscope(
-                connexion, entite=entite.id, page=page, taille=int(taille)
+                connexion,
+                entite=entite.id,
+                page=page,
+                taille=int(taille),
+                #  L'instant est pris UNE fois, ici, et passe au service : les
+                #  cinq filtres portent sur des relations historisees, et deux
+                #  appels a `now()` dans la meme requete pourraient differer.
+                instant=dt.datetime.now(tz=dt.UTC),
+                filtres=Filtres(
+                    recherche=recherche,
+                    cercle=cercle,
+                    dsm=dsm,
+                    metier=metier,
+                    client=client,
+                    statut=None if statut is None else statut.value,
+                ),
             )
 
         #  Division entiere par excedent, sans `math.ceil` : une division

@@ -19,6 +19,8 @@ import {
   CODES_TROMBINOSCOPE,
   CONTRAT_API,
   GABARIT_CHEMIN_TROMBINOSCOPE,
+  LONGUEUR_MAXIMALE_RECHERCHE,
+  STATUTS_PROFESSIONNELS,
   TAILLE_PAR_DEFAUT,
   TAILLES_DE_PAGE,
   validerLeTrombinoscope,
@@ -150,5 +152,39 @@ describe('le validateur', () => {
 
   it('refuse une ligne non objet', () => {
     expect(() => validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: ['x'] })).toThrow(TypeError);
+  });
+});
+
+describe('les filtres — LOT 5, T3', () => {
+  it('n’ajoute que les axes renseignes, dans un ordre STABLE', () => {
+    expect(cheminTrombinoscope('bordeaux', undefined, undefined, { recherche: 'ada' })).toBe(
+      '/api/v1/entities/bordeaux/people?recherche=ada',
+    );
+    //  Deux appels aux memes filtres doivent rendre la MEME adresse : sinon deux
+    //  cles de cache designeraient la meme page.
+    const filtres = { statut: 'mission', cercle: 'c-1', recherche: 'ada' };
+    expect(cheminTrombinoscope('bordeaux', 1, 25, filtres)).toBe(
+      cheminTrombinoscope('bordeaux', 1, 25, filtres),
+    );
+    expect(cheminTrombinoscope('bordeaux', 1, 25, filtres)).toBe(
+      '/api/v1/entities/bordeaux/people?page=1&taille=25&recherche=ada&cercle=c-1&statut=mission',
+    );
+  });
+
+  it('ecarte une chaine VIDE — « ?recherche= » chercherait le vide', () => {
+    expect(cheminTrombinoscope('bordeaux', undefined, undefined, { recherche: '' })).toBe(
+      '/api/v1/entities/bordeaux/people',
+    );
+  });
+
+  it('encode les valeurs de filtre', () => {
+    expect(cheminTrombinoscope('bordeaux', undefined, undefined, { recherche: 'a b&c=d' })).toBe(
+      '/api/v1/entities/bordeaux/people?recherche=a%20b%26c%3Dd',
+    );
+  });
+
+  it('declare les deux statuts et la borne du terme cherche', () => {
+    expect(STATUTS_PROFESSIONNELS).toEqual(['mission', 'intercontract']);
+    expect(LONGUEUR_MAXIMALE_RECHERCHE).toBe(128);
   });
 });

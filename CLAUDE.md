@@ -21,21 +21,21 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1` et `T2` sont terminées**, dix restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1`, `T2` et `T3` sont terminées**, neuf restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T3` du LOT 5 — recherche et filtres, six axes combinables** (`US002`, issue #117). Le critère est « 300 ms · performance **mesurée sur 5 000 profils** · **aucun N+1**, compté et non supposé ». `T2` n'a fait **aucune** jointure métier : les six axes — entité, cercle, DSM, client, métier et statut — sont exactement ce qu'il reste. Lis le §8 du [compte rendu de `T2`](docs/operations/compte-rendu-t2-lot-5.md). ~~`T2`~~ (`US001`, issue #116). Le §18.2 du cahier donne « 25 par défaut ; options 25, 50 et 100 ; **maximum 100** » : le contrôle devra exiger le **refus au-delà**, pas seulement l'acceptation des trois. Et le §5.1 de la matrice s'applique à cette route comme aux autres — l'API a déjà de quoi le faire, `exiger_un_role_dans_l_entite` attendant son premier consommateur. Lis le §9 du [compte rendu de `T1`](docs/operations/compte-rendu-t1-lot-5.md) |
+| **Prochaine action** | **`T4` du LOT 5 — la fiche profil et les règles de visibilité** (`US004`, issue #119). Le critère est « chaque champ visible **ou** masqué selon la matrice, **les deux sens** testés ». Le §10.2 donne treize champs, et le §6.1 de la matrice dit qui les voit. **`fn_normaliser_pour_recherche` existe** depuis `T3` — c'est la seule normalisation de recherche du projet, et elle doit le rester. Lis le §8 du [compte rendu de `T3`](docs/operations/compte-rendu-t3-lot-5.md). **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
 | **Tests** | **1 022** : **761 pytest** — dont **465 d'intégration** — et **261 Vitest** (**97 `ui`**, **121 `web`**, **43 `contracts`**) |
-| Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **14 migrations**, tête `0014`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
+| Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **15 migrations**, tête `0015`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **84 cibles** documentées — `trombinoscope-check` est nouvelle. **`ECART-049` : 25 d'entre elles ne sont PAS dans `.PHONY`**. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **144 décisions** `DEC-418+` · **49 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
+| Registres | **145 décisions** `DEC-418+` · **50 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 19 — DÉRIVÉS le 24/08/2026, et le « 8 » qui figurait ici était faux**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -865,7 +865,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**203 défauts NOMMÉS au 26/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **12** au LOT 5 — 71 + 44 + 57 + 19 + 12,
+**215 défauts NOMMÉS au 26/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **24** au LOT 5 — 71 + 44 + 57 + 19 + 24,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -1917,6 +1917,74 @@ cause, et la seconde serait celle qu'aucun test de format n'examine.
 
 ---
 
+## 7.38 Un test de performance mesure le système, son HARNAIS, et l'ÉTAT PHYSIQUE de la base
+
+**Apport de `T3` du LOT 5, et il a coûté quatre diagnostics dont DEUX étaient faux.**
+
+La même requête, le même code, le même volume : **2 ms** isolément, **1 400 ms** en fin de suite
+complète. Et le plan `EXPLAIN ANALYZE` donnait `Execution Time: 478 ms` avec
+**`Rows Removed by Join Filter: 45 294`** — la base parcourait `person` **en entier à chaque
+appartenance**.
+
+| Hypothèse | Ce que la mesure a dit |
+|---|---|
+| « la fonction SQL n'est pas *inlinée* » | **réfutée** — la fonction, l'expression en clair et `lower()` seul rendent **0,6 ms** tous les trois |
+| « mon compteur fuit un écouteur » | **vraie, mais pas la cause** — corrigée, et la lenteur est revenue |
+| « le planificateur sous-estime des colonnes corrélées » | **réfutée par l'expérience faite pour la confirmer** |
+| **les tuples MORTS laissés par le harnais** | **confirmée** — 467, 490, 539 ms sur trois tours, puis **0,5 ms** la base nettoyée |
+
+Chaque test du fichier engendre 28 000 lignes dans une transaction **annulée**. Les lignes annulées
+restent **physiquement en table** jusqu'à `autovacuum` : `Buffers: shared hit=372 681` dans le plan
+lent, contre **326** dans le plan sain.
+
+> **La règle, sans jargon :** quand une mesure de performance varie d'un facteur 500 sans que le code
+> change, ne cherche pas d'abord dans le produit. **Sépare les trois grandeurs** — le temps serveur,
+> le temps du harnais, et l'état physique de la base — parce qu'un banc d'essai qui se salue
+> lui-même attribue au produit ce qui lui appartient.
+
+**ET UNE HYPOTHÈSE NE SE CONFIRME PAS EN APPLIQUANT SON REMÈDE. DEUX FOIS DE SUITE.** J'ai d'abord
+posé des `CREATE STATISTICS` sur les colonnes que je croyais corrélées, mesuré « après », vu que
+c'était rapide, et conclu. En mesurant **avec ET sans**, l'estimation restait la même et les durées
+étaient **identiques**. Puis j'ai posé une CTE `MATERIALIZED` pour borner le travail à l'entité :
+**elle n'a rien corrigé non plus** — 45 879 lignes encore rejetées.
+
+**Les deux changements ont été retirés.** Garder un correctif dont le motif est faux laisse croire
+que la cause est traitée, ce qui est pire que le défaut — et un correctif dont l'effet est **nul**
+en plus du motif faux ne laisse même pas l'excuse du doute.
+
+**Et ce qu'un test PEUT prouver n'est pas toujours ce que le critère énonce.** Le §25.2 vise « moins
+de 800 ms au P95 » : c'est un objectif de **production**, sous charge réelle. Un poste de
+développement ne mesure pas cela. Le test **rapporte** donc le P95, et **exige** deux choses qui,
+elles, se prouvent :
+
+- **aucun effondrement**, avec un plafond large et assumé — c'est le parti de `test_jeu_de_recette.py`
+  au LOT 2, « détecter un effondrement, non mesurer une milliseconde » ;
+- **la propriété STRUCTURELLE, RAPPORTÉE et non exigée** : `Rows Removed by Join Filter` dit si la
+  jointure suit l'**entité** ou la **table**, et c'est ce qui distingue le plan à 0,15 ms de celui à
+  478 ms. **Mais l'exiger ferait échouer un livrable conforme**, pour une raison mesurée le
+  26/08/2026 et qui vaut pour tout ce projet :
+
+> **`ANALYZE` NE PUBLIE RIEN D'EXPLOITABLE SUR DES LIGNES NON VALIDÉES.**
+>
+> ```text
+> apres VACUUM (ANALYZE) sur base validee   reltuples(entity_membership) = 0
+> apres 5 155 insertions NON validees
+>   puis ANALYZE dans la transaction        reltuples(entity_membership) = 0
+> ```
+>
+> Un test qui engendre son volume dans une transaction **annulée** — le patron posé par `T12` du
+> LOT 2 et repris depuis — mesure donc un planificateur qui croit les tables **vides** : il estime
+> `rows=1` partout et choisit des plans qu'il ne choisirait pas en service. **Aucune conclusion sur
+> le PLAN ne peut être tirée de ce banc d'essai**, et le commentaire hérité du LOT 2 — « sans
+> `ANALYZE`, PostgreSQL raisonne sur des tables qu'il croit vides » — est faux dans ce contexte : il
+> les croit vides quand même.
+
+**Enfin, un piège de nettoyage qui vaut d'être connu :** un `VACUUM` lancé pendant qu'une
+transaction de fixture est **déjà ouverte** ne récupère **rien** — son instantané l'en empêche. Il
+faut une connexion séparée, en autovalidation, **avant** d'ouvrir celle qui mesure.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **7 ouverts sur 33**
@@ -2286,7 +2354,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **38 leçons** payées par **203 défauts nommés** — 71 + 44 + 57 + 19 + 12, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **39 leçons** payées par **215 défauts nommés** — 71 + 44 + 57 + 19 + 24, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

@@ -59,10 +59,16 @@ from app.auth.sessions import ouvrir_une_session
 from app.configuration.settings import Parametres
 from app.main import creer_application
 from app.organization.modeles import TypeRoleTechnique
-from app.people.modeles import ETATS_APPARTENANCE, VISIBILITES_PROFIL, EtatAppartenance
+from app.people.modeles import (
+    ETATS_APPARTENANCE,
+    SITUATIONS_PROFESSIONNELLES,
+    VISIBILITES_PROFIL,
+    EtatAppartenance,
+)
 from app.people.trombinoscope import (
     COLONNES_EXPOSEES,
     ETAT_LISTE,
+    LONGUEUR_MAXIMALE_RECHERCHE,
     TAILLE_MAXIMALE,
     TAILLE_PAR_DEFAUT,
     TAILLES_DE_PAGE,
@@ -95,6 +101,11 @@ CHAMPS_ATTENDUS = frozenset(
     }
 )
 CHAMPS_ENVELOPPE = frozenset({"collaborateurs", "page", "taille", "total", "pages"})
+
+#  Un instant FIXE : les cinq filtres portent sur des relations historisees, et un
+#  decor date par rapport a `now()` rendrait le test dependant de l'heure de son
+#  execution. Le temps est INJECTE, jamais attendu.
+ANCRAGE = dt.datetime(2026, 6, 15, 12, 0, tzinfo=dt.UTC)
 
 
 def _exiger_postgresql(parametres: Parametres) -> None:
@@ -172,7 +183,13 @@ def test_le_service_refuse_une_taille_hors_liste_meme_sans_HTTP() -> None:
     """
     for taille in (0, 1, 24, 26, 99, 101, 10_000):
         with pytest.raises(ValueError, match="taille"):
-            lister_le_trombinoscope(None, entite=uuid.uuid4(), page=1, taille=taille)  # type: ignore[arg-type]
+            lister_le_trombinoscope(
+                None,  # type: ignore[arg-type]
+                entite=uuid.uuid4(),
+                page=1,
+                taille=taille,
+                instant=ANCRAGE,
+            )
 
 
 def test_le_service_refuse_une_page_inferieure_a_un() -> None:
@@ -184,6 +201,7 @@ def test_le_service_refuse_une_page_inferieure_a_un() -> None:
                 entite=uuid.uuid4(),
                 page=page,
                 taille=TAILLE_PAR_DEFAUT,
+                instant=ANCRAGE,
             )
 
 
@@ -715,3 +733,93 @@ def test_le_404_est_IDENTIQUE_a_celui_de_la_route_d_entite(
     assert {
         n.lower(): v for n, v in trombinoscope.headers.items() if n.lower() in interessants
     } == {n.lower(): v for n, v in entite.headers.items() if n.lower() in interessants}
+
+
+# ---------------------------------------------------------------------------
+#  T3 : les filtres a travers HTTP
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_un_identifiant_de_filtre_mal_forme_est_refuse(decor: tuple[Parametres, str, str]) -> None:
+    """Les quatre axes a identifiant sont typees `uuid.UUID` : FastAPI refuse.
+
+    **LE REFUS PORTE LE FORMAT DU §18.3**, produit par le gestionnaire de
+    validation et non par la route -- ecrire un second refus donnerait deux formes
+    pour une meme cause.
+    """
+    parametres, marqueur, code = decor
+    jeton = _session(parametres, marqueur)
+    for axe in ("cercle", "dsm", "metier", "client"):
+        reponse = _appeler(parametres, code, jeton, requete=f"?{axe}=pas-un-uuid")
+        assert reponse.status_code == 422, f"{axe} : {reponse.text}"
+        assert reponse.json()["erreur"]["champ"] == f"query.{axe}"
+
+
+@pytest.mark.integration
+def test_un_statut_hors_des_DEUX_valeurs_est_refuse(decor: tuple[Parametres, str, str]) -> None:
+    """§9.3 : `mission` ou `intercontract`, et rien d'autre.
+
+    **LES DEUX VALEURS VALIDES SONT EPROUVEES AUSSI**, sans quoi un type qui
+    refuserait tout passerait ce test -- c'est exactement le defaut `T2-3`, dont
+    la lecon est que toute famille de refus a besoin de son temoin.
+    """
+    parametres, marqueur, code = decor
+    jeton = _session(parametres, marqueur)
+    for valeur in ("employe", "MISSION", "", "mission-x"):
+        reponse = _appeler(parametres, code, jeton, requete=f"?statut={valeur}")
+        assert reponse.status_code == 422, f"« {valeur} » accepte : {reponse.text}"
+        assert reponse.json()["erreur"]["champ"] == "query.statut"
+    for valide in SITUATIONS_PROFESSIONNELLES:
+        reponse = _appeler(parametres, code, jeton, requete=f"?statut={valide}")
+        assert reponse.status_code == 200, f"« {valide} » refuse : {reponse.text}"
+
+
+@pytest.mark.integration
+def test_un_terme_de_recherche_trop_long_est_refuse(decor: tuple[Parametres, str, str]) -> None:
+    """Sans borne, la base normaliserait un terme enorme sur chaque ligne.
+
+    Le temoin est a la borne EXACTE : 128 passe, 129 refuse. Une epreuve qui ne
+    testerait que « tres long » ne dirait pas ou est la borne.
+    """
+    parametres, marqueur, code = decor
+    jeton = _session(parametres, marqueur)
+    juste = "a" * LONGUEUR_MAXIMALE_RECHERCHE
+    trop = "a" * (LONGUEUR_MAXIMALE_RECHERCHE + 1)
+    assert _appeler(parametres, code, jeton, requete=f"?recherche={juste}").status_code == 200
+    refus = _appeler(parametres, code, jeton, requete=f"?recherche={trop}")
+    assert refus.status_code == 422, refus.text
+    assert refus.json()["erreur"]["champ"] == "query.recherche"
+
+
+@pytest.mark.integration
+def test_la_recherche_a_travers_HTTP_ignore_les_accents(
+    decor: tuple[Parametres, str, str],
+) -> None:
+    """Le decor porte `visible` : on la trouve par un fragment de son nom.
+
+    **ET UN TEMOIN DANS L'AUTRE SENS** : un terme absent rend une liste vide avec
+    un `total` a zero, et non une erreur. Sans lui, une recherche qui refuserait
+    tout donnerait la meme observation qu'une recherche correcte sur un terme
+    absent.
+    """
+    parametres, marqueur, code = decor
+    jeton = _session(parametres, marqueur)
+    trouve = _appeler(parametres, code, jeton, requete="?recherche=isibl").json()
+    assert _noms(trouve) == ["visible"], (
+        "une sous-chaine du nom doit suffire — et seule la ligne LISTABLE remonte, "
+        "les cinq autres etant exclues par leur etat"
+    )
+    assert trouve["total"] == 1
+
+    #  Le prenom du decor est « Ada » : on le trouve sans accent comme avec.
+    #  Le prenom est « Ada » pour les SIX lignes du decor : la recherche par
+    #  prenom rend donc la seule qui soit listable, ce qui prouve que les filtres
+    #  d'etat et la recherche se composent.
+    par_prenom = _appeler(parametres, code, jeton, requete="?recherche=ADA").json()
+    assert _noms(par_prenom) == ["visible"], "la recherche doit porter sur le PRENOM aussi"
+
+    vide = _appeler(parametres, code, jeton, requete="?recherche=zzzz-absent").json()
+    assert vide["collaborateurs"] == []
+    assert vide["total"] == 0
+    assert vide["pages"] == 0
