@@ -432,6 +432,24 @@ jobs:
         # implemente nulle part.
         run: make trombinoscope-check
 
+      - name: La fiche profil, servie a travers Caddy
+        # LOT 5, T4, story MVP-L05-US004.
+        #
+        # SON CONTROLE LE PLUS UTILE RELIE LA FICHE A LA LISTE. Le trombinoscope
+        # exclut quatre etats ; si la fiche etait accessible pour un profil que la
+        # liste refuse, le filtre de la liste serait DECORATIF -- et aucun
+        # controle de la liste seule ne le verrait. Le controle prend donc
+        # l'identifiant que la LISTE rend, verifie que sa fiche est servie, puis
+        # prend un profil exclu et exige le MEME 404 qu'un identifiant inconnu.
+        # Eprouve : en retirant le filtre de population, il rend « 200/404 ».
+        #
+        # ET L'ABSENCE DE MASQUAGE EST EPROUVEE, PAS SUPPOSEE. La matrice ne
+        # definit aucune visibilite par champ -- ECART-051 -- et le controle
+        # appelle avec un compte sans appartenance, sans responsabilite et sans
+        # role technique, en exigeant que les SIX champs sensibles du §10.2 soient
+        # tous renseignes.
+        run: make profil-check
+
       - name: 4bis · Le changement d'entite recharge les droits, sans en transferer
         # LOT 4, T8 — story `MVP-L04-US002`. Les CINQ regles du cahier §23.3 et de
         # la matrice §23.3 deviennent exigibles ici, et la matrice §5.1 donne la

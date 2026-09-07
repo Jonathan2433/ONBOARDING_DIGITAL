@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 26 août 2026, sous-étape `T3` du LOT 5
+**Dernière mise à jour :** 26 août 2026, sous-étape `T4` du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 50 | 10 | 37 | 3 |
+| Total 51 | 10 | 38 | 3 |
 
 ---
 
@@ -68,6 +68,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-048` | **Deux garde-fous de ce dépôt étaient exacts pour un mode de défaillance et aveugles à un autre.** **(1)** Le motif `media/` de `.gitignore`, écrit au LOT 0 contre les **médias déposés**, attrapait `apps/api/app/media/` — le module source de `T1`. Écrit, testé, `make check` à **0**, et `git add -A` **ne l'a pas ajouté**. **(2)** `make docs-check` faisait un `search` du marqueur « prochain identifiant libre » : il lisait le **premier** et ne voyait jamais les autres. Ce registre en portait **deux**, `ECART-048` en tête et **`ECART-045`** à la toute fin — trois de retard, dans le garde-fou écrit **pour** `ECART-021` | Non — le premier a été vu avant la poussée, le second n'a jamais fait attribuer un numéro en double | **Clos en `T1` du LOT 5** — `DEC-560`, avec `make sources-check` et son témoin |
 | `ECART-049` | **Vingt-cinq des quatre-vingt-quatre cibles documentées du `Makefile` ne sont pas déclarées `.PHONY`** — dont `entites-check`, `permissions-check`, `residu-check`, `migrations-check`, `apercu` et `code-refresh`. Une cible absente de `.PHONY` **ne s'exécute plus** le jour où un fichier porte son nom, et `make` le dit alors « up to date » | Non — aucun de ces noms n'existe comme fichier aujourd'hui, mesuré | **Ouvert.** La correction juste est de **dériver** `.PHONY` des cibles documentées, non d'y recopier 25 noms |
 | `ECART-050` | **La fiche donne « 300 ms » comme critère de performance de `T3`, alors que le cahier porte DEUX durées qui ne mesurent pas la même chose.** Le §9.3 étape 2 dit « temporisation d'environ **300 ms** » — un délai de **saisie**, donc un comportement d'écran ; le §25.2 dit « Recherche trombinoscope | moins de **800 ms** » au P95 — un budget d'**API**. Les critères de sortie du LOT 5 reprennent le second | Non — le 300 ms est plus strict, donc l'appliquer n'aurait rien cassé ; mais le critère réel n'aurait jamais été vérifié, et la temporisation serait restée sans porteur | **Clos en `T3`** — le test mesure les **800 ms au P95**, et la temporisation est rattachée à `T10` |
+| `ECART-051` | **Le critère de `T4` dit « chaque champ visible ou masqué selon la matrice », et la matrice ne définit AUCUNE visibilité par champ.** « Règles de visibilité » ne paraît que dans les **deux copies du critère de `US004` lui-même** ; le seul « masquer » de la matrice porte sur les **actions**. Le §5 donne « Fiches collaborateur », « Statut mission/intercontrat » et « Client actif » en **Lecture aux huit** rôles authentifiés | Non — mais suivre le critère à la lettre aurait fait **inventer** un masquage, ce que la règle §6.5 interdit | **Clos en `T4`** — aucun champ n'est masqué, et **un test fige l'absence** pour qu'un lot ultérieur doive la décider |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -151,9 +152,22 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **`T3` mesure les 800 ms au P95, et `T10` portera la temporisation de 300 ms.** Le test le dit dans son docstring, pour qu'un relecteur de la fiche ne conclue pas au contraire.<br>**Recommandation générale** : quand un critère porte un nombre, cherche **toutes** les occurrences de la grandeur dans le corpus avant de mesurer. Deux nombres dans la même unité, sur le même sujet, ne mesurent pas forcément la même chose — et le plus visible n'est pas forcément celui du critère. |
 | Résolution | **Clos en `T3` du LOT 5**, et la résolution est plus nuancée que « on mesure les 800 ms ».<br>**Le §25.2 est un objectif de PRODUCTION**, mesurable en recette ou en exploitation sous charge réelle. Une horloge de poste de développement, dans une suite qui vient d'engendrer et d'annuler plusieurs jeux de 28 000 lignes, ne mesure pas cette grandeur — le croire serait le §7.0 sixième proposition **une seconde fois**. Mesuré : le même code rend **2 ms** isolément et **1 400 ms** en fin de suite.<br>Le test prouve donc les deux choses qu'un test *peut* prouver : **aucun effondrement**, avec un plafond large et assumé comme celui de `test_jeu_de_recette.py` au LOT 2 ; et **le plan ne parcourt pas `person`** — `Rows Removed by Join Filter` borné par l'effectif de l'entité, jamais par la table. Il **rapporte** le P95 face au budget du cahier, sans l'exiger.<br>La temporisation de 300 ms est rattachée à **`T10`**. |
 
+## `ECART-051` — Un critère qui renvoie à des règles que le corpus ne définit pas
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 26 août 2026, LOT 5 sous-étape `T4`, en cherchant **quelles** règles de visibilité appliquer |
+| Source | `docs/operations/fiche-lot-5.md`, ligne de `T4` : « chaque champ visible **ou** masqué selon la matrice, **les deux sens** testés » — et `MVP-L05-US004` : « Métier, statut, client, DSM, cercles, responsabilités, présentation et fun fact **respectent les règles de visibilité** » |
+| Constat | **La matrice ne définit aucune visibilité par CHAMP**, et c'est mesuré :<br>**1.** « règles de visibilité » a **2 occurrences dans tout le corpus** — et ce sont les **deux copies du critère de `US004` lui-même**, l'une au backlog, l'autre dans la reprise du backlog par le cahier. **Rien ne les énonce.**<br>**2.** Le seul « masquer » de la matrice porte sur les **actions** : « le frontend peut masquer ou afficher les **actions** pour améliorer l'expérience, mais l'API reste l'autorité finale ».<br>**3.** Le §6.1 de la matrice liste des **actions** — consulter, créer, modifier, archiver — jamais des champs. Son §6.2 ne parle que de **modification**.<br>**4.** Les règles applicables sont donc celles du **§5**, qui traite « Fiches collaborateur », « Statut mission/intercontrat » et « Client actif » comme **trois ressources distinctes** et donne **« Lecture » aux huit** rôles authentifiés sur chacune |
+| Impact | **Aucun sur le livrable, à condition de ne pas suivre le critère à la lettre.** Le suivre aurait fait **inventer** un masquage — quels champs, pour quels rôles ? — ce que la règle §6.5 interdit explicitement. Une hypothèse déguisée en décision est pire qu'une case vide.<br>Et le risque symétrique existe : conclure « rien n'est masqué » **sans le dire** laisserait un relecteur de la fiche croire que le critère a été traité, alors qu'il aura été **écarté** |
+| Cause | **Le critère de la fiche a été écrit à partir du backlog**, qui renvoie lui-même à des règles qu'il ne définit pas. C'est la cinquième occurrence de la classe §7.29 : un document annonce une règle que le corpus ne porte pas.<br>La nuance qui compte : le corpus **définit bien** ce qui est masqué — mais **ailleurs et autrement**. `ANON` n'a aucun accès ; les profils `draft`, `hidden`, `departed` et `archived` sont exclus de la population ; et la **photo** sans autorisation active impose un avatar neutre (§12.2). Trois règles réelles, aucune par champ et par rôle |
+| Bloquant | Non |
+| Recommandation | **Ne rien masquer, et FIGER l'absence par un test.** Le test appelle avec un compte qui n'a aucune appartenance dans l'entité, aucune responsabilité et aucun rôle technique — le cas le plus dépourvu qu'une session puisse porter — et exige que les six champs sensibles du §10.2 soient **tous renseignés**. Un lot qui voudra masquer un champ devra casser ce test, donc le décider (§7.32).<br>**Recommandation générale** : quand un critère renvoie à « les règles de X », cherche **où elles sont écrites** avant de les appliquer. Si elles ne le sont nulle part, la bonne réponse n'est ni de les inventer ni de les ignorer en silence : c'est de **nommer l'absence** et de figer le choix par un test. |
+| Résolution | **Clos en `T4` du LOT 5**, `DEC-563`. Aucun champ n'est masqué ; `test_AUCUN_champ_n_est_masque_a_un_employe_SANS_responsabilite` et le contrôle `make profil-check` l'exigent tous deux. La **photo** reste hors de la fiche : elle attend `T5` et `T6`, et un champ qui vaudrait toujours `null` laisserait croire que la règle du §12.2 est appliquée. |
+
 ---
 
-**Prochain identifiant libre : `ECART-051`.**
+**Prochain identifiant libre : `ECART-052`.**
 
 ---
 
