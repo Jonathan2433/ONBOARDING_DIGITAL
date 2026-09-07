@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 26 août 2026, sous-étape `T4` du LOT 5
+**Dernière mise à jour :** 7 septembre 2026, sous-étape `T5` du LOT 5
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 51 | 10 | 38 | 3 |
+| Total 52 | 10 | 39 | 3 |
 
 ---
 
@@ -69,6 +69,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-049` | **Vingt-cinq des quatre-vingt-quatre cibles documentées du `Makefile` ne sont pas déclarées `.PHONY`** — dont `entites-check`, `permissions-check`, `residu-check`, `migrations-check`, `apercu` et `code-refresh`. Une cible absente de `.PHONY` **ne s'exécute plus** le jour où un fichier porte son nom, et `make` le dit alors « up to date » | Non — aucun de ces noms n'existe comme fichier aujourd'hui, mesuré | **Ouvert.** La correction juste est de **dériver** `.PHONY` des cibles documentées, non d'y recopier 25 noms |
 | `ECART-050` | **La fiche donne « 300 ms » comme critère de performance de `T3`, alors que le cahier porte DEUX durées qui ne mesurent pas la même chose.** Le §9.3 étape 2 dit « temporisation d'environ **300 ms** » — un délai de **saisie**, donc un comportement d'écran ; le §25.2 dit « Recherche trombinoscope | moins de **800 ms** » au P95 — un budget d'**API**. Les critères de sortie du LOT 5 reprennent le second | Non — le 300 ms est plus strict, donc l'appliquer n'aurait rien cassé ; mais le critère réel n'aurait jamais été vérifié, et la temporisation serait restée sans porteur | **Clos en `T3`** — le test mesure les **800 ms au P95**, et la temporisation est rattachée à `T10` |
 | `ECART-051` | **Le critère de `T4` dit « chaque champ visible ou masqué selon la matrice », et la matrice ne définit AUCUNE visibilité par champ.** « Règles de visibilité » ne paraît que dans les **deux copies du critère de `US004` lui-même** ; le seul « masquer » de la matrice porte sur les **actions**. Le §5 donne « Fiches collaborateur », « Statut mission/intercontrat » et « Client actif » en **Lecture aux huit** rôles authentifiés | Non — mais suivre le critère à la lettre aurait fait **inventer** un masquage, ce que la règle §6.5 interdit | **Clos en `T4`** — aucun champ n'est masqué, et **un test fige l'absence** pour qu'un lot ultérieur doive la décider |
+| `ECART-052` | **Le §8.2 de la fiche annonce que `T5` doit décider du format des miniatures. Ce n'est pas à `T5`.** La fiche a raison sur le constat — le corpus ne nomme **aucun** format, zéro occurrence de `webp`, `avif`, `jpeg` ou `png` dans les cinq documents — et **tort sur qui décide** : c'est celui qui **produit** les variantes, donc `MVP-L11-US005` au LOT 11. La **taille**, elle, est bien dans le corpus : le §25.3 dit « moins de 100 Ko » | Non — mais suivre la fiche aurait produit une **liste blanche fermée de formats** qui bloquerait le LOT 11, ce que la règle §6.5 interdit | **Clos en `T5`** — `DEC-564` : la taille est posée en base (`0016`), le format reste **non tranché**, et un test l'exige |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -167,7 +168,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-052`.**
+**Prochain identifiant libre : `ECART-053`.**
 
 ---
 
@@ -755,3 +756,18 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | Borner l'extraction au bloc `ECRANS`, comme l'autre l'est au bloc `CHEMINS`.<br>**Recommandation générale** : quand une lecture textuelle porte sur un fichier qui déclare **plusieurs** collections de même forme, la borner au bloc **dès la première écriture**. `verifier-cadre.py` le fait pour `RUBRIQUES` — son `lire_rubriques` est bornée, et son docstring dit pourquoi. |
 | Résolution | **Clos.** |
 
+
+---
+
+## `ECART-052` — Une fiche qui attribue à ce lot une décision qui appartient à un autre
+
+| | |
+|---|---|
+| Constaté | 06/09/2026, sous-étape `T5` du LOT 5 |
+| Origine | `docs/operations/fiche-lot-5.md` §8.2, et une note laissée par `T1` du même lot |
+| Constat | Le §8.2 dit : « Le corpus ne donne **ni dimension, ni format** [...] **`T5` devra donc décider, et le motif de chaque valeur devra être mesuré** ». Le constat est **juste et vérifié** — mesure du 06/09/2026 : zéro occurrence de `webp`, `avif`, `jpeg` ou `png`, et aucune dimension en pixels, dans les cinq documents de cadrage. La conclusion, elle, est fausse : **cette décision n'appartient pas à `T5`**. `MVP-L11-US005` — « Générer miniatures et variantes sans doublon », dans « Médias, worker et tâches planifiées » — est la story qui **produit** les variantes, au LOT 11. C'est celui qui produit un format qui le choisit. `T5` **sélectionne** une variante et la **sert** ; elle n'en fabrique aucune, et **aucune bibliothèque de traitement d'image n'est installée** — zéro occurrence de `pillow` ou `vips`, mesuré le même jour.<br>**Et `T1` du même lot avait laissé la même note** : `FORMATS_VARIANTE` était laissée vide avec le commentaire que `T5` devait « décider et mesurer ». La note s'est propagée d'une sous-étape à l'autre sans que personne ne demande **de quel lot** relève la production. |
+| Cause | **§7.29, cinquième occurrence, et sa nuance exacte.** Le §7.29 apprenait : quand un document t'annonce une décision à prendre, cherche-la d'abord dans le cahier. Ici le cahier ne la porte pas — la fiche a raison là-dessus. Ce qui manquait est l'**autre** question : *à quel lot appartient cette décision ?* Le §7.29 avait déjà une nuance symétrique — le « par exemple » du §22 ne doit pas produire une liste fermée — et c'est la même erreur : **fermer une liste blanche que le corpus laisse ouverte à dessein**. Une liste `('webp', 'avif')` écrite ici aurait fait **échouer** le LOT 11 le jour où il produit du `jpeg`, et le message n'aurait pas dit que la cause est une décision prise trop tôt. |
+| Bloquant | Non. Le critère de `T5` ne porte pas sur le format : il porte sur la **taille** (« < 100 Ko mesuré ») et sur le fait que **l'originale n'est jamais servie**. Les deux se prouvent sans choisir de format. |
+| Impact mesuré | La **taille** est dans le corpus et est posée en base : migration `0016`, `ck_media_variant_miniature_sous_cent_ko`, bornée au **seul** type `thumbnail` — la porter sur les cinq casserait le LOT 11. Le **format** reste `variant_format` libre, et `_MIMES` de `app/media/photo.py` **couvre les formats d'image courants** en tombant sur `application/octet-stream` pour un format inconnu : un octet servi vaut mieux qu'une page cassée, et le LOT 11 n'a rien à défaire. |
+| Recommandation | **Pour le LOT 11 :** c'est là que le format et les dimensions se décident, et le motif devra être mesuré — comme `DEC-491` a **relevé** les jetons du prototype puis les a **recalculés** contre WCAG. La note du §8.2 est juste sur la méthode, elle se trompe de lot.<br>**Générale, et c'est l'apport de cet écart :** quand un document t'annonce une décision à prendre, pose **deux** questions et non une — *le cahier la porte-t-il déjà ?* (§7.29) **et** *à quel lot appartient-elle ?* La seconde se répond en cherchant qui **produit** la donnée, jamais qui la **consomme** : le consommateur peut toujours lire un format qu'il n'a pas choisi. |
+| Résolution | **Clos en `T5` du LOT 5**, `DEC-564`. La taille est en base avec un test qui la franchit **à l'octet** ; le format n'est pas tranché, et un test **exige** qu'un format inconnu soit servi avec un type MIME générique plutôt que refusé — de sorte que le jour où le LOT 11 en choisit un, rien ne casse. |

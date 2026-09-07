@@ -31,7 +31,7 @@
  */
 
 import { estObjet, exigerChaine } from './formes.js';
-import { endpoint } from './sante.js';
+import { PREFIXE_VERSIONNE, endpoint } from './sante.js';
 
 /** Le gabarit du chemin, lu du manifeste et non recopie. */
 export const GABARIT_CHEMIN_TROMBINOSCOPE: string = endpoint('trombinoscopeDeLEntite').chemin;
@@ -62,6 +62,40 @@ export interface CollaborateurDuTrombinoscope {
   readonly nomPrefere: string | null;
   readonly categorieProfessionnelle: string;
   readonly dateArrivee: string;
+  /** Le chemin de la miniature, ou `null` — voir `cheminDePhotoOuNul`. */
+  readonly photo: string | null;
+}
+
+/**
+ * Le chemin d'une miniature, ou `null` — LOT 5, `T5`.
+ *
+ * **UN CHEMIN, JAMAIS DES OCTETS.** Le §16.1 interdit Base64 en propre ; un
+ * champ qui porterait l'image ferait grossir chaque ligne de plusieurs dizaines
+ * de kilo-octets, et une page de cent lignes en paierait cent fois le prix.
+ *
+ * **ET IL N'EST PAS L'`object_key`.** Le validateur refuse toute valeur qui ne
+ * commence pas par le prefixe versionne : une cle de stockage exposerait la
+ * disposition du bucket, et le navigateur ne pourrait rien en faire.
+ *
+ * `null` couvre CINQ causes indistinguables — pas d'autorisation, retiree, pas
+ * encore active, media non `ready`, aucune variante `thumbnail`. L'appelant
+ * affiche alors l'avatar neutre du §21.2, et ne doit surtout pas essayer de
+ * deviner laquelle : le §21.2 ne veut pas le dire.
+ */
+export function cheminDePhotoOuNul(valeur: Record<string, unknown>): string | null {
+  const brut = valeur['photo'];
+  if (brut === null) {
+    return null;
+  }
+  if (typeof brut !== 'string') {
+    //  **L'ABSENCE N'EST PAS `null`**, meme distinction qu'ailleurs : un champ
+    //  manquant est une reponse malformee, un `null` est une photo non servable.
+    throw new TypeError('champ « photo » ni chaine ni null');
+  }
+  if (!brut.startsWith(PREFIXE_VERSIONNE)) {
+    throw new TypeError(`champ « photo » hors du prefixe versionne : ${brut}`);
+  }
+  return brut;
 }
 
 /** Une page du trombinoscope, et de quoi savoir ou l'on est. */
@@ -166,6 +200,7 @@ function validerUnCollaborateur(valeur: unknown, rang: number): CollaborateurDuT
     nomPrefere: prefere,
     categorieProfessionnelle: exigerChaine(valeur, 'professional_category'),
     dateArrivee: exigerChaine(valeur, 'arrival_date'),
+    photo: cheminDePhotoOuNul(valeur),
   };
 }
 

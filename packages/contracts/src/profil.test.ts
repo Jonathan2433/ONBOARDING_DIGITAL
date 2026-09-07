@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  cheminDePhotoOuNul,
   cheminProfil,
   CODES_PROFIL,
   CONTRAT_API,
@@ -36,6 +37,8 @@ const UNE_FICHE = {
   cercle_principal: UN_CERCLE,
   cercles_secondaires: [UN_CERCLE],
   responsabilites: [{ type: 'BOOSTER', cercle: 'Cercle Tech', bureau: null }],
+  //  LOT 5, T5 : le MEME chemin que la liste annonce, valide par la MEME fonction.
+  photo: '/api/v1/entities/bordeaux/people/0f8fad5b-d9cb-469f-a165-70867728950e/photo',
 };
 
 describe('le chemin', () => {
@@ -118,5 +121,50 @@ describe('le validateur', () => {
   it('refuse un non-objet', () => {
     expect(() => validerLaFiche(null)).toThrow(TypeError);
     expect(() => validerLaFiche([])).toThrow(TypeError);
+  });
+});
+
+// ===========================================================================
+//  LOT 5, T5 — la photo : LA MEME fonction que le trombinoscope
+// ===========================================================================
+
+describe('la photo de la fiche', () => {
+  it('accepte le chemin, et `null`', () => {
+    expect(validerLaFiche(UNE_FICHE).photo).toBe(UNE_FICHE.photo);
+    expect(validerLaFiche({ ...UNE_FICHE, photo: null }).photo).toBeNull();
+  });
+
+  it('refuse le champ ABSENT — meme regle que dans la liste', () => {
+    const ampute: Record<string, unknown> = { ...UNE_FICHE };
+    delete ampute['photo'];
+    expect(() => validerLaFiche(ampute)).toThrow(TypeError);
+  });
+
+  it('est validee par EXACTEMENT la meme fonction que la liste', () => {
+    //  **LA PROPRIETE QUI COMPTE, ET LA SEULE FACON DE LA PROUVER.**
+    //
+    //  Deux validateurs qui accepteraient aujourd'hui les memes valeurs
+    //  divergeraient au premier changement, et l'un accepterait alors ce que
+    //  l'autre refuse -- sans qu'aucun test de l'un ou de l'autre ne le voie.
+    //
+    //  Comparer leurs verdicts sur un echantillon ne prouverait rien : deux
+    //  implementations distinctes peuvent concorder sur tous les cas essayes.
+    //  Ce qui se prouve est l'IDENTITE du message d'erreur, que seule une source
+    //  partagee peut garantir a l'octet.
+    const mauvais = 'miniatures/abc123.jpg';
+    let messageFiche = '';
+    let messageListe = '';
+    try {
+      validerLaFiche({ ...UNE_FICHE, photo: mauvais });
+    } catch (erreur) {
+      messageFiche = (erreur as Error).message;
+    }
+    try {
+      cheminDePhotoOuNul({ photo: mauvais });
+    } catch (erreur) {
+      messageListe = (erreur as Error).message;
+    }
+    expect(messageFiche).not.toBe('');
+    expect(messageFiche).toBe(messageListe);
   });
 });

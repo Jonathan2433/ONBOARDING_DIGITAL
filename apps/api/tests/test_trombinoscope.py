@@ -59,20 +59,26 @@ from app.auth.sessions import ouvrir_une_session
 from app.configuration.settings import Parametres
 from app.main import creer_application
 from app.organization.modeles import TypeRoleTechnique
+
+#  **`ETAT_LISTE` ET `VISIBILITE_LISTEE` ONT DEMENAGE EN `T5`**, du trombinoscope
+#  vers `modeles.py` : un import circulaire avec `app/media/photo.py` a montre
+#  que la regle « profil listable » n'appartient a aucun des deux modules qui
+#  l'emploient. Elle est derivee des deux enumerations, et sa place est aupres
+#  d'elles.
 from app.people.modeles import (
+    ETAT_LISTE,
     ETATS_APPARTENANCE,
     SITUATIONS_PROFESSIONNELLES,
+    VISIBILITE_LISTEE,
     VISIBILITES_PROFIL,
     EtatAppartenance,
 )
 from app.people.trombinoscope import (
     COLONNES_EXPOSEES,
-    ETAT_LISTE,
     LONGUEUR_MAXIMALE_RECHERCHE,
     TAILLE_MAXIMALE,
     TAILLE_PAR_DEFAUT,
     TAILLES_DE_PAGE,
-    VISIBILITE_LISTEE,
     TailleDePage,
     lister_le_trombinoscope,
 )
@@ -88,7 +94,13 @@ ORIGINE_DE_TEST = "https://testserver"
 CHEMIN = "/api/v1/entities/{code}/people"
 CHEMIN_ENTITE = "/api/v1/entities/{code}"
 
-#  Les sept champs que la reponse doit porter, et EXACTEMENT ceux-la.
+#  Les HUIT champs que la reponse doit porter, et EXACTEMENT ceux-la.
+#
+#  **`photo` EST ARRIVE EN `T5`, ET CE TEST L'A DIT AVANT MOI.** Il en exigeait
+#  sept ; le huitieme l'a fait echouer, sur un livrable pourtant conforme. C'est
+#  exactement son role -- « une colonne ajoutee sans etre voulue fait echouer » --
+#  et la bonne reaction est de mettre l'attendu a jour **parce que l'addition est
+#  voulue** (`DEC-564`), non d'affaiblir le test en comparant par inclusion.
 CHAMPS_ATTENDUS = frozenset(
     {
         "id",
@@ -98,6 +110,7 @@ CHAMPS_ATTENDUS = frozenset(
         "preferred_name",
         "professional_category",
         "arrival_date",
+        "photo",
     }
 )
 CHAMPS_ENVELOPPE = frozenset({"collaborateurs", "page", "taille", "total", "pages"})
@@ -169,9 +182,16 @@ def test_les_QUATRE_etats_et_les_TROIS_visibilites_sont_connus_de_ces_tests() ->
 
 
 def test_les_colonnes_exposees_sont_declarees_une_seule_fois() -> None:
-    """Les sept colonnes SQL et les sept champs de la reponse se correspondent."""
+    """Les huit champs declares et les huit champs servis se correspondent.
+
+    **LE NOMBRE EST ECRIT, ET C'EST VOULU.** Comparer les deux ensembles entre
+    eux ne prouverait rien le jour ou les deux seraient modifies ensemble par
+    distraction -- ils viennent de deux fichiers, mais rien n'empeche d'editer
+    les deux. Le nombre en dur est le troisieme temoin, et il fait echouer toute
+    addition non decidee.
+    """
     assert set(COLONNES_EXPOSEES) == CHAMPS_ATTENDUS
-    assert len(COLONNES_EXPOSEES) == len(CHAMPS_ATTENDUS) == 7
+    assert len(COLONNES_EXPOSEES) == len(CHAMPS_ATTENDUS) == 8
 
 
 def test_le_service_refuse_une_taille_hors_liste_meme_sans_HTTP() -> None:
@@ -459,10 +479,16 @@ def test_les_exclusions_valent_AUSSI_pour_un_super_administrateur(
 
 
 @pytest.mark.integration
-def test_l_enveloppe_porte_ses_cinq_champs_et_les_lignes_leurs_sept(
+def test_l_enveloppe_porte_ses_cinq_champs_et_les_lignes_leurs_huit(
     decor: tuple[Parametres, str, str],
 ) -> None:
-    """Ni plus ni moins : une colonne ajoutee sans etre voulue fait echouer."""
+    """Ni plus ni moins : une colonne ajoutee sans etre voulue fait echouer.
+
+    **ET IL A ECHOUE EN `T5`**, quand `photo` est arrive. Le laisser echouer
+    jusqu'a ce que l'attendu soit mis a jour est ce qui rend l'addition d'un
+    champ **visible en revue** -- un test qui comparerait par inclusion
+    laisserait passer n'importe quelle donnee nouvelle en silence.
+    """
     parametres, marqueur, code = decor
     charge = _appeler(parametres, code, _session(parametres, marqueur)).json()
     assert set(charge) == CHAMPS_ENVELOPPE

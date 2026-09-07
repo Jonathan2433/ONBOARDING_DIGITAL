@@ -73,6 +73,12 @@ MARQUEUR = f"t2l5-{uuid.uuid4().hex[:12]}"
 DELAI_HTTP = 30
 CORRELATION_FIXE = "l5t2-egalite-des-refus"
 
+#  **LES HUIT CHAMPS D'UNE LIGNE, ET `photo` EST ARRIVE EN `T5`.**
+#
+#  Ce contrôle a échoué au moment où `T5` a ajouté le champ, sur un livrable
+#  pourtant conforme. C'est son objet : « ni plus ni moins » rend toute addition
+#  visible en revue. La bonne réaction est de mettre l'attendu à jour **parce que
+#  l'addition est voulue** (`DEC-564`), non de comparer par inclusion.
 CHAMPS_LIGNE = frozenset(
     {
         "id",
@@ -82,6 +88,7 @@ CHAMPS_LIGNE = frozenset(
         "preferred_name",
         "professional_category",
         "arrival_date",
+        "photo",
     }
 )
 CHAMPS_ENVELOPPE = frozenset({"collaborateurs", "page", "taille", "total", "pages"})

@@ -410,7 +410,12 @@
         "L'ORDRE EST NOM PUIS PRENOM, arbitrage du 25/08/2026, et TOTAL par la cle",
         "primaire : sans troisieme critere, deux homonymes se repeteraient d'une page",
         "a l'autre tout en rendant le meme compte.",
-        "LE 404 EST LE MEME QUE CELUI DE entiteConsultee, en corps ET en en-tetes."
+        "LE 404 EST LE MEME QUE CELUI DE entiteConsultee, en corps ET en en-tetes.",
+        "LE CHAMP `photo` EST ARRIVE EN T5, ET C'EST UN CHEMIN. Il vaut `null` quand la",
+        "miniature n'est pas servable, et il est resolu par un EXISTS dans la requete de",
+        "page -- jamais ligne par ligne, ce qui serait le N+1 que le critere de T3",
+        "interdit. La liste et la route de photo partagent leurs conditions, en une seule",
+        "source : deux copies feraient annoncer un chemin que la route refuse."
       ]
     },
     {
@@ -430,9 +435,11 @@
         "« Fiches collaborateur », « Statut mission/intercontrat » et « Client actif »",
         "en LECTURE aux HUIT roles authentifies. Inventer un masquage serait le §6.5, et",
         "un test FIGE l'absence pour qu'un lot ulterieur doive la decider. ECART-051.",
-        "TREIZE CHAMPS AU §10.2, MOINS LA PHOTO. Elle attend T5 -- ses variantes -- et",
-        "T6 -- son autorisation : sans autorisation active, le §12.2 impose un avatar",
-        "neutre, et la fiche ne porte aujourd'hui AUCUNE trace de photo.",
+        "LES TREIZE CHAMPS DU §10.2, PHOTO COMPRISE DEPUIS T5. Le champ `photo` porte le",
+        "CHEMIN de la miniature, ou `null` -- jamais des octets : le §16.1 interdit Base64",
+        "en propre. `null` couvre cinq causes indistinguables (pas d'autorisation, retiree,",
+        "pas encore active, media non `ready`, aucune variante), et l'appelant sert alors",
+        "l'avatar neutre du §21.2. T5 et T6 ont ete FUSIONNEES : DEC-564.",
         "LA CARDINALITE EST PROUVEE PAR LE SCHEMA, PAS SUPPOSEE. Metier, statut, client,",
         "DSM et cercle principal sont uniques a un instant donne parce que des",
         "contraintes d'EXCLUSION interdisent le chevauchement des periodes. Les jointures",
@@ -445,6 +452,40 @@
         "non active, appartenance inexistante ou d'une AUTRE entite, profil non listable.",
         "Un refus distinct pour « existe mais masque » apprendrait l'existence de la",
         "personne."
+      ]
+    },
+    {
+      "cle": "photoDuProfil",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "octets",
+      "role": [
+        "La MINIATURE autorisee d'un collaborateur — LOT 5, T5, story MVP-L05-US005.",
+        "ELLE SERT DES OCTETS, ET NON DU JSON. `forme` vaut « octets » : le type MIME",
+        "vient de `variant_format`, et le corps est l'image. C'est le seul endpoint du",
+        "contrat dans ce cas, et le declarer evite qu'un client tente d'en lire le JSON.",
+        "L'ORIGINALE N'EST JAMAIS SERVIE, ET C'EST STRUCTUREL. La requete ne SELECTIONNE",
+        "pas `media_asset.object_key` et la structure rendue ne porte aucun champ qui",
+        "puisse le contenir : le perdre exigerait de reecrire la requete, pas d'oublier",
+        "un filtre (§7.35). Un controle de stack le prouve sur les OCTETS, deux contenus",
+        "distincts deverses dans MinIO.",
+        "QUATRE CONDITIONS, TOUTES NECESSAIRES : autorisation ACTIVE (§12.2 -- `granted_at`",
+        "atteint ET `withdrawn_at` nul, car une autorisation FUTURE a elle aussi un retrait",
+        "nul), media `ready` (§16.1), meme entite (§25.3), variante `thumbnail` presente.",
+        "LA MINIATURE PESE MOINS DE 100 Ko, ET LA BASE L'EXIGE. Migration 0016,",
+        "`ck_media_variant_miniature_sous_cent_ko`, bornee au SEUL type `thumbnail` : la",
+        "borner sur les cinq casserait le LOT 11. Un test la franchit A L'OCTET.",
+        "T5 NE FABRIQUE AUCUNE MINIATURE : la generation est MVP-L11-US005, au LOT 11.",
+        "Cette route SELECTIONNE et SERT. Le FORMAT des variantes reste donc non tranche,",
+        "volontairement -- c'est celui qui les produit qui choisira (§6.5).",
+        "LE 404 COUVRE SEPT CAUSES, dont « l'objet manque du stockage » -- l'etat NORMAL",
+        "de ce lot, puisque rien ne produit encore de miniature. La cause part au JOURNAL",
+        "avec l'identifiant de correlation : sans cela, une panne de MinIO produirait des",
+        "avatars neutres en silence sur tout le trombinoscope.",
+        "AUCUN 403 : la matrice §5 ne distingue aucun role en lecture. Une session suffit,",
+        "et sans session c'est 401 — une image accessible par simple URL serait une fuite",
+        "de donnee personnelle."
       ]
     }
   ],

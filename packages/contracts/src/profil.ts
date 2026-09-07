@@ -17,16 +17,20 @@
  *   client ; un nouvel arrivant n'a pas encore de fun fact. Confondre les deux
  *   ferait ecrire un jour « ce champ est nul, donc l'appelant n'y a pas droit ».
  *
- * LA PHOTO N'EST PAS ICI, ET CE N'EST PAS UN OUBLI
+ * LA PHOTO EST ARRIVEE EN `T5`, ET C'EST UN CHEMIN
  *
- *   Le §10.2 la nomme en premier, et le §12.2 impose un avatar neutre sans
- *   autorisation active. Rien de tout cela n'existe : `T5` pose les variantes,
- *   `T6` l'autorisation. Un champ `photo` qui vaudrait toujours `null` laisserait
- *   croire que la regle est appliquee.
+ *   Le §10.2 la nomme en premier. `T4` n'en portait AUCUNE trace, volontairement :
+ *   un champ qui aurait toujours valu `null` aurait laisse croire que le §12.2
+ *   etait applique. `T5` et `T6` ont ete fusionnees (`DEC-564`), et le champ
+ *   existe desormais.
+ *
+ *   **C'est un CHEMIN, jamais des octets** -- le §16.1 interdit Base64 -- et il
+ *   est valide par `cheminDePhotoOuNul`, la MEME fonction que le trombinoscope.
  */
 
 import { estObjet, exigerChaine } from './formes.js';
 import { endpoint } from './sante.js';
+import { cheminDePhotoOuNul } from './trombinoscope.js';
 
 /** Le gabarit du chemin, lu du manifeste et non recopie. */
 export const GABARIT_CHEMIN_PROFIL: string = endpoint('ficheDuProfil').chemin;
@@ -72,6 +76,15 @@ export interface FicheDuProfil {
   readonly cerclePrincipal: CercleDuProfil | null;
   readonly cerclesSecondaires: readonly CercleDuProfil[];
   readonly responsabilites: readonly ResponsabiliteDuProfil[];
+  /**
+   * Le chemin de la miniature, ou `null` — LOT 5, `T5`.
+   *
+   * **LA MEME FONCTION QUE LE TROMBINOSCOPE**, et non une seconde copie : la
+   * liste et la fiche annoncent le meme chemin, produit par le meme service
+   * cote API. Deux validateurs divergeraient au premier changement, et l'un des
+   * deux accepterait alors ce que l'autre refuse.
+   */
+  readonly photo: string | null;
 }
 
 /** Le chemin d'une fiche, ses DEUX segments encodes. */
@@ -163,5 +176,6 @@ export function validerLaFiche(valeur: unknown): FicheDuProfil {
     cerclePrincipal: principal === null ? null : validerUnCercle(principal, 'principal'),
     cerclesSecondaires: secondaires.map((c, rang) => validerUnCercle(c, `secondaire ${rang}`)),
     responsabilites: responsabilites.map(validerUneResponsabilite),
+    photo: cheminDePhotoOuNul(valeur),
   };
 }

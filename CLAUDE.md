@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 24 août 2026, à la sortie de **`T1` du LOT 5**
+**Mis à jour le :** 7 septembre 2026, à la sortie de **`T5` du LOT 5**
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), **découpage en douze sous-étapes validé le même jour, avant qu'une ligne ne soit écrite**. **`T1` à `T4` sont terminées**, huit restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` sont terminées**, six restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T5` du LOT 5 — les miniatures de photo** (`US005`, issue #120). Le critère est « **< 100 Ko mesuré** · la photo **originale jamais servie** dans la liste ». Les trois tables de `T1` l'attendent, `media_variant` porte déjà ses cinq types, et **aucun champ de la fiche ne mentionne la photo** — un test l'exige, pour que son apparition soit une décision. **`fn_normaliser_pour_recherche` existe** depuis `T3` — c'est la seule normalisation de recherche du projet, et elle doit le rester. Lis le §8 du [compte rendu de `T3`](docs/operations/compte-rendu-t3-lot-5.md). **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` |
+| **Prochaine action** | **`T7` du LOT 5 — les écrans de trombinoscope.** `T5` a livré la miniature : la liste **et** la fiche portent un champ `photo` qui est un **CHEMIN**, jamais des octets, et les écrans devront le suivre avec le cookie de session puis servir **l'avatar neutre du §21.2** sur `null` — **sans essayer de deviner laquelle des cinq causes**, ce que le §21.2 ne veut pas dire. **Deux choses qu'il faut savoir avant de commencer :** aucune miniature n'existe encore dans MinIO — `T5` n'en fabrique pas, c'est `MVP-L11-US005` au LOT 11 — donc la route rend **404 pour tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test ; et **aucune route ne permet de RETIRER une photo**, la lecture honore le retrait mais l'écriture appartient à `T8` ou au LOT 9. **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` ou après |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 093** : **806 pytest** — dont **504 d'intégration** — et **287 Vitest** (**97 `ui`**, **121 `web`**, **69 `contracts`**) |
-| Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **15 migrations**, tête `0015`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
+| **Tests** | **1 137** : **838 pytest** — dont **530 d'intégration** — et **299 Vitest** (**97 `ui`**, **121 `web`**, **81 `contracts`**) |
+| Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **85 cibles** documentées — `profil-check` est nouvelle. **`ECART-049` : 25 d'entre elles ne sont PAS dans `.PHONY`**. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **146 décisions** `DEC-418+` · **51 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1` et de `T2` |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · **LOT 4 : 19 — DÉRIVÉS le 24/08/2026, et le « 8 » qui figurait ici était faux**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **147 décisions** `DEC-418+` · **52 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1`, de `T2` et de `T5` |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 32 — DÉRIVÉS le 07/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -112,7 +112,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
-| **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, 12 sous-étapes validées le 24/08/2026. **Son §2.1 porte un piège mesuré** et son §8 les deux points ouverts |
+| **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -527,7 +527,10 @@ API             migrate migrate-status api-check alembic-check
                 secrets-check                                     ← LOT 3, T2
                 entites-check                                     ← LOT 4, T1
                 trombinoscope-check                               ← LOT 5, T2
-                profil-check                                      ← LOT 5, T4
+                profil-check                                      ← LOT 5, T4 et T5
+                (T5 n'ajoute AUCUNE cible : elle ETEND profil-check, de 10 a
+                 17 controles. Un second verificateur aurait duplique le
+                 decor, la connexion et le menage -- §7.27)
                 permissions-check                                 ← LOT 4, T8
                 (T9 n'ajoute AUCUNE cible : son garde-fou est prouve par
                  12 tests, pas par un controle de stack. Voir ECART-046)
@@ -866,7 +869,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**219 défauts NOMMÉS au 26/08/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **28** au LOT 5 — 71 + 44 + 57 + 19 + 28,
+**223 défauts NOMMÉS au 07/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **32** au LOT 5 — 71 + 44 + 57 + 19 + 32,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -1997,6 +2000,56 @@ faut une connexion séparée, en autovalidation, **avant** d'ouvrir celle qui me
 
 ---
 
+---
+
+## 7.39 Un CRITÈRE de non-fuite est satisfait par une route qui ne sert RIEN
+
+**Apport de `T5` du LOT 5, et c'est la quatrième proposition du §7.0 appliquée non pas à un
+contrôle mais au CRITÈRE lui-même.**
+
+La fiche découpait `US005` en deux sous-étapes : `T5` « les miniatures », `T6` « l'autorisation ».
+Le critère de `T5` était « la photo **originale jamais servie** dans la liste ».
+
+**Ce critère est parfaitement satisfait par une route qui ne sert rien du tout.** Une `T5` qui aurait
+posé les variantes sans servir d'octets aurait pu cocher son critère, en toute bonne foi, et n'aurait
+rien prouvé. Le manque n'était pas dans un contrôle à écrire : il était dans le **découpage**.
+
+| Ce que la fiche voulait séparer | Pourquoi c'est indissociable |
+|---|---|
+| `T5` : les miniatures | on ne peut pas prouver « l'originale n'est jamais servie » sans **servir** la miniature |
+| `T6` : l'autorisation | on ne peut pas prouver « sans autorisation, avatar neutre » sans **servir** quelque chose non plus — et servir sans vérifier l'autorisation enfreindrait le §12.2 |
+
+Arbitrage de Jonathan du 06/09/2026 : **une seule sous-étape**, et le lot passe à onze.
+
+> **La règle, sans jargon :** un critère qui interdit quelque chose — « jamais servi », « aucune
+> fuite », « pas de doublon » — se satisfait tout seul quand la fonctionnalité n'existe pas.
+> **Avant d'accepter un découpage, demande-toi de chaque critère négatif : quel témoin POSITIF le
+> rend non trivial, et cette sous-étape le contient-elle ?** Si le témoin est dans la sous-étape
+> suivante, les deux n'en font qu'une.
+
+**Et la même sous-étape en a donné une seconde forme, plus fine encore.** Une fois `T5` et `T6`
+fusionnées, j'ai écrit cinq épreuves de refus — pas d'autorisation, retirée, future, média non
+`ready`, aucune variante — **et les cinq donnent la même observation côté client**, c'est le §21.2 qui
+le veut. Cinq refus indistinguables : un `WHERE` faux aurait refusé tout, et les cinq seraient restés
+verts, exactement comme les **huit** refus du défaut `T2-3`.
+
+Chaque refus a donc été **apparié à un témoin qui ne diffère que par LA valeur en cause**. Et le plus
+utile n'est pas un refus : c'est celui de l'autorisation **future**, où **seul l'instant avance** —
+la même ligne, le même actif, la même variante, et la photo devient servable. Sans lui, le refus
+mesuré pouvait venir de n'importe quel filtre trop large.
+
+**La mesure du témoin le confirme :** en retirant `granted_at <= :instant` — donc en gardant
+`withdrawn_at IS NULL` seul, ce qui semble suffisant — **quatre** tests échouent, dont ceux de la
+route de liste. Sans ce témoin, aucun.
+
+**Un corollaire de la même sous-étape, sur les propriétés qu'on ne peut pas tester par le refus.**
+« L'originale n'est jamais servie » ne se prouve pas en montrant qu'elle ne sort pas : il faut
+montrer que **ce qui sort est autre chose**. Deux objets de contenus **distincts** sont donc déversés
+dans MinIO, et le contrôle compare les **octets** — pas le code HTTP, pas la longueur. Éprouvé :
+`a.object_key` sélectionné au lieu de `v.object_key`, et le contrôle nomme les octets reçus,
+`b'ORIGINAL-QUI-NE-DOIT-JAMAIS-SORTIR-ooooo'`. Un contrôle qui aurait vérifié « 200 et des octets »
+serait resté vert.
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **7 ouverts sur 33**
@@ -2178,11 +2231,36 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                          « masquage du profil » n'est
 │                                          implemente NULLE PART, donc un
 │                                          partant reste `published`
-│                 app/people/profil.py    ← la FICHE (LOT 5, T4). Quatre
+│                 app/people/modeles.py   ← les enumerations, ET les regles qui
+                                          s'en DERIVENT : ETATS_OCCUPANTS, puis
+                                          ETAT_LISTE et VISIBILITE_LISTEE depuis
+                                          T5. Ces deux-la vivaient dans le
+                                          trombinoscope ; un import CIRCULAIRE
+                                          avec media/photo.py a dit qu'elles
+                                          n'appartenaient a aucun des deux
+                 app/media/photo.py      ← la MINIATURE (LOT 5, T5). Elle ne
+                                          SELECTIONNE PAS `media_asset.object_key`,
+                                          et `MiniatureServie` n'a AUCUN champ qui
+                                          puisse le porter : l'original ne peut pas
+                                          fuir par cette structure (§7.35). Ses
+                                          CONDITIONS sont une source UNIQUE,
+                                          partagee avec le trombinoscope -- en
+                                          EXISTS la-bas, en SELECT ici
+                 app/media/objets.py     ← lire un objet MinIO. L'API sert les
+                                          OCTETS et non une URL signee : le corpus
+                                          ne dit RIEN de la facon dont un media
+                                          parvient au navigateur, et une URL vers
+                                          MinIO exposerait le port 9000 (DEC-460,
+                                          DEC-470). Reversible : seul le corps de
+                                          la route changerait
+                 app/people/profil.py    ← la FICHE (LOT 5, T4). Quatre
 │                                          contraintes d'EXCLUSION rendent les
 │                                          LEFT JOIN surs, et un test exige
 │                                          qu'elles existent toujours. AUCUN
-│                                          champ n'est masque : ECART-051
+│                                          champ n'est masque : ECART-051.
+│                                          Depuis T5 elle porte `photo`, et le
+│                                          test de T4 qui EXIGEAIT son absence
+│                                          est RETOURNE -- c'etait son role
 │                 app/people/routes.py    ← GET .../people. `taille` est un
 │                                          IntEnum et NON un Literal : un
 │                                          parametre d'URL arrive en CHAINE,
@@ -2339,9 +2417,14 @@ make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EM
                           #      une affectation FUTURE qui n'accordent rien, le
                           #      super-administrateur partout, et les QUATRE tables de
                           #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
-make profil-check         # 10 — il RELIE la fiche a la liste : l'identifiant vient du
+make profil-check         # 17 — il RELIE la fiche a la liste : l'identifiant vient du
                           #      trombinoscope, et un profil EXCLU rend le MEME 404. Les six
-                          #      champs sensibles sont TOUS renseignes (ECART-051)
+                          #      champs sensibles sont TOUS renseignes (ECART-051).
+                          #      DEPUIS T5 il deverse DEUX objets de contenus distincts
+                          #      dans MinIO et exige que les octets servis soient
+                          #      EXACTEMENT ceux de la MINIATURE : un controle
+                          #      « 200 et des octets » passerait si la route servait
+                          #      l'original. C'est le PREMIER consommateur du bucket
 make trombinoscope-check  # 23 — les TROIS tailles SERVIES (le temoin qui a trouve T2-3),
                           #      huit refus au format du 18.3, la recomposition des pages
                           #      qui exige un ordre TOTAL, et les quatre etats exclus
@@ -2374,7 +2457,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **39 leçons** payées par **219 défauts nommés** — 71 + 44 + 57 + 19 + 28, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **40 leçons** payées par **223 défauts nommés** — 71 + 44 + 57 + 19 + 32, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
@@ -2431,7 +2514,7 @@ bureaucratie. C'est ce qui permettra, au LOT 9, de justifier chaque ligne rejet�
 données personnelles réelles — et, plus tôt, de ne pas refaire quatre fois la même erreur de
 tuyau. **Tiens les registres à jour dans la même pull request que le travail — jamais après.**
 
-**Et une chose qui a marché à chaque fois, sur les trois lots :** quand un contrôle échoue et que tu
+**Et une chose qui a marché à chaque fois, sur les cinq lots :** quand un contrôle échoue et que tu
 ne sais pas pourquoi, **la première correction à écrire est celle qui te le dira**. Trois cycles
 d'intégration continue perdus en `T7` du LOT 1, un `REASSIGN OWNED` diagnostiqué en deux nombres en
 `T1` du LOT 3 : la différence est là. Un contrôle qui masque la cause de son échec ne coûte pas un

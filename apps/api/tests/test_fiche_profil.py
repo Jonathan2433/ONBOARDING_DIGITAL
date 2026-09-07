@@ -60,9 +60,15 @@ CHEMIN_LISTE = "/api/v1/entities/{code}/people"
 ANCRAGE = dt.datetime(2026, 6, 15, 12, 0, tzinfo=dt.UTC)
 JOUR = dt.timedelta(days=1)
 
-#  Les seize champs de la reponse : les treize du §10.2 moins la photo, plus les
-#  deux identifiants et la categorie professionnelle. **Declares ici et confrontes
-#  a la reponse servie** : un champ ajoute sans etre voulu fait echouer.
+#  Les dix-sept champs de la reponse : les treize du §10.2, plus les deux
+#  identifiants, la categorie professionnelle et les deux listes. **Declares ici
+#  et confrontes a la reponse servie** : un champ ajoute sans etre voulu fait
+#  echouer.
+#
+#  **`photo` EST ARRIVEE EN `T5`, ET C'ETAIT LE POINT.** `T4` avait ecrit un test
+#  qui EXIGEAIT son absence, pour que son apparition soit une decision et non une
+#  derive. La decision est prise -- `DEC-564` -- et le test ci-dessous est
+#  retourne : il exige desormais qu'elle soit un CHEMIN, jamais des octets.
 CHAMPS_ATTENDUS = frozenset(
     {
         "id",
@@ -81,6 +87,7 @@ CHAMPS_ATTENDUS = frozenset(
         "cercle_principal",
         "cercles_secondaires",
         "responsabilites",
+        "photo",
     }
 )
 
@@ -98,15 +105,25 @@ def _exiger_postgresql(parametres: Parametres) -> None:
 # ===========================================================================
 
 
-def test_la_photo_n_est_dans_AUCUN_champ_de_la_fiche() -> None:
-    """**LA PHOTO ATTEND `T5` ET `T6`, ET IL FAUT LE DIRE.**
+def test_la_photo_est_un_CHEMIN_et_jamais_des_octets() -> None:
+    """**LE TEST DE `T4` EST RETOURNE, ET C'ETAIT SON ROLE.**
 
-    Le §10.2 la nomme en premier ; le §12.2 impose un avatar neutre sans
-    autorisation active. Rien de tout cela n'existe encore, et un champ `photo`
-    qui vaudrait toujours `null` laisserait croire que la regle est appliquee.
+    `T4` exigeait l'absence de tout champ `photo`, pour que son apparition soit
+    une **decision** (§7.32 : un test est un meilleur vehicule qu'un
+    commentaire). `T5` la prend, et ce test devient l'exigence inverse.
+
+    **CE QU'IL FIXE MAINTENANT** : la fiche porte `photo`, et c'est un CHEMIN. Le
+    §16.1 interdit Base64 en propre -- « objets MinIO references par
+    `object_key`, **jamais Base64** » -- et un champ qui porterait les octets
+    ferait grossir chaque fiche de plusieurs dizaines de kilo-octets.
+
+    Le champ ne porte pas non plus l'`object_key` : c'est le chemin de NOTRE
+    route, que le navigateur peut suivre avec son cookie de session.
     """
-    assert not any("photo" in champ for champ in CHAMPS_ATTENDUS)
-    assert not any("avatar" in champ for champ in CHAMPS_ATTENDUS)
+    assert "photo" in CHAMPS_ATTENDUS
+    #  Aucun champ d'octets, ni de nom qui en promettrait.
+    assert not any(champ.endswith(("_base64", "_octets", "_bytes")) for champ in CHAMPS_ATTENDUS)
+    assert "object_key" not in CHAMPS_ATTENDUS
 
 
 def test_les_quatre_exclusions_qui_rendent_la_jointure_sure_sont_declarees() -> None:
