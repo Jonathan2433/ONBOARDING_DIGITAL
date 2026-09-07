@@ -1132,7 +1132,7 @@ trombinoscope-check: ## Prouver que le trombinoscope est pagine et ne rend QUE d
 # profil que la liste EXCLUT et verifie que sa fiche est refusee. Sans ce lien,
 # une fiche accessible pour un profil masque rendrait le filtre de la liste
 # decoratif, et aucun controle de la liste seule ne le verrait.
-profil-check: ## Prouver que la fiche profil ne masque aucun champ et suit la population de la liste (LOT 5, US004)
+profil-check: ## Prouver que la fiche ne masque aucun champ, suit la population de la liste, et sert la MINIATURE (LOT 5, US004 et US005)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
 	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \

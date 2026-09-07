@@ -19,6 +19,19 @@ SON CONTROLE LE PLUS UTILE RELIE LA FICHE A LA LISTE
   Le controle prend donc **l'identifiant que la LISTE rend**, verifie que sa fiche
   est servie, puis prend un profil exclu et verifie que sa fiche est refusee.
 
+`T5` AJOUTE LA PHOTO ICI, ET NE DUPLIQUE PAS CE HARNAIS
+
+  La miniature est un CHAMP de la fiche et un CHAMP de la liste : son critere --
+  « l'originale jamais servie **dans la liste** » -- porte sur les deux. Ecrire
+  un second verificateur aurait duplique le decor, la connexion et le menage,
+  donc trois sources a maintenir pour une seule regle (§7.27).
+
+  **ET IL PROUVE CE QU'AUCUN TEST NE PROUVE : LES OCTETS.** Deux objets sont
+  deverses dans MinIO -- la miniature et l'original, avec des contenus
+  differents -- et le controle exige que la route rende **exactement** ceux de la
+  miniature. Un controle qui se contenterait de « 200 et des octets » passerait
+  si la route servait l'original.
+
 L'ABSENCE DE MASQUAGE EST EPROUVEE, PAS SUPPOSEE
 
   La matrice ne definit **aucune** visibilite par champ -- `ECART-051`. Le
@@ -33,6 +46,8 @@ Sortie 0 si tous les controles passent, 1 sinon.
 from __future__ import annotations
 
 import argparse
+import ast
+import base64
 import json
 import os
 import pathlib
@@ -47,18 +62,54 @@ import uuid
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RACINE / "apps" / "api"))
 
+
+def borne_du_module() -> int:
+    """`BORNE_MINIATURE_OCTETS` lue par `ast`, sans importer le module.
+
+    **PAR `ast` ET NON PAR `import`** : `app.media.photo` importe SQLAlchemy, que
+    ce script n'a pas -- il est invoque par `python3` hors environnement virtuel.
+    C'est exactement le piege mesure en `T1` du LOT 3 sur `verifier-images.py`
+    (§7.27), et la parade est la meme.
+
+    Et c'est ce qui evite de RECOPIER 100 000 ici : une seconde copie du seuil
+    divergerait de celle du module au premier changement.
+    """
+    source = (RACINE / "apps" / "api" / "app" / "media" / "photo.py").read_text(encoding="utf-8")
+    for noeud in ast.walk(ast.parse(source)):
+        cible = getattr(noeud, "target", None)
+        if (
+            isinstance(noeud, ast.AnnAssign)
+            and isinstance(cible, ast.Name)
+            and cible.id == "BORNE_MINIATURE_OCTETS"
+            and isinstance(noeud.value, ast.Constant)
+        ):
+            return int(noeud.value.value)
+    message = "BORNE_MINIATURE_OCTETS introuvable dans app/media/photo.py"
+    raise SystemExit(message)
+
+
+BORNE_MINIATURE_OCTETS = borne_du_module()
+
 CHEMIN_CONNEXION = "/api/v1/auth/connexion"
 CHEMIN_TROMBINOSCOPE = "/api/v1/entities/{code}/people"
 CHEMIN_PROFIL = "/api/v1/entities/{code}/people/{appartenance}"
 CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
+CHEMIN_PHOTO = "/api/v1/entities/{code}/people/{appartenance}/photo"
+
+#  **DEUX CONTENUS DISTINCTS, ET C'EST CE QUI REND LE CRITERE MESURABLE.** Servir
+#  l'original au lieu de la miniature donnerait un 200 et des octets dans les
+#  deux cas : seule la comparaison du CONTENU discrimine.
+OCTETS_MINIATURE = b"MINIATURE-DE-VERIFICATION-" + b"m" * 74
+OCTETS_ORIGINAL = b"ORIGINAL-QUI-NE-DOIT-JAMAIS-SORTIR-" + b"o" * 4000
 
 MARQUEUR = f"t4l5-{uuid.uuid4().hex[:12]}"
 DELAI_HTTP = 30
 CORRELATION_FIXE = "l5t4-egalite-des-refus"
 
-#  Les SEIZE champs de la fiche : les treize du §10.2 moins la photo, plus les
-#  deux identifiants et la categorie professionnelle. **Declares et confrontes a
-#  la reponse servie** : un champ ajoute sans etre voulu fait echouer.
+#  Les DIX-SEPT champs de la fiche : les treize du §10.2, plus les deux
+#  identifiants, la categorie professionnelle et les deux listes. **Declares et
+#  confrontes a la reponse servie** : un champ ajoute sans etre voulu fait
+#  echouer -- et c'est ce qui s'est produit a `T5`, ou `photo` est arrivee.
 CHAMPS_FICHE = frozenset(
     {
         "id",
@@ -77,8 +128,14 @@ CHAMPS_FICHE = frozenset(
         "cercle_principal",
         "cercles_secondaires",
         "responsabilites",
+        "photo",
     }
 )
+
+#  Les profils que la liste doit rendre. **`Retiree` EST listable** : son
+#  appartenance est active et son profil publie ; seule son AUTORISATION de photo
+#  est retiree. `Parti` en est exclu par son etat d'appartenance.
+PROFILS_LISTABLES = frozenset({"Complete", "Retiree"})
 
 #  Les champs SENSIBLES du §10.2 : ceux qu'un masquage viserait s'il existait.
 CHAMPS_SENSIBLES = ("metier", "statut", "client", "dsm", "short_bio", "fun_fact")
@@ -187,6 +244,8 @@ def poser_le_decor(
     empreinte: str,
     algo: str,
     parametres_hachage: str,
+    cle_miniature: str,
+    cle_originale: str,
 ) -> str:
     """Une entite, un admin local, un profil COMPLET, un profil EXCLU.
 
@@ -198,9 +257,15 @@ def poser_le_decor(
     d'absence de masquage ne prouverait rien : un champ nul est indistinguable
     d'un champ masque.
     """
+    #  **LES DEUX TAILLES SONT DERIVEES DE LA BORNE DU MODULE**, jamais ecrites :
+    #  la miniature juste sous, l'original vingt fois au-dessus. Si la borne
+    #  changeait, ce decor suivrait.
+    taille_miniature = BORNE_MINIATURE_OCTETS - 1
+    taille_originale = BORNE_MINIATURE_OCTETS * 20
     return f"""
     DO $$
     DECLARE p uuid; e uuid; c uuid; m uuid; cl uuid; jc uuid; ci uuid; d uuid; dm uuid;
+            ma uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone)
       VALUES ('{code_entite}', 'Entite {marqueur}', 'Bordeaux', 'FR', 'active', 'Europe/Paris')
@@ -253,15 +318,89 @@ def poser_le_decor(
          starts_at, ends_at)
       VALUES (d, e, 'BOOSTER', ci, d, now() - INTERVAL '30 days', NULL);
 
+      -- LA PHOTO du profil complet : l'actif, sa MINIATURE, son ORIGINAL, et
+      -- une autorisation ACTIVE. Les deux cles d'objet sont distinctes et
+      -- deversees dans MinIO par l'appelant.
+      INSERT INTO media_asset (entity_id, uploaded_by_person_id, state, media_type,
+        original_filename, object_key, mime_declared, size_bytes, checksum_sha256, ready_at)
+      VALUES (e, d, 'ready', 'image', 'photo.jpg', '{cle_originale}', 'image/jpeg',
+              {taille_originale}, repeat('a', 64), now() - INTERVAL '1 day')
+      RETURNING id INTO ma;
+      INSERT INTO media_variant (entity_id, media_asset_id, variant_type, width, height,
+        variant_format, size_bytes, checksum_sha256, object_key)
+      VALUES (e, ma, 'thumbnail', 200, 200, 'jpeg', {taille_miniature}, repeat('b', 64),
+              '{cle_miniature}');
+      INSERT INTO photo_authorization (person_id, media_asset_id, granted_at, source)
+      VALUES (d, ma, now() - INTERVAL '1 day', 'self_service');
+
       -- Un profil EXCLU de la liste : appartenance partie, profil RESTE publie.
       INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
       VALUES ('{marqueur}-parti@x.test', '{marqueur}-parti@x.test', 'Ivan', 'Parti', 'active')
       RETURNING id INTO d;
       INSERT INTO entity_membership (person_id, entity_id, arrival_date, departure_date,
         membership_state, professional_category, profile_visibility)
-      VALUES (d, e, DATE '2026-01-15', DATE '2026-06-01', 'departed', 'consultant', 'published');
+      VALUES (d, e, DATE '2026-01-15', DATE '2026-06-01', 'departed', 'consultant', 'published')
+      RETURNING id INTO m;
+
+      -- **ET UN QUATRIEME PROFIL : PHOTO DEPOSEE, AUTORISATION RETIREE.** Sans
+      -- lui, « pas de photo » et « autorisation retiree » seraient
+      -- indistinguables : le premier n'a rien en base, le second a tout SAUF le
+      -- droit. C'est le temoin qui prouve que le filtre porte sur le retrait.
+      INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
+      VALUES ('{marqueur}-retire@x.test', '{marqueur}-retire@x.test', 'Rosa', 'Retiree',
+              'active') RETURNING id INTO d;
+      INSERT INTO entity_membership (person_id, entity_id, arrival_date, membership_state,
+        professional_category, profile_visibility)
+      VALUES (d, e, DATE '2026-02-01', 'active', 'consultant', 'published') RETURNING id INTO m;
+      INSERT INTO media_asset (entity_id, uploaded_by_person_id, state, media_type,
+        original_filename, object_key, mime_declared, size_bytes, checksum_sha256, ready_at)
+      VALUES (e, d, 'ready', 'image', 'photo.jpg', '{marqueur}/retire-original', 'image/jpeg',
+              123456, repeat('c', 64), now() - INTERVAL '1 day') RETURNING id INTO ma;
+      INSERT INTO media_variant (entity_id, media_asset_id, variant_type, width, height,
+        variant_format, size_bytes, checksum_sha256, object_key)
+      VALUES (e, ma, 'thumbnail', 200, 200, 'jpeg', 4096, repeat('d', 64),
+              '{marqueur}/retire-thumb');
+      INSERT INTO photo_authorization (person_id, media_asset_id, granted_at, withdrawn_at,
+        source) VALUES (d, ma, now() - INTERVAL '2 days', now() - INTERVAL '1 day',
+                        'self_service');
     END $$;
     """  # noqa: S608
+
+
+def mc(compose: list[str], commande: str) -> tuple[int, str]:
+    """Une commande `mc` DANS le conteneur MinIO.
+
+    **`mc` ET NON `boto3`** : le controle de stack ne doit rien exiger de
+    l'environnement Python de la machine, et `mc` est deja l'outil que
+    `make minio-bucket` emploie. L'alias vise la boucle locale du conteneur.
+    """
+    execution = subprocess.run(  # noqa: S603
+        [
+            *compose,
+            "exec",
+            "-T",
+            "minio",
+            "sh",
+            "-c",
+            'mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" '
+            f'"$MINIO_ROOT_PASSWORD" >/dev/null && {commande}',
+        ],
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+        check=False,
+    )
+    return execution.returncode, (execution.stdout + execution.stderr).strip()
+
+
+def deverser(compose: list[str], bucket: str, cle: str, octets: bytes) -> tuple[int, str]:
+    """Deverser des octets dans MinIO, sans fichier temporaire sur l'hote.
+
+    Le contenu passe par `base64`, present dans l'image MinIO -- contrairement a
+    `grep`, absent, et c'est la lecon du §7.10. Verifie avant emploi.
+    """
+    encode = base64.b64encode(octets).decode("ascii")
+    return mc(compose, f"echo '{encode}' | base64 -d | mc pipe local/{bucket}/{cle}")
 
 
 def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str) -> None:
@@ -277,6 +416,9 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
         f"DELETE FROM circle_membership WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM membership_job_assignment WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM professional_status_assignment WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
+        f"DELETE FROM photo_authorization WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
+        f"DELETE FROM media_variant WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
+        f"DELETE FROM media_asset WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM entity_membership WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM entity_client WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM circle WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608
@@ -317,6 +459,9 @@ def main() -> int:
     mot_de_passe = "un-mot-de-passe-de-verification-sans-portee"
     nom_cookie = env.get("SESSION_COOKIE_NAME", "exalt_session")
     code_entite = f"{MARQUEUR}-e"
+    bucket = env["MINIO_BUCKET"]
+    cle_miniature = f"{MARQUEUR}/miniature.jpg"
+    cle_originale = f"{MARQUEUR}/originale.jpg"
 
     contexte = ssl.create_default_context()
     contexte.check_hostname = False
@@ -350,6 +495,8 @@ def main() -> int:
             empreinte_mdp,
             ALGORITHME,
             json.dumps(parametres_hachage),
+            cle_miniature,
+            cle_originale,
         ),
     )
     if code:
@@ -387,13 +534,20 @@ def main() -> int:
         corps = appeler(arguments.base, liste, contexte, en_tetes=biscuit).json()
         lignes = corps.get("collaborateurs", []) if isinstance(corps, dict) else []
         rendus = {ligne["last_name"]: ligne["id"] for ligne in lignes}
-        if set(rendus) == {"Complete"}:
+        #  **LES DEUX PROFILS LISTABLES, ET LE PARTI ABSENT.** `Retiree` est
+        #  listable -- appartenance active, profil publie -- et sa photo n'est
+        #  PAS servable : c'est le temoin qui separe « hors de la liste » de
+        #  « sans photo », deux causes qu'un decor a un seul profil confondrait.
+        if set(rendus) == PROFILS_LISTABLES:
             print(
-                "    ok       la liste rend EXACTEMENT le profil listable — le parti en est absent"
+                f"    ok       la liste rend EXACTEMENT les {len(PROFILS_LISTABLES)} profils "
+                "listables — le parti en est absent"
             )
         else:
             echecs += 1
-            print(f"    ECHEC    la liste rend {sorted(rendus)}, ['Complete'] attendu")
+            print(
+                f"    ECHEC    la liste rend {sorted(rendus)}, {sorted(PROFILS_LISTABLES)} attendu"
+            )
             return 1
         appartenance = rendus["Complete"]
 
@@ -527,7 +681,146 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    identifiant mal forme : {mal.statut}, {str(corps_mal)[:110]}")
+        # ==================================================================
+        #  T5 — LA MINIATURE : le chemin, les OCTETS, et jamais l'original
+        # ==================================================================
+
+        # --- 11. les deux objets sont deverses dans MinIO ---------------------
+        controles += 1
+        code_mc, sortie_mc = deverser(compose, bucket, cle_miniature, OCTETS_MINIATURE)
+        code_mc2, sortie_mc2 = deverser(compose, bucket, cle_originale, OCTETS_ORIGINAL)
+        if code_mc or code_mc2:
+            echecs += 1
+            print(f"    ECHEC    depot MinIO : {sortie_mc[:120]} | {sortie_mc2[:120]}")
+            return 1
+        print(
+            f"    ok       MinIO : miniature {len(OCTETS_MINIATURE)} o, "
+            f"original {len(OCTETS_ORIGINAL)} o — contenus DISTINCTS"
+        )
+
+        # --- 12. la LISTE annonce le chemin de photo, et AUCUNE cle d'objet ----
+        controles += 1
+        liste_reponse = appeler(arguments.base, liste, contexte, en_tetes=biscuit)
+        corps_liste = liste_reponse.json()
+        lignes_photo = (
+            corps_liste.get("collaborateurs", []) if isinstance(corps_liste, dict) else []
+        )
+        par_nom = {ligne["last_name"]: ligne for ligne in lignes_photo}
+        chemin_attendu = CHEMIN_PHOTO.format(code=code_entite, appartenance=appartenance)
+        brut_liste = liste_reponse.corps.decode("utf-8", "replace")
+        annonce_juste = par_nom.get("Complete", {}).get("photo") == chemin_attendu
+        retiree_nulle = par_nom.get("Retiree", {}).get("photo") is None
+        sans_cle = cle_miniature not in brut_liste and cle_originale not in brut_liste
+        if annonce_juste and retiree_nulle and sans_cle:
+            print(
+                "    ok       la LISTE annonce le chemin pour le profil autorise, `null` "
+                "pour l'autorisation RETIREE, et AUCUNE cle d'objet"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    liste : chemin {annonce_juste}, retiree nulle {retiree_nulle}, "
+                f"sans cle {sans_cle}"
+            )
+
+        # --- 13. la FICHE annonce le MEME chemin ------------------------------
+        controles += 1
+        if fiche.get("photo") == chemin_attendu:
+            print("    ok       la FICHE annonce le MEME chemin que la liste — une source")
+        else:
+            echecs += 1
+            print(f"    ECHEC    fiche.photo = {fiche.get('photo')!r}, {chemin_attendu!r} attendu")
+
+        # --- 14. LE CONTROLE CENTRAL : les octets sont ceux de la MINIATURE ----
+        controles += 1
+        image = appeler(arguments.base, chemin_attendu, contexte, en_tetes=biscuit)
+        type_juste = image.en_tetes.get("content-type", "").startswith("image/jpeg")
+        if (
+            image.statut == 200
+            and image.corps == OCTETS_MINIATURE
+            and image.corps != OCTETS_ORIGINAL
+            and type_juste
+        ):
+            print(
+                f"    ok       les octets servis sont EXACTEMENT ceux de la miniature "
+                f"({len(image.corps)} o < {BORNE_MINIATURE_OCTETS}), type "
+                f"{image.en_tetes.get('content-type')}"
+            )
+        else:
+            echecs += 1
+            debut_recu = image.corps[:40]
+            print(
+                f"    ECHEC    photo : {image.statut}, {len(image.corps)} o, "
+                f"debut {debut_recu!r}, type {image.en_tetes.get('content-type')!r}"
+            )
+
+        # --- 15. l'ORIGINAL n'est joignable par AUCUN chemin de l'API ----------
+        controles += 1
+        #  **L'ORIGINAL EST DANS LE BUCKET**, prouve au controle 11 : le seul
+        #  point ouvert est de savoir si l'API le sert. Deux tentatives, et
+        #  aucune ne doit rendre ses octets.
+        tentatives = [
+            f"/api/v1/entities/{code_entite}/media/{cle_originale}",
+            f"{chemin_attendu}?variante=original",
+        ]
+        fuites = []
+        for tentative in tentatives:
+            essai = appeler(arguments.base, tentative, contexte, en_tetes=biscuit)
+            if essai.corps == OCTETS_ORIGINAL:
+                fuites.append(tentative)
+        if not fuites:
+            print(
+                f"    ok       l'original ({len(OCTETS_ORIGINAL)} o) n'est rendu par aucune "
+                f"des {len(tentatives)} tentatives — dont un parametre `?variante=original`"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    l'original a fuite par : {fuites}")
+
+        # --- 16. l'autorisation RETIREE rend 404, comme un profil sans photo ---
+        controles += 1
+        code_sql, brut = psql(
+            compose,
+            env,
+            "SELECT em.id FROM entity_membership em JOIN person p ON p.id = em.person_id "  # noqa: S608
+            f"WHERE p.email_normalized = '{MARQUEUR}-retire@x.test'",
+        )
+        retiree = valeur(brut)
+        if code_sql or not retiree:
+            echecs += 1
+            print(f"    ECHEC    identifiant du profil a autorisation retiree : {brut[:120]}")
+        else:
+            refus_photo = appeler(
+                arguments.base,
+                CHEMIN_PHOTO.format(code=code_entite, appartenance=retiree),
+                contexte,
+                en_tetes={**biscuit, "X-Request-ID": CORRELATION_FIXE},
+            )
+            corps_refus = refus_photo.json()
+            forme = corps_refus.get("erreur", {}) if isinstance(corps_refus, dict) else {}
+            if refus_photo.statut == 404 and forme.get("code") == "entite_introuvable":
+                print(
+                    "    ok       autorisation RETIREE : 404 au format du §18.3 — le §12.2 "
+                    "exige une autorisation ACTIVE, et l'appelant sert l'avatar neutre"
+                )
+            else:
+                echecs += 1
+                print(f"    ECHEC    retrait : {refus_photo.statut}, {str(corps_refus)[:110]}")
+
+        # --- 17. sans session, la photo refuse --------------------------------
+        controles += 1
+        photo_anonyme = appeler(arguments.base, chemin_attendu, contexte)
+        if photo_anonyme.statut == 401 and photo_anonyme.corps != OCTETS_MINIATURE:
+            print("    ok       sans session : 401, et AUCUN octet — la matrice §5 refuse `ANON`")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    photo sans session : {photo_anonyme.statut}, "
+                f"{len(photo_anonyme.corps)} o"
+            )
     finally:
+        mc(compose, f"mc rm --force local/{bucket}/{cle_miniature} >/dev/null 2>&1 || true")
+        mc(compose, f"mc rm --force local/{bucket}/{cle_originale} >/dev/null 2>&1 || true")
         nettoyer(compose, env, MARQUEUR, debut)
 
     print()
@@ -535,8 +828,9 @@ def main() -> int:
     if echecs:
         return 1
     print(
-        "  --> la fiche profil sert les champs du §10.2, n'en masque aucun, et suit "
-        "exactement la population du trombinoscope"
+        "  --> la fiche profil sert les champs du §10.2, n'en masque aucun, suit "
+        "exactement la population du trombinoscope, et sert la MINIATURE — jamais "
+        "l'originale"
     )
     return 0
 

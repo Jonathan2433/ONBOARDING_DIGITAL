@@ -78,7 +78,7 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy import text
 
-from app.people.trombinoscope import ETAT_LISTE, VISIBILITE_LISTEE
+from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection

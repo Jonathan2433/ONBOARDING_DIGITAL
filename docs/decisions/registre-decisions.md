@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 26 août 2026, sous-étape `T4` du LOT 5
+**Dernière mise à jour :** 7 septembre 2026, sous-étape `T5` du LOT 5
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -70,6 +70,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 5 `DEC-561`, sous-étape `T2`** | 1 | **Soumise le 26/08/2026** |
 | **Réalisation du LOT 5 `DEC-562`, sous-étape `T3`** | 1 | **Soumise le 26/08/2026** |
 | **Réalisation du LOT 5 `DEC-563`, sous-étape `T4`** | 1 | **Soumise le 26/08/2026** |
+| **Réalisation du LOT 5 `DEC-564`, sous-étape `T5`** | 1 | **Soumise le 07/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -81,7 +82,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **231** | |
+| **Total** | **232** | |
 
 ---
 
@@ -729,7 +730,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 ---
 
-**Prochain identifiant libre : `DEC-564`.**
+| `DEC-564` | **`T5` et `T6` sont FUSIONNEES, la miniature est SERVIE et jamais l'originale, et la borne des 100 Ko est posee en base.** **(a)** Le lot passe a **onze** sous-etapes : `US005` n'est pas separable en deux. **(b)** `GET /api/v1/entities/{code}/people/{appartenance}/photo` sert les **octets** de la variante `thumbnail`, sous quatre conditions. **(c)** La liste **et** la fiche portent un champ `photo` qui est un **chemin**, jamais des octets, resolu par un `EXISTS` dans la requete de page. **(d)** Migration `0016` : `ck_media_variant_miniature_sous_cent_ko`, bornee au **seul** type `thumbnail`. **(e)** `T5` ne **fabrique** aucune miniature, et le **format** des variantes reste non tranche. | **(a) LES DEUX MOITIES NE TIENNENT PAS DEBOUT SEPAREMENT.** La fiche decoupait `US005` en `T5` « les miniatures » et `T6` « l'autorisation ». On ne peut pas prouver « sans autorisation, avatar neutre » sans servir quelque chose, et servir une photo sans verifier l'autorisation enfreindrait le §12.2. Pire : le critere « l'originale jamais servie » serait **parfaitement satisfait par une route qui ne sert RIEN** — c'est le §7.0, quatrieme proposition. Arbitrage de Jonathan du 06/09/2026. **(b) QUATRE CONDITIONS, CHACUNE DERIVEE D'UNE REGLE ECRITE**, et chacune avec son refus **et** son temoin : autorisation **active** (§12.2), media `ready` (§16.1), **meme entite** (§25.3), variante `thumbnail` presente (§16.2). **`withdrawn_at IS NULL` NE SUFFIT PAS SEUL** : une autorisation datee du futur a elle aussi un retrait nul, et c'est le seul des cinq refus qu'un `WHERE` trop large laisserait passer — le temoin qui n'avance que l'instant le prouve. **L'API sert les OCTETS et non une URL signee** : le corpus ne dit pas comment un media parvient au navigateur — zero occurrence d'« URL signee », de « presigned » ou de CDN — et une URL vers MinIO exposerait le port 9000, contre `DEC-460` et `DEC-470`. `boto3` est deja une dependance, et le choix reste **reversible** : le chemin de la route ne change pas, seul son corps. **(c) LA LISTE DOIT SAVOIR S'IL Y A UNE PHOTO**, sans quoi elle emettrait un chemin qui rend 404 ; et resoudre la variante ligne par ligne serait le **N+1** que le critere de `T3` interdit — un test compte **deux** requetes quel que soit le nombre de lignes. Les conditions sont donc **une seule source**, employee en `EXISTS` par la liste et en `SELECT` par la route : deux copies feraient annoncer un chemin que la route refuse. Le **gabarit du chemin** l'est aussi. **`T4` AVAIT ECRIT UN TEST QUI EXIGEAIT L'ABSENCE DU CHAMP**, pour que son apparition soit une **decision** (§7.32) ; il est retourne, et exige desormais que ce soit un chemin — le §16.1 interdit Base64 en propre. **(d) LA BORNE EST EN BASE, ET AU SEUL TYPE `thumbnail`.** Le §25.3 borne « la miniature trombinoscope » : la porter sur les **cinq** types casserait le LOT 11, ou l'original et la variante `large` pesent bien davantage, et **rien ne le dirait avant ce lot-la**. Un test la franchit **a l'octet** — 99 999 passe, 100 000 est refuse — parce qu'un test a 50 Ko et 200 Ko passerait avec une borne posee n'importe ou entre les deux. La valeur est **100 000 et non 102 400** : c'est la lecture la plus stricte de « Ko ». **(e) LA GENERATION APPARTIENT AU LOT 11**, `MVP-L11-US005` le dit en propre, et **aucune bibliotheque de traitement d'image n'est installee** — zero occurrence de `pillow` ou `vips`, mesure du 06/09/2026. Ecrire un generateur ici enfreindrait la regle 1. **Et le FORMAT des variantes n'est pas tranche, volontairement** : `T1` avait laisse `FORMATS_VARIANTE` vide en notant que `T5` devait « decider et mesurer » — la reponse est que cela ne lui appartient pas, c'est celui qui **produit** les variantes qui choisit. Une liste blanche inventee ici bloquerait le LOT 11 (§6.5). **L'ORIGINALE N'EST JAMAIS SERVIE, ET C'EST STRUCTUREL** : la requete ne selectionne pas `media_asset.object_key`, et `MiniatureServie` n'a aucun champ qui puisse le porter — le perdre exigerait de reecrire la requete, pas d'oublier un filtre (§7.35). `make profil-check` le prouve **sur les octets**, deux contenus distincts deverses dans MinIO : sans cela, un controle « 200 et des octets » passerait si la route servait l'originale. | Soumise le 07/09/2026 |
+
+**Prochain identifiant libre : `DEC-565`.**
 
 ---
 
@@ -941,6 +944,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-561` — réalisation du LOT 5, `T2` | 1 | 1 |
 | `DEC-562` — réalisation du LOT 5, `T3` | 1 | 1 |
 | `DEC-563` — réalisation du LOT 5, `T4` | 1 | 1 |
+| `DEC-564` — réalisation du LOT 5, `T5` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -952,7 +956,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **231** | **231** |
+| **Total** | **232** | **232** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

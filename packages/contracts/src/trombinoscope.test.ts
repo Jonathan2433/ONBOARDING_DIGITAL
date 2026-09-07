@@ -34,6 +34,8 @@ const UNE_LIGNE = {
   preferred_name: null,
   professional_category: 'consultant',
   arrival_date: '2026-01-15',
+  //  LOT 5, T5 : le chemin de la miniature. **Un CHEMIN, jamais des octets.**
+  photo: '/api/v1/entities/bordeaux/people/0f8fad5b-d9cb-469f-a165-70867728950e/photo',
 };
 
 const UNE_PAGE = {
@@ -95,6 +97,7 @@ describe('le validateur', () => {
       nomPrefere: null,
       categorieProfessionnelle: 'consultant',
       dateArrivee: '2026-01-15',
+      photo: UNE_LIGNE.photo,
     });
     expect(page.total).toBe(1);
   });
@@ -140,6 +143,59 @@ describe('le validateur', () => {
       );
     },
   );
+
+  //  ========================================================================
+  //  LOT 5, T5 — la photo : un CHEMIN, ou `null`
+  //  ========================================================================
+
+  it('accepte `null` — l’appelant sert alors l’avatar neutre du §21.2', () => {
+    const page = validerLeTrombinoscope({
+      ...UNE_PAGE,
+      collaborateurs: [{ ...UNE_LIGNE, photo: null }],
+    });
+    expect(page.collaborateurs[0]?.photo).toBeNull();
+  });
+
+  it('refuse une photo ABSENTE, alors qu’elle accepte `null`', () => {
+    //  **L'ABSENCE N'EST PAS `null`**, et les deux temoins encadrent la regle :
+    //  un champ manquant est une reponse malformee, un `null` est une photo non
+    //  servable. Sans le second, l'exigence serait satisfaite par un validateur
+    //  qui refuse tout.
+    const ligne: Record<string, unknown> = { ...UNE_LIGNE };
+    delete ligne['photo'];
+    expect(() => validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [ligne] })).toThrow(
+      TypeError,
+    );
+  });
+
+  it.each([42, true, {}, [], ['/api/v1/x']])('refuse une photo de type %s', (mauvais) => {
+    expect(() =>
+      validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [{ ...UNE_LIGNE, photo: mauvais }] }),
+    ).toThrow(TypeError);
+  });
+
+  it('refuse une cle d’objet MinIO deguisee en photo', () => {
+    //  **LE CONTROLE LE PLUS UTILE DE CE BLOC.** Si l'API rendait un jour
+    //  l'`object_key` au lieu du chemin, tous les tests de type ci-dessus
+    //  resteraient verts : c'est une chaine. Seul le prefixe discrimine, et le
+    //  §16.1 veut que la disposition du stockage ne sorte jamais.
+    for (const cle of ['miniatures/abc123.jpg', 'onboarding-dev-media/x.jpg', '']) {
+      expect(() =>
+        validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [{ ...UNE_LIGNE, photo: cle }] }),
+      ).toThrow(TypeError);
+    }
+  });
+
+  it('refuse une photo qui porterait les OCTETS en Base64', () => {
+    //  Le §16.1 interdit Base64 en propre. Une donnee `data:` est une chaine, et
+    //  seul le prefixe versionne la refuse.
+    expect(() =>
+      validerLeTrombinoscope({
+        ...UNE_PAGE,
+        collaborateurs: [{ ...UNE_LIGNE, photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' }],
+      }),
+    ).toThrow(TypeError);
+  });
 
   it('refuse un « preferred_name » qui n’est ni chaine ni null', () => {
     expect(() =>

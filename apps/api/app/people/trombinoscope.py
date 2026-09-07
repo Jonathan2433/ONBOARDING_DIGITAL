@@ -143,7 +143,12 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy import text
 
-from app.people.modeles import EtatAppartenance, VisibiliteProfil
+from app.media.photo import (
+    CONDITIONS_DE_LA_MINIATURE,
+    ETAT_AFFICHABLE,
+    VARIANTE_DE_LISTE,
+)
+from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Mapping
@@ -194,15 +199,16 @@ TAILLE_MAXIMALE: Final[int] = max(TAILLES_DE_PAGE)
 #  `text`, sans borne en base, mais aucun nom reel n'approche cette longueur.
 LONGUEUR_MAXIMALE_RECHERCHE: Final[int] = 128
 
-#  Les DEUX etats qui font qu'un profil est dans l'annuaire. Derives des
-#  enumerations, jamais ecrits en litteral -- une liste recopiee vieillit au
-#  premier ajout de valeur (§7.27).
-ETAT_LISTE: Final[str] = EtatAppartenance.ACTIVE.value
-VISIBILITE_LISTEE: Final[str] = VisibiliteProfil.PUBLISHED.value
 
 #  Les colonnes exposees, en une seule source. Le controle de `T2` compare la
 #  reponse servie a cette liste : une colonne ajoutee a la requete sans etre
 #  ajoutee ici -- ou l'inverse -- fait echouer le test.
+#
+#  **`photo` EST LA HUITIEME, ET ELLE N'EST PAS UNE COLONNE SQL.** C'est le
+#  chemin que la route calcule a partir d'`a_une_photo`, lequel est un `EXISTS`
+#  et non une colonne de `entity_membership`. La liste decrit donc les champs de
+#  la REPONSE, ce qu'elle a toujours fait -- `id` vient de `em.id`, `person_id`
+#  de `em.person_id` -- et non les colonnes lues telles quelles.
 COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
     "id",
     "person_id",
@@ -211,6 +217,7 @@ COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
     "preferred_name",
     "professional_category",
     "arrival_date",
+    "photo",
 )
 
 #  **UNE SEULE SOURCE ET UNE SEULE CLAUSE, PARTAGEES PAR LES DEUX REQUETES.** Le
@@ -238,6 +245,13 @@ class CollaborateurListe:
     preferred_name: str | None
     professional_category: str
     arrival_date: dt.date
+    #  **UN BOOLEEN, PAS UNE CLE, ET C'EST LE POINT.** La liste doit savoir s'il
+    #  faut emettre un chemin de photo ; elle n'a aucun besoin de la variante.
+    #  Resoudre la variante ligne par ligne serait le N+1 que le critere de `T3`
+    #  interdit, et joindre `photo_authorization` multiplierait les lignes -- le
+    #  §12.2 n'impose aucune unicite, `T1` l'a mesure. Un `EXISTS` ne fait ni
+    #  l'un ni l'autre.
+    a_une_photo: bool
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -416,12 +430,26 @@ def lister_le_trombinoscope(
     lignes = connexion.execute(
         text(
             "SELECT em.id, em.person_id, p.first_name, p.last_name, p.preferred_name, "
-            f"em.professional_category, em.arrival_date {source} "
+            "em.professional_category, em.arrival_date, "
+            #  **L'`EXISTS` EST DANS LA REQUETE DE PAGE, PAS DANS LE COMPTAGE** :
+            #  le total ne depend pas de la photo, et l'y ajouter ferait payer a
+            #  chaque comptage un travail dont il n'a que faire.
+            f"EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo "
+            f"{source} "
             #  L'ordre est TOTAL : `em.id` est cle primaire. Voir l'en-tete.
             "ORDER BY p.last_name, p.first_name, em.id "
             "LIMIT :taille OFFSET :decalage"
         ),
-        {**parametres, "taille": taille, "decalage": (page - 1) * taille},
+        {
+            **parametres,
+            "taille": taille,
+            "decalage": (page - 1) * taille,
+            #  Les trois parametres que `CONDITIONS_DE_LA_MINIATURE` exige. Un
+            #  test verifie que cette liste et celle du module `photo` concordent.
+            "etat_media": ETAT_AFFICHABLE,
+            "variante": VARIANTE_DE_LISTE,
+            "instant": instant,
+        },
     ).fetchall()
 
     return PageDuTrombinoscope(
@@ -434,6 +462,7 @@ def lister_le_trombinoscope(
                 preferred_name=None if ligne[4] is None else str(ligne[4]),
                 professional_category=str(ligne[5]),
                 arrival_date=ligne[6],
+                a_une_photo=bool(ligne[7]),
             )
             for ligne in lignes
         ],

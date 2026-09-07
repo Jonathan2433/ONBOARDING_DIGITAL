@@ -266,6 +266,24 @@ class VisibiliteProfil(enum.StrEnum):
 
 VISIBILITES_PROFIL: tuple[str, ...] = tuple(membre.value for membre in VisibiliteProfil)
 
+#  **LA REGLE « PROFIL LISTABLE », EN UN SEUL ENDROIT.**
+#
+#  Trois modules l'emploient -- le trombinoscope, la fiche, et la photo -- et
+#  elle etait d'abord definie dans le trombinoscope. `T5` a fait apparaitre le
+#  probleme sous la forme d'un IMPORT CIRCULAIRE : `media/photo.py` avait besoin
+#  du filtre, et le trombinoscope avait besoin des conditions de la photo.
+#
+#  Le cycle disait la verite : cette regle n'appartient a aucun des trois. Elle
+#  est **derivee des deux enumerations ci-dessus**, et sa place est ici, aux cotes
+#  d'`ETATS_OCCUPANTS`, qui est de la meme nature.
+#
+#  **LES DEUX SONT NECESSAIRES, ET AUCUNE N'EST REDONDANTE** : le §22.5 etape 5
+#  « masquage du profil » n'est implemente nulle part, donc un partant reste
+#  `published` ; et un nouvel arrivant est `active` des son arrivee avec un profil
+#  `draft`. Le motif complet est dans l'en-tete de `app/people/trombinoscope.py`.
+ETAT_LISTE: str = EtatAppartenance.ACTIVE.value
+VISIBILITE_LISTEE: str = VisibiliteProfil.PUBLISHED.value
+
 
 class EntityMembership(ChampsCommuns, RessourceLocale, Base):
     """Profil d'une personne dans une entite — modele §6.2."""

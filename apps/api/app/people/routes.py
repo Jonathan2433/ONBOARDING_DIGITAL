@@ -39,10 +39,11 @@ LE REFUS D'UNE TAILLE HORS LISTE EST UN 422 QUE JE N'ECRIS PAS
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import uuid
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from pydantic import BaseModel
 
 from app.auth.dependances import exiger_une_session
@@ -52,6 +53,8 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.media.objets import ObjetIntrouvable, lire_l_objet
+from app.media.photo import resoudre_la_miniature
 from app.people.modeles import SituationProfessionnelle
 from app.people.profil import CercleDuProfil, FicheProfil, ResponsabiliteDuProfil, lire_la_fiche
 from app.people.trombinoscope import (
@@ -64,6 +67,19 @@ from app.people.trombinoscope import (
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
+#  **LE GABARIT DU CHEMIN DE PHOTO, EN UNE SEULE SOURCE.** La route le declare,
+#  les deux reponses l'emploient : deux copies divergeraient au premier
+#  renommage, et la liste emettrait alors un chemin qui rend 404.
+journal = logging.getLogger("app.people")
+
+GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
+
+
+def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
+    """Le chemin complet de la miniature, prefixe versionne compris."""
+    return prefixe + GABARIT_PHOTO.format(code=code, appartenance=appartenance)
+
+
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Parametres
 
@@ -71,9 +87,9 @@ if TYPE_CHECKING:  # pragma: no cover
 class CollaborateurDuTrombinoscope(BaseModel):
     """Une ligne du trombinoscope.
 
-    Sept champs, et **ni photo ni informations professionnelles jointes** : le
-    motif de ces absences est dans l'en-tete de `trombinoscope.py`, section « ce
-    que `T2` ne fait pas ».
+    Huit champs depuis `T5`, qui a ajoute la **photo**. Les informations
+    professionnelles ne sont toujours pas jointes : le motif est dans l'en-tete de
+    `trombinoscope.py`, section « ce que `T3` ne fait toujours pas ».
 
     Les noms sont en `snake_case`, comme `est_entite_principale` de `T8` du
     LOT 4 : c'est le contrat de `packages/contracts` qui traduit vers le
@@ -87,6 +103,18 @@ class CollaborateurDuTrombinoscope(BaseModel):
     preferred_name: str | None
     professional_category: str
     arrival_date: dt.date
+    #  **LE CHEMIN DE LA MINIATURE, OU `None` POUR L'AVATAR NEUTRE.**
+    #
+    #  Un chemin et non un booleen : le frontend l'emploie tel quel. Et le chemin
+    #  d'une ROUTE, non l'`object_key` de la variante -- exposer la cle
+    #  divulguerait la disposition du stockage, et le navigateur n'en pourrait
+    #  rien faire.
+    #
+    #  `None` couvre CINQ causes -- pas d'autorisation, retiree, pas encore
+    #  active, media non `ready`, aucune variante -- et c'est voulu : distinguer
+    #  « il a une photo mais tu n'y as pas droit » de « il n'a pas de photo »
+    #  apprendrait ce que le §21.2 ne veut pas dire.
+    photo: str | None
 
 
 class CercleDeLaFiche(BaseModel):
@@ -134,6 +162,8 @@ class FicheDuProfil(BaseModel):
     cercle_principal: CercleDeLaFiche | None
     cercles_secondaires: list[CercleDeLaFiche]
     responsabilites: list[ResponsabiliteDeLaFiche]
+    #  Meme regle que dans la liste : le chemin de la miniature, ou `None`.
+    photo: str | None
 
 
 class ReponseDuTrombinoscope(BaseModel):
@@ -287,6 +317,11 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     preferred_name=ligne.preferred_name,
                     professional_category=ligne.professional_category,
                     arrival_date=ligne.arrival_date,
+                    photo=(
+                        chemin_de_la_photo(parametres.API_PREFIX, code, ligne.id)
+                        if ligne.a_une_photo
+                        else None
+                    ),
                 )
                 for ligne in resultat.collaborateurs
             ],
@@ -360,11 +395,25 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ENTITE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
+            instant = dt.datetime.now(tz=dt.UTC)
             fiche = lire_la_fiche(
                 connexion,
                 entite=entite.id,
                 appartenance=appartenance,
-                instant=dt.datetime.now(tz=dt.UTC),
+                instant=instant,
+            )
+            #  **LE MEME SERVICE QUE LA ROUTE DE PHOTO**, dans la MEME
+            #  transaction que la fiche : le champ annonce donc exactement ce
+            #  que la route servira, et non ce qu'une seconde regle croirait.
+            miniature = (
+                resoudre_la_miniature(
+                    connexion,
+                    entite=entite.id,
+                    appartenance=appartenance,
+                    instant=instant,
+                )
+                if fiche is not None
+                else None
             )
 
         if fiche is None:
@@ -377,7 +426,110 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 message=MESSAGE_ENTITE_INTROUVABLE,
                 statut=status.HTTP_404_NOT_FOUND,
             )
-        return _en_reponse(fiche)
+        return _en_reponse(
+            fiche,
+            photo=(
+                None
+                if miniature is None
+                else chemin_de_la_photo(parametres.API_PREFIX, code, appartenance)
+            ),
+        )
+
+    @routeur.get(
+        GABARIT_PHOTO,
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_class=Response,
+        responses={
+            status.HTTP_200_OK: {
+                "content": {"image/*": {}},
+                "description": "Les octets de la MINIATURE. Jamais ceux de l'original.",
+            },
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Aucune photo a servir — l'appelant affiche l'avatar neutre du "
+                    "§21.2. UNE SEULE forme pour SEPT causes : entite inconnue ou non "
+                    "active, appartenance inexistante ou d'une autre entite, profil non "
+                    "listable, pas d'autorisation active, media non `ready`, aucune "
+                    "variante `thumbnail`, ou objet absent du stockage. Distinguer "
+                    "« il a une photo mais tu n'y as pas droit » de « il n'a pas de "
+                    "photo » apprendrait ce que le §21.2 ne veut pas dire."
+                )
+            },
+        },
+        summary="Servir la miniature autorisee d'un collaborateur",
+        description=(
+            "La variante `thumbnail`, et JAMAIS l'original — cahier §25.3 et backlog "
+            "`MVP-L05-US005`. Quatre conditions : autorisation ACTIVE (§12.2), media "
+            "`ready` (§16.1), meme entite (§25.3), variante `thumbnail` presente. "
+            "La generation des variantes appartient au LOT 11 (`MVP-L11-US005`) : cette "
+            "route SELECTIONNE et SERT, elle ne fabrique rien."
+        ),
+    )
+    def servir_la_photo(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant d'appartenance")],
+    ) -> Response:
+        """Servir la miniature — cahier §25.3, backlog `MVP-L05-US005`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            miniature = (
+                None
+                if entite is None
+                else resoudre_la_miniature(
+                    connexion,
+                    entite=entite.id,
+                    appartenance=appartenance,
+                    instant=dt.datetime.now(tz=dt.UTC),
+                )
+            )
+
+        if miniature is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            octets = lire_l_objet(parametres, miniature.object_key)
+        except ObjetIntrouvable as erreur:
+            #  **LE MEME REFUS, ET LA CAUSE JOURNALISEE ICI MEME.**
+            #
+            #  Un navigateur ne peut rien faire de la distinction entre « la
+            #  miniature a disparu du stockage » et « il n'a pas de photo » ;
+            #  l'exploitant, lui, en a besoin -- sinon une panne de MinIO produit
+            #  des avatars neutres **en silence**, a l'echelle de tout le
+            #  trombinoscope, et rien ne le dit.
+            #
+            #  **ET C'EST ICI QUE CA DOIT ETRE ECRIT, PAS DANS LE GESTIONNAIRE.**
+            #  `gerer_erreur_applicative` ne journalise RIEN -- mesure du
+            #  07/09/2026, `app/shared/errors.py` -- et mon commentaire affirmait
+            #  d'abord le contraire : defaut `T5-1`, classe §7.11, dans mon propre
+            #  code. La correction est de rendre l'affirmation vraie.
+            #
+            #  `resultat: echec` et non `refus` : `DEC-468`, l'appelant n'a rien
+            #  fait de mal. La cle est journalisee -- c'est la seule facon de
+            #  retrouver l'objet -- et elle n'est pas un secret : le §16.1 interdit
+            #  qu'un client la FOURNISSE, pas qu'un journal serveur la porte.
+            journal.error(
+                "miniature illisible dans le stockage : avatar neutre servi",
+                extra={
+                    "resultat": "echec",
+                    "code_erreur": "miniature_illisible",
+                    "cle_objet": miniature.object_key,
+                },
+            )
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            ) from erreur
+
+        return Response(content=octets, media_type=miniature.mime)
 
     return routeur
 
@@ -394,7 +546,7 @@ def _responsabilite(responsabilite: ResponsabiliteDuProfil) -> ResponsabiliteDeL
     )
 
 
-def _en_reponse(fiche: FicheProfil) -> FicheDuProfil:
+def _en_reponse(fiche: FicheProfil, *, photo: str | None) -> FicheDuProfil:
     """Le domaine vers la reponse HTTP, champ par champ.
 
     **AUCUN `**dataclasses.asdict()`**, et c'est deliberé : une conversion
@@ -421,4 +573,5 @@ def _en_reponse(fiche: FicheProfil) -> FicheDuProfil:
         ),
         cercles_secondaires=[_cercle(c) for c in fiche.cercles_secondaires],
         responsabilites=[_responsabilite(r) for r in fiche.responsabilites],
+        photo=photo,
     )

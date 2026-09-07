@@ -80,13 +80,14 @@ export type { EntiteDuPortail, PermissionsDeLEntite, ReponseDesEntites } from '.
 //  `snake_case` -> `camelCase` est ICI, en un seul endroit, et le validateur
 //  n'est pas contournable puisque `formes.ts` n'est pas reexporte.
 export {
-  cheminTrombinoscope,
   CODES_TROMBINOSCOPE,
   GABARIT_CHEMIN_TROMBINOSCOPE,
   LONGUEUR_MAXIMALE_RECHERCHE,
   STATUTS_PROFESSIONNELS,
-  TAILLE_PAR_DEFAUT,
   TAILLES_DE_PAGE,
+  TAILLE_PAR_DEFAUT,
+  cheminDePhotoOuNul,
+  cheminTrombinoscope,
   validerLeTrombinoscope,
 } from './trombinoscope.js';
 export type {
@@ -98,6 +99,9 @@ export type {
 //  LOT 5, T4 — la fiche profil. La frontiere `snake_case` -> `camelCase` est ICI,
 //  comme pour le trombinoscope, et le validateur n'est pas contournable.
 export { cheminProfil, CODES_PROFIL, GABARIT_CHEMIN_PROFIL, validerLaFiche } from './profil.js';
+//  LOT 5, T5 — `cheminDePhotoOuNul` est exportee depuis `trombinoscope.js`, ou
+//  elle vit : la liste ET la fiche l'emploient, et une reexportation depuis
+//  `profil.js` donnerait deux chemins vers une meme fonction.
 export type { CercleDuProfil, FicheDuProfil, ResponsabiliteDuProfil } from './profil.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';

@@ -4,6 +4,7 @@
 **Ouvert par :** Jonathan, le 24 août 2026 (`DEC-558`)
 **Porte de sortie :** `G5`
 **Découpage :** douze sous-étapes, **validé le 24 août 2026 avant qu'une ligne ne soit écrite**
+**Révisé le 6 septembre 2026 :** **onze**, `T5` et `T6` fusionnées — `DEC-564`, et le motif est au §3
 **Avancement :** **`T1` terminée** le 24/08/2026. Onze sous-étapes restantes
 
 ---
@@ -85,7 +86,15 @@ serait plus restrictif que la matrice, ce que le §7.20 interdit.
 
 ---
 
-# 3. Le découpage — douze sous-étapes
+# 3. Le découpage — **onze** sous-étapes depuis le 06/09/2026
+
+> **`T5` ET `T6` SONT FUSIONNÉES**, arbitrage de Jonathan du 06/09/2026, `DEC-564`. Les deux
+> moitiés de `US005` ne tiennent pas debout séparément : on ne peut pas prouver « sans
+> autorisation, avatar neutre » sans **servir** quelque chose, servir une photo sans vérifier
+> l'autorisation enfreindrait le §12.2, et surtout **le critère « l'originale n'est jamais
+> servie » serait parfaitement satisfait par une route qui ne sert RIEN** — §7.0, quatrième
+> proposition. Les deux lignes restent au tableau, barrées, parce qu'un découpage validé ne
+> s'efface pas : il se révise, et la révision se lit.
 
 **L'ordre suit les dépendances du backlog** : les tables d'abord, la lecture avant l'écriture, les
 écrans **après** les routes qu'ils consomment — comme `T11` du LOT 4, qui arrivait après les écrans
@@ -97,8 +106,8 @@ employant ses composants.
 | ~~**`T2`**~~ | ~~**Le trombinoscope en lecture** : route paginée 25/50/100~~ **TERMINÉE le 26/08/2026.** `DEC-561`. **LA MATRICE §5 NE DISTINGUE AUCUN RÔLE** : « Trombinoscope » est à « Lecture » pour les **huit** rôles authentifiés, `ANON` seul exclu — une session suffit, et `exiger_un_role_dans_l_entite` **attend toujours** son premier consommateur, contrairement à ce que le rapport de `T1` annonçait. **QUATRE ÉTATS SONT EXCLUS, ET LES DEUX FILTRES SONT NÉCESSAIRES** : le §22.5 étape 5 « masquage du profil » n'est implémenté **nulle part**, donc un partant reste `published` et filtrer la seule visibilité le listerait ; un nouvel arrivant est `active` avec un profil `draft`, donc filtrer le seul état le listerait trop tôt. Un test **fige** les exclusions pour un appelant `SUPER`, que `T8` devra casser. **DEUX ARBITRAGES DE JONATHAN** le 25/08/2026 : liste blanche des trois tailles, et ordre **nom puis prénom** — rendu **total** par la clé primaire, sans quoi la pagination répéterait des lignes. **LE DÉFAUT `T2-3` EST LA LEÇON DE LA SOUS-ÉTAPE** : `Literal[25, 50, 100]` **refuse la chaîne** « 25 », donc la route refusait les trois tailles valides — et **les huit épreuves de refus passaient toutes**. **761 tests** dont 32 nouveaux, **23 contrôles** de stack à travers Caddy. Compte rendu : [`compte-rendu-t2-lot-5.md`](compte-rendu-t2-lot-5.md) | `US001` | ☑ |
 | ~~**`T3`**~~ | ~~**Recherche et filtres** — six axes combinables~~ **TERMINÉE le 26/08/2026.** `DEC-562`. **LE CRITÈRE NOMMAIT LA MAUVAISE DURÉE** : le §9.3 donne une **temporisation de saisie** de 300 ms — un délai d'écran, qui appartient à `T10` — et le §25.2 un **budget de réponse de 800 ms au P95**, que reprennent les critères de sortie du lot. `ECART-050`. **CINQ FILTRES ET NON SIX** : l'axe « entité » **est** le `{code}` de la route, y ajouter un `entite=` serait une fuite inter-entités en puissance. Et **cinq filtres tiennent en quatre tables** — `professional_status_assignment` porte `status` **et** `client_id`. **`EXISTS` ET NON JOINTURE** : le §8.2 autorise plusieurs cercles, et une jointure rendrait la personne autant de fois — le `total` serait faux et la pagination répéterait des lignes. La période est `period @> :instant`, **jamais `ends_at IS NULL`**, qui inclurait les affectations **futures**. **LA RECHERCHE IGNORE LES ACCENTS**, par une fonction **`IMMUTABLE`** en `translate` et non l'extension `unaccent`, qui est `STABLE` — un index bâti sur une fonction faussement déclarée immuable se corrompt. Elle s'applique **des deux côtés**. **DOUZE DÉFAUTS, TOUS CHEZ MOI, ET SIX DANS LA MESURE** : mon « P95 » était le **maximum**, mon compteur **fuyait un écouteur**, et j'ai posé des statistiques étendues sur une hypothèse **fausse** avant de les retirer. La vraie cause était les **tuples morts** laissés par le banc d'essai — 467 ms contre 0,5 ms sur la même requête. **P95 mesuré : 1,1 à 2,8 ms**, RAPPORTÉ face au budget de 800 — ce budget est un objectif de **production** ; le test exige, lui, un plafond d'effondrement et la propriété **structurelle** qui le garantit : `Rows Removed by Join Filter` borné par l'effectif de l'entité, jamais par la table. Compte rendu : [`compte-rendu-t3-lot-5.md`](compte-rendu-t3-lot-5.md) | `US002` | ☑ |
 | ~~**`T4`**~~ | ~~**La fiche profil** et les règles de visibilité~~ **TERMINÉE le 26/08/2026.** `DEC-563`. **LE CRITÈRE RENVOIE À DES RÈGLES QUE LE CORPUS NE DÉFINIT PAS** : « règles de visibilité » ne paraît que dans les **deux copies du critère de `US004` lui-même**, et le seul « masquer » de la matrice porte sur les **actions**. Le §5 donne « Fiches collaborateur », « Statut mission/intercontrat » et « Client actif » en **Lecture aux huit** rôles. **Aucun champ n'est masqué**, et un test **fige l'absence** — l'appelant n'a ni appartenance, ni responsabilité, ni rôle technique, et voit tout. `ECART-051`. **LA CARDINALITÉ EST PROUVÉE PAR LE SCHÉMA** : quatre contraintes d'**exclusion** rendent métier, statut, client, DSM et cercle principal uniques à un instant donné, si bien que les `LEFT JOIN` ne peuvent pas multiplier — et un test **exige que ces contraintes existent toujours**. **LA PHOTO N'EST PAS DANS LA FICHE** : un champ qui vaudrait toujours `null` laisserait croire que le §12.2 est appliqué. **LE CONTRÔLE RELIE LA FICHE À LA LISTE** — il prend l'identifiant que le trombinoscope rend, puis un profil exclu, et exige le même 404 ; éprouvé, il rend « 200/404 » sans le filtre. **806 tests**, **10 contrôles** de stack, **3 requêtes** par fiche, comptées. **ET LA CI A REVELE UN DEFAUT DE `T3`** : son plafond d'effondrement de 3 000 ms était calibré sur ma machine — l'exécuteur a rendu **3 663 ms**. Le test de recherche n'exige plus **aucune durée** : il exige la **justesse au volume** et rapporte le reste. `T4-1`. Compte rendu : [`compte-rendu-t4-lot-5.md`](compte-rendu-t4-lot-5.md) | `US004` | ☑ |
-| **`T5`** | **Les miniatures** : variantes et cible 100 Ko | `US005` | **< 100 Ko mesuré** · la photo **originale jamais servie** dans la liste |
-| **`T6`** | **L'autorisation de photo** : sans elle, avatar neutre | `US005` | aucune photo non autorisée publiée · le **retrait** effectif |
+| ~~**`T5`**~~ | ~~**Les miniatures** : variantes et cible 100 Ko~~ **ET `T6`, FUSIONNÉE. TERMINÉE le 07/09/2026.** `DEC-564`. **LE LOT PASSE À ONZE SOUS-ÉTAPES**, et le motif est mesurable : le critère « l'originale n'est jamais servie » serait **parfaitement satisfait par une route qui ne sert RIEN** — §7.0 quatrième proposition, et c'est le défaut `T2-3` où huit refus restaient verts. On ne peut pas non plus prouver « sans autorisation, avatar neutre » sans servir quelque chose, ni servir une photo sans vérifier l'autorisation sans enfreindre le §12.2. **QUATRE CONDITIONS, CHACUNE AVEC SON REFUS ET SON TÉMOIN** : autorisation **active** (§12.2), média `ready` (§16.1), **même entité** (§25.3), variante `thumbnail` (§16.2). **`withdrawn_at IS NULL` NE SUFFIT PAS SEUL** — une autorisation datée du **futur** a elle aussi un retrait nul, et c'est le seul refus qu'un `WHERE` trop large laisserait passer. **L'ORIGINALE N'EST JAMAIS SERVIE, ET C'EST STRUCTUREL** : la requête ne sélectionne pas `media_asset.object_key` et la structure rendue n'a aucun champ qui puisse le porter — le perdre exigerait de réécrire la requête. `make profil-check` le prouve **sur les OCTETS**, deux contenus distincts déversés dans MinIO : un contrôle « 200 et des octets » passerait si la route servait l'originale. **LA BORNE EST EN BASE, AU SEUL TYPE `thumbnail`** — la porter sur les cinq casserait le LOT 11 — et un test la franchit **à l'octet** : 99 999 passe, 100 000 est refusé. **`T5` NE FABRIQUE AUCUNE MINIATURE** : c'est `MVP-L11-US005`, et aucune bibliothèque de traitement d'image n'est installée. Le **format** reste donc non tranché : `ECART-052`, la fiche §8.2 attribuait à `T5` une décision qui appartient à qui **produit** les variantes. **QUATRE DÉFAUTS, TROIS DANS MES CONTRÔLES** — dont un commentaire affirmant « la cause reste au journal » alors que `gerer_erreur_applicative` ne journalise **rien**, et un décor ancré sur une **date en dur** que les tests injectant leur instant ne pouvaient pas voir. **838 tests** dont 32 nouveaux, **299 Vitest**, `make profil-check` de 10 à **17 contrôles**, migration **`0016`**. Compte rendu : [`compte-rendu-t5-lot-5.md`](compte-rendu-t5-lot-5.md) | `US005` | ☑ |
+| ~~**`T6`**~~ | ~~**L'autorisation de photo** : sans elle, avatar neutre~~ **FUSIONNÉE DANS `T5`** le 06/09/2026, arbitrage de Jonathan, `DEC-564`. Ses deux critères — « aucune photo non autorisée publiée » et « le **retrait** effectif » — sont prouvés en `T5` : cinq causes d'avatar neutre, chacune avec son témoin, et l'autorisation **retirée** rend 404 au format du §18.3. **UN POINT RESTE OUVERT, ET IL EST NOMMÉ** : la **lecture** honore le retrait, mais **aucune ROUTE ne permet de retirer** — cela suppose un écran et une écriture, donc `T8` ou le LOT 9. À annoncer à la porte `G5`. | `US005` | ☑ |
 | **`T7`** | **L'écriture dans son périmètre** — la matrice §6 exigible | `US006` | un DSM modifie **son** consultant · **refusé** sur un autre · `OFFICE` **refusé partout** |
 | **`T8`** | **Archivage et restauration** | `US007` | l'archivage **révoque** et clôture · la restauration suit les rôles validés |
 | **`T9`** | **L'historique organisationnel** | `US008` | les périodes lisibles **sans** exposer l'audit technique |
@@ -139,7 +148,7 @@ Entra ID · aucune ligne du prototype historique.
 | **`exiger_un_role_dans_l_entite`** | `app/permissions/dependances.py`, LOT 4 `T9`. Il fait **six** des huit vérifications du §2.6 ; les deux qui manquent — « le **périmètre exact de la ressource** » et « les contraintes métier supplémentaires » — ne s'appliquaient pas à un lot en lecture seule. **Elles s'appliquent ici**, et `ECART-046` attend que ce lot prouve le refus **à travers Caddy** |
 | **le jeu de 5 000 profils** | `make jeu-de-donnees` — 25 entités, 5 000 profils, LOT 2 `T12`. C'est **exactement** ce que le quatrième critère de sortie réclame |
 | **`exiger_un_scope`** | LOT 3 `T9`, toujours sans consommateur. Les comptes de service liront des profils au LOT 9 |
-| **le bucket MinIO** | `onboarding-dev-media`, créé par `make up` depuis `DEC-477`, et **jamais employé**. `T5` sera son premier consommateur |
+| **le bucket MinIO** | `onboarding-dev-media`, créé par `make up` depuis `DEC-477`. **`T5` en est le premier consommateur**, et il l'a été le 07/09/2026 : `make profil-check` y déverse deux objets de contenus distincts, puis les retire |
 
 ---
 
@@ -150,7 +159,7 @@ Entra ID · aucune ligne du prototype historique.
 | **la matrice §6 est dense** — quinze actions, huit rôles, huit règles complémentaires | `T7` doit en faire un **contrôle** dérivé du document, jamais une liste recopiée (§7.27). Le LOT 4 l'a fait pour trois rôles ; ici il y en a quinze × huit |
 | **la performance à 5 000 profils** | le jeu existe. `T3` doit mesurer la **durée**, qui est la grandeur du critère, et **rapporter** le plan — exiger « aucun Seq Scan » exigerait le contraire de la performance sur des tables de cette taille (§7.26) |
 | **le N+1** | il se **compte**, il ne se suppose pas. `T3` doit compter les requêtes émises, et confronter ce compte à un attendu |
-| **une photo est une donnée personnelle** | aucune photo réelle, jamais. Le jeu de données est fictif, et `T5` devra engendrer ses images |
+| **une photo est une donnée personnelle** | aucune photo réelle, jamais. **Tenu en `T5`** : les seuls octets employés sont des marqueurs de test — `MINIATURE-DE-VERIFICATION-mmm…` et `ORIGINAL-QUI-NE-DOIT-JAMAIS-SORTIR-ooo…` — engendrés dans le contrôle, jamais versionnés, et supprimés du bucket à la fin |
 | **les affectations structurantes écrasées** | sixième critère de sortie. Le socle du LOT 2 porte des **relations historisées** : une modification **clôture** et ouvre, elle n'écrase pas. `T7` doit l'exiger, et le §24.4 du modèle le dit |
 
 ---
@@ -184,15 +193,29 @@ trombinoscope l'**afficherait**, et cela serait lu comme une erreur.
 chiffrées, et la moins coûteuse ne touche pas le modèle : conditionner l'**affichage** à la catégorie.
 **`T4` doit donc rendre le statut d'une façon qui laisse ce choix ouvert**, et ne rien inventer.
 
-## 8.2 Le format et la taille exacte des miniatures
+## 8.2 ~~Le format et la taille exacte des miniatures~~ — **CLOS en `T5`, et la fiche se trompait de lot**
 
-Le critère dit « **inférieures à la cible de 100 Ko** ». Le corpus ne donne **ni dimension, ni
-format** — mesuré : aucune occurrence de `webp`, `avif`, ni de dimension en pixels dans les cinq
-documents de cadrage.
+> **CORRECTION DU 06/09/2026.** Ce paragraphe disait « **`T5` devra donc décider** ». **Cette
+> décision n'appartient pas à `T5`** — `ECART-052`, `DEC-564`.
 
-**`T5` devra donc décider, et le motif de chaque valeur devra être mesuré**, non choisi : c'est
-exactement la situation de `DEC-491` au LOT 1, où les jetons ont été **relevés** du prototype puis
-**recalculés** contre WCAG. Une valeur plausible plutôt que mesurée est ce que le §7.0 interdit.
+Le constat était **juste et vérifié** : le corpus ne donne ni dimension ni format, et la mesure du
+06/09/2026 le confirme — zéro occurrence de `webp`, `avif`, `jpeg` ou `png` dans les cinq documents.
+La **conclusion** était fausse.
+
+| Grandeur | Où elle se décide |
+|---|---|
+| la **taille** | **dans le corpus** : le §25.3 dit « moins de 100 Ko ». Posée en base par la migration `0016`, bornée au **seul** type `thumbnail`, et un test la franchit **à l'octet** |
+| le **format** | **au LOT 11**, par `MVP-L11-US005` qui **produit** les variantes. `T5` sélectionne et sert ; elle n'en fabrique aucune, et aucune bibliothèque de traitement d'image n'est installée |
+
+**Une liste blanche `('webp', 'avif')` écrite en `T5` aurait fait échouer le LOT 11** le jour où il
+produit du `jpeg`, et le message n'aurait pas dit que la cause est une décision prise trop tôt. Un
+format inconnu tombe donc sur `application/octet-stream` : un octet servi vaut mieux qu'une page
+cassée.
+
+> **L'apport de cet écart, et il vaut pour la suite du lot :** quand un document t'annonce une
+> décision à prendre, pose **deux** questions et non une — *le cahier la porte-t-il déjà ?* (§7.29)
+> **et** *à quel lot appartient-elle ?* La seconde se répond en cherchant qui **produit** la donnée,
+> jamais qui la **consomme**.
 
 ---
 
