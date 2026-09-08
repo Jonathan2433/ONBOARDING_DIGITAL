@@ -61,6 +61,20 @@ SEQUENCES: tuple[tuple[str, str], ...] = (
 )
 
 
+#  La ligne « Total » du tableau de TETE d'un registre. Les registres ont des
+#  nombres de colonnes differents -- 2, 3 ou 4 -- donc le motif ne compte pas les
+#  colonnes : il prend le PREMIER nombre qui suit le libelle, qui est l'effectif
+#  dans les quatre cas mesures. Les autres colonnes sont des ventilations.
+#
+#  **`re.M` ET UN ANCRAGE EN DEBUT DE LIGNE** : « Total outillage » et
+#  « Total mesure » existent ailleurs dans le registre des questions, et un motif
+#  non ancre les attraperait. Mesure : 3 lignes « Total... » dans ce fichier, une
+#  seule est le tableau de tete.
+MOTIF_TOTAL_DE_REGISTRE = re.compile(
+    r"^\|\s*\*\*Total\*\*\s*\|(?:\s*\|)*\s*\*\*(?P<total>\d+)\*\*\s*\|", re.M
+)
+
+
 def identifiants_en_usage(texte: str, prefixe: str) -> set[int]:
     """Relever les identifiants qu'un registre DECLARE, et non ceux qu'il cite.
 
@@ -78,9 +92,31 @@ def identifiants_en_usage(texte: str, prefixe: str) -> set[int]:
     `ECART-021` cite `DEC-451`, et un releve naif la compterait comme un
     identifiant en usage. Un controle qui se laisse berner par sa propre
     documentation ne prouve rien non plus.
+
+    **ET UNE TROISIEME FORME, TROUVEE LE 07/09/2026 : LA DECLARATION BARREE.**
+
+        Un identifiant CLOS est ecrit `| ~~`QO-072`~~ |` ou
+        `## ~~`ROAD-RSK-032`~~ — CLOS en T10`. Les deux motifs exigeaient
+        l'identifiant IMMEDIATEMENT apres le `|` ou le `#`, si bien que **toute
+        declaration barree etait ignoree en silence** : 40 questions relevees
+        pour 42 declarees, 33 risques pour 34.
+
+        **C'etait un defaut DORMANT du controle de sequences**, pas seulement du
+        controle de totaux : le jour ou l'identifiant le PLUS HAUT d'un registre
+        serait clos et barre, le maximum releve baisserait, le marqueur
+        « prochain identifiant libre » serait juge trop haut, et un numero
+        pourrait etre REUTILISE. Aucun registre n'est dans ce cas aujourd'hui --
+        c'est ce qui rendait le defaut invisible, et c'est exactement le §7.31 :
+        exact pour la forme du jour, aveugle a une autre.
+
+        `ECART-053`, et un temoin par forme est desormais exige plus bas.
+
+    **Le barrage est OPTIONNEL et non alternatif** : `~?~?` accepterait un seul
+    tilde, ce qui n'existe pas ; `(?:~~)?` exige la paire ou rien.
     """
-    en_ligne = re.compile(r"^\|\s*`?" + re.escape(prefixe) + r"-0*(\d+)`?\s*\|")
-    en_titre = re.compile(r"^#{1,4}\s+`?" + re.escape(prefixe) + r"-0*(\d+)`?")
+    barre = r"(?:~~)?"
+    en_ligne = re.compile(r"^\|\s*" + barre + r"`?" + re.escape(prefixe) + r"-0*(\d+)`?")
+    en_titre = re.compile(r"^#{1,4}\s+" + barre + r"`?" + re.escape(prefixe) + r"-0*(\d+)`?")
     trouves: set[int] = set()
     for ligne in texte.splitlines():
         for motif in (en_ligne, en_titre):
@@ -398,12 +434,108 @@ def controler_totaux_decisions() -> tuple[int, int]:
     return controles, fautes
 
 
+#  **LES QUATRE AUTRES REGISTRES, ET POURQUOI CE CONTROLE MANQUAIT.**
+#
+#  `controler_totaux_decisions` ci-dessus derive les totaux du registre des
+#  DECISIONS. Il a ete ecrit en `T8` du LOT 1 contre un defaut reel de ce
+#  registre-la, et il est exact pour lui.
+#
+#  **Il est AVEUGLE aux cinq autres.** Mesure du 07/09/2026, a la mise a jour
+#  documentaire de `T5` du LOT 5 :
+#
+#      registre des risques   34 declares (12 + 12 + 10 sections), total ANNONCE 33
+#                             et le titre du §3 disait « 025 a 033 » alors qu'il
+#                             va jusqu'a 034 -- `ROAD-RSK-034` a ete ajoute en
+#                             `T8` du LOT 1 sans que ni le total ni le titre
+#                             suivent
+#      CLAUDE.md §1           « 40 questions (33 ouvertes) » quand le registre en
+#                             declare 42 dont 10 closes, donc 32 ouvertes
+#
+#  **Et la cellule fautive de `CLAUDE.md` affirmait, dans la meme phrase, que
+#  `make docs-check` DERIVE ces totaux.** C'est le §7.31 -- un garde-fou exact
+#  pour un mode de defaillance et aveugle a un autre -- et le §7.11 dans la
+#  meme ligne : verifie ce que la documentation affirme, meme quand c'est toi
+#  qui l'ecris. `ECART-053`.
+#
+#  **LA LISTE DES REGISTRES EST DERIVEE, PAS RECOPIEE** : elle vient de
+#  `SEQUENCES`, qui pilote deja `controler_sequences`. Un septieme registre
+#  ajoute a `SEQUENCES` entrera donc ici sans que personne y pense -- c'est le
+#  §7.27, et c'est ce qui empeche ce controle de vieillir comme le precedent.
+def controler_totaux_des_registres() -> tuple[int, int]:
+    """Chaque registre annonce-t-il le nombre d'entrees qu'il declare VRAIMENT ?
+
+    Le tableau de tete de chaque registre porte une ligne « Total ». On la
+    confronte au nombre d'identifiants que le corps declare -- la meme fonction
+    `identifiants_en_usage` que `controler_sequences`, donc la meme definition de
+    « declare » : une ligne de tableau OU un titre de section.
+
+    **CE CONTROLE NE PORTE PAS SUR LE REGISTRE DES DECISIONS**, dont les deux
+    tableaux de synthese ont une forme propre -- « Total repris » plus les lignes
+    de realisation -- et leur propre controle, plus exigeant, juste au-dessus.
+
+    **UN REGISTRE SANS LIGNE « Total » EST RAPPORTE, PAS IGNORE.** Le §7.20 :
+    faire dire le vrai plutot que d'affaiblir. `inventaire-prototype.md` est dans
+    ce cas -- il declare 29 contenus et n'annonce aucun total -- et le taire
+    laisserait croire que les six registres sont couverts quand cinq le sont.
+    """
+    print()
+    print("  Totaux des autres registres, derives de leur corps (ECART-021, ECART-053)")
+    fautes = 0
+    controles = 0
+    sans_total: list[str] = []
+
+    for prefixe, chemin_relatif in SEQUENCES:
+        if prefixe == "DEC":
+            continue  # son controle propre est juste au-dessus, et plus strict
+        chemin = RACINE / chemin_relatif
+        texte = chemin.read_text(encoding="utf-8")
+        declares = len(identifiants_en_usage(texte, prefixe))
+
+        annonce = MOTIF_TOTAL_DE_REGISTRE.search(texte)
+        if annonce is None:
+            sans_total.append(f"{prefixe} ({declares} declares)")
+            continue
+
+        controles += 1
+        attendu = int(annonce.group("total"))
+        ligne = texte[: annonce.start()].count("\n") + 1
+        if attendu == declares:
+            print(f"    ok       {prefixe:12} total {attendu} = {declares} identifiants declares")
+        else:
+            fautes += 1
+            print(
+                f"    ECHEC    {prefixe:12} le total annonce {attendu} a la ligne {ligne}, "
+                f"mais le corps declare {declares} identifiant(s)"
+            )
+
+    #  **LE COMPTE DES CONTROLES EST CONFRONTE A UN ATTENDU DERIVE.** Sans cela,
+    #  une expression reguliere qui ne matcherait plus rien annoncerait
+    #  « 0 controle, 0 echec » et passerait au vert -- §7.0, troisieme
+    #  proposition. L'attendu est le nombre de registres MOINS ceux qui n'ont
+    #  pas de ligne « Total », lesquels sont nommes.
+    attendu_controles = len(SEQUENCES) - 1 - len(sans_total)
+    controles += 1
+    if controles - 1 == attendu_controles:
+        total_registres = len(SEQUENCES) - 1
+        print(
+            f"    ok       {attendu_controles} registre(s) sur {total_registres} portent un total"
+        )
+    else:
+        fautes += 1
+        print(f"    ECHEC    {controles - 1} total(aux) examine(s), {attendu_controles} attendu(s)")
+    if sans_total:
+        print(f"    info     sans ligne « Total », donc NON couverts : {', '.join(sans_total)}")
+
+    return controles, fautes
+
+
 def main() -> int:
     empreintes, fautes_empreintes = controler_empreintes()
     sequences, fautes_sequences = controler_sequences()
     totaux, fautes_totaux = controler_totaux_decisions()
+    autres, fautes_autres = controler_totaux_des_registres()
 
-    fautes = fautes_empreintes + fautes_sequences + fautes_totaux
+    fautes = fautes_empreintes + fautes_sequences + fautes_totaux + fautes_autres
     print()
     if fautes:
         # stdout vide AVANT d'ecrire sur stderr : sans cela le verdict remonte
@@ -415,7 +547,7 @@ def main() -> int:
     print(
         f"  --> {empreintes} documents immuables intacts, "
         f"{sequences} sequences d'identifiants coherentes et "
-        f"{totaux} controles de totaux derives"
+        f"{totaux + autres} controles de totaux derives"
     )
     return 0
 

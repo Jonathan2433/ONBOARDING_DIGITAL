@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 7 septembre 2026, sous-étape `T5` du LOT 5
+**Dernière mise à jour :** 7 septembre 2026, sous-étape `T5` du LOT 5 — écarts `ECART-052` et `ECART-053`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 52 | 10 | 39 | 3 |
+| Total 53 | 10 | 40 | 3 |
 
 ---
 
@@ -70,6 +70,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-050` | **La fiche donne « 300 ms » comme critère de performance de `T3`, alors que le cahier porte DEUX durées qui ne mesurent pas la même chose.** Le §9.3 étape 2 dit « temporisation d'environ **300 ms** » — un délai de **saisie**, donc un comportement d'écran ; le §25.2 dit « Recherche trombinoscope | moins de **800 ms** » au P95 — un budget d'**API**. Les critères de sortie du LOT 5 reprennent le second | Non — le 300 ms est plus strict, donc l'appliquer n'aurait rien cassé ; mais le critère réel n'aurait jamais été vérifié, et la temporisation serait restée sans porteur | **Clos en `T3`** — le test mesure les **800 ms au P95**, et la temporisation est rattachée à `T10` |
 | `ECART-051` | **Le critère de `T4` dit « chaque champ visible ou masqué selon la matrice », et la matrice ne définit AUCUNE visibilité par champ.** « Règles de visibilité » ne paraît que dans les **deux copies du critère de `US004` lui-même** ; le seul « masquer » de la matrice porte sur les **actions**. Le §5 donne « Fiches collaborateur », « Statut mission/intercontrat » et « Client actif » en **Lecture aux huit** rôles authentifiés | Non — mais suivre le critère à la lettre aurait fait **inventer** un masquage, ce que la règle §6.5 interdit | **Clos en `T4`** — aucun champ n'est masqué, et **un test fige l'absence** pour qu'un lot ultérieur doive la décider |
 | `ECART-052` | **Le §8.2 de la fiche annonce que `T5` doit décider du format des miniatures. Ce n'est pas à `T5`.** La fiche a raison sur le constat — le corpus ne nomme **aucun** format, zéro occurrence de `webp`, `avif`, `jpeg` ou `png` dans les cinq documents — et **tort sur qui décide** : c'est celui qui **produit** les variantes, donc `MVP-L11-US005` au LOT 11. La **taille**, elle, est bien dans le corpus : le §25.3 dit « moins de 100 Ko » | Non — mais suivre la fiche aurait produit une **liste blanche fermée de formats** qui bloquerait le LOT 11, ce que la règle §6.5 interdit | **Clos en `T5`** — `DEC-564` : la taille est posée en base (`0016`), le format reste **non tranché**, et un test l'exige |
+| `ECART-053` | **Le garde-fou écrit CONTRE `ECART-021` ne couvrait qu'un registre sur six, et trois nombres étaient faux.** **(1)** Le registre des **risques** annonçait **33** pour **34** déclarés, et le titre de son §3 disait « `025` à `033` » alors qu'il va à `034` — `ROAD-RSK-034` a été ouvert en `T8` du LOT 1 sans que l'en-tête suive, et la date de mise à jour restée à `T7` en était la preuve. **(2)** `CLAUDE.md` §1 annonçait « **40** questions (**33** ouvertes) » quand le registre en déclare **42** dont 10 closes, donc **32** ouvertes. **(3)** Et la même cellule affirmait que `make docs-check` **dérive** ces totaux : il ne dérivait que ceux du registre des **décisions** | Non — aucun numéro n'a été attribué en double, la vérification des **séquences** couvrant les six registres | **Clos en `T5` du LOT 5** — `DEC-565` : les totaux des cinq autres registres sont **dérivés**, et le relevé voit désormais les déclarations **barrées** |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -127,18 +128,19 @@ formulée, et son caractère bloquant est explicité.
 | Recommandation | **Ancrer, et surtout POSER LE CONTRÔLE** — corriger un motif corrige une instance.<br>**1.** Les huit motifs qui nomment un répertoire de données locales sont ancrés à la racine ; les motifs de vrais artefacts produits à toute profondeur restent non ancrés, parce que c'est leur intention. **`make sources-check`** exige qu'aucun fichier source du disque ne soit ignoré, la liste **dérivée du disque** à chaque exécution, et il est dans **`make check`** *et* **nommé explicitement dans `ci.yml`** — `ci.yml` n'invoque **pas** `make check`, il appelle trente-six cibles une par une, et l'avoir cru est le défaut `T1-5`. **Éprouvé sur le défaut qui l'a fait naître** : remis à `media/`, il rend 1 et nomme les deux fichiers avec leur ligne.<br>**2.** `marqueurs_declares` rend **tous** les marqueurs avec leur ligne, et un **seul** est exigé — non pas seulement leur accord : deux marqueurs qui concordent aujourd'hui divergent le jour où une sous-étape n'en met qu'un à jour, ce qui est précisément ce qui s'est produit.<br>**Recommandation générale** : quand un garde-fou passe au vert sur un problème réel, ne conclus pas qu'il est cassé — demande-toi **quel mode de défaillance il couvre**, et lequel il ne voit pas. |
 | Résolution | **Clos en `T1` du LOT 5**, `DEC-560`. `make sources-check` et `make sources-temoin` sont dans `make check` ; `make docs-check` nomme désormais chaque ligne portant un marqueur. |
 
-## `ECART-049` — Un quart des cibles documentées n'est pas déclaré `.PHONY`
+## `ECART-049` — Un peu moins d'un tiers des cibles documentées n'est pas déclaré `.PHONY`
 
 | Champ | Valeur |
 |---|---|
 | Constaté le | 26 août 2026, LOT 5 sous-étape `T2`, en voulant y ajouter `trombinoscope-check` — l'ancre attendue n'existait pas, `entites-check` n'y figurant pas non plus |
 | Source | `Makefile`, bloc `.PHONY` |
-| Constat | **84 cibles documentées, 59 dans `.PHONY`, donc 25 absentes**, dérivé et non recopié : `apercu`, `apercu-fin`, `cadre-check`, `cadre-temoin`, `code-check`, `code-refresh`, `compte-de-service`, `debit-check`, `ecrans-check`, `entites-check`, `evenements-check`, `historisation-check`, `isolation-check`, `isolation-temoin`, `jeu-de-donnees`, `migrations-check`, `permissions-check`, `privileges-check`, `recette-modele-check`, `residu-check`, `revocation-check`, `roles-provision`, `secrets-check`, `service-check`, `trombinoscope-check` |
+| Constat | **85 cibles documentées, 59 dans `.PHONY`, donc 26 absentes** au 07/09/2026 — c'était 84 et 25 au 26/08/2026, et l'écart a grandi de lui-même. **Dérivé, jamais recopié** : `apercu`, `apercu-fin`, `cadre-check`, `cadre-temoin`, `code-check`, `code-refresh`, `compte-de-service`, `debit-check`, `ecrans-check`, `entites-check`, `evenements-check`, `historisation-check`, `isolation-check`, `isolation-temoin`, `jeu-de-donnees`, `migrations-check`, `permissions-check`, `privileges-check`, `recette-modele-check`, `residu-check`, `revocation-check`, `roles-provision`, `secrets-check`, `service-check`, `trombinoscope-check` |
 | Impact | **Aucun aujourd'hui, et c'est mesuré** : aucun de ces noms n'existe comme fichier à la racine. Le risque est **latent et silencieux** : le jour où un fichier porte l'un de ces noms, `make <cible>` répond « up to date » et **ne fait rien**, sans erreur. Une cible de contrôle qui ne s'exécute pas et sort en 0 est exactement la classe de défaut du §7.0 première proposition |
 | Cause | **`.PHONY` est une liste RECOPIÉE, et elle vieillit à chaque cible ajoutée.** C'est `ECART-021` appliqué au `Makefile` : le bloc a été tenu à jour jusqu'au LOT 3, puis les sous-étapes suivantes ont ajouté leurs cibles sans y penser — le `Makefile` ne le signale pas, et aucun contrôle ne le lit |
 | Bloquant | Non |
 | Recommandation | **Dériver `.PHONY` des cibles documentées, ne pas y recopier 25 noms de plus** — une liste corrigée à la main aura le même sort dans six sous-étapes. GNU Make 3.81 accepte `$(shell …)`, et `make help` grepe déjà le `Makefile` de la même façon.<br>**Attention au §7.2 dans la formulation** : `$(MAKEFILE_LIST)` porte le chemin du dépôt, qui **contient une espace**, et doit donc être cité.<br>**Recommandation générale** : quand un fichier de construction porte une liste qui décrit ses propres cibles, cette liste est **dérivable** — et une liste dérivable qu'on recopie est un `ECART-021` en puissance (§7.27). |
-| Résolution | **Ouvert.** À traiter hors `T2` : y toucher pour 84 cibles pendant une sous-étape fonctionnelle élargirait son périmètre. |
+| Résolution | **Ouvert.** À traiter hors d'une sous-étape fonctionnelle : y toucher pour 85 cibles pendant l'une d'elles élargirait son périmètre. |
+| Recompté le | **07/09/2026**, à la mise à jour documentaire de `T5`. **26 et non 25** : le compte a grandi tout seul, ce qui est exactement le mécanisme dénoncé. La commande fait foi, et **elle doit joindre les continuations de ligne** — `.PHONY` s'étend sur onze lignes terminées par `\\`, et un motif qui ne lit que la première annonce **78 absentes** au lieu de 26 : c'est le §7.0 sixième proposition, dans la mesure elle-même. <br>```bash<br>python3 -c "import re,pathlib;b=pathlib.Path('Makefile').read_text();j=b.replace('\\\\\\n',' ');d=set(re.findall(r'^([a-z][a-z0-9-]*):.*##',b,re.M));p=set();[p.update(m.group(1).split()) for m in re.finditer(r'^\\.PHONY:\\s*(.*)$',j,re.M)];print(len(d),len(d&p),len(d-p))"<br>``` |
 
 ## `ECART-050` — Un critère qui nomme la mauvaise durée
 
@@ -168,7 +170,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-053`.**
+**Prochain identifiant libre : `ECART-054`.**
 
 ---
 
@@ -771,3 +773,18 @@ formulée, et son caractère bloquant est explicité.
 | Impact mesuré | La **taille** est dans le corpus et est posée en base : migration `0016`, `ck_media_variant_miniature_sous_cent_ko`, bornée au **seul** type `thumbnail` — la porter sur les cinq casserait le LOT 11. Le **format** reste `variant_format` libre, et `_MIMES` de `app/media/photo.py` **couvre les formats d'image courants** en tombant sur `application/octet-stream` pour un format inconnu : un octet servi vaut mieux qu'une page cassée, et le LOT 11 n'a rien à défaire. |
 | Recommandation | **Pour le LOT 11 :** c'est là que le format et les dimensions se décident, et le motif devra être mesuré — comme `DEC-491` a **relevé** les jetons du prototype puis les a **recalculés** contre WCAG. La note du §8.2 est juste sur la méthode, elle se trompe de lot.<br>**Générale, et c'est l'apport de cet écart :** quand un document t'annonce une décision à prendre, pose **deux** questions et non une — *le cahier la porte-t-il déjà ?* (§7.29) **et** *à quel lot appartient-elle ?* La seconde se répond en cherchant qui **produit** la donnée, jamais qui la **consomme** : le consommateur peut toujours lire un format qu'il n'a pas choisi. |
 | Résolution | **Clos en `T5` du LOT 5**, `DEC-564`. La taille est en base avec un test qui la franchit **à l'octet** ; le format n'est pas tranché, et un test **exige** qu'un format inconnu soit servi avec un type MIME générique plutôt que refusé — de sorte que le jour où le LOT 11 en choisit un, rien ne casse. |
+
+---
+
+## `ECART-053` — Le garde-fou écrit contre `ECART-021` ne couvrait qu'un registre sur six
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 7 septembre 2026, `T5` du LOT 5, pendant la mise à jour documentaire demandée par Jonathan |
+| Source | `docs/operations/registre-risques.md`, `CLAUDE.md` §1, et `infra/scripts/verifier-documentation.py` |
+| Constat | **Trois nombres faux, et le contrôle qui devait les attraper regardait ailleurs.**<br>**1. Le registre des risques.** Son tableau de tête annonçait « `ROAD-RSK-025` à `033` », **9** risques de réalisation et un **total de 33**. Le corps en déclare **dix** — `ROAD-RSK-034`, ouvert en `T8` du LOT 1, mesure que publier un port perce l'isolement inter-réseaux de Docker — donc **34**. Sa ligne « Dernière mise à jour : `T7` du LOT 1 » était la **preuve du mécanisme** : le corps a reçu le risque, l'en-tête non.<br>**2. `CLAUDE.md` §1.** Sa cellule « Registres » annonçait « **40** questions (**33** ouvertes) » et « **33** risques ». Dérivé : le registre des questions déclare **42** entrées dont **10** closes, donc **32** ouvertes ; celui des risques, **34**.<br>**3. Et la même cellule affirmait la protection qui manquait** : « `make docs-check` les **dérive** et **échoue** si l'un diverge ». Faux pour quatre registres sur six — il ne dérivait que les deux tableaux de synthèse du registre des **décisions**. |
+| Cause | **§7.31, littéralement : un garde-fou exact pour un mode de défaillance et aveugle à un autre.** `controler_totaux_decisions` a été écrit en `T8` du LOT 1 contre un défaut réel du registre des décisions — deux tableaux annonçant 145 pour 150 — et il est **exact pour lui**. Personne n'a demandé si les cinq autres registres avaient le même besoin. Ils l'avaient.<br>**Et un second mécanisme, plus insidieux, l'a masqué : le relevé d'identifiants ne voyait pas les déclarations BARRÉES.** `identifiants_en_usage` exigeait l'identifiant **immédiatement** après `\|` ou `#`, si bien que `\| ~~`QO-072`~~ \|` et `## ~~`ROAD-RSK-032`~~` étaient **ignorés en silence** : 40 questions relevées pour 42, 33 risques pour 34. Ma première version du nouveau contrôle comparait donc **deux grandeurs différentes** — §7.0 sixième proposition, dans le contrôle écrit pour cette classe. |
+| Bloquant | Non. **Aucun numéro n'a été attribué en double** : la vérification des **séquences**, elle, couvre les six registres depuis `T8` du LOT 1, et c'est elle qui protège de la collision. |
+| Impact latent, et il compte | **La cécité aux déclarations barrées était un défaut DORMANT du contrôle de séquences**, pas seulement de celui des totaux. Le jour où l'identifiant le **plus haut** d'un registre serait clos et barré, le maximum relevé baisserait, le marqueur « prochain identifiant libre » serait jugé trop haut, et **un numéro pourrait être réutilisé** — ce que les règles de tenue interdisent absolument. Aucun registre n'est dans ce cas aujourd'hui, et **c'est précisément ce qui rendait le défaut invisible**. |
+| Recommandation | **Dériver le total de chaque registre de son propre corps, et faire échouer le contrôle sur toute divergence** — ce que `DEC-565` fait. Et **dériver la liste des registres de `SEQUENCES`**, qui pilote déjà la vérification des séquences : un septième registre y entrera sans que personne y pense, ce qui empêche ce contrôle de vieillir comme le précédent (§7.27).<br>**Recommandation générale, et c'est l'apport de cet écart :** quand tu écris un garde-fou contre une instance, demande-toi **combien d'objets de la même nature existent dans le dépôt**, et si le garde-fou les couvre tous. Ici la réponse était « six registres, un couvert ». C'est le §7.34 — un motif écrit contre un exemple ne couvre que cet exemple — appliqué non pas à un motif mais à un **périmètre**. |
+| Résolution | **Clos en `T5` du LOT 5**, `DEC-565`. Les trois nombres sont corrigés, le titre du §3 du registre des risques aussi, et **onze contrôles de totaux sont désormais dérivés** contre cinq auparavant. Trois témoins ont été exécutés : un total de risque faux d'une unité, un total de question faux d'une unité, et — le décisif — **barrer une entrée ne change plus le compte**, ce qui prouve que le relevé voit bien la troisième forme. |

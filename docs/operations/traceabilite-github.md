@@ -159,7 +159,16 @@ Chemin dans l'interface : `Settings` → `Branches` → `Add branch protection r
 ## 6. État de la mise en place
 
 Au 27 juillet 2026, sous-étape `T0` du LOT 1. `ECART-010` **clos**, `QO-107` et `QO-108`
-**closes**.
+**closes**. **État des issues remesuré le 7 septembre 2026**, `T5` du LOT 5.
+
+> **LES NOMBRES CI-DESSOUS SE DÉRIVENT, ET LA COMMANDE FAIT FOI.** Ce tableau a annoncé
+> « épics et stories des LOTS 2 à 14 : **non créés** » pendant **quatre lots** — classe
+> `ECART-021`.
+>
+> ```bash
+> ~/.local/bin/gh issue list --state all  --limit 300 --json number --jq 'length'   # 44
+> ~/.local/bin/gh issue list --state open --limit 300 --json number --jq 'length'   #  9
+> ```
 
 | Élément | État | Contrôle |
 |---|---|---|
@@ -169,9 +178,11 @@ Au 27 juillet 2026, sous-étape `T0` du LOT 1. `ECART-010` **clos**, `QO-107` et
 | 15 milestones `G0` à `G14` | **Créées** | 15/15, **`G0` fermée** (`DEC-438`) |
 | Epic du LOT 1 | **Créé** — issue `#1` | Rattaché à `G1` |
 | Stories du LOT 1 | **Créées** — issues `#2` à `#9` | 8/8 sur `G1`, 7 `p0` + 1 `p1`, intitulés et critères **générés depuis le backlog**, fidélité 8/8 |
-| Epics et stories des LOTS 2 à 14 | **Non créés** | 104 issues restantes, à créer lot par lot quand chaque fiche existe |
+| Epics et stories des LOTS 2, 3 et 4 | **Créés et CLOS** | LOT 2 : epic + 8 stories · LOT 3 : epic `#62`, stories `#63`–`#70` · LOT 4 : epic `#91`, stories `#92`–`#98`, **les sept closes**, `#92` le 24/08/2026 à 15:31 UTC |
+| Epic et stories du LOT 5 | **Créés, OUVERTS** | epic `#115`, stories `#116` à `#123` — **les neuf seules issues ouvertes du dépôt**. `#120` reste ouverte après `T5` : « retrait possible » n'est tenu **qu'en lecture**, aucune route ne permet de retirer |
+| Epics et stories des LOTS 6 à 14 | **Non créés** | À créer lot par lot, **quand chaque fiche existe** — jamais par anticipation |
 | Protection de `main` et `develop` | **Posée** | PR obligatoire, 0 approbation, `enforce_admins` actif, push forcés et suppressions rejetés, historique linéaire, résolution des conversations |
-| Contrôles d'intégration obligatoires | **Aucun** | À ajouter en `T6`, quand la CI existera |
+| Contrôles d'intégration obligatoires | **Posés** | La porte de `ci.yml` est requise sur `develop` **et** `main`, contexte unique, `strict` actif (`DEC-476`). **La porte de `images.yml` n'est PAS requise, et ne doit pas le devenir** |
 
 **Preuve d'effectivité de la protection**, et non simple constat de réglage : un push direct
 d'un commit vide sur `main` puis sur `develop` a été **rejeté** par le serveur —

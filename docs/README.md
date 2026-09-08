@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `564` en usage | `DEC-565` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `565` en usage | `DEC-566` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `052` |  `ECART-053` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `053` |  `ECART-054` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `118` | `QO-119` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -128,9 +128,9 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G0` | Fin du référentiel | Jonathan confirme les documents et conventions | **Validée** le 27/07/2026 |
 | `G1` | Fin du socle local | Stack, CI et images validées | **FRANCHIE** le 12/08/2026 — tag `v0.1.0` posé sur `main` |
 | ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
-| `G3` | Fin de l'authentification | Sécurité et sessions validées | **Porte courante** — LOT 3 ouvert le 20/08/2026 (`DEC-518`), tag `v0.3.0` prévu. Plan : [`fiche-lot-3.md`](operations/fiche-lot-3.md), **12 sous-étapes soumises à validation** |
-| `G4` | Fin du portail national | Navigation et lecture inter-entités validées | Planifiée |
-| `G5` | Fin du trombinoscope | Profils et permissions validés | Planifiée |
+| ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
+| ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
+| `G5` | Fin du trombinoscope | Profils et permissions validés | **Porte courante** — LOT 5 ouvert le 24/08/2026 (`DEC-558`), tag `v0.5.0` prévu. Plan : [`fiche-lot-5.md`](operations/fiche-lot-5.md), **onze** sous-étapes depuis le 06/09/2026 (`DEC-564`) |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | Planifiée |
 | `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | Planifiée |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
@@ -190,12 +190,13 @@ Traçabilité GitHub en place (`DEC-449`) : 13 étiquettes, 15 milestones, epic 
 
 ---
 
-## 9. Avancement du LOT 3 — **lot ouvert**, porte `G3`
+## 9. Avancement du LOT 3 — **lot VERROUILLÉ**, porte `G3` franchie
 
-**Ouvert par Jonathan le 20 août 2026 (`DEC-518`), découpage validé le même jour.** Plan :
+**Ouvert par Jonathan le 20 août 2026 (`DEC-518`), découpage validé le même jour. VERROUILLÉ le
+22/08/2026 : les DOUZE sous-étapes faites, `G3` franchie (`DEC-540`), tag `v0.3.0`.** Plan :
 [`operations/fiche-lot-3.md`](operations/fiche-lot-3.md) — **12 sous-étapes, `T1` à `T12`**,
-8 stories dont **7 en `P0`**, les **7 tables** du modèle §10, tag `v0.3.0`.
-Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
+8 stories dont **7 en `P0`**, les **7 tables** du modèle §10.
+Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`, **les huit issues closes**.
 
 > **`T1` est le moindre privilège PostgreSQL, avant l'authentification elle-même** — arbitrage de
 > Jonathan, `DEC-518`. Motif : le LOT 3 est celui qui introduit l'accès extérieur, donc celui où
@@ -239,5 +240,64 @@ Traçabilité GitHub : epic `#62`, jalon `G3`, stories `#63` à `#70`.
 | `T10` | Contraintes de rôles et de périmètres | `MVP-L02-US005` | **Terminée** le 19/08/2026. **Deux des trois critères étaient DÉJÀ ACQUIS en `T8`** — vérifiés, non réimplémentés. **`ECART-032` ouvert** : le backlog interdit plus large que le cahier, la matrice **et** le modèle, qui restreignent tous au seul **Booster**. « DG implique DSM » appliqué comme **implication** — un déclencheur ne connaît pas l'attributeur et **inventerait une trace d'audit fausse**. Un **ombrage** de clé étrangère par un déclencheur `BEFORE` a inversé un test de `T6`. 11 tests, dont un sur une **non-action**. `DEC-514` |
 | `T11` | Isolation inter-entités | `MVP-L02-US006` | **Terminée** le 20/08/2026. **Aucune migration** : les 8 clés composites du §25.3 fermaient déjà tous les chemins locaux. **Ma première mesure ne prouvait rien** — une référence sans clé étrangère aurait donné la même observation ; le contrôle examine les **colonnes**, pas les contraintes. `MATCH SIMPLE` rend une clé composite **inerte** sur une colonne nulle : `T8-1` transposé. **Dépôts cloisonnés** dont les deux types ne peuvent se confondre, et le service qui referme `DEC-514`. 34 tests, témoin en CI. `DEC-515` |
 | `T12` | Factories, jeu de test et recette du modèle | `MVP-L02-US007`, `US008` | **Terminée** le 20/08/2026. **Trois contrôles qui prouvent ce que onze sous-étapes avaient fait à la main** : `migrations-check` compare le schéma d'une base **neuve** à celui qui tourne — 269 colonnes, 94 contraintes, 85 index, 8 déclencheurs **identiques** ; `recette-modele-check` **lit les 25 contrôles du §30** et exige leur classement, avec le test nommé dont l'existence est vérifiée ; l'absence de SQLite est cherchée comme un **usage**, jamais comme le mot. Jeu de **27 936 lignes**, toutes requêtes **sous 1,3 ms**. **373 tests**. `DEC-516`, [checklist `G2`](operations/checklist-validation-G2.md) |
+
+---
+
+## 11. Avancement du LOT 4 — **lot VERROUILLÉ**, porte `G4` franchie
+
+**Ouvert par Jonathan le 22 août 2026 (`DEC-541`), découpage en douze sous-étapes validé le même
+jour. VERROUILLÉ le 24/08/2026 : les DOUZE faites, `G4` franchie (`DEC-557`), tag `v0.4.0` posé sur
+`main`.** Plan : [`operations/fiche-lot-4.md`](operations/fiche-lot-4.md) — 7 stories, **six**
+critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/checklist-validation-G4.md).
+
+> **`US001` reste couverte par QUATRE sous-étapes** — `T1`, `T2`, `T6` et `T7` — donc son issue
+> **`#92` reste ouverte**. Une story qu'un seul lot n'achève pas ne se referme pas.
+
+| | Sous-étape | Story | État |
+|:--:|---|---|---|
+| `T1` | **Lister les entités, côté API** | `MVP-L04-US001` | **Terminée** le 22/08/2026. **La PREMIÈRE route métier du projet.** Le critère nommait **deux** états à exclure, le modèle en déclare **quatre** : `ECART-039`. Le filtre est **dérivé de l'énumération**, jamais écrit en littéral. `DEC-543`, `DEC-544` |
+| `T2` | **L'entité consultée : où elle vit** | `US001`, `US002` | **Terminée** le 22/08/2026. **Le §8 de la fiche annonçait un point ouvert que le cahier tranche** — `ECART-040` : on atterrit **toujours** sur la page nationale, donc une mémoire serveur du dernier choix n'aurait **aucun consommateur**. Et le §23.3 « Changement d'entité » donne **cinq** règles que la fiche ne citait pas. `DEC-545` |
+| `T3` | **Le cadre applicatif et les cinq largeurs** | `MVP-L04-US004` | **Terminée** le 23/08/2026. **Deux défauts qui vivaient depuis un mois** : le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne — `ECART-041`, `ECART-042` |
+| `T4` | **La navigation principale, au clavier** | `US004` | **Terminée** le 23/08/2026. **Deux défauts de plus, dans MES propres contrôles** : `ECART-043`, `ECART-044` |
+| `T5` | **La barre inférieure mobile** | `MVP-L04-US003` | **Terminée** le 23/08/2026 |
+| `T6` | **La page nationale : la liste accessible** | `US001` | **Terminée** le 23/08/2026. La page de statut passe à `/statut`, la nationale prend `/` (`DEC-549`) |
+| `T7` | **La carte de France illustrative** | `US001` | **Terminée** le 23/08/2026 |
+| `T8` | **Le changement d'entité, de bout en bout** | `US002` | **Terminée** le 24/08/2026. **QUATRE défauts, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, **n'a été vu que dans un navigateur** : les droits arrivés **avant** l'entité étaient perdus, l'API rendait la bonne valeur, l'écran ne l'affichait pas. **Un stub qui ne fixe pas l'ordre en fixe un quand même — celui de ton code.** Et une propriété qu'**aucun contrôle ne pouvait voir** a été rendue **structurelle** : §7.35 |
+| `T9` | **L'affichage conditionnel, et le témoin qui compte** | `MVP-L04-US005` | **Terminée** le 24/08/2026. Son garde-fou est prouvé par **12 tests**, pas par un contrôle de stack : `ECART-046` |
+| `T10` | **Les états d'erreur et la perte de connexion** | `MVP-L04-US006` | **Terminée** le 24/08/2026 |
+| `T11` | **Les composants du design system que ces écrans emploient** | `MVP-L04-US007` (`P1`) | **Terminée** le 24/08/2026 |
+| `T12` | **Recette, reclassements du §30 et checklist `G4`** | — | **Terminée** le 24/08/2026. Les **six** critères prouvés, [checklist](operations/checklist-validation-G4.md) remise. `DEC-557` |
+
+---
+
+## 12. Avancement du LOT 5 — **lot OUVERT**, porte `G5`
+
+**Ouvert par Jonathan le 24 août 2026 (`DEC-558`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-5.md`](operations/fiche-lot-5.md) — 8 stories, **sept** critères de sortie
+**dérivés**, tag `v0.5.0` prévu. Traçabilité GitHub : epic `#115`, jalon `G5`, stories `#116` à
+`#123`.
+
+> **LE DÉCOUPAGE EST PASSÉ DE DOUZE À ONZE SOUS-ÉTAPES LE 06/09/2026**, arbitrage de Jonathan,
+> `DEC-564`. `T5` et `T6` sont **fusionnées** : les deux moitiés de `US005` ne tiennent pas debout
+> séparément, et le motif est mesurable — **le critère « l'originale n'est jamais servie » serait
+> parfaitement satisfait par une route qui ne sert RIEN**. Nouvelle leçon `CLAUDE.md` §7.39.
+
+**`T1` à `T5` sont faites, six restent.** La prochaine est **`T7` — l'écriture dans son
+périmètre**, qui sera la **première écriture métier** du projet, donc le premier consommateur de la
+restriction du §5.1 et de `exiger_un_role_dans_l_entite`.
+
+| | Sous-étape | Story | État |
+|:--:|---|---|---|
+| `T1` | **Les trois tables de média et d'autorisation de photo** | — | **Terminée** le 24/08/2026. **Deux sections du modèle ont dû être CONFRONTÉES** : le §16.2 ne donne pas d'`entity_id` à `media_variant`, mais le §25.3 le prescrit pour toute table **locale** — sans lui, une variante pourrait pointer l'actif d'une **autre entité**. **`photo_authorization` reste globale**, et la dérivation du contrôle le confirme. **Aucune unicité sur `photo_authorization`**, et un test **fige l'absence**. **La borne « photo 10 Mo » n'est PAS en base** : une photo est une image, la distinction est un **usage**. Migration `0014`. `DEC-559`, `DEC-560` |
+| `T2` | **Le trombinoscope en lecture** | `MVP-L05-US001` | **Terminée** le 25/08/2026. **`taille` est un `IntEnum` et NON un `Literal`** : un paramètre d'URL arrive en **chaîne**, et `Literal[25, 50, 100]` **refuse** `"25"`. La route refusait **les trois tailles valides**, et **huit contrôles de refus restaient verts** — seul le témoin positif discrimine. Nouvelle leçon §7.37. **DEUX filtres, aucun redondant** : le §22.5 étape 5 « masquage du profil » n'est implémenté **nulle part**, donc un partant reste `published`. `DEC-561` |
+| `T3` | **Recherche et filtres** | `MVP-L05-US002` | **Terminée** le 26/08/2026. **Le critère nommait la mauvaise durée** — le §9.3 donne une **temporisation de saisie** de 300 ms, le §25.2 un **budget de réponse** de 800 ms au P95 : `ECART-050`. **CINQ filtres et non six** : l'axe « entité » **est** le `{code}` de la route. **La recherche ignore les accents** par une fonction **`IMMUTABLE`** — `unaccent` est `STABLE`, et un index bâti sur une fonction faussement déclarée immuable **se corrompt**. **DOUZE défauts, tous chez moi, et six dans la MESURE** : mon « P95 » était le **maximum**, mon compteur **fuyait un écouteur**, et j'ai posé des statistiques étendues sur une hypothèse **fausse** avant de les retirer. La vraie cause était les **tuples morts** du banc d'essai — 467 ms contre 0,5 ms. Nouvelle leçon §7.38. `DEC-562` |
+| `T4` | **La fiche profil** | `MVP-L05-US004` | **Terminée** le 26/08/2026. **Le critère renvoie à des règles que le corpus ne définit pas** : « chaque champ visible ou masqué selon la matrice », et la matrice ne définit **aucune** visibilité par champ — `ECART-051`. **Aucun champ n'est masqué, et un test FIGE l'absence** pour qu'un lot ultérieur doive la décider. **La cardinalité est prouvée par le SCHÉMA** : quatre contraintes d'**exclusion** rendent les `LEFT JOIN` sûrs, et un test **exige qu'elles existent toujours**. `DEC-563` |
+| `T5` | **Les miniatures**, ET `T6` **l'autorisation** — fusionnées | `MVP-L05-US005` | **Terminée** le 07/09/2026. **QUATRE conditions, chacune avec son refus ET son témoin** — et `withdrawn_at IS NULL` **ne suffit pas seul** : une autorisation datée du **futur** a elle aussi un retrait nul. **L'originale n'est jamais servie, et c'est STRUCTUREL** : la requête ne sélectionne pas `media_asset.object_key`, et la structure rendue n'a aucun champ qui puisse le porter. `make profil-check` le prouve **sur les OCTETS** — deux contenus distincts déversés dans MinIO, dont il est le **premier consommateur**. **La borne des 100 Ko est en base, au SEUL type `thumbnail`** — la porter sur les cinq casserait le LOT 11 — et un test la franchit **à l'octet**. **`T5` ne fabrique aucune miniature** : `ECART-052`, le §8.2 de la fiche lui attribuait le choix du **format**, qui appartient à qui les **produit**. `DEC-564` |
+| `T7` | **L'écriture dans son périmètre** | `MVP-L05-US006` | À faire — **la première écriture métier du projet** |
+| `T8` | **Archivage et restauration** | `MVP-L05-US007` | À faire |
+| `T9` | **L'historique organisationnel** | `MVP-L05-US008` | À faire |
+| `T10` | **Le trombinoscope à l'écran** : liste, pagination, carte retournable | `MVP-L05-US003` | À faire |
+| `T11` | **La page de profil à l'écran** | `US003`, `US004` | À faire |
+| `T12` | **Recette, reclassements du §30 et checklist `G5`** | — | À faire |
 
 ---

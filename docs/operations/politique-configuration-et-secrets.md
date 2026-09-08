@@ -25,15 +25,51 @@ Le versionnement d'un secret **empêche la validation de toute porte** (backlog 
 
 ---
 
-## 2. Statut du modèle : version 0.1
+## 2. Statut du modèle : **version 1.6, 84 variables** — `ECART-006` clos
 
-`.env.example` est livré en **version 0.1** au LOT 0. Il ne contient que des variables
-**traçables à une décision déjà validée**, chacune annotée de sa source documentaire et du
-lot où elle devient effective.
+`.env.example` a été livré en **version 0.1** au LOT 0, avec la seule limitation que le contenu
+exhaustif dépendait du LOT 1 : `ECART-006`, **clos en `T3` du LOT 1**.
 
-Il sera complété au LOT 1, quand les services seront réellement configurés. Cette limitation
-est enregistrée comme `ECART-006` : le contenu exhaustif dépend du LOT 1, alors que la story
-`MVP-L00-US007` est un livrable du LOT 0.
+**Il est aujourd'hui en version 1.6 et porte 84 variables**, chacune annotée de sa source
+documentaire et du lot où elle devient effective. Les compter, jamais les recopier :
+
+```bash
+grep -cE '^[A-Z_][A-Z0-9_]*=' .env.example                # 84 variables
+grep -cE '^[A-Z_][A-Z0-9_]*=CHANGE_ME' .env.example       # 9 encore a renseigner
+```
+
+> **`make env` NE RÉCONCILIE RIEN, et c'est la cause d'un défaut à chaque lot.** Il ne touche
+> **jamais** un `.env` existant — c'est voulu, il porte des secrets engendrés — donc une variable
+> ajoutée au modèle **après** la première création n'y arrive **jamais**. `make env-check` est la
+> parade : il **nomme** les manquantes, et il est dans `make check`.
+>
+> Mesuré : le `.env` de cette machine comptait **74 affectations contre 78** en `T7` du LOT 1 —
+> `APP_REVISION`, `LOG_MAX_SIZE` et `LOG_MAX_FILES` y manquaient depuis `T3` et `T4`. Le fichier
+> déclarait aussi **`APP_REVISION` deux fois**, en blocs identiques : dans un fichier de
+> configuration, **c'est la dernière qui gagne, en silence**, le jour où elles divergent.
+> `ECART-022`.
+
+**Deux valeurs `CHANGE_ME` ne sont pas engendrées, et ce n'est pas un oubli** :
+`IMPORT_SOURCE_RETENTION_DAYS` attend `QO-100` au LOT 9, `UPTIME_KUMA_PUSH_URL` attend le LOT 13.
+Les sept autres le sont par `make env`, sur 48 caractères (`DEC-461`).
+
+**Et cinq variables ne sont consommées par personne** — les seuils du cahier §20.2, `ECART-034`.
+Elles portent l'annotation qui le dit, plutôt que de laisser croire qu'elles agissent.
+
+### Les trois rôles PostgreSQL, et employer le mauvais coûte une heure
+
+Depuis `T1` du LOT 3 (`DEC-520`), quatre variables décrivent **deux comptes de moindre privilège**
+en plus du superutilisateur :
+
+| Variables | Compte | Ce qu'il peut |
+|---|---|---|
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` | `onboarding_app` | **tout** — `initdb` et `make roles-provision` seulement |
+| `POSTGRES_MIGRATIONS_USER` / `_PASSWORD` | `onboarding_migrations` | possède le schéma, crée et modifie les tables |
+| `POSTGRES_RUNTIME_USER` / `_PASSWORD` | `onboarding_runtime` | **lire et écrire des LIGNES** — rien de plus |
+
+L'API, le worker et **tous** les tests d'intégration emploient le troisième. Ce qu'il refuse est
+mesuré et testé : `CREATE TABLE`, `DROP TABLE`, `ALTER TABLE`, `CREATE ROLE`, et **`TRUNCATE`** —
+un DDL déguisé qui contourne les déclencheurs `ON DELETE`.
 
 Une variable ne doit **jamais** être ajoutée à ce fichier sans source validée. Si un besoin de
 configuration apparaît sans décision correspondante, c'est une décision à prendre, pas une
@@ -113,8 +149,23 @@ Exigences :
 
 ## 6. Garde-fous de démarrage
 
-Le cahier des charges §20.3 exige un refus de démarrage. Contrôles à implémenter au LOT 1
-(`MVP-L01-US002`, `MVP-L01-US003`) :
+Le cahier des charges §20.3 exige un refus de démarrage. **Les onze contrôles sont implémentés et
+testés depuis `T3` du LOT 1**, dans `apps/api/app/configuration/settings.py` : quatre dans tous les
+environnements, sept en production seule.
+
+> **Le message nomme la variable, JAMAIS sa valeur**, et un test l'éprouve. Un garde-fou qui
+> afficherait la valeur fautive écrirait un secret dans les journaux au moment précis où il
+> prétend protéger la configuration.
+>
+> **Chaque garde-fou a DEUX tests** : celui qui l'enfreint, et le **témoin** qui le respecte. Les
+> sept contrôles de production sont éprouvés **en forçant `APP_ENV=production`**, plus un test qui
+> prouve qu'ils **ne s'appliquent pas** en développement.
+>
+> **Et deux d'entre eux ne pouvaient pas se déclencher** : `SESSION_COOKIE_SECURE` et
+> `CSRF_PROTECTION_ENABLED` n'étaient **pas transmises au conteneur** — zéro occurrence, mesuré en
+> `T6` du LOT 3. Une variable déclarée n'est pas une variable transmise. Le garde-fou porte sur ce
+> que l'API **déclare** (`DEC-464`), et `make env-check` sur ce que le fichier contient ; **aucun
+> des deux ne vérifiait la frontière de processus**.
 
 ### 6.1 Dans tous les environnements
 
