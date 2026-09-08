@@ -23,8 +23,8 @@ d'agir.
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
 | **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` sont terminées**, six restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T7` du LOT 5 — les écrans de trombinoscope.** `T5` a livré la miniature : la liste **et** la fiche portent un champ `photo` qui est un **CHEMIN**, jamais des octets, et les écrans devront le suivre avec le cookie de session puis servir **l'avatar neutre du §21.2** sur `null` — **sans essayer de deviner laquelle des cinq causes**, ce que le §21.2 ne veut pas dire. **Deux choses qu'il faut savoir avant de commencer :** aucune miniature n'existe encore dans MinIO — `T5` n'en fabrique pas, c'est `MVP-L11-US005` au LOT 11 — donc la route rend **404 pour tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test ; et **aucune route ne permet de RETIRER une photo**, la lecture honore le retrait mais l'écriture appartient à `T8` ou au LOT 9. **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` ou après |
-| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : **8** · LOT 3 : **8, les huit issues closes** · **LOT 4 : 0 sur 7** — `US001` est couverte par `T1`, `T2`, `T6` et `T7`, donc son issue **#92 reste ouverte** |
+| **Prochaine action** | **`T7` du LOT 5 — L'ÉCRITURE DANS SON PÉRIMÈTRE** (`US006`, la matrice §6 exigible). **Ce n'est PAS les écrans** : ceux du trombinoscope sont `T10`, celui du profil `T11`. J'ai écrit « les écrans de trombinoscope » dans trois documents avant de **dériver le libellé de la fiche**, qui fait foi — §7.11, sur ce que j'écris moi-même. **`T7` est la PREMIÈRE écriture métier du projet**, donc le premier consommateur de la restriction du §5.1 — hors de son entité principale, une personne n'a que `EMP` — et de `exiger_un_role_dans_l_entite`, qui attend depuis le LOT 3. Ses critères : un DSM modifie **son** consultant, il est **refusé** sur un autre, et `OFFICE` est **refusé partout**. `T5` a livré la miniature : la liste **et** la fiche portent un champ `photo` qui est un **CHEMIN**, jamais des octets, et les écrans devront le suivre avec le cookie de session puis servir **l'avatar neutre du §21.2** sur `null` — **sans essayer de deviner laquelle des cinq causes**, ce que le §21.2 ne veut pas dire. **Et deux choses que `T5` laisse aux écrans de `T10` et `T11` :** aucune miniature n'existe encore dans MinIO — `T5` n'en fabrique pas, c'est `MVP-L11-US005` au LOT 11 — donc la route rend **404 pour tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test ; et **aucune route ne permet de RETIRER une photo**, la lecture honore le retrait mais l'écriture appartient à `T8` ou au LOT 9. **Et `exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'écriture — donc sur `T7` ou après |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 0 sur 8** — et c'est normal, aucune story du lot n'est achevée par une seule sous-étape. **Cette cellule annonçait « LOT 4 : 0 sur 7 » et « #92 reste ouverte » le 07/09/2026 : les SEPT sont closes, #92 depuis le 24/08 à 15:31 UTC**, à la porte `G4`. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` → **9**, et les neuf sont l'épic `#115` et les huit stories du LOT 5 |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
@@ -35,7 +35,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **85 cibles** documentées — `profil-check` est nouvelle. **`ECART-049` : 25 d'entre elles ne sont PAS dans `.PHONY`**. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **147 décisions** `DEC-418+` · **52 écarts** (**10 ouverts**) · **40 questions** (**33 ouvertes**) · **33 risques** `ROAD-RSK`. **Cinq de ces nombres étaient faux le 23/08/2026** — `ECART-021`, encore. `make docs-check` les **dérive** et **échoue** si l'un diverge : il a nommé les quatre incohérences de `ECART-038`, puis celles de `T1`, de `T2` et de `T5` |
+| Registres | **147 décisions** `DEC-418+` · **52 écarts** (**10 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 32 — DÉRIVÉS le 07/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -556,8 +556,8 @@ Aide            help
 >
 > `.env` sert le développement, `.env.recette` la recette — **déjà couvert par `.env.*` dans
 > `.gitignore`, vérifié par `git check-ignore`**. Le modèle reste **unique**, `.env.example`, plus un
-> **calque de différences versionné** par environnement : un second modèle de 79 variables
-> divergerait.
+> **calque de différences versionné** par environnement : un second modèle divergerait
+> — et le dire **sans nombre** est la formulation qui ne vieillit pas.
 >
 > **`make separations-check` exige que les DEUX stacks tournent.** C'est une exception bornée à
 > `DEC-440`, motivée : l'épreuve d'isolement réseau serait sans valeur si la cible était arrêtée.
@@ -2050,6 +2050,69 @@ dans MinIO, et le contrôle compare les **octets** — pas le code HTTP, pas la 
 `b'ORIGINAL-QUI-NE-DOIT-JAMAIS-SORTIR-ooooo'`. Un contrôle qui aurait vérifié « 200 et des octets »
 serait resté vert.
 
+---
+
+## 7.40 Un garde-fou écrit contre UNE instance ne couvre pas la CLASSE d'objets
+
+**Apport de la mise à jour documentaire de `T5` du LOT 5, et c'est le §7.34 appliqué non pas à un
+motif mais à un PÉRIMÈTRE.**
+
+`controler_totaux_decisions` a été écrit en `T8` du LOT 1 contre un défaut réel : les deux tableaux
+de synthèse du registre des décisions annonçaient **145** quand son corps en déclarait **150**. Le
+contrôle est bien écrit, il porte son motif dans son docstring, et **il est exact pour ce
+registre-là.**
+
+**Personne n'a demandé combien de registres existent.** Il y en a **six**, et **un seul était
+couvert**. Mesure du 07/09/2026 :
+
+| Registre | Annoncé | Déclaré |
+|---|---|---|
+| risques | **33**, et son §3 titré « `025` à `033` » | **34** — `ROAD-RSK-034` ouvert en `T8` du LOT 1 |
+| questions, dans `CLAUDE.md` §1 | « **40** questions (**33** ouvertes) » | **42**, dont 10 closes, donc **32** ouvertes |
+
+**Et la cellule fautive affirmait, dans la même phrase, que `make docs-check` DÉRIVE ces totaux.**
+C'est le §7.11 au carré : vérifie ce que la documentation affirme, y compris quand elle affirme
+qu'elle est protégée. `ECART-053`, `DEC-565`.
+
+> **La règle, sans jargon :** quand tu écris un garde-fou contre une instance, demande-toi
+> **combien d'objets de la même nature existent dans le dépôt**, et si le garde-fou les couvre
+> tous. « Six registres, un couvert » est la réponse qu'il fallait obtenir avant de considérer
+> `ECART-021` traité.
+>
+> **Et la parade qui dure est de DÉRIVER le périmètre, pas de l'étendre à la main.** La liste des
+> registres vient de `SEQUENCES`, qui pilote déjà la vérification des séquences : un septième
+> registre y entrera **sans que personne y pense**. Écrire les cinq chemins en dur aurait reproduit
+> exactement la faute que le contrôle corrige.
+
+**ET LE DÉFAUT ÉTAIT MASQUÉ PAR UN SECOND, PLUS INSIDIEUX : LE RELEVÉ NE VOYAIT PAS LES
+DÉCLARATIONS BARRÉES.**
+
+`identifiants_en_usage` exigeait l'identifiant **immédiatement** après le `|` ou le `#`. Une
+déclaration close — `| ~~`QO-072`~~ |`, `## ~~`ROAD-RSK-032`~~` — était donc **ignorée en
+silence** : 40 questions relevées pour 42, 33 risques pour 34.
+
+**Ma première version du nouveau contrôle comparait donc deux grandeurs différentes** — §7.0
+sixième proposition, dans le contrôle écrit pour cette classe. Elle accusait le registre des
+questions, qui était **juste**.
+
+**Et c'était un défaut DORMANT du contrôle de séquences, pas seulement de celui des totaux.** Le
+jour où l'identifiant le **plus haut** d'un registre serait clos et barré, le maximum relevé
+baisserait, le marqueur « prochain identifiant libre » serait jugé trop haut, et **un numéro
+pourrait être réutilisé** — ce que les règles de tenue interdisent absolument. Aucun registre n'est
+dans ce cas aujourd'hui, **et c'est exactement ce qui rendait le défaut invisible** : §7.31, une
+troisième fois.
+
+**Le témoin qui compte n'est pas un échec, c'est une ABSENCE d'échec.** Barrer une entrée qui ne
+l'était pas **ne change plus le compte** — 42 reste 42 — là où l'ancien relevé serait tombé à 41 et
+aurait fait échouer le contrôle sur des données **justes**. Les deux témoins d'échec, eux, ne
+prouvaient que la moitié de la correction.
+
+**Un dernier constat de la même passe, et il vaut pour toute mise à jour documentaire.** J'ai écrit
+« `T7` — les écrans de trombinoscope » dans **trois** documents, dont deux que je venais de
+rédiger. La fiche du lot dit « `T7` — **l'écriture dans son périmètre** », les écrans étant `T10` et
+`T11`. **Je l'ai trouvé en DÉRIVANT les libellés de la fiche** pour remplir un tableau, non en
+relisant. *Une relecture confirme ce qu'on croit ; une dérivation le contredit.*
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **7 ouverts sur 33**
@@ -2212,7 +2275,8 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 ├── CLAUDE.md                    ← ce document. AGENTS.md est un lien symbolique, NON VERSIONNÉ
 ├── README.md · CONTRIBUTING.md
 ├── Makefile                     ← cibles parametrees par ENVIRONNEMENT (T8, DEC-485)
-├── .env.example                 ← v1.2, 79 variables, aucun secret (ECART-022)
+├── .env.example                 ← v1.6, 84 variables, aucun secret. DERIVE :
+│                                 grep -cE '^[A-Z_][A-Z0-9_]*=' .env.example
 ├── .dockerignore                ← DEC-473. node_modules, .venv, caches, .env
 ├── .gitleaks.toml               ← regles taillees sur les formats de CE projet (T6)
 ├── .node-version · .python-version
@@ -2457,7 +2521,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **40 leçons** payées par **223 défauts nommés** — 71 + 44 + 57 + 19 + 32, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **41 leçons** payées par **223 défauts nommés** — 71 + 44 + 57 + 19 + 32, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

@@ -18,7 +18,7 @@
 | Lot | **LOT 5 — collaborateurs, profils et organisation**, ouvert le 24/08/2026 (`DEC-558`) |
 | Découpage | **onze** sous-étapes, et non douze : `T5` et `T6` sont **fusionnées** (`DEC-564`) |
 | Faites | `T1` à `T4`, **et `T5`** — il en reste **six** |
-| Prochaine | **`T7` — les écrans de trombinoscope** |
+| Prochaine | **`T7` — l'écriture dans son périmètre** (`US006`). **Corrigé le 07/09/2026** : j'avais écrit « les écrans de trombinoscope », qui sont `T10` et `T11`. Le libellé est **dérivé de la fiche**, et non de ma mémoire |
 
 **Pourquoi onze et non douze.** La fiche découpait `US005` en `T5` « les miniatures » et `T6`
 « l'autorisation ». Les deux moitiés ne tiennent pas debout séparément, et le motif est mesurable :
