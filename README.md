@@ -36,7 +36,7 @@ Au-dessus de ce socle :
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, et la **miniature de photo** avec son autorisation | LOT 5, `T1` à `T5` |
 
 **Ce qui n'existe pas encore :** aucun **écran** de collaborateur — les routes sont là, les écrans
-sont `T7` et `T10` — aucun cercle (LOT 6), aucun import CSV (LOT 9), et **aucune miniature n'est
+sont **`T10` et `T11`** — aucun cercle (LOT 6), aucun import CSV (LOT 9), et **aucune miniature n'est
 produite** : leur génération est `MVP-L11-US005`, au LOT 11. La route de photo rend donc **404 pour
 tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test.
 
@@ -70,7 +70,7 @@ make entites-check         # 13 controles — une entite par etat, les trois non
 make residu-check          # la suite d'integration, ET la preuve qu'elle ne laisse rien en base
 ```
 
-`make help` fait foi pour la liste complète — **85 cibles documentées**.
+`make help` fait foi pour la liste complète — **86 cibles documentées**.
 
 **Et la recette, depuis `T8`.** Elle tire les images publiées, donc elle exige un
 `docker login ghcr.io` — sans quoi elle **refuse de démarrer** plutôt que de se rabattre sur une
