@@ -43,10 +43,10 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, Query, Response, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.auth.dependances import exiger_une_session
+from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
     LONGUEUR_MAXIMALE_CODE,
@@ -55,6 +55,7 @@ from app.entities.routes import (
 from app.entities.services import resoudre_une_entite_active
 from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
+from app.people.ecriture import modifier_les_donnees_organisationnelles
 from app.people.modeles import SituationProfessionnelle
 from app.people.profil import CercleDuProfil, FicheProfil, ResponsabiliteDuProfil, lire_la_fiche
 from app.people.trombinoscope import (
@@ -64,6 +65,13 @@ from app.people.trombinoscope import (
     TailleDePage,
     lister_le_trombinoscope,
 )
+from app.permissions.dependances import exiger_un_role_dans_l_entite
+from app.permissions.perimetre import (
+    ROLES_D_ECRITURE,
+    ChampOrganisationnel,
+    resoudre_le_perimetre,
+)
+from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
@@ -72,6 +80,11 @@ from app.shared.errors import ErreurApplicative
 #  renommage, et la liste emettrait alors un chemin qui rend 404.
 journal = logging.getLogger("app.people")
 
+#  **UN SEUL LITTERAL POUR LES DEUX ROUTES.** Le `GET` de `T4` et le `PATCH`
+#  de `T7` servent la MEME ressource : deux litteraux identiques divergeraient
+#  au premier renommage, et l'un des deux resterait servi sans que rien ne le
+#  dise. Meme motif que `GABARIT_PHOTO`.
+GABARIT_FICHE: Final = "/entities/{code}/people/{appartenance}"
 GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
 
 
@@ -164,6 +177,79 @@ class FicheDuProfil(BaseModel):
     responsabilites: list[ResponsabiliteDeLaFiche]
     #  Meme regle que dans la liste : le chemin de la miniature, ou `None`.
     photo: str | None
+
+
+class DemandeDeModification(BaseModel):
+    """Les six champs du §10.2, tous FACULTATIFS, et la version attendue.
+
+    **`CHAMP ABSENT` ET `CHAMP NUL` NE SONT PAS LA MEME CHOSE, ET LA BASE LE
+    PROUVE.** Mesure du 09/09/2026 sur les six colonnes cibles : **seule**
+    `professional_status_assignment.client_id` est nullable. Un consultant en
+    intercontrat n'a pas de client, donc `client: null` est une valeur LEGITIME ;
+    un `metier: null` ne l'est pas, et la base le refuserait avec un message qui
+    ne dirait pas que la cause est une demande mal formee.
+
+    `model_fields_set` distingue les deux, et un nul explicite sur les cinq
+    colonnes non nullables est refuse en `422` **avant** d'atteindre la base.
+
+    **`extra="forbid"` PLUTOT QUE L'IGNORANCE PAR DEFAUT.** Un client qui
+    enverrait `presentation_courte` -- une ligne DISTINCTE du §6.1, hors du
+    perimetre de `T7` -- doit l'apprendre. L'ignorer en silence lui ferait croire
+    que sa modification a ete prise.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(
+        ge=1,
+        description=(
+            "La version lue sur la fiche. Cahier §18.4 : une version obsolete rend 409 "
+            "sans ecrasement silencieux."
+        ),
+    )
+    date_d_arrivee: dt.date | None = Field(default=None, description="Cahier §10.2")
+    metier: uuid.UUID | None = Field(default=None, description="`job_catalog_id`")
+    statut: SituationProfessionnelle | None = Field(default=None, description="§30.5")
+    client: uuid.UUID | None = Field(
+        default=None,
+        description=(
+            "`null` est une valeur LEGITIME : un intercontrat n'a pas de client. "
+            "C'est le seul des six champs dont la colonne soit nullable."
+        ),
+    )
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM")
+    cercle_principal: uuid.UUID | None = Field(default=None, description="§8.2")
+
+
+#  Les champs dont un `null` EXPLICITE est refuse, parce que leur colonne est
+#  `NOT NULL`. **DERIVE D'UNE MESURE, PAS D'UNE INTUITION** : les six colonnes
+#  ont ete lues dans `information_schema`, et `client_id` est la seule nullable.
+#
+#  Retirer une affectation sans la remplacer n'est pas « modifier » : ce serait
+#  cloturer sans ouvrir, et le §30.4 veut qu'un consultant actif AIT un DSM.
+#  L'operation existe peut-etre, mais elle n'est pas dans le §6.1 et donc pas ici.
+CHAMPS_SANS_NUL: Final[frozenset[ChampOrganisationnel]] = frozenset(ChampOrganisationnel) - {
+    ChampOrganisationnel.CLIENT
+}
+
+CODE_NUL_REFUSE: Final = "valeur_nulle_refusee"
+MESSAGE_NUL_REFUSE: Final = (
+    "Ce champ ne peut pas etre vide. Pour retirer une affectation, employez l'operation dediee."
+)
+
+
+class ReponseDeModification(BaseModel):
+    """Ce qui a change, et la version nouvelle a reutiliser.
+
+    **`champs_modifies` PEUT ETRE VIDE, ET CE N'EST PAS UNE ERREUR.** Une demande
+    qui redonne les valeurs courantes ne ferme aucune periode -- l'historique ne
+    doit pas se remplir de periodes d'une microseconde -- et la version ne monte
+    donc pas. Le dire vaut mieux que de rendre `200` sans expliquer pourquoi
+    l'historique n'a pas bouge.
+    """
+
+    version: int
+    champs_modifies: list[str]
 
 
 class ReponseDuTrombinoscope(BaseModel):
@@ -332,7 +418,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
         )
 
     @routeur.get(
-        "/entities/{code}/people/{appartenance}",
+        GABARIT_FICHE,
         dependencies=[Depends(exiger_une_session(parametres))],
         status_code=status.HTTP_200_OK,
         response_model=FicheDuProfil,
@@ -434,6 +520,152 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 if miniature is None
                 else chemin_de_la_photo(parametres.API_PREFIX, code, appartenance)
             ),
+        )
+
+    #  **LA FABRIQUE EST APPELEE UNE FOIS, AU MONTAGE.** Elle fige son
+    #  `frozenset` de roles et refuse une liste vide -- une route ainsi gardee
+    #  serait morte sans que rien ne le dise.
+    garde_d_ecriture = exiger_un_role_dans_l_entite(parametres, ROLES_D_ECRITURE)
+
+    @routeur.patch(
+        GABARIT_FICHE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeModification,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Deux causes, deux codes. `acces_refuse` : aucun role d'ecriture dans "
+                    "cette entite -- `EMP`, `NEW` et `OFFICE` sont dans ce cas, et le §6.2 "
+                    "le dit en clair pour `OFFICE`. `champ_hors_perimetre` : le role existe "
+                    "mais pas sur CETTE personne, ou pas sur CE champ -- un DSM sur le "
+                    "consultant d'un autre DSM, un Booster sur le DSM d'un membre."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite inconnue ou non active. Meme forme que la lecture."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : le profil a change depuis votre lecture -- cahier "
+                    "§18.4, « sans ecrasement silencieux ». `periode_incompatible` : une "
+                    "affectation POSTERIEURE existe, et l'ecrire chevaucherait un avenir "
+                    "decide ailleurs. La base refuse, elle n'arbitre pas."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`valeur_nulle_refusee` : seul `client` accepte `null`, les cinq autres "
+                    "colonnes etant `NOT NULL`. `valeur_refusee` : un statut `mission` exige "
+                    "un client et un `intercontract` n'en accepte aucun (§30.5)."
+                )
+            },
+        },
+        summary="Modifier les donnees organisationnelles d'un collaborateur",
+        description=(
+            "Les SIX champs que le cahier §10.2 nomme « donnees organisationnelles » : date "
+            "d'arrivee, metier, statut, client, DSM, cercle principal. Backlog "
+            "`MVP-L05-US006`.<br><br>"
+            "**Presentation courte, fun fact et cercles secondaires ne sont PAS ici** : ce sont "
+            "des lignes DISTINCTES du §6.1, avec leurs propres portees -- `NEW` peut modifier "
+            "son fun fact avant validation, ce qui n'est vrai d'aucun champ ci-dessus.<br><br>"
+            "**Les quatre relations historisees sont CLOTUREES puis REOUVERTES**, jamais "
+            "ecrasees : §23.4, et une contrainte d'exclusion par table le rend structurel."
+        ),
+    )
+    def modifier_le_profil(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[
+            uuid.UUID, Path(description="L'identifiant d'appartenance, rendu par la fiche")
+        ],
+        demande: DemandeDeModification,
+        requete: Request,
+        #  **LA DEPENDANCE EST PRISE EN PARAMETRE, PAS EN `dependencies`**, parce
+        #  que son verdict est utile : elle rend l'appelant, dont le service a
+        #  besoin pour `updated_by_person_id`. En `dependencies` sa valeur serait
+        #  jetee et il faudrait une seconde dependance pour la session.
+        #
+        #  **PREMIER CONSOMMATEUR DE `exiger_un_role_dans_l_entite`**, ecrite et
+        #  testee au `T9` du LOT 4 et sans emploi depuis : la matrice §5 ne
+        #  distingue aucun role en LECTURE, et la restriction du §5.1 porte sur
+        #  l'ECRITURE. Elle repond « cet appelant a-t-il un role d'ecriture ICI »
+        #  et refuse `EMP`, `NEW` et `OFFICE` avant toute transaction.
+        #  **`Depends` EN DEFAUT, PAS DANS `Annotated`, ET LE MOTIF EST MESURE.**
+        #  Ce module porte `from __future__ import annotations` : toute annotation
+        #  est une CHAINE, que Pydantic doit resoudre au montage. Or `parametres`
+        #  est une variable de FERMETURE du routeur, invisible au niveau module :
+        #  la forme `Annotated[SessionEtablie, Depends(fabrique(parametres, ...))]`
+        #  fait echouer la construction du schema OpenAPI avec
+        #  « is not fully defined ». C'est le piege de `T1` du LOT 4, que le
+        #  commentaire du `GET` voisin nomme deja.
+        #
+        #  **NI `ruff` NI `mypy` NE L'ONT VU** -- les deux passaient au vert. Seul
+        #  le montage de l'application l'a dit. §7.28 : lis ce que la cible FAIT.
+        #
+        #  Le `noqa` est ici JUSTIFIE, et c'est la forme que `permissions/routes.py`
+        #  emploie deja depuis le `T8` du LOT 4 : `B008` interdit un appel en
+        #  valeur par defaut, ce qui est precisement l'idiome de FastAPI.
+        #  **LE GARDE-FOU EST NOMME AU-DESSUS, ET C'EST CE QUI REND LA LIGNE
+        #  TENABLE.** `B008` produit DEUX diagnostics sur cette construction --
+        #  l'appel interieur ET `Depends` lui-meme -- et une exemption ne couvre
+        #  que sa propre ligne. Etale sur trois lignes, il en faudrait deux.
+        #  `permissions/routes.py` tient sur une seule depuis le `T8` du LOT 4 ;
+        #  nommer la fabrique rend la meme forme possible ici.
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeModification:
+        """Modifier les donnees organisationnelles — matrice §6.1 et §6.2."""
+        #  **LE JETON EST LU DANS LE COOKIE, PAS RECU DE LA DEPENDANCE.**
+        #  `SessionEtablie` ne le porte pas a dessein -- voir son docstring : le
+        #  faire circuler multiplierait les endroits d'ou il peut fuir vers un
+        #  journal. La deconnexion procede de la meme facon.
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        #  Le garde-fou a valide la session depuis ce meme cookie, donc il est la.
+        #  S'il manquait, passer `None` DESARMERAIT la barriere de jeton en
+        #  silence : on refuse plutot, avec le meme gabarit que les autres causes.
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        demandes = _lire_la_demande(demande)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            #  **LES PERMISSIONS SONT RESOLUES A NOUVEAU, ET DANS CETTE
+            #  TRANSACTION.** Le garde-fou a resolu les SIENNES, dans sa propre
+            #  connexion et a son propre instant : s'y fier ferait ecrire a `T2`
+            #  ce qui a ete autorise a `T1`. Ce n'est pas une seconde copie de la
+            #  regle -- c'est le meme appel, au bon instant et dans le bon
+            #  perimetre transactionnel.
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                cible=appartenance,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            modification = modifier_les_donnees_organisationnelles(
+                connexion,
+                entite=entite.id,
+                cible=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                demande=demandes,
+                perimetre=perimetre,
+                instant=instant,
+            )
+        return ReponseDeModification(
+            version=modification.version,
+            champs_modifies=sorted(champ.value for champ in modification.champs),
         )
 
     @routeur.get(
@@ -576,3 +808,33 @@ def _en_reponse(fiche: FicheProfil, *, photo: str | None) -> FicheDuProfil:
         responsabilites=[_responsabilite(r) for r in fiche.responsabilites],
         photo=photo,
     )
+
+
+def _lire_la_demande(demande: DemandeDeModification) -> dict[ChampOrganisationnel, object]:
+    """Les champs REELLEMENT presents dans le corps, et le refus des nuls interdits.
+
+    **`model_fields_set` EST LA SEULE FACON DE DISTINGUER `absent` DE `null`.**
+    Lire les attributs rendrait `None` dans les deux cas, et une demande qui ne
+    touche pas au client serait indistinguable d'une demande qui le retire.
+    """
+    presents: dict[ChampOrganisationnel, object] = {}
+    nuls_refuses: list[str] = []
+    for champ in ChampOrganisationnel:
+        if champ.value not in demande.model_fields_set:
+            continue
+        valeur = getattr(demande, champ.value)
+        if valeur is None and champ in CHAMPS_SANS_NUL:
+            nuls_refuses.append(champ.value)
+            continue
+        #  L'enumeration est rendue a sa VALEUR : la base porte une colonne
+        #  `character varying` avec un `CHECK`, pas un type `enum` natif
+        #  (`DEC-499`), et lui passer le membre laisserait psycopg deviner.
+        presents[champ] = valeur.value if isinstance(valeur, SituationProfessionnelle) else valeur
+    if nuls_refuses:
+        raise ErreurApplicative(
+            code=CODE_NUL_REFUSE,
+            message=MESSAGE_NUL_REFUSE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            details={"champs": sorted(nuls_refuses)},
+        )
+    return presents

@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import logging
 import uuid
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
@@ -61,7 +62,14 @@ from typing import TYPE_CHECKING, Final
 from fastapi import Request, Response, status
 
 from app.auth.comptes_de_service import Authentification, authentifier_un_jeton
-from app.auth.sessions import lire_et_rafraichir
+from app.auth.csrf import (
+    EN_TETE_JETON,
+    CsrfRefuse,
+    controler_l_origine,
+    controler_le_jeton,
+    origine_attendue,
+)
+from app.auth.sessions import empreinte_de_session, lire_et_rafraichir
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
@@ -83,6 +91,76 @@ MESSAGE_SCOPE_REFUSE: Final = (
 #  appelant lequel des cinq cas il a rencontre.
 CODE_SESSION_EXIGEE: Final = "session_refusee"
 MESSAGE_SESSION_EXIGEE: Final = "Aucune session valide. Connectez-vous pour continuer."
+
+journal = logging.getLogger("app.auth")
+
+CODE_CSRF_REFUSE: Final = "requete_refusee"
+MESSAGE_CSRF_REFUSE: Final = (
+    "Cette requete a ete refusee par la protection contre les requetes forgees. "
+    "Rechargez la page et recommencez."
+)
+
+
+def proteger_du_csrf(
+    parametres: Parametres, requete: Request, *, jeton_de_session: str | None = None
+) -> None:
+    """Appliquer les barrieres CSRF a une ecriture — cahier §7.4, §20.1, `DEC-531`.
+
+    **DEUX BARRIERES, ET LEUR PORTEE DIFFERE.** L'origine est controlee sur
+    TOUTES les ecritures ; le jeton seulement quand une session existe, parce
+    qu'un jeton suppose une session pour le delivrer.
+
+    **ELLE VIT ICI DEPUIS LE LOT 5 `T7`, ET LE DEPLACEMENT EST LE POINT.** Elle
+    etait `_proteger_du_csrf`, PRIVEE a `app/auth/routes.py`, ou elle n'a servi
+    qu'aux cinq ecritures d'authentification pendant deux lots. `T7` est la
+    PREMIERE ecriture metier du projet et a besoin de la meme regle.
+
+    En recopier une seconde version dans `app/people/` aurait donne **deux
+    regles pour une seule** : `DEC-466` a tranche cela pour le masquage,
+    `ECART-022` pour les modeles d'environnement, et les deux disent la meme
+    chose -- deux copies divergent au premier changement, et le jour ou l'une
+    oublie une barriere la faille est SILENCIEUSE.
+
+    `app/auth/dependances.py` est son foyer parce que c'est le module que les
+    routes METIER importent deja -- `exiger_une_session` et `exiger_un_scope` y
+    vivent. La mettre dans `csrf.py` aurait couple des primitives PURES,
+    testables sans FastAPI, a `Request` et a `Parametres`.
+
+    Args:
+        jeton_de_session: le jeton du cookie, si cette route en exige un. `None`
+            signifie « route amont » : seule l'origine est controlee.
+
+            **`SessionEtablie` NE LE PORTE PAS, ET C'EST VOULU** -- voir son
+            docstring : le faire circuler dans le code applicatif multiplierait
+            les endroits d'ou il peut fuir vers un journal. Une route metier lit
+            donc son cookie elle-meme, comme le fait la deconnexion.
+
+    Raises:
+        ErreurApplicative: 403, avec le meme gabarit pour les trois causes.
+    """
+    try:
+        controler_l_origine(
+            origine=requete.headers.get("origin"),
+            attendue=origine_attendue(parametres.PUBLIC_BASE_URL),
+        )
+        if jeton_de_session is not None:
+            controler_le_jeton(
+                presente=requete.headers.get(EN_TETE_JETON),
+                empreinte_de_session=empreinte_de_session(jeton_de_session),
+                cle=parametres.APP_SECRET_KEY,
+            )
+    except CsrfRefuse as refus:
+        #  Le motif interne est journalise, jamais rendu : distinguer les causes
+        #  dirait a un attaquant s'il s'est approche.
+        journal.warning(
+            "requete refusee par la protection CSRF",
+            extra={"resultat": "refus", "code_erreur": refus.motif},
+        )
+        raise ErreurApplicative(
+            code=CODE_CSRF_REFUSE,
+            message=MESSAGE_CSRF_REFUSE,
+            statut=status.HTTP_403_FORBIDDEN,
+        ) from None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

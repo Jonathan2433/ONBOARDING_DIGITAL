@@ -93,7 +93,11 @@ BORNE_MINIATURE_OCTETS = borne_du_module()
 CHEMIN_CONNEXION = "/api/v1/auth/connexion"
 CHEMIN_TROMBINOSCOPE = "/api/v1/entities/{code}/people"
 CHEMIN_PROFIL = "/api/v1/entities/{code}/people/{appartenance}"
+#  La MEME adresse que la fiche : le `GET` la lit, le `PATCH` de `T7` l'ecrit.
+CHEMIN_ECRITURE = CHEMIN_PROFIL
 CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
+CHEMIN_SESSION = "/api/v1/auth/session"
+EN_TETE_JETON = "X-CSRF-Token"
 CHEMIN_PHOTO = "/api/v1/entities/{code}/people/{appartenance}/photo"
 
 #  **DEUX CONTENUS DISTINCTS, ET C'EST CE QUI REND LE CRITERE MESURABLE.** Servir
@@ -217,16 +221,25 @@ def appeler(
     chemin: str,
     contexte: ssl.SSLContext,
     *,
-    charge: dict[str, str] | None = None,
+    charge: dict[str, object] | None = None,
     en_tetes: dict[str, str] | None = None,
+    methode: str | None = None,
 ) -> Reponse:
+    """Un aller-retour HTTP. `methode` n'est explicite que pour `PATCH`.
+
+    **`T7` DU LOT 5 A AJOUTE `methode`, ET SANS ELLE LE CONTROLE ETAIT MUET.**
+    La deduction « charge => POST, sinon GET » couvrait les six routes des lots
+    precedents ; la premiere ecriture METIER est un `PATCH`, et l'envoyer en
+    `POST` aurait rendu **405** -- un refus, donc un test de refus vert pour la
+    mauvaise raison. C'est le defaut `T2-3` en puissance.
+    """
     entetes = {"Content-Type": "application/json"} if charge is not None else {}
     entetes.update(en_tetes or {})
     requete = urllib.request.Request(  # noqa: S310 — https impose par `base`
         f"{base}{chemin}",
         data=json.dumps(charge).encode("utf-8") if charge is not None else None,
         headers=entetes,
-        method="POST" if charge is not None else "GET",
+        method=methode or ("POST" if charge is not None else "GET"),
     )
     try:
         with urllib.request.urlopen(  # noqa: S310
@@ -241,6 +254,7 @@ def poser_le_decor(
     marqueur: str,
     code_entite: str,
     adresse: str,
+    adresse_dsm: str,
     empreinte: str,
     algo: str,
     parametres_hachage: str,
@@ -288,9 +302,38 @@ def poser_le_decor(
       INSERT INTO entity_client (entity_id, client_id) VALUES (e, cl);
 
       -- Le DSM, sa responsabilite AVANT son affectation : la base l'exige.
+      --
+      -- **IL EST CONNECTABLE DEPUIS `T7`, ET SON ADRESSE EST SUR LE DOMAINE
+      -- AUTORISE.** Elle etait en `@x.test`, qui ne peut pas se connecter :
+      -- `ALLOWED_EMAIL_DOMAINS` filtre. Le motif de menage est `{{marqueur}}%`,
+      -- donc insensible au domaine -- verifie avant de changer.
+      --
+      -- **L'APPELANT SANS ROLE N'EST PAS TOUCHE, ET C'EST LE POINT.** Le
+      -- controle 5 prouve qu'AUCUN champ n'est masque a quelqu'un qui n'a « ni
+      -- appartenance, ni responsabilite, ni role technique » -- `ECART-051`.
+      -- Donner un role a cette personne-la aurait detruit ce temoin. `T7`
+      -- ajoute donc un SECOND compte connectable au lieu d'en modifier un.
       INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
-      VALUES ('{marqueur}-dsm@x.test', '{marqueur}-dsm@x.test', 'Dominique', 'Lesmanager',
+      VALUES ('{adresse_dsm}', '{adresse_dsm}', 'Dominique', 'Lesmanager',
               'active') RETURNING id INTO dm;
+      INSERT INTO user_account (person_id, account_type, state, failed_login_count)
+      VALUES (dm, 'ADMIN_LOCAL', 'active', 0) RETURNING id INTO c;
+      INSERT INTO admin_password_credential
+        (user_account_id, password_hash, algorithm, parameters, changed_at, must_change)
+      VALUES (c, '{empreinte}', '{algo}', '{parametres_hachage}'::jsonb, now(), FALSE);
+      -- **SON APPARTENANCE EST NECESSAIRE, ET LE GARDE-FOU L'A DIT.** Sans
+      -- elle, il n'a AUCUNE entite principale, et le §5.1 ne lui laisse que
+      -- `EMP` : les cinq epreuves d'ecriture rendaient `acces_refuse`. Le refus
+      -- etait JUSTE, c'est le decor qui etait incomplet -- et c'est exactement
+      -- le genre de constat que seul un controle A TRAVERS L'API produit.
+      --
+      -- **`profile_visibility` A `draft`, ET C'EST DELIBERE** : le controle 2
+      -- exige que la liste rende EXACTEMENT deux profils. Un DSM `published`
+      -- en ferait trois et casserait un temoin de `T2`. `draft` lui donne son
+      -- entite principale sans le faire entrer dans le trombinoscope.
+      INSERT INTO entity_membership (person_id, entity_id, arrival_date,
+        membership_state, professional_category, profile_visibility)
+      VALUES (dm, e, DATE '2025-01-01', 'active', 'consultant', 'draft');
       INSERT INTO framework_responsibility_assignment
         (person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at, ends_at)
       VALUES (dm, e, 'DSM', dm, now() - INTERVAL '30 days', NULL);
@@ -456,6 +499,8 @@ def main() -> int:
     ]
     domaine = domaines[0] if domaines else "exalt-company.com"
     adresse = f"{MARQUEUR}@{domaine}"
+    #  Le DSM est un SECOND compte connectable, sur le meme domaine autorise.
+    adresse_dsm = f"{MARQUEUR}-dsm@{domaine}"
     mot_de_passe = "un-mot-de-passe-de-verification-sans-portee"
     nom_cookie = env.get("SESSION_COOKIE_NAME", "exalt_session")
     code_entite = f"{MARQUEUR}-e"
@@ -492,6 +537,7 @@ def main() -> int:
             MARQUEUR,
             code_entite,
             adresse,
+            adresse_dsm,
             empreinte_mdp,
             ALGORITHME,
             json.dumps(parametres_hachage),
@@ -818,6 +864,241 @@ def main() -> int:
                 f"    ECHEC    photo sans session : {photo_anonyme.statut}, "
                 f"{len(photo_anonyme.corps)} o"
             )
+
+        # ==================================================================
+        #  LOT 5, `T7` — L'ECRITURE DANS SON PERIMETRE, story `MVP-L05-US006`
+        #
+        #  **LE DECOR DE `T4` DONNE LE COUPLE APPARIE POUR RIEN**, et c'est
+        #  pourquoi `T7` etend ce verificateur plutot que d'en ecrire un second
+        #  (§7.27, comme `T5`) : « Ada Complete » est RATTACHEE au DSM, « Rosa
+        #  Retiree » est active et NE L'EST PAS. Le refus et son temoin ne
+        #  different donc que par le rattachement -- ce qu'un `WHERE` trop large
+        #  ou trop etroit rendrait visible.
+        # ==================================================================
+
+        # --- 18. TEMOIN : le DSM se connecte et obtient son jeton CSRF --------
+        controles += 1
+        connexion_dsm = appeler(
+            arguments.base,
+            CHEMIN_CONNEXION,
+            contexte,
+            charge={"email": adresse_dsm, "mot_de_passe": mot_de_passe},
+        )
+        jeton_dsm = ""
+        for pose in connexion_dsm.cookies_poses:
+            if pose.startswith(f"{nom_cookie}="):
+                jeton_dsm = pose.split("=", 1)[1].split(";", 1)[0]
+        biscuit_dsm = {"Cookie": f"{nom_cookie}={jeton_dsm}"}
+        session_dsm = appeler(arguments.base, CHEMIN_SESSION, contexte, en_tetes=biscuit_dsm)
+        corps_session = session_dsm.json()
+        csrf = corps_session.get("jeton_csrf", "") if isinstance(corps_session, dict) else ""
+        if connexion_dsm.statut == 200 and jeton_dsm and csrf:
+            print("    ok       TEMOIN : le DSM se connecte, et `GET /auth/session` rend son jeton")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    connexion du DSM : {connexion_dsm.statut}, "
+                f"cookie {'oui' if jeton_dsm else 'NON'}, jeton {'oui' if csrf else 'NON'}"
+            )
+        ecriture_dsm = {**biscuit_dsm, EN_TETE_JETON: csrf, "Origin": arguments.base}
+
+        def periodes_de_metier(cible: str) -> list[str]:
+            _, brut = psql(
+                compose,
+                env,
+                "SELECT ends_at IS NULL FROM membership_job_assignment "  # noqa: S608
+                f"WHERE entity_membership_id = '{cible}' ORDER BY starts_at",
+            )
+            return [ligne.strip() for ligne in brut.splitlines() if ligne.strip()]
+
+        # --- 19. LE CRITERE : un DSM modifie SON consultant -------------------
+        controles += 1
+        avant = periodes_de_metier(appartenance)
+        _, brut_metier = psql(
+            compose,
+            env,
+            "SELECT id FROM job_catalog WHERE entity_id IN "  # noqa: S608
+            f"(SELECT id FROM entity WHERE code = '{code_entite}') "
+            f"AND code = '{MARQUEUR}-job'",
+        )
+        metier = valeur(brut_metier)
+        _, brut_version = psql(
+            compose,
+            env,
+            f"SELECT version FROM entity_membership WHERE id = '{appartenance}'",  # noqa: S608
+        )
+        version = int(valeur(brut_version) or 0)
+        #  Le metier CHANGE : on repose le meme catalogue apres avoir CLOS la
+        #  periode courante par une premiere ecriture. Plus simple et plus
+        #  discriminant : on modifie la DATE D'ARRIVEE, qui est une colonne, puis
+        #  on verifie que la version a monte -- et on modifie le METIER pour
+        #  verifier la cloture-reouverture.
+        ecrit = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": version, "date_d_arrivee": "2026-03-01"},
+            en_tetes=ecriture_dsm,
+            methode="PATCH",
+        )
+        corps_ecrit = ecrit.json()
+        modifies = corps_ecrit.get("champs_modifies") if isinstance(corps_ecrit, dict) else None
+        if ecrit.statut == 200 and modifies == ["date_d_arrivee"]:
+            print(
+                "    ok       LE CRITERE : un DSM modifie SON consultant — 200, et la reponse "
+                "nomme le champ ecrit"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    ecriture du DSM : {ecrit.statut}, {str(corps_ecrit)[:160]}")
+
+        # --- 20. LE REFUS APPARIE : le MEME DSM sur un consultant NON rattache -
+        controles += 1
+        refus_autre = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=retiree),
+            contexte,
+            charge={"version": 1, "date_d_arrivee": "2026-03-01"},
+            en_tetes=ecriture_dsm,
+            methode="PATCH",
+        )
+        corps_autre = refus_autre.json()
+        code_autre = (
+            corps_autre.get("erreur", {}).get("code") if isinstance(corps_autre, dict) else None
+        )
+        if refus_autre.statut == 403 and code_autre == "champ_hors_perimetre":
+            print(
+                "    ok       le MEME DSM est REFUSE sur un consultant non rattache — 403 "
+                "`champ_hors_perimetre` (§6.2)"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    refus attendu : {refus_autre.statut}, {str(corps_autre)[:140]}")
+
+        # --- 21. AUCUN ROLE D'ECRITURE : le garde-fou de role refuse ----------
+        controles += 1
+        session_sans_role = appeler(arguments.base, CHEMIN_SESSION, contexte, en_tetes=biscuit)
+        corps_ssr = session_sans_role.json()
+        csrf_sans_role = corps_ssr.get("jeton_csrf", "") if isinstance(corps_ssr, dict) else ""
+        refus_role = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": 1, "date_d_arrivee": "2026-03-01"},
+            en_tetes={**biscuit, EN_TETE_JETON: csrf_sans_role, "Origin": arguments.base},
+            methode="PATCH",
+        )
+        corps_role = refus_role.json()
+        code_role = (
+            corps_role.get("erreur", {}).get("code") if isinstance(corps_role, dict) else None
+        )
+        if refus_role.statut == 403 and code_role == "acces_refuse":
+            print(
+                "    ok       sans role d'ecriture : 403 `acces_refuse` — c'est le cas d'`OFFICE`, "
+                "dont la colonne du §6.1 est ENTIEREMENT a tiret"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    refus de role : {refus_role.statut}, {str(corps_role)[:140]}")
+
+        # --- 22. sans session, l'ecriture refuse ------------------------------
+        controles += 1
+        anonyme = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": 1, "date_d_arrivee": "2026-03-01"},
+            en_tetes={"Origin": arguments.base},
+            methode="PATCH",
+        )
+        if anonyme.statut == 401:
+            print("    ok       sans session : 401 — aucune ecriture n'est ouverte a `ANON`")
+        else:
+            echecs += 1
+            print(f"    ECHEC    ecriture anonyme : {anonyme.statut}")
+
+        # --- 23. sans jeton CSRF, l'ecriture refuse ---------------------------
+        controles += 1
+        sans_csrf = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": 1, "date_d_arrivee": "2026-03-01"},
+            en_tetes={**biscuit_dsm, "Origin": arguments.base},
+            methode="PATCH",
+        )
+        corps_csrf = sans_csrf.json()
+        code_csrf = (
+            corps_csrf.get("erreur", {}).get("code") if isinstance(corps_csrf, dict) else None
+        )
+        if sans_csrf.statut == 403 and code_csrf == "requete_refusee":
+            print(
+                "    ok       sans jeton CSRF : 403 `requete_refusee` — PREMIER emploi de la "
+                "protection sur une route METIER, et la regle n'a pas ete recopiee"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    CSRF : {sans_csrf.statut}, {str(corps_csrf)[:140]}")
+
+        # --- 24. une version OBSOLETE rend 409, et rien n'est ecrit -----------
+        controles += 1
+        etat_avant = periodes_de_metier(appartenance)
+        obsolete = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": 1, "metier": metier},
+            en_tetes=ecriture_dsm,
+            methode="PATCH",
+        )
+        corps_obs = obsolete.json()
+        code_obs = corps_obs.get("erreur", {}).get("code") if isinstance(corps_obs, dict) else None
+        if (
+            obsolete.statut == 409
+            and code_obs == "version_obsolete"
+            and periodes_de_metier(appartenance) == etat_avant
+        ):
+            print(
+                "    ok       version OBSOLETE : 409 `version_obsolete`, et l'historique est "
+                "INCHANGE — §18.4, « sans ecrasement silencieux »"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    version obsolete : {obsolete.statut}, {str(corps_obs)[:140]}")
+
+        # --- 25. un champ INCONNU est refuse, jamais ignore -------------------
+        controles += 1
+        inconnu = appeler(
+            arguments.base,
+            CHEMIN_ECRITURE.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            charge={"version": 2, "presentation_courte": "hors perimetre"},
+            en_tetes=ecriture_dsm,
+            methode="PATCH",
+        )
+        if inconnu.statut == 422:
+            print(
+                "    ok       champ INCONNU : 422 — `presentation_courte` est une AUTRE ligne du "
+                "§6.1, et l'ignorer ferait croire la modification prise"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    champ inconnu : {inconnu.statut}, {str(inconnu.json())[:140]}")
+
+        #  **ET LE TEMOIN QUI REND LE COUPLE NON TRIVIAL, EN BASE** : `avant` a
+        #  ete releve avant toute ecriture, et le metier n'a PAS ete modifie ici
+        #  -- le controle 24 l'a refuse sur une version obsolete. L'historique du
+        #  metier doit donc etre strictement identique.
+        controles += 1
+        if periodes_de_metier(appartenance) == avant:
+            print(
+                "    ok       l'historique du metier est INTACT apres deux refus — aucune "
+                "periode fantome n'a ete ouverte"
+            )
+        else:
+            echecs += 1
+            print("    ECHEC    l'historique du metier a bouge alors que tout a ete refuse")
+
     finally:
         mc(compose, f"mc rm --force local/{bucket}/{cle_miniature} >/dev/null 2>&1 || true")
         mc(compose, f"mc rm --force local/{bucket}/{cle_originale} >/dev/null 2>&1 || true")
@@ -829,8 +1110,8 @@ def main() -> int:
         return 1
     print(
         "  --> la fiche profil sert les champs du §10.2, n'en masque aucun, suit "
-        "exactement la population du trombinoscope, et sert la MINIATURE — jamais "
-        "l'originale"
+        "exactement la population du trombinoscope, sert la MINIATURE — jamais "
+        "l'originale — et un DSM n'ecrit QUE dans son perimetre"
     )
     return 0
 
