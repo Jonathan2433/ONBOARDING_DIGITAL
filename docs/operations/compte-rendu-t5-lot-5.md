@@ -445,8 +445,8 @@ mieux qu'une page cassée, et le LOT 11 n'aura rien à défaire.
 | **le format des variantes n'est pas tranché** | volontairement, `ECART-052`. Le LOT 11 le choisira, et `_MIMES` de `app/media/photo.py` accueille déjà les formats courants |
 | **le retrait de photo n'a aucune ROUTE** | `US005` dit « retrait possible ». La **lecture** honore le retrait — prouvé par deux contrôles — mais **rien ne permet de retirer** : cela suppose un écran et une écriture, donc `T8` (back-office de profil) ou le LOT 9. **À nommer à la porte `G5`** |
 | **`exiger_un_role_dans_l_entite` attend TOUJOURS son premier consommateur** | inchangé depuis `T1` : la matrice §5 ne distingue aucun rôle en lecture, et la restriction du §5.1 porte sur l'**écriture**. Donc `T7` ou après |
-| **`ECART-049` reste ouvert** | 25 des 85 cibles du `Makefile` ne sont pas dans `.PHONY`. La correction juste est de **dériver** `.PHONY`, pas de recopier 25 noms |
-| **le champ `photo` est un CHEMIN** | les écrans de `T7` devront le suivre avec le cookie de session, et servir l'avatar neutre du §21.2 sur `null`. **Ne pas essayer de deviner laquelle des cinq causes** : le §21.2 ne veut pas le dire |
+| **`ECART-049` reste ouvert** | **26** des 85 cibles du `Makefile` ne sont pas dans `.PHONY` — dérivé le 08/09/2026, et ce paragraphe annonçait 25. La correction juste est de **dériver** `.PHONY`, pas de recopier 26 noms |
+| **le champ `photo` est un CHEMIN** | les écrans de **`T10` et `T11`** devront le suivre avec le cookie de session, et servir l'avatar neutre du §21.2 sur `null`. **Ne pas essayer de deviner laquelle des cinq causes** : le §21.2 ne veut pas le dire |
 
 ---
 

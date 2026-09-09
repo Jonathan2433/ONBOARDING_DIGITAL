@@ -126,11 +126,16 @@ LA RECHERCHE ET LES FILTRES — `T3`
 
 CE QUE `T3` NE FAIT TOUJOURS PAS
 
-  La ligne rendue ne porte **ni photo, ni metier, ni statut affiches**. Les cinq
-  relations servent a **filtrer**, pas a enrichir la reponse : le §10.1 veut un
-  verso « informations professionnelles principales », et c'est `T10` qui
-  l'affichera, avec ce que `T4` aura defini pour la fiche. La photo attend `T5`
-  et `T6`.
+  La ligne rendue ne porte **ni metier, ni statut affiches**. Les cinq relations
+  servent a **filtrer**, pas a enrichir la reponse : le §10.1 veut un verso
+  « informations professionnelles principales », et c'est `T10` qui l'affichera,
+  avec ce que `T4` a defini pour la fiche.
+
+  **LA PHOTO, ELLE, EST LA DEPUIS `T5`** : la ligne porte `a_une_photo`, un
+  booleen issu d'un `EXISTS`, et la route en calcule le huitieme champ expose --
+  voir `COLONNES_EXPOSEES` plus bas. Ce paragraphe disait « la photo attend `T5`
+  et `T6` » jusqu'au 08/09/2026, alors que le commentaire de `COLONNES_EXPOSEES`
+  disait deja l'inverse, vingt lignes plus loin. `ECART-054`.
 """
 
 from __future__ import annotations

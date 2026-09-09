@@ -58,7 +58,7 @@ export interface ResponsabiliteDuProfil {
   readonly bureau: string | null;
 }
 
-/** La fiche profil complete — les champs du §10.2, moins la photo. */
+/** La fiche profil complete — les champs du §10.2, ET la photo depuis `T5`. */
 export interface FicheDuProfil {
   readonly id: string;
   readonly personneId: string;

@@ -210,7 +210,7 @@ ETIQUETTE_LOCALE := onboarding-local
         env env-check up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
         web-check caddy-reload caddy-recreate docs-check sources-check sources-temoin \
-        audit alembic-check test-frontend \
+        audit alembic-check test-frontend docs-temoin \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
@@ -377,6 +377,14 @@ test-frontend: ## Tests frontend seuls (Vitest, sans dependance externe)
 # ECART-021, quatre nombres du corpus n'etaient pas derives de leur source.
 docs-check: ## Verifier l'integrite des documents immuables et les sequences d'identifiants
 	@python3 infra/scripts/verifier-documentation.py
+
+# Existe a cause de ECART-054 : `docs-check` etait exact pour les six registres et
+# AVEUGLE a la passation, si bien que `CLAUDE.md` a annonce `DEC-541` libre alors que
+# `DEC-565` etait en usage -- une collision d'identifiant garantie pour qui s'y fierait.
+# Le controle a ete etendu ; ce temoin prouve qu'il MORD. Il travaille sur des copies
+# en repertoire temporaire et ne touche jamais le depot.
+docs-temoin: ## Temoin negatif du controle de documentation et de la passation
+	@python3 infra/scripts/temoin-documentation.py
 
 # Existe a cause de T1 du LOT 5 : le module `apps/api/app/media/` a ete ecrit et
 # teste, `make check` est sorti en 0, et `git add -A` ne l'a PAS ajoute -- la

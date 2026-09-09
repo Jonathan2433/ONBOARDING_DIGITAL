@@ -31,7 +31,7 @@ treize mois :
 ```bash
 ls infra/scripts/ | grep -cE '\.(py|sh)$'      # 42
 ls infra/scripts/ | grep -cE '^verifier-'      # 32
-grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile      # 85 cibles documentees
+grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile      # 86 cibles documentees
 ```
 
 > **Ni `postgres/init/` ni `minio/` n'existent, et c'est délibéré.** Les extensions PostgreSQL

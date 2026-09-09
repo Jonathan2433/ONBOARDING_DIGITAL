@@ -47,6 +47,38 @@ RACINE = Path(__file__).resolve().parents[2]
 REFERENCE_EMPREINTES = RACINE / "docs/operations/integrite-et-conformite-documents.md"
 INDEX = RACINE / "docs/README.md"
 
+#  **LA PASSATION EST LE DOCUMENT LE PLUS LU DU PROJET, ET RIEN NE LE VERIFIAIT.**
+#  `CLAUDE.md` est ce que lit en entier tout agent qui prend le relais : il resume
+#  les six registres et reannonce les six « prochain identifiant libre ». Mesure du
+#  08/09/2026 : SEIZE affirmations fausses, dont deux qui font AGIR de travers --
+#  la regle n°1 du §2 nommait le LOT 4 comme ouvert et INTERDISAIT le LOT 5, qui
+#  etait le lot ouvert ; et le tableau §4.14 annoncait `DEC-541` et `ECART-038`,
+#  soit 25 et 16 de retard, donc une COLLISION d'identifiant garantie.
+#
+#  `ECART-053` avait etendu ce controle aux six REGISTRES. Il n'a pas demande
+#  quels AUTRES documents affirment les memes nombres -- c'est le §7.40 d'un cran
+#  plus haut : un garde-fou ecrit contre une instance ne couvre pas la classe, et
+#  la classe n'etait pas « les registres », c'etait « ce qui annonce leurs
+#  totaux ». `ECART-054`.
+PASSATION = RACINE / "CLAUDE.md"
+
+#  Le mot sous lequel la passation designe chaque sequence.
+#
+#  **C'EST UNE INTERPRETATION, DONC ELLE EST DECLAREE ET EXIGEE.** Rien dans le
+#  corpus ne lie le prefixe `DEC` au mot « decisions » : le deriver serait une
+#  heuristique sur de la prose, ce que le §7.25 nomme un defaut. Elle est donc
+#  ecrite ici -- et le controle EXIGE de trouver chaque entree : un mot
+#  introuvable est un ECHEC, jamais un silence, sans quoi renommer une cellule
+#  desarmerait le controle en le laissant vert. §7.0, troisieme proposition.
+NOMS_DANS_LA_PASSATION: dict[str, str] = {
+    "DEC": "décisions",
+    "ECART": "écarts",
+    "QO": "questions",
+    "ROAD-RSK": "risques",
+    "DEP": "dépendances",
+    "CONT": "contenus",
+}
+
 EMPREINTES_ATTENDUES = 5
 
 # Une sequence d'identifiants : son prefixe, le registre qui fait foi, et le
@@ -73,6 +105,36 @@ SEQUENCES: tuple[tuple[str, str], ...] = (
 MOTIF_TOTAL_DE_REGISTRE = re.compile(
     r"^\|\s*\*\*Total\*\*\s*\|(?:\s*\|)*\s*\*\*(?P<total>\d+)\*\*\s*\|", re.M
 )
+
+#  **UNE SECONDE FORME, PARCE QU'UN REGISTRE MET SON TOTAL DANS LE LIBELLE.**
+#  Le registre des ecarts ecrit « | Total 53 | 10 | 40 | 3 | » : le motif
+#  ci-dessus ne le voit pas, si bien que ce registre etait RAPPORTE comme non
+#  couvert -- honnetement, §7.20 -- et son total n'a jamais ete confronte a son
+#  corps. C'est exactement par la que « 52 ecarts » a survecu dans `CLAUDE.md`.
+#
+#  **MESURE AVANT AJOUT, parce qu'un garde-fou a faux positifs est pire
+#  qu'aucun (§7.25) :** applique aux six registres, ce motif attrape UNE seule
+#  ligne, celle des ecarts. Zero faux positif -- et notamment aucun des quatre
+#  « **Total outillage** », « **Total mesure** » du registre des questions, que
+#  l'ancrage en debut de ligne et l'espace avant le chiffre ecartent tous.
+MOTIF_TOTAL_DANS_LE_LIBELLE = re.compile(r"^\|\s*\*{0,2}Total\s+(?P<total>\d+)\*{0,2}\s*\|", re.M)
+
+
+def total_annonce(texte: str) -> re.Match[str] | None:
+    """Le total du tableau de TETE, quelle que soit des deux formes il emploie.
+
+    **LE PLUS TOT DANS LE DOCUMENT GAGNE, ET C'EST LE POINT.** Plusieurs lignes
+    « Total » sont legitimes ailleurs dans un registre -- le registre des
+    questions en porte une pour la memoire des services -- donc en exiger une
+    seule serait un faux positif. Ce qui distingue le tableau de tete n'est pas
+    son unicite mais sa POSITION, et c'est cela qu'on lit.
+    """
+    trouves = [
+        m
+        for m in (MOTIF_TOTAL_DE_REGISTRE.search(texte), MOTIF_TOTAL_DANS_LE_LIBELLE.search(texte))
+        if m is not None
+    ]
+    return min(trouves, key=lambda m: m.start()) if trouves else None
 
 
 def identifiants_en_usage(texte: str, prefixe: str) -> set[int]:
@@ -156,18 +218,33 @@ def marqueurs_declares(texte: str, prefixe: str) -> list[tuple[int, int]]:
     return trouves
 
 
-def index_declare(texte: str, prefixe: str) -> int | None:
-    """Lire le « prochain libre » que l'index de docs/README.md annonce."""
+def prochain_declare_en_tableau(texte: str, prefixe: str) -> list[tuple[int, int]]:
+    """TOUS les « prochain libre » qu'un tableau `PREFIXE-nnn` annonce.
+
+    **UNE SEULE PRIMITIVE POUR DEUX DOCUMENTS**, et ce n'est pas de l'economie :
+    l'index de `docs/README.md` §4 et le tableau §4.14 de la passation portent la
+    MEME regle, et deux copies d'une meme regle divergent au premier changement --
+    `DEC-466` pour le masquage, `ECART-022` pour les modeles d'environnement.
+
+    Les deux formes ne differaient que par la mise en gras : la passation ecrit
+    « **`DEC-566`** », l'index « `DEC-566` ». L'ancien motif n'admettait pas les
+    `**`, donc il rendait `None` sur les six lignes de la passation -- il ne
+    l'accusait pas a tort, il ne la lisait PAS DU TOUT, ce qui est pire : un
+    controle qui ne voit rien ne dit rien.
+
+    Rend une LISTE, comme `marqueurs_declares`, pour que les appelants puissent
+    exiger l'unicite : deux tableaux qui concordent aujourd'hui divergent le jour
+    ou une sous-etape n'en met qu'un a jour. §7.31.
+    """
     motif = re.compile(
         r"^\|\s*`"
         + re.escape(prefixe)
-        + r"-nnn`\s*\|.*?\|\s*`?"
+        + r"-nnn`\s*\|.*?\|\s*\*{0,2}`?"
         + re.escape(prefixe)
-        + r"-0*(\d+)`?\s*\|",
+        + r"-0*(\d+)`?\*{0,2}\s*\|",
         re.M,
     )
-    trouve = motif.search(texte)
-    return int(trouve.group(1)) if trouve else None
+    return [(texte[: m.start()].count("\n") + 1, int(m.group(1))) for m in motif.finditer(texte)]
 
 
 def controler_empreintes() -> tuple[int, int]:
@@ -224,7 +301,8 @@ def controler_sequences() -> tuple[int, int]:
         attendu = max(en_usage) + 1
         marqueurs = marqueurs_declares(texte, prefixe)
         du_registre = marqueurs[0][1] if marqueurs else None
-        de_l_index = index_declare(index, prefixe)
+        de_l_index_tous = prochain_declare_en_tableau(index, prefixe)
+        de_l_index = de_l_index_tous[0][1] if len(de_l_index_tous) == 1 else None
 
         ecarts = []
         if len(marqueurs) > 1:
@@ -233,7 +311,9 @@ def controler_sequences() -> tuple[int, int]:
         elif du_registre != attendu:
             annonce = nommer(prefixe, du_registre) if du_registre else "rien"
             ecarts.append(f"le registre annonce {annonce}")
-        if de_l_index != attendu:
+        if len(de_l_index_tous) != 1:
+            ecarts.append(f"l'index en declare {len(de_l_index_tous)} au lieu d'un seul")
+        elif de_l_index != attendu:
             annonce = nommer(prefixe, de_l_index) if de_l_index else "rien"
             ecarts.append(f"l'index annonce {annonce}")
 
@@ -491,7 +571,7 @@ def controler_totaux_des_registres() -> tuple[int, int]:
         texte = chemin.read_text(encoding="utf-8")
         declares = len(identifiants_en_usage(texte, prefixe))
 
-        annonce = MOTIF_TOTAL_DE_REGISTRE.search(texte)
+        annonce = total_annonce(texte)
         if annonce is None:
             sans_total.append(f"{prefixe} ({declares} declares)")
             continue
@@ -529,13 +609,111 @@ def controler_totaux_des_registres() -> tuple[int, int]:
     return controles, fautes
 
 
+def controler_la_passation() -> tuple[int, int]:
+    """La passation annonce-t-elle les nombres que les registres DECLARENT ?
+
+    Deux familles par sequence, et elles ne se remplacent pas :
+
+    1. le COMPTE, dans la cellule « Registres » du §1 -- « **148 decisions** » ;
+    2. le PROCHAIN LIBRE, dans le tableau §4.14 -- « **`DEC-566`** ».
+
+    **LA SECONDE EST CELLE QUI FAIT AGIR DE TRAVERS.** Un compte faux trompe un
+    lecteur ; un « prochain libre » faux fait REUTILISER un numero, ce que les
+    regles de tenue interdisent absolument. Mesure du 08/09/2026 : la passation
+    annoncait `DEC-541` et `ECART-038`, soit 25 et 16 de retard.
+
+    **LE PERIMETRE EST DERIVE DE `SEQUENCES`, PAS ECRIT A LA MAIN.** Une septieme
+    sequence entrera dans ce controle sans que personne y pense -- et ecrire les
+    six a la main serait exactement la faute que ce controle corrige. C'est la
+    parade du §7.40, appliquee au controle ecrit POUR le §7.40.
+    """
+    print()
+    print("  Ce que la passation CLAUDE.md annonce des registres (ECART-054)")
+    texte = PASSATION.read_text(encoding="utf-8")
+    controles = 0
+    fautes = 0
+
+    for prefixe, chemin_relatif in SEQUENCES:
+        registre = (RACINE / chemin_relatif).read_text(encoding="utf-8")
+        en_usage = identifiants_en_usage(registre, prefixe)
+        if not en_usage:
+            print(f"    ECHEC    {prefixe:9s} aucun identifiant releve dans {chemin_relatif}")
+            fautes += 1
+            controles += 2
+            continue
+        declares = len(en_usage)
+        prochain_attendu = max(en_usage) + 1
+
+        #  1. LE COMPTE de la cellule « Registres » du §1.
+        nom = NOMS_DANS_LA_PASSATION[prefixe]
+        motif = re.compile(r"\*\*(\d+)\s+" + re.escape(nom) + r"\*\*")
+        annonces = [
+            (texte[: m.start()].count("\n") + 1, int(m.group(1))) for m in motif.finditer(texte)
+        ]
+        controles += 1
+        if len(annonces) != 1:
+            fautes += 1
+            ou = " ; ".join(f"ligne {ligne} -> {valeur}" for ligne, valeur in annonces) or "aucune"
+            print(
+                f"    ECHEC    {prefixe:9s} « **N {nom}** » : {len(annonces)} occurrence(s) "
+                f"au lieu d'une seule ({ou})"
+            )
+        elif annonces[0][1] != declares:
+            fautes += 1
+            print(
+                f"    ECHEC    {prefixe:9s} la passation annonce {annonces[0][1]} {nom} "
+                f"a la ligne {annonces[0][0]}, le registre en declare {declares}"
+            )
+        else:
+            print(f"    ok       {prefixe:9s} {declares} {nom}, comme le registre")
+
+        #  2. LE PROCHAIN LIBRE du tableau §4.14.
+        marqueurs = prochain_declare_en_tableau(texte, prefixe)
+        controles += 1
+        if len(marqueurs) != 1:
+            fautes += 1
+            ou = (
+                " ; ".join(f"ligne {ligne} -> {nommer(prefixe, v)}" for ligne, v in marqueurs)
+                or "aucune"
+            )
+            print(
+                f"    ECHEC    {prefixe:9s} {len(marqueurs)} ligne(s) `{prefixe}-nnn` "
+                f"au lieu d'une seule ({ou})"
+            )
+        elif marqueurs[0][1] != prochain_attendu:
+            fautes += 1
+            print(
+                f"    ECHEC    {prefixe:9s} la passation annonce "
+                f"{nommer(prefixe, marqueurs[0][1])} libre a la ligne {marqueurs[0][0]}, "
+                f"or {nommer(prefixe, max(en_usage))} est en usage — "
+                f"COLLISION : {nommer(prefixe, prochain_attendu)} est le prochain"
+            )
+        else:
+            print(
+                f"    ok       {prefixe:9s} prochain libre "
+                f"{nommer(prefixe, prochain_attendu)}, comme le registre"
+            )
+
+    #  **L'ATTENDU EST DERIVE, ET CONFRONTE.** Deux controles par sequence : sans
+    #  cette confrontation, un motif qui cesserait de matcher annoncerait
+    #  « 0 controle, 0 echec » et passerait au vert. §7.0, troisieme proposition.
+    attendu = 2 * len(SEQUENCES)
+    if controles != attendu:
+        fautes += 1
+        print(f"    ECHEC    {controles} controle(s) executes, {attendu} attendus")
+    else:
+        print(f"\n    sequences examinees : {len(SEQUENCES)}   controles : {controles}")
+    return controles, fautes
+
+
 def main() -> int:
     empreintes, fautes_empreintes = controler_empreintes()
     sequences, fautes_sequences = controler_sequences()
     totaux, fautes_totaux = controler_totaux_decisions()
     autres, fautes_autres = controler_totaux_des_registres()
+    passation, fautes_passation = controler_la_passation()
 
-    fautes = fautes_empreintes + fautes_sequences + fautes_totaux + fautes_autres
+    fautes = fautes_empreintes + fautes_sequences + fautes_totaux + fautes_autres + fautes_passation
     print()
     if fautes:
         # stdout vide AVANT d'ecrire sur stderr : sans cela le verdict remonte
@@ -546,8 +724,9 @@ def main() -> int:
         return 1
     print(
         f"  --> {empreintes} documents immuables intacts, "
-        f"{sequences} sequences d'identifiants coherentes et "
-        f"{totaux + autres} controles de totaux derives"
+        f"{sequences} sequences d'identifiants coherentes, "
+        f"{totaux + autres} controles de totaux derives "
+        f"et {passation} controles sur la passation"
     )
     return 0
 

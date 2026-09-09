@@ -119,7 +119,13 @@ class ResponsabiliteDuProfil:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class FicheProfil:
-    """Les treize champs du §10.2, moins la photo, qui attend `T6`."""
+    """Les treize champs du §10.2, moins la photo, que la ROUTE resout a part.
+
+    **« MOINS LA PHOTO » EST EXACT ICI, ET NE L'EST PAS DANS LA REPONSE.** Cette
+    structure de domaine n'en porte aucune ; `_en_reponse` la recoit en argument
+    et la joint. Le libelle disait « qui attend `T6` » -- une sous-etape que
+    `DEC-564` a fusionnee dans `T5`, laquelle a livre la photo.
+    """
 
     id: uuid.UUID
     person_id: uuid.UUID

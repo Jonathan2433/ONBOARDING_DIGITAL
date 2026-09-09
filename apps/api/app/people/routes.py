@@ -138,7 +138,7 @@ class ResponsabiliteDeLaFiche(BaseModel):
 
 
 class FicheDuProfil(BaseModel):
-    """Les champs du §10.2, moins la photo.
+    """Les champs du §10.2, ET la photo depuis `T5` -- un CHEMIN, jamais des octets.
 
     **AUCUN CHAMP N'EST MASQUE**, et ce n'est pas un oubli : la matrice ne definit
     aucune visibilite par champ. Le motif complet est dans l'en-tete de
@@ -355,7 +355,8 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
         },
         summary="Consulter la fiche profil complete d'un collaborateur",
         description=(
-            "Les champs du cahier §10.2, moins la photo — elle attend `T5` et `T6`. "
+            "Les champs du cahier §10.2, ET la photo depuis `T5` — un CHEMIN vers la "
+            "MINIATURE, ou `null` pour l'avatar neutre du §21.2. "
             "Exige une session : la matrice §5 donne « Fiches collaborateur », « Statut "
             "mission/intercontrat » et « Client actif » en LECTURE aux huit roles "
             "authentifies, sans distinction. "
