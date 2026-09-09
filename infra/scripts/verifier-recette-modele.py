@@ -187,12 +187,32 @@ CLASSEMENT: dict[int, Classement] = {
     #  repartit ces medias entre deux lots selon leur USAGE. §7.24 -- relire une
     #  regle ne suffit pas, il faut confronter les regles entre elles. `ECART-047`.
     #
-    #  **IL RESTE `REPORTE`, ET C'EST DELIBERE.** `T1` cree les tables ; c'est `T6`
-    #  qui posera le service refusant la publication sans autorisation active --
-    #  le §25.4 rangeant cette regle parmi celles qui exigent « service ou trigger
-    #  controle ». Le passer `ACQUIS` maintenant nommerait un test qui n'existe pas,
-    #  et le controle exige que chaque preuve nomme un test QUI EXISTE.
-    12: Classement(12, REPORTE, lot="LOT 5 `T6` — autorisations de photo de profil"),
+    #  **IL ETAIT `REPORTE` AVEC POUR ECHEANCE « LOT 5 `T6` », ET `T6` N'EXISTE
+    #  PLUS.** `DEC-564` l'a fusionnee dans `T5` le 06/09/2026, et `T5` a livre le
+    #  service. L'echeance a survecu trois jours en nommant une sous-etape morte,
+    #  et ce controle passait au vert : il exige que chaque contrôle soit CLASSE,
+    #  pas que son echeance designe une sous-etape REELLE. §7.31, encore une fois --
+    #  exact pour un mode de defaillance, aveugle a un autre.
+    #
+    #  **IL EST ACQUIS DEPUIS `T5`**, et les trois tests nommes couvrent les deux
+    #  sens : le refus des cinq causes, le temoin positif, et le temoin TEMPOREL ou
+    #  seul l'instant avance. `make profil-check` le prouve de plus sur les OCTETS.
+    12: Classement(
+        12,
+        ACQUIS,
+        preuve=(
+            "LOT 5 `T5` — la resolution de la miniature exige une autorisation ACTIVE "
+            "(§12.2), et `null` couvre CINQ causes indistinguables : pas d'autorisation, "
+            "retiree, pas encore active, media non `ready`, aucune variante. "
+            "`make profil-check` le prouve sur les OCTETS, et son controle 16 exerce "
+            "l'autorisation RETIREE."
+        ),
+        tests=(
+            "test_les_cinq_causes_donnent_TOUTES_un_avatar_neutre",
+            "test_LE_TEMOIN_la_miniature_autorisee_est_resolue",
+            "test_l_autorisation_FUTURE_devient_servable_le_jour_venu",
+        ),
+    ),
     13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
     14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),
     15: Classement(15, REPORTE, lot="LOT 7 — reouverture d'une tache"),
