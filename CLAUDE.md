@@ -2226,6 +2226,38 @@ mêmes registres.
 > version **recopiait** les chaînes du corpus au lieu de les dériver. `ECART-021`, dans le témoin
 > écrit pour `ECART-054`. La démonstration la plus courte possible du §7.27.
 
+---
+
+## 7.41 Un test qu'on t'annonce comme devant céder est une PRÉDICTION, pas une mesure
+
+**Apport de `T8` du LOT 5, et c'est le §9.0 retourné contre ce document-ci.**
+
+Ce document disait, en toutes lettres et dans sa cellule « Prochaine action » : « **`T7` lui laisse
+DEUX TESTS À CASSER, ET C'EST LEUR RÔLE** […] `T8` devra la relâcher **délibérément**, et deux tests
+l'y obligeront. » La formulation était juste sur le mécanisme — c'est bien le §7.32, un test vaut
+mieux qu'un commentaire pour forcer une décision — et **fausse sur la décision à prendre**.
+
+| Le test qui « devait céder » | Pourquoi il avait raison de tenir |
+|---|---|
+| le trombinoscope exclut les archivés, **même pour `SUPER`** | le §6.1 lui donne la ligne « profil **actif** ». « Consulter un profil archivé » est une **autre** ligne, à **trois** rôles : deux droits que le document sépare |
+| `resoudre_le_perimetre` refuse une cible archivée | on ne **modifie** pas un archivé, on le **restaure**. Le refus est exact |
+
+La bonne forme n'était pas de relâcher, c'était d'**ajouter à côté** : une seconde route servant une
+seconde population, avec sa propre grille de rôles. Les deux tests sont restés verts, et le §6.1 est
+suivi de plus près qu'il ne l'aurait été en élargissant le premier.
+
+> **La règle, sans jargon :** quand une passation, un commentaire ou un test te dit « le lot suivant
+> devra me casser », il t'annonce qu'une **décision** t'attend — pas laquelle. **Va lire la source
+> qui a fait poser ce test, et demande-toi si la décision n'est pas d'en écrire un second.** Un test
+> qu'on relâche perd sa preuve ; un test qu'on double la garde et en ajoute une.
+
+**Et le corollaire porte sur ce document.** Le §9.0 apprend à se méfier de ce que les documents
+**affirment** ; celui-ci ajoute qu'il faut se méfier de ce qu'ils **prévoient**. Une affirmation se
+vérifie par la mesure ; une prévision de conception ne se vérifie que **contre le corpus**, au
+moment de la faire.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **10 ouverts**, dérivés du registre le 08/09/2026 (le total est au §1)
@@ -2338,9 +2370,9 @@ sont faites**.
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le lot est ouvert et son découpage est validé** — onze sous-étapes, `DEC-558` puis `DEC-564`. Il
-n'y a donc plus de découpage à proposer : il y a `T7` à faire, puis `T8` à `T12`.
+n'y a donc plus de découpage à proposer : il y a `T9` à faire, puis `T10` à `T12`.
 
-1. **Lire la fiche §3 pour le libellé et le critère de `T7`**, et le backlog `MVP-L05-US006` pour son
+1. **Lire la fiche §3 pour le libellé et le critère de `T9`**, et le backlog `MVP-L05-US008` pour son
    critère d'acceptation. **Dériver les libellés de la fiche, ne pas les relire de mémoire** : trois
    documents ont annoncé « `T7` — les écrans de trombinoscope » alors que les écrans sont `T10` et
    `T11`, et la dérivation seule l'a démenti (`ECART-053`, puis `ECART-054`).
@@ -2348,15 +2380,17 @@ n'y a donc plus de découpage à proposer : il y a `T7` à faire, puis `T8` à `
    fiche porte un piège **mesuré** : la colonne `OFFICE` du §6.1 est **entièrement à tiret**, et
    l'erreur serait de lui accorder des droits parce qu'il figure dans les autres tableaux.
 3. **Vérifier les points du §8 de la fiche contre le cahier avant d'instruire quoi que ce soit.**
-   Trois fois sur quatre au LOT 3, et une fois de plus au LOT 4, la décision était déjà prise
-   ailleurs — §7.29, cinq occurrences.
+   Trois fois sur quatre au LOT 3, une fois de plus au LOT 4, et une sixième en `T8` du LOT 5 —
+   §7.29, **six occurrences**. La dernière portait sur le mot « **Conditionnel** » du §6.1 : il
+   ressemble à une case vide, et `ARB-DROIT-003` nomme la condition.
 
-**Et trois choses attendent toujours leur premier consommateur** — `T7` en fournira deux :
+**Il ne reste plus qu'UNE chose sans consommateur, et deux ont été consommées :**
 
-| Livré, sans consommateur | Où c'est |
+| État | Où c'est |
 |---|---|
-| **`exiger_un_role_dans_l_entite`** | `apps/api/app/permissions/dependances.py`, écrit et **testé** au LOT 4, `T9`. **Aucune route ne l'emploie** : la matrice §5 ne distingue aucun rôle en **lecture**, et la restriction du §5.1 porte sur l'**écriture**. Donc `T7` |
-| la **protection CSRF sur une route métier** | `apps/api/app/auth/routes.py`, `_proteger_du_csrf` — employée par les **cinq** écritures d'authentification et par rien d'autre. **Mesuré le 08/09/2026 : hors `auth/`, les onze routes du projet sont toutes des `GET`**, donc `T7` est bien la première écriture métier |
+| ~~**`exiger_un_role_dans_l_entite`**~~ | **CONSOMMÉE en `T7`**, puis une seconde fois en `T8` — avec une **autre** grille de rôles, parce que le §6.1 en porte deux : `ROLES_D_ECRITURE` (cinq rôles) et `ROLES_DU_CYCLE_DE_VIE` (trois) |
+| ~~la **protection CSRF sur une route métier**~~ | **CONSOMMÉE en `T7`**, la première écriture métier, puis par les deux `POST` de `T8`. Elle vit dans `app/auth/dependances.py` et ne doit **jamais** être recopiée (`DEC-466`) |
+| **`exiger_un_scope`** | `apps/api/app/auth/dependances.py`, LOT 3 `T9`. **Attend toujours** : c'est la dépendance des **comptes de service**, qui liront des profils au **LOT 9** |
 | le **rafraîchissement de session** | `GET …/auth/session` reste la seule écriture n'exigeant pas de jeton — **résiduel nommé depuis le LOT 3, à réexaminer** |
 
 ---
@@ -2655,7 +2689,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **41 leçons** payées par **234 défauts nommés** — 71 + 44 + 57 + 19 + 43, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **42 leçons** payées par **234 défauts nommés** — 71 + 44 + 57 + 19 + 43, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
