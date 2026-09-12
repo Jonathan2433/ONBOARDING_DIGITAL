@@ -103,6 +103,8 @@ CHEMIN_PHOTO = "/api/v1/entities/{code}/people/{appartenance}/photo"
 CHEMIN_ARCHIVAGE = "/api/v1/entities/{code}/people/{appartenance}/archivage"
 CHEMIN_RESTAURATION = "/api/v1/entities/{code}/people/{appartenance}/restauration"
 CHEMIN_FICHE_ARCHIVEE = "/api/v1/entities/{code}/people/{appartenance}/fiche-archivee"
+#  Le chemin de `T9`.
+CHEMIN_HISTORIQUE = "/api/v1/entities/{code}/people/{appartenance}/historique"
 
 #  **DEUX CONTENUS DISTINCTS, ET C'EST CE QUI REND LE CRITERE MESURABLE.** Servir
 #  l'original au lieu de la miniature donnerait un 200 et des octets dans les
@@ -284,7 +286,7 @@ def poser_le_decor(
     return f"""
     DO $$
     DECLARE p uuid; e uuid; c uuid; m uuid; cl uuid; jc uuid; ci uuid; d uuid; dm uuid;
-            ma uuid; es uuid;
+            ma uuid; es uuid; jp uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone)
       VALUES ('{code_entite}', 'Entite {marqueur}', 'Bordeaux', 'FR', 'active', 'Europe/Paris')
@@ -378,6 +380,15 @@ def poser_le_decor(
         professional_category, profile_visibility, short_bio, fun_fact)
       VALUES (d, e, DATE '2026-01-15', 'active', 'consultant', 'published',
               'Ingenieure passionnee.', 'Joue du theorbe.') RETURNING id INTO m;
+      -- **UN METIER PASSE, CLOS, POSE PAR `T9`.** Sans lui le decor n'a AUCUNE
+      -- periode close avant l'archivage de `T8`, et « l'historique rend le
+      -- PASSE » ne serait prouve par rien : toutes les periodes seraient
+      -- ouvertes, ce qu'une requete sans historique rendrait aussi.
+      INSERT INTO job_catalog (entity_id, code, label, display_order, active)
+      VALUES (e, '{marqueur}-job-ancien', 'Developpeuse', 1, TRUE) RETURNING id INTO jp;
+      INSERT INTO membership_job_assignment (entity_id, entity_membership_id, job_catalog_id,
+        starts_at, ends_at)
+      VALUES (e, m, jp, now() - INTERVAL '400 days', now() - INTERVAL '30 days');
       INSERT INTO membership_job_assignment (entity_id, entity_membership_id, job_catalog_id,
         starts_at, ends_at) VALUES (e, m, jc, now() - INTERVAL '30 days', NULL);
       INSERT INTO professional_status_assignment (entity_id, entity_membership_id, status,
@@ -548,7 +559,7 @@ def main() -> int:
     contexte.verify_mode = ssl.CERT_NONE
 
     print()
-    print("  Fiche profil, ecriture et cycle de vie — US004, US006, US007, cahier §10.2")
+    print("  Fiche profil, ecriture, cycle de vie et historique — US004, US006, US007, US008")
     print(f"    info     origine {arguments.base}")
     print(f"    info     marqueur : {MARQUEUR}")
     print(
@@ -1210,7 +1221,154 @@ def main() -> int:
             return 1
         cycle_esm = {**biscuit_esm, EN_TETE_JETON: csrf_esm, "Origin": arguments.base}
 
-        # --- 28. sans session, l'archivage refuse -----------------------------
+        # ==================================================================
+        #  LOT 5, `T9` — L'HISTORIQUE ORGANISATIONNEL, story `MVP-L05-US008`
+        #
+        #  **CES CONTROLES VIENNENT AVANT CEUX DE `T8`, ET LA MESURE L'A IMPOSE.**
+        #  Je les avais places apres, pour profiter des periodes que l'archivage
+        #  clot. Resultat : le DSM du decor rendait **404** sur son propre
+        #  consultant -- et il avait raison. L'archivage avait clos son
+        #  `dsm_assignment`, la restauration ne l'a pas rouvert, donc il n'etait
+        #  plus le DSM de personne. Le controle etait juste, l'ordre etait faux.
+        #
+        #  **C'est une consequence REELLE de `T8`, pas un artefact de decor** : un
+        #  DSM perd l'acces a l'historique de son ancien consultant des que
+        #  celui-ci est archive puis restaure sans reaffectation. `period @>
+        #  instant` le veut, et le §6.2 aussi -- « SES consultants » se lit au
+        #  present. C'est nomme au compte rendu.
+        #
+        #  Le decor porte donc un metier PASSE, clos, pose pour cette sous-etape :
+        #  sans lui, aucune periode close n'existerait ici, et « l'historique rend
+        #  le PASSE » ne serait prouve par rien.
+        # ==================================================================
+
+        chemin_historique = CHEMIN_HISTORIQUE.format(code=code_entite, appartenance=appartenance)
+
+        # --- 28. LE CRITERE : l'ESM lit les CINQ axes -------------------------
+        controles += 1
+        histoire = appeler(arguments.base, chemin_historique, contexte, en_tetes=biscuit_esm)
+        corps_h = histoire.json()
+        h = corps_h if isinstance(corps_h, dict) else {}
+        axes_attendus = {"metier", "statut", "cercle", "dsm", "responsabilites"}
+        closes_lues = [
+            p
+            for axe in ("metier", "statut", "cercle", "dsm")
+            for p in (h.get(axe) or [])
+            if p.get("fin") is not None
+        ]
+        if (
+            histoire.statut == 200
+            and set(h) == axes_attendus
+            and all(h.get(axe) is not None for axe in axes_attendus)
+            and closes_lues
+        ):
+            print(
+                f"    ok       LE CRITERE : l'ESM lit les {len(axes_attendus)} axes — et "
+                f"{len(closes_lues)} periode(s) CLOSES y figurent : le PASSE est bien "
+                "rendu, non les seules affectations courantes"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    historique de l'ESM : {histoire.statut}, axes {sorted(h)}, "
+                f"{len(closes_lues)} periode(s) closes"
+            )
+
+        # --- 29. AUCUNE COLONNE TECHNIQUE dans les OCTETS SERVIS --------------
+        #
+        #  **CE CONTROLE PORTE SUR LA CHARGE UTILE, PAS SUR LES STRUCTURES.** Le
+        #  test unitaire fige les champs des dataclasses ; celui-ci lit ce qui
+        #  sort REELLEMENT de Caddy. Les deux sont necessaires : une structure
+        #  propre servie par un serialiseur bavard rendrait quand meme les
+        #  colonnes, et rien d'autre ne le dirait.
+        controles += 1
+        interdits = (
+            "created_at",
+            "updated_at",
+            "created_by_person_id",
+            "updated_by_person_id",
+            "assigned_by_person_id",
+            "archived_at",
+            "version",
+        )
+        texte_servi = histoire.corps.decode("utf-8", "replace")
+        trouves = [mot for mot in interdits if mot in texte_servi]
+        if not trouves:
+            print(
+                f"    ok       AUCUNE des {len(interdits)} colonnes techniques ne parait dans "
+                "les octets servis — « sans exposer les audits techniques », §16.2"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    colonnes techniques servies : {trouves}")
+
+        # --- 30. le DSM lit SON consultant, SANS l'axe des responsabilites ----
+        controles += 1
+        histoire_dsm = appeler(arguments.base, chemin_historique, contexte, en_tetes=biscuit_dsm)
+        corps_hd = histoire_dsm.json()
+        hd = corps_hd if isinstance(corps_hd, dict) else {}
+        if (
+            histoire_dsm.statut == 200
+            and set(hd) == axes_attendus
+            and hd.get("responsabilites") is None
+            and hd.get("dsm") is not None
+        ):
+            print(
+                "    ok       le DSM lit SON consultant, et `responsabilites` vaut `null` — "
+                "le §20 reserve l'historique des roles a l'ESM, l'ADM-E et le SUPER, et le "
+                "§23.2 fait prevaloir la regle la plus etroite"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    historique du DSM : {histoire_dsm.statut}, axes {sorted(hd)}, "
+                f"responsabilites={hd.get('responsabilites')!r}"
+            )
+
+        # --- 31. LE REFUS APPARIE : le MEME DSM sur un consultant non rattache -
+        controles += 1
+        histoire_autre = appeler(
+            arguments.base,
+            CHEMIN_HISTORIQUE.format(code=code_entite, appartenance=retiree),
+            contexte,
+            en_tetes=biscuit_dsm,
+        )
+        if histoire_autre.statut == 404:
+            print(
+                "    ok       LE REFUS APPARIE : le MEME DSM sur un consultant NON rattache — "
+                "404, la meme forme qu'une appartenance inexistante : distinguer apprendrait "
+                "de qui l'on n'est pas responsable"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    le DSM devrait etre refuse : {histoire_autre.statut}")
+
+        # --- 32. sans role d'historique : 403, c'est le cas d'`EMP` -----------
+        controles += 1
+        histoire_sans_role = appeler(arguments.base, chemin_historique, contexte, en_tetes=biscuit)
+        if histoire_sans_role.statut == 403:
+            print(
+                "    ok       sans role d'historique : 403 — la ligne « Audit » du §5 met "
+                "`EMP` et `NEW` a TIRET, et le responsable de bureau n'obtient rien sur les "
+                "profils (§6.2)"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    un appelant sans role devrait etre refuse : "
+                f"{histoire_sans_role.statut}"
+            )
+
+        # --- 33. sans session : 401 ------------------------------------------
+        controles += 1
+        histoire_anonyme = appeler(arguments.base, chemin_historique, contexte)
+        if histoire_anonyme.statut == 401:
+            print("    ok       sans session : 401 — la matrice §5 refuse `ANON`")
+        else:
+            echecs += 1
+            print(f"    ECHEC    historique sans session : {histoire_anonyme.statut}")
+
+        # --- 34. sans session, l'archivage refuse -----------------------------
         controles += 1
         sans_session = appeler(
             arguments.base, chemin_archivage, contexte, charge={"version": version_courante()}
@@ -1221,7 +1379,7 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    archivage sans session : {sans_session.statut}")
 
-        # --- 29. sans jeton CSRF, l'archivage refuse --------------------------
+        # --- 35. sans jeton CSRF, l'archivage refuse --------------------------
         controles += 1
         sans_jeton = appeler(
             arguments.base,
@@ -1241,7 +1399,7 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    archivage sans jeton CSRF : {sans_jeton.statut}")
 
-        # --- 30. LE REFUS APPARIE : le MEME DSM qui a ECRIT au 19 est REFUSE ---
+        # --- 36. LE REFUS APPARIE : le MEME DSM qui a ECRIT au 19 est REFUSE ---
         controles += 1
         refus_dsm = appeler(
             arguments.base,
@@ -1262,7 +1420,7 @@ def main() -> int:
                 f"{str(refus_dsm.json())[:140]}"
             )
 
-        # --- 31. LE CRITERE : l'ESM archive, et cela REVOQUE et CLOT ----------
+        # --- 37. LE CRITERE : l'ESM archive, et cela REVOQUE et CLOT ----------
         controles += 1
         listes_avant = profils_listes()
         archive = appeler(
@@ -1326,7 +1484,7 @@ def main() -> int:
             )
             return 1
 
-        # --- 32. l'archivage RETIRE de la liste ET de la fiche ordinaire ------
+        # --- 38. l'archivage RETIRE de la liste ET de la fiche ordinaire ------
         controles += 1
         listes_apres = profils_listes()
         fiche_apres = appeler(
@@ -1347,7 +1505,7 @@ def main() -> int:
                 f"fiche {fiche_apres.statut}"
             )
 
-        # --- 33. la fiche ARCHIVEE la sert, a l'ESM ---------------------------
+        # --- 39. la fiche ARCHIVEE la sert, a l'ESM ---------------------------
         controles += 1
         fiche_archivee = appeler(
             arguments.base, chemin_fiche_archivee, contexte, en_tetes=biscuit_esm
@@ -1367,7 +1525,7 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    fiche archivee : {fiche_archivee.statut}, {str(fa)[:200]}")
 
-        # --- 34. le MEME DSM est REFUSE sur la fiche archivee -----------------
+        # --- 40. le MEME DSM est REFUSE sur la fiche archivee -----------------
         controles += 1
         fa_dsm = appeler(arguments.base, chemin_fiche_archivee, contexte, en_tetes=biscuit_dsm)
         if fa_dsm.statut == 403:
@@ -1379,7 +1537,7 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    le DSM devrait etre refuse : {fa_dsm.statut}")
 
-        # --- 35. la RESTAURATION la ramene, et NE ROUVRE RIEN -----------------
+        # --- 41. la RESTAURATION la ramene, et NE ROUVRE RIEN -----------------
         controles += 1
         restauree = appeler(
             arguments.base,
@@ -1422,7 +1580,7 @@ def main() -> int:
                 f"liste {sorted(profils_listes())}, fiche {fiche_revenue.statut}"
             )
 
-        # --- 36. l'archivage est REFUSE sur une appartenance deja archivee ----
+        # --- 42. l'archivage est REFUSE sur une appartenance deja archivee ----
         #
         #  **LE TEMOIN DE LA GRILLE D'ETAT, A TRAVERS L'API.** Il vient APRES la
         #  restauration a dessein : la cible est de nouveau `active`, donc c'est
@@ -1451,6 +1609,48 @@ def main() -> int:
                 f"{code_d_erreur(restaurer_deux_fois)}"
             )
 
+        # --- 43. L'HISTORIQUE PORTE CE QUE L'ARCHIVAGE A CLOS -----------------
+        #
+        #  **LE SEUL CONTROLE QUI CROISE DEUX SOUS-ETAPES**, et il vaut mieux
+        #  qu'un temoin : l'archivage du controle 37 a clos CINQ relations, la
+        #  restauration ne les a pas rouvertes, et l'historique doit donc porter
+        #  ces cloture-la. C'est la preuve qu'il lit l'etat REEL de la base, et
+        #  non une vue figee au moment du decor.
+        controles += 1
+        histoire_apres = appeler(arguments.base, chemin_historique, contexte, en_tetes=biscuit_esm)
+        corps_ha = histoire_apres.json()
+        ha = corps_ha if isinstance(corps_ha, dict) else {}
+        closes_apres = [
+            p
+            for axe in ("metier", "statut", "cercle", "dsm", "responsabilites")
+            for p in (ha.get(axe) or [])
+            if p.get("fin") is not None
+        ]
+        ouvertes_apres = [
+            p
+            for axe in ("metier", "statut", "cercle", "dsm", "responsabilites")
+            for p in (ha.get(axe) or [])
+            if p.get("fin") is None
+        ]
+        if (
+            histoire_apres.statut == 200
+            and len(closes_apres) > len(closes_lues)
+            and not ouvertes_apres
+        ):
+            print(
+                f"    ok       l'historique porte ce que l'archivage a CLOS : "
+                f"{len(closes_lues)} periode(s) closes avant, {len(closes_apres)} apres, "
+                "et PLUS AUCUNE ouverte — la restauration ne rouvre rien, et "
+                "l'historique le montre"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    historique apres archivage : {histoire_apres.statut}, "
+                f"{len(closes_apres)} closes (avant {len(closes_lues)}), "
+                f"{len(ouvertes_apres)} encore ouvertes"
+            )
+
     finally:
         mc(compose, f"mc rm --force local/{bucket}/{cle_miniature} >/dev/null 2>&1 || true")
         mc(compose, f"mc rm --force local/{bucket}/{cle_originale} >/dev/null 2>&1 || true")
@@ -1465,7 +1665,9 @@ def main() -> int:
         "exactement la population du trombinoscope, sert la MINIATURE — jamais "
         "l'originale — un DSM n'ecrit QUE dans son perimetre, et il est REFUSE a "
         "l'archivage, que seul l'ESM mene : la liste et la fiche le suivent, puis "
-        "la restauration les ramene sans rouvrir aucune affectation"
+        "la restauration les ramene sans rouvrir aucune affectation. Et "
+        "l'historique rend les periodes CLOSES par cet archivage, sans une seule "
+        "colonne technique, avec un axe de moins pour le DSM"
     )
     return 0
 

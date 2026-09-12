@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `569` en usage | `DEC-570` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `570` en usage | `DEC-571` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `058` |  `ECART-059` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `059` |  `ECART-060` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `118` | `QO-119` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -282,11 +282,14 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 > séparément, et le motif est mesurable — **le critère « l'originale n'est jamais servie » serait
 > parfaitement satisfait par une route qui ne sert RIEN**. Nouvelle leçon `CLAUDE.md` §7.39.
 
-**`T1` à `T5`, `T7` et `T8` sont faites, quatre restent.** La prochaine est **`T9` —
-l'historique organisationnel** (`US008`), dont le critère est « les périodes DSM, client, cercle et
-responsabilités sont lisibles **sans exposer les audits techniques** ». C'est aussi le premier
-endroit où pourrait se décider **d'où vient l'identifiant d'un profil archivé** : `T8` a mesuré que
-le corpus ne décrit **aucune** énumération des archives, et n'en a donc inventé aucune.
+**`T1` à `T5` et `T7` à `T9` sont faites, trois restent.** Les trois dernières sont des
+**écrans** — `T10` le trombinoscope, `T11` la page de profil — puis `T12`, la recette et la
+checklist `G5`. C'est là que `ECART-012` devient **visible**, et qu'il faudra une réponse de Léa.
+
+> **Deux points restent ouverts et ne sont comblés par aucune des trois**, tous deux nommés : il
+> n'existe **aucune énumération des profils archivés** dans le corpus — mesuré en `T8`, confirmé en
+> `T9` — et la portée « Bureau » de la matrice n'a **rien à quoi s'accrocher** (`ECART-059`). Les
+> deux sont à annoncer à `G5`.
 
 | | Sous-étape | Story | État |
 |:--:|---|---|---|
@@ -297,7 +300,7 @@ le corpus ne décrit **aucune** énumération des archives, et n'en a donc inven
 | `T5` | **Les miniatures**, ET `T6` **l'autorisation** — fusionnées | `MVP-L05-US005` | **Terminée** le 07/09/2026. **QUATRE conditions, chacune avec son refus ET son témoin** — et `withdrawn_at IS NULL` **ne suffit pas seul** : une autorisation datée du **futur** a elle aussi un retrait nul. **L'originale n'est jamais servie, et c'est STRUCTUREL** : la requête ne sélectionne pas `media_asset.object_key`, et la structure rendue n'a aucun champ qui puisse le porter. `make profil-check` le prouve **sur les OCTETS** — deux contenus distincts déversés dans MinIO, dont il est le **premier consommateur**. **La borne des 100 Ko est en base, au SEUL type `thumbnail`** — la porter sur les cinq casserait le LOT 11 — et un test la franchit **à l'octet**. **`T5` ne fabrique aucune miniature** : `ECART-052`, le §8.2 de la fiche lui attribuait le choix du **format**, qui appartient à qui les **produit**. `DEC-564` |
 | `T7` | **L'écriture dans son périmètre** | `MVP-L05-US006` | **Terminée** le 09/09/2026. **La PREMIÈRE écriture métier du projet** — mesuré : hors `app/auth/`, les onze routes du dépôt étaient toutes des `GET`. **Le critère de la fiche est un critère d'AUTORISATION** et serait satisfait par une route écrivant un champ trivial ; le **critère de sortie n°6 du lot** n'avait alors aucun propriétaire. Arbitrage : **les six champs du §10.2**. **DEUX GRILLES** — le rôle avant toute transaction, puis le §6.2 **par cible**. **« Jamais écrasées » est STRUCTUREL** : `period` en bornes `[)` et une exclusion par table. **CSRF déplacée, jamais recopiée.** **Cinq défauts, dont deux invisibles à `ruff` ET `mypy`.** **857 tests**, `profil-check` à **26 contrôles**, aucune cible nouvelle. `DEC-568`, `ECART-056` et `ECART-057` clos |
 | `T8` | **Archivage et restauration** | `MVP-L05-US007` | **Terminée** le 10/09/2026. **La moitié « révoque et clôture » existait DÉJÀ** — `T9` du LOT 3, et le §30.22 est `ACQUIS` depuis lors. Ce qui manquait, mesuré : la **quatrième** transition du §24.1, `Archived --> Active`, **zéro occurrence** dans le code, et **aucune route**. **Le §6.1 porte DEUX grilles de rôles** : ses trois lignes d'archivage mettent `DSM` **et** `BOOST` à TIRET, alors que les deux modifient — réutiliser celle de `T7` aurait élargi un droit. **« Conditionnel » n'est pas une décision en suspens** : `ARB-DROIT-003` nomme la condition. **Archiver un actif est un CHEMIN** — le §24.1 n'a aucun `Active --> Archived` — et les deux étapes révoquent, la seconde rendant zéro. **La restauration ne rouvre RIEN** et **nomme** ce qui manque, par une mesure à trois valeurs qui distingue « jamais existé » de « n'existe plus ». **Les deux tests que la passation annonçait à casser restent VERTS** : une seconde route est plus fidèle au §6.1 qu'un assouplissement de la première. **Six défauts, cinq dans mes contrôles.** **888 tests**, `profil-check` à **36** contrôles, **aucune migration**, aucune cible nouvelle. `DEC-569`, `ECART-058` clos |
-| `T9` | **L'historique organisationnel** | `MVP-L05-US008` | À faire |
+| `T9` | **L'historique organisationnel** | `MVP-L05-US008` | **TERMINÉE le 12/09/2026.** `DEC-570`. **LE CORPUS NE DIT RIEN DES AFFECTATIONS PASSÉES, ET « PERTINENT » NON PLUS** : zéro occurrence de « ancien DSM » ou « missions passées » dans les cinq documents, et le mot du titre de `US008` ne paraît que dans les **deux copies du critère lui-même** — la forme exacte d'`ECART-051`. **LA GRILLE VIENT DONC DE LA LIGNE « AUDIT » DU §5**, seul endroit où la matrice règle la consultation d'un historique, et elle **refuse `EMP` et `NEW`** : savoir qui a managé qui et chez quel client est une information de gestion, non une donnée d'annuaire. Arbitrage de Jonathan. **`OFFICE` N'OBTIENT RIEN**, et deux sources concordantes le disent — **aucune table ne rattache un collaborateur à un bureau**, et le §6.2 écrit qu'un responsable de bureau « n'obtient aucun droit général sur les profils » : `ECART-059`, même forme qu'`ECART-031`. **DEUX LIGNES DE LA MATRICE SE CONTREDISENT, ET LA PLUS ÉTROITE GAGNE** : le §20 réserve « l'historique des rôles » à l'ESM, l'ADM-E et le SUPER, et le §23.2 tranche — l'axe des responsabilités vaut donc `null` pour un DSM. **`null` N'EST PAS `[]`** : le premier dit « hors périmètre », le second « rien à montrer », et les confondre affirmerait faux. **CINQ AXES ET NON QUATRE** : le backlog omet le métier, la roadmap dit « historique des **affectations** », et une omission n'est pas une exclusion. **AUCUNE GRILLE D'ÉTAT**, contrairement à `T7` et `T8` — un profil archivé a justement l'historique le plus intéressant — et un test le prouve **par comparaison** avec `resoudre_le_perimetre`, qui refuse la même cible. **« SANS EXPOSER LES AUDITS TECHNIQUES » EST STRUCTUREL** : aucune requête ne touche `auth_event`, aucune structure rendue ne peut porter une colonne technique, et **deux** contrôles le figent — l'un sur les champs, l'autre sur les **octets servis**. **LE NOMBRE DE REQUÊTES SE COMPTE** : six pour cinq axes, quatre pour trois — un service qui filtrerait après coup rendrait six dans les deux cas. **TROIS DÉFAUTS, TOUS CHEZ MOI** — dont une factorisation qui ne factorisait rien et coûtait cinq exemptions, et des contrôles **dans le mauvais ordre** que la mesure a démasqués : le DSM rendait 404 sur son propre consultant, **et il avait raison**. **912 tests** dont 24 nouveaux, `make profil-check` de 36 à **43** contrôles, **aucune migration** et **aucune cible nouvelle**. Compte rendu : [`compte-rendu-t9-lot-5.md`](compte-rendu-t9-lot-5.md) |
 | `T10` | **Le trombinoscope à l'écran** : liste, pagination, carte retournable | `MVP-L05-US003` | À faire |
 | `T11` | **La page de profil à l'écran** | `US003`, `US004` | À faire |
 | `T12` | **Recette, reclassements du §30 et checklist `G5`** | — | À faire |

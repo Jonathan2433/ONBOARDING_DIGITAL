@@ -141,6 +141,15 @@ class PerimetreDEcriture:
 #  `(id, entity_id)` est ce qui porte l'isolation (§25.3), et non un `WHERE`
 #  sur l'entite seule -- deux appartenances d'entites differentes ne peuvent
 #  pas se confondre.
+#  La cible existe-t-elle dans cette entite ? Le couple `(id, entity_id)` porte
+#  l'isolation (§25.3). **AUCUN filtre d'etat** : voir
+#  `resoudre_l_acces_a_l_historique`, un profil parti a justement l'historique le
+#  plus interessant.
+_CIBLE_DANS_L_ENTITE: Final[str] = """
+SELECT 1 FROM entity_membership
+WHERE id = :cible AND entity_id = :entite AND archived_at IS NULL
+"""
+
 _CIBLE_MODIFIABLE: Final[str] = """
 SELECT 1 FROM entity_membership
 WHERE id = :cible AND entity_id = :entite
@@ -378,3 +387,179 @@ def resoudre_le_cycle_de_vie(
     if etat == EtatAppartenance.ARCHIVED.value:
         actions.add(ActionDeCycleDeVie.CONSULTER_UN_ARCHIVE)
     return PerimetreDuCycleDeVie(actions=frozenset(actions))
+
+
+# ===========================================================================
+#
+#  L'HISTORIQUE ORGANISATIONNEL — LOT 5, `T9`, story `MVP-L05-US008`
+#
+#    **LE CORPUS NE DIT RIEN DES AFFECTATIONS PASSEES, ET C'EST MESURE.** Zero
+#    occurrence de « ancien DSM », « missions passees », « affectation
+#    precedente » dans les cinq documents de cadrage, le 12/09/2026. Le mot
+#    « pertinent » du titre de `US008` ne parait, lui, que dans les DEUX copies
+#    du critere lui-meme -- exactement la forme d'`ECART-051`.
+#
+#    **LA GRILLE VIENT DONC DE LA LIGNE « AUDIT » DU §5**, qui est le seul
+#    endroit ou la matrice regle la consultation d'un historique :
+#
+#        | Audit | ANON — | EMP — | NEW — | DSM Consultants | ESM Entite
+#        | BOOST Cercle | OFFICE Bureau | ADM-E Entite | SUPER Global |
+#
+#    C'est ce que le backlog appelle « **Responsable autorise** », et cela
+#    REFUSE `EMP` et `NEW` : savoir qui a manage qui et chez quel client est une
+#    information de gestion, non une donnee d'annuaire. Arbitrage de Jonathan du
+#    12/09/2026.
+#
+#    **`OFFICE` N'OBTIENT RIEN, ET DEUX SOURCES CONCORDANTES LE DISENT.**
+#    D'abord la mesure : `office_id` n'existe que sur
+#    `framework_responsibility_assignment`, et seulement pour `OFFICE_MANAGER` --
+#    **aucune table ne rattache un collaborateur a un bureau**, donc la cellule
+#    « Bureau » n'a rien a quoi s'accrocher pour une PERSONNE. Ensuite le texte :
+#    le §6.2 ecrit « un responsable de bureau n'obtient **aucun droit general sur
+#    les profils** du seul fait de sa responsabilite de bureau ». La cellule du
+#    §5 porte donc sur l'audit du BUREAU comme ressource, qui est du LOT 6.
+#    `ECART-059`.
+#
+#    **ET L'AXE DES RESPONSABILITES EST PLUS FERME QUE LES AUTRES.** Le §20
+#    porte une ligne a part -- « Consulter l'historique des roles | ESM Entite |
+#    ADM-E Entite | SUPER Global » -- qui ne donne rien au DSM ni au Booster. Le
+#    §23.2 tranche le conflit : « une interdiction liee a la RESSOURCE prevaut
+#    sur le cumul des roles ». La reponse porte donc un axe de plus ou de moins
+#    selon l'appelant, et ce n'est pas une fuite : un axe absent est absent pour
+#    TOUS les appelants de ce role, quelle que soit la cible.
+#
+# ===========================================================================
+
+
+class AxeHistorique(enum.StrEnum):
+    """Les axes que `US008` rend lisibles.
+
+    **`statut` PORTE LE CLIENT, ET CE N'EST PAS UN RACCOURCI** : le §6.5 du
+    modele met `status` et `client_id` sur la MEME ligne de
+    `professional_status_assignment`, liees par une biconditionnelle. Une mission
+    et son client sont une seule periode ; les separer en deux axes inventerait
+    deux historiques la ou la base en porte un.
+
+    **`metier` VIENT DE LA ROADMAP, PAS DU BACKLOG**, et c'est un arbitrage de
+    Jonathan du 12/09/2026 : le backlog enumere « DSM, client, cercle et
+    responsabilites » et **omet** le metier, quand la roadmap inclut
+    « historique des **affectations** ». Une omission n'est pas une exclusion, et
+    un historique professionnel sans les changements de metier serait bancal.
+    """
+
+    METIER = "metier"
+    STATUT = "statut"
+    CERCLE = "cercle"
+    DSM = "dsm"
+    RESPONSABILITES = "responsabilites"
+
+
+#  Les axes que tout lecteur autorise obtient. Definis par SOUSTRACTION de celui
+#  qui a sa propre regle : ajouter un axe a l'enumeration l'y fait entrer sans
+#  que personne y pense, et c'est le sens du §7.27.
+AXES_ORGANISATIONNELS: Final[frozenset[AxeHistorique]] = frozenset(AxeHistorique) - {
+    AxeHistorique.RESPONSABILITES
+}
+
+#  §20 : « Consulter l'historique des roles | ESM | ADM-E | SUPER ».
+ROLES_DE_L_HISTORIQUE_DES_ROLES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  Les roles qui portent AU MOINS un droit de lecture d'historique quelque part.
+#  Sert au garde-fou de role de la route ; la portee par cible est resolue
+#  ensuite. `EMP`, `NEW` et `OFFICE` en sont absents, chacun pour son motif ecrit
+#  en tete de section.
+ROLES_DE_L_HISTORIQUE: Final[frozenset[RoleDeLaMatrice]] = ROLES_DE_L_HISTORIQUE_DES_ROLES | {
+    RoleDeLaMatrice.DSM,
+    RoleDeLaMatrice.BOOSTER,
+}
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class AccesAlHistorique:
+    """Les axes que l'acteur peut lire SUR CETTE CIBLE, et rien d'autre.
+
+    **UN ENSEMBLE VIDE EST LE REFUS**, comme `PerimetreDEcriture` et
+    `PerimetreDuCycleDeVie` : meme discipline, meme motif, aucun champ derivable
+    en plus.
+    """
+
+    axes: frozenset[AxeHistorique]
+
+
+def resoudre_l_acces_a_l_historique(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    cible: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> AccesAlHistorique:
+    """Les axes d'historique que `acteur` peut lire sur `cible`, dans `entite`.
+
+    **AUCUNE GRILLE D'ETAT ICI, ET C'EST DELIBERE.** `resoudre_le_perimetre`
+    exige une appartenance OCCUPANTE parce qu'on ne modifie pas un profil
+    archive ; `resoudre_le_cycle_de_vie` exige un etat precis parce que chaque
+    action en depend. **Lire un historique n'a aucune de ces raisons** : un
+    profil `departed` ou `archived` a justement l'historique le plus interessant,
+    et le §6.1 reserve deja « consulter un profil archive » aux trois roles qui
+    sont ici les plus larges. Exiger un etat occupant rendrait l'historique
+    inaccessible au moment ou il sert.
+
+    La cible doit donc seulement **exister dans cette entite** -- le couple
+    `(id, entity_id)` du §25.3, qui porte l'isolation.
+    """
+    if not roles & ROLES_DE_L_HISTORIQUE:
+        return AccesAlHistorique(axes=frozenset())
+
+    existe = connexion.execute(
+        text(_CIBLE_DANS_L_ENTITE), {"cible": cible, "entite": entite}
+    ).first()
+    if existe is None:
+        return AccesAlHistorique(axes=frozenset())
+
+    axes: set[AxeHistorique] = set()
+
+    #  Portee ENTITE ou globale : le §5 ecrit « Entite » pour ESM et ADM-E,
+    #  « Global » pour SUPER. La route etant bornee a une entite par son chemin,
+    #  les trois se resolvent identiquement -- et le dire vaut mieux que de
+    #  laisser croire que `SUPER` est traite a part.
+    if roles & ROLES_DE_L_HISTORIQUE_DES_ROLES:
+        axes |= set(AxeHistorique)
+
+    if RoleDeLaMatrice.DSM in roles:
+        rattache = connexion.execute(
+            text(_RATTACHE_A_CE_DSM),
+            {"cible": cible, "acteur": acteur, "entite": entite, "instant": instant},
+        ).first()
+        if rattache is not None:
+            axes |= AXES_ORGANISATIONNELS
+
+    if RoleDeLaMatrice.BOOSTER in roles:
+        ligne = connexion.execute(
+            text(_TYPE_DANS_LE_CERCLE_DU_BOOSTER),
+            {
+                "acteur": acteur,
+                "entite": entite,
+                "cible": cible,
+                "type_booster": TypeResponsabilite.BOOSTER.value,
+                "instant_fra": instant,
+                "instant_cm": instant,
+            },
+        ).first()
+        #  **LE MEME PREDICAT QUE `T7`, ET LA MEME LECTURE DU §6.2.** « Pour un
+        #  membre SECONDAIRE, ses actions doivent rester limitees aux donnees du
+        #  cercle » -- or l'historique des missions et des clients d'une personne
+        #  n'est pas une donnee du cercle. Elargir aux membres secondaires
+        #  donnerait a un Booster la suite des clients de quelqu'un dont son
+        #  cercle n'est que le second, ce qu'aucune ligne du corpus n'autorise.
+        if ligne is not None and ligne[0] == TypeAppartenanceCercle.PRINCIPAL.value:
+            axes |= AXES_ORGANISATIONNELS
+
+    return AccesAlHistorique(axes=frozenset(axes))
