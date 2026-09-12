@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 7 septembre 2026, à la sortie de **`T5` du LOT 5**
+**Mis à jour le :** 10 septembre 2026, à la sortie de **`T8` du LOT 5**
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` sont terminées**, cinq restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5`, `T7` et `T8` sont terminées**, quatre restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T8` du LOT 5 — ARCHIVAGE ET RESTAURATION** (`US007`, issue `#122`). Ses critères : « l'archivage **révoque** et clôture · la restauration suit les rôles validés ». **`T7` LUI LAISSE DEUX TESTS À CASSER, ET C'EST LEUR RÔLE** (§7.32) : la grille d'état de `resoudre_le_perimetre` refuse une appartenance `archived` **même à `SUPER`**, dérivé du §23.2 et du §6.1 qui traite séparément « consulter » et « réactiver » un profil archivé. `T8` devra la relâcher **délibérément**, et deux tests l'y obligeront. **ET TROIS CHOSES QUE `T7` A ÉTABLIES, À NE PAS REDÉCOUVRIR :** « les affectations structurantes ne sont jamais écrasées » est **structurel** — `period` en bornes `[)` et une exclusion `(clé, period)` par table, donc la base refuse et n'arbitre pas ; la **règle CSRF** vit désormais dans `app/auth/dependances.py` et ne doit **jamais** être recopiée (`DEC-466`) ; et **`retirer` une affectation n'existe pas** — seul `client` accepte un `null`, clôturer sans réouvrir n'est pas « modifier », et le §30.4 veut qu'un consultant actif **ait** un DSM. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — c'est la dépendance des comptes de service, livrée au LOT 3 ; `T7` a consommé `exiger_un_role_dans_l_entite` et la protection CSRF, pas celle-là |
+| **Prochaine action** | **`T9` du LOT 5 — L'HISTORIQUE ORGANISATIONNEL** (`US008`, issue `#123`). Son critère : « les périodes DSM, client, cercle et responsabilités sont lisibles **sans exposer les audits techniques** ». **LA PASSATION S'EST TROMPÉE SUR `T8`, ET LE DIRE VAUT MIEUX QUE DE LE TAIRE** : cette cellule annonçait que `T8` devrait casser deux tests. **Elle n'aurait pas dû, et les deux sont restés verts.** Le §6.1 traite « consulter un profil ACTIF » — huit rôles — et « consulter un profil ARCHIVÉ » — trois rôles — comme deux lignes distinctes : une **seconde route** servant une **seconde population** est plus fidèle au document qu'un assouplissement de la première, et `resoudre_le_perimetre` a raison de refuser un archivé — on ne le **modifie** pas, on le **restaure**. **Avant de relâcher un test qu'on t'annonce comme devant céder, demande-toi si la vraie forme n'est pas d'en ajouter un à côté.** **ET QUATRE CHOSES QUE `T7` ET `T8` ONT ÉTABLIES, À NE PAS REDÉCOUVRIR :** « les affectations structurantes ne sont jamais écrasées » est **structurel** — `period` en bornes `[)` et une exclusion `(clé, period)` par table, donc la base refuse et n'arbitre pas ; la **règle CSRF** vit dans `app/auth/dependances.py` et ne doit **jamais** être recopiée (`DEC-466`) ; **les quatre transitions du §24.1** vivent dans `app/people/modeles.py`, aux côtés d'`ETATS_OCCUPANTS`, et les deux grilles s'en **dérivent** par le sens de la transition ; et **aucune ÉNUMÉRATION des profils archivés n'existe** — mesure du 10/09/2026, zéro occurrence dans le corpus, et les six axes de filtre du `US002` n'incluent pas l'état d'appartenance. `T9` est le premier endroit où cela peut se décider, et c'est **à annoncer à `G5`**. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — la dépendance des comptes de service, livrée au LOT 3 ; `T7` et `T8` ont consommé `exiger_un_role_dans_l_entite` et la protection CSRF, pas celle-là |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 0 sur 8** — et c'est normal, aucune story du lot n'est achevée par une seule sous-étape. **Cette cellule annonçait « LOT 4 : 0 sur 7 » et « #92 reste ouverte » le 07/09/2026 : les SEPT sont closes, #92 depuis le 24/08 à 15:31 UTC**, à la porte `G4`. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` → **9**, et les neuf sont l'épic `#115` et les huit stories du LOT 5 |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 137** : **838 pytest** — dont **530 d'intégration** — et **299 Vitest** (**97 `ui`**, **121 `web`**, **81 `contracts`**) |
+| **Tests** | **1 187** : **888 pytest** — dont **577 d'intégration** — et **299 Vitest** (**97 `ui`**, **121 `web`**, **81 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **151 décisions** `DEC-418+` · **57 écarts** (**10 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 32 — DÉRIVÉS le 07/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **152 décisions** `DEC-418+` · **58 écarts** (**10 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 43 — DÉRIVÉS le 10/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -48,7 +48,7 @@ make test-frontend 2>&1 | grep -oE 'Tests  [0-9]+ passed'
 grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile
 grep -cE '^[A-Z_][A-Z0-9_]*=' .env.example
 ls apps/api/alembic/versions/*.py | wc -l
-for l in 1 2 3; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md | sort -u | wc -l; done
+for l in 1 2 3 4 5; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md | sort -u | wc -l; done
 ```
 
 > **DEUX NOMBRES ONT ÉTÉ RETIRÉS DE CE TABLEAU PLUTÔT QUE CORRIGÉS : le compte de commits et le
@@ -82,9 +82,9 @@ Toute modification passe par une branche et une pull request vers `develop`.
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
    `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 5 EST OUVERT** depuis le 24/08/2026 (`DEC-558`), son
    découpage est validé — **ONZE** sous-étapes depuis la fusion de `T5` et `T6` (`DEC-564`) — et
-   **`T1` à `T5` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
+   **`T1` à `T5`, `T7` et `T8` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
    — import CSV — ni au LOT 11 — génération des miniatures.
-   Et **une sous-étape à la fois** : la suivante est `T7`.
+   Et **une sous-étape à la fois** : la suivante est `T9`.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
    > disait « LE LOT 4 EST OUVERT […] la suivante est `T2` » et **interdisait le LOT 5**, qui était
@@ -120,6 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,2,3,4,5,7,8}-lot-5.md`** — les trois tables de média, le trombinoscope, la recherche, la fiche, la miniature, l'écriture, et l'archivage. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **43** au 10/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -470,8 +471,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`568` en usage | **`DEC-569`** |
-| `ECART-nnn` | `001`–`057` | **`ECART-058`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`569` en usage | **`DEC-570`** |
+| `ECART-nnn` | `001`–`058` | **`ECART-059`** |
 | `QO-nnn` | `072`–`118`, **5 trous** | **`QO-119`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -539,10 +540,12 @@ API             migrate migrate-status api-check alembic-check
                 secrets-check                                     ← LOT 3, T2
                 entites-check                                     ← LOT 4, T1
                 trombinoscope-check                               ← LOT 5, T2
-                profil-check                                      ← LOT 5, T4 et T5
-                (T5 n'ajoute AUCUNE cible : elle ETEND profil-check, de 10 a
-                 17 controles. Un second verificateur aurait duplique le
-                 decor, la connexion et le menage -- §7.27)
+                profil-check                          ← LOT 5, T4, T5, T7 et T8
+                (NI T5, NI T7, NI T8 n'ajoutent de cible : les trois ETENDENT
+                 profil-check, de 10 a 17 puis 26 puis 36 controles. Un second
+                 verificateur aurait duplique le decor, la connexion et le
+                 menage -- §7.27. Et aucune cible nouvelle = rien a ajouter
+                 dans `ci.yml`, ce qui est le benefice direct de la lecon)
                 permissions-check                                 ← LOT 4, T8
                 (T9 n'ajoute AUCUNE cible : son garde-fou est prouve par
                  12 tests, pas par un controle de stack. Voir ECART-046)
@@ -888,7 +891,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**223 défauts NOMMÉS au 07/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **32** au LOT 5 — 71 + 44 + 57 + 19 + 32,
+**234 défauts NOMMÉS au 10/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **43** au LOT 5 — 71 + 44 + 57 + 19 + 43,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -905,7 +908,7 @@ mes propres contrôles** — c'est la forme la plus insidieuse, parce qu'on croi
 > Elle compte les défauts **nommés**, lot par lot :
 >
 > ```bash
-> for l in 1 2 3; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md \
+> for l in 1 2 3 4 5; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md \
 >   | sort -u | wc -l; done
 > ```
 >
@@ -2284,7 +2287,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 5 est ouvert, et `T7` est la prochaine
+# 9. Par où commencer : le LOT 5 est ouvert, et `T9` est la prochaine
 
 ## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
@@ -2317,7 +2320,8 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 ## 9.1 Où en est exactement le projet
 
 **Les LOTS 0 à 4 sont terminés.** `G4` a été franchie le 24/08/2026 (`DEC-557`), tag `v0.4.0` sur
-`e0629fe`. **Le LOT 5 est ouvert** depuis le même jour (`DEC-558`), et **`T1` à `T5` sont faites**.
+`e0629fe`. **Le LOT 5 est ouvert** depuis le même jour (`DEC-558`), et **`T1` à `T5`, `T7` et `T8`
+sont faites**.
 
 | Fait | Ce que ça donne |
 |---|---|
@@ -2327,7 +2331,7 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 | Recette | **réépinglée** sur les images de `3bc68b9`, et son API se connecte avec le rôle d'**exécution** — `DEC-539`, mesuré |
 | Contrôles | les contrôles de stack sont **tous** dans la CI, chacun portant ses témoins. **`make help` et `ci.yml` font foi sur leur nombre**, jamais cette cellule |
 
-**Rien n'attend de décision technique.** Ce qui attend est **`T7`**, la première écriture métier.
+**Rien n'attend de décision technique.** Ce qui attend est **`T9`**, l'historique organisationnel.
 
 ---
 
@@ -2604,14 +2608,21 @@ make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EM
                           #      une affectation FUTURE qui n'accordent rien, le
                           #      super-administrateur partout, et les QUATRE tables de
                           #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
-make profil-check         # 17 — il RELIE la fiche a la liste : l'identifiant vient du
+make profil-check         # 36 — il RELIE la fiche a la liste : l'identifiant vient du
                           #      trombinoscope, et un profil EXCLU rend le MEME 404. Les six
                           #      champs sensibles sont TOUS renseignes (ECART-051).
                           #      DEPUIS T5 il deverse DEUX objets de contenus distincts
                           #      dans MinIO et exige que les octets servis soient
                           #      EXACTEMENT ceux de la MINIATURE : un controle
                           #      « 200 et des octets » passerait si la route servait
-                          #      l'original. C'est le PREMIER consommateur du bucket
+                          #      l'original. C'est le PREMIER consommateur du bucket.
+                          #      DEPUIS T7 un DSM ecrit dans SON perimetre et est REFUSE
+                          #      ailleurs ; DEPUIS T8 le MEME DSM est REFUSE a
+                          #      l'archivage, que seul l'ESM mene -- le §6.1 porte DEUX
+                          #      grilles de roles. Les NEUF controles de T8 viennent en
+                          #      DERNIER, parce qu'ils archivent le profil complet : plus
+                          #      haut, ils casseraient le « exactement deux profils » du
+                          #      controle 2 et l'historique intact du temoin 26
 make trombinoscope-check  # 38 — les TROIS tailles SERVIES (le temoin qui a trouve T2-3),
                           #      huit refus au format du 18.3, la recomposition des pages
                           #      qui exige un ordre TOTAL, et les quatre etats exclus
@@ -2644,7 +2655,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **41 leçons** payées par **223 défauts nommés** — 71 + 44 + 57 + 19 + 32, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **41 leçons** payées par **234 défauts nommés** — 71 + 44 + 57 + 19 + 43, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

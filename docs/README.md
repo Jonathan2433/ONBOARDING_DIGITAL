@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `568` en usage | `DEC-569` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `569` en usage | `DEC-570` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `057` |  `ECART-058` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `058` |  `ECART-059` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `118` | `QO-119` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -282,9 +282,11 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 > séparément, et le motif est mesurable — **le critère « l'originale n'est jamais servie » serait
 > parfaitement satisfait par une route qui ne sert RIEN**. Nouvelle leçon `CLAUDE.md` §7.39.
 
-**`T1` à `T5` sont faites, six restent.** La prochaine est **`T7` — l'écriture dans son
-périmètre**, qui sera la **première écriture métier** du projet, donc le premier consommateur de la
-restriction du §5.1 et de `exiger_un_role_dans_l_entite`.
+**`T1` à `T5`, `T7` et `T8` sont faites, quatre restent.** La prochaine est **`T9` —
+l'historique organisationnel** (`US008`), dont le critère est « les périodes DSM, client, cercle et
+responsabilités sont lisibles **sans exposer les audits techniques** ». C'est aussi le premier
+endroit où pourrait se décider **d'où vient l'identifiant d'un profil archivé** : `T8` a mesuré que
+le corpus ne décrit **aucune** énumération des archives, et n'en a donc inventé aucune.
 
 | | Sous-étape | Story | État |
 |:--:|---|---|---|
@@ -294,7 +296,7 @@ restriction du §5.1 et de `exiger_un_role_dans_l_entite`.
 | `T4` | **La fiche profil** | `MVP-L05-US004` | **Terminée** le 26/08/2026. **Le critère renvoie à des règles que le corpus ne définit pas** : « chaque champ visible ou masqué selon la matrice », et la matrice ne définit **aucune** visibilité par champ — `ECART-051`. **Aucun champ n'est masqué, et un test FIGE l'absence** pour qu'un lot ultérieur doive la décider. **La cardinalité est prouvée par le SCHÉMA** : quatre contraintes d'**exclusion** rendent les `LEFT JOIN` sûrs, et un test **exige qu'elles existent toujours**. `DEC-563` |
 | `T5` | **Les miniatures**, ET `T6` **l'autorisation** — fusionnées | `MVP-L05-US005` | **Terminée** le 07/09/2026. **QUATRE conditions, chacune avec son refus ET son témoin** — et `withdrawn_at IS NULL` **ne suffit pas seul** : une autorisation datée du **futur** a elle aussi un retrait nul. **L'originale n'est jamais servie, et c'est STRUCTUREL** : la requête ne sélectionne pas `media_asset.object_key`, et la structure rendue n'a aucun champ qui puisse le porter. `make profil-check` le prouve **sur les OCTETS** — deux contenus distincts déversés dans MinIO, dont il est le **premier consommateur**. **La borne des 100 Ko est en base, au SEUL type `thumbnail`** — la porter sur les cinq casserait le LOT 11 — et un test la franchit **à l'octet**. **`T5` ne fabrique aucune miniature** : `ECART-052`, le §8.2 de la fiche lui attribuait le choix du **format**, qui appartient à qui les **produit**. `DEC-564` |
 | `T7` | **L'écriture dans son périmètre** | `MVP-L05-US006` | **Terminée** le 09/09/2026. **La PREMIÈRE écriture métier du projet** — mesuré : hors `app/auth/`, les onze routes du dépôt étaient toutes des `GET`. **Le critère de la fiche est un critère d'AUTORISATION** et serait satisfait par une route écrivant un champ trivial ; le **critère de sortie n°6 du lot** n'avait alors aucun propriétaire. Arbitrage : **les six champs du §10.2**. **DEUX GRILLES** — le rôle avant toute transaction, puis le §6.2 **par cible**. **« Jamais écrasées » est STRUCTUREL** : `period` en bornes `[)` et une exclusion par table. **CSRF déplacée, jamais recopiée.** **Cinq défauts, dont deux invisibles à `ruff` ET `mypy`.** **857 tests**, `profil-check` à **26 contrôles**, aucune cible nouvelle. `DEC-568`, `ECART-056` et `ECART-057` clos |
-| `T8` | **Archivage et restauration** | `MVP-L05-US007` | À faire |
+| `T8` | **Archivage et restauration** | `MVP-L05-US007` | **Terminée** le 10/09/2026. **La moitié « révoque et clôture » existait DÉJÀ** — `T9` du LOT 3, et le §30.22 est `ACQUIS` depuis lors. Ce qui manquait, mesuré : la **quatrième** transition du §24.1, `Archived --> Active`, **zéro occurrence** dans le code, et **aucune route**. **Le §6.1 porte DEUX grilles de rôles** : ses trois lignes d'archivage mettent `DSM` **et** `BOOST` à TIRET, alors que les deux modifient — réutiliser celle de `T7` aurait élargi un droit. **« Conditionnel » n'est pas une décision en suspens** : `ARB-DROIT-003` nomme la condition. **Archiver un actif est un CHEMIN** — le §24.1 n'a aucun `Active --> Archived` — et les deux étapes révoquent, la seconde rendant zéro. **La restauration ne rouvre RIEN** et **nomme** ce qui manque, par une mesure à trois valeurs qui distingue « jamais existé » de « n'existe plus ». **Les deux tests que la passation annonçait à casser restent VERTS** : une seconde route est plus fidèle au §6.1 qu'un assouplissement de la première. **Six défauts, cinq dans mes contrôles.** **888 tests**, `profil-check` à **36** contrôles, **aucune migration**, aucune cible nouvelle. `DEC-569`, `ECART-058` clos |
 | `T9` | **L'historique organisationnel** | `MVP-L05-US008` | À faire |
 | `T10` | **Le trombinoscope à l'écran** : liste, pagination, carte retournable | `MVP-L05-US003` | À faire |
 | `T11` | **La page de profil à l'écran** | `US003`, `US004` | À faire |

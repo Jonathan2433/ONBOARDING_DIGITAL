@@ -55,9 +55,16 @@ from app.entities.routes import (
 from app.entities.services import resoudre_une_entite_active
 from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
+from app.people.archivage import archiver_un_profil, restaurer_un_profil
 from app.people.ecriture import modifier_les_donnees_organisationnelles
-from app.people.modeles import SituationProfessionnelle
-from app.people.profil import CercleDuProfil, FicheProfil, ResponsabiliteDuProfil, lire_la_fiche
+from app.people.modeles import EtatAppartenance, SituationProfessionnelle
+from app.people.profil import (
+    CercleDuProfil,
+    FicheProfil,
+    ResponsabiliteDuProfil,
+    lire_la_fiche,
+    lire_la_fiche_archivee,
+)
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
     TAILLE_PAR_DEFAUT,
@@ -68,7 +75,11 @@ from app.people.trombinoscope import (
 from app.permissions.dependances import exiger_un_role_dans_l_entite
 from app.permissions.perimetre import (
     ROLES_D_ECRITURE,
+    ROLES_DU_CYCLE_DE_VIE,
+    ActionDeCycleDeVie,
     ChampOrganisationnel,
+    PerimetreDuCycleDeVie,
+    resoudre_le_cycle_de_vie,
     resoudre_le_perimetre,
 )
 from app.permissions.services import resoudre_les_permissions
@@ -87,6 +98,17 @@ journal = logging.getLogger("app.people")
 GABARIT_FICHE: Final = "/entities/{code}/people/{appartenance}"
 GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
 
+#  Les trois chemins de `T8`. **DES NOMS, PAS DES VERBES** : c'est la convention
+#  des cinq ecritures d'authentification du LOT 3 -- `/connexion`,
+#  `/deconnexion`, `/magic-link/consommation`.
+#
+#  Et `fiche-archivee` plutot qu'`archive` : deux segments freres nommes
+#  `archivage` et `archive` se confondent a la lecture d'un journal, et c'est
+#  precisement dans un journal qu'on les lira.
+GABARIT_ARCHIVAGE: Final = "/entities/{code}/people/{appartenance}/archivage"
+GABARIT_RESTAURATION: Final = "/entities/{code}/people/{appartenance}/restauration"
+GABARIT_FICHE_ARCHIVEE: Final = "/entities/{code}/people/{appartenance}/fiche-archivee"
+
 
 def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
     """Le chemin complet de la miniature, prefixe versionne compris."""
@@ -94,6 +116,8 @@ def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
 
 
 if TYPE_CHECKING:  # pragma: no cover
+    from sqlalchemy.engine import Connection
+
     from app.configuration.settings import Parametres
 
 
@@ -250,6 +274,107 @@ class ReponseDeModification(BaseModel):
 
     version: int
     champs_modifies: list[str]
+
+
+class DemandeDArchivage(BaseModel):
+    """La version attendue, et la date de depart facultative.
+
+    **`date_de_depart` N'EST PAS UNE INVENTION** : le §2.1 du cahier range « date
+    de depart » parmi les informations que porte `entity_membership`, et le §24.1
+    libelle la transition « depart ENREGISTRE ». La rendre facultative est ce qui
+    permet d'archiver quelqu'un parti la semaine derniere sans ecrire une date
+    fausse -- et a defaut, le jour de l'appel.
+
+    Elle est **ignoree** quand la cible est `future` ou `departed` : le §24.1 n'y
+    passe par aucun depart, et l'« arrivee annulee » n'en est pas un.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(
+        ge=1,
+        description=(
+            "La version lue sur la fiche. Cahier §18.4 : une version obsolete rend 409 "
+            "sans ecrasement silencieux."
+        ),
+    )
+    date_de_depart: dt.date | None = Field(
+        default=None,
+        description=(
+            "Cahier §2.1. A defaut, le jour de l'appel. La contrainte "
+            "`depart_apres_arrivee` refuse une date anterieure a l'arrivee (422)."
+        ),
+    )
+
+
+class DemandeDeRestauration(BaseModel):
+    """La version attendue, et rien d'autre.
+
+    **AUCUN CHAMP DE REAFFECTATION, ET C'EST UN ARBITRAGE DU 10/09/2026.** La
+    restauration remet l'appartenance en `active` et laisse metier, statut,
+    client, DSM et cercle **clos** : les redonner est une decision humaine, que le
+    `PATCH` de `T7` sert. Voir l'en-tete de `app/people/archivage.py`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=1, description="Cahier §18.4, comme pour l'archivage.")
+
+
+class ReponseDArchivage(BaseModel):
+    """Ce que l'archivage a produit, ET ce qu'il a rapporte sans le traiter.
+
+    **LES QUATRE DERNIERS CHAMPS SONT DES RAPPORTS, PAS DES ECHECS.** Le `T9` du
+    LOT 3 les a etablis et motives ; `T8` est ce qui les rend enfin lisibles par
+    un humain, puisque le service n'avait aucune route. Les taire aurait laisse
+    croire qu'un archivage ne laisse jamais rien derriere lui -- alors qu'il
+    laisse, mesure et nomme, des consultants sans DSM.
+    """
+
+    version: int
+    etat_precedent: str = Field(
+        description="`active`, `future` ou `departed` — il dit si un depart a ete enregistre."
+    )
+    etat_nouveau: str = Field(
+        description=(
+            "Toujours `archived`. Il est rendu plutot que suppose : sans lui, chaque "
+            "client recopierait la cible du §24.1."
+        )
+    )
+    sessions_revoquees: int
+    liens_invalides: int
+    relations_closes: dict[str, int]
+    #  --- ce qui est rapporte, jamais decide ---
+    consultants_sans_dsm: list[uuid.UUID] = Field(
+        description=(
+            "Les consultants dont le partant etait le DSM. Leurs lignes ne sont PAS "
+            "closes -- le lien historique est conserve, et le §30.4 veut qu'un "
+            "consultant actif ait un DSM : designer le remplacant est humain."
+        )
+    )
+    roles_globaux_conserves: int = Field(
+        description="Quitter une entite ne retire pas un role global (§8.6)."
+    )
+    relations_futures_conservees: dict[str, int] = Field(
+        description=(
+            "Une relation qui n'a pas commence ne peut pas etre close a cet instant : "
+            "`ends_at < starts_at` rendrait la periode invalide."
+        )
+    )
+
+
+class ReponseDeRestauration(BaseModel):
+    """La version nouvelle, et ce qui reste a redonner a la main."""
+
+    version: int
+    etat_precedent: str = Field(description="Toujours `archived` — le §24.1 n'a que ce depart.")
+    etat_nouveau: str = Field(description="Toujours `active`.")
+    relations_a_redonner: list[str] = Field(
+        description=(
+            "Les relations de l'appartenance SANS periode courante apres la "
+            "restauration — mesurees, pas supposees. La restauration ne rouvre rien."
+        )
+    )
 
 
 class ReponseDuTrombinoscope(BaseModel):
@@ -526,6 +651,12 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
     #  `frozenset` de roles et refuse une liste vide -- une route ainsi gardee
     #  serait morte sans que rien ne le dise.
     garde_d_ecriture = exiger_un_role_dans_l_entite(parametres, ROLES_D_ECRITURE)
+    #  **UNE SECONDE GARDE, PARCE QUE LA MATRICE PORTE DEUX GRILLES.** Le §6.1
+    #  met `DSM` et `BOOST` a TIRET sur les trois lignes de cycle de vie, alors
+    #  qu'ils portent tous deux un droit de modification. Reutiliser
+    #  `garde_d_ecriture` accorderait donc l'archivage a deux roles que le
+    #  document en exclut, et le §6.2 le redit en clair.
+    garde_du_cycle_de_vie = exiger_un_role_dans_l_entite(parametres, ROLES_DU_CYCLE_DE_VIE)
 
     @routeur.patch(
         GABARIT_FICHE,
@@ -764,7 +895,290 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
 
         return Response(content=octets, media_type=miniature.mime)
 
+    # -------------------------------------------------------------------
+    #  LE CYCLE DE VIE — LOT 5, `T8`, story `MVP-L05-US007`
+    # -------------------------------------------------------------------
+
+    @routeur.post(
+        GABARIT_ARCHIVAGE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivage,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "UNE SEULE forme pour trois causes : l'appelant n'a aucun des trois "
+                    "roles du §6.1 dans cette entite, la cible est deja `archived`, ou le "
+                    "jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code inconnu, ou entite existante mais non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": "Version obsolete — cahier §18.4, sans ecrasement silencieux."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "Demande mal formee, ou date de depart anterieure a la date "
+                    "d'arrivee (`depart_apres_arrivee`)."
+                )
+            },
+        },
+        summary="Archiver un profil",
+        description=(
+            "« Archiver un profil » du §6.1 — **ESM, administrateur d'entite et "
+            "super-administrateur seulement**, `DSM` et `BOOST` etant a tiret sur cette "
+            "ligne alors qu'ils modifient. Backlog `MVP-L05-US007`.<br><br>"
+            "**L'ACTION PARCOURT LE CHEMIN DU §24.1**, qui n'a aucune transition "
+            "`Active --> Archived` : depuis `active`, le depart est enregistre PUIS "
+            "l'archivage applique ; depuis `future` (« arrivee annulee ») ou `departed`, "
+            "l'archivage seul.<br><br>"
+            "**LA REVOCATION TIENT AU DEPART, ET ELLE EST IMMEDIATE** (§7.4, §30.22) : "
+            "sessions revoquees, liens actifs invalides, et les SIX relations "
+            "historisees du §25.2 closes. Quatre situations sont **rapportees** dans la "
+            "reponse plutot que traitees en silence."
+        ),
+    )
+    def archiver_le_profil(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[
+            uuid.UUID, Path(description="L'identifiant d'appartenance, rendu par la fiche")
+        ],
+        demande: DemandeDArchivage,
+        requete: Request,
+        #  Meme forme que le `PATCH` voisin, et pour les memes deux motifs : le
+        #  verdict de la dependance est UTILISE -- `updated_by_person_id` -- et
+        #  `Depends` en valeur par defaut est le seul montage resoluble sous
+        #  `from __future__ import annotations`.
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie),  # noqa: B008
+    ) -> ReponseDArchivage:
+        """Archiver un profil — matrice §6.1, §6.2 et modele §24.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, perimetre = _resoudre_le_cycle(
+                connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
+            )
+            archivage = archiver_un_profil(
+                connexion,
+                entite=entite,
+                cible=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                perimetre=perimetre,
+                instant=instant,
+                date_de_depart=demande.date_de_depart,
+            )
+        return ReponseDArchivage(
+            version=archivage.version,
+            etat_precedent=archivage.etat_precedent,
+            etat_nouveau=EtatAppartenance.ARCHIVED.value,
+            sessions_revoquees=archivage.sessions_revoquees,
+            liens_invalides=archivage.liens_invalides,
+            relations_closes=archivage.relations_closes,
+            consultants_sans_dsm=list(archivage.consultants_sans_dsm),
+            roles_globaux_conserves=archivage.roles_globaux_conserves,
+            relations_futures_conservees=archivage.relations_futures_conservees,
+        )
+
+    @routeur.post(
+        GABARIT_RESTAURATION,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestauration,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "UNE SEULE forme pour trois causes : aucun des trois roles du §6.1, "
+                    "la cible n'est pas `archived`, ou le jeton anti-CSRF manque."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code inconnu, ou entite existante mais non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "Version obsolete (§18.4), **ou** la base refuse le retour dans un "
+                    "etat occupant — la personne occupe deja une appartenance, ou la "
+                    "periode redevenue ouverte en chevauche une posterieure. La cause "
+                    "n'est PAS nommee : elle porterait sur une autre entite (§5.1). Elle "
+                    "est journalisee cote serveur."
+                )
+            },
+        },
+        summary="Reactiver un profil archive",
+        description=(
+            "« Reactiver un profil archive » du §6.1 — `Archived --> Active`, la "
+            "quatrieme et derniere transition du §24.1, « reactivation explicite "
+            "autorisee ». Backlog `MVP-L05-US007`.<br><br>"
+            "**« CONDITIONNEL » POUR L'ESM N'EST PAS UNE DECISION EN SUSPENS** : le §18 "
+            "precise « Entite, restauration **fonctionnelle** » et `ARB-DROIT-003` "
+            "reserve a l'ADM-E et au SUPER les restaurations « techniques, massives ou "
+            "liees aux imports ». Un profil a l'unite est fonctionnelle.<br><br>"
+            "**ELLE NE ROUVRE AUCUNE AFFECTATION** — arbitrage du 10/09/2026. Metier, "
+            "statut, client, DSM et cercle restent clos, et `relations_a_redonner` dit "
+            "lesquels manquent : les redonner passe par le `PATCH` de `T7`, parce qu'un "
+            "DSM reaffecte par la plateforme serait un DSM que personne n'a designe."
+        ),
+    )
+    def restaurer_le_profil(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant d'appartenance")],
+        demande: DemandeDeRestauration,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie),  # noqa: B008
+    ) -> ReponseDeRestauration:
+        """Reactiver un profil archive — matrice §6.1 et modele §24.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, perimetre = _resoudre_le_cycle(
+                connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
+            )
+            restauration = restaurer_un_profil(
+                connexion,
+                entite=entite,
+                cible=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                perimetre=perimetre,
+                instant=instant,
+            )
+        return ReponseDeRestauration(
+            version=restauration.version,
+            etat_precedent=restauration.etat_precedent,
+            etat_nouveau=EtatAppartenance.ACTIVE.value,
+            relations_a_redonner=list(restauration.relations_a_redonner),
+        )
+
+    @routeur.get(
+        GABARIT_FICHE_ARCHIVEE,
+        status_code=status.HTTP_200_OK,
+        response_model=FicheDuProfil,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "L'appelant n'a aucun des trois roles du §6.1 dans cette entite."
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour quatre causes : code inconnu ou entite non "
+                    "active, appartenance inexistante, appartenance d'une autre entite, "
+                    "ou appartenance qui n'est PAS archivee. Distinguer apprendrait "
+                    "qu'une appartenance existe — §2.5, refus par defaut."
+                )
+            },
+        },
+        summary="Consulter un profil archive",
+        description=(
+            "« Consulter un profil archive » du §6.1 — **ESM (« besoin fonctionnel »), "
+            "administrateur d'entite et super-administrateur**. C'est une ligne "
+            "DISTINCTE de « Consulter un profil actif », qui est ouverte aux huit "
+            "roles : la consultation d'un archive est un acte delibere, d'ou une route "
+            "a part plutot qu'un assouplissement de la fiche.<br><br>"
+            "**LE TROMBINOSCOPE CONTINUE D'EXCLURE LES ARCHIVES**, y compris pour un "
+            "super-administrateur, et un test le fige : le §6.1 lui donne la ligne "
+            "« profil actif ».<br><br>"
+            "**LA VISIBILITE N'EST PAS FILTREE ICI** : l'archivage ne touche pas "
+            "`profile_visibility`, donc un archive peut etre `draft`, `published` ou "
+            "`hidden`. Filtrer ferait echouer un acte que le §6.1 autorise.<br><br>"
+            "**AUCUNE ENUMERATION DES ARCHIVES N'EXISTE**, et ce n'est pas un oubli : "
+            "le corpus n'en decrit aucune (mesure du 10/09/2026, zero occurrence), et "
+            "les six axes de filtre du `MVP-L05-US002` sont entite, cercle, DSM, client, "
+            "metier et statut. L'identifiant vient donc d'ailleurs — l'historique de "
+            "`T9`, ou le back-office du LOT 9."
+        ),
+    )
+    def consulter_la_fiche_archivee(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant d'appartenance")],
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie),  # noqa: B008
+    ) -> FicheDuProfil:
+        """Consulter un profil archive — matrice §6.1."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, perimetre = _resoudre_le_cycle(
+                connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
+            )
+            if ActionDeCycleDeVie.CONSULTER_UN_ARCHIVE not in perimetre.actions:
+                #  **UN 404 ET NON UN 403, ET LA DIFFERENCE EST DELIBEREE.** La
+                #  garde de role a deja rendu 403 si l'appelant n'a aucun des
+                #  trois roles. Arriver ici veut dire qu'il les a et que la CIBLE
+                #  n'est pas archivee : lui rendre 403 lui apprendrait qu'une
+                #  appartenance existe dans un autre etat, ce que le 404 de la
+                #  fiche ordinaire ne dit pas non plus.
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            fiche = lire_la_fiche_archivee(
+                connexion, entite=entite, appartenance=appartenance, instant=instant
+            )
+        if fiche is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        #  **AUCUNE PHOTO SUR UNE FICHE ARCHIVEE.** `chemin_de_la_photo` mene a
+        #  une route qui exige un profil LISTABLE : le lien serait un 404 garanti.
+        #  Un champ qui vaut toujours `null` est ce que `T4` avait refuse pour la
+        #  photo elle-meme, et le motif est le meme -- laisser croire.
+        return _en_reponse(fiche, photo=None)
+
     return routeur
+
+
+def _resoudre_le_cycle(
+    connexion: Connection,
+    *,
+    code: str,
+    appelant: SessionEtablie,
+    cible: uuid.UUID,
+    instant: dt.datetime,
+) -> tuple[uuid.UUID, PerimetreDuCycleDeVie]:
+    """L'entite active et le perimetre de cycle de vie, en UN exemplaire.
+
+    **LES TROIS ROUTES DE `T8` PARTAGENT CE PROLOGUE**, et l'ecrire trois fois
+    donnerait trois regles pour une seule -- `DEC-466`, `ECART-022`. Le jour ou le
+    §6.1 gagnerait une quatrieme ligne de cycle de vie, il n'y aurait qu'un
+    endroit a lire.
+
+    **LES PERMISSIONS SONT RESOLUES DANS CETTE TRANSACTION**, et non reprises de
+    la garde de role : celle-ci a resolu les siennes dans sa propre connexion et
+    a son propre instant. Ce n'est pas une seconde copie de la regle, c'est le
+    meme appel au bon instant -- exactement le parti de `T7`.
+    """
+    entite = resoudre_une_entite_active(connexion, code)
+    if entite is None:
+        raise ErreurApplicative(
+            code=CODE_ENTITE_INTROUVABLE,
+            message=MESSAGE_ENTITE_INTROUVABLE,
+            statut=status.HTTP_404_NOT_FOUND,
+        )
+    permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+    perimetre = resoudre_le_cycle_de_vie(
+        connexion,
+        entite=entite.id,
+        cible=cible,
+        roles=frozenset(permissions.roles),
+    )
+    return entite.id, perimetre
 
 
 def _cercle(cercle: CercleDuProfil) -> CercleDeLaFiche:

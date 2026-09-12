@@ -107,7 +107,11 @@ CLASSEMENT: dict[int, Classement] = {
             "resultat. Il ne peut pas designer le remplacant -- decision humaine -- "
             "mais il rend l'etat VISIBLE au lieu de le laisser silencieux. Le residuel "
             "n'est donc plus « rien ne le voit » mais « rien ne le corrige "
-            "automatiquement »"
+            "automatiquement ». **ET `T8` DU LOT 5 EN COUVRE LE SECOND CHEMIN** : une "
+            "restauration remet une personne en `active` SANS DSM, et "
+            "`restaurer_un_profil` le NOMME dans `relations_a_redonner` — mesure, non "
+            "supposee, et seulement si la relation a REELLEMENT existe. Les deux "
+            "facons d'atteindre l'etat que le §30.4 interdit sont donc visibles"
         ),
         lot="LOT 7, onboarding — ou un service anterieur",
     ),

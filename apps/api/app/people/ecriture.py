@@ -67,7 +67,7 @@ from fastapi import status
 from psycopg import errors as erreurs_psycopg
 from sqlalchemy import text
 from sqlalchemy.engine import Connection, RowMapping
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError
 
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import SituationProfessionnelle
@@ -89,6 +89,9 @@ MESSAGE_PERIODE_INCOMPATIBLE: Final = (
     "Une affectation posterieure existe deja sur ce profil : la modification a ete refusee "
     "plutot que d'ecraser l'historique."
 )
+
+CODE_ETAT_INCOMPATIBLE: Final = "etat_incompatible"
+MESSAGE_ETAT_INCOMPATIBLE: Final = "l'etat actuel des donnees ne permet pas cette operation"
 
 CODE_VALEUR_REFUSEE: Final = "valeur_refusee"
 MESSAGE_VALEUR_REFUSEE: Final = (
@@ -263,8 +266,12 @@ def modifier_les_donnees_organisationnelles(
         ecrits |= _ecrire_le_cercle(
             connexion, etat, demande, entite=entite, cible=cible, acteur=acteur, instant=instant
         )
-    except IntegrityError as erreur:
-        raise _traduire(erreur) from erreur
+    except (IntegrityError, DataError) as erreur:
+        #  **LES DEUX, ET NON `DatabaseError`.** Ce dernier couvre aussi
+        #  `OperationalError` -- une panne de connexion -- qu'il ne faut
+        #  surtout pas traduire en refus metier : elle deviendrait un `422`
+        #  silencieux au lieu d'une alerte.
+        raise traduire_un_refus_de_la_base(erreur) from erreur
 
     #  3. LA VERSION DE LA RACINE MONTE DES QU'UN CHAMP A CHANGE, et pas avant :
     #     une demande sans effet ne doit pas faire echouer la prochaine.
@@ -284,7 +291,7 @@ def modifier_les_donnees_organisationnelles(
     return Modification(version=version, champs=frozenset(ecrits))
 
 
-def _traduire(erreur: IntegrityError) -> ErreurApplicative:
+def traduire_un_refus_de_la_base(erreur: IntegrityError | DataError) -> ErreurApplicative:
     """Traduire un refus de la BASE en refus du §18.3, sans le masquer.
 
     **DEUX REFUS DISTINCTS, DEUX CODES DISTINCTS**, et le discriminant est le
@@ -299,6 +306,41 @@ def _traduire(erreur: IntegrityError) -> ErreurApplicative:
             statut=status.HTTP_409_CONFLICT,
         )
     if isinstance(cause, erreurs_psycopg.CheckViolation):
+        return ErreurApplicative(
+            code=CODE_VALEUR_REFUSEE,
+            message=MESSAGE_VALEUR_REFUSEE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    #  **TROISIEME REFUS, AJOUTE PAR `T8` DU LOT 5.** `T7` n'en rencontrait
+    #  aucun : les cinq relations qu'il ecrit sont gardees par des EXCLUSIONS.
+    #  La restauration, elle, repose sur deux index UNIQUES -- une seule
+    #  appartenance occupante par personne (§25.1), et le couple `(id, entity_id)`
+    #  du §25.3 -- et sans cette branche un refus legitime de la base sortait en
+    #  **500**. Le message ne nomme PAS la cause : elle porterait sur une AUTRE
+    #  entite, ce que le §5.1 ne laisse pas lire. La cause reste au journal de
+    #  l'appelant, qui la connait.
+    if isinstance(cause, erreurs_psycopg.UniqueViolation):
+        return ErreurApplicative(
+            code=CODE_ETAT_INCOMPATIBLE,
+            message=MESSAGE_ETAT_INCOMPATIBLE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+    #  **QUATRIEME REFUS, ET C'ETAIT UN 500 DEPUIS `T7`.** Une colonne GENEREE
+    #  peut refuser une valeur **avant** toute contrainte : `period` est
+    #  `daterange(arrival_date, departure_date)`, et une arrivee posterieure au
+    #  depart rend « range lower bound must be less than or equal to range upper
+    #  bound » -- une `DataException`, donc un `DataError` de SQLAlchemy, que
+    #  `except IntegrityError` NE VOIT PAS.
+    #
+    #  Mesure du 10/09/2026 : le `PATCH` de `T7` sortait en **500** sur une
+    #  `date_d_arrivee` posterieure a une `departure_date` existante -- un etat
+    #  atteignable, `depart_date_si_departed` ne contraignant que `departed`.
+    #  C'est `T8` qui l'a trouve, en cherchant pourquoi son propre refus de date
+    #  n'etait pas traduit. `ECART-058`.
+    #
+    #  `422` et non `409` : c'est la VALEUR envoyee qui est refusee, comme pour
+    #  une `CheckViolation`, et non un conflit avec un etat concurrent.
+    if isinstance(cause, erreurs_psycopg.DataException):
         return ErreurApplicative(
             code=CODE_VALEUR_REFUSEE,
             message=MESSAGE_VALEUR_REFUSEE,

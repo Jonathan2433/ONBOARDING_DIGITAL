@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 9 septembre 2026, `T7` du LOT 5 — écarts `ECART-056` et `ECART-057`
+**Dernière mise à jour :** 10 septembre 2026, `T8` du LOT 5 — écart `ECART-058`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 57 | 10 | 44 | 3 |
+| Total 58 | 10 | 45 | 3 |
 
 ---
 
@@ -75,6 +75,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-055` | **Un test exigeait une durée sur un banc d'essai qui ne peut pas la mesurer, et il est dans la CI bloquante.** `test_jeu_de_recette.py` exigeait **500 ms par requête** depuis le `T12` du LOT 2, plafond jamais revu alors que la requête visée y tournait à **1,3 ms**. Cinq exécutions isolées le 08/09/2026, code identique : **211, 823, 1 006, 1 078 et 1 165 ms** — un succès sur cinq. **Le plan complet clôt la question** : estimations à `rows=1`, `Nested Loop` à **5 001 tours**, **1 028 870** combinaisons rejetées sur 1 029 071, et des `Heap Fetches` sur un *Index Only* Scan — la carte de visibilité n'est pas positionnée pour des lignes **non validées**. **Ce n'est pas un problème produit** : en service, avec des statistiques réelles, le planificateur prendrait un Hash Join | Non pour le produit — **oui pour la CI**, que ce test peut rougir à tout moment | **Clos le 08/09/2026** — `DEC-567` : la durée est **rapportée**, la **justesse** est exigée, comme `DEC-562` l'avait déjà tranché pour le test de `T3` |
 | `ECART-056` | **La seule requête applicative du dépôt à filtrer encore sur `ends_at IS NULL` SEUL, et `T7` allait la consommer.** `responsabilite_dsm_active` rendait un identifiant pour une responsabilité DSM **future** — dont `starts_at` est à venir et `ends_at` nul — alors que **la fonction immédiatement en dessous documente sur dix lignes pourquoi cela ne suffit pas** et emploie `period @> :instant`. Scénario d'échec mesuré : `attribuer_la_categorie_dg` **saute** la création quand elle rend non-`None`, donc une personne promue DG aujourd'hui, portant une responsabilité DSM programmée le mois prochain, n'obtenait **aucune** responsabilité DSM active — alors que le §8.4 l'exige — et l'action rendait un succès. **Aucune contrainte n'interdit un `starts_at` futur**, mesuré : les deux seuls `CHECK` de la table portent sur le type et la portée | Non — aucune route métier n'écrivait avant `T7`, donc la fonction n'était appelée que par des tests. **Mais `T7` est la première écriture** | **Clos en `T7` du LOT 5** — `DEC-568` : `period @> :instant` et `archived_at IS NULL`, avec le test temporel qui manquait et son témoin |
 | `ECART-057` | **Une échéance de `recette-modele-check` nommait une sous-étape SUPPRIMÉE, et le contrôle passait au vert.** Le §30.12 — « une photo sans autorisation ne peut pas être publiée » — était classé `REPORTE` avec pour échéance « LOT 5 **`T6`** », or `DEC-564` a fusionné `T6` dans `T5` le 06/09/2026 et `T5` a livré le service **avec ses tests nommés**. Le contrôle exige que chaque contrôle du §30 **soit classé**, et que chaque `ACQUIS` **nomme un test qui existe** — il ne vérifie **pas** que l'échéance d'un `REPORTE` désigne une sous-étape réelle | Non — le §30.12 est acquis en fait depuis le 07/09/2026, seul son classement était en retard | **Clos en `T7` du LOT 5** — `DEC-568` : le §30.12 passe `ACQUIS`, avec trois tests nommés dont le témoin temporel |
+| `ECART-058` | Une colonne GÉNÉRÉE refuse une valeur **avant** toute contrainte, et le `PATCH` de `T7` sortait alors en **500** | Non — le refus était correct, sa forme ne l'était pas | **Clos** |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -174,7 +175,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-058`.**
+**Prochain identifiant libre : `ECART-059`.**
 
 ---
 
@@ -852,3 +853,17 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non. Le §30.12 est acquis **en fait** depuis le 07/09/2026 — seul son classement était en retard, et un classement trop prudent ne fait rien passer d'indu. |
 | Recommandation | **Reclasser, et se demander à chaque livraison quels contrôles du §30 elle acquiert** — c'est une question à poser en fin de sous-étape, comme on tient les registres.<br>**Et une piste pour plus tard, non retenue ici** : le contrôle pourrait confronter les échéances aux sous-étapes que la fiche du lot **déclare**, ce qui attraperait une sous-étape supprimée. Non fait dans `T7` parce que le périmètre de la sous-étape est l'écriture, et qu'élargir un contrôle de recette en passant relève de l'hygiène — à instruire hors sous-étape fonctionnelle, comme `ECART-049`. |
 | Résolution | **Clos en `T7` du LOT 5**, `DEC-568`. Le §30.12 passe **`ACQUIS`**, avec trois tests nommés qui couvrent les deux sens — le refus des cinq causes, le témoin positif, et le témoin **temporel** où seul l'instant avance — et la preuve renvoie au contrôle 16 de `make profil-check`. Le compte passe de 12 à **13 acquis**, et de 11 à **10 reportés**. |
+
+---
+
+## `ECART-058` — Une colonne générée refuse avant toute contrainte, et le refus sortait en 500
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 10 septembre 2026, en `T8` du LOT 5, en cherchant pourquoi le refus d'une date de départ antérieure à l'arrivée n'était pas traduit au format du §18.3 |
+| Source | `apps/api/app/people/ecriture.py`, `modifier_les_donnees_organisationnelles` et `traduire_un_refus_de_la_base` — livrés en `T7` |
+| Constat | `entity_membership.period` est **`GENERATED ALWAYS AS daterange(arrival_date, departure_date)`**. Une arrivée postérieure au départ rend donc « **range lower bound must be less than or equal to range upper bound** » — une `psycopg.errors.DataException`, que SQLAlchemy emballe en **`DataError`**. Or le service ne capturait que `IntegrityError` : l'exception remontait, et la route rendait **500**.<br>**L'état est atteignable, mesuré :** une appartenance `active` **peut** porter une `departure_date`, la contrainte `depart_date_si_departed` ne contraignant que l'état `departed`. Un `PATCH` de `date_d_arrivee` au-delà de cette date suffit. Reproduit le 10/09/2026 par une sonde, avant toute correction. |
+| Cause | **Une contrainte n'est pas la seule chose qui refuse.** `traduire_un_refus_de_la_base` avait été écrite contre les trois refus que `T7` rencontrait — exclusion, `CHECK`, et rien d'autre — et une colonne **générée** échoue à un autre étage : le calcul de la valeur, avant que toute contrainte n'ait la parole. C'est le §7.0 sixième proposition transposée aux **types d'exception** : `IntegrityError` et `DataError` sont deux grandeurs différentes, et le `except` n'en couvrait qu'une.<br>**Et c'est la moitié oubliée du §7.38 qui l'a fait trouver.** `T8` a rencontré exactement le même refus sur **sa** date de départ, a vu qu'il n'était pas traduit, puis a demandé *quel autre code porte la même exigence* — la question que `T3` n'avait pas posée et que `ECART-055` a coûtée deux semaines plus tard. |
+| Bloquant | Non. Le refus était **juste** — l'écriture n'a jamais eu lieu — seule sa forme était fausse : un `500` au lieu du `422` du §18.3, donc un appelant qui ne peut pas distinguer sa propre erreur d'une panne du serveur. |
+| Recommandation | **Capturer `(IntegrityError, DataError)`, et non `DatabaseError`.** Ce dernier couvre aussi `OperationalError` — une panne de connexion — qu'il ne faut surtout pas traduire en refus métier : elle deviendrait un `422` silencieux au lieu d'une alerte.<br>**Et deux tests, non un.** Le refus **avorte la transaction** PostgreSQL entière — « current transaction is aborted » — si bien que le témoin positif ne peut pas vivre dans le même test que le refus. C'est un fait du harnais, pas du produit, et il est nommé dans le test. |
+| Résolution | **Clos en `T8` du LOT 5**, `DEC-569`. `traduire_un_refus_de_la_base` gagne une quatrième branche, `DataException` → **`422 valeur_refusee`** — c'est la **valeur envoyée** qui est refusée, comme pour un `CHECK`, et non un conflit avec un état concurrent. Les deux appelants — le `PATCH` de `T7` et l'archivage de `T8` — capturent désormais les deux exceptions. Deux tests l'éprouvent dans `test_ecriture_organisationnelle.py`, le refus et son témoin, plus un dans `test_archivage.py` sur la date de départ. |

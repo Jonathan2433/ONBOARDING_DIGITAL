@@ -284,6 +284,29 @@ VISIBILITES_PROFIL: tuple[str, ...] = tuple(membre.value for membre in Visibilit
 ETAT_LISTE: str = EtatAppartenance.ACTIVE.value
 VISIBILITE_LISTEE: str = VisibiliteProfil.PUBLISHED.value
 
+#  **LES QUATRE TRANSITIONS DU §24.1, ET ELLES SEULES.**
+#
+#  Le diagramme du §24.1 est la source. Il ne porte **aucune** transition
+#  `Active --> Archived` : archiver quelqu'un d'actif passe donc par `Departed`,
+#  ce que le cahier appelle « archivage fonctionnel ». La quatrieme,
+#  `Archived --> Active` -- « reactivation explicite autorisee » -- est celle que
+#  `T8` du LOT 5 realise ; les trois autres viennent du `T9` du LOT 3.
+#
+#  **ELLES VIVENT ICI, ET NON DANS LE SERVICE QUI LES APPLIQUE.** Deux modules
+#  en ont besoin pour des raisons differentes : `people/services.py` pour
+#  refuser une transition, `permissions/perimetre.py` pour savoir quelle ACTION
+#  de cycle de vie l'etat courant rend possible. Les laisser dans le service
+#  ferait dependre le module de permissions d'un module d'ecriture, et une copie
+#  dans chacun divergerait au premier ajout -- §7.27. C'est le meme constat que
+#  pour `ETAT_LISTE` ci-dessus, et le meme remede : un fait du MODELE se declare
+#  aupres du modele.
+TRANSITIONS_DU_CYCLE_DE_VIE: tuple[tuple[str, str], ...] = (
+    (EtatAppartenance.ACTIVE.value, EtatAppartenance.DEPARTED.value),
+    (EtatAppartenance.DEPARTED.value, EtatAppartenance.ARCHIVED.value),
+    (EtatAppartenance.FUTURE.value, EtatAppartenance.ARCHIVED.value),
+    (EtatAppartenance.ARCHIVED.value, EtatAppartenance.ACTIVE.value),
+)
+
 
 class EntityMembership(ChampsCommuns, RessourceLocale, Base):
     """Profil d'une personne dans une entite — modele §6.2."""
