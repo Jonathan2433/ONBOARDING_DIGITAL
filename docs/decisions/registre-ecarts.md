@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 10 septembre 2026, `T8` du LOT 5 — écart `ECART-058`
+**Dernière mise à jour :** 12 septembre 2026, `T9` du LOT 5 — écart `ECART-059`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 58 | 10 | 45 | 3 |
+| Total 59 | 11 | 45 | 3 |
 
 ---
 
@@ -76,6 +76,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-056` | **La seule requête applicative du dépôt à filtrer encore sur `ends_at IS NULL` SEUL, et `T7` allait la consommer.** `responsabilite_dsm_active` rendait un identifiant pour une responsabilité DSM **future** — dont `starts_at` est à venir et `ends_at` nul — alors que **la fonction immédiatement en dessous documente sur dix lignes pourquoi cela ne suffit pas** et emploie `period @> :instant`. Scénario d'échec mesuré : `attribuer_la_categorie_dg` **saute** la création quand elle rend non-`None`, donc une personne promue DG aujourd'hui, portant une responsabilité DSM programmée le mois prochain, n'obtenait **aucune** responsabilité DSM active — alors que le §8.4 l'exige — et l'action rendait un succès. **Aucune contrainte n'interdit un `starts_at` futur**, mesuré : les deux seuls `CHECK` de la table portent sur le type et la portée | Non — aucune route métier n'écrivait avant `T7`, donc la fonction n'était appelée que par des tests. **Mais `T7` est la première écriture** | **Clos en `T7` du LOT 5** — `DEC-568` : `period @> :instant` et `archived_at IS NULL`, avec le test temporel qui manquait et son témoin |
 | `ECART-057` | **Une échéance de `recette-modele-check` nommait une sous-étape SUPPRIMÉE, et le contrôle passait au vert.** Le §30.12 — « une photo sans autorisation ne peut pas être publiée » — était classé `REPORTE` avec pour échéance « LOT 5 **`T6`** », or `DEC-564` a fusionné `T6` dans `T5` le 06/09/2026 et `T5` a livré le service **avec ses tests nommés**. Le contrôle exige que chaque contrôle du §30 **soit classé**, et que chaque `ACQUIS` **nomme un test qui existe** — il ne vérifie **pas** que l'échéance d'un `REPORTE` désigne une sous-étape réelle | Non — le §30.12 est acquis en fait depuis le 07/09/2026, seul son classement était en retard | **Clos en `T7` du LOT 5** — `DEC-568` : le §30.12 passe `ACQUIS`, avec trois tests nommés dont le témoin temporel |
 | `ECART-058` | Une colonne GÉNÉRÉE refuse une valeur **avant** toute contrainte, et le `PATCH` de `T7` sortait alors en **500** | Non — le refus était correct, sa forme ne l'était pas | **Clos** |
+| `ECART-059` | La matrice donne au responsable de bureau un périmètre « Bureau » sur l'audit, mais **aucune table ne rattache un collaborateur à un bureau** | Non — le §6.2 tranche dans le même sens | Ouvert, à reprendre au LOT 6 |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -175,7 +176,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-059`.**
+**Prochain identifiant libre : `ECART-060`.**
 
 ---
 
@@ -867,3 +868,17 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | Non. Le refus était **juste** — l'écriture n'a jamais eu lieu — seule sa forme était fausse : un `500` au lieu du `422` du §18.3, donc un appelant qui ne peut pas distinguer sa propre erreur d'une panne du serveur. |
 | Recommandation | **Capturer `(IntegrityError, DataError)`, et non `DatabaseError`.** Ce dernier couvre aussi `OperationalError` — une panne de connexion — qu'il ne faut surtout pas traduire en refus métier : elle deviendrait un `422` silencieux au lieu d'une alerte.<br>**Et deux tests, non un.** Le refus **avorte la transaction** PostgreSQL entière — « current transaction is aborted » — si bien que le témoin positif ne peut pas vivre dans le même test que le refus. C'est un fait du harnais, pas du produit, et il est nommé dans le test. |
 | Résolution | **Clos en `T8` du LOT 5**, `DEC-569`. `traduire_un_refus_de_la_base` gagne une quatrième branche, `DataException` → **`422 valeur_refusee`** — c'est la **valeur envoyée** qui est refusée, comme pour un `CHECK`, et non un conflit avec un état concurrent. Les deux appelants — le `PATCH` de `T7` et l'archivage de `T8` — capturent désormais les deux exceptions. Deux tests l'éprouvent dans `test_ecriture_organisationnelle.py`, le refus et son témoin, plus un dans `test_archivage.py` sur la date de départ. |
+
+---
+
+## `ECART-059` — Une portée « Bureau » qui n'a rien à quoi s'accrocher
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 septembre 2026, en `T9` du LOT 5, en dérivant la grille de lecture de l'historique depuis la matrice |
+| Source | Matrice §5, ligne « Audit » ; matrice §16, ligne « Consulter » ; modèle §8.3 et §8.4 |
+| Constat | La ligne « Audit » du §5 donne au responsable de bureau la portée « **Bureau** », et le §16 la libelle « **Historique du bureau** ». Or **aucune table ne rattache un collaborateur à un bureau** : mesure du 12/09/2026, `office_id` n'existe que sur `framework_responsibility_assignment`, et le §8.4 le rend « obligatoire uniquement pour `OFFICE_MANAGER` ». Il n'existe pas d'`office_membership` — la seule appartenance modélisée est celle aux **cercles**, §8.2.<br>La cellule est donc **inapplicable à une personne** : un responsable de bureau n'a aucun ensemble de collaborateurs à qui la rattacher. |
+| Cause | **La matrice décrit une portée que le modèle ne porte pas**, exactement comme `ECART-031` — « le §8.4 exige un bureau **publié**, mais le §8.3 ne déclare aucun état de publication ». Deux documents validés, chacun cohérent seul, et une cellule qui ne se calcule pas.<br>**Et le corpus tranche dans le même sens ailleurs**, ce qui rend la lecture sûre : le §6.2 écrit qu'« un responsable de bureau **n'obtient aucun droit général sur les profils** du seul fait de sa responsabilité de bureau ». La cellule « Bureau » du §5 porte donc sur l'audit du **bureau comme ressource** — un contenu du LOT 6 — et non sur les personnes. |
+| Bloquant | **Non.** Deux sources concordantes — le §6.2 et l'absence de table — donnent la même conclusion : `OFFICE` n'obtient rien sur l'historique d'une personne. `T9` l'applique, et un contrôle l'éprouve **avec** une responsabilité `OFFICE_MANAGER` réelle, pour que le refus ne vienne pas d'un décor vide. |
+| Recommandation | **Ne rien inventer, et surtout pas une table d'appartenance à un bureau** : le LOT 6 — Framework, cercles, bureaux — est le lot qui instruit les bureaux, et c'est là que la question se pose. Deux issues possibles, et le choix n'appartient pas au LOT 5 : soit les bureaux reçoivent une appartenance, et la cellule devient calculable ; soit ils n'en reçoivent pas, et la cellule du §5 est reclassée comme portant sur le contenu du bureau. **À reprendre avec `ECART-031`**, qui porte sur la même table et la même absence. |
+| Résolution | **Ouvert.** Échéance : **avant le LOT 6**. `T9` le nomme, l'applique dans le sens du §6.2, et ne comble rien. |

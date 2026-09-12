@@ -57,6 +57,7 @@ from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
 from app.people.archivage import archiver_un_profil, restaurer_un_profil
 from app.people.ecriture import modifier_les_donnees_organisationnelles
+from app.people.historique import HistoriqueOrganisationnel, lire_l_historique
 from app.people.modeles import EtatAppartenance, SituationProfessionnelle
 from app.people.profil import (
     CercleDuProfil,
@@ -75,10 +76,12 @@ from app.people.trombinoscope import (
 from app.permissions.dependances import exiger_un_role_dans_l_entite
 from app.permissions.perimetre import (
     ROLES_D_ECRITURE,
+    ROLES_DE_L_HISTORIQUE,
     ROLES_DU_CYCLE_DE_VIE,
     ActionDeCycleDeVie,
     ChampOrganisationnel,
     PerimetreDuCycleDeVie,
+    resoudre_l_acces_a_l_historique,
     resoudre_le_cycle_de_vie,
     resoudre_le_perimetre,
 )
@@ -108,6 +111,9 @@ GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
 GABARIT_ARCHIVAGE: Final = "/entities/{code}/people/{appartenance}/archivage"
 GABARIT_RESTAURATION: Final = "/entities/{code}/people/{appartenance}/restauration"
 GABARIT_FICHE_ARCHIVEE: Final = "/entities/{code}/people/{appartenance}/fiche-archivee"
+
+#  Le chemin de `T9`. Un NOM, comme les autres.
+GABARIT_HISTORIQUE: Final = "/entities/{code}/people/{appartenance}/historique"
 
 
 def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
@@ -375,6 +381,75 @@ class ReponseDeRestauration(BaseModel):
             "restauration — mesurees, pas supposees. La restauration ne rouvre rien."
         )
     )
+
+
+class PeriodeMetierRendue(BaseModel):
+    """Une affectation metier et sa periode — §6.4."""
+
+    metier: str
+    debut: dt.datetime
+    fin: dt.datetime | None
+
+
+class PeriodeStatutRendue(BaseModel):
+    """Le statut ET son client : UNE SEULE periode, §6.5."""
+
+    statut: str
+    client: str | None
+    debut: dt.datetime
+    fin: dt.datetime | None
+
+
+class PeriodeCercleRendue(BaseModel):
+    """Une appartenance a un cercle, avec son type — §8.2."""
+
+    code: str
+    nom: str
+    type: str
+    debut: dt.datetime
+    fin: dt.datetime | None
+
+
+class PeriodeDsmRendue(BaseModel):
+    """Un rattachement DSM et sa periode — §8.5."""
+
+    dsm: str
+    debut: dt.datetime
+    fin: dt.datetime | None
+
+
+class PeriodeResponsabiliteRendue(BaseModel):
+    """Une responsabilite Framework et sa portee — §8.4."""
+
+    type: str
+    cercle: str | None
+    bureau: str | None
+    debut: dt.datetime
+    fin: dt.datetime | None
+
+
+class ReponseDeLHistorique(BaseModel):
+    """Les cinq axes, dont un peut valoir `null`.
+
+    **`null` ET `[]` NE DISENT PAS LA MEME CHOSE, ET C'EST LE POINT.** `[]`
+    signifie « il n'y a rien a montrer » ; `null` signifie « ce n'est pas dans
+    ton perimetre ». Les confondre ferait croire a un DSM que son consultant n'a
+    jamais porte de responsabilite — une affirmation FAUSSE, et le §7.21 dit
+    qu'un champ qui ment apprend a ne pas le lire.
+
+    **La cle reste PRESENTE a `null` plutot qu'absente** : un consommateur qui
+    doit tester l'existence d'une cle avant de la lire finit par se tromper, et
+    c'est deja le parti du format d'erreur du §18.3.
+
+    **Et ce n'est pas une fuite** : un axe `null` l'est pour TOUTES les cibles de
+    ce role, jamais selon la cible. On n'apprend rien de la personne consultee.
+    """
+
+    metier: list[PeriodeMetierRendue] | None
+    statut: list[PeriodeStatutRendue] | None
+    cercle: list[PeriodeCercleRendue] | None
+    dsm: list[PeriodeDsmRendue] | None
+    responsabilites: list[PeriodeResponsabiliteRendue] | None
 
 
 class ReponseDuTrombinoscope(BaseModel):
@@ -657,6 +732,12 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
     #  `garde_d_ecriture` accorderait donc l'archivage a deux roles que le
     #  document en exclut, et le §6.2 le redit en clair.
     garde_du_cycle_de_vie = exiger_un_role_dans_l_entite(parametres, ROLES_DU_CYCLE_DE_VIE)
+    #  **UNE TROISIEME GRILLE, ET LE DOCUMENT EN PORTE BIEN TROIS.** L'ecriture
+    #  vient du §6.1, le cycle de vie de ses trois lignes d'archivage, et la
+    #  lecture d'historique de la ligne « Audit » du §5 — qui refuse `EMP` et
+    #  `NEW`, et ne donne rien a `OFFICE` sur une personne : le §6.2 l'ecrit, et
+    #  AUCUNE table ne rattache un collaborateur a un bureau (`ECART-059`).
+    garde_de_l_historique = exiger_un_role_dans_l_entite(parametres, ROLES_DE_L_HISTORIQUE)
 
     @routeur.patch(
         GABARIT_FICHE,
@@ -1141,7 +1222,157 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
         #  photo elle-meme, et le motif est le meme -- laisser croire.
         return _en_reponse(fiche, photo=None)
 
+    # -------------------------------------------------------------------
+    #  L'HISTORIQUE ORGANISATIONNEL — LOT 5, `T9`, story `MVP-L05-US008`
+    # -------------------------------------------------------------------
+
+    @routeur.get(
+        GABARIT_HISTORIQUE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLHistorique,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "L'appelant ne porte AUCUN role de lecture d'historique dans cette "
+                    "entite. C'est le cas d'`EMP`, de `NEW` et du responsable de bureau "
+                    "— la ligne « Audit » du §5 les met a tiret, et le §6.2 ecrit qu'un "
+                    "responsable de bureau « n'obtient aucun droit general sur les "
+                    "profils du seul fait de sa responsabilite de bureau »."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour QUATRE causes : code inconnu ou entite non "
+                    "active, appartenance inexistante, appartenance d'une AUTRE entite, "
+                    "ou cible hors du perimetre de l'appelant — un DSM qui n'est pas "
+                    "celui de ce consultant, un Booster dont ce n'est pas le cercle "
+                    "principal. Distinguer apprendrait de qui l'on n'est pas responsable."
+                )
+            },
+        },
+        summary="Consulter l'historique organisationnel d'un collaborateur",
+        description=(
+            "Les periodes de metier, de statut et client, de cercle, de DSM et de "
+            "responsabilites — backlog `MVP-L05-US008`.<br><br>"
+            "**AUCUN AUDIT TECHNIQUE N'EST EXPOSE, ET C'EST STRUCTUREL** : aucune "
+            "requete ne touche `auth_event`, et aucune periode rendue n'a de champ qui "
+            "puisse porter `created_by_person_id`, `updated_by_person_id`, "
+            "`assigned_by_person_id`, `version`, `created_at` ou `updated_at`. Le §16.2 "
+            "enumere ce qu'aucun role ne peut consulter depuis l'audit : rien de tout "
+            "cela ne vit dans les tables lues ici.<br><br>"
+            "**QUI LIT QUOI — la ligne « Audit » du §5**, qui refuse `EMP` et `NEW` : un "
+            "DSM lit l'historique de SES consultants, un Booster celui des membres "
+            "PRINCIPAUX de son cercle, l'ESM et l'administrateur d'entite celui de "
+            "l'entite, le super-administrateur partout.<br><br>"
+            "**L'AXE DES RESPONSABILITES EST PLUS FERME**, et le §20 le dit a part : "
+            "« Consulter l'historique des roles | ESM | ADM-E | SUPER ». Le §23.2 "
+            "tranche — une interdiction liee a la ressource prevaut sur le cumul — donc "
+            "cet axe vaut `null` pour un DSM et pour un Booster. `null` n'est PAS `[]` : "
+            "le premier dit « hors perimetre », le second « rien a montrer ».<br><br>"
+            "**AUCUNE GRILLE D'ETAT** : un profil `departed` ou `archived` a justement "
+            "l'historique le plus interessant, et exiger un etat occupant le rendrait "
+            "inaccessible au moment ou il sert."
+        ),
+    )
+    def consulter_l_historique(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[
+            uuid.UUID, Path(description="L'identifiant d'appartenance, rendu par la fiche")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_l_historique),  # noqa: B008
+    ) -> ReponseDeLHistorique:
+        """Consulter l'historique organisationnel — matrice §5 et §20."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            #  Les permissions sont resolues DANS cette transaction, comme en `T7`
+            #  et `T8` : la garde a resolu les siennes dans sa propre connexion et
+            #  a son propre instant.
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            acces = resoudre_l_acces_a_l_historique(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                cible=appartenance,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            #  **UN ACCES VIDE REND 404, ET NON 403.** La garde a deja rendu 403 si
+            #  l'appelant ne porte aucun role d'historique. Arriver ici avec un
+            #  ensemble vide veut dire que la CIBLE est hors de sa portee — ou
+            #  qu'elle n'existe pas. Les deux rendent la meme forme : distinguer
+            #  apprendrait a un DSM de qui il n'est pas responsable.
+            if not acces.axes:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            historique = lire_l_historique(
+                connexion,
+                entite=entite.id,
+                cible=appartenance,
+                acces=acces,
+                instant=instant,
+            )
+        if historique is None:  # pragma: no cover — course : la cible a disparu entre-temps
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return _historique_en_reponse(historique)
+
     return routeur
+
+
+def _historique_en_reponse(historique: HistoriqueOrganisationnel) -> ReponseDeLHistorique:
+    """Traduire les structures du service en modeles de reponse.
+
+    **UN AXE `None` RESTE `None`**, jamais `[]` : c'est toute la distinction que
+    `ReponseDeLHistorique` porte, et l'ecraser ici la perdrait en silence.
+    """
+    return ReponseDeLHistorique(
+        metier=None
+        if historique.metier is None
+        else [
+            PeriodeMetierRendue(metier=p.metier, debut=p.debut, fin=p.fin)
+            for p in historique.metier
+        ],
+        statut=None
+        if historique.statut is None
+        else [
+            PeriodeStatutRendue(statut=p.statut, client=p.client, debut=p.debut, fin=p.fin)
+            for p in historique.statut
+        ],
+        cercle=None
+        if historique.cercle is None
+        else [
+            PeriodeCercleRendue(code=p.code, nom=p.nom, type=p.type, debut=p.debut, fin=p.fin)
+            for p in historique.cercle
+        ],
+        dsm=None
+        if historique.dsm is None
+        else [PeriodeDsmRendue(dsm=p.dsm, debut=p.debut, fin=p.fin) for p in historique.dsm],
+        responsabilites=None
+        if historique.responsabilites is None
+        else [
+            PeriodeResponsabiliteRendue(
+                type=p.type, cercle=p.cercle, bureau=p.bureau, debut=p.debut, fin=p.fin
+            )
+            for p in historique.responsabilites
+        ],
+    )
 
 
 def _resoudre_le_cycle(
