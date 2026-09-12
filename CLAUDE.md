@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 12 septembre 2026, à la sortie de **`T11` du LOT 5**
+**Mis à jour le :** 12 septembre 2026, à la sortie de **`T12` du LOT 5** — le lot attend sa porte
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,9 +21,9 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` à `T11` sont terminées** — `T11` en **deux** pull requests, `DEC-572`. **Une seule reste : `T12`** |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **LES ONZE SOUS-ÉTAPES SONT TERMINÉES** — `T11` en **deux** pull requests, `DEC-572`. **Le lot attend sa porte `G5`**, décision `DEC-574` |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T12` DU LOT 5 — LA RECETTE ET LA CHECKLIST `G5`.** C'est la **dernière** sous-étape : les **sept** critères de sortie du lot, la démonstration, et ce que le lot n'a PAS fait. **TROIS CHOSES QUE `T11` A ÉTABLIES ET QU'IL FAUT SAVOIR AVANT DE PROUVER QUOI QUE CE SOIT :** un **bouchon de `fetch` prouve ce qu'on a écrit dans le bouchon**, jamais ce que l'API fait — les deux défauts de `T11` étaient invisibles à 192 tests et six contrôles verts, et visibles au **premier appel réel** (§7.43) ; `make code-refresh` doit tourner **AVANT** les contrôles d'écran, et `make ecrans-check` le vérifie désormais sur les **32** modules ; et la fiche sert sa **`version`** depuis `DEC-573`, sans quoi aucun écran ne pouvait écrire. **CE QUI RESTE SANS ÉCRAN, À ANNONCER À `G5` :** **`US006` — modifier un profil** (`T7`), dont l'API est complète et qu'aucun écran n'appelle. **ET TROIS CHOSES QUI ATTENDENT QUELQU'UN D'AUTRE :** **`ECART-012` attend Léa** · **`ECART-060`** attend les listes de référence du LOT 6 et du LOT 9 · **`ECART-061`** attend une décision sur le mot de passe provisoire. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — les comptes de service, au LOT 9 |
+| **Prochaine action** | **LA PORTE `G5`, ET C'EST JONATHAN QUI LA FRANCHIT.** Le LOT 5 est **complet** : ses onze sous-étapes sont livrées, et la recette a tourné **sur une base remise à zéro** — `make check` code=0, 915 pytest dont 602 d'intégration, 440 Vitest, et **trente-deux** contrôles de stack tous verts. Tout est dans [`checklist-validation-G5.md`](docs/operations/checklist-validation-G5.md), décision `DEC-574`. **N'OUVRE AUCUN LOT DE TOI-MÊME** — règle n°1 du §2, et elle a nommé le mauvais lot pendant deux semaines. **CE QUE LA CHECKLIST DIT ET QU'IL FAUT LIRE EN PREMIER, C'EST SON §7 :** ce que le lot n'a **PAS** fait. **`US006` — modifier un profil — n'a AUCUN écran**, son API étant complète depuis `T7` ; **aucune route ne permet de RETIRER** une autorisation de photo ; **aucune miniature n'est fabriquée**, c'est le LOT 11 ; et **quatre filtres sur six** attendent les listes de référence, `ECART-060`. **ET TROIS CHOSES QUI ATTENDENT QUELQU'UN D'AUTRE :** **`ECART-012` attend Léa**, échéance dépassée et désormais **à l'écran** · **`ECART-061`** attend une décision sur le mot de passe provisoire, LOT 13 · **`ECART-031`** attend avant le LOT 6. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — les comptes de service, au LOT 9 |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 0 sur 8** — et c'est normal, aucune story du lot n'est achevée par une seule sous-étape. **Cette cellule annonçait « LOT 4 : 0 sur 7 » et « #92 reste ouverte » le 07/09/2026 : les SEPT sont closes, #92 depuis le 24/08 à 15:31 UTC**, à la porte `G4`. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` → **9**, et les neuf sont l'épic `#115` et les huit stories du LOT 5 |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
@@ -84,7 +84,7 @@ Toute modification passe par une branche et une pull request vers `develop`.
    découpage est validé — **ONZE** sous-étapes depuis la fusion de `T5` et `T6` (`DEC-564`) — et
    **`T1` à `T5` et `T7` à `T10` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
    — import CSV — ni au LOT 11 — génération des miniatures.
-   Et **une sous-étape à la fois** : la suivante est **`T12`**, la dernière.
+   Et **une sous-étape à la fois**. **IL N'Y EN A PLUS** : le LOT 5 est complet, et ce qui vient est **la porte `G5`**, que Jonathan franchit — puis le LOT 6, qu'il ouvre.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
    > disait « LE LOT 4 EST OUVERT […] la suivante est `T2` » et **interdisait le LOT 5**, qui était
@@ -120,7 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
-| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,11}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **62** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,12}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **62** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -130,6 +130,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
+| **Que valide Jonathan à la porte `G5` ?** | **`docs/operations/checklist-validation-G5.md`** — les **sept** critères de sortie avec ce qui prouve chacun, **huit** gestes de démonstration, les trente-deux contrôles de la recette, et **son §7 : ce que le lot n'a PAS fait**. C'est ce §7 qu'il faut lire en premier |
 | **Que valide Jonathan à la porte `G4` ?** | **`docs/operations/checklist-validation-G4.md`** — les **six** critères avec le contrôle qui prouve chacun, huit gestes de démonstration, et **ce que le lot n'a PAS fait** |
 | **Que valide Jonathan à la porte `G2` ?** | **`docs/operations/checklist-validation-G2.md`** — les 7 critères, les 25 contrôles du §30 **classés**, et une démonstration guidée |
 | Que validait-il à `G1` ? | `docs/operations/checklist-validation-G1.md` — 33 contrôles |
@@ -2415,7 +2416,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 5 est ouvert, et `T12` est la DERNIÈRE
+# 9. Par où commencer : le LOT 5 est COMPLET, et sa porte attend Jonathan
 
 ## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
@@ -2466,9 +2467,9 @@ sont faites**.
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le lot est ouvert et son découpage est validé** — onze sous-étapes, `DEC-558` puis `DEC-564`. Il
-n'y a donc plus de découpage à proposer : il reste **`T12`**, la recette et la checklist `G5`.
+n'y a donc plus rien à découper ni à faire : **les onze sous-étapes sont livrées**, et la checklist [`checklist-validation-G5.md`](docs/operations/checklist-validation-G5.md) attend la décision de Jonathan.
 
-1. **Lire la fiche §3 pour le libellé et le critère de `T12`**, et les **sept critères de sortie du lot** pour leur
+1. **Ne commence AUCUN travail de lot tant que la porte `G5` n'est pas franchie** — règle n°1 du §2. Lis la checklist `G5` pour savoir ce qui est prouvé, et surtout son §7 : ce que le lot n'a PAS fait. Le LOT 6 s'ouvrira par une décision de Jonathan, comme le LOT 5 par
    critère d'acceptation. **Dériver les libellés de la fiche, ne pas les relire de mémoire** : trois
    documents ont annoncé « `T7` — les écrans de trombinoscope » alors que les écrans sont `T10` et
    `T11`, et la dérivation seule l'a démenti (`ECART-053`, puis `ECART-054`).
@@ -2503,7 +2504,7 @@ n'y a donc plus de découpage à proposer : il reste **`T12`**, la recette et la
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
 | **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13.** Mesure du 08/09/2026 sur les images publiées : `api` et `worker` ne portent **qu'un** `CRITICAL`, `CVE-2026-13221` de `perl-base`, **sans correctif** — donc correctement ignoré par la porte, et `ROAD-RSK-033` est **inchangé dans sa nature** |
 | **`images.yml` EST ROUGE, ET CE N'EST PAS ENCORE CONSIGNÉ DANS UN REGISTRE** | **Cinq exécutions consécutives en échec depuis `T2` du LOT 5**, le 05/09/2026. **La construction et les deux lancements d'architecture PASSENT** ; seule la tâche **Trivy** échoue, et sur la **seule image `web`** : `CVE-2026-56854`, **CRITICAL** et **corrigeable** (`golang.org/x/crypto` v0.52.0 → 0.55.0), héritée de la base `caddy:2.11-alpine`. **La porte fait donc exactement son travail**, `DEC-482` bloquant sur `CRITICAL` corrigeable. Deux choses à savoir : le **même condensat** sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert ; et la porte d'`images.yml` **n'est pas un contexte requis**, donc **les fusions ne sont pas bloquées**. **Aucun identifiant n'a été ouvert** : Jonathan a choisi le 08/09/2026 de ne pas instruire ce point dans la pull request d'hygiène, et une montée de base Caddy doit d'abord être **mesurée** dans ce qu'elle casse (§7.0, cinquième proposition) |
-| **11 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé |
+| **10 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé. **Ce nombre annonçait « 11 » jusqu'à `T12`**, et il n'était pas dérivé — la mesure donne 13 acquis, 1 partiel, 1 inapplicable et **10** reportés, qui vont aux LOTS 7, 9, 10, 11 et 12. `ECART-021`, la énième fois |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
 ---
