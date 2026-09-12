@@ -54,6 +54,29 @@ export const TAILLES_DE_PAGE: readonly number[] = [25, 50, 100];
 export const TAILLE_PAR_DEFAUT = 25;
 
 /** Une ligne du trombinoscope. */
+/**
+ * Le cercle PRINCIPAL d'une ligne, avec son jeton de couleur — LOT 5, `T10`.
+ *
+ * **LE NOM VOYAGE AVEC LE JETON, ET LE §10.1 L'EXIGE** : « la couleur du cercle
+ * peut etre utilisee sur les bordures, arriere-plans legers et badges, mais
+ * **jamais comme seul moyen de transmettre une information** ». Un ecran qui
+ * n'aurait que le jeton ne pourrait pas respecter la regle, quoi qu'il fasse.
+ */
+export interface CercleDeLaListe {
+  readonly code: string;
+  readonly nom: string;
+  /**
+   * **LE JETON PEUT MANQUER, ET C'EST LE SCHEMA QUI LE DIT.** `circle.color_token`
+   * est nullable au catalogue : un cercle sans couleur declaree est un etat
+   * legitime, pas une anomalie. Le typer `string` a fait servir la chaine
+   * « None » -- un jeton d'apparence plausible. Defaut `T10-8`.
+   *
+   * **L'ABSENCE RESTE REFUSEE** : `null` est une valeur, `undefined` une
+   * divergence de contrat.
+   */
+  readonly jetonDeCouleur: string | null;
+}
+
 export interface CollaborateurDuTrombinoscope {
   readonly id: string;
   readonly personneId: string;
@@ -64,6 +87,18 @@ export interface CollaborateurDuTrombinoscope {
   readonly dateArrivee: string;
   /** Le chemin de la miniature, ou `null` — voir `cheminDePhotoOuNul`. */
   readonly photo: string | null;
+  /**
+   * LES QUATRE CHAMPS DU VERSO — LOT 5, `T10`.
+   *
+   * Le §10.1 : « le **verso** presente les informations **professionnelles
+   * principales** ». Tous facultatifs, et c'est le schema qui le dit : un nouvel
+   * arrivant peut n'avoir ni metier, ni statut, ni cercle, et le client est nul
+   * en `intercontract`. Les rendre obligatoires obligerait l'API a inventer.
+   */
+  readonly metier: string | null;
+  readonly statut: string | null;
+  readonly client: string | null;
+  readonly cercle: CercleDeLaListe | null;
 }
 
 /**
@@ -201,6 +236,50 @@ function validerUnCollaborateur(valeur: unknown, rang: number): CollaborateurDuT
     categorieProfessionnelle: exigerChaine(valeur, 'professional_category'),
     dateArrivee: exigerChaine(valeur, 'arrival_date'),
     photo: cheminDePhotoOuNul(valeur),
+    metier: chaineOuNul(valeur, 'metier', rang),
+    statut: chaineOuNul(valeur, 'statut', rang),
+    client: chaineOuNul(valeur, 'client', rang),
+    cercle: cercleOuNul(valeur, rang),
+  };
+}
+
+/**
+ * Une chaine, `null`, ou une erreur — jamais `undefined`.
+ *
+ * **`undefined` EST REFUSE AUTANT QUE 42.** Une cle absente signifie que l'API ne
+ * sert pas ce champ, ce qui est une reponse d'une AUTRE version : l'accepter en la
+ * traduisant en `null` masquerait une divergence de contrat derriere une valeur
+ * parfaitement plausible -- le §7.0 quatrieme proposition, l'echec produirait la
+ * meme observation que le succes.
+ */
+function chaineOuNul(source: Record<string, unknown>, cle: string, rang: number): string | null {
+  const valeur = source[cle];
+  if (valeur === null) {
+    return null;
+  }
+  if (typeof valeur !== 'string') {
+    throw new TypeError(`collaborateur ${String(rang)} : « ${cle} » ni chaine ni null`);
+  }
+  return valeur;
+}
+
+/** Le cercle principal, ou `null`. Ses TROIS champs sont exiges ensemble. */
+function cercleOuNul(source: Record<string, unknown>, rang: number): CercleDeLaListe | null {
+  const valeur = source['cercle'];
+  if (valeur === null) {
+    return null;
+  }
+  if (!estObjet(valeur)) {
+    throw new TypeError(`collaborateur ${String(rang)} : « cercle » ni objet ni null`);
+  }
+  //  **LES TROIS CLES SONT EXIGEES ENSEMBLE, MAIS LE JETON PEUT VALOIR `null`.**
+  //  Le §10.1 veut que le NOM voyage toujours -- sans lui, « jamais la couleur
+  //  seule » serait inapplicable. Le jeton, lui, est nullable au schema : une
+  //  carte sans bordure coloree reste parfaitement lisible.
+  return {
+    code: exigerChaine(valeur, 'code'),
+    nom: exigerChaine(valeur, 'nom'),
+    jetonDeCouleur: chaineOuNul(valeur, 'jeton_de_couleur', rang),
   };
 }
 

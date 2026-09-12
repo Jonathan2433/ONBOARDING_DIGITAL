@@ -232,17 +232,28 @@ def _poser(cx: Connection) -> Decor:
         {"code": f"t3-{marqueur}", "nom": f"t3-{marqueur}"},
     ).scalar_one()
 
+    #  **LE CERCLE A PORTE UN JETON, LE CERCLE B N'EN PORTE AUCUN**, et c'est la
+    #  seule difference entre les deux. `circle.color_token` est NULLABLE au
+    #  catalogue -- `information_schema` rend `is_nullable = YES` -- si bien
+    #  qu'un cercle sans couleur declaree est un etat legitime du schema.
+    #
+    #  Ce decor n'en portait aucun, et c'est ce qui a laisse passer `T10-8` : le
+    #  service faisait `str(color_token)`, donc `str(None)`, donc la chaine
+    #  « None » -- un jeton d'apparence parfaitement plausible. Aucun test ne
+    #  regardait la valeur, et les 5 000 cercles du jeu de donnees en rendaient
+    #  « None » a 100 %.
     cercles = {}
-    for rang, nom in enumerate(("a", "b")):
+    for rang, (nom, jeton) in enumerate((("a", "bleu"), ("b", None))):
         cercles[nom] = cx.execute(
             text(
                 "INSERT INTO circle (entity_id, code, name, color_token, display_order) "
-                "VALUES (:e, :code, :nom, 'bleu', :rang) RETURNING id"
+                "VALUES (:e, :code, :nom, :jeton, :rang) RETURNING id"
             ),
             {
                 "e": entite,
                 "code": f"cercle-{nom}-{marqueur}",
                 "nom": f"cercle-{nom}-{marqueur}",
+                "jeton": jeton,
                 "rang": rang,
             },
         ).scalar_one()
@@ -534,6 +545,39 @@ def test_le_filtre_par_CERCLE(cx: Connection) -> None:
 
 
 @pytest.mark.integration
+def test_le_jeton_de_couleur_ABSENT_est_rendu_null_et_non_la_chaine_None(
+    cx: Connection,
+) -> None:
+    """`T10-8` — les deux lignes ne different QUE par le jeton du cercle.
+
+    **LE TEMOIN EST LA MOITIE QUI COMPTE.** Un test qui n'exigerait que
+    « `martin` rend `bleu` » resterait vert avec le defaut ; un test qui
+    n'exigerait que « `dupont` ne rend pas `bleu` » serait satisfait par une
+    requete qui ne joint rien. Les deux ensemble nomment la difference.
+
+    **ET « None » EST LA VALEUR QUE LE DEFAUT PRODUISAIT**, pas un exemple :
+    `str(None)` rend exactement cette chaine, et l'exiger absente est ce qui
+    empeche la regression de revenir en paraissant plausible.
+    """
+    decor = _poser(cx)
+    page = lister_le_trombinoscope(
+        cx, entite=decor.entite, page=1, taille=100, instant=ANCRAGE, filtres=Filtres()
+    )
+    lignes = {ligne.last_name.lower(): ligne for ligne in page.collaborateurs}
+
+    #  Temoin : le cercle A porte « bleu », et il est servi tel quel.
+    assert lignes["martin"].cercle is not None
+    assert lignes["martin"].cercle.jeton_de_couleur == "bleu"
+
+    #  Le cas : le cercle B n'a aucun jeton. Le cercle EXISTE -- son nom est
+    #  servi, ce que le §10.1 exige -- mais sa couleur vaut `None`.
+    assert lignes["dupont"].cercle is not None
+    assert lignes["dupont"].cercle.nom.startswith("cercle-b-")
+    assert lignes["dupont"].cercle.jeton_de_couleur is None
+    assert lignes["dupont"].cercle.jeton_de_couleur != "None"
+
+
+@pytest.mark.integration
 def test_le_filtre_par_DSM(cx: Connection) -> None:
     decor = _poser(cx)
     assert _noms(cx, decor, dsm=decor.dsm) == ["martin"]
@@ -692,14 +736,26 @@ class Compteur:
 def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_lignes(
     cx: Connection, taille: int
 ) -> None:
-    """**DEUX requetes, quelle que soit la taille de page.**
+    """**TROIS requetes, quelle que soit la taille de page.**
 
     C'est la definition operatoire de « aucun N+1 » : si le nombre de requetes
     croissait avec le nombre de lignes rendues, la difference se verrait ici et
     nulle part ailleurs.
 
-    Le compte est **confronte a un attendu**, non simplement affiche (§7.0
-    troisieme proposition).
+    **LE COMPTE EST PASSE DE DEUX A TROIS EN `T10`, ET C'ETAIT LE BON CHOIX.** Le
+    §10.1 exige un verso professionnel ; les quatre valeurs qu'il demande vivent
+    dans quatre tables. Deux montages etaient possibles :
+
+        quatre `LEFT JOIN` sur la requete de PAGE  ->  deux requetes, mais les
+            jointures paieraient sur toute la population TRIEE avant le `LIMIT` --
+            cinq mille lignes au volume du quatrieme critere de sortie, pour n'en
+            garder que vingt-cinq ;
+        une TROISIEME requete sur les seuls identifiants rendus  ->  bornee a cent
+            lignes par le §18.2, et le chemin chaud reste intact.
+
+    Le second a ete retenu. **Trois reste un nombre BORNE** : il ne depend ni du
+    nombre de lignes -- ce test le prouve sur les trois tailles -- ni du nombre de
+    cercles, de metiers ou de clients.
     """
     decor = _poser(cx)
     with Compteur(cx) as compteur:
@@ -707,7 +763,7 @@ def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_lignes(
             cx, entite=decor.entite, page=1, taille=taille, instant=ANCRAGE, filtres=Filtres()
         )
     assert len(page.collaborateurs) == 7
-    assert len(compteur.requetes) == 2, (
+    assert len(compteur.requetes) == 3, (
         f"{len(compteur.requetes)} requetes pour {len(page.collaborateurs)} lignes : "
         "le comptage et la page, et rien d'autre"
     )
@@ -736,7 +792,7 @@ def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_filtres(cx: Connection
             cx, entite=decor.entite, page=1, taille=25, instant=ANCRAGE, filtres=tous
         )
     assert [ligne.last_name.lower() for ligne in page.collaborateurs] == ["martin"]
-    assert len(compteur.requetes) == 2, (
+    assert len(compteur.requetes) == 3, (
         f"{len(compteur.requetes)} requetes pour six axes : ils doivent tenir dans UNE clause"
     )
 

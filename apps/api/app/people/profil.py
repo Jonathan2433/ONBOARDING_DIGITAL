@@ -105,7 +105,12 @@ class CercleDuProfil:
 
     code: str
     nom: str
-    jeton_de_couleur: str
+    #  **NULLABLE AU CATALOGUE** : `circle.color_token` rend `is_nullable = YES`.
+    #  Ce defaut est celui de `T10-8`, et il est ne ICI, en `T4` : `T10` n'a fait
+    #  que le recopier dans la liste. Corriger la seule instance que je venais
+    #  d'ecrire aurait ete le §7.40 exactement -- une correction qui ne couvre que
+    #  les fichiers sous la main.
+    jeton_de_couleur: str | None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -261,7 +266,7 @@ def lire_la_fiche(
         return None
 
     secondaires = [
-        CercleDuProfil(code=str(c), nom=str(n), jeton_de_couleur=str(j))
+        CercleDuProfil(code=str(c), nom=str(n), jeton_de_couleur=None if j is None else str(j))
         for c, n, j in connexion.execute(
             text(_SECONDAIRES), {"appartenance": appartenance, "instant": instant}
         )
@@ -284,7 +289,7 @@ def lire_la_fiche(
         else CercleDuProfil(
             code=str(ligne.cercle_code),
             nom=str(ligne.cercle_nom),
-            jeton_de_couleur=str(ligne.cercle_couleur),
+            jeton_de_couleur=(None if ligne.cercle_couleur is None else str(ligne.cercle_couleur)),
         )
     )
     return FicheProfil(

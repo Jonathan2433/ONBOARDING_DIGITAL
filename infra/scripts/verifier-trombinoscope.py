@@ -73,12 +73,18 @@ MARQUEUR = f"t2l5-{uuid.uuid4().hex[:12]}"
 DELAI_HTTP = 30
 CORRELATION_FIXE = "l5t2-egalite-des-refus"
 
-#  **LES HUIT CHAMPS D'UNE LIGNE, ET `photo` EST ARRIVE EN `T5`.**
+#  **LES DOUZE CHAMPS D'UNE LIGNE, ET IL A ECHOUE DEUX FOIS.**
 #
-#  Ce contrôle a échoué au moment où `T5` a ajouté le champ, sur un livrable
-#  pourtant conforme. C'est son objet : « ni plus ni moins » rend toute addition
-#  visible en revue. La bonne réaction est de mettre l'attendu à jour **parce que
-#  l'addition est voulue** (`DEC-564`), non de comparer par inclusion.
+#  Ce contrôle a échoué au moment où `T5` a ajouté `photo`, puis au moment où
+#  `T10` a ajouté les **quatre du verso** — métier, statut, client, cercle — sur
+#  un livrable pourtant conforme les deux fois. C'est son objet : « ni plus ni
+#  moins » rend toute addition **visible en revue**. La bonne réaction est de
+#  mettre l'attendu à jour **parce que l'addition est voulue** (`DEC-564` puis
+#  `DEC-571`), non de comparer par inclusion.
+#
+#  **`T10` l'a ajoutée parce que le §10.1 l'exige** : « le **verso** présente les
+#  informations **professionnelles principales** », et un écran ne peut pas
+#  inventer ce que l'API ne sert pas.
 CHAMPS_LIGNE = frozenset(
     {
         "id",
@@ -89,6 +95,10 @@ CHAMPS_LIGNE = frozenset(
         "professional_category",
         "arrival_date",
         "photo",
+        "metier",
+        "statut",
+        "client",
+        "cercle",
     }
 )
 CHAMPS_ENVELOPPE = frozenset({"collaborateurs", "page", "taille", "total", "pages"})

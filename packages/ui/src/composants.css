@@ -196,3 +196,109 @@
 .ex-notification[data-ton='echec'] {
   color: var(--ko);
 }
+
+/* ==========================================================================
+   La carte retournable — LOT 5, `T10`, story `MVP-L05-US003`
+   ========================================================================== */
+
+/*
+ * `ui-hors-ecran` masque a l'OEIL sans masquer au lecteur d'ecran.
+ *
+ * **`display: none` et `visibility: hidden` retireraient le texte de l'arbre
+ * d'accessibilite**, ce qui est exactement l'inverse du but : ce texte EST le nom
+ * accessible de la commande. Le decalage d'un pixel avec `clip-path` est la
+ * forme qui traverse tous les lecteurs d'ecran actuels.
+ */
+.ui-hors-ecran {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * **`--carte-cercle` EST DECLAREE ICI, ET `cadre-check` L'A EXIGE.**
+ *
+ * Elle est posee EN LIGNE par l'appelant, avec la couleur du cercle -- donc
+ * jamais dans une feuille, et le controle a raison de le refuser : « la page
+ * rendra les defauts du navigateur, SANS que rien n'echoue ». La declarer au
+ * `:root` avec sa valeur NEUTRE rend le repli explicite plutot qu'implicite, et
+ * une carte sans cercle garde une bordure visible.
+ */
+:root {
+  --carte-cercle: var(--trait);
+}
+
+.ui-carte-retournable {
+  display: flex;
+  flex-direction: column;
+  background: var(--fond);
+  /* La couleur du cercle vit dans cette variable, posee en ligne par l'appelant.
+     `currentColor` en repli : une carte sans cercle garde une bordure visible. */
+  border: 2px solid var(--carte-cercle);
+  border-radius: var(--rayon-l);
+  overflow: hidden;
+}
+
+/*
+ * LA FACE EST UN BOUTON, ET ELLE DOIT LE MONTRER
+ *
+ * Un bouton qui ressemble a une carte reste un bouton : le curseur, le focus
+ * visible et la zone de frappe doivent le dire. La hauteur minimale de 44 px
+ * vient du §14.2 -- la cible tactile.
+ */
+.ui-carte-retournable__face {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--espace-m);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.ui-carte-retournable__face:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: -3px;
+}
+
+/*
+ * LA TRANSITION, ET SON ALTERNATIVE
+ *
+ * Le retournement est une rotation courte sur l'axe Y. Elle n'est PAS un
+ * retournement 3D des deux faces -- une seule face est dans le DOM a la fois,
+ * l'autre porte `hidden` -- donc rien ne peut rester lisible a l'envers.
+ */
+.ui-carte-retournable__faces {
+  display: block;
+  transition: transform 180ms ease-out;
+}
+
+.ui-carte-retournable__face[aria-expanded='true'] .ui-carte-retournable__faces {
+  transform: rotateY(0deg);
+}
+
+.ui-carte-retournable__recto,
+.ui-carte-retournable__verso {
+  display: block;
+}
+
+.ui-carte-retournable__pied {
+  padding: 0 var(--espace-m) var(--espace-m);
+}
+
+/* L'alternative du critere : la transition est NEUTRALISEE, pas raccourcie.
+   Meme forme que `application.css` et `styles.css` depuis le LOT 1. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-carte-retournable__faces {
+    transition: none;
+  }
+}

@@ -65,8 +65,29 @@ describe('le validateur', () => {
     expect(fiche.presentation).toBe('Ingenieure.');
     expect(fiche.funFact).toBeNull();
     expect(fiche.cerclePrincipal?.jetonDeCouleur).toBe('bleu');
+    //  **LE TEMOIN DE `T10-8`** : un jeton PRESENT est servi tel quel. Le cas
+    //  sans jeton est juste en dessous ; separes, aucun des deux ne prouverait
+    //  la difference.
     expect(fiche.cerclesSecondaires).toHaveLength(1);
     expect(fiche.responsabilites[0]?.bureau).toBeNull();
+  });
+
+  it('accepte un cercle dont le JETON vaut `null`, et refuse un jeton mal type', () => {
+    //  **`T10-8`.** `circle.color_token` est nullable au catalogue ; le typer
+    //  en chaine faisait servir « None » par l'API.
+    const fiche = validerLaFiche({
+      ...UNE_FICHE,
+      cercle_principal: { code: 'tech', nom: 'Cercle Tech', jeton_de_couleur: null },
+    });
+    expect(fiche.cerclePrincipal?.jetonDeCouleur).toBeNull();
+    expect(fiche.cerclePrincipal?.nom).toBe('Cercle Tech');
+
+    expect(() =>
+      validerLaFiche({
+        ...UNE_FICHE,
+        cercle_principal: { code: 'tech', nom: 'Cercle Tech', jeton_de_couleur: 42 },
+      }),
+    ).toThrow(TypeError);
   });
 
   it('accepte un profil SANS aucune relation', () => {

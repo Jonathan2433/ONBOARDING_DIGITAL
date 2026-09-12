@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 12 septembre 2026, à la sortie de **`T9` du LOT 5**
+**Mis à jour le :** 12 septembre 2026, à la sortie de **`T10` du LOT 5**
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` à `T9` sont terminées**, trois restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` à `T10` sont terminées**, deux restent |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T10` du LOT 5 — LE TROMBINOSCOPE À L'ÉCRAN** (`US003`, issue `#118`). Ses critères : « recto/verso au **clic, toucher ET clavier** · alternative `reduced-motion` ». **C'EST LE PREMIER ÉCRAN MÉTIER DU PROJET**, et les routes qu'il consomme sont toutes livrées — liste paginée, recherche et cinq filtres, fiche, miniature. **DEUX CHOSES DEVIENNENT VISIBLES À L'ÉCRAN, ET ELLES ATTENDENT** : `ECART-012` — « intercontrat » sur une fiche de direction générale — **attend Léa depuis une échéance dépassée**, et la fiche §8.1 dit que `T10` est l'endroit où le choix ne peut plus attendre ; et le §13.2 du cahier veut des dégradés dont `packages/ui` porte les jetons **mesurés contre WCAG 2.2 AA** — le jaune rend **1,37** de contraste sur fond clair, donc les couleurs de marque sont des **surfaces**, jamais des couleurs de texte. **ET QUATRE CHOSES QUE `T7`, `T8` ET `T9` ONT ÉTABLIES, À NE PAS REDÉCOUVRIR :** la matrice porte **trois** grilles de rôles distinctes — écriture (§6.1), cycle de vie (ses trois lignes d'archivage), lecture d'historique (ligne « Audit » du §5) — et elles ne se réutilisent pas l'une pour l'autre ; les **quatre transitions du §24.1** vivent dans `app/people/modeles.py`, et les grilles s'en **dérivent** ; **`null` n'est pas `[]`** dans l'historique, le premier dit « hors périmètre » ; et **un DSM perd l'accès à l'historique de son ancien consultant** dès que celui-ci est archivé puis restauré sans réaffectation — `period @> instant` le veut, et c'est mesuré, pas supposé. **`exiger_un_scope` attend TOUJOURS son premier consommateur**, et ce ne sera pas un écran : c'est la dépendance des **comptes de service**, qui liront des profils au **LOT 9** |
+| **Prochaine action** | **`T11` du LOT 5 — LA PAGE DE PROFIL À L'ÉCRAN** (`US003` et `US004`, issues `#118` et `#119`). Ses critères : « chaque composant livré est **employé** · contraste mesuré ». **LA ROUTE EXISTE DÉJÀ** — `T10` l'a posée parce que « "Voir plus" ouvre le profil » était SON critère — et elle rend aujourd'hui une page qui **dit** que le contenu arrive en `T11`. L'API, elle, est complète depuis `T4` : `GET .../people/{appartenance}` sert dix-sept champs, et `T5` y a ajouté la photo. **TROIS CHOSES QUE `T10` A ÉTABLIES, À NE PAS REDÉCOUVRIR :** la face d'une carte est un `<button>` **natif**, ce qui donne clic, toucher et clavier **sans gestionnaire** — le toucher n'étant pas éprouvable dans `jsdom`, c'est **la balise** qu'on exige (§7.35) ; le **nom** du cercle est toujours du texte, la couleur ne fait que border (§10.1) ; et le calcul du nom accessible **concatène sans séparateur**, donc `aria-label` plutôt qu'un `<span>` masqué. **ET DEUX CHOSES QUI ATTENDENT QUELQU'UN D'AUTRE :** **`ECART-012` attend Léa**, et il est **maintenant à l'écran** — un `dg` affiche « En intercontrat » ; **`ECART-060`** attend les listes de référence du LOT 6 et du LOT 9, sans lesquelles quatre des six filtres ne peuvent pas être proposés. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — les comptes de service, au LOT 9 |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 0 sur 8** — et c'est normal, aucune story du lot n'est achevée par une seule sous-étape. **Cette cellule annonçait « LOT 4 : 0 sur 7 » et « #92 reste ouverte » le 07/09/2026 : les SEPT sont closes, #92 depuis le 24/08 à 15:31 UTC**, à la porte `G4`. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` → **9**, et les neuf sont l'épic `#115` et les huit stories du LOT 5 |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 211** : **912 pytest** — dont **601 d'intégration** — et **299 Vitest** (**97 `ui`**, **121 `web`**, **81 `contracts`**) |
+| **Tests** | **1 249** : **913 pytest** — dont **602 d'intégration** — et **336 Vitest** (**103 `ui`**, **140 `web`**, **93 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **153 décisions** `DEC-418+` · **59 écarts** (**11 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 46 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **154 décisions** `DEC-418+` · **61 écarts** (**13 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 54 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -82,9 +82,9 @@ Toute modification passe par une branche et une pull request vers `develop`.
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
    `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 5 EST OUVERT** depuis le 24/08/2026 (`DEC-558`), son
    découpage est validé — **ONZE** sous-étapes depuis la fusion de `T5` et `T6` (`DEC-564`) — et
-   **`T1` à `T5` et `T7` à `T9` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
+   **`T1` à `T5` et `T7` à `T10` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
    — import CSV — ni au LOT 11 — génération des miniatures.
-   Et **une sous-étape à la fois** : la suivante est `T10`.
+   Et **une sous-étape à la fois** : la suivante est `T11`.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
    > disait « LE LOT 4 EST OUVERT […] la suivante est `T2` » et **interdisait le LOT 5**, qui était
@@ -120,7 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
-| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,2,3,4,5,7,8,9}-lot-5.md`** — les trois tables de média, le trombinoscope, la recherche, la fiche, la miniature, l'écriture, l'archivage, et l'historique. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **46** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,10}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **54** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -471,8 +471,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`570` en usage | **`DEC-571`** |
-| `ECART-nnn` | `001`–`059` | **`ECART-060`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`571` en usage | **`DEC-572`** |
+| `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`118`, **5 trous** | **`QO-119`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -551,6 +551,13 @@ API             migrate migrate-status api-check alembic-check
                  12 tests, pas par un controle de stack. Voir ECART-046)
                 cadre-check cadre-temoin                          ← LOT 4, T3
                 jeu-de-donnees                                    ← LOT 2, T12
+                (ATTENTION : elle COMMITE 25 entites et 5 000 profils dans la
+                 base visee, et n'a AUCUNE cible de nettoyage. Lancee sur la
+                 base de DEV, elle fait echouer 66 tests d'integration qui
+                 comptent des lignes en ABSOLU -- mesure du 12/09/2026, et
+                 aucun des 66 messages ne nomme la cause. Remede : `make down`,
+                 `docker volume rm onboarding-dev_db-data`, `make up`,
+                 `make migrate`. PAS `make destroy`, qui emporte caddy-data)
 Frontend        web-check test-frontend
 Images          images-check images-build images-inspect images-verify images-push
                 images-pin                                            ← T8
@@ -891,7 +898,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**237 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **46** au LOT 5 — 71 + 44 + 57 + 19 + 46,
+**245 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **54** au LOT 5 — 71 + 44 + 57 + 19 + 54,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2258,9 +2265,56 @@ moment de la faire.
 
 ---
 
+## 7.42 Un décor qui ne produit JAMAIS la valeur en cause ne dit rien d'elle
+
+**Apport de `T10-8`, trouvé en préparant une démonstration — donc APRÈS que la porte
+d'intégration continue est passée au vert.**
+
+`circle.color_token` est **nullable** au catalogue. Le service faisait `str(color_token)`, ce qui
+sur `None` rend la chaîne **`"None"`** : un jeton d'apparence parfaitement plausible, servi sur
+**100 des 100 cercles** du jeu de données, par la fiche **et** par la liste.
+
+| Ce qui existait | Ce que ça valait |
+|---|---|
+| trois décors de test, trois fixtures | **les trois écrivaient `'bleu'`** |
+| un contrôle de stack « les quatre champs du verso sont RENSEIGNÉS » | `cercle` est une **structure**, donc renseignée — avec un jeton mensonger dedans |
+| `mypy --strict` | `str(x)` rend bien un `str`. Il n'avait rien à dire |
+
+**Les sept propositions du §7.0 étaient toutes respectées.** Les contrôles pouvaient échouer, on
+lisait leur code de sortie, ils annonçaient combien d'éléments ils avaient examinés, et leur échec
+aurait produit une autre observation. Ils n'ont rien vu, parce que **la valeur qui déclenche le
+défaut n'était présente dans aucun décor.**
+
+> **La règle, sans jargon :** quand une colonne est **nullable**, un décor qui la renseigne toujours
+> n'éprouve que la moitié de son domaine. **Demande-toi, de chaque colonne facultative que ton code
+> traverse : mon décor produit-il l'absence ?** Si non, le code qui la traite n'est exercé par
+> personne — et c'est la version *nullable* du §7.26, où une contrainte d'unicité ne s'éprouve
+> qu'au volume.
+
+**La parade est un COUPLE dans chaque décor**, deux lignes ne différant que par la colonne en cause
+— un cercle avec jeton, un cercle sans. Ni moitié ne suffit : sans le témoin, un code qui ne
+rendrait **jamais** de jeton passerait ; sans le cas, `str(None)` reste invisible.
+
+**Et deux constats de méthode, tous deux mesurés :**
+
+- **le périmètre a été DÉRIVÉ du catalogue, pas listé de mémoire.** Une requête sur
+  `information_schema.columns` dit que `circle.color_token` est la **seule** colonne textuelle
+  nullable qui atterrisse dans un champ non optionnel, sur les onze tables traversées. Trois sites,
+  deux modules, et la mesure dit qu'il n'y en a pas un quatrième. Sans elle, j'aurais corrigé la
+  liste — que je venais d'écrire — et laissé la fiche, qui portait le défaut **depuis `T4`** : le
+  §7.40 exactement ;
+- **une moitié de la correction n'est observable par AUCUN test.** `COULEURS_DE_CERCLE[null]` rend
+  `undefined`, exactement comme le chemin gardé : les 140 tests d'écran restent **verts** avec le
+  défaut en place. Ce qui le refuse est le **type** — `TS2538: Type 'null' cannot be used as an
+  index type`. C'est le §7.35 dans l'autre sens : là où aucun contrôle ne peut voir la propriété,
+  c'est la **structure** qui la tient, et il faut le **dire** plutôt que de laisser croire qu'un
+  test la prouve.
+
+---
+
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — **10 ouverts**, dérivés du registre le 08/09/2026 (le total est au §1)
+## 8.1 Écarts — **13 ouverts**, dérivés du registre le 12/09/2026 (le total est au §1)
 
 > **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
 > par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
@@ -2277,6 +2331,7 @@ moment de la faire.
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | avant le LOT 6 |
 | `ECART-033` | **CLOS en `T1` du LOT 3.** `make ports` concaténait les deux flux de Compose puis parsait le tout en JSON : un avertissement le cassait, **sans nommer la cause**. Il était juste à sa date — `ECART-024` à l'identique |
+| `ECART-061` | **Un mot de passe provisoire n'est jamais forcé de changer** : `must_change` est servi par l'API sous le nom `changement_exige`, **aucun écran ne le lit**, et la session est ouverte quand même. `DEC-527` affirme le contraire. **Mesuré le 12/09/2026** | avant production, à instruire au LOT 13 |
 | `ECART-032` | **Le backlog interdit plus large que le cahier, la matrice ET le modèle réunis** : « aucune responsabilité **métier** active dans plusieurs entités » là où les trois autres restreignent au seul **Booster**. Le cahier prévaut, le livrable est conforme — **mais un relecteur du backlog conclurait à un critère manquant** | à annoncer à `G2` |
 
 `ECART-023` est ouvert et clos en **`T8`** — la fiche énumérait six des sept séparations du cahier §22.2, et empruntait « Mailpit exclusif » aux LOTS 11 et 13.
@@ -2319,7 +2374,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 5 est ouvert, et `T10` est la prochaine
+# 9. Par où commencer : le LOT 5 est ouvert, et `T11` est la prochaine
 
 ## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
@@ -2352,7 +2407,7 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 ## 9.1 Où en est exactement le projet
 
 **Les LOTS 0 à 4 sont terminés.** `G4` a été franchie le 24/08/2026 (`DEC-557`), tag `v0.4.0` sur
-`e0629fe`. **Le LOT 5 est ouvert** depuis le même jour (`DEC-558`), et **`T1` à `T5` et `T7` à `T9`
+`e0629fe`. **Le LOT 5 est ouvert** depuis le même jour (`DEC-558`), et **`T1` à `T5` et `T7` à `T10`
 sont faites**.
 
 | Fait | Ce que ça donne |
@@ -2363,16 +2418,16 @@ sont faites**.
 | Recette | **réépinglée** sur les images de `3bc68b9`, et son API se connecte avec le rôle d'**exécution** — `DEC-539`, mesuré |
 | Contrôles | les contrôles de stack sont **tous** dans la CI, chacun portant ses témoins. **`make help` et `ci.yml` font foi sur leur nombre**, jamais cette cellule |
 
-**Rien n'attend de décision technique.** Ce qui attend est **`T10`**, le premier des deux écrans.
+**Rien n'attend de décision technique de MA part.** Ce qui attend est **`T11`**, le second écran — et **`ECART-012` attend Léa**, désormais visible à l'écran.
 
 ---
 
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le lot est ouvert et son découpage est validé** — onze sous-étapes, `DEC-558` puis `DEC-564`. Il
-n'y a donc plus de découpage à proposer : il y a `T10` à faire, puis `T11` et `T12`.
+n'y a donc plus de découpage à proposer : il y a `T11` à faire, puis `T12`.
 
-1. **Lire la fiche §3 pour le libellé et le critère de `T10`**, et le backlog `MVP-L05-US003` pour son
+1. **Lire la fiche §3 pour le libellé et le critère de `T11`**, et le backlog `MVP-L05-US004` pour son
    critère d'acceptation. **Dériver les libellés de la fiche, ne pas les relire de mémoire** : trois
    documents ont annoncé « `T7` — les écrans de trombinoscope » alors que les écrans sont `T10` et
    `T11`, et la dérivation seule l'a démenti (`ECART-053`, puis `ECART-054`).
@@ -2403,6 +2458,7 @@ n'y a donc plus de découpage à proposer : il y a `T10` à faire, puis `T11` et
 | **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
 | **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut |
 | **`ECART-035`** | **Les invitations n'existent pas** dans le modèle. À reprendre au **LOT 9**, où le back-office les créera : la révocation de `T9` devra alors recevoir une ligne de plus |
+| **`ECART-061`** | **`changement_exige` n'a AUCUN consommateur.** `make admin-local` pose un mot de passe provisoire et `must_change = true` ; la connexion ouvre quand même la session, et **toutes** les routes métier répondent 200 — mesuré. Les **huit** écrans du LOT 3 sont ceux que le cahier §17.5 énumère, et le changement de mot de passe **n'y est pas**. La phrase « `T11` doit le consommer » du compte rendu de `T5` du LOT 3 était une **prévision**, §7.41. Ni garde d'API ni écran : les deux se tiennent ensemble, et c'est une décision de Jonathan. **LOT 13** |
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
 | **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13.** Mesure du 08/09/2026 sur les images publiées : `api` et `worker` ne portent **qu'un** `CRITICAL`, `CVE-2026-13221` de `perl-base`, **sans correctif** — donc correctement ignoré par la porte, et `ROAD-RSK-033` est **inchangé dans sa nature** |
 | **`images.yml` EST ROUGE, ET CE N'EST PAS ENCORE CONSIGNÉ DANS UN REGISTRE** | **Cinq exécutions consécutives en échec depuis `T2` du LOT 5**, le 05/09/2026. **La construction et les deux lancements d'architecture PASSENT** ; seule la tâche **Trivy** échoue, et sur la **seule image `web`** : `CVE-2026-56854`, **CRITICAL** et **corrigeable** (`golang.org/x/crypto` v0.52.0 → 0.55.0), héritée de la base `caddy:2.11-alpine`. **La porte fait donc exactement son travail**, `DEC-482` bloquant sur `CRITICAL` corrigeable. Deux choses à savoir : le **même condensat** sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert ; et la porte d'`images.yml` **n'est pas un contexte requis**, donc **les fusions ne sont pas bloquées**. **Aucun identifiant n'a été ouvert** : Jonathan a choisi le 08/09/2026 de ne pas instruire ce point dans la pull request d'hygiène, et une montée de base Caddy doit d'abord être **mesurée** dans ce qu'elle casse (§7.0, cinquième proposition) |
@@ -2642,7 +2698,7 @@ make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EM
                           #      une affectation FUTURE qui n'accordent rien, le
                           #      super-administrateur partout, et les QUATRE tables de
                           #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
-make profil-check         # 43 — il RELIE la fiche a la liste : l'identifiant vient du
+make profil-check         # 45 — il RELIE la fiche a la liste : l'identifiant vient du
                           #      trombinoscope, et un profil EXCLU rend le MEME 404. Les six
                           #      champs sensibles sont TOUS renseignes (ECART-051).
                           #      DEPUIS T5 il deverse DEUX objets de contenus distincts
@@ -2663,7 +2719,17 @@ make profil-check         # 43 — il RELIE la fiche a la liste : l'identifiant 
                           #      techniques ne parait dans les OCTETS servis. Ses
                           #      controles viennent AVANT ceux de T8 : apres
                           #      l'archivage, le DSM n'est plus le DSM de personne,
-                          #      et il rendait 404 a juste titre (defaut T9-3)
+                          #      et il rendait 404 a juste titre (defaut T9-3).
+                          #      DEPUIS T10 il exige que les QUATRE champs du VERSO
+                          #      soient RENSEIGNES : « douze champs ni plus ni
+                          #      moins » passerait avec les quatre a `null`, ce
+                          #      que rendrait une jointure qui ne joint rien.
+                          #      ET le JETON de couleur y est un COUPLE : « bleu »
+                          #      sur le cercle principal, `null` sur un second
+                          #      cercle qui n'en porte aucun -- `color_token` est
+                          #      NULLABLE, et `str(None)` servait la chaine
+                          #      « None » sur 100 % des cercles (defaut T10-8).
+                          #      La chaine est cherchee dans les OCTETS servis
 make trombinoscope-check  # 38 — les TROIS tailles SERVIES (le temoin qui a trouve T2-3),
                           #      huit refus au format du 18.3, la recomposition des pages
                           #      qui exige un ordre TOTAL, et les quatre etats exclus
@@ -2696,7 +2762,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **42 leçons** payées par **237 défauts nommés** — 71 + 44 + 57 + 19 + 46, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **43 leçons** payées par **245 défauts nommés** — 71 + 44 + 57 + 19 + 54, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
