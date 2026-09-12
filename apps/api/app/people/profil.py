@@ -138,6 +138,14 @@ class FicheProfil:
     """
 
     id: uuid.UUID
+    #  **LA VERSION EST SERVIE DEPUIS `T11`, ET SANS ELLE AUCUN ECRAN NE PEUT
+    #  ECRIRE.** Le §18.4 fait de `version` un champ OBLIGATOIRE du corps des
+    #  trois ecritures -- `PATCH`, archivage, restauration -- et **aucun endpoint
+    #  ne la servait** : mesure du 12/09/2026, zero occurrence dans la fiche comme
+    #  dans le trombinoscope. `verifier-profil.py` la lisait en SQL DIRECT, ce
+    #  qu'un navigateur ne peut pas faire. Le premier ecran qui a tente d'archiver
+    #  a recu `422 Field required`. Defaut `T11-6`.
+    version: int
     person_id: uuid.UUID
     first_name: str
     last_name: str
@@ -158,7 +166,7 @@ class FicheProfil:
 #  La fiche et ses CINQ relations uniques, en une requete. Les `LEFT JOIN` sont
 #  surs parce que les exclusions ci-dessus interdisent deux lignes actives.
 _FICHE: Final[str] = """
-SELECT em.id, em.person_id, p.first_name, p.last_name, p.preferred_name,
+SELECT em.id, em.version, em.person_id, p.first_name, p.last_name, p.preferred_name,
        em.professional_category, em.arrival_date, em.short_bio, em.fun_fact,
        jc.label AS metier,
        ps.status AS statut,
@@ -294,6 +302,7 @@ def lire_la_fiche(
     )
     return FicheProfil(
         id=uuid.UUID(str(ligne.id)),
+        version=int(ligne.version),
         person_id=uuid.UUID(str(ligne.person_id)),
         first_name=str(ligne.first_name),
         last_name=str(ligne.last_name),

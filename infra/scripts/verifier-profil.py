@@ -137,13 +137,16 @@ MARQUEUR = f"t4l5-{uuid.uuid4().hex[:12]}"
 DELAI_HTTP = 30
 CORRELATION_FIXE = "l5t4-egalite-des-refus"
 
-#  Les DIX-SEPT champs de la fiche : les treize du §10.2, plus les deux
-#  identifiants, la categorie professionnelle et les deux listes. **Declares et
-#  confrontes a la reponse servie** : un champ ajoute sans etre voulu fait
-#  echouer -- et c'est ce qui s'est produit a `T5`, ou `photo` est arrivee.
+#  Les DIX-HUIT champs de la fiche : les treize du §10.2, plus les deux
+#  identifiants, la categorie professionnelle, les deux listes -- et `version`
+#  depuis `T11`. **Declares et confrontes a la reponse servie** : un champ ajoute
+#  sans etre voulu fait echouer -- et c'est ce qui s'est produit a `T5`, ou
+#  `photo` est arrivee, puis a `T11` avec `version`, que le §18.4 exige dans le
+#  corps des ecritures et qu'aucune lecture ne servait.
 CHAMPS_FICHE = frozenset(
     {
         "id",
+        "version",
         "person_id",
         "first_name",
         "last_name",

@@ -126,4 +126,25 @@ export type {
   PeriodeDeStatut,
 } from './historique.js';
 
+//  LOT 5, T11 — le cycle de vie d'un profil : archiver, restaurer, et lire la
+//  fiche d'un archive. L'API le sert depuis `T8`, sans consommateur. Les roles
+//  sont LUS DU MANIFESTE et declares separement de `rolesAdministration`, qui
+//  porte les memes trois valeurs pour une AUTRE raison : les fusionner ferait
+//  suivre l'une quand la matrice change l'autre, en silence.
+export {
+  cheminArchivage,
+  cheminFicheArchivee,
+  cheminRestauration,
+  CODES_ARCHIVAGE,
+  CODES_FICHE_ARCHIVEE,
+  CODES_RESTAURATION,
+  GABARIT_CHEMIN_ARCHIVAGE,
+  GABARIT_CHEMIN_FICHE_ARCHIVEE,
+  GABARIT_CHEMIN_RESTAURATION,
+  peutGererLeCycleDeVie,
+  ROLES_DU_CYCLE_DE_VIE,
+  validerLeResultat,
+} from './cycleDeVie.js';
+export type { ResultatDuCycleDeVie } from './cycleDeVie.js';
+
 export const PACKAGE_NAME = '@onboarding/contracts';

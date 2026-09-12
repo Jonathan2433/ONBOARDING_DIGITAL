@@ -69,9 +69,16 @@ JOUR = dt.timedelta(days=1)
 #  qui EXIGEAIT son absence, pour que son apparition soit une decision et non une
 #  derive. La decision est prise -- `DEC-564` -- et le test ci-dessous est
 #  retourne : il exige desormais qu'elle soit un CHEMIN, jamais des octets.
+#  **ET `version` EST ARRIVEE EN `T11`, POUR LA MEME RAISON QUE `photo` EN `T5`.**
+#  Le §18.4 fait d'elle un champ OBLIGATOIRE du corps des trois ecritures, et
+#  AUCUNE lecture ne la servait : le premier ecran qui a tente d'archiver a recu
+#  `422 Field required`. Ce test est tombe, et c'etait son role -- l'addition d'un
+#  champ doit etre une decision visible en revue, jamais une derive. Defaut
+#  `T11-6`.
 CHAMPS_ATTENDUS = frozenset(
     {
         "id",
+        "version",
         "person_id",
         "first_name",
         "last_name",

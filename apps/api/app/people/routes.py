@@ -216,6 +216,12 @@ class FicheDuProfil(BaseModel):
     """
 
     id: uuid.UUID
+    #  **§18.4 — LA VERSION, SANS LAQUELLE AUCUN ECRAN NE PEUT ECRIRE.** Les trois
+    #  ecritures l'exigent dans leur corps, et aucune lecture ne la servait : le
+    #  premier ecran qui a tente d'archiver a recu `422 Field required`, defaut
+    #  `T11-6`. La servir ici ne relache RIEN -- la concurrence optimiste reste
+    #  entiere, l'appelant doit toujours renvoyer la version qu'il a lue.
+    version: int
     person_id: uuid.UUID
     first_name: str
     last_name: str
@@ -1472,6 +1478,7 @@ def _en_reponse(fiche: FicheProfil, *, photo: str | None) -> FicheDuProfil:
     """
     return FicheDuProfil(
         id=fiche.id,
+        version=fiche.version,
         person_id=fiche.person_id,
         first_name=fiche.first_name,
         last_name=fiche.last_name,

@@ -62,6 +62,17 @@ export interface ResponsabiliteDuProfil {
 /** La fiche profil complete — les champs du §10.2, ET la photo depuis `T5`. */
 export interface FicheDuProfil {
   readonly id: string;
+  /**
+   * §18.4 — LA VERSION, ET SANS ELLE AUCUN ECRAN NE PEUT ECRIRE.
+   *
+   * Les trois ecritures -- `PATCH`, archivage, restauration -- l'exigent dans
+   * leur corps, et **aucune lecture ne la servait** : le premier ecran qui a
+   * tente d'archiver a recu `422 Field required`. Defaut `T11-6`.
+   *
+   * La servir ne relache rien : la concurrence optimiste reste entiere, et
+   * l'appelant doit toujours renvoyer la version qu'il a lue.
+   */
+  readonly version: number;
   readonly personneId: string;
   readonly prenom: string;
   readonly nom: string;
@@ -112,6 +123,20 @@ function chaineOuNul(valeur: Record<string, unknown>, champ: string): string | n
     throw new TypeError(`champ « ${champ} » ni chaine ni null`);
   }
   return brut;
+}
+
+/**
+ * Un entier, ou une erreur — §18.4.
+ *
+ * **UN FLOTTANT OU UNE CHAINE RENDRAIENT LA COMPARAISON SUIVANTE FAUSSE** sans
+ * rien dire : la concurrence optimiste repose entierement sur cette valeur.
+ */
+function entierExige(source: Record<string, unknown>, cle: string): number {
+  const valeur = source[cle];
+  if (typeof valeur !== 'number' || !Number.isInteger(valeur)) {
+    throw new TypeError(`champ « ${cle} » absent ou non entier`);
+  }
+  return valeur;
 }
 
 function validerUnCercle(valeur: unknown, ou: string): CercleDuProfil {
@@ -168,6 +193,7 @@ export function validerLaFiche(valeur: unknown): FicheDuProfil {
   }
   return {
     id: exigerChaine(valeur, 'id'),
+    version: entierExige(valeur, 'version'),
     personneId: exigerChaine(valeur, 'person_id'),
     prenom: exigerChaine(valeur, 'first_name'),
     nom: exigerChaine(valeur, 'last_name'),
