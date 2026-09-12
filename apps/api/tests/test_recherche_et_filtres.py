@@ -232,17 +232,28 @@ def _poser(cx: Connection) -> Decor:
         {"code": f"t3-{marqueur}", "nom": f"t3-{marqueur}"},
     ).scalar_one()
 
+    #  **LE CERCLE A PORTE UN JETON, LE CERCLE B N'EN PORTE AUCUN**, et c'est la
+    #  seule difference entre les deux. `circle.color_token` est NULLABLE au
+    #  catalogue -- `information_schema` rend `is_nullable = YES` -- si bien
+    #  qu'un cercle sans couleur declaree est un etat legitime du schema.
+    #
+    #  Ce decor n'en portait aucun, et c'est ce qui a laisse passer `T10-8` : le
+    #  service faisait `str(color_token)`, donc `str(None)`, donc la chaine
+    #  « None » -- un jeton d'apparence parfaitement plausible. Aucun test ne
+    #  regardait la valeur, et les 5 000 cercles du jeu de donnees en rendaient
+    #  « None » a 100 %.
     cercles = {}
-    for rang, nom in enumerate(("a", "b")):
+    for rang, (nom, jeton) in enumerate((("a", "bleu"), ("b", None))):
         cercles[nom] = cx.execute(
             text(
                 "INSERT INTO circle (entity_id, code, name, color_token, display_order) "
-                "VALUES (:e, :code, :nom, 'bleu', :rang) RETURNING id"
+                "VALUES (:e, :code, :nom, :jeton, :rang) RETURNING id"
             ),
             {
                 "e": entite,
                 "code": f"cercle-{nom}-{marqueur}",
                 "nom": f"cercle-{nom}-{marqueur}",
+                "jeton": jeton,
                 "rang": rang,
             },
         ).scalar_one()
@@ -531,6 +542,39 @@ def test_le_filtre_par_CERCLE(cx: Connection) -> None:
     assert "dupont" not in _noms(cx, decor, cercle=decor.cercle_a)
     #  Et le cercle B rend les deux autres.
     assert _noms(cx, decor, cercle=decor.cercle_b) == ["dupont", "troiscercles"]
+
+
+@pytest.mark.integration
+def test_le_jeton_de_couleur_ABSENT_est_rendu_null_et_non_la_chaine_None(
+    cx: Connection,
+) -> None:
+    """`T10-8` — les deux lignes ne different QUE par le jeton du cercle.
+
+    **LE TEMOIN EST LA MOITIE QUI COMPTE.** Un test qui n'exigerait que
+    « `martin` rend `bleu` » resterait vert avec le defaut ; un test qui
+    n'exigerait que « `dupont` ne rend pas `bleu` » serait satisfait par une
+    requete qui ne joint rien. Les deux ensemble nomment la difference.
+
+    **ET « None » EST LA VALEUR QUE LE DEFAUT PRODUISAIT**, pas un exemple :
+    `str(None)` rend exactement cette chaine, et l'exiger absente est ce qui
+    empeche la regression de revenir en paraissant plausible.
+    """
+    decor = _poser(cx)
+    page = lister_le_trombinoscope(
+        cx, entite=decor.entite, page=1, taille=100, instant=ANCRAGE, filtres=Filtres()
+    )
+    lignes = {ligne.last_name.lower(): ligne for ligne in page.collaborateurs}
+
+    #  Temoin : le cercle A porte « bleu », et il est servi tel quel.
+    assert lignes["martin"].cercle is not None
+    assert lignes["martin"].cercle.jeton_de_couleur == "bleu"
+
+    #  Le cas : le cercle B n'a aucun jeton. Le cercle EXISTE -- son nom est
+    #  servi, ce que le §10.1 exige -- mais sa couleur vaut `None`.
+    assert lignes["dupont"].cercle is not None
+    assert lignes["dupont"].cercle.nom.startswith("cercle-b-")
+    assert lignes["dupont"].cercle.jeton_de_couleur is None
+    assert lignes["dupont"].cercle.jeton_de_couleur != "None"
 
 
 @pytest.mark.integration

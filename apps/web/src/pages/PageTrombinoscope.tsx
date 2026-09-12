@@ -333,8 +333,11 @@ interface ProprietesCarte {
 
 function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Element {
   const nom = nomAffiche(ligne);
-  const couleur =
-    ligne.cercle === null ? undefined : COULEURS_DE_CERCLE[ligne.cercle.jetonDeCouleur];
+  //  **DEUX ABSENCES DISTINCTES, ET LE MEME RENDU.** Pas de cercle, ou un cercle
+  //  sans jeton declare : la bordure reste neutre dans les deux cas, et le NOM du
+  //  cercle reste du texte sur le verso -- c'est le §10.1 qui l'exige.
+  const jeton = ligne.cercle?.jetonDeCouleur ?? null;
+  const couleur = jeton === null ? undefined : COULEURS_DE_CERCLE[jeton];
   const libelleStatut = STATUTS.find((choix) => choix.valeur === ligne.statut)?.libelle;
 
   return (

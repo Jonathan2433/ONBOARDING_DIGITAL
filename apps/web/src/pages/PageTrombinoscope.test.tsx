@@ -203,6 +203,37 @@ describe('le trombinoscope a l’ecran', () => {
     expect(screen.getByText(/En mission — Client Alpha/)).toBeTruthy();
   });
 
+  it.each([
+    ['bleu', 'var(--marque-bleu)'],
+    [null, ''],
+    ['jeton-inconnu-du-design-system', ''],
+  ])(
+    'le jeton « %s » borde la carte, ou ne la borde pas — et le NOM reste',
+    async (jeton, attendu) => {
+      //  **LES TROIS CAS DONNENT LE MEME NOM, ET C'EST LE §10.1.** La couleur
+      //  n'est jamais le seul porteur : qu'elle soit posee, absente (`T10-8` --
+      //  `color_token` est nullable au schema) ou inconnue du design system, le
+      //  nom du cercle reste du texte sur le verso.
+      //
+      //  **LE PREMIER CAS EST LE TEMOIN** : sans lui, un code qui ne poserait
+      //  JAMAIS de couleur passerait les deux autres.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(page([{ ...ADA, cercle: { ...ADA.cercle, jeton_de_couleur: jeton } }])),
+        ),
+      );
+      monter();
+      await waitFor(() => {
+        expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      });
+      const carte = faceDe('Ada Lovelace').closest('article');
+      expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe(attendu);
+      fireEvent.click(faceDe('Ada Lovelace'));
+      expect(screen.getByText('Data')).toBeTruthy();
+    },
+  );
+
   it('un collaborateur SANS affectation affiche « Non renseigne », jamais du vide', async () => {
     //  Un champ vide laisserait croire a une panne d'affichage ; « Non
     //  renseigne » dit ce qui est vrai.

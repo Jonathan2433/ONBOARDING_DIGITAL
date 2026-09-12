@@ -65,7 +65,16 @@ export const TAILLE_PAR_DEFAUT = 25;
 export interface CercleDeLaListe {
   readonly code: string;
   readonly nom: string;
-  readonly jetonDeCouleur: string;
+  /**
+   * **LE JETON PEUT MANQUER, ET C'EST LE SCHEMA QUI LE DIT.** `circle.color_token`
+   * est nullable au catalogue : un cercle sans couleur declaree est un etat
+   * legitime, pas une anomalie. Le typer `string` a fait servir la chaine
+   * « None » -- un jeton d'apparence plausible. Defaut `T10-8`.
+   *
+   * **L'ABSENCE RESTE REFUSEE** : `null` est une valeur, `undefined` une
+   * divergence de contrat.
+   */
+  readonly jetonDeCouleur: string | null;
 }
 
 export interface CollaborateurDuTrombinoscope {
@@ -263,13 +272,14 @@ function cercleOuNul(source: Record<string, unknown>, rang: number): CercleDeLaL
   if (!estObjet(valeur)) {
     throw new TypeError(`collaborateur ${String(rang)} : « cercle » ni objet ni null`);
   }
-  //  **LES TROIS ENSEMBLE, ET C'EST LE §10.1.** Un cercle sans `nom` rendrait la
-  //  regle « jamais la couleur seule » inapplicable ; un cercle sans jeton
-  //  priverait la carte de sa bordure. L'un sans l'autre n'a pas de sens.
+  //  **LES TROIS CLES SONT EXIGEES ENSEMBLE, MAIS LE JETON PEUT VALOIR `null`.**
+  //  Le §10.1 veut que le NOM voyage toujours -- sans lui, « jamais la couleur
+  //  seule » serait inapplicable. Le jeton, lui, est nullable au schema : une
+  //  carte sans bordure coloree reste parfaitement lisible.
   return {
     code: exigerChaine(valeur, 'code'),
     nom: exigerChaine(valeur, 'nom'),
-    jetonDeCouleur: exigerChaine(valeur, 'jeton_de_couleur'),
+    jetonDeCouleur: chaineOuNul(valeur, 'jeton_de_couleur', rang),
   };
 }
 

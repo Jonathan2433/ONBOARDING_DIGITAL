@@ -170,13 +170,25 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[tuple[Parametres, str,
         ).scalar_one()
         reperes["entite"] = entite
 
-        for nom in ("principal", "second-a", "second-b"):
+        #  **`second-b` N'A AUCUN JETON DE COULEUR, LES DEUX AUTRES EN ONT UN.**
+        #  `circle.color_token` est NULLABLE au catalogue, et la fiche le servait
+        #  par `str(...)` : un cercle sans couleur rendait la chaine « None ».
+        #  Defaut `T10-8`, ne ICI en `T4` et recopie dans la liste en `T10`.
+        #
+        #  Les DEUX chemins de `profil.py` sont ainsi couverts : la ligne de la
+        #  fiche porte le cercle PRINCIPAL, la seconde requete les SECONDAIRES.
+        for nom, jeton in (("principal", "bleu"), ("second-a", "bleu"), ("second-b", None)):
             reperes[f"cercle-{nom}"] = cx.execute(
                 text(
                     "INSERT INTO circle (entity_id, code, name, color_token, display_order) "
-                    "VALUES (:e, :code, :nom, 'bleu', 0) RETURNING id"
+                    "VALUES (:e, :code, :nom, :jeton, 0) RETURNING id"
                 ),
-                {"e": entite, "code": f"{marqueur}-{nom}", "nom": f"Cercle {nom}"},
+                {
+                    "e": entite,
+                    "code": f"{marqueur}-{nom}",
+                    "nom": f"Cercle {nom}",
+                    "jeton": jeton,
+                },
             ).scalar_one()
 
         reperes["bureau"] = cx.execute(
@@ -464,6 +476,15 @@ def test_la_fiche_rend_les_champs_du_10_2(
         "Cercle second-a",
         "Cercle second-b",
     ]
+
+    #  **`T10-8` — LE JETON EST NULLABLE, ET « None » EST LA VALEUR DU DEFAUT.**
+    #  Les trois cercles ne different QUE par leur jeton : deux en portent un,
+    #  le troisieme non. Sans le temoin, une requete qui ne rendrait jamais de
+    #  jeton passerait ; sans le cas, `str(None)` resterait invisible.
+    assert fiche["cercle_principal"]["jeton_de_couleur"] == "bleu"
+    jetons = {c["nom"]: c["jeton_de_couleur"] for c in fiche["cercles_secondaires"]}
+    assert jetons == {"Cercle second-a": "bleu", "Cercle second-b": None}
+    assert "None" not in [c["jeton_de_couleur"] for c in fiche["cercles_secondaires"]]
 
     #  **LA PORTEE DE CHAQUE RESPONSABILITE, ET C'EST LE §8.4** : un BOOSTER porte
     #  sur un cercle, un OFFICE_MANAGER sur un bureau, jamais les deux.

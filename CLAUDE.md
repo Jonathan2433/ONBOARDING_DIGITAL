@@ -28,7 +28,7 @@ d'agir.
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 242** : **912 pytest** — dont **601 d'intégration** — et **330 Vitest** (**103 `ui`**, **137 `web`**, **90 `contracts`**) |
+| **Tests** | **1 249** : **913 pytest** — dont **602 d'intégration** — et **336 Vitest** (**103 `ui`**, **140 `web`**, **93 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
@@ -36,7 +36,7 @@ d'agir.
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
 | Registres | **154 décisions** `DEC-418+` · **60 écarts** (**12 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 53 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 54 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -120,7 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
-| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,10}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **53** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,10}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **54** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -898,7 +898,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**244 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **53** au LOT 5 — 71 + 44 + 57 + 19 + 53,
+**245 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **54** au LOT 5 — 71 + 44 + 57 + 19 + 54,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2265,6 +2265,53 @@ moment de la faire.
 
 ---
 
+## 7.42 Un décor qui ne produit JAMAIS la valeur en cause ne dit rien d'elle
+
+**Apport de `T10-8`, trouvé en préparant une démonstration — donc APRÈS que la porte
+d'intégration continue est passée au vert.**
+
+`circle.color_token` est **nullable** au catalogue. Le service faisait `str(color_token)`, ce qui
+sur `None` rend la chaîne **`"None"`** : un jeton d'apparence parfaitement plausible, servi sur
+**100 des 100 cercles** du jeu de données, par la fiche **et** par la liste.
+
+| Ce qui existait | Ce que ça valait |
+|---|---|
+| trois décors de test, trois fixtures | **les trois écrivaient `'bleu'`** |
+| un contrôle de stack « les quatre champs du verso sont RENSEIGNÉS » | `cercle` est une **structure**, donc renseignée — avec un jeton mensonger dedans |
+| `mypy --strict` | `str(x)` rend bien un `str`. Il n'avait rien à dire |
+
+**Les sept propositions du §7.0 étaient toutes respectées.** Les contrôles pouvaient échouer, on
+lisait leur code de sortie, ils annonçaient combien d'éléments ils avaient examinés, et leur échec
+aurait produit une autre observation. Ils n'ont rien vu, parce que **la valeur qui déclenche le
+défaut n'était présente dans aucun décor.**
+
+> **La règle, sans jargon :** quand une colonne est **nullable**, un décor qui la renseigne toujours
+> n'éprouve que la moitié de son domaine. **Demande-toi, de chaque colonne facultative que ton code
+> traverse : mon décor produit-il l'absence ?** Si non, le code qui la traite n'est exercé par
+> personne — et c'est la version *nullable* du §7.26, où une contrainte d'unicité ne s'éprouve
+> qu'au volume.
+
+**La parade est un COUPLE dans chaque décor**, deux lignes ne différant que par la colonne en cause
+— un cercle avec jeton, un cercle sans. Ni moitié ne suffit : sans le témoin, un code qui ne
+rendrait **jamais** de jeton passerait ; sans le cas, `str(None)` reste invisible.
+
+**Et deux constats de méthode, tous deux mesurés :**
+
+- **le périmètre a été DÉRIVÉ du catalogue, pas listé de mémoire.** Une requête sur
+  `information_schema.columns` dit que `circle.color_token` est la **seule** colonne textuelle
+  nullable qui atterrisse dans un champ non optionnel, sur les onze tables traversées. Trois sites,
+  deux modules, et la mesure dit qu'il n'y en a pas un quatrième. Sans elle, j'aurais corrigé la
+  liste — que je venais d'écrire — et laissé la fiche, qui portait le défaut **depuis `T4`** : le
+  §7.40 exactement ;
+- **une moitié de la correction n'est observable par AUCUN test.** `COULEURS_DE_CERCLE[null]` rend
+  `undefined`, exactement comme le chemin gardé : les 140 tests d'écran restent **verts** avec le
+  défaut en place. Ce qui le refuse est le **type** — `TS2538: Type 'null' cannot be used as an
+  index type`. C'est le §7.35 dans l'autre sens : là où aucun contrôle ne peut voir la propriété,
+  c'est la **structure** qui la tient, et il faut le **dire** plutôt que de laisser croire qu'un
+  test la prouve.
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **10 ouverts**, dérivés du registre le 08/09/2026 (le total est au §1)
@@ -2649,7 +2696,7 @@ make permissions-check    # 15 — l'union du 23.1 dans l'entite principale, `EM
                           #      une affectation FUTURE qui n'accordent rien, le
                           #      super-administrateur partout, et les QUATRE tables de
                           #      rattachement INCHANGEES avant/apres — regles 1 et 2 du 23.3
-make profil-check         # 44 — il RELIE la fiche a la liste : l'identifiant vient du
+make profil-check         # 45 — il RELIE la fiche a la liste : l'identifiant vient du
                           #      trombinoscope, et un profil EXCLU rend le MEME 404. Les six
                           #      champs sensibles sont TOUS renseignes (ECART-051).
                           #      DEPUIS T5 il deverse DEUX objets de contenus distincts
@@ -2674,7 +2721,13 @@ make profil-check         # 44 — il RELIE la fiche a la liste : l'identifiant 
                           #      DEPUIS T10 il exige que les QUATRE champs du VERSO
                           #      soient RENSEIGNES : « douze champs ni plus ni
                           #      moins » passerait avec les quatre a `null`, ce
-                          #      que rendrait une jointure qui ne joint rien
+                          #      que rendrait une jointure qui ne joint rien.
+                          #      ET le JETON de couleur y est un COUPLE : « bleu »
+                          #      sur le cercle principal, `null` sur un second
+                          #      cercle qui n'en porte aucun -- `color_token` est
+                          #      NULLABLE, et `str(None)` servait la chaine
+                          #      « None » sur 100 % des cercles (defaut T10-8).
+                          #      La chaine est cherchee dans les OCTETS servis
 make trombinoscope-check  # 38 — les TROIS tailles SERVIES (le temoin qui a trouve T2-3),
                           #      huit refus au format du 18.3, la recomposition des pages
                           #      qui exige un ordre TOTAL, et les quatre etats exclus
@@ -2707,7 +2760,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **42 leçons** payées par **244 défauts nommés** — 71 + 44 + 57 + 19 + 53, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **43 leçons** payées par **245 défauts nommés** — 71 + 44 + 57 + 19 + 54, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

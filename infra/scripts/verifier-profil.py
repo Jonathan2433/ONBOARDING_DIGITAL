@@ -286,7 +286,7 @@ def poser_le_decor(
     return f"""
     DO $$
     DECLARE p uuid; e uuid; c uuid; m uuid; cl uuid; jc uuid; ci uuid; d uuid; dm uuid;
-            ma uuid; es uuid; jp uuid;
+            ma uuid; es uuid; jp uuid; ci2 uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone)
       VALUES ('{code_entite}', 'Entite {marqueur}', 'Bordeaux', 'FR', 'active', 'Europe/Paris')
@@ -302,6 +302,13 @@ def poser_le_decor(
 
       INSERT INTO circle (entity_id, code, name, color_token, display_order)
       VALUES (e, '{marqueur}-cercle', 'Cercle des essais', 'bleu', 0) RETURNING id INTO ci;
+      -- **UN SECOND CERCLE, SANS JETON DE COULEUR** — `color_token` est NULLABLE
+      -- au catalogue. Il est le CAS du couple que le controle 6 bis mesure ; le
+      -- premier, qui en porte un, en est le TEMOIN. Defaut `T10-8` : la fiche et
+      -- la liste faisaient `str(color_token)`, donc `str(None)`, donc la chaine
+      -- « None » -- un jeton d'apparence plausible qu'aucun ecran ne reconnait.
+      INSERT INTO circle (entity_id, code, name, color_token, display_order)
+      VALUES (e, '{marqueur}-cercle-2', 'Cercle sans couleur', NULL, 1) RETURNING id INTO ci2;
       INSERT INTO job_catalog (entity_id, code, label, display_order, active)
       VALUES (e, '{marqueur}-job', 'Ingenieure logicielle', 0, TRUE) RETURNING id INTO jc;
       INSERT INTO client (canonical_name, display_name, status)
@@ -399,6 +406,10 @@ def poser_le_decor(
       INSERT INTO circle_membership (entity_id, entity_membership_id, circle_id,
         membership_type, starts_at, ends_at)
       VALUES (e, m, ci, 'principal', now() - INTERVAL '30 days', NULL);
+      -- Le §8.2 autorise plusieurs cercles SECONDAIRES : celui-ci est legitime.
+      INSERT INTO circle_membership (entity_id, entity_membership_id, circle_id,
+        membership_type, starts_at, ends_at)
+      VALUES (e, m, ci2, 'secondary', now() - INTERVAL '30 days', NULL);
       INSERT INTO framework_responsibility_assignment
         (person_id, entity_id, responsibility_type, circle_id, assigned_by_person_id,
          starts_at, ends_at)
@@ -732,6 +743,41 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    principal {principal}, responsabilites {responsabilites}")
+
+        # --- 6 bis. le JETON de couleur : un pose, un ABSENT -------------------
+        #
+        #  **LE COUPLE, ET AUCUNE DES DEUX MOITIES NE SUFFIT.** Le cercle
+        #  principal porte « bleu », le secondaire n'a AUCUN jeton : les deux
+        #  lignes ne different que par la colonne en cause. Sans le temoin, un
+        #  code qui ne rendrait jamais de jeton passerait ; sans le cas,
+        #  `str(None)` -- la chaine « None » du defaut `T10-8` -- resterait
+        #  invisible, comme elle l'a ete sur 100 % des cercles du jeu de donnees.
+        controles += 1
+        secondaires = fiche.get("cercles_secondaires") or []
+        sans_couleur = next(
+            (c_ for c_ in secondaires if c_.get("nom") == "Cercle sans couleur"), {}
+        )
+        jetons_justes = (
+            principal.get("jeton_de_couleur") == "bleu"
+            and sans_couleur.get("nom") == "Cercle sans couleur"
+            and "jeton_de_couleur" in sans_couleur
+            and sans_couleur["jeton_de_couleur"] is None
+        )
+        #  **ET LA CHAINE EST CHERCHEE DANS LES OCTETS SERVIS**, pas dans l'objet
+        #  decode : c'est la forme exacte que le defaut produisait sur le reseau.
+        aucune_chaine_none = b'"None"' not in fiche_reponse.corps
+        if jetons_justes and aucune_chaine_none:
+            print(
+                "    ok       jeton de couleur : « bleu » sur le principal, `null` sur le "
+                "secondaire sans couleur — et la chaine « None » est ABSENTE des octets"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    jetons : principal {principal.get('jeton_de_couleur')!r}, "
+                f"secondaire sans couleur {sans_couleur!r}, "
+                f"chaine « None » absente : {aucune_chaine_none}"
+            )
 
         # --- 7. le profil EXCLU de la liste est INTROUVABLE -------------------
         controles += 1

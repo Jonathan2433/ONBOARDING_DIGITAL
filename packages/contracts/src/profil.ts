@@ -42,7 +42,8 @@ export const CODES_PROFIL: readonly number[] = endpoint('ficheDuProfil').codesEx
 export interface CercleDuProfil {
   readonly code: string;
   readonly nom: string;
-  readonly jetonDeCouleur: string;
+  /** Nullable au schema — voir `CercleDeLaListe`. Defaut `T10-8`. */
+  readonly jetonDeCouleur: string | null;
 }
 
 /**
@@ -117,10 +118,16 @@ function validerUnCercle(valeur: unknown, ou: string): CercleDuProfil {
   if (!estObjet(valeur)) {
     throw new TypeError(`cercle ${ou} non objet`);
   }
+  const jeton = valeur['jeton_de_couleur'];
+  //  **`null` EST UNE VALEUR, `undefined` UNE DIVERGENCE DE CONTRAT** -- meme
+  //  discrimination que `chaineOuNul` dans le contrat de la liste.
+  if (jeton !== null && typeof jeton !== 'string') {
+    throw new TypeError(`cercle ${ou} : « jeton_de_couleur » ni chaine ni null`);
+  }
   return {
     code: exigerChaine(valeur, 'code'),
     nom: exigerChaine(valeur, 'nom'),
-    jetonDeCouleur: exigerChaine(valeur, 'jeton_de_couleur'),
+    jetonDeCouleur: jeton,
   };
 }
 

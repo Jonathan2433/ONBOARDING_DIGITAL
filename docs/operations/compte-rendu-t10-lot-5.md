@@ -118,12 +118,12 @@ interactif invalide.
 
 ```text
 make check                 code=0 — Tous les controles sont passes
-make profil-check          code=0 — controles executes : 44   echecs : 0
+make profil-check          code=0 — controles executes : 45   echecs : 0
 make trombinoscope-check   code=0 — controles executes : 38   echecs : 0
 make web-check             code=0 — 7 controles, la racine de Caddy est approuvee
 make docs-check            code=0
 
-912 pytest  ·  330 Vitest (90 contracts + 103 ui + 137 web)  ·  1 242 au total
+913 pytest  ·  336 Vitest (93 contracts + 103 ui + 140 web)  ·  1 249 au total
 ```
 
 Et la route est **servie** par la coquille, mesurée à travers Caddy :
@@ -150,7 +150,9 @@ prouvent la structure et le comportement ; le **rendu visuel** reste à voir, et
 
 ---
 
-# 4. Défauts trouvés — **sept, tous dans mon propre travail**
+# 4. Défauts trouvés — **huit, tous dans mon propre travail**
+
+> **LE HUITIÈME A ÉTÉ TROUVÉ APRÈS LA PORTE VERTE**, en préparant la démonstration — et il vivait dans la fiche profil depuis `T4`. Une porte d'intégration continue qui passe dit que les contrôles écrits sont verts, jamais qu'ils regardent au bon endroit.
 
 ## `T10-1` — Un `setState` synchrone dans un effet, et la correction vaut mieux que le contournement
 
@@ -217,6 +219,91 @@ lui, donc l'autorité approuvée dans le trousseau — et coûté à Jonathan un
 volume, et il **commite**. Il n'a aucune cible de nettoyage. Le lancer sur la base de développement
 rend la suite d'intégration rouge jusqu'à ce qu'on la remette à zéro.
 
+## `T10-8` — `str(None)` rend la chaine « None », et elle est servie à cent pour cent des cercles
+
+**Trouvé en préparant la démonstration, après que la porte d'intégration continue est passée au
+vert.** L'API servait, pour **chaque** cercle du jeu de données :
+
+```json
+"cercle": {"code": "CLOUD", "nom": "Cloud", "jeton_de_couleur": "None"}
+```
+
+`circle.color_token` est **nullable** — `information_schema` rend `is_nullable = YES`, mesuré — et
+le service faisait `str(color_token)`. Sur `None`, `str()` rend la chaîne `"None"` : **un jeton
+d'apparence parfaitement plausible**, qu'aucun écran ne reconnaît, et que le contrat déclarait
+`string`.
+
+| Mesure | Valeur |
+|---|---|
+| cercles du jeu de données | **100** |
+| dont un `color_token` non nul | **0** |
+| donc lignes servant `"None"` | **100 %** |
+
+**LE DÉFAUT EST NÉ EN `T4`, PAS EN `T10`.** La fiche profil porte les **deux** premiers sites —
+`profil.py`, le cercle principal et les secondaires — et `T10` n'a fait que **recopier le motif**
+dans la liste. Ne corriger que l'instance que je venais d'écrire aurait été le §7.40 exactement :
+*une correction appliquée aux fichiers sous la main ne couvre que ceux-là.*
+
+**Le périmètre a donc été DÉRIVÉ du catalogue, non listé de mémoire.** Parmi toutes les colonnes
+textuelles que ces requêtes traversent, **`circle.color_token` est la SEULE nullable** qui atterrisse
+dans un champ non optionnel : `person.first_name`, `circle.name`, `entity_membership.professional_category`,
+`media_variant.object_key` et les autres sont toutes `NOT NULL`. Trois sites, deux modules, et la
+mesure dit qu'il n'y en a pas un quatrième.
+
+```sql
+SELECT table_name||'.'||column_name, is_nullable FROM information_schema.columns
+WHERE data_type IN ('character varying','text') AND table_name IN (…);
+```
+
+**POURQUOI AUCUN TEST NE LE VOYAIT : TOUS MES DÉCORS POSAIENT UN JETON.** Les trois fixtures — celle
+de la recherche, celle de la fiche, celle du vérificateur de stack — écrivaient `'bleu'`. Un décor
+qui ne produit jamais la valeur en cause ne peut rien dire d'elle. Et le contrôle de stack de `T10`
+exigeait que les quatre champs du verso soient **renseignés** : `cercle` est une **structure**, donc
+il l'était — avec un jeton mensonger à l'intérieur.
+
+**La correction fait porter à chaque décor le COUPLE**, deux lignes ne différant que par la colonne
+en cause :
+
+| Décor | Témoin | Cas |
+|---|---|---|
+| `test_recherche_et_filtres.py` | cercle A, `'bleu'` | cercle B, **aucun jeton** |
+| `test_fiche_profil.py` | principal et `second-a`, `'bleu'` | `second-b`, **aucun jeton** |
+| `verifier-profil.py` | cercle principal, `'bleu'` | cercle secondaire, **aucun jeton** |
+
+**Témoins négatifs exécutés, dans les deux mondes.** Défaut réintroduit aux trois sites :
+
+```text
+pytest        2 failed, 40 passed   — la liste ET la fiche
+profil-check  controles 45, echecs 1
+              ECHEC  jetons : principal 'bleu', secondaire sans couleur
+                     {'nom': 'Cercle sans couleur', 'jeton_de_couleur': 'None'},
+                     chaine « None » absente : False
+contrat       1 failed | 92 passed  — « accepte un cercle dont le JETON vaut `null` »
+```
+
+> **ET LE CONTRÔLE DE STACK CHERCHE LA CHAÎNE DANS LES OCTETS SERVIS**, pas dans l'objet décodé :
+> `b'"None"' not in reponse.corps`. C'est la forme exacte que le défaut produisait **sur le
+> réseau**, et c'est elle qu'un futur retour en arrière reproduirait.
+
+**UNE MOITIÉ DE LA CORRECTION N'EST OBSERVABLE PAR AUCUN TEST, ET C'EST MESURÉ.** Côté écran,
+`COULEURS_DE_CERCLE[null]` rend `undefined` — exactement ce que rend le chemin gardé. Les 140 tests
+`web` restent **verts** avec le défaut en place. Ce qui le refuse est le **type** :
+
+```text
+src/pages/PageTrombinoscope.tsx(340,60): error TS2538: Type 'null' cannot be used as an index type.
+```
+
+C'est le §7.35 dans l'autre sens : là où la propriété n'est pas observable, c'est la **structure**
+qui la tient — ici le vérificateur de types, et le dire vaut mieux que de laisser croire qu'un test
+la prouve.
+
+**Et l'écran gagne un troisième cas de figure éprouvé** : jeton posé → bordure de marque · jeton
+`null` → bordure neutre · jeton **inconnu du design system** → bordure neutre. Les trois affichent le
+**nom** du cercle, ce que le §10.1 exige. Le premier est le témoin sans lequel un code qui ne
+poserait **jamais** de couleur passerait les deux autres.
+
+---
+
 ## Et un point de propreté, corrigé avant commit
 
 Ma première version appelait `_professionnel` **quatre fois par ligne**, une par champ. Sans
@@ -256,16 +343,21 @@ make admin-local ADRESSE=<ton adresse>
 Puis `https://app.onboarding.localhost/entites/BORDEA00/trombinoscope` — **76 profils listables** sur
 cette entité, mesuré. La carte se retourne au clic, au **Tab + Entrée**, et au **Tab + Espace**.
 
+> **LE JEU DE DONNÉES NE POSE AUCUN JETON DE COULEUR** — 100 cercles, 0 `color_token` non nul,
+> mesuré. Les cartes sont donc bordées de neutre, et c'est **juste** : `T10-8` a rendu ce cas
+> fidèle plutôt que mensonger. Pour voir les bordures de marque, il faut poser des jetons dans la
+> base ; le faire dans le **générateur** appartiendrait au LOT 6, qui est le lot des cercles.
+
 ---
 
 # 7. Chiffres, tous dérivés le 12/09/2026
 
 | Grandeur | Valeur |
 |---|---|
-| Tests | **1 242** — 912 pytest, **330** Vitest (+31) |
+| Tests | **1 249** — 913 pytest dont **602 d'intégration**, **336** Vitest (+37) |
 | Tests gelés mis à jour **délibérément** | **8** — 7 pytest, 1 contrôle de stack |
-| Défauts nommés | **7**, tous chez moi |
-| Contrôles de `profil-check` | **44** (+1) |
+| Défauts nommés | **8**, tous chez moi — et le huitième est né en `T4` |
+| Contrôles de `profil-check` | **45** (+2) |
 | Champs d'une ligne de liste | **12** (+4) |
 | Requêtes par page de liste | **3** (+1), et **borné** |
 | Endpoints du contrat | **21**, inchangé — `T10` change une charge utile, pas un chemin |

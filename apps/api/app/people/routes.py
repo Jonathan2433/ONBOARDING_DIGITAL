@@ -181,7 +181,9 @@ class CercleDeLaListeRendu(BaseModel):
 
     code: str
     nom: str
-    jeton_de_couleur: str
+    #  **NULLABLE** : `circle.color_token` l'est au catalogue, et un `str(None)`
+    #  servait la chaine « None ». Defaut `T10-8`.
+    jeton_de_couleur: str | None
 
 
 class CercleDeLaFiche(BaseModel):
@@ -189,7 +191,7 @@ class CercleDeLaFiche(BaseModel):
 
     code: str
     nom: str
-    jeton_de_couleur: str
+    jeton_de_couleur: str | None
 
 
 class ResponsabiliteDeLaFiche(BaseModel):

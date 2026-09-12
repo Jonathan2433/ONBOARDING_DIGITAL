@@ -207,12 +207,40 @@ describe('le validateur', () => {
     });
   });
 
+  it('accepte un cercle dont le JETON vaut `null` — il est nullable au schema', () => {
+    //  **`T10-8`.** `circle.color_token` rend `is_nullable = YES` au catalogue.
+    //  Le contrat l'exigeait en chaine, si bien que l'API servait `str(None)`,
+    //  donc la chaine « None » : un jeton d'apparence plausible qu'aucun ecran
+    //  ne reconnait. Le NOM, lui, reste exige -- le §10.1 en depend.
+    const cercle = { code: 'data', nom: 'Data', jeton_de_couleur: null };
+    const page = validerLeTrombinoscope({
+      ...UNE_PAGE,
+      collaborateurs: [{ ...UNE_LIGNE, cercle }],
+    });
+    expect(page.collaborateurs[0]?.cercle).toEqual({
+      code: 'data',
+      nom: 'Data',
+      jetonDeCouleur: null,
+    });
+  });
+
+  it('refuse un jeton qui n’est NI chaine NI null', () => {
+    //  Le temoin de la regle precedente : accepter `null` ne doit pas revenir a
+    //  tout accepter.
+    const cercle = { code: 'data', nom: 'Data', jeton_de_couleur: 42 };
+    expect(() =>
+      validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [{ ...UNE_LIGNE, cercle }] }),
+    ).toThrow(TypeError);
+  });
+
   it.each(['code', 'nom', 'jeton_de_couleur'])(
     'refuse un cercle dont « %s » manque — le §10.1 les veut ensemble',
     (champ) => {
-      //  Le NOM sans le jeton prive la carte de sa bordure ; le jeton sans le
-      //  nom rend inapplicable « jamais la couleur seule ». L'un sans l'autre
-      //  n'a pas de sens.
+      //  **L'ABSENCE N'EST PAS `null`**, et c'est ce que ce test fige pour le
+      //  jeton depuis `T10-8` : `null` est une valeur que le schema autorise,
+      //  une cle ABSENTE est une reponse d'une autre version de l'API.
+      //  Le nom, lui, est exige en toute circonstance : sans lui, « jamais la
+      //  couleur seule » serait inapplicable.
       const cercle: Record<string, unknown> = { ...UNE_LIGNE.cercle };
       delete cercle[champ];
       expect(() =>

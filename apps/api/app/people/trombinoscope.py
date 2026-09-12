@@ -307,7 +307,12 @@ class CercleDeLaListe:
 
     code: str
     nom: str
-    jeton_de_couleur: str
+    #  **`color_token` EST NULLABLE, ET LE CATALOGUE LE DIT** --
+    #  `information_schema` rend `is_nullable = YES`. Le typer `str` obligeait a
+    #  un `str(None)`, qui rend la chaine « None » : un jeton d'apparence
+    #  parfaitement plausible, qu'aucun ecran ne reconnait et qu'aucun test ne
+    #  voyait, parce que tous mes decors en posaient un. Defaut `T10-8`.
+    jeton_de_couleur: str | None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -628,6 +633,11 @@ def _professionnel(enrichie: Any | None) -> InfosProfessionnelles:
         cercle=None
         if enrichie[4] is None
         else CercleDeLaListe(
-            code=str(enrichie[4]), nom=str(enrichie[5]), jeton_de_couleur=str(enrichie[6])
+            code=str(enrichie[4]),
+            nom=str(enrichie[5]),
+            #  **LE CINQUIEME GARDE, CELUI QUE J'AVAIS OUBLIE.** Les quatre
+            #  au-dessus sont ecrits ; celui-ci est IMBRIQUE dans la construction
+            #  du cercle, et c'est ce qui l'a fait manquer.
+            jeton_de_couleur=None if enrichie[6] is None else str(enrichie[6]),
         ),
     )
