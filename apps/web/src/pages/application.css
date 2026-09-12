@@ -825,6 +825,187 @@
   outline-offset: 2px;
 }
 
-.trombi-identifiant code {
-  font-family: ui-monospace, monospace;
+/* =========================================================================
+   LOT 5, `T11` — LA FICHE PROFIL
+
+   **AUCUNE COULEUR HORS DES JETONS.** `make ecrans-check` l'exige depuis le
+   LOT 3, et `cadre-check` refuse une propriete personnalisee employee sans
+   etre definie -- defaut `T10-2`, deux fois d'un coup.
+
+   `--profil-cercle` est posee EN LIGNE par le composant, a partir d'un jeton
+   de marque, et sa valeur de repli est `--trait` : un cercle sans couleur
+   declaree garde donc une bordure, neutre. §10.1, la couleur ne transmet
+   jamais seule.
+   ========================================================================= */
+
+.profil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.profil-chargement {
+  color: var(--encre-douce);
+}
+
+.profil-entete {
+  display: flex;
+  gap: var(--espace-l);
+  align-items: center;
+  padding: var(--espace-l);
+  background: var(--fond-doux);
+  border-radius: var(--rayon-l);
+}
+
+.profil-avatar,
+.profil-photo {
+  flex: 0 0 auto;
+  width: 5rem;
+  height: 5rem;
+  border-radius: var(--rayon-pastille);
+  object-fit: cover;
+}
+
+.profil-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--taille-l);
+  font-weight: 600;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+}
+
+.profil-titre {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  align-items: flex-start;
+}
+
+.profil-titre h2 {
+  margin: 0;
+  font-size: var(--taille-xl);
+}
+
+.profil-metier {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.profil-bloc {
+  padding: var(--espace-l);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-l);
+}
+
+.profil-bloc h3 {
+  margin: 0 0 var(--espace-m);
+  font-size: var(--taille-m);
+}
+
+.profil-champs {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--espace-xs) var(--espace-l);
+  margin: 0;
+}
+
+.profil-champs dt {
+  color: var(--encre-douce);
+}
+
+.profil-champs dd {
+  margin: 0;
+}
+
+.profil-cercles,
+.profil-responsabilites,
+.profil-periodes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.profil-responsabilites li {
+  display: flex;
+  gap: var(--espace-s);
+  align-items: center;
+}
+
+/* **`--profil-cercle` EST DECLAREE ICI, ET `cadre-check` L'A EXIGE.**
+
+   Elle est posee EN LIGNE par le composant, a partir d'un jeton de marque. Une
+   propriete employee sans etre definie par une feuille chargee resout au defaut
+   du navigateur **sans que rien n'echoue** -- defaut `T10-2`, ou `--carte-cercle`
+   et `--encre-doux` etaient dans ce cas.
+
+   La valeur de repli n'y suffit PAS, et c'est la mesure qui l'a dit : le
+   controle exige une DEFINITION, pas un `var(--x, repli)`. Il a raison --
+   un repli cache l'absence au lieu de la signaler. La declarer ici lui donne
+   sa valeur neutre, et le style en ligne la surcharge quand un jeton existe. */
+.profil-cercle {
+  --profil-cercle: var(--trait);
+
+  display: flex;
+  gap: var(--espace-s);
+  align-items: baseline;
+  padding: var(--espace-xs) var(--espace-s);
+  border-left: 4px solid var(--profil-cercle);
+  border-radius: var(--rayon-s);
+}
+
+.profil-cercle-role {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.profil-vide,
+.profil-hors-perimetre {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.profil-axe {
+  margin-top: var(--espace-m);
+}
+
+.profil-axe h3 {
+  margin: 0 0 var(--espace-xs);
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profil-periodes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-xs) var(--espace-s);
+  align-items: baseline;
+}
+
+.profil-periode-bornes {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.profil-retour {
+  margin: 0;
+}
+
+/* Un ecran etroit empile les definitions plutot que de les serrer. §13.4. */
+@media (max-width: 40rem) {
+  .profil-champs {
+    grid-template-columns: 1fr;
+  }
+
+  .profil-entete {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

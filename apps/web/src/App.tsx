@@ -54,7 +54,7 @@ import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
 import { PageTrombinoscope } from './pages/PageTrombinoscope';
-import { PageProfilAVenir } from './pages/PageProfilAVenir';
+import { PageProfil } from './pages/PageProfil';
 import { CHEMINS, RUBRIQUES } from './routes';
 
 /**
@@ -158,7 +158,7 @@ export function App(): JSX.Element {
               simulee plutot que prouvee -- c'est le motif de `PageRubrique`, pose
               au `T4` du LOT 4.
             */}
-            <Route path={SUFFIXE_PROFIL} element={<PageProfilAVenir />} />
+            <Route path={SUFFIXE_PROFIL} element={<PageProfil />} />
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**

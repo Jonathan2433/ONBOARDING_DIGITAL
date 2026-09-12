@@ -29,7 +29,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { nomAffiche, PageTrombinoscope, STATUTS } from './PageTrombinoscope';
+import { STATUTS } from '../affichage';
+import { nomAffiche, PageTrombinoscope } from './PageTrombinoscope';
 
 //  **LE CONTEXTE DU CADRE EST BOUCHONNE**, parce que la page le lit par
 //  `useOutletContext` et qu'un `MemoryRouter` nu n'en fournit aucun.

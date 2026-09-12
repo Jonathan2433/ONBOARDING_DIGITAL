@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 12 septembre 2026, à la sortie de **`T10` du LOT 5**
+**Mis à jour le :** 12 septembre 2026, à la **première partie de `T11` du LOT 5**
 **Destinataire :** l'agent qui réalise le **LOT 5 — collaborateurs, profils et organisation**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, **24/08/2026**, `DEC-557`, **tag `v0.4.0` POSÉ le 24/08/2026**) |
-| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` à `T10` sont terminées**, deux restent |
+| **Lot en cours** | **LOT 5 — collaborateurs, profils et organisation.** Ouvert par Jonathan le 24/08/2026 (`DEC-558`), découpage validé le même jour, **révisé le 06/09/2026 à ONZE sous-étapes** — `T5` et `T6` fusionnées, `DEC-564`. **`T1` à `T5` et `T7` à `T10` sont terminées**, et **`T11` est EN COURS** — `DEC-572` la découpe en **deux** pull requests, et la première, la lecture, est fusionnée |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** Plus le réépinglage de la recette (`DEC-539`), la porte (`DEC-540`) et la correction des garde-fous iCloud (`DEC-542`) |
-| **Prochaine action** | **`T11` du LOT 5 — LA PAGE DE PROFIL À L'ÉCRAN** (`US003` et `US004`, issues `#118` et `#119`). Ses critères : « chaque composant livré est **employé** · contraste mesuré ». **LA ROUTE EXISTE DÉJÀ** — `T10` l'a posée parce que « "Voir plus" ouvre le profil » était SON critère — et elle rend aujourd'hui une page qui **dit** que le contenu arrive en `T11`. L'API, elle, est complète depuis `T4` : `GET .../people/{appartenance}` sert dix-sept champs, et `T5` y a ajouté la photo. **TROIS CHOSES QUE `T10` A ÉTABLIES, À NE PAS REDÉCOUVRIR :** la face d'une carte est un `<button>` **natif**, ce qui donne clic, toucher et clavier **sans gestionnaire** — le toucher n'étant pas éprouvable dans `jsdom`, c'est **la balise** qu'on exige (§7.35) ; le **nom** du cercle est toujours du texte, la couleur ne fait que border (§10.1) ; et le calcul du nom accessible **concatène sans séparateur**, donc `aria-label` plutôt qu'un `<span>` masqué. **ET DEUX CHOSES QUI ATTENDENT QUELQU'UN D'AUTRE :** **`ECART-012` attend Léa**, et il est **maintenant à l'écran** — un `dg` affiche « En intercontrat » ; **`ECART-060`** attend les listes de référence du LOT 6 et du LOT 9, sans lesquelles quatre des six filtres ne peuvent pas être proposés. **`exiger_un_scope` attend TOUJOURS son premier consommateur** — les comptes de service, au LOT 9 |
+| **Prochaine action** | **LA SECONDE PARTIE DE `T11`** — **archiver et restaurer à l'écran** (`US007`, issue `#122`). `DEC-572` a élargi `T11` : sa première partie, **la fiche profil et l'historique en lecture**, est fusionnée. **CE QUI RESTE ÉCRIT**, et c'est pour cela que c'est une seconde pull request : deux actions qui changent l'état, donc confirmation, **jeton anti-CSRF** — `GET …/auth/session` le sert — et traitement des refus. L'API est complète depuis `T8` : `POST …/archivage`, `POST …/restauration`, et `GET …/fiche-archivee` pour la seconde population. **TROIS CHOSES QUE LA PREMIÈRE PARTIE A ÉTABLIES :** `apps/web/src/api/profil.ts` porte déjà le montage d'appel — en-tête de corrélation lu AVANT le corps, corps illisible qui ne masque pas le statut ; `apps/web/src/affichage.ts` est la source unique de ce que deux écrans présentent ; et **`make ecrans-check` refuse désormais un conteneur `web` périmé**, ce qui a laissé passer trois contrôles verts sur du code d'un autre lot. **ET DEUX CHOSES QUI ATTENDENT QUELQU'UN D'AUTRE :** **`ECART-012` attend Léa**, désormais visible sur la fiche ET sur la carte ; **`ECART-061`** attend une décision sur le mot de passe provisoire. **`US006` — modifier un profil — reste SANS ÉCRAN**, délibérément hors du périmètre de `T11`, à annoncer à `G5` |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 0 sur 8** — et c'est normal, aucune story du lot n'est achevée par une seule sous-étape. **Cette cellule annonçait « LOT 4 : 0 sur 7 » et « #92 reste ouverte » le 07/09/2026 : les SEPT sont closes, #92 depuis le 24/08 à 15:31 UTC**, à la porte `G4`. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` → **9**, et les neuf sont l'épic `#115` et les huit stories du LOT 5 |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 249** : **913 pytest** — dont **602 d'intégration** — et **336 Vitest** (**103 `ui`**, **140 `web`**, **93 `contracts`**) |
+| **Tests** | **1 291** : **913 pytest** — dont **602 d'intégration** — et **378 Vitest** (**111 `ui`**, **156 `web`**, **111 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **154 décisions** `DEC-418+` · **61 écarts** (**13 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 54 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Registres | **155 décisions** `DEC-418+` · **61 écarts** (**13 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 59 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -84,7 +84,7 @@ Toute modification passe par une branche et une pull request vers `develop`.
    découpage est validé — **ONZE** sous-étapes depuis la fusion de `T5` et `T6` (`DEC-564`) — et
    **`T1` à `T5` et `T7` à `T10` sont terminées**. N'écris **rien** qui appartienne au LOT 6 — cercles — au LOT 9
    — import CSV — ni au LOT 11 — génération des miniatures.
-   Et **une sous-étape à la fois** : la suivante est `T11`.
+   Et **une sous-étape à la fois** : `T11` est **en cours**, et sa SECONDE partie — archiver et restaurer — est la suivante.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
    > disait « LE LOT 4 EST OUVERT […] la suivante est `T2` » et **interdisait le LOT 5**, qui était
@@ -120,7 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
-| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,10}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **54** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,11}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **59** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -471,7 +471,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`571` en usage | **`DEC-572`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`572` en usage | **`DEC-573`** |
 | `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`118`, **5 trous** | **`QO-119`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -898,7 +898,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**245 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **54** au LOT 5 — 71 + 44 + 57 + 19 + 54,
+**250 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **59** au LOT 5 — 71 + 44 + 57 + 19 + 59,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2374,7 +2374,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 5 est ouvert, et `T11` est la prochaine
+# 9. Par où commencer : le LOT 5 est ouvert, et `T11` est À MOITIÉ FAITE
 
 ## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
@@ -2425,7 +2425,7 @@ sont faites**.
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le lot est ouvert et son découpage est validé** — onze sous-étapes, `DEC-558` puis `DEC-564`. Il
-n'y a donc plus de découpage à proposer : il y a `T11` à faire, puis `T12`.
+n'y a donc plus de découpage à proposer : il y a la **seconde partie de `T11`** à faire — archiver et restaurer, `DEC-572` — puis `T12`.
 
 1. **Lire la fiche §3 pour le libellé et le critère de `T11`**, et le backlog `MVP-L05-US004` pour son
    critère d'acceptation. **Dériver les libellés de la fiche, ne pas les relire de mémoire** : trois
@@ -2685,7 +2685,15 @@ make csrf-check           # 10 — 5 ecritures refusees, une cle rejouee sans ef
 make debit-check          # 12 — les seuils du 20.2, les DEUX refus compares
 make revocation-check     #  6 — le depart revoque, et l'API rend 401, MESURE
 make service-check        # 11 — un jeton hors scope refuse, l'expiration effective
-make ecrans-check         #  7 — les 8 chemins servis, aucune couleur hors jetons
+make ecrans-check         #  8 — les 8 chemins servis, aucune couleur hors jetons dans
+                          #      les QUATRE feuilles (une seule etait lue avant T11), et
+                          #      les 30 MODULES d'ecran servis en JAVASCRIPT. Ce dernier
+                          #      est le seul qui distingue un conteneur `web` a jour d'un
+                          #      conteneur perime : le repli SPA rend `text/html` avec le
+                          #      point de montage pour N'IMPORTE QUEL chemin, si bien que
+                          #      les trois autres controles d'ecran passent sur le code
+                          #      d'un autre lot. §7.0, quatrieme proposition. Lance
+                          #      `make code-refresh` AVANT, jamais apres
 make evenements-check     #  6 — les 7 evenements du 10.6, sans rien de sensible
 make residu-check         #      la suite d'integration, ET la preuve qu'elle ne laisse rien
                           #      Il REMPLACE `make test-integration`, il ne s'y ajoute pas.
@@ -2762,7 +2770,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **43 leçons** payées par **245 défauts nommés** — 71 + 44 + 57 + 19 + 54, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **43 leçons** payées par **250 défauts nommés** — 71 + 44 + 57 + 19 + 59, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;

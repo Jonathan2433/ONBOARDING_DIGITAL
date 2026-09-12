@@ -47,6 +47,7 @@ import type { JSX } from 'react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
+import { STATUTS, couleurDuCercle, libelleDuStatut } from '../affichage';
 import { type CriteresDeRecherche, listerLeTrombinoscope } from '../api/trombinoscope';
 import { cheminDuProfilALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
@@ -61,32 +62,10 @@ import { Alerte, CarteRetournable } from '@onboarding/ui';
 /** §9.3 : « la recherche demarre apres environ 300 ms ». */
 export const TEMPORISATION_DE_SAISIE_MS = 300;
 
-/**
- * Les deux valeurs du §6.5, et le libelle que l'ecran affiche.
- *
- * **`intercontract` EST LA VALEUR STOCKEE, « intercontrat » LE MOT FRANCAIS.**
- * Le modele emploie l'anglais pour la valeur -- `DEC-499`, les noms suivent le
- * modele a la lettre -- et le metier parle francais. La traduction est ici, en un
- * seul endroit, jamais dans chaque composant.
- */
-export const STATUTS: readonly { readonly valeur: string; readonly libelle: string }[] = [
-  { valeur: 'mission', libelle: 'En mission' },
-  { valeur: 'intercontract', libelle: 'En intercontrat' },
-];
-
-/**
- * Les jetons de couleur que le design system porte — LOT 1, `T10`.
- *
- * Un jeton absent de cette table laisse la bordure neutre. **C'est volontaire** :
- * inventer une couleur pour un cercle inconnu serait exactement ce que la regle
- * §6.5 interdit, et le LOT 6 est le lot des cercles.
- */
-const COULEURS_DE_CERCLE: Readonly<Record<string, string>> = {
-  bleu: 'var(--marque-bleu)',
-  'bleu-fonce': 'var(--marque-bleu-fonce)',
-  rose: 'var(--marque-rose)',
-  jaune: 'var(--marque-jaune)',
-};
+//  **`STATUTS` ET LES COULEURS DE CERCLE ONT DEMENAGE EN `T11`**, dans
+//  `../affichage`. Ils avaient UN consommateur quand `T10` les a poses ; la fiche
+//  profil est le second, et une page qui en importe une autre casse le jour ou
+//  celle-ci est renommee. Les recopier aurait ete pire -- §7.27.
 
 /**
  * Le dernier resultat connu, et POUR QUELS criteres.
@@ -336,9 +315,8 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
   //  **DEUX ABSENCES DISTINCTES, ET LE MEME RENDU.** Pas de cercle, ou un cercle
   //  sans jeton declare : la bordure reste neutre dans les deux cas, et le NOM du
   //  cercle reste du texte sur le verso -- c'est le §10.1 qui l'exige.
-  const jeton = ligne.cercle?.jetonDeCouleur ?? null;
-  const couleur = jeton === null ? undefined : COULEURS_DE_CERCLE[jeton];
-  const libelleStatut = STATUTS.find((choix) => choix.valeur === ligne.statut)?.libelle;
+  const couleur = couleurDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
+  const libelleStatut = libelleDuStatut(ligne.statut);
 
   return (
     <CarteRetournable

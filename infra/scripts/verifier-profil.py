@@ -106,6 +106,27 @@ CHEMIN_FICHE_ARCHIVEE = "/api/v1/entities/{code}/people/{appartenance}/fiche-arc
 #  Le chemin de `T9`.
 CHEMIN_HISTORIQUE = "/api/v1/entities/{code}/people/{appartenance}/historique"
 
+#  **AUCUN CONTROLE DE STACK SUR LA PAGE DE PROFIL, ET C'EST MESURE** — `T11`.
+#
+#  J'en avais ecrit un : la page servie en `text/html` avec le point de montage,
+#  sur l'identifiant reel rendu par la liste. **Il ne pouvait pas echouer.** Le
+#  repli SPA du `Caddyfile` sert `index.html` pour TOUT chemin, mesure le
+#  12/09/2026 :
+#
+#      /entites/BORDEA00/trombinoscope/<uuid reel>   200 text/html racine=1
+#      /entites/BORDEA00/trombinoscope/bidon         200 text/html racine=1
+#      /chemin/qui/n/existe/pas/du/tout              200 text/html racine=1
+#
+#  L'echec aurait produit la MEME observation que le succes -- §7.0, quatrieme
+#  proposition -- et le repli lui-meme est deja prouve par `make ecrans-check`.
+#  Le supprimer vaut mieux que de le garder : un controle qui ne discrimine pas
+#  apprend a lire « ok » sans le lire.
+#
+#  Ce que le rendu de cette page a de prouve est ailleurs : **156 tests `jsdom`**
+#  cote `apps/web`. Une preuve dans un vrai navigateur demande un moteur de
+#  rendu, que le cahier §17.1 nomme — Playwright — et que le **LOT 12** possede ;
+#  `make cadre-check` porte deja la meme reserve pour la mesure aux cinq largeurs.
+
 #  **DEUX CONTENUS DISTINCTS, ET C'EST CE QUI REND LE CRITERE MESURABLE.** Servir
 #  l'original au lieu de la miniature donnerait un 200 et des octets dans les
 #  deux cas : seule la comparaison du CONTENU discrimine.

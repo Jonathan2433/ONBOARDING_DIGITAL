@@ -50,7 +50,20 @@ import urllib.request
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 CAHIER = RACINE / "docs/product/CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 ROUTES = RACINE / "apps/web/src/routes.ts"
-FEUILLE = RACINE / "apps/web/src/pages/auth.css"
+#  **LES FEUILLES SONT DERIVEES DU DISQUE, ET ELLES ETAIENT UNE SUR QUATRE.**
+#
+#  Ce controle ne lisait que `auth.css`, ecrite au `T11` du LOT 3 -- exact pour
+#  elle, et **aveugle** aux trois autres. Mesure du 12/09/2026 : `application.css`
+#  porte 195 references a des jetons et vit depuis le LOT 4 ; `composants.css`
+#  58 ; aucune n'etait examinee. C'est le §7.40 -- un garde-fou ecrit contre une
+#  INSTANCE ne couvre pas la classe -- et la parade qui dure est de DERIVER le
+#  perimetre : une feuille ajoutee y entrera sans que personne y pense.
+FEUILLES_DES_ECRANS = sorted(
+    {
+        *(RACINE / "apps/web/src").rglob("*.css"),
+        RACINE / "packages/ui/src/composants.css",
+    }
+)
 PAGES = RACINE / "apps/web/src/pages"
 
 DELAI_HTTP = 30
@@ -190,23 +203,51 @@ def main() -> int:
     #  --------------------------------------------------------------
     controles += 1
     motif_couleur = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(")
-    feuille = sans_commentaires_css(FEUILLE.read_text(encoding="utf-8"))
-    trouvees = motif_couleur.findall(feuille)
-    #  TEMOIN — le motif SAIT trouver une couleur. Sans lui, un motif casse
-    #  rendrait toujours une liste vide, et l'absence prouverait l'absence de
-    #  controle plutot que l'absence de couleur. §7.0, quatrieme proposition.
+    #  **LE DISCRIMINANT EST LA PROPRIETE, JAMAIS LE FICHIER.** `styles.css` porte
+    #  quatorze hexadecimaux, et les quatorze sont des DEFINITIONS de jetons --
+    #  `--encre: #1a1a1a` -- en theme clair et sombre. Exempter le fichier
+    #  masquerait une couleur ecrite en dur dans une regle ordinaire de ce meme
+    #  fichier ; exempter la LIGNE d'une definition est exact. §7.25, et c'est la
+    #  meme forme que l'exemption par COLONNE de `residu-check`.
+    definition = re.compile(r"^\s*--[a-z0-9-]+\s*:")
+    trouvees: list[tuple[str, str]] = []
+    definitions = 0
+    variables = 0
+    for chemin in FEUILLES_DES_ECRANS:
+        feuille = sans_commentaires_css(chemin.read_text(encoding="utf-8"))
+        variables += len(re.findall(r"var\(--[a-z0-9-]+\)", feuille))
+        for ligne in feuille.splitlines():
+            if not motif_couleur.search(ligne):
+                continue
+            if definition.match(ligne):
+                definitions += 1
+                continue
+            trouvees.append((chemin.name, ligne.strip()))
+    #  TEMOIN — le motif SAIT trouver une couleur, ET il sait ne PAS exempter une
+    #  regle ordinaire. Sans lui, un motif casse rendrait toujours une liste vide,
+    #  et l'absence prouverait l'absence de controle plutot que l'absence de
+    #  couleur. §7.0, quatrieme proposition.
     temoin = motif_couleur.findall(sans_commentaires_css(".x { color: #abcdef; }"))
+    temoin_definition = definition.match("  --encre: #1a1a1a;") is not None
+    temoin_regle = definition.match("  color: #abcdef;") is None
     if trouvees:
+        print(f"    ECHEC    {len(trouvees)} couleur(s) litterale(s) hors definition de jeton :")
+        for nom, ligne in trouvees[:4]:
+            print(f"             {nom} — {ligne}")
+        echecs += 1
+    elif not temoin or not temoin_definition or not temoin_regle:
         print(
-            f"    ECHEC    {len(trouvees)} couleur(s) litterale(s) dans auth.css : {trouvees[:4]}"
+            "    ECHEC    TEMOIN : couleur evidente "
+            f"{bool(temoin)}, definition reconnue {temoin_definition}, "
+            f"regle ordinaire NON exemptee {temoin_regle}"
         )
         echecs += 1
-    elif not temoin:
-        print("    ECHEC    TEMOIN : le motif ne trouve meme pas une couleur evidente")
-        echecs += 1
     else:
-        variables = len(re.findall(r"var\(--[a-z0-9-]+\)", feuille))
-        print(f"    ok       0 couleur litterale, {variables} references aux jetons — temoin OK")
+        print(
+            f"    ok       {len(FEUILLES_DES_ECRANS)} feuille(s) examinee(s), 0 couleur "
+            f"litterale hors des {definitions} definitions de jetons, {variables} references "
+            "aux jetons — 3 temoins OK"
+        )
 
     #  --------------------------------------------------------------
     #  3. AUCUN STOCKAGE NAVIGATEUR DANS LES SOURCES DES ECRANS
@@ -269,6 +310,76 @@ def main() -> int:
     else:
         print(f"    ok       {len(a_verifier)} chemins servis en `text/html` avec le point")
         print("             de montage — le repli SPA du `Caddyfile` est EXERCE")
+
+    #  --------------------------------------------------------------
+    #  4 bis. LES MODULES DES ECRANS SONT REELLEMENT SERVIS
+    #  --------------------------------------------------------------
+    #
+    #  **LE CONTROLE PRECEDENT PASSE SUR UN FRONTEND PERIME, ET C'EST MESURE.**
+    #  Le repli SPA du `Caddyfile` rend `text/html` avec le point de montage pour
+    #  N'IMPORTE QUEL chemin : les huit ecrans « servis » le sont donc meme quand
+    #  le conteneur porte le code d'un autre lot. Le `Makefile` le dit de son
+    #  cote -- le frontend servi est reste celui du LOT 1 pendant TOUT le LOT 3 --
+    #  et `code-refresh` a ete corrige sans qu'aucun CONTROLE ne soit pose.
+    #
+    #  **CELUI-CI DISCRIMINE, ET LE TYPE MIME EST CE QUI DISCRIMINE** (§7.10) :
+    #  un module present est servi en JavaScript, un module absent retombe sur le
+    #  repli et rend `text/html`. Mesure du 12/09/2026, sur ce meme couple :
+    #
+    #      /src/pages/PageProfil.tsx        200 text/javascript   (present)
+    #      /src/pages/PageProfilAVenir.tsx  200 text/html         (supprime)
+    #
+    #  **IL NE VAUT QUE DU SERVEUR DE DEVELOPPEMENT**, et il le DIT plutot que de
+    #  le supposer : l'artefact bati ne sert aucun `/src/…`, il sert `/assets/…`.
+    #  C'est le §7.21 -- un controle juste d'une cible est faux de l'autre -- et
+    #  la parade est d'identifier la cible servie avant de conclure.
+    controles += 1
+    entree = "/src/main.tsx"
+    _, mime_entree, _ = appeler(arguments.base, entree, contexte)
+    if "javascript" not in mime_entree:
+        print(
+            f"    info     cible NON-developpement : {entree} rend {mime_entree!r}. "
+            "L'artefact bati sert `/assets/…`, pas `/src/…` ;"
+        )
+        print("             ce controle ne s'applique donc pas, et il le dit (§7.21)")
+    else:
+        modules = sorted(
+            chemin
+            for chemin in (RACINE / "apps/web/src").rglob("*.ts*")
+            if not chemin.name.endswith((".test.ts", ".test.tsx"))
+        )
+        non_resolus: list[str] = []
+        for chemin in modules:
+            relatif = "/" + chemin.relative_to(RACINE / "apps/web").as_posix()
+            _, mime, _ = appeler(arguments.base, relatif, contexte)
+            if "javascript" not in mime:
+                non_resolus.append(f"{relatif} -> {mime!r}")
+        #  TEMOIN — un module qui n'existe PAS doit retomber sur le repli. Sans
+        #  lui, un serveur qui rendrait du JavaScript pour tout chemin donnerait
+        #  la meme observation qu'un frontend a jour. §7.0, quatrieme proposition.
+        _, mime_temoin, _ = appeler(arguments.base, "/src/pages/ModuleQuiNExistePas.tsx", contexte)
+        temoin_ok = "javascript" not in mime_temoin
+        if non_resolus:
+            print(
+                f"    ECHEC    {len(non_resolus)} module(s) sur {len(modules)} NON servi(s) "
+                "— le conteneur `web` porte un code plus ancien que le depot."
+            )
+            for ligne in non_resolus[:4]:
+                print(f"             {ligne}")
+            print("             Remede : `make code-refresh`, qui reconstruit AUSSI `web`.")
+            echecs += 1
+        elif not temoin_ok:
+            print(
+                f"    ECHEC    TEMOIN : un module inexistant rend {mime_temoin!r}, "
+                "donc le type MIME ne discrimine rien ici"
+            )
+            echecs += 1
+        else:
+            print(
+                f"    ok       les {len(modules)} modules des ecrans sont servis en "
+                "JavaScript — le conteneur porte bien le code du depot, et un module"
+            )
+            print("             inexistant retombe sur le repli : le temoin discrimine")
 
     #  --------------------------------------------------------------
     #  5. UN LIEN PROFOND AVEC CHAINE DE REQUETE EST SERVI AUSSI

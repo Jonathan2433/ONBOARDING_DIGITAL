@@ -105,4 +105,25 @@ export { cheminProfil, CODES_PROFIL, GABARIT_CHEMIN_PROFIL, validerLaFiche } fro
 //  `profil.js` donnerait deux chemins vers une meme fonction.
 export type { CercleDuProfil, FicheDuProfil, ResponsabiliteDuProfil } from './profil.js';
 
+//  LOT 5, T11 — l'historique organisationnel, servi par l'API depuis `T9` et
+//  qu'aucun ecran ne lisait. Le validateur porte la distinction que tout le
+//  reste du dispositif a construite : `null` = hors perimetre, `[]` = rien a
+//  montrer. L'absorber « pour simplifier l'ecran » ferait affirmer FAUX.
+export {
+  AXES_DE_L_HISTORIQUE,
+  cheminHistorique,
+  CODES_HISTORIQUE,
+  GABARIT_CHEMIN_HISTORIQUE,
+  validerLHistorique,
+} from './historique.js';
+export type {
+  AxeDeLHistorique,
+  HistoriqueOrganisationnel,
+  PeriodeDeCercle,
+  PeriodeDeDsm,
+  PeriodeDeMetier,
+  PeriodeDeResponsabilite,
+  PeriodeDeStatut,
+} from './historique.js';
+
 export const PACKAGE_NAME = '@onboarding/contracts';
