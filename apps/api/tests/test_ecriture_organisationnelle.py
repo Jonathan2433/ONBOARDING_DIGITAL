@@ -39,6 +39,7 @@ from app.organization.services import responsabilite_dsm_active
 from app.people.ecriture import (
     CODE_CHAMP_HORS_PERIMETRE,
     CODE_PERIODE_INCOMPATIBLE,
+    CODE_VALEUR_REFUSEE,
     CODE_VERSION_OBSOLETE,
     modifier_les_donnees_organisationnelles,
 )
@@ -778,3 +779,102 @@ def test_un_role_technique_SUPER_ouvre_les_six_champs(cx: Connection) -> None:
         _perimetre(cx, entite, acteur, cible, {RoleDeLaMatrice.SUPER_ADMINISTRATEUR}).champs
         == TOUS_LES_CHAMPS
     )
+
+
+# ---------------------------------------------------------------------------
+#  Ajout de `T8` du LOT 5 : un refus que `T7` rendait en 500
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_une_DATE_D_ARRIVEE_posterieure_au_depart_rend_422_et_NON_500(
+    cx: Connection,
+) -> None:
+    """**DEFAUT DE `T7`, TROUVE PAR `T8` LE 10/09/2026. `ECART-058`.**
+
+    `period` est `GENERATED ALWAYS AS daterange(arrival_date, departure_date)` :
+    une colonne GENEREE peut refuser une valeur **avant** toute contrainte, et
+    elle leve alors « range lower bound must be less than or equal to range upper
+    bound » -- une `DataException`, donc un `sqlalchemy.exc.DataError`.
+
+    Or `modifier_les_donnees_organisationnelles` ne capturait que
+    `IntegrityError`. **La route sortait en 500**, mesure a l'appui, sur un etat
+    parfaitement atteignable : une appartenance `active` PEUT porter une
+    `departure_date`, la contrainte `depart_date_si_departed` ne contraignant que
+    l'etat `departed`.
+
+    **CE N'EST PAS `T8` QUI L'A INTRODUIT, ET C'EST LA LECON.** `T8` a rencontre
+    le meme refus sur SA date de depart, a vu qu'il n'etait pas traduit, puis a
+    demande *quel autre code porte la meme exigence* -- la moitie du §7.38 qui
+    avait ete oubliee en `T3` et payee deux semaines plus tard par `ECART-055`.
+    """
+    entite = _entite(cx, "T7-PLAGE")
+    acteur = _personne(cx, "t7-plage-a@exalt-company.com")
+    _appartenance(cx, acteur, entite)
+    #  ACTIVE **avec** une date de depart : le schema l'autorise.
+    cible = cx.execute(
+        text(
+            "INSERT INTO entity_membership (person_id, entity_id, arrival_date, departure_date, "
+            "membership_state, professional_category, profile_visibility) "
+            "VALUES (:p, :e, :arrivee, :depart, 'active', 'consultant', 'published') RETURNING id"
+        ),
+        {
+            "p": _personne(cx, "t7-plage-c@exalt-company.com"),
+            "e": entite,
+            "arrivee": (ANCRAGE - 60 * JOUR).date(),
+            "depart": (ANCRAGE - 30 * JOUR).date(),
+        },
+    ).scalar_one()
+
+    with pytest.raises(ErreurApplicative) as capture:
+        modifier_les_donnees_organisationnelles(
+            cx,
+            entite=entite,
+            cible=cible,
+            acteur=acteur,
+            version_attendue=1,
+            demande={ChampOrganisationnel.DATE_D_ARRIVEE: (ANCRAGE - 10 * JOUR).date()},
+            perimetre=_tout(cx, entite, cible),
+            instant=ANCRAGE,
+        )
+    assert capture.value.statut == 422
+    assert capture.value.code == CODE_VALEUR_REFUSEE
+
+
+@pytest.mark.integration
+def test_une_DATE_D_ARRIVEE_ANTERIEURE_au_depart_passe(cx: Connection) -> None:
+    """**LE TEMOIN DU TEST PRECEDENT, ET IL EST UN TEST A PART.**
+
+    Il ne peut pas vivre dans le meme : un ordre refuse par PostgreSQL **avorte
+    la transaction entiere** -- « current transaction is aborted, commands
+    ignored until end of transaction block » -- et le decor de ce fichier est une
+    seule transaction annulee a la fin. Le temoin mesure ici est donc separe, et
+    il ne differe du refus que par la date demandee.
+    """
+    entite = _entite(cx, "T7-PLAGE-OK")
+    acteur = _personne(cx, "t7-plage-ok-a@exalt-company.com")
+    _appartenance(cx, acteur, entite)
+    cible = cx.execute(
+        text(
+            "INSERT INTO entity_membership (person_id, entity_id, arrival_date, departure_date, "
+            "membership_state, professional_category, profile_visibility) "
+            "VALUES (:p, :e, :arrivee, :depart, 'active', 'consultant', 'published') RETURNING id"
+        ),
+        {
+            "p": _personne(cx, "t7-plage-ok-c@exalt-company.com"),
+            "e": entite,
+            "arrivee": (ANCRAGE - 60 * JOUR).date(),
+            "depart": (ANCRAGE - 30 * JOUR).date(),
+        },
+    ).scalar_one()
+    modification = modifier_les_donnees_organisationnelles(
+        cx,
+        entite=entite,
+        cible=cible,
+        acteur=acteur,
+        version_attendue=1,
+        demande={ChampOrganisationnel.DATE_D_ARRIVEE: (ANCRAGE - 50 * JOUR).date()},
+        perimetre=_tout(cx, entite, cible),
+        instant=ANCRAGE,
+    )
+    assert modification.champs == frozenset({ChampOrganisationnel.DATE_D_ARRIVEE})

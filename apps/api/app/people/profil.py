@@ -78,7 +78,12 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy import text
 
-from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
+from app.people.modeles import (
+    ETAT_LISTE,
+    VISIBILITE_LISTEE,
+    VISIBILITES_PROFIL,
+    EtatAppartenance,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection
@@ -174,7 +179,7 @@ LEFT JOIN circle_membership AS cm
       AND cm.period @> :instant AND cm.membership_type = 'principal'
 LEFT JOIN circle AS cp ON cp.id = cm.circle_id
 WHERE em.id = :appartenance AND em.entity_id = :entite
-  AND em.membership_state = :etat AND em.profile_visibility = :visibilite
+  AND em.membership_state = ANY(:etats) AND em.profile_visibility = ANY(:visibilites)
 """
 
 _SECONDAIRES: Final[str] = """
@@ -199,12 +204,26 @@ ORDER BY fra.responsibility_type, c.name, o.name
 """
 
 
+#  **LA POPULATION DES ARCHIVES, DERIVEE ET NON ECRITE.**
+#
+#  L'etat vient de l'enumeration ; les visibilites sont **les trois**, et cette
+#  ouverture est motivee : l'archivage ne touche pas `profile_visibility`, si bien
+#  qu'un archive peut etre `draft`, `published` ou `hidden`. Filtrer sur la
+#  visibilite ferait echouer un acte que le §6.1 autorise, pour une raison que le
+#  corpus n'ecrit nulle part -- et un controle qui refuse du legitime apprend a
+#  passer outre (§7.25).
+ETATS_ARCHIVES: Final[tuple[str, ...]] = (EtatAppartenance.ARCHIVED.value,)
+TOUTES_LES_VISIBILITES: Final[tuple[str, ...]] = VISIBILITES_PROFIL
+
+
 def lire_la_fiche(
     connexion: Connection,
     *,
     entite: uuid.UUID,
     appartenance: uuid.UUID,
     instant: dt.datetime,
+    etats: tuple[str, ...] = (ETAT_LISTE,),
+    visibilites: tuple[str, ...] = (VISIBILITE_LISTEE,),
 ) -> FicheProfil | None:
     """La fiche complete d'une appartenance, ou `None`.
 
@@ -213,15 +232,28 @@ def lire_la_fiche(
     trois rendent le meme refus -- distinguer apprendrait qu'un brouillon existe,
     exactement comme pour les entites en `T2` du LOT 4.
 
-    **LE FILTRE DE POPULATION EST CELUI DE `T2`**, et il doit le rester : une
-    fiche accessible directement alors que la liste l'exclut rendrait le filtre de
-    la liste decoratif.
+    **LE FILTRE DE POPULATION EST CELUI DE `T2` PAR DEFAUT**, et il doit le
+    rester pour cette route : une fiche accessible directement alors que la liste
+    l'exclut rendrait le filtre de la liste decoratif.
+
+    **`T8` DU LOT 5 EN A OUVERT UN SECOND, ET C'EST UN PARAMETRE, PAS UNE COPIE.**
+    Le §6.1 donne « Consulter un profil archive » a l'ESM, a l'administrateur
+    d'entite et au super-administrateur : c'est une AUTRE population, servie par
+    une AUTRE route, avec sa propre grille de roles. Un second exemplaire de cette
+    requete aurait diverge au premier champ ajoute -- `DEC-466`, et `T5` l'a paye
+    sur les conditions de la miniature. Voir `lire_la_fiche_archivee`.
+
+    Args:
+        etats: les etats d'appartenance admissibles. `= ANY(:etats)` et non une
+            egalite : c'est ce qui permet la seconde population sans composer de
+            SQL, donc sans qu'un chemin de code puisse construire un `WHERE`.
+        visibilites: les visibilites admissibles, meme motif.
     """
     parametres = {
         "appartenance": appartenance,
         "entite": entite,
-        "etat": ETAT_LISTE,
-        "visibilite": VISIBILITE_LISTEE,
+        "etats": list(etats),
+        "visibilites": list(visibilites),
         "instant": instant,
     }
     ligne = connexion.execute(text(_FICHE), parametres).one_or_none()
@@ -272,4 +304,36 @@ def lire_la_fiche(
         cercle_principal=principal,
         cercles_secondaires=secondaires,
         responsabilites=responsabilites,
+    )
+
+
+def lire_la_fiche_archivee(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    appartenance: uuid.UUID,
+    instant: dt.datetime,
+) -> FicheProfil | None:
+    """La fiche d'un profil ARCHIVE — « Consulter un profil archive », §6.1.
+
+    LOT 5, sous-etape `T8`.
+
+    **UNE ROUTE DISTINCTE, ET NON UN ASSOUPLISSEMENT DE `lire_la_fiche`.** Le
+    §6.1 traite « Consulter un profil actif » -- les huit roles -- et « Consulter
+    un profil archive » -- trois roles, « besoin fonctionnel » -- comme deux
+    lignes differentes. Elargir la premiere aurait fusionne deux droits que le
+    document separe, et **casse le test qui fige le 404 d'un profil exclu**, dont
+    c'est precisement le role.
+
+    `None` couvre les memes trois cas que `lire_la_fiche`, plus un quatrieme :
+    l'appartenance existe et n'est PAS archivee. Le refus est identique, et c'est
+    voulu -- le §2.5 « refus par defaut ».
+    """
+    return lire_la_fiche(
+        connexion,
+        entite=entite,
+        appartenance=appartenance,
+        instant=instant,
+        etats=ETATS_ARCHIVES,
+        visibilites=TOUTES_LES_VISIBILITES,
     )

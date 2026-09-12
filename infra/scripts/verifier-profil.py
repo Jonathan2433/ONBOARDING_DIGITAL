@@ -99,6 +99,10 @@ CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
 CHEMIN_SESSION = "/api/v1/auth/session"
 EN_TETE_JETON = "X-CSRF-Token"
 CHEMIN_PHOTO = "/api/v1/entities/{code}/people/{appartenance}/photo"
+#  Les trois chemins de `T8`.
+CHEMIN_ARCHIVAGE = "/api/v1/entities/{code}/people/{appartenance}/archivage"
+CHEMIN_RESTAURATION = "/api/v1/entities/{code}/people/{appartenance}/restauration"
+CHEMIN_FICHE_ARCHIVEE = "/api/v1/entities/{code}/people/{appartenance}/fiche-archivee"
 
 #  **DEUX CONTENUS DISTINCTS, ET C'EST CE QUI REND LE CRITERE MESURABLE.** Servir
 #  l'original au lieu de la miniature donnerait un 200 et des octets dans les
@@ -255,6 +259,7 @@ def poser_le_decor(
     code_entite: str,
     adresse: str,
     adresse_dsm: str,
+    adresse_esm: str,
     empreinte: str,
     algo: str,
     parametres_hachage: str,
@@ -279,7 +284,7 @@ def poser_le_decor(
     return f"""
     DO $$
     DECLARE p uuid; e uuid; c uuid; m uuid; cl uuid; jc uuid; ci uuid; d uuid; dm uuid;
-            ma uuid;
+            ma uuid; es uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone)
       VALUES ('{code_entite}', 'Entite {marqueur}', 'Bordeaux', 'FR', 'active', 'Europe/Paris')
@@ -337,6 +342,33 @@ def poser_le_decor(
       INSERT INTO framework_responsibility_assignment
         (person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at, ends_at)
       VALUES (dm, e, 'DSM', dm, now() - INTERVAL '30 days', NULL);
+
+      -- **UN TROISIEME COMPTE CONNECTABLE, POSE PAR `T8` : L'ESM.**
+      --
+      -- Le §6.1 reserve « Archiver un profil » a l'ESM, a l'administrateur
+      -- d'entite et au super-administrateur -- `DSM` et `BOOST` sont A TIRET,
+      -- alors que les deux peuvent MODIFIER. Aucun des deux comptes existants
+      -- ne porte ce droit, et en donner un a l'un d'eux aurait detruit un
+      -- temoin : celui de l'appelant sans role (controle 5, `ECART-051`) ou
+      -- celui du DSM refuse hors de son perimetre (controle 20).
+      --
+      -- **AJOUTER PLUTOT QUE MODIFIER**, exactement comme `T7` l'a fait pour le
+      -- DSM. Et `profile_visibility` a `draft` pour le meme motif : le controle
+      -- 2 exige que la liste rende EXACTEMENT deux profils.
+      INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
+      VALUES ('{adresse_esm}', '{adresse_esm}', 'Esmeralda', 'Lentite',
+              'active') RETURNING id INTO es;
+      INSERT INTO user_account (person_id, account_type, state, failed_login_count)
+      VALUES (es, 'ADMIN_LOCAL', 'active', 0) RETURNING id INTO c;
+      INSERT INTO admin_password_credential
+        (user_account_id, password_hash, algorithm, parameters, changed_at, must_change)
+      VALUES (c, '{empreinte}', '{algo}', '{parametres_hachage}'::jsonb, now(), FALSE);
+      INSERT INTO entity_membership (person_id, entity_id, arrival_date,
+        membership_state, professional_category, profile_visibility)
+      VALUES (es, e, DATE '2025-01-01', 'active', 'consultant', 'draft');
+      INSERT INTO framework_responsibility_assignment
+        (person_id, entity_id, responsibility_type, assigned_by_person_id, starts_at, ends_at)
+      VALUES (es, e, 'ESM', es, now() - INTERVAL '30 days', NULL);
 
       -- Le profil COMPLET, avec ses six champs sensibles.
       INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
@@ -501,6 +533,9 @@ def main() -> int:
     adresse = f"{MARQUEUR}@{domaine}"
     #  Le DSM est un SECOND compte connectable, sur le meme domaine autorise.
     adresse_dsm = f"{MARQUEUR}-dsm@{domaine}"
+    #  Le TROISIEME compte connectable, pose par `T8` : le seul a porter un droit
+    #  d'archivage. Meme domaine autorise, meme motif de menage `{marqueur}%`.
+    adresse_esm = f"{MARQUEUR}-esm@{domaine}"
     mot_de_passe = "un-mot-de-passe-de-verification-sans-portee"
     nom_cookie = env.get("SESSION_COOKIE_NAME", "exalt_session")
     code_entite = f"{MARQUEUR}-e"
@@ -513,7 +548,7 @@ def main() -> int:
     contexte.verify_mode = ssl.CERT_NONE
 
     print()
-    print("  Fiche profil complete — US004, cahier §10.2")
+    print("  Fiche profil, ecriture et cycle de vie — US004, US006, US007, cahier §10.2")
     print(f"    info     origine {arguments.base}")
     print(f"    info     marqueur : {MARQUEUR}")
     print(
@@ -538,6 +573,7 @@ def main() -> int:
             code_entite,
             adresse,
             adresse_dsm,
+            adresse_esm,
             empreinte_mdp,
             ALGORITHME,
             json.dumps(parametres_hachage),
@@ -548,7 +584,10 @@ def main() -> int:
     if code:
         print(f"    ECHEC    decor impossible : {sortie[:250]}")
         return 1
-    print("    ok       decor : un profil COMPLET, un profil EXCLU, + un admin local")
+    print(
+        "    ok       decor : un profil COMPLET, un profil EXCLU, + un admin local, "
+        "un DSM et un ESM"
+    )
 
     try:
         liste = CHEMIN_TROMBINOSCOPE.format(code=code_entite)
@@ -1099,6 +1138,319 @@ def main() -> int:
             echecs += 1
             print("    ECHEC    l'historique du metier a bouge alors que tout a ete refuse")
 
+        # ==================================================================
+        #  LOT 5, `T8` — ARCHIVAGE ET RESTAURATION, story `MVP-L05-US007`
+        #
+        #  **CES CONTROLES VIENNENT EN DERNIER, ET CE N'EST PAS UN DETAIL.**
+        #  Ils archivent le profil COMPLET, ce qui CLOT ses quatre relations et
+        #  le retire de la liste. Les places plus haut, ils casseraient le
+        #  controle 2 -- « exactement deux profils » -- et le temoin 26, qui
+        #  exige un historique de metier INTACT.
+        #
+        #  **ET C'EST CE QUI LES REND FORTS** : ils relient l'archivage a la
+        #  LISTE et a la FICHE, comme le controle 2 relie la fiche a la liste.
+        #  Un archivage qui n'aurait change que `membership_state` passerait un
+        #  controle de code HTTP ; il ne passe pas celui-ci.
+        # ==================================================================
+
+        def profils_listes() -> set[str]:
+            corps_liste = appeler(arguments.base, liste, contexte, en_tetes=biscuit).json()
+            lignes_liste = (
+                corps_liste.get("collaborateurs", []) if isinstance(corps_liste, dict) else []
+            )
+            return {ligne["last_name"] for ligne in lignes_liste}
+
+        def version_courante() -> int:
+            _, brut_v = psql(
+                compose,
+                env,
+                f"SELECT version FROM entity_membership WHERE id = '{appartenance}'",  # noqa: S608
+            )
+            return int(valeur(brut_v) or 0)
+
+        def code_d_erreur(reponse: Reponse) -> str | None:
+            corps_err = reponse.json()
+            if not isinstance(corps_err, dict):
+                return None
+            erreur = corps_err.get("erreur")
+            return erreur.get("code") if isinstance(erreur, dict) else None
+
+        chemin_archivage = CHEMIN_ARCHIVAGE.format(code=code_entite, appartenance=appartenance)
+        chemin_restauration = CHEMIN_RESTAURATION.format(
+            code=code_entite, appartenance=appartenance
+        )
+        chemin_fiche_archivee = CHEMIN_FICHE_ARCHIVEE.format(
+            code=code_entite, appartenance=appartenance
+        )
+
+        # --- 27. TEMOIN : l'ESM se connecte et obtient son jeton CSRF ---------
+        controles += 1
+        connexion_esm = appeler(
+            arguments.base,
+            CHEMIN_CONNEXION,
+            contexte,
+            charge={"email": adresse_esm, "mot_de_passe": mot_de_passe},
+        )
+        jeton_esm = ""
+        for pose in connexion_esm.cookies_poses:
+            if pose.startswith(f"{nom_cookie}="):
+                jeton_esm = pose.split("=", 1)[1].split(";", 1)[0]
+        biscuit_esm = {"Cookie": f"{nom_cookie}={jeton_esm}"}
+        session_esm = appeler(arguments.base, CHEMIN_SESSION, contexte, en_tetes=biscuit_esm)
+        corps_esm = session_esm.json()
+        csrf_esm = corps_esm.get("jeton_csrf", "") if isinstance(corps_esm, dict) else ""
+        if connexion_esm.statut == 200 and jeton_esm and csrf_esm:
+            print("    ok       TEMOIN : l'ESM se connecte, et `GET /auth/session` rend son jeton")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    connexion de l'ESM : {connexion_esm.statut}, "
+                f"cookie {'oui' if jeton_esm else 'NON'}, jeton {'oui' if csrf_esm else 'NON'}"
+            )
+            return 1
+        cycle_esm = {**biscuit_esm, EN_TETE_JETON: csrf_esm, "Origin": arguments.base}
+
+        # --- 28. sans session, l'archivage refuse -----------------------------
+        controles += 1
+        sans_session = appeler(
+            arguments.base, chemin_archivage, contexte, charge={"version": version_courante()}
+        )
+        if sans_session.statut == 401:
+            print("    ok       sans session : 401 — l'archivage n'est pas anonyme")
+        else:
+            echecs += 1
+            print(f"    ECHEC    archivage sans session : {sans_session.statut}")
+
+        # --- 29. sans jeton CSRF, l'archivage refuse --------------------------
+        controles += 1
+        sans_jeton = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": version_courante()},
+            #  La session SEULE, sans en-tete de jeton : c'est exactement la
+            #  requete qu'un formulaire d'un autre site produirait.
+            en_tetes={**biscuit_esm, "Origin": arguments.base},
+        )
+        if sans_jeton.statut == 403:
+            print(
+                "    ok       sans jeton CSRF : 403 — la SECONDE ecriture metier du projet est "
+                "protegee, et la regle n'est pas recopiee (`DEC-466`)"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    archivage sans jeton CSRF : {sans_jeton.statut}")
+
+        # --- 30. LE REFUS APPARIE : le MEME DSM qui a ECRIT au 19 est REFUSE ---
+        controles += 1
+        refus_dsm = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": version_courante()},
+            en_tetes=ecriture_dsm,
+        )
+        if refus_dsm.statut == 403:
+            print(
+                "    ok       LE REFUS APPARIE : le MEME DSM qui a ecrit au controle 19 est "
+                "REFUSE a l'archivage — 403, le §6.1 le met a TIRET sur cette ligne"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    le DSM devrait etre refuse a l'archivage : {refus_dsm.statut}, "
+                f"{str(refus_dsm.json())[:140]}"
+            )
+
+        # --- 31. LE CRITERE : l'ESM archive, et cela REVOQUE et CLOT ----------
+        controles += 1
+        listes_avant = profils_listes()
+        archive = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": version_courante()},
+            en_tetes=cycle_esm,
+        )
+        corps_archive = archive.json()
+        detail = corps_archive if isinstance(corps_archive, dict) else {}
+        closes = detail.get("relations_closes") or {}
+        #  **LES CINQ RELATIONS DU DECOR, NOMMEES.** Un archivage qui n'aurait
+        #  change que `membership_state` rendrait un dictionnaire VIDE, et le code
+        #  HTTP serait exactement le meme.
+        #
+        #  **ET LA CINQUIEME EST CELLE QUE JE N'AVAIS PAS PREVUE : LE CONTROLE
+        #  AVAIT RAISON.** J'en attendais quatre -- metier, statut, DSM, cercle,
+        #  les relations de l'APPARTENANCE. Il en a rendu cinq, et la difference
+        #  nommee etait `framework_responsibility_assignment` : « Ada Complete »
+        #  porte une responsabilite `BOOSTER` dans le decor, et le service du
+        #  `T9` du LOT 3 clot aussi les relations de la PERSONNE bornees a
+        #  l'entite quittee. C'est la moitie « **et roles** » du §30.22, et ce
+        #  contrat est meilleur que celui que j'avais ecrit.
+        #
+        #  **`technical_role_assignment` EN EST ABSENTE, ET C'EST MESURE** : le
+        #  decor ne donne aucun role technique a ce profil. Cette liste est une
+        #  INTERPRETATION du decor, non un etat derivable -- elle est donc
+        #  declaree et confrontee au reel, comme `RELATIONS_ATTENDUES` de
+        #  `verifier-historisation.py` (§7.27).
+        attendues_closes = {
+            "membership_job_assignment",
+            "professional_status_assignment",
+            "dsm_assignment",
+            "circle_membership",
+            "framework_responsibility_assignment",
+        }
+        if (
+            archive.statut == 200
+            and detail.get("etat_precedent") == "active"
+            and detail.get("etat_nouveau") == "archived"
+            and set(closes) == attendues_closes
+        ):
+            print(
+                "    ok       LE CRITERE : l'ESM archive — 200, `active` -> `archived` en "
+                f"passant par le depart, et les {len(attendues_closes)} relations du decor "
+                "sont CLOSES, nommees table par table — dont la responsabilite BOOSTER, "
+                "qui est la moitie « et roles » du §30.22"
+            )
+        else:
+            echecs += 1
+            #  **L'ECHEC NOMME LA DIFFERENCE, PAS LA CHARGE UTILE.** Un extrait
+            #  tronque d'un dictionnaire cache precisement la cle qui manque :
+            #  c'est le §7.18, la premiere correction a ecrire est celle qui dit
+            #  pourquoi.
+            print(
+                f"    ECHEC    archivage par l'ESM : {archive.statut} "
+                f"`{detail.get('etat_precedent')}` -> `{detail.get('etat_nouveau')}` ; "
+                f"relations closes manquantes {sorted(attendues_closes - set(closes))}, "
+                f"en trop {sorted(set(closes) - attendues_closes)}"
+            )
+            return 1
+
+        # --- 32. l'archivage RETIRE de la liste ET de la fiche ordinaire ------
+        controles += 1
+        listes_apres = profils_listes()
+        fiche_apres = appeler(
+            arguments.base,
+            CHEMIN_PROFIL.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            en_tetes=biscuit,
+        )
+        if listes_avant - listes_apres == {"Complete"} and fiche_apres.statut == 404:
+            print(
+                f"    ok       l'archive DISPARAIT : la liste passe de {sorted(listes_avant)} a "
+                f"{sorted(listes_apres)}, et sa fiche ordinaire rend 404"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    apres archivage : liste {sorted(listes_apres)}, "
+                f"fiche {fiche_apres.statut}"
+            )
+
+        # --- 33. la fiche ARCHIVEE la sert, a l'ESM ---------------------------
+        controles += 1
+        fiche_archivee = appeler(
+            arguments.base, chemin_fiche_archivee, contexte, en_tetes=biscuit_esm
+        )
+        corps_fa = fiche_archivee.json()
+        fa = corps_fa if isinstance(corps_fa, dict) else {}
+        if (
+            fiche_archivee.statut == 200
+            and fa.get("id") == appartenance
+            and fa.get("photo") is None
+        ):
+            print(
+                "    ok       « Consulter un profil archive » : 200 a l'ESM sur une route "
+                "DISTINCTE, et AUCUN chemin de photo — il menerait a un 404 garanti"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    fiche archivee : {fiche_archivee.statut}, {str(fa)[:200]}")
+
+        # --- 34. le MEME DSM est REFUSE sur la fiche archivee -----------------
+        controles += 1
+        fa_dsm = appeler(arguments.base, chemin_fiche_archivee, contexte, en_tetes=biscuit_dsm)
+        if fa_dsm.statut == 403:
+            print(
+                "    ok       le MEME DSM est REFUSE sur la fiche archivee — 403 : le §6.1 "
+                "separe « profil actif », ouverte aux huit roles, de « profil archive »"
+            )
+        else:
+            echecs += 1
+            print(f"    ECHEC    le DSM devrait etre refuse : {fa_dsm.statut}")
+
+        # --- 35. la RESTAURATION la ramene, et NE ROUVRE RIEN -----------------
+        controles += 1
+        restauree = appeler(
+            arguments.base,
+            chemin_restauration,
+            contexte,
+            charge={"version": version_courante()},
+            en_tetes=cycle_esm,
+        )
+        corps_r = restauree.json()
+        r = corps_r if isinstance(corps_r, dict) else {}
+        a_redonner = set(r.get("relations_a_redonner") or [])
+        fiche_revenue = appeler(
+            arguments.base,
+            CHEMIN_PROFIL.format(code=code_entite, appartenance=appartenance),
+            contexte,
+            en_tetes=biscuit,
+        )
+        if (
+            restauree.statut == 200
+            and r.get("etat_precedent") == "archived"
+            and r.get("etat_nouveau") == "active"
+            #  **EXACTEMENT CE QUE L'ARCHIVAGE A CLOS, NI PLUS NI MOINS.** Les
+            #  deux ensembles sont mesures par deux chemins differents -- le
+            #  service de revocation compte ses `UPDATE`, le rapport interroge
+            #  les periodes -- et `technical_role_assignment` n'est dans aucun
+            #  des deux : ce profil n'a jamais porte de role technique, et on ne
+            #  redonne pas ce qui n'a pas ete donne (§7.21).
+            and a_redonner == set(closes)
+            and profils_listes() == listes_avant
+            and fiche_revenue.statut == 200
+        ):
+            print(
+                "    ok       LE CRITERE : la restauration ramene dans la liste ET dans la "
+                f"fiche — 200 — et NOMME les {len(a_redonner)} affectations restees closes"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    restauration : {restauree.statut}, a redonner {sorted(a_redonner)}, "
+                f"liste {sorted(profils_listes())}, fiche {fiche_revenue.statut}"
+            )
+
+        # --- 36. l'archivage est REFUSE sur une appartenance deja archivee ----
+        #
+        #  **LE TEMOIN DE LA GRILLE D'ETAT, A TRAVERS L'API.** Il vient APRES la
+        #  restauration a dessein : la cible est de nouveau `active`, donc c'est
+        #  la RESTAURATION qui doit maintenant etre refusee. Le meme appelant, le
+        #  meme jeton, la meme cible -- seul l'etat a change.
+        controles += 1
+        restaurer_deux_fois = appeler(
+            arguments.base,
+            chemin_restauration,
+            contexte,
+            charge={"version": version_courante()},
+            en_tetes=cycle_esm,
+        )
+        if (
+            restaurer_deux_fois.statut == 403
+            and code_d_erreur(restaurer_deux_fois) == "action_hors_perimetre"
+        ):
+            print(
+                "    ok       restaurer un profil ACTIF est refuse — 403 "
+                "`action_hors_perimetre` : §23.2, l'etat prevaut sur le cumul des roles"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    seconde restauration : {restaurer_deux_fois.statut}, "
+                f"{code_d_erreur(restaurer_deux_fois)}"
+            )
+
     finally:
         mc(compose, f"mc rm --force local/{bucket}/{cle_miniature} >/dev/null 2>&1 || true")
         mc(compose, f"mc rm --force local/{bucket}/{cle_originale} >/dev/null 2>&1 || true")
@@ -1111,7 +1463,9 @@ def main() -> int:
     print(
         "  --> la fiche profil sert les champs du §10.2, n'en masque aucun, suit "
         "exactement la population du trombinoscope, sert la MINIATURE — jamais "
-        "l'originale — et un DSM n'ecrit QUE dans son perimetre"
+        "l'originale — un DSM n'ecrit QUE dans son perimetre, et il est REFUSE a "
+        "l'archivage, que seul l'ESM mene : la liste et la fiche le suivent, puis "
+        "la restauration les ramene sans rouvrir aucune affectation"
     )
     return 0
 

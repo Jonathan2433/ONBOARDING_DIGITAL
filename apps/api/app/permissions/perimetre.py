@@ -64,7 +64,11 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.organization.modeles import TypeAppartenanceCercle, TypeResponsabilite
-from app.people.modeles import ETATS_OCCUPANTS
+from app.people.modeles import (
+    ETATS_OCCUPANTS,
+    TRANSITIONS_DU_CYCLE_DE_VIE,
+    EtatAppartenance,
+)
 from app.permissions.services import RoleDeLaMatrice
 
 
@@ -246,3 +250,131 @@ def resoudre_le_perimetre(
         #  « Gerer les cercles secondaires », hors perimetre de `T7`.
 
     return PerimetreDEcriture(champs=frozenset(champs))
+
+
+# ===========================================================================
+#
+#  LE CYCLE DE VIE — ARCHIVER, RESTAURER, CONSULTER UN ARCHIVE (LOT 5, `T8`)
+#
+#    **TROIS LIGNES DU §6.1, ET UNE SEULE GRILLE DE ROLES.** La matrice donne
+#    exactement les memes trois roles aux trois actions :
+#
+#        Archiver un profil            —  —  —  Entite  —  —  Entite  Global
+#        Reactiver un profil archive   —  —  —  Condit. —  —  Entite  Global
+#        Consulter un profil archive   —  —  —  Entite* —  —  Entite  Global
+#
+#    `DSM` et `BOOST` sont A TIRET sur les trois, alors qu'ils portent tous deux
+#    un droit de MODIFICATION. **Reutiliser `ROLES_D_ECRITURE` accorderait donc
+#    l'archivage a deux roles que la matrice en exclut**, et le §6.2 le redit en
+#    mots : « l'archivage d'un collaborateur est reserve a l'ESM, a
+#    l'administrateur d'entite et au super-administrateur ». Deux grilles, parce
+#    que le document en porte deux.
+#
+#    **« CONDITIONNEL » N'EST PAS UNE DECISION A PRENDRE (§7.29).** Le mot y
+#    ressemble ; la condition est ecrite ailleurs, en deux endroits concordants :
+#    le §18 precise « Entite, **restauration fonctionnelle** », et
+#    `ARB-DROIT-003` tranche -- « l'ESM peut restaurer dans son entite un profil
+#    […] ; les restaurations **techniques, massives ou liees aux imports**
+#    restent reservees a l'administrateur d'entite et au super-administrateur ».
+#    Un profil a l'unite par une route dediee EST une restauration
+#    fonctionnelle : l'ESM est autorise.
+#
+#    **ET IL EXISTE UNE SECONDE LIGNE « REACTIVER UN PROFIL ARCHIVE », QUI N'EST
+#    PAS CELLE-CI.** Le §14 -- imports CSV -- la reprend en exigeant
+#    « Confirmation explicite » de l'ESM et de l'ADM-E. C'est le LOT 9, et
+#    l'appliquer ici ajouterait une exigence que le §6.1 ne porte pas.
+#
+#    **LA GRILLE D'ETAT EST DERIVEE DU §24.1, PAS ECRITE.** `T7` avait un seul
+#    etat admissible -- occupant -- et pouvait le lire dans `ETATS_OCCUPANTS`.
+#    Ici chaque action a le sien, et la source est le diagramme : une action est
+#    possible si et seulement si une transition part de l'etat courant.
+#
+# ===========================================================================
+
+
+class ActionDeCycleDeVie(enum.StrEnum):
+    """Les trois lignes du §6.1 qui portent sur un profil archive ou a archiver."""
+
+    ARCHIVER = "archiver"
+    RESTAURER = "restaurer"
+    CONSULTER_UN_ARCHIVE = "consulter_un_archive"
+
+
+ROLES_DU_CYCLE_DE_VIE: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  Les etats depuis lesquels une transition MENE hors de l'occupation : c'est la
+#  definition meme d'« archivable ». `active` y passe par `departed`, le §24.1
+#  n'ayant aucune transition `Active --> Archived` directe.
+ETATS_ARCHIVABLES: Final[frozenset[str]] = frozenset(
+    depuis for depuis, vers in TRANSITIONS_DU_CYCLE_DE_VIE if vers not in ETATS_OCCUPANTS
+)
+
+#  Et ceux depuis lesquels une transition RAMENE dans l'occupation. Le §24.1 n'en
+#  donne qu'un, `archived`, et le deriver ainsi fait suivre un §24.1 qui
+#  en ajouterait un autre.
+ETATS_RESTAURABLES: Final[frozenset[str]] = frozenset(
+    depuis for depuis, vers in TRANSITIONS_DU_CYCLE_DE_VIE if vers in ETATS_OCCUPANTS
+)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PerimetreDuCycleDeVie:
+    """Les actions de cycle de vie que l'acteur peut mener SUR CETTE CIBLE.
+
+    **UN ENSEMBLE VIDE EST LE REFUS**, exactement comme `PerimetreDEcriture` :
+    meme discipline, meme motif, et aucun champ derivable en plus.
+    """
+
+    actions: frozenset[ActionDeCycleDeVie]
+
+
+#  L'etat courant de la cible. Le couple `(id, entity_id)` porte l'isolation
+#  (§25.3) ; un `WHERE` sur l'entite seule confondrait deux appartenances.
+_ETAT_DE_LA_CIBLE: Final[str] = """
+SELECT membership_state FROM entity_membership
+WHERE id = :cible AND entity_id = :entite AND archived_at IS NULL
+"""
+
+
+def resoudre_le_cycle_de_vie(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    cible: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+) -> PerimetreDuCycleDeVie:
+    """Quelles actions de cycle de vie `roles` autorise sur `cible`, dans `entite`.
+
+    **AUCUN `acteur` EN PARAMETRE, ET C'EST UNE DIFFERENCE REELLE AVEC
+    `resoudre_le_perimetre`.** Les trois roles du §6.1 ont une portee d'ENTITE ou
+    globale : aucun ne depend d'un lien entre l'acteur et la cible, la ou un DSM
+    dependait de `dsm_assignment` et un Booster de son cercle. Passer un acteur
+    inutilise laisserait croire qu'il est examine.
+
+    **AUCUN `instant` NON PLUS.** Rien ici n'est temporel : les roles arrivent
+    deja resolus a l'instant de l'appelant par `resoudre_les_permissions`, et
+    l'etat d'une appartenance n'est pas une periode. En demander un serait un
+    parametre que personne ne lit -- §7.32.
+    """
+    if not roles & ROLES_DU_CYCLE_DE_VIE:
+        return PerimetreDuCycleDeVie(actions=frozenset())
+
+    ligne = connexion.execute(text(_ETAT_DE_LA_CIBLE), {"cible": cible, "entite": entite}).first()
+    if ligne is None:
+        return PerimetreDuCycleDeVie(actions=frozenset())
+
+    etat = str(ligne[0])
+    actions: set[ActionDeCycleDeVie] = set()
+    if etat in ETATS_ARCHIVABLES:
+        actions.add(ActionDeCycleDeVie.ARCHIVER)
+    if etat in ETATS_RESTAURABLES:
+        actions.add(ActionDeCycleDeVie.RESTAURER)
+    if etat == EtatAppartenance.ARCHIVED.value:
+        actions.add(ActionDeCycleDeVie.CONSULTER_UN_ARCHIVE)
+    return PerimetreDuCycleDeVie(actions=frozenset(actions))
