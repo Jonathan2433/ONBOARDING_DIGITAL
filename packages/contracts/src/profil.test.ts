@@ -22,6 +22,8 @@ const UN_CERCLE = { code: 'tech', nom: 'Cercle Tech', jeton_de_couleur: 'bleu' }
 
 const UNE_FICHE = {
   id: '0f8fad5b-d9cb-469f-a165-70867728950e',
+  //  §18.4 — servie depuis `T11` : sans elle, aucun ecran ne peut ecrire.
+  version: 7,
   person_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
   first_name: 'Ada',
   last_name: 'Lovelace',
@@ -117,14 +119,30 @@ describe('le validateur', () => {
     },
   );
 
-  it.each(['id', 'person_id', 'first_name', 'last_name', 'professional_category', 'arrival_date'])(
-    'refuse « %s » absent — il est obligatoire',
-    (champ) => {
-      const ampute: Record<string, unknown> = { ...UNE_FICHE };
-      delete ampute[champ];
-      expect(() => validerLaFiche(ampute)).toThrow(TypeError);
-    },
-  );
+  it('refuse une VERSION qui n’est pas un entier — §18.4', () => {
+    //  La concurrence optimiste repose entierement dessus : une version
+    //  flottante ou textuelle rendrait la comparaison suivante fausse SANS RIEN
+    //  DIRE. Et son absence est refusee comme celle de n'importe quel champ
+    //  exige : c'est le cas qui a coute le defaut `T11-6`, ou le client envoyait
+    //  un corps sans version et recevait 422 de l'API.
+    expect(() => validerLaFiche({ ...UNE_FICHE, version: '7' })).toThrow(TypeError);
+    expect(() => validerLaFiche({ ...UNE_FICHE, version: 7.5 })).toThrow(TypeError);
+    expect(() => validerLaFiche({ ...UNE_FICHE, version: null })).toThrow(TypeError);
+  });
+
+  it.each([
+    'id',
+    'version',
+    'person_id',
+    'first_name',
+    'last_name',
+    'professional_category',
+    'arrival_date',
+  ])('refuse « %s » absent — il est obligatoire', (champ) => {
+    const ampute: Record<string, unknown> = { ...UNE_FICHE };
+    delete ampute[champ];
+    expect(() => validerLaFiche(ampute)).toThrow(TypeError);
+  });
 
   it.each(['cercles_secondaires', 'responsabilites'])(
     'refuse « %s » absent — sinon une liste vide serait indistinguable',

@@ -37,6 +37,8 @@ LE TEMPS EST INJECTE, JAMAIS LU A L'HORLOGE
 from __future__ import annotations
 
 import datetime as dt
+import json
+import pathlib
 import uuid
 from collections.abc import Iterator
 
@@ -83,6 +85,10 @@ from app.permissions.perimetre import (
 from app.permissions.services import RoleDeLaMatrice
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+
+#  Le manifeste du contrat, source unique de `DEC-492` — lue par TypeScript ET
+#  par Python. Le chemin est relatif a la racine du depot.
+MANIFESTE_DU_CONTRAT = "packages/contracts/src/contrat-api.json"
 
 ANCRAGE = dt.datetime(2026, 6, 15, 12, 0, tzinfo=dt.UTC)
 JOUR = dt.timedelta(days=1)
@@ -326,6 +332,44 @@ def test_LES_TROIS_ROLES_du_6_1_sont_exactement_ESM_ADM_E_et_SUPER() -> None:
     absents = set(RoleDeLaMatrice) - ROLES_DU_CYCLE_DE_VIE
     assert RoleDeLaMatrice.DSM in absents
     assert RoleDeLaMatrice.BOOSTER in absents
+
+
+def test_le_MANIFESTE_declare_la_MEME_grille_que_le_service() -> None:
+    """`T11` — l'ecran doit savoir quand proposer les actions, sans les decider.
+
+    **LE FRONTEND N'EST PAS L'AUTORITE**, et la matrice l'ecrit : « le frontend
+    peut masquer ou afficher les ACTIONS pour ameliorer l'experience, mais l'API
+    reste l'autorite finale ». Il lui faut neanmoins la grille, pour ne pas
+    proposer un bouton dont il sait qu'il sera refuse.
+
+    **`rolesCycleDeVie` EST DECLARE SEPAREMENT DE `rolesAdministration`, ET LES
+    DEUX PORTENT AUJOURD'HUI LES MEMES TROIS ROLES.** C'est une **coincidence**,
+    pas une derivation : le premier vient des trois lignes d'archivage du §6.1,
+    le second du §20. Les fusionner parce qu'ils coincident ferait suivre l'un
+    quand l'autre change, **en silence** -- et le §6.1 porte deux grilles, ce que
+    `T8` a mesure en refusant a `DSM` et `BOOST` ce que l'ecriture leur donne.
+
+    **CE TEST EST CE QUI EMPECHE LES DEUX DERIVATIONS DE DIVERGER** : le manifeste
+    est la source unique de `DEC-492`, lue par TypeScript et par Python, et
+    l'egalite est exigee **dans les deux sens**.
+    """
+    manifeste = json.loads(
+        (pathlib.Path(__file__).resolve().parents[3] / MANIFESTE_DU_CONTRAT).read_text(
+            encoding="utf-8"
+        )
+    )
+    codes = manifeste["rolesCycleDeVie"]
+    assert codes, "le manifeste ne declare aucun role de cycle de vie"
+    #  La conversion ajoute une exigence utile : un code qui ne serait pas un role
+    #  connu leve ICI, au lieu de rendre l'ecran inerte en silence.
+    declares = {RoleDeLaMatrice(code) for code in codes}
+    assert declares == ROLES_DU_CYCLE_DE_VIE
+
+    #  **ET LES DEUX GRILLES RESTENT DEUX DECLARATIONS.** Ce test ne verifie pas
+    #  qu'elles different -- elles ne different pas aujourd'hui -- mais que le
+    #  manifeste les porte separement. Fusionner les cles ferait echouer ici.
+    assert "rolesAdministration" in manifeste
+    assert "rolesCycleDeVie" in manifeste
 
 
 @pytest.mark.integration

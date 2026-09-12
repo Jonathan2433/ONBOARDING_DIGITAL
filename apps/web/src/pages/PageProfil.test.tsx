@@ -20,19 +20,31 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dateComplete, moisAnnee, PageProfil } from './PageProfil';
 
+//  **LES ROLES SONT VARIABLES, PARCE QUE LE COMPORTEMENT EN DEPEND.** Depuis la
+//  seconde partie de `T11`, un 404 de la fiche conduit a tenter `fiche-archivee`
+//  — mais SEULEMENT quand le role du cadre donne le cycle de vie. Un decor fige
+//  a `null` ne pourrait eprouver qu'une moitie du couple.
+let rolesDuCadre: readonly string[] | null = null;
+
 vi.mock('./CadreApplicatif', () => ({
   useEntiteConsultee: () => ({
     entite: { id: 'e1', code: 'bordeaux', nom: 'eXalt Bordeaux', ville: 'Bordeaux' },
-    permissions: null,
+    permissions: rolesDuCadre === null ? null : { roles: rolesDuCadre },
   }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  rolesDuCadre = null;
+});
 
 const APPARTENANCE = '0f8fad5b-d9cb-469f-a165-70867728950e';
 
 const FICHE = {
   id: APPARTENANCE,
+  //  §18.4 — servie depuis `T11`, parce qu'aucun ecran ne pouvait ecrire sans
+  //  elle. Defaut `T11-6`.
+  version: 7,
   person_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
   first_name: 'Ada',
   last_name: 'Lovelace',
@@ -300,6 +312,88 @@ describe('la fiche a l’ecran', () => {
     });
     expect(screen.getByText('septembre 2025 → janvier 2026')).toBeTruthy();
     expect(screen.getAllByText(/→ aujourd’hui/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('la fiche d’un profil ARCHIVE — `T11`, seconde partie', () => {
+  /** La fiche rend 404 ; `fiche-archivee` rend ce que le test demande. */
+  function servirArchive(archivee: { charge: unknown; statut?: number }): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url.endsWith('/fiche-archivee')) {
+          return Promise.resolve(json(archivee.charge, archivee.statut ?? 200));
+        }
+        if (url.endsWith('/historique')) {
+          return Promise.resolve(json(HISTOIRE));
+        }
+        return Promise.resolve(json({ code: 'introuvable' }, 404));
+      }),
+    );
+  }
+
+  it('un 404 conduit a la fiche ARCHIVEE quand le role le permet — LE CAS', async () => {
+    //  Le §6.1 donne « consulter un profil ACTIF » aux huit roles et « consulter
+    //  un profil ARCHIVE » a trois : la route de la fiche exclut donc les
+    //  archives, et rend le MEME 404 que pour une cible inexistante.
+    rolesDuCadre = ['ESM'];
+    servirArchive({ charge: FICHE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.getByText(/Ce profil est/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Restaurer ce profil' })).toBeTruthy();
+    const appels = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls;
+    expect(appels.filter((appel) => appel[0]?.endsWith('/fiche-archivee'))).toHaveLength(1);
+  });
+
+  it('sans le role, la fiche archivee n’est PAS demandee — LE TEMOIN', async () => {
+    //  **SANS CE SECOND TEST, LE PREMIER NE PROUVE RIEN** : un ecran qui
+    //  tenterait TOUJOURS la route archivee le passerait. Et la tenter pour qui
+    //  n'y a pas droit ferait un appel dont la reponse est connue d'avance.
+    rolesDuCadre = ['EMP', 'DSM'];
+    servirArchive({ charge: FICHE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText(/introuvable, ou il n’est pas dans votre perimetre/)).toBeTruthy();
+    });
+    const appels = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls;
+    expect(appels.filter((appel) => appel[0]?.endsWith('/fiche-archivee'))).toHaveLength(0);
+  });
+
+  it('un 404 de la fiche archivee ramene au message introuvable', async () => {
+    //  Le role permet de tenter ; la cible n'existe pas pour autant. Les deux
+    //  refus se rejoignent sur le meme message, et c'est voulu.
+    rolesDuCadre = ['SUPER'];
+    servirArchive({ charge: { code: 'introuvable' }, statut: 404 });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText(/introuvable, ou il n’est pas dans votre perimetre/)).toBeTruthy();
+    });
+  });
+
+  it('un profil ACTIF ne porte NI bandeau NI bouton de restauration', async () => {
+    //  Le temoin du bandeau : sans lui, un bandeau affiche en permanence
+    //  passerait le premier test de cette section.
+    rolesDuCadre = ['ESM'];
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.queryByText(/Ce profil est/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Archiver ce profil' })).toBeTruthy();
+  });
+
+  it('un employe ne voit AUCUNE action sur un profil actif', async () => {
+    rolesDuCadre = ['EMP'];
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: /Archiver|Restaurer/ })).toBeNull();
   });
 });
 

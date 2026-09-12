@@ -702,6 +702,25 @@
       ]
     }
   ],
+  "_commentaire_cycle_de_vie": [
+    "LES ROLES QUI ARCHIVENT ET RESTAURENT — LOT 5, T8 pour l'API, T11 pour l'ecran.",
+    "TROIS ROLES, LES MEMES QUE `rolesAdministration` -- ET C'EST UNE COINCIDENCE,",
+    "PAS UNE DERIVATION. Les deux listes viennent de DEUX endroits distincts de la",
+    "matrice : `rolesAdministration` du 20, « Roles, responsabilites et comptes",
+    "administrateurs » ; celle-ci des TROIS LIGNES D'ARCHIVAGE du 6.1, qui mettent",
+    "`DSM` et `BOOST` a TIRET alors que les deux MODIFIENT un profil -- le 6.2 le",
+    "redit en mots. Le §6.1 porte donc DEUX grilles de roles, et `T8` l'a mesure :",
+    "reutiliser celle de l'ecriture aurait ELARGI un droit.",
+    "Les fusionner parce qu'elles coincident aujourd'hui ferait suivre l'une quand",
+    "l'autre change, EN SILENCE. Elles sont declarees separement, et un test Python",
+    "confronte celle-ci a `ROLES_DU_CYCLE_DE_VIE` de `app/permissions/perimetre.py`",
+    "-- la source unique que `DEC-492` a posee, lue par TypeScript ET par Python.",
+    "LE FRONTEND N'EST PAS L'AUTORITE, et la matrice l'ecrit : « le frontend peut",
+    "masquer ou afficher les ACTIONS pour ameliorer l'experience, mais l'API reste",
+    "l'autorite finale ». Cette liste sert a ne pas proposer un bouton qui serait",
+    "refuse ; elle ne decide rien."
+  ],
+  "rolesCycleDeVie": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_debit": [
     "LOT 3, T8 — LES SEUILS NE SONT PAS DANS CE CONTRAT, ET C'EST DELIBERE.",
     "Le §20.2 les ecrit, `app/auth/debit.py` les porte, et un test RELIT le cahier",

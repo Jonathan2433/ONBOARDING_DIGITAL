@@ -5,9 +5,9 @@
 **Décision :** `DEC-572`
 **Date :** 12 septembre 2026
 
-> **CE COMPTE RENDU COUVRE LA PREMIÈRE DES DEUX PULL REQUESTS.** `DEC-572` découpe `T11` en deux :
-> ce qui se **lit** — la fiche et l'historique — puis ce qui **écrit** — archiver et restaurer. La
-> seconde partie complétera ce document, et la sous-étape n'est pas terminée avant.
+> **CE COMPTE RENDU COUVRE LES DEUX PULL REQUESTS.** `DEC-572` découpait `T11` en deux, jamais
+> empilées : ce qui se **lit** — §§1 à 6 — puis ce qui **écrit** — §§7 à 11. **La sous-étape est
+> terminée.**
 
 ---
 
@@ -16,11 +16,11 @@
 | | |
 |---|---|
 | Lot | **LOT 5**, ouvert le 24/08/2026, **onze** sous-étapes |
-| Faites | `T1` à `T5`, `T7` à `T10` · **`T11` en cours**, première partie |
+| Faites | `T1` à `T5`, `T7` à **`T11`** — il ne reste que `T12` |
 | Périmètre de cette partie | la fiche profil en lecture, et l'historique organisationnel |
 | Périmètre de la seconde | archiver et restaurer, les deux actions du §24.1 |
 | Hors périmètre, **nommé** | **modifier** un profil (`US006`, `T7`) : son API est complète, elle reste **sans écran** |
-| Issues `#119` et `#123` | **restent ouvertes** jusqu'à la fin de `T11` |
+| Issues `#118`, `#119`, `#122`, `#123` | **restent ouvertes** — `T12` les refermera avec la porte `G5` |
 
 ---
 
@@ -259,3 +259,214 @@ l'historique en cinq axes.
 **Un compte `SUPER` voit les cinq axes.** Pour voir la moitié qui compte — « Hors de votre
 périmètre » — il faut un compte dont le rôle ne donne pas l'axe des responsabilités, ce que
 `make profil-check` éprouve déjà côté API avec un DSM.
+
+---
+
+# 7. La seconde partie — archiver et restaurer
+
+> **FUSIONNÉE APRÈS LA PREMIÈRE.** `DEC-572` découpait `T11` en deux pull requests, jamais
+> empilées. Celle-ci part de `develop` avec la première déjà dedans.
+
+## 7.1 Trois états, et le premier est l'absence
+
+Un appelant dont le rôle ne donne pas l'action **ne voit rien** : ni bouton grisé, ni message
+« vous n'avez pas le droit ». Le §20.1 est le « refus par défaut », et un bouton désactivé apprend
+qu'une action existe — sur un profil dont on ne gère pas le cycle de vie, c'est une information de
+trop.
+
+**Le frontend n'est pas l'autorité pour autant.** La matrice l'écrit : « le frontend peut masquer
+ou afficher les **actions** pour améliorer l'expérience, mais l'API reste l'autorité finale ».
+
+## 7.2 `rolesCycleDeVie` est déclaré SÉPARÉMENT de `rolesAdministration`
+
+Les deux portent aujourd'hui les **mêmes trois rôles** — `ESM`, `ADM-E`, `SUPER` — pour **deux
+raisons différentes** : le §20 pour l'un, les **trois lignes d'archivage du §6.1** pour l'autre, qui
+mettent `DSM` et `BOOST` à tiret alors que les deux **modifient** un profil.
+
+Les fusionner parce qu'ils coïncident aujourd'hui ferait suivre l'un quand la matrice change
+l'autre, **en silence**. Un test Python confronte la clé du manifeste à `ROLES_DU_CYCLE_DE_VIE` de
+`perimetre.py` — l'égalité exigée **dans les deux sens** — et un test TypeScript exige que les deux
+clés restent **deux déclarations**, sans exiger qu'elles diffèrent.
+
+## 7.3 La confirmation est une étape, pas un `window.confirm`
+
+`confirm()` bloque le fil, n'est pas stylable, et **`jsdom` ne l'implémente pas** : il faudrait le
+bouchonner, donc le test ne prouverait que son propre bouchon.
+
+**Et la confirmation annonce ce que `T8` a mesuré**, pas une formule de politesse : l'archivage
+révoque les sessions et clôture les affectations, la restauration **ne rouvre rien**. Un « Êtes-vous
+sûr ? » ne dit rien.
+
+> **LE TEST QUI COMPTE EST UNE ABSENCE D'APPEL.** Un test qui vérifierait seulement « la
+> confirmation s'affiche » passerait sur un bouton qui agit tout de suite. Ce qui est exigé est que
+> `fetch` n'ait **pas** été appelé tant que rien n'est confirmé. Témoin exécuté : le défaut
+> réintroduit fait tomber **douze** tests.
+
+---
+
+# 8. Trois défauts — deux que seule la pile pouvait dire, un qui n'est pas de `T11`
+
+> **J'allais écrire « aucun défaut dans la seconde partie ».** Les 192 tests passaient, les six
+> contrôles de stack étaient verts. C'est en exerçant le parcours **sur la pile** — la leçon
+> `T11-1` — que les deux sont tombés, coup sur coup.
+
+## `T11-6` — Aucun écran ne pouvait écrire : la version du §18.4 n'était servie par personne
+
+Premier archivage tenté depuis le client :
+
+```text
+POST …/archivage   ->  422
+{"erreur":{"code":"validation_invalide","champ":"version",
+           "details":{"violations":[{"champ":"body.version","motif":"Field required"}]}}}
+```
+
+Les **trois** écritures de profil exigent `version` dans leur corps — §18.4, concurrence optimiste.
+Et **aucune lecture ne la servait** : zéro occurrence dans la fiche comme dans le trombinoscope,
+mesuré. `verifier-profil.py` la lit en **SQL direct** :
+
+```sql
+SELECT version FROM entity_membership WHERE id = '…'
+```
+
+…ce qu'un navigateur ne peut pas faire. **C'est la forme exacte d'`ECART-060`** : l'API accepte ce
+dont l'écran n'a pas la matière. La fiche sert donc `version` — **dix-huit** champs au lieu de
+dix-sept, `DEC-573` — et rien n'est relâché : l'appelant doit toujours renvoyer la version qu'il a
+**lue**.
+
+> **POURQUOI AUCUN TEST NE LE VOYAIT :** un `fetch` bouchonné rend `200` **quel que soit le corps**.
+> Mes onze tests du panneau passaient avec un client qui envoyait `{}`. Le test qui manquait est
+> celui qui lit le **corps envoyé** — il existe désormais, et il exige `{ version }`.
+
+## `T11-7` — Les deux réponses n'ont pas la même forme, et mon contrat en avait inventé une commune
+
+Relevé sur la pile, le même jour :
+
+| Action | Champs rendus |
+|---|---|
+| **archivage** | `version`, `etat_precedent`, `etat_nouveau`, `sessions_revoquees`, `liens_invalides`, `relations_closes`, `consultants_sans_dsm`, `roles_globaux_conserves`, `relations_futures_conservees` |
+| **restauration** | `version`, `etat_precedent`, `etat_nouveau`, **`relations_a_redonner`** |
+
+Mon validateur exigeait `relations_a_redonner` sur les **deux** : un archivage **réussi** était donc
+rejeté, `corps` valait `null`, et l'écran affichait « l'action n'a pas pu aboutir » **sur un 200**.
+
+**L'action est désormais un argument du validateur, et non une devinette.** Deviner la forme d'après
+les champs présents accepterait une réponse d'archivage là où l'on attend une restauration — ce
+qu'aucun test n'attraperait. Un test l'exige dans les deux sens.
+
+**Et l'écran y gagne** : l'archivage montre ce qu'il a **réellement** clos, table par table, plus le
+nombre de sessions révoquées. L'annoncer avant le geste est une promesse ; le montrer après est une
+mesure.
+
+> **LA LEÇON COMMUNE AUX DEUX :** un bouchon de `fetch` prouve ce que **j'ai écrit dans le bouchon**,
+> jamais ce que l'API fait. Les deux défauts étaient invisibles aux 192 tests et aux six contrôles
+> de stack, et visibles **au premier appel réel**. C'est le §7.16 — ce qui n'a jamais tourné ailleurs
+> n'est pas éprouvé — appliqué non pas à une machine mais à **l'autre bout d'un appel**.
+
+
+## `T11-8` — Un test INSTABLE dans la porte bloquante, et il n'est pas de `T11`
+
+**La porte de `T11` est passée au rouge sur un test que cette sous-étape ne touche pas** —
+`git diff origin/develop..HEAD` sur `debit` rend **zéro** fichier.
+
+```text
+FAILED test_LES_DEUX_REFUS_SONT_IDENTIQUES_corps_ET_en_tetes
+  secondes_avant_reprise : 3599  !=  3600
+```
+
+Le test compare le refus servi à une adresse **connue** et à une adresse **inconnue**, et exige
+qu'ils soient identiques — §22.5, la limitation ne doit pas révéler l'existence d'un compte. Les
+deux corps l'étaient **mot pour mot**, sauf le décompte.
+
+**La cause est une horloge, pas un produit.** `secondes_avant_reprise` vient du TTL d'une clé Redis
+créée à la **première** demande de chaque adresse ; les deux séquences du test s'enchaînent, et
+elles peuvent tomber de part et d'autre d'une seconde. Le docstring du test énumérait pourtant ce
+qui varie — « seuls `x-request-id` et `date` » — et **le décompte n'y était pas**.
+
+> **ET CE N'EST PAS UNE FUITE.** Les deux adresses reçoivent une clé dès leur première demande,
+> connue ou non : c'est précisément ce que le §22.5 exige. Le décompte mesure donc **l'instant du
+> test**, jamais l'état du compte.
+
+**Trois réactions possibles, et une seule est bonne** (§7.20) : rejouer la CI en espérant — c'est
+apprendre à ignorer le rouge, §7.25 ; supprimer la comparaison — on perd le garde-fou ; **la faire
+dire le vrai**, ce qui a été retenu.
+
+| Ce qui est neutralisé | Ce qui est exigé à part |
+|---|---|
+| `identifiant_correlation`, qui varie par construction | — |
+| `secondes_avant_reprise`, qui mesure une **durée** | il **existe des deux côtés**, il est positif, et il tient dans `FENETRE_DEMANDES_DE_LIEN` |
+
+**Un décompte servi d'un seul côté révélerait, LUI, l'existence du compte** — c'est pourquoi
+l'exiger des deux côtés remplace exactement ce que l'égalité prouvait.
+
+**ET LE TÉMOIN EST PERMANENT, parce que neutraliser un champ est le geste qui peut rendre un
+contrôle aveugle.** `test_TEMOIN_la_neutralisation_du_DECOMPTE_ne_rend_pas_le_controle_aveugle`
+éprouve les trois cas :
+
+```text
+deux corps ne differant QUE par le decompte  ->  signatures EGALES
+deux corps differant par le MESSAGE          ->  signatures DIFFERENTES
+deux corps differant par le CODE d'erreur    ->  signatures DIFFERENTES
+```
+
+**Témoin négatif exécuté** : la neutralisation élargie au `message` et au `code` fait échouer ce
+test. Sans les deux dernières épreuves, la première prouverait seulement qu'on a bien supprimé
+quelque chose — §7.0, quatrième proposition.
+
+---
+
+# 9. Le parcours complet, exercé sur la pile
+
+```text
+fiche               version 3
+POST archivage      200   active -> archived, version 4
+GET  fiche          404   (le §6.1 exclut les archives de « consulter un profil ACTIF »)
+GET  fiche-archivee 200   version 4
+POST restauration   200   archived -> active, version 5
+                          NON rouvertes : membership_job_assignment,
+                                          professional_status_assignment, circle_membership
+```
+
+**Le second tour montre l'arbitrage de `T8` dans les données** : `relations_closes` est **vide**,
+parce que le premier cycle les avait closes et que la restauration ne les a pas rouvertes. Ce n'est
+pas un défaut, c'est le §23.4 — rouvrir d'anciennes valeurs serait **décider à nouveau**.
+
+---
+
+# 10. Contrôles de la seconde partie
+
+```text
+make lint                  code=0
+make typecheck             code=0
+make format-check          code=0
+make docs-check            code=0
+pytest -m "not integration" 312 passed, 602 deselected
+make test-frontend         137 contracts · 111 ui · 192 web  =  440 Vitest
+
+make code-refresh          code=0   ← AVANT les controles d'ecran, lecon `T11-1`
+make code-check            code=0
+make profil-check          code=0 — 45 controles, 0 echec
+make trombinoscope-check   code=0 — 38 controles, 0 echec
+make cadre-check           code=0 — 25 controles, 0 echec
+make ecrans-check          code=0 —  8 controles, 32 modules servis
+make web-check             code=0
+```
+
+**Témoins négatifs exécutés** — trois défauts réintroduits, un par un :
+
+| Défaut réintroduit | Ce qui tombe |
+|---|---|
+| la fiche archivée est tentée pour **tout le monde** | 1 test — « sans le rôle, elle n'est PAS demandée » |
+| le bouton agit **sans confirmation**, et le panneau se montre à tous | **12** tests |
+| *(les deux vrais défauts, `T11-6` et `T11-7`)* | trouvés par la pile, pas par un test |
+
+---
+
+# 11. Ce que `T11` laisse à la suite
+
+| Point | Où il va |
+|---|---|
+| **modifier un profil** | `US006`, `T7` — l'API est complète, **aucun écran** ne l'appelle. À annoncer à `G5` |
+| **le rendu visuel** | non vu par moi (§7.14) |
+| **`ECART-012`** | attend toujours Léa |
+| **`ECART-061`** | le mot de passe provisoire n'est jamais forcé de changer. LOT 13 |
+| `T12` | la recette et la checklist `G5` |

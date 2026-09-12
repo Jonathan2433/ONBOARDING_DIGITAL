@@ -56,9 +56,11 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { couleurDuCercle, libelleDuStatut } from '../affichage';
+import { lireLaFicheArchivee } from '../api/cycleDeVie';
 import { lireLaFiche, lireLHistorique } from '../api/profil';
 import { cheminDeRubrique } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
+import { PanneauDuCycleDeVie } from './PanneauDuCycleDeVie';
 
 import {
   AXES_DE_L_HISTORIQUE,
@@ -66,6 +68,7 @@ import {
   type CercleDuProfil,
   type FicheDuProfil,
   type HistoriqueOrganisationnel,
+  peutGererLeCycleDeVie,
 } from '@onboarding/contracts';
 import { Alerte, Badge } from '@onboarding/ui';
 
@@ -122,6 +125,8 @@ interface Chargement {
   readonly appartenance: string;
   readonly fiche: { readonly statut: number; readonly corps: FicheDuProfil | null };
   readonly histoire: { readonly statut: number; readonly corps: HistoriqueOrganisationnel | null };
+  /** Vrai quand la fiche vient de `fiche-archivee` — voir l'effet de chargement. */
+  readonly archive: boolean;
 }
 
 /** Une ligne de definition, avec son repli « Non renseigne ». */
@@ -233,44 +238,83 @@ function AxeDeLHistoire({
 }
 
 export function PageProfil(): JSX.Element {
-  const { entite } = useEntiteConsultee();
+  const { entite, permissions } = useEntiteConsultee();
   const { appartenance } = useParams<{ appartenance: string }>();
   const [charge, setCharge] = useState<Chargement | null>(null);
+  //  **UN COMPTEUR, ET NON UN BOOLEEN.** Apres une action du cycle de vie, la
+  //  page doit RECHARGER : un booleen ne pourrait le faire qu'une fois, et
+  //  archiver puis restaurer dans la meme visite est exactement ce qu'on veut
+  //  pouvoir faire.
+  const [rechargements, setRechargements] = useState(0);
+
+  //  `roles` est `null` tant que les permissions ne sont pas arrivees, et le
+  //  panneau ne montre alors RIEN -- plutot qu'un bouton qui apparaitrait puis
+  //  disparaitrait selon la reponse.
+  const roles = permissions?.roles ?? null;
+  const gereLeCycleDeVie = roles !== null && peutGererLeCycleDeVie(roles);
 
   useEffect(() => {
     if (appartenance === undefined) {
       return undefined;
     }
+    //  **UNE LIAISON LOCALE PLUTOT QU'UNE ASSERTION.** TypeScript ne propage pas
+    //  le retrecissement de `appartenance` dans la fonction imbriquee ; un
+    //  `as string` le ferait taire sans rien prouver, une constante le lui
+    //  DEMONTRE.
+    const cible = appartenance;
     const abandon = new AbortController();
-    //  **LES DEUX APPELS PARTENT ENSEMBLE.** Enchainer ferait attendre
-    //  l'historique pour rien : ses refus ne dependent pas de la fiche, et un
-    //  employe recoit legitimement un 200 puis un 403.
-    void Promise.all([
-      lireLaFiche(entite.code, appartenance, abandon.signal),
-      lireLHistorique(entite.code, appartenance, abandon.signal),
-    ]).then(
-      ([fiche, histoire]) => {
-        setCharge({
-          appartenance,
-          fiche: { statut: fiche.statut, corps: fiche.corps },
-          histoire: { statut: histoire.statut, corps: histoire.corps },
-        });
-      },
-      (cause: unknown) => {
-        if (!abandon.signal.aborted) {
-          setCharge({
-            appartenance,
-            fiche: { statut: 0, corps: null },
-            histoire: { statut: 0, corps: null },
-          });
+
+    async function charger(): Promise<Chargement> {
+      //  **LES DEUX APPELS PARTENT ENSEMBLE.** Enchainer ferait attendre
+      //  l'historique pour rien : ses refus ne dependent pas de la fiche, et un
+      //  employe recoit legitimement un 200 puis un 403.
+      const [fiche, histoire] = await Promise.all([
+        lireLaFiche(entite.code, cible, abandon.signal),
+        lireLHistorique(entite.code, cible, abandon.signal),
+      ]);
+      //  **UN 404 PEUT VOULOIR DIRE « ARCHIVE », ET SEUL UN TROISIEME APPEL LE
+      //  DIT.** Le §6.1 donne « consulter un profil ACTIF » aux huit roles et
+      //  « consulter un profil ARCHIVE » a trois : la route de la fiche exclut
+      //  donc les archives, et rend le MEME 404 que pour une cible inexistante.
+      //
+      //  Le tenter n'apprend rien a qui n'y a pas droit -- `fiche-archivee`
+      //  porte sa propre grille et rend 403 ou 404 -- et on ne le tente que
+      //  lorsque le role le permet, pour ne pas faire un appel dont la reponse
+      //  est connue d'avance.
+      if (fiche.statut === 404 && gereLeCycleDeVie) {
+        const archivee = await lireLaFicheArchivee(entite.code, cible, abandon.signal);
+        if (archivee.statut === 200 && archivee.corps !== null) {
+          return {
+            appartenance: cible,
+            fiche: { statut: 200, corps: archivee.corps },
+            histoire: { statut: histoire.statut, corps: histoire.corps },
+            archive: true,
+          };
         }
-        return cause;
-      },
-    );
+      }
+      return {
+        appartenance: cible,
+        fiche: { statut: fiche.statut, corps: fiche.corps },
+        histoire: { statut: histoire.statut, corps: histoire.corps },
+        archive: false,
+      };
+    }
+
+    void charger().then(setCharge, (cause: unknown) => {
+      if (!abandon.signal.aborted) {
+        setCharge({
+          appartenance: cible,
+          fiche: { statut: 0, corps: null },
+          histoire: { statut: 0, corps: null },
+          archive: false,
+        });
+      }
+      return cause;
+    });
     return () => {
       abandon.abort();
     };
-  }, [entite.code, appartenance]);
+  }, [entite.code, appartenance, gereLeCycleDeVie, rechargements]);
 
   const retour = (
     <p className="profil-retour">
@@ -345,6 +389,18 @@ export function PageProfil(): JSX.Element {
           {statut === null ? null : <Badge ton="marque">{statut}</Badge>}
         </div>
       </header>
+
+      {charge.archive ? (
+        //  **DIRE QU'IL EST ARCHIVE AVANT TOUT LE RESTE.** Sans ce bandeau, la
+        //  fiche d'un archive est indistinguable de celle d'un actif : les memes
+        //  dix-sept champs, les memes cercles -- et l'affectation qu'on y lit a
+        //  ete CLOTUREE. C'est le §7.21 applique a un ecran : une information
+        //  juste hier peut etre trompeuse aujourd'hui.
+        <Alerte ton="avertissement" urgence="information">
+          Ce profil est <strong>archive</strong>. Il ne parait plus dans le trombinoscope, et ses
+          affectations ont ete cloturees.
+        </Alerte>
+      ) : null}
 
       <section className="profil-bloc">
         <h3>Informations professionnelles</h3>
@@ -432,6 +488,17 @@ export function PageProfil(): JSX.Element {
           </Alerte>
         )}
       </section>
+
+      <PanneauDuCycleDeVie
+        appartenance={p.id}
+        archive={charge.archive}
+        codeEntite={entite.code}
+        roles={roles}
+        version={p.version}
+        surSucces={() => {
+          setRechargements((n) => n + 1);
+        }}
+      />
 
       {retour}
     </article>
