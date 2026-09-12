@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 12 septembre 2026, `T9` du LOT 5 — écart `ECART-059`
+**Dernière mise à jour :** 12 septembre 2026, `T10` du LOT 5 — écart `ECART-060`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 59 | 11 | 45 | 3 |
+| Total 60 | 12 | 45 | 3 |
 
 ---
 
@@ -77,6 +77,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-057` | **Une échéance de `recette-modele-check` nommait une sous-étape SUPPRIMÉE, et le contrôle passait au vert.** Le §30.12 — « une photo sans autorisation ne peut pas être publiée » — était classé `REPORTE` avec pour échéance « LOT 5 **`T6`** », or `DEC-564` a fusionné `T6` dans `T5` le 06/09/2026 et `T5` a livré le service **avec ses tests nommés**. Le contrôle exige que chaque contrôle du §30 **soit classé**, et que chaque `ACQUIS` **nomme un test qui existe** — il ne vérifie **pas** que l'échéance d'un `REPORTE` désigne une sous-étape réelle | Non — le §30.12 est acquis en fait depuis le 07/09/2026, seul son classement était en retard | **Clos en `T7` du LOT 5** — `DEC-568` : le §30.12 passe `ACQUIS`, avec trois tests nommés dont le témoin temporel |
 | `ECART-058` | Une colonne GÉNÉRÉE refuse une valeur **avant** toute contrainte, et le `PATCH` de `T7` sortait alors en **500** | Non — le refus était correct, sa forme ne l'était pas | **Clos** |
 | `ECART-059` | La matrice donne au responsable de bureau un périmètre « Bureau » sur l'audit, mais **aucune table ne rattache un collaborateur à un bureau** | Non — le §6.2 tranche dans le même sens | Ouvert, à reprendre au LOT 6 |
+| `ECART-060` | Le §10.1 veut « des filtres combinables » ; **quatre des cinq que l'API accepte n'ont aucune liste de référence à proposer** | Non — l'API les accepte, l'écran ne peut pas les peupler | Ouvert, à reprendre aux LOTS 6 et 9 |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -176,7 +177,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-060`.**
+**Prochain identifiant libre : `ECART-061`.**
 
 ---
 
@@ -882,3 +883,17 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | **Non.** Deux sources concordantes — le §6.2 et l'absence de table — donnent la même conclusion : `OFFICE` n'obtient rien sur l'historique d'une personne. `T9` l'applique, et un contrôle l'éprouve **avec** une responsabilité `OFFICE_MANAGER` réelle, pour que le refus ne vienne pas d'un décor vide. |
 | Recommandation | **Ne rien inventer, et surtout pas une table d'appartenance à un bureau** : le LOT 6 — Framework, cercles, bureaux — est le lot qui instruit les bureaux, et c'est là que la question se pose. Deux issues possibles, et le choix n'appartient pas au LOT 5 : soit les bureaux reçoivent une appartenance, et la cellule devient calculable ; soit ils n'en reçoivent pas, et la cellule du §5 est reclassée comme portant sur le contenu du bureau. **À reprendre avec `ECART-031`**, qui porte sur la même table et la même absence. |
 | Résolution | **Ouvert.** Échéance : **avant le LOT 6**. `T9` le nomme, l'applique dans le sens du §6.2, et ne comble rien. |
+
+---
+
+## `ECART-060` — Des filtres que l'API accepte et que l'écran ne peut pas proposer
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 septembre 2026, en `T10` du LOT 5, en construisant la barre de critères du trombinoscope |
+| Source | Cahier §10.1 (« des filtres combinables ») · backlog `MVP-L05-US002` · `apps/api/app/people/trombinoscope.py`, les cinq clauses de `T3` |
+| Constat | `T3` a livré **cinq** filtres : cercle, DSM, métier, client, statut. Quatre d'entre eux prennent un **identifiant** — un `uuid` de cercle, de personne, de métier ou de client — et **aucun endpoint ne sert la liste de ces valeurs** : mesure du 12/09/2026 sur les **vingt-et-un** chemins du manifeste, zéro.<br>Un écran ne peut pas offrir un choix dont il ignore les options. `T10` n'en propose donc que **deux** : la **recherche**, qui ne demande aucune liste, et le **statut**, dont le domaine est fermé et dérivable — `mission` ou `intercontract`, §6.5 du modèle. |
+| Cause | **Ce n'est pas une contradiction entre deux documents, c'est un ordre de livraison.** L'API a été construite avant les écrans — parti du projet depuis le LOT 4, « les écrans **après** les routes qu'ils consomment » — et les listes de référence appartiennent aux lots qui créent les objets : les **cercles** au LOT 6, les métiers, clients et DSM au **back-office du LOT 9**.<br>**La fabriquer depuis la page courante aurait été pire** : un filtre qui ne propose que ce qui est déjà visible ne filtre rien, et il donnerait l'illusion d'un choix complet. |
+| Bloquant | **Non.** L'API accepte les cinq ; seul l'écran est bridé, et il l'est **visiblement** — il n'affiche pas de sélecteurs vides. La recherche textuelle couvre le besoin courant, et le §10.1 n'impose aucun nombre de filtres. |
+| Recommandation | **Ne rien inventer, et surtout pas un endpoint de référence au LOT 5.** Deux échéances, chacune chez qui possède la donnée : les **cercles au LOT 6**, dont c'est le lot ; les **métiers, clients et DSM au LOT 9**, où le back-office les administre. Le jour où ces listes existent, l'écran gagne quatre sélecteurs sans qu'une ligne de l'API ne change — les cinq clauses de `T3` sont déjà là.<br>**À annoncer à la porte `G5`** : c'est le seul écart entre ce que l'API sait faire et ce que l'écran propose. |
+| Résolution | **Ouvert.** Échéances : **LOT 6** pour les cercles, **LOT 9** pour les trois autres. `T10` le nomme, en propose deux, et n'en simule aucun. |

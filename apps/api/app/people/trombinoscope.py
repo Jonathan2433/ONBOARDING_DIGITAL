@@ -144,7 +144,7 @@ import dataclasses
 import datetime as dt
 import enum
 import uuid
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from sqlalchemy import text
 
@@ -153,6 +153,7 @@ from app.media.photo import (
     ETAT_AFFICHABLE,
     VARIANTE_DE_LISTE,
 )
+from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -214,6 +215,17 @@ LONGUEUR_MAXIMALE_RECHERCHE: Final[int] = 128
 #  et non une colonne de `entity_membership`. La liste decrit donc les champs de
 #  la REPONSE, ce qu'elle a toujours fait -- `id` vient de `em.id`, `person_id`
 #  de `em.person_id` -- et non les colonnes lues telles quelles.
+#  **QUATRE CHAMPS DE PLUS DEPUIS `T10`, ET LE §10.1 LES EXIGE.** « Le recto
+#  presente principalement la photo et l'identite. Le **verso** presente les
+#  informations **professionnelles principales**. » Un ecran ne peut pas inventer
+#  ce que l'API ne sert pas : sans eux, le verso de la carte ne porterait que la
+#  categorie et la date d'arrivee, ce qui ne repond pas au critere.
+#
+#  **LE CERCLE VIENT AVEC SON JETON DE COULEUR, ET C'EST UNE EXIGENCE
+#  D'ACCESSIBILITE.** Le §10.1 : « la couleur du cercle peut etre utilisee sur les
+#  bordures, arriere-plans legers et badges, mais **jamais comme seul moyen de
+#  transmettre une information** ». L'ecran a donc besoin du NOM autant que du
+#  jeton -- servir le seul jeton rendrait la regle inapplicable.
 COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
     "id",
     "person_id",
@@ -223,6 +235,10 @@ COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
     "professional_category",
     "arrival_date",
     "photo",
+    "metier",
+    "statut",
+    "client",
+    "cercle",
 )
 
 #  **UNE SEULE SOURCE ET UNE SEULE CLAUSE, PARTAGEES PAR LES DEUX REQUETES.** Le
@@ -232,6 +248,81 @@ COLONNES_EXPOSEES: Final[tuple[str, ...]] = (
 #  `resoudre_une_entite_active`, poussee d'un cran -- la elles partageaient la
 #  valeur, ici elles partagent la clause entiere.
 _SOURCE: Final[str] = "FROM entity_membership AS em JOIN person AS p ON p.id = em.person_id"
+
+#  **UNE TROISIEME REQUETE, ET NON QUATRE JOINTURES DE PLUS SUR LA PAGE.**
+#
+#  La requete de page porte `ORDER BY p.last_name, p.first_name, em.id` puis
+#  `LIMIT` : elle doit donc TRIER toute la population filtree avant de couper. Y
+#  ajouter quatre `LEFT JOIN` ferait payer ces jointures sur l'ensemble trie --
+#  cinq mille lignes au volume du quatrieme critere de sortie -- pour n'en garder
+#  que vingt-cinq.
+#
+#  Celle-ci ne touche QUE les lignes rendues, bornees a cent par le §18.2. Le
+#  nombre de requetes passe de deux a **trois**, et il reste borne : il ne depend
+#  ni du nombre de lignes, ni du nombre de cercles. Ce n'est donc pas le N+1 que
+#  le cinquieme critere de sortie interdit, et le test qui COMPTE les requetes le
+#  fige a trois.
+#
+#  **LES `LEFT JOIN` SONT SURS, ET C'EST STRUCTUREL** : quatre contraintes
+#  d'exclusion rendent metier, statut et cercle principal uniques a un instant
+#  donne -- `T4` l'a mesure pour la fiche, et un test exige que ces contraintes
+#  existent toujours. Sans elles, une seule ligne pourrait en rendre plusieurs.
+_ENRICHISSEMENT: Final[str] = """
+SELECT em.id,
+       jc.label AS metier,
+       ps.status AS statut,
+       cl.display_name AS client,
+       c.code AS cercle_code, c.name AS cercle_nom, c.color_token AS cercle_jeton
+FROM entity_membership AS em
+LEFT JOIN membership_job_assignment AS mja
+       ON mja.entity_membership_id = em.id AND mja.entity_id = em.entity_id
+      AND mja.archived_at IS NULL AND mja.period @> :instant_mja
+LEFT JOIN job_catalog AS jc ON jc.id = mja.job_catalog_id
+LEFT JOIN professional_status_assignment AS ps
+       ON ps.entity_membership_id = em.id AND ps.entity_id = em.entity_id
+      AND ps.archived_at IS NULL AND ps.period @> :instant_ps
+LEFT JOIN client AS cl ON cl.id = ps.client_id
+LEFT JOIN circle_membership AS cm
+       ON cm.entity_membership_id = em.id AND cm.entity_id = em.entity_id
+      AND cm.membership_type = :type_principal
+      AND cm.archived_at IS NULL AND cm.period @> :instant_cm
+LEFT JOIN circle AS c ON c.id = cm.circle_id
+WHERE em.id = ANY(:identifiants)
+"""
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class CercleDeLaListe:
+    """Le cercle PRINCIPAL d'une ligne, avec son jeton de couleur — §8.1 et §8.2.
+
+    **LE NOM ET LE JETON VOYAGENT ENSEMBLE**, parce que le §10.1 interdit que la
+    couleur soit le SEUL moyen de transmettre une information : un ecran qui
+    n'aurait que le jeton ne pourrait pas respecter la regle.
+
+    **Le cercle PRINCIPAL seul.** Le §8.2 autorise plusieurs cercles secondaires ;
+    les joindre tous multiplierait les lignes de la page et fausserait la
+    pagination -- c'est exactement ce que `T3` a mesure pour les filtres, et
+    pourquoi ils emploient `EXISTS`.
+    """
+
+    code: str
+    nom: str
+    jeton_de_couleur: str
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class InfosProfessionnelles:
+    """Les quatre champs du verso, tous facultatifs.
+
+    **UNE STRUCTURE PLUTOT QU'UN DICTIONNAIRE DEBALLE**, et `mypy` l'a exige :
+    `**dict[str, object]` perd les types a l'appel, si bien qu'un champ mal nomme
+    ou mal type ne serait dit par personne.
+    """
+
+    metier: str | None = None
+    statut: str | None = None
+    client: str | None = None
+    cercle: CercleDeLaListe | None = None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -257,6 +348,15 @@ class CollaborateurListe:
     #  §12.2 n'impose aucune unicite, `T1` l'a mesure. Un `EXISTS` ne fait ni
     #  l'un ni l'autre.
     a_une_photo: bool
+
+    #  **LES QUATRE DU VERSO, AJOUTES PAR `T10`.** Tous facultatifs, et c'est le
+    #  schema qui le dit : un nouvel arrivant peut n'avoir ni metier, ni statut,
+    #  ni cercle, et `client_id` est nul en `intercontract`. Les rendre
+    #  obligatoires obligerait a inventer une valeur.
+    metier: str | None = None
+    statut: str | None = None
+    client: str | None = None
+    cercle: CercleDeLaListe | None = None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -457,19 +557,77 @@ def lister_le_trombinoscope(
         },
     ).fetchall()
 
-    return PageDuTrombinoscope(
-        collaborateurs=[
-            CollaborateurListe(
-                id=uuid.UUID(str(ligne[0])),
-                person_id=uuid.UUID(str(ligne[1])),
-                first_name=str(ligne[2]),
-                last_name=str(ligne[3]),
-                preferred_name=None if ligne[4] is None else str(ligne[4]),
-                professional_category=str(ligne[5]),
-                arrival_date=ligne[6],
-                a_une_photo=bool(ligne[7]),
+    #  **AUCUNE TROISIEME REQUETE SUR UNE PAGE VIDE.** Un `= ANY('{}')` ne rendrait
+    #  rien et couterait un aller-retour : une entite sans collaborateur listable
+    #  est un etat legitime, pas un cas d'erreur.
+    identifiants = [ligne[0] for ligne in lignes]
+    professionnel = (
+        {
+            enrichie[0]: enrichie
+            for enrichie in connexion.execute(
+                text(_ENRICHISSEMENT),
+                {
+                    "identifiants": identifiants,
+                    "type_principal": TypeAppartenanceCercle.PRINCIPAL.value,
+                    "instant_mja": instant,
+                    "instant_ps": instant,
+                    "instant_cm": instant,
+                },
             )
-            for ligne in lignes
-        ],
+        }
+        if identifiants
+        else {}
+    )
+
+    return PageDuTrombinoscope(
+        collaborateurs=[_en_ligne(ligne, professionnel.get(ligne[0])) for ligne in lignes],
         total=total,
+    )
+
+
+def _en_ligne(ligne: Any, enrichie: Any | None) -> CollaborateurListe:
+    """Une ligne de page, enrichie de son verso.
+
+    **UN SEUL APPEL A `_professionnel` PAR LIGNE.** Ma premiere version l'appelait
+    QUATRE fois -- une par champ -- ce qui reconstruisait la structure a chaque
+    fois. Sans consequence mesurable a cent lignes, et sans excuse : une fonction
+    appelee pour son resultat se lit une fois.
+    """
+    infos = _professionnel(enrichie)
+    return CollaborateurListe(
+        id=uuid.UUID(str(ligne[0])),
+        person_id=uuid.UUID(str(ligne[1])),
+        first_name=str(ligne[2]),
+        last_name=str(ligne[3]),
+        preferred_name=None if ligne[4] is None else str(ligne[4]),
+        professional_category=str(ligne[5]),
+        arrival_date=ligne[6],
+        a_une_photo=bool(ligne[7]),
+        metier=infos.metier,
+        statut=infos.statut,
+        client=infos.client,
+        cercle=infos.cercle,
+    )
+
+
+def _professionnel(enrichie: Any | None) -> InfosProfessionnelles:
+    """Les quatre champs du verso, ou des `None` si la ligne n'a rien.
+
+    **UNE LIGNE ABSENTE ET UNE LIGNE SANS AFFECTATION DONNENT LE MEME RESULTAT**,
+    et c'est voulu : l'enrichissement porte sur les identifiants de la page, donc
+    une absence ne peut venir que d'une course -- la ligne a disparu entre les
+    deux requetes -- et un nouvel arrivant sans metier rend exactement les memes
+    `None`. Distinguer les deux n'aurait aucun consommateur (§7.32).
+    """
+    if enrichie is None:
+        return InfosProfessionnelles()
+    return InfosProfessionnelles(
+        metier=None if enrichie[1] is None else str(enrichie[1]),
+        statut=None if enrichie[2] is None else str(enrichie[2]),
+        client=None if enrichie[3] is None else str(enrichie[3]),
+        cercle=None
+        if enrichie[4] is None
+        else CercleDeLaListe(
+            code=str(enrichie[4]), nom=str(enrichie[5]), jeton_de_couleur=str(enrichie[6])
+        ),
     )

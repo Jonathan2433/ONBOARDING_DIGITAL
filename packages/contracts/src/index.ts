@@ -91,6 +91,7 @@ export {
   validerLeTrombinoscope,
 } from './trombinoscope.js';
 export type {
+  CercleDeLaListe,
   CollaborateurDuTrombinoscope,
   FiltresDuTrombinoscope,
   ReponseDuTrombinoscope,

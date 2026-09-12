@@ -111,6 +111,12 @@ CHAMPS_ATTENDUS = frozenset(
         "professional_category",
         "arrival_date",
         "photo",
+        #  **LES QUATRE DU VERSO, AJOUTES PAR `T10`.** Voir le motif au test
+        #  `test_les_colonnes_exposees_sont_declarees_une_seule_fois`.
+        "metier",
+        "statut",
+        "client",
+        "cercle",
     }
 )
 CHAMPS_ENVELOPPE = frozenset({"collaborateurs", "page", "taille", "total", "pages"})
@@ -182,16 +188,23 @@ def test_les_QUATRE_etats_et_les_TROIS_visibilites_sont_connus_de_ces_tests() ->
 
 
 def test_les_colonnes_exposees_sont_declarees_une_seule_fois() -> None:
-    """Les huit champs declares et les huit champs servis se correspondent.
+    """Les DOUZE champs declares et les DOUZE champs servis se correspondent.
 
     **LE NOMBRE EST ECRIT, ET C'EST VOULU.** Comparer les deux ensembles entre
     eux ne prouverait rien le jour ou les deux seraient modifies ensemble par
     distraction -- ils viennent de deux fichiers, mais rien n'empeche d'editer
     les deux. Le nombre en dur est le troisieme temoin, et il fait echouer toute
     addition non decidee.
+
+    **LES QUATRE CHAMPS DU VERSO SONT ARRIVES EN `T10`, ET CE TEST DEVAIT
+    TOMBER.** Le §10.1 dit « le **verso** presente les informations
+    **professionnelles principales** », et un ecran ne peut pas inventer ce que
+    l'API ne sert pas. L'addition est donc VOULUE, et la bonne reaction est de
+    mettre l'attendu a jour -- non d'affaiblir le test en comparant par
+    inclusion, ce qui laisserait passer n'importe quelle donnee nouvelle.
     """
     assert set(COLONNES_EXPOSEES) == CHAMPS_ATTENDUS
-    assert len(COLONNES_EXPOSEES) == len(CHAMPS_ATTENDUS) == 8
+    assert len(COLONNES_EXPOSEES) == len(CHAMPS_ATTENDUS) == 12
 
 
 def test_le_service_refuse_une_taille_hors_liste_meme_sans_HTTP() -> None:
@@ -479,15 +492,16 @@ def test_les_exclusions_valent_AUSSI_pour_un_super_administrateur(
 
 
 @pytest.mark.integration
-def test_l_enveloppe_porte_ses_cinq_champs_et_les_lignes_leurs_huit(
+def test_l_enveloppe_porte_ses_cinq_champs_et_les_lignes_leurs_douze(
     decor: tuple[Parametres, str, str],
 ) -> None:
     """Ni plus ni moins : une colonne ajoutee sans etre voulue fait echouer.
 
-    **ET IL A ECHOUE EN `T5`**, quand `photo` est arrive. Le laisser echouer
-    jusqu'a ce que l'attendu soit mis a jour est ce qui rend l'addition d'un
-    champ **visible en revue** -- un test qui comparerait par inclusion
-    laisserait passer n'importe quelle donnee nouvelle en silence.
+    **ET IL A ECHOUE DEUX FOIS** : en `T5` quand `photo` est arrive, et en `T10`
+    quand les quatre champs du verso sont arrives. Le laisser echouer jusqu'a ce
+    que l'attendu soit mis a jour est ce qui rend l'addition d'un champ **visible
+    en revue** -- un test qui comparerait par inclusion laisserait passer
+    n'importe quelle donnee nouvelle en silence.
     """
     parametres, marqueur, code = decor
     charge = _appeler(parametres, code, _session(parametres, marqueur)).json()

@@ -130,9 +130,11 @@ if TYPE_CHECKING:  # pragma: no cover
 class CollaborateurDuTrombinoscope(BaseModel):
     """Une ligne du trombinoscope.
 
-    Huit champs depuis `T5`, qui a ajoute la **photo**. Les informations
-    professionnelles ne sont toujours pas jointes : le motif est dans l'en-tete de
-    `trombinoscope.py`, section « ce que `T3` ne fait toujours pas ».
+    **DOUZE champs depuis `T10`, qui a ajoute les QUATRE du VERSO.** Le §10.1 dit
+    « le **verso** presente les informations **professionnelles principales** », et
+    un ecran ne peut pas inventer ce que l'API ne sert pas. Le cout est une
+    TROISIEME requete, bornee aux lignes de la page : voir `_ENRICHISSEMENT` dans
+    `trombinoscope.py`.
 
     Les noms sont en `snake_case`, comme `est_entite_principale` de `T8` du
     LOT 4 : c'est le contrat de `packages/contracts` qui traduit vers le
@@ -158,6 +160,28 @@ class CollaborateurDuTrombinoscope(BaseModel):
     #  « il a une photo mais tu n'y as pas droit » de « il n'a pas de photo »
     #  apprendrait ce que le §21.2 ne veut pas dire.
     photo: str | None
+
+    #  **LES QUATRE DU VERSO, TOUS FACULTATIFS**, et c'est le schema qui le dit :
+    #  un nouvel arrivant peut n'avoir ni metier, ni statut, ni cercle, et
+    #  `client_id` est nul en `intercontract`.
+    metier: str | None
+    statut: str | None
+    client: str | None
+    cercle: CercleDeLaListeRendu | None
+
+
+class CercleDeLaListeRendu(BaseModel):
+    """Le cercle principal d'une ligne, avec son jeton de couleur.
+
+    **LE NOM VOYAGE AVEC LE JETON, ET LE §10.1 L'EXIGE** : « la couleur du cercle
+    peut etre utilisee sur les bordures, arriere-plans legers et badges, mais
+    **jamais comme seul moyen de transmettre une information** ». Servir le seul
+    jeton rendrait la regle inapplicable a l'ecran.
+    """
+
+    code: str
+    nom: str
+    jeton_de_couleur: str
 
 
 class CercleDeLaFiche(BaseModel):
@@ -607,6 +631,18 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                         chemin_de_la_photo(parametres.API_PREFIX, code, ligne.id)
                         if ligne.a_une_photo
                         else None
+                    ),
+                    metier=ligne.metier,
+                    statut=ligne.statut,
+                    client=ligne.client,
+                    cercle=(
+                        None
+                        if ligne.cercle is None
+                        else CercleDeLaListeRendu(
+                            code=ligne.cercle.code,
+                            nom=ligne.cercle.nom,
+                            jeton_de_couleur=ligne.cercle.jeton_de_couleur,
+                        )
                     ),
                 )
                 for ligne in resultat.collaborateurs

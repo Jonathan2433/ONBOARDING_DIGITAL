@@ -1030,9 +1030,18 @@ def test_la_liste_ne_paie_pas_une_requete_par_ligne(
 ) -> None:
     """**LE N+1 QUE LE CRITERE DE `T3` INTERDIT.**
 
-    L'`EXISTS` de la photo est dans la requete de page : la liste doit rester a
-    **deux** requetes quel que soit le nombre de lignes. Resoudre la variante
+    L'`EXISTS` de la photo est dans la requete de page : resoudre la variante
     ligne par ligne aurait donne 2 + n.
+
+    **LE COMPTE EST PASSE DE DEUX A TROIS EN `T10`, ET CE TEST DEVAIT TOMBER.**
+    Le §10.1 exige un verso professionnel ; ses quatre valeurs vivent dans quatre
+    tables, et les joindre sur la requete de PAGE les ferait payer sur toute la
+    population triee avant le `LIMIT`. Une troisieme requete, bornee aux seuls
+    identifiants rendus, les lit sans toucher au chemin chaud.
+
+    **Trois reste un nombre BORNE**, et c'est cela que le critere demande : il ne
+    depend ni du nombre de lignes -- ce test le verifie a cent -- ni du nombre de
+    cercles, de metiers ou de clients.
     """
     from app.people.trombinoscope import Filtres, lister_le_trombinoscope
 
@@ -1063,7 +1072,7 @@ def test_la_liste_ne_paie_pas_une_requete_par_ligne(
         event.remove(moteur_, "before_cursor_execute", compter)
 
     assert page.total >= 6, "le decor porte six appartenances"
-    assert compte == 2, f"deux requetes attendues, {compte} observees"
+    assert compte == 3, f"trois requetes attendues, {compte} observees"
     assert sum(1 for c in page.collaborateurs if c.a_une_photo) == 1
 
 

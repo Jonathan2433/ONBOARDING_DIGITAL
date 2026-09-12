@@ -36,6 +36,12 @@ const UNE_LIGNE = {
   arrival_date: '2026-01-15',
   //  LOT 5, T5 : le chemin de la miniature. **Un CHEMIN, jamais des octets.**
   photo: '/api/v1/entities/bordeaux/people/0f8fad5b-d9cb-469f-a165-70867728950e/photo',
+  //  LOT 5, T10 : les QUATRE champs du VERSO — §10.1, « le verso presente les
+  //  informations professionnelles principales ».
+  metier: 'Ingenieure logicielle',
+  statut: 'mission',
+  client: 'Client Alpha',
+  cercle: { code: 'data', nom: 'Data', jeton_de_couleur: 'bleu' },
 };
 
 const UNE_PAGE = {
@@ -98,6 +104,11 @@ describe('le validateur', () => {
       categorieProfessionnelle: 'consultant',
       dateArrivee: '2026-01-15',
       photo: UNE_LIGNE.photo,
+      //  LOT 5, T10 — les quatre du verso, §10.1.
+      metier: 'Ingenieure logicielle',
+      statut: 'mission',
+      client: 'Client Alpha',
+      cercle: { code: 'data', nom: 'Data', jetonDeCouleur: 'bleu' },
     });
     expect(page.total).toBe(1);
   });
@@ -133,16 +144,28 @@ describe('le validateur', () => {
     expect(() => validerLeTrombinoscope({ ...UNE_PAGE, [champ]: '1' })).toThrow(TypeError);
   });
 
-  it.each(['id', 'person_id', 'first_name', 'last_name', 'professional_category', 'arrival_date'])(
-    'refuse une ligne dont « %s » manque',
-    (champ) => {
-      const ligne: Record<string, unknown> = { ...UNE_LIGNE };
-      delete ligne[champ];
-      expect(() => validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [ligne] })).toThrow(
-        TypeError,
-      );
-    },
-  );
+  it.each([
+    'id',
+    'person_id',
+    'first_name',
+    'last_name',
+    'professional_category',
+    'arrival_date',
+    //  LOT 5, T10. **L'ABSENCE EST REFUSEE AUTANT QUE LE MAUVAIS TYPE** : une
+    //  cle manquante signifie que l'API ne sert pas ce champ, donc une AUTRE
+    //  version du contrat. La traduire en `null` masquerait la divergence
+    //  derriere une valeur parfaitement plausible.
+    'metier',
+    'statut',
+    'client',
+    'cercle',
+  ])('refuse une ligne dont « %s » manque', (champ) => {
+    const ligne: Record<string, unknown> = { ...UNE_LIGNE };
+    delete ligne[champ];
+    expect(() => validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [ligne] })).toThrow(
+      TypeError,
+    );
+  });
 
   //  ========================================================================
   //  LOT 5, T5 — la photo : un CHEMIN, ou `null`
@@ -155,6 +178,48 @@ describe('le validateur', () => {
     });
     expect(page.collaborateurs[0]?.photo).toBeNull();
   });
+
+  //  ========================================================================
+  //  LOT 5, T10 — les quatre champs du verso
+  //  ========================================================================
+
+  it('accepte `null` sur les QUATRE champs du verso — un nouvel arrivant n’a rien', () => {
+    //  **LE TEMOIN QUI ENCADRE LA FAMILLE DE REFUS CI-DESSUS.** Sans lui,
+    //  l'exigence serait satisfaite par un validateur qui refuse tout : le
+    //  defaut `T2-3`, ou huit refus restaient verts pour la mauvaise raison.
+    const page = validerLeTrombinoscope({
+      ...UNE_PAGE,
+      collaborateurs: [{ ...UNE_LIGNE, metier: null, statut: null, client: null, cercle: null }],
+    });
+    const ligne = page.collaborateurs[0];
+    expect(ligne?.metier).toBeNull();
+    expect(ligne?.statut).toBeNull();
+    expect(ligne?.client).toBeNull();
+    expect(ligne?.cercle).toBeNull();
+  });
+
+  it('traduit le cercle vers le camelCase, ses TROIS champs ensemble', () => {
+    const page = validerLeTrombinoscope(UNE_PAGE);
+    expect(page.collaborateurs[0]?.cercle).toEqual({
+      code: 'data',
+      nom: 'Data',
+      jetonDeCouleur: 'bleu',
+    });
+  });
+
+  it.each(['code', 'nom', 'jeton_de_couleur'])(
+    'refuse un cercle dont « %s » manque — le §10.1 les veut ensemble',
+    (champ) => {
+      //  Le NOM sans le jeton prive la carte de sa bordure ; le jeton sans le
+      //  nom rend inapplicable « jamais la couleur seule ». L'un sans l'autre
+      //  n'a pas de sens.
+      const cercle: Record<string, unknown> = { ...UNE_LIGNE.cercle };
+      delete cercle[champ];
+      expect(() =>
+        validerLeTrombinoscope({ ...UNE_PAGE, collaborateurs: [{ ...UNE_LIGNE, cercle }] }),
+      ).toThrow(TypeError);
+    },
+  );
 
   it('refuse une photo ABSENTE, alors qu’elle accepte `null`', () => {
     //  **L'ABSENCE N'EST PAS `null`**, et les deux temoins encadrent la regle :

@@ -692,14 +692,26 @@ class Compteur:
 def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_lignes(
     cx: Connection, taille: int
 ) -> None:
-    """**DEUX requetes, quelle que soit la taille de page.**
+    """**TROIS requetes, quelle que soit la taille de page.**
 
     C'est la definition operatoire de « aucun N+1 » : si le nombre de requetes
     croissait avec le nombre de lignes rendues, la difference se verrait ici et
     nulle part ailleurs.
 
-    Le compte est **confronte a un attendu**, non simplement affiche (§7.0
-    troisieme proposition).
+    **LE COMPTE EST PASSE DE DEUX A TROIS EN `T10`, ET C'ETAIT LE BON CHOIX.** Le
+    §10.1 exige un verso professionnel ; les quatre valeurs qu'il demande vivent
+    dans quatre tables. Deux montages etaient possibles :
+
+        quatre `LEFT JOIN` sur la requete de PAGE  ->  deux requetes, mais les
+            jointures paieraient sur toute la population TRIEE avant le `LIMIT` --
+            cinq mille lignes au volume du quatrieme critere de sortie, pour n'en
+            garder que vingt-cinq ;
+        une TROISIEME requete sur les seuls identifiants rendus  ->  bornee a cent
+            lignes par le §18.2, et le chemin chaud reste intact.
+
+    Le second a ete retenu. **Trois reste un nombre BORNE** : il ne depend ni du
+    nombre de lignes -- ce test le prouve sur les trois tailles -- ni du nombre de
+    cercles, de metiers ou de clients.
     """
     decor = _poser(cx)
     with Compteur(cx) as compteur:
@@ -707,7 +719,7 @@ def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_lignes(
             cx, entite=decor.entite, page=1, taille=taille, instant=ANCRAGE, filtres=Filtres()
         )
     assert len(page.collaborateurs) == 7
-    assert len(compteur.requetes) == 2, (
+    assert len(compteur.requetes) == 3, (
         f"{len(compteur.requetes)} requetes pour {len(page.collaborateurs)} lignes : "
         "le comptage et la page, et rien d'autre"
     )
@@ -736,7 +748,7 @@ def test_le_nombre_de_requetes_ne_depend_PAS_du_nombre_de_filtres(cx: Connection
             cx, entite=decor.entite, page=1, taille=25, instant=ANCRAGE, filtres=tous
         )
     assert [ligne.last_name.lower() for ligne in page.collaborateurs] == ["martin"]
-    assert len(compteur.requetes) == 2, (
+    assert len(compteur.requetes) == 3, (
         f"{len(compteur.requetes)} requetes pour six axes : ils doivent tenir dans UNE clause"
     )
 

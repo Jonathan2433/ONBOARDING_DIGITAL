@@ -647,6 +647,42 @@ def main() -> int:
             return 1
         appartenance = rendus["Complete"]
 
+        # ---  3. LES QUATRE CHAMPS DU VERSO SONT RENSEIGNES — LOT 5, `T10` ----
+        #
+        #  **UN CONTROLE DE PRESENCE NE SUFFIRAIT PAS.** `trombinoscope-check`
+        #  verifie que la ligne porte douze champs « ni plus ni moins » ; il
+        #  passerait avec les quatre a `null`, ce qui est exactement ce que
+        #  rendrait une requete d'enrichissement qui ne joindrait rien. C'est le
+        #  §7.0 quatrieme proposition : l'echec produirait la meme observation que
+        #  le succes.
+        #
+        #  Le decor donne a « Ada Complete » un metier, une mission avec client et
+        #  un cercle principal : les quatre doivent donc etre RENSEIGNES, et le
+        #  cercle porter ses trois sous-champs.
+        controles += 1
+        ligne_complete = next(
+            (ligne for ligne in lignes if ligne.get("last_name") == "Complete"), {}
+        )
+        cercle_rendu = ligne_complete.get("cercle") or {}
+        verso_renseigne = [
+            champ
+            for champ in ("metier", "statut", "client")
+            if ligne_complete.get(champ) not in (None, "")
+        ]
+        if len(verso_renseigne) == 3 and set(cercle_rendu) == {"code", "nom", "jeton_de_couleur"}:
+            print(
+                "    ok       les 4 champs du VERSO sont RENSEIGNES — "
+                f"metier « {ligne_complete['metier']} », statut « {ligne_complete['statut']} », "
+                f"client « {ligne_complete['client']} », cercle « {cercle_rendu['nom']} » : "
+                "§10.1, « le verso presente les informations professionnelles principales »"
+            )
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    verso : renseignes {verso_renseigne}, "
+                f"cercle {sorted(cercle_rendu) or 'absent'}"
+            )
+
         # --- 3. la fiche de cet identifiant EST servie ------------------------
         controles += 1
         chemin = CHEMIN_PROFIL.format(code=code_entite, appartenance=appartenance)
