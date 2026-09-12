@@ -224,10 +224,19 @@ n'avait donc **rien à reclasser**, et c'est un constat, pas un oubli.
 
 ## 8. Trois choses à connaître avant de valider
 
-**1. `ECART-012` attend Léa, et l'échéance est dépassée.** Elle était « avant le LOT 5 », lequel est
-ouvert depuis le 24/08/2026. Une catégorie `dg` ne peut porter que `intercontrat`, que le
-trombinoscope **et** la fiche affichent désormais. Les deux options sont chiffrées ; la moins
-coûteuse ne touche pas le modèle.
+**1. `ECART-012` attend Léa, et l'échéance est dépassée.** Elle était « avant le LOT 5 », lequel
+est ouvert depuis le 24/08/2026. Une catégorie `dg` ne peut porter que `intercontrat`, que le
+trombinoscope **et** la fiche affichent désormais.
+
+> **Ta position est arrêtée depuis le 12/09/2026** : **conditionner l'affichage**, la valeur restant
+> en base. C'est **un seul changement, en un seul endroit** — `libelleDuStatut` de
+> `apps/web/src/affichage.ts`, que les **trois** affichages consomment — et il est **réversible**.
+>
+> **La réserve est nommée plutôt que tue** : la base continuera de porter une valeur que le métier
+> juge fausse, invisible à l'écran mais bien présente dans les données **et dans l'historique**.
+> C'est le prix de la réversibilité, et c'est ce qu'il faut dire à Léa pour qu'elle choisisse en
+> connaissance de cause. **Ce n'est pas la résolution de l'écart** : Léa décide du produit, et
+> l'écart reste **ouvert** jusqu'à sa réponse.
 
 **2. `ECART-061` est nouveau, et il touche la sécurité.** `make admin-local` pose un mot de passe
 provisoire et `must_change = true` ; la connexion le remonte fidèlement, **et rien ne s'ensuit** :
@@ -250,8 +259,9 @@ trombinoscope et les profils, formé au §3.
 
 **Ce que la porte ouvre :** le **LOT 6** — Framework, cercles, bureaux et contenus éditoriaux.
 
-**Ce qu'elle ne clôt pas :** `ECART-012` — Léa · `ECART-031` — avant le LOT 6 · `ECART-060` — LOT 6
-et LOT 9 · `ECART-061` — LOT 13 · `US006` sans écran.
+**Ce qu'elle ne clôt pas :** `ECART-012` — **Léa**, ta position étant arrêtée mais pas sa
+réponse · `ECART-031` — avant le LOT 6 · `ECART-060` — LOT 6 et LOT 9 · `ECART-061` — LOT 13 ·
+**`US006` sans écran**.
 
 | | |
 |---|---|
