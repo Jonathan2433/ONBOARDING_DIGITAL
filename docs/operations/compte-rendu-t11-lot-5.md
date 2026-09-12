@@ -304,7 +304,7 @@ sûr ? » ne dit rien.
 
 ---
 
-# 8. Deux défauts que SEULE la pile réelle pouvait dire
+# 8. Trois défauts — deux que seule la pile pouvait dire, un qui n'est pas de `T11`
 
 > **J'allais écrire « aucun défaut dans la seconde partie ».** Les 192 tests passaient, les six
 > contrôles de stack étaient verts. C'est en exerçant le parcours **sur la pile** — la leçon
@@ -361,6 +361,56 @@ mesure.
 > jamais ce que l'API fait. Les deux défauts étaient invisibles aux 192 tests et aux six contrôles
 > de stack, et visibles **au premier appel réel**. C'est le §7.16 — ce qui n'a jamais tourné ailleurs
 > n'est pas éprouvé — appliqué non pas à une machine mais à **l'autre bout d'un appel**.
+
+
+## `T11-8` — Un test INSTABLE dans la porte bloquante, et il n'est pas de `T11`
+
+**La porte de `T11` est passée au rouge sur un test que cette sous-étape ne touche pas** —
+`git diff origin/develop..HEAD` sur `debit` rend **zéro** fichier.
+
+```text
+FAILED test_LES_DEUX_REFUS_SONT_IDENTIQUES_corps_ET_en_tetes
+  secondes_avant_reprise : 3599  !=  3600
+```
+
+Le test compare le refus servi à une adresse **connue** et à une adresse **inconnue**, et exige
+qu'ils soient identiques — §22.5, la limitation ne doit pas révéler l'existence d'un compte. Les
+deux corps l'étaient **mot pour mot**, sauf le décompte.
+
+**La cause est une horloge, pas un produit.** `secondes_avant_reprise` vient du TTL d'une clé Redis
+créée à la **première** demande de chaque adresse ; les deux séquences du test s'enchaînent, et
+elles peuvent tomber de part et d'autre d'une seconde. Le docstring du test énumérait pourtant ce
+qui varie — « seuls `x-request-id` et `date` » — et **le décompte n'y était pas**.
+
+> **ET CE N'EST PAS UNE FUITE.** Les deux adresses reçoivent une clé dès leur première demande,
+> connue ou non : c'est précisément ce que le §22.5 exige. Le décompte mesure donc **l'instant du
+> test**, jamais l'état du compte.
+
+**Trois réactions possibles, et une seule est bonne** (§7.20) : rejouer la CI en espérant — c'est
+apprendre à ignorer le rouge, §7.25 ; supprimer la comparaison — on perd le garde-fou ; **la faire
+dire le vrai**, ce qui a été retenu.
+
+| Ce qui est neutralisé | Ce qui est exigé à part |
+|---|---|
+| `identifiant_correlation`, qui varie par construction | — |
+| `secondes_avant_reprise`, qui mesure une **durée** | il **existe des deux côtés**, il est positif, et il tient dans `FENETRE_DEMANDES_DE_LIEN` |
+
+**Un décompte servi d'un seul côté révélerait, LUI, l'existence du compte** — c'est pourquoi
+l'exiger des deux côtés remplace exactement ce que l'égalité prouvait.
+
+**ET LE TÉMOIN EST PERMANENT, parce que neutraliser un champ est le geste qui peut rendre un
+contrôle aveugle.** `test_TEMOIN_la_neutralisation_du_DECOMPTE_ne_rend_pas_le_controle_aveugle`
+éprouve les trois cas :
+
+```text
+deux corps ne differant QUE par le decompte  ->  signatures EGALES
+deux corps differant par le MESSAGE          ->  signatures DIFFERENTES
+deux corps differant par le CODE d'erreur    ->  signatures DIFFERENTES
+```
+
+**Témoin négatif exécuté** : la neutralisation élargie au `message` et au `code` fait échouer ce
+test. Sans les deux dernières épreuves, la première prouverait seulement qu'on a bien supprimé
+quelque chose — §7.0, quatrième proposition.
 
 ---
 

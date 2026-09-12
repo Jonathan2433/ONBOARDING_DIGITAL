@@ -28,7 +28,7 @@ d'agir.
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), **`v0.4.0` (`G4`)** — ce dernier sur `e0629fe`, dont l'arbre est **vérifié identique** à celui de `fdfa64a`, donc l'état exact de la porte, **sans LOT 5** |
-| **Tests** | **1 354** : **914 pytest** — dont **602 d'intégration** — et **440 Vitest** (**111 `ui`**, **192 `web`**, **137 `contracts`**) |
+| **Tests** | **1 355** : **915 pytest** — dont **602 d'intégration** — et **440 Vitest** (**111 `ui`**, **192 `web`**, **137 `contracts`**) |
 | Schéma PostgreSQL | **29 tables**, **9 déclencheurs**, **16 migrations**, tête `0016`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
@@ -36,7 +36,7 @@ d'agir.
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
 | Registres | **156 décisions** `DEC-418+` · **61 écarts** (**13 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 61 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 62 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -120,7 +120,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
-| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,11}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **61** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
+| **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,11}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **62** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 4 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-4.md`** — la première route métier, l'entité consultée, le cadre, la navigation, la barre mobile, la page nationale, puis la carte. **Le §8 de la fiche s'est trompé sur l'un de ses deux points ouverts** (`ECART-040`) ; **`T3` a trouvé deux défauts qui vivaient depuis un mois** (`ECART-041`, `ECART-042`) ; et **`T4` en a trouvé deux de plus dans MES propres contrôles** (`ECART-043`, `ECART-044`). **`T8` en a trouvé quatre, dont TROIS dans mes contrôles** — et le quatrième, un vrai défaut du livrable, n'a été vu que **dans un navigateur** |
 | Que faisait-on au LOT 3 ? | `docs/operations/fiche-lot-3.md` — 12 sous-étapes, **les douze barrées** |
@@ -898,7 +898,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**252 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **61** au LOT 5 — 71 + 44 + 57 + 19 + 61,
+**253 défauts NOMMÉS au 12/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4 et **62** au LOT 5 — 71 + 44 + 57 + 19 + 62,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2811,7 +2811,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **44 leçons** payées par **252 défauts nommés** — 71 + 44 + 57 + 19 + 61, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **44 leçons** payées par **253 défauts nommés** — 71 + 44 + 57 + 19 + 62, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
