@@ -35,7 +35,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **154 décisions** `DEC-418+` · **60 écarts** (**12 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **154 décisions** `DEC-418+` · **61 écarts** (**13 ouverts**) · **42 questions** (**32 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · **LOT 5 : 54 — DÉRIVÉS le 12/09/2026**, plus **deux écarts antérieurs découverts en `T3`** — le frontend servi était celui du LOT 1, et les feuilles du design system n'étaient importées par personne. Presque tous dans mes propres contrôles — c'est la forme la plus insidieuse, parce qu'on croit avoir prouvé |
 
 **Les commandes qui produisent ces nombres :**
@@ -472,7 +472,7 @@ comblé.
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
 | `DEC-nnn` | `001`–`417` **réservés**, `418`–`571` en usage | **`DEC-572`** |
-| `ECART-nnn` | `001`–`060` | **`ECART-061`** |
+| `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`118`, **5 trous** | **`QO-119`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -2314,7 +2314,7 @@ rendrait **jamais** de jeton passerait ; sans le cas, `str(None)` reste invisibl
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — **10 ouverts**, dérivés du registre le 08/09/2026 (le total est au §1)
+## 8.1 Écarts — **13 ouverts**, dérivés du registre le 12/09/2026 (le total est au §1)
 
 > **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
 > par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
@@ -2331,6 +2331,7 @@ rendrait **jamais** de jeton passerait ; sans le cas, `str(None)` reste invisibl
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | avant le LOT 6 |
 | `ECART-033` | **CLOS en `T1` du LOT 3.** `make ports` concaténait les deux flux de Compose puis parsait le tout en JSON : un avertissement le cassait, **sans nommer la cause**. Il était juste à sa date — `ECART-024` à l'identique |
+| `ECART-061` | **Un mot de passe provisoire n'est jamais forcé de changer** : `must_change` est servi par l'API sous le nom `changement_exige`, **aucun écran ne le lit**, et la session est ouverte quand même. `DEC-527` affirme le contraire. **Mesuré le 12/09/2026** | avant production, à instruire au LOT 13 |
 | `ECART-032` | **Le backlog interdit plus large que le cahier, la matrice ET le modèle réunis** : « aucune responsabilité **métier** active dans plusieurs entités » là où les trois autres restreignent au seul **Booster**. Le cahier prévaut, le livrable est conforme — **mais un relecteur du backlog conclurait à un critère manquant** | à annoncer à `G2` |
 
 `ECART-023` est ouvert et clos en **`T8`** — la fiche énumérait six des sept séparations du cahier §22.2, et empruntait « Mailpit exclusif » aux LOTS 11 et 13.
@@ -2457,6 +2458,7 @@ n'y a donc plus de découpage à proposer : il y a `T11` à faire, puis `T12`.
 | **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
 | **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut |
 | **`ECART-035`** | **Les invitations n'existent pas** dans le modèle. À reprendre au **LOT 9**, où le back-office les créera : la révocation de `T9` devra alors recevoir une ligne de plus |
+| **`ECART-061`** | **`changement_exige` n'a AUCUN consommateur.** `make admin-local` pose un mot de passe provisoire et `must_change = true` ; la connexion ouvre quand même la session, et **toutes** les routes métier répondent 200 — mesuré. Les **huit** écrans du LOT 3 sont ceux que le cahier §17.5 énumère, et le changement de mot de passe **n'y est pas**. La phrase « `T11` doit le consommer » du compte rendu de `T5` du LOT 3 était une **prévision**, §7.41. Ni garde d'API ni écran : les deux se tiennent ensemble, et c'est une décision de Jonathan. **LOT 13** |
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
 | **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13.** Mesure du 08/09/2026 sur les images publiées : `api` et `worker` ne portent **qu'un** `CRITICAL`, `CVE-2026-13221` de `perl-base`, **sans correctif** — donc correctement ignoré par la porte, et `ROAD-RSK-033` est **inchangé dans sa nature** |
 | **`images.yml` EST ROUGE, ET CE N'EST PAS ENCORE CONSIGNÉ DANS UN REGISTRE** | **Cinq exécutions consécutives en échec depuis `T2` du LOT 5**, le 05/09/2026. **La construction et les deux lancements d'architecture PASSENT** ; seule la tâche **Trivy** échoue, et sur la **seule image `web`** : `CVE-2026-56854`, **CRITICAL** et **corrigeable** (`golang.org/x/crypto` v0.52.0 → 0.55.0), héritée de la base `caddy:2.11-alpine`. **La porte fait donc exactement son travail**, `DEC-482` bloquant sur `CRITICAL` corrigeable. Deux choses à savoir : le **même condensat** sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert ; et la porte d'`images.yml` **n'est pas un contexte requis**, donc **les fusions ne sont pas bloquées**. **Aucun identifiant n'a été ouvert** : Jonathan a choisi le 08/09/2026 de ne pas instruire ce point dans la pull request d'hygiène, et une montée de base Caddy doit d'abord être **mesurée** dans ce qu'elle casse (§7.0, cinquième proposition) |

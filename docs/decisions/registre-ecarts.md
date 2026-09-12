@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 12 septembre 2026, `T10` du LOT 5 — écart `ECART-060`
+**Dernière mise à jour :** 12 septembre 2026, après `T10` du LOT 5 — écart `ECART-061`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 60 | 12 | 45 | 3 |
+| Total 61 | 13 | 45 | 3 |
 
 ---
 
@@ -78,6 +78,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-058` | Une colonne GÉNÉRÉE refuse une valeur **avant** toute contrainte, et le `PATCH` de `T7` sortait alors en **500** | Non — le refus était correct, sa forme ne l'était pas | **Clos** |
 | `ECART-059` | La matrice donne au responsable de bureau un périmètre « Bureau » sur l'audit, mais **aucune table ne rattache un collaborateur à un bureau** | Non — le §6.2 tranche dans le même sens | Ouvert, à reprendre au LOT 6 |
 | `ECART-060` | Le §10.1 veut « des filtres combinables » ; **quatre des cinq que l'API accepte n'ont aucune liste de référence à proposer** | Non — l'API les accepte, l'écran ne peut pas les peupler | Ouvert, à reprendre aux LOTS 6 et 9 |
+| `ECART-061` | Le modèle §10.2 et `DEC-527` veulent qu'un mot de passe provisoire soit changé ; **`changement_exige` est servi par l'API et aucun écran ne le lit** — la session est ouverte et toutes les routes répondent | Non pour le MVP, **oui avant la production** | Ouvert, à instruire au LOT 13 |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -177,7 +178,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-061`.**
+**Prochain identifiant libre : `ECART-062`.**
 
 ---
 
@@ -897,3 +898,17 @@ formulée, et son caractère bloquant est explicité.
 | Bloquant | **Non.** L'API accepte les cinq ; seul l'écran est bridé, et il l'est **visiblement** — il n'affiche pas de sélecteurs vides. La recherche textuelle couvre le besoin courant, et le §10.1 n'impose aucun nombre de filtres. |
 | Recommandation | **Ne rien inventer, et surtout pas un endpoint de référence au LOT 5.** Deux échéances, chacune chez qui possède la donnée : les **cercles au LOT 6**, dont c'est le lot ; les **métiers, clients et DSM au LOT 9**, où le back-office les administre. Le jour où ces listes existent, l'écran gagne quatre sélecteurs sans qu'une ligne de l'API ne change — les cinq clauses de `T3` sont déjà là.<br>**À annoncer à la porte `G5`** : c'est le seul écart entre ce que l'API sait faire et ce que l'écran propose. |
 | Résolution | **Ouvert.** Échéances : **LOT 6** pour les cercles, **LOT 9** pour les trois autres. `T10` le nomme, en propose deux, et n'en simule aucun. |
+
+---
+
+## `ECART-061` — `changement_exige` est servi par l'API, et AUCUN écran ne le lit
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 12 septembre 2026, après `T10` du LOT 5, **en provisionnant un compte de démonstration** |
+| Source | Modèle §10.2 (`must_change`) · `DEC-527` (« `must_change` impose son changement ») · `compte-rendu-t5-lot-3.md` §7 point 5 · `apps/api/app/auth/routes.py`, `ReponseDeConnexion` |
+| Constat | `make admin-local` engendre un mot de passe **provisoire**, l'affiche une seule fois et pose `must_change = true`. La route de connexion le remonte fidèlement : `{"message":"Identifiants acceptes.", …, "changement_exige":true}`, **mesuré**.<br>**Et rien ne s'ensuit.** La connexion **pose le cookie de session** et l'API sert ensuite l'intégralité des routes métier — entités, trombinoscope, fiche, permissions — toutes mesurées à **200**. Côté écran, `changement_exige` a **zéro** consommateur : mesure du 12/09/2026 sur `apps/web/src/`, les seules occurrences du motif sont des identifiants HTML de formulaire. La route `POST /api/v1/auth/mot-de-passe` **existe** et figure au manifeste, mais **aucun des huit écrans du LOT 3 ne l'appelle**.<br>Un mot de passe provisoire reste donc utilisable **indéfiniment**. |
+| Cause | **Une PRÉVISION prise pour une décision — le §7.41.** Le §7 du compte rendu de `T5` du LOT 3 écrit : « `must_change` est remonté par la route de connexion. Un écran qui l'ignorerait laisserait un administrateur travailler avec un mot de passe provisoire ; **`T11` doit le consommer** ». Le docstring de `ReponseDeConnexion` le redit.<br>`T11` du LOT 3 a livré **les huit écrans que le cahier §17.5 énumère** — connexion, lien envoyé, lien expiré, connexion administrateur, déconnexion, 403, 404, erreur — et **le changement de mot de passe n'est dans aucune de ces huit puces**. Le compte est dérivé du cahier par un test ; il était juste. La phrase du compte rendu désignait un écran **qui n'a jamais été commandé par le corpus**. |
+| Bloquant | **Non pour le MVP, oui avant la production.** En développement et en démonstration, le seul compte concerné est celui de Jonathan, et le mot de passe est engendré sur 32 caractères par `secrets`. En production, un compte administrateur travaillant avec un mot de passe provisoire qu'aucun mécanisme ne périme est un défaut de sécurité réel — `DEC-527` **affirme** le contraire (« `must_change` impose son changement »), et cette affirmation est aujourd'hui fausse. |
+| Recommandation | **Ne rien improviser au LOT 5** : ce n'est ni son périmètre ni son lot. Deux options, à trancher par Jonathan, et la mesure les départage plutôt qu'une préférence.<br>**(a) Un neuvième écran** — le corpus n'en commande que huit, l'ajouter est donc une décision de produit, pas une déduction.<br>**(b) Une garde d'API** : `exiger_une_session` refuserait toute route **autre que** le changement de mot de passe tant que `must_change` est vrai. C'est le §20.1, « refus par défaut », et cela ne dépend d'aucun écran — mais sans écran pour l'offrir, cela **enfermerait** l'administrateur hors de l'application.<br>**Les deux se tiennent ensemble** : la garde sans l'écran verrouille, l'écran sans la garde ne contraint rien. **À instruire au LOT 13**, avec le durcissement de production, et **à annoncer à la porte `G5`**. |
+| Résolution | **Ouvert.** Échéance : **avant la production (`G14`)**, à instruire au **LOT 13**. Aucun correctif n'est appliqué au LOT 5 : le constat est mesuré, nommé, et laissé à qui possède la décision. |
