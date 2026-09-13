@@ -140,16 +140,30 @@ Mes helpers de test employaient `:c` pour `entity.code` — `character varying(6
 `display_name` et `city`, qui sont `text`. **39 tests sur 46 ont échoué**, et le message ne nomme ni
 la table ni la colonne.
 
-C'est **le piège du §7.25**, celui qui s'est déjà rejoué trois fois — `T4-2`, `T8-3`, puis six
+C'est **le piège du §7.25**, dont l'exemple mesuré est **littéralement ces trois colonnes**, et qui s'est déjà rejoué trois fois — `T4-2`, `T8-3`, puis six
 fabriques d'un coup au LOT 2. Je l'ai rejoué **dans le fichier où je citais la leçon**.
 
 Corrigé sur les quatre helpers : **un paramètre par colonne**, jamais un paramètre partagé.
 
-> **Le garde-fou syntaxique existe** — posé en `T11` du LOT 2 — et il n'a rien dit, parce qu'il
-> discrimine sur le **type de colonne** lu au catalogue, et que `code`/`display_name` sont deux types
-> réellement différents. Il aurait donc dû mordre. **C'est un point à instruire**, et il est nommé au
-> §7 plutôt que corrigé à la hâte : un garde-fou qu'on modifie sans comprendre pourquoi il s'est tu
-> est un garde-fou qu'on casse.
+> **J'AI D'ABORD ÉCRIT QUE « LE GARDE-FOU EXISTE ET S'EST TU ». C'EST FAUX, ET JE NE L'AVAIS PAS
+> MESURÉ.** Cherché par son nom, par son motif et dans le `Makefile` : **aucun garde-fou de cette
+> nature n'existe dans ce dépôt.** Le §7.25 documente **deux tentatives qui ont échoué** — l'une se
+> déclenchait sur le commentaire expliquant le motif qu'elle interdit, l'autre sur une réutilisation
+> légitime entre deux colonnes `uuid` — et conclut que le discriminant est le **type de colonne**.
+> **Il ne dit nulle part qu'une troisième version a été livrée.**
+>
+> C'est le §9.0 retourné contre moi : *vérifie ce que la documentation affirme* — y compris quand
+> c'est toi qui la lis vite.
+>
+> **ET LE CONSTAT EST PLUS DUR QUE MON ERREUR.** L'exemple que le §7.25 **mesure**, en toutes
+> lettres, est : « `entity.code` est `character varying(64)` quand `display_name` et `city` sont
+> `text` — d'où l'échec ». **Ce sont exactement les trois colonnes sur lesquelles je suis tombé.**
+> La leçon nommait le cas, personne ne l'a outillé, et il s'est rejoué **une quatrième fois** —
+> `T4-2`, `T8-3`, les six fabriques du LOT 2, puis celle-ci.
+>
+> **Le §7.30 dit quoi faire quand une classe résiste : changer d'outil, pas promettre d'attention.**
+> La recommandation est au §5, et elle n'est pas une promesse : elle décrit le contrôle exact que le
+> §7.25 spécifie déjà — lire le catalogue, pas le texte.
 
 ## Ce qu'un garde-fou a exigé, et qui n'est pas un défaut
 
@@ -169,6 +183,6 @@ nouvelles. **Deux garde-fous qui doivent échouer, et qui ont échoué exactemen
 |---|---|
 | **`QO-120`** — la liste des protocoles d'URL | Jonathan et Léa. **Avant `T8`**, qui écrit les liens internes |
 | **`QO-119`** — le vocabulaire des blocs | Léa. **Avant `T11`**. `T1` pose **onze** types, la lecture la plus large |
-| **Le garde-fou de paramètre lié ne s'est pas déclenché sur `T1-2`** | à instruire — il discrimine sur le type de colonne, et il aurait dû mordre |
+| **Le garde-fou du paramètre lié N'EXISTE PAS** | **Recommandation, pas promesse.** Le §7.25 spécifie déjà le contrôle exact : relever chaque paramètre lié partagé par plusieurs colonnes dans une requête, résoudre chaque colonne, **lire son type au catalogue**, et refuser quand les types diffèrent. Il ne se déclenche donc ni sur un commentaire, ni sur `:p` réutilisé entre deux `uuid`. **C'est un contrôle transverse, pas un morceau de `T1`** : il mérite sa propre sous-étape et la décision de Jonathan. La classe a résisté **quatre** fois |
 | **Le rendu des blocs et le refus de l'injection** | `T5`. `T1` tient la moitié **structurelle** : aucune colonne ne peut porter du HTML libre |
 | **Le déclencheur « un à trois responsables actifs »** | `T4`. C'est un **comptage borné**, qu'aucune contrainte de ligne n'exprime, et `DEC-576` dit à partir de quand il mord |
