@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `577` en usage | `DEC-578` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `578` en usage | `DEC-579` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
 | `ECART-nnn` | Écarts |  `001` à `061` |  `ECART-062` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `119` | `QO-120` | [questions](operations/registre-questions-ouvertes.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `120` | `QO-121` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -276,9 +276,21 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 [`operations/fiche-lot-6.md`](operations/fiche-lot-6.md) — **7** stories, **sept** critères de sortie
 **dérivés des deux sources, qui concordent**, **douze** sous-étapes, tag `v0.6.0` prévu.
 
-**AUCUNE SOUS-ÉTAPE N'EST FAITE.** La prochaine est `T1` : les trois tables éditoriales
-`content_page`, `content_block` et `internal_link`, migration `0017`. **Aucune des trois n'existe** —
-mesuré sur le schéma réel : **29 tables**, `alembic_version` comprise.
+**`T1` EST FAITE** le 13/09/2026, `DEC-578` : les trois tables éditoriales `content_page`,
+`content_block` et `internal_link`, migration `0017`. Le schéma passe de **29 à 32 tables**, et
+**48 tests** les éprouvent, chaque refus apparié à son témoin. La prochaine est `T2`, la page
+Framework en lecture.
+
+> **`T1` A ÉVITÉ UN INCIDENT QUI VISAIT LE LOT 5, ET C'EST SON LIVRABLE LE PLUS UTILE.**
+> `alembic --autogenerate` a proposé de **supprimer `ix_person_recherche_nom`**, l'index de la
+> recherche du trombinoscope, dans la même migration que les trois tables. C'est un index **sur
+> expression**, qu'autogenerate ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et
+> **aucun test** n'exigeait son existence : le piège était debout pour toutes les sous-étapes
+> suivantes. `T1` ajoute le test qui le **nommera** si quelqu'un le fait disparaître.
+
+**Deux questions attendent Léa** : `QO-119`, le vocabulaire des blocs — `T1` en pose **onze**, la
+lecture la plus large — et `QO-120`, la liste des protocoles d'URL, **que le corpus nomme deux fois
+et ne donne jamais**.
 
 > **DEUX DÉCISIONS SONT PRISES AVANT `T1`, ET ELLES LA COMMANDENT.** `DEC-576` — la publication d'un
 > bureau est portée par sa **page de contenu**, jamais par la table `office` : cela clôt `ECART-031`
@@ -291,7 +303,7 @@ mesuré sur le schéma réel : **29 tables**, `alembic_version` comprise.
 > négatifs**, si bien que chacun reçoit son **témoin positif dans la même sous-étape** : c'est la
 > leçon `CLAUDE.md` §7.39, appliquée **au découpage** cette fois, et non après coup.
 
-**Traçabilité GitHub : à créer** — epic `MVP-L06`, jalon `G6`, sept stories `MVP-L06-US001` à `US007`.
+**Traçabilité GitHub :** épic `#145`, jalon `G6`, stories `#146` à `#152` — créées le 13/09/2026.
 
 ---
 
