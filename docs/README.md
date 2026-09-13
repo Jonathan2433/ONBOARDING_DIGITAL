@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `573` en usage | `DEC-574` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `577` en usage | `DEC-578` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
 | `ECART-nnn` | Écarts |  `001` à `061` |  `ECART-062` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `118` | `QO-119` | [questions](operations/registre-questions-ouvertes.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `119` | `QO-120` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -130,8 +130,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
 | ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
-| `G5` | Fin du trombinoscope | Profils et permissions validés | **Porte courante** — LOT 5 ouvert le 24/08/2026 (`DEC-558`), tag `v0.5.0` prévu. Plan : [`fiche-lot-5.md`](operations/fiche-lot-5.md), **onze** sous-étapes depuis le 06/09/2026 (`DEC-564`) |
-| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | Planifiée |
+| ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
+| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **Porte courante** — LOT 6 ouvert le 13/09/2026 (`DEC-575`), tag `v0.6.0` prévu. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), **douze** sous-étapes |
 | `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | Planifiée |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
@@ -270,7 +270,32 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 
 ---
 
-## 12. Avancement du LOT 5 — **lot OUVERT**, porte `G5`
+## 13. Avancement du LOT 6 — **lot OUVERT**, porte `G6`
+
+**Ouvert par Jonathan le 13 septembre 2026 (`DEC-575`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-6.md`](operations/fiche-lot-6.md) — **7** stories, **sept** critères de sortie
+**dérivés des deux sources, qui concordent**, **douze** sous-étapes, tag `v0.6.0` prévu.
+
+**AUCUNE SOUS-ÉTAPE N'EST FAITE.** La prochaine est `T1` : les trois tables éditoriales
+`content_page`, `content_block` et `internal_link`, migration `0017`. **Aucune des trois n'existe** —
+mesuré sur le schéma réel : **29 tables**, `alembic_version` comprise.
+
+> **DEUX DÉCISIONS SONT PRISES AVANT `T1`, ET ELLES LA COMMANDENT.** `DEC-576` — la publication d'un
+> bureau est portée par sa **page de contenu**, jamais par la table `office` : cela clôt `ECART-031`
+> **et** `ECART-059`, qui portaient sur la même table et la même absence. `DEC-577` — les types de
+> blocs sont l'**union** des deux listes du corpus, chacun rattaché au document qui le nomme, et
+> **`QO-119`** porte le vocabulaire à Léa.
+>
+> **`MVP-L06-US004` est découpée en TROIS** — lire, écrire, afficher — parce qu'elle est la seule
+> `XL` du lot et que trois stories en dépendent. Et **quatre des sept critères de sortie sont
+> négatifs**, si bien que chacun reçoit son **témoin positif dans la même sous-étape** : c'est la
+> leçon `CLAUDE.md` §7.39, appliquée **au découpage** cette fois, et non après coup.
+
+**Traçabilité GitHub : à créer** — epic `MVP-L06`, jalon `G6`, sept stories `MVP-L06-US001` à `US007`.
+
+---
+
+## 12. Avancement du LOT 5 — **lot VERROUILLÉ**, porte `G5` franchie
 
 **Ouvert par Jonathan le 24 août 2026 (`DEC-558`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-5.md`](operations/fiche-lot-5.md) — 8 stories, **sept** critères de sortie
@@ -282,10 +307,19 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 > séparément, et le motif est mesurable — **le critère « l'originale n'est jamais servie » serait
 > parfaitement satisfait par une route qui ne sert RIEN**. Nouvelle leçon `CLAUDE.md` §7.39.
 
-**LES ONZE SOUS-ÉTAPES DU LOT 5 SONT TERMINÉES.** Le lot attend sa porte `G5` —
-[`checklist-validation-G5.md`](operations/checklist-validation-G5.md), décision `DEC-574`, prise
-par Jonathan. `T11` a été livrée en **deux** pull requests (`DEC-572`) : la lecture — fiche et
-historique — puis les deux actions du cycle de vie.
+**LES ONZE SOUS-ÉTAPES DU LOT 5 SONT TERMINÉES, ET LA PORTE `G5` EST FRANCHIE** le **13/09/2026**,
+décision `DEC-574`, tag **`v0.5.0`** posé sur `14b2bd1` — arbre **vérifié identique** à celui de
+`develop`, `develop` **ancêtre** de `main`, et **deux** parents au commit.
+[`checklist-validation-G5.md`](operations/checklist-validation-G5.md). `T11` a été livrée en **deux**
+pull requests (`DEC-572`) : la lecture — fiche et historique — puis les deux actions du cycle de vie.
+
+> **SIX STORIES SUR HUIT SONT FERMÉES, ET LES DEUX QUI RESTENT NE SONT PAS UN OUBLI.** `#120` —
+> `MVP-L05-US005` — porte un critère « **retrait possible** » qui **n'est pas tenu** : la lecture
+> honore le retrait, mais **aucune route ne retire**, mesuré le 13/09/2026. `#121` —
+> `MVP-L05-US006` — a une API complète depuis `T7` et **aucun écran ne l'appelle**, si bien que
+> l'acteur que la story nomme ne peut pas accomplir le geste. **Un critère d'acceptation non tenu
+> ne se referme pas** : les refermer ferait croire acquis ce que le §7 de la checklist nomme en
+> premier.
 
 > **`ECART-012` EST MAINTENANT À L'ÉCRAN, ET IL ATTEND TOUJOURS LÉA.** Le trombinoscope de `T10`
 > affiche « En intercontrat » pour une catégorie `dg`, exactement ce que la fiche §8.1 annonçait
