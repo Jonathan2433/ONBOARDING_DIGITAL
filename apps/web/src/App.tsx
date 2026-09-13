@@ -53,7 +53,29 @@ import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
+import { PageTrombinoscope } from './pages/PageTrombinoscope';
+import { PageProfil } from './pages/PageProfil';
 import { CHEMINS, RUBRIQUES } from './routes';
+
+/**
+ * Les rubriques dont la page est LIVREE — LOT 5, `T10`.
+ *
+ * **UNE TABLE, PAS UNE CHAINE DE `if`.** Cinq lots vont remplir cette liste ; une
+ * condition par rubrique deviendrait illisible, et surtout `make cadre-check`
+ * derive les routes de ce fichier -- une forme reguliere reste lisible pour lui.
+ */
+const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
+  trombinoscope: <PageTrombinoscope />,
+};
+
+/**
+ * Le suffixe de la fiche profil, DERIVE du chemin declare.
+ *
+ * `CHEMINS.profil` est absolu ; la route est imbriquee sous `CHEMINS.entite`,
+ * donc React Router attend le suffixe RELATIF. Le deriver evite la troisieme
+ * copie du meme chemin (§7.27).
+ */
+const SUFFIXE_PROFIL = CHEMINS.profil.replace(`${CHEMINS.entite}/`, '');
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -101,8 +123,13 @@ export function App(): JSX.Element {
               route, ou l'inverse, fait echouer le controle. §7.27.
 
               L'accueil est la route `index` -- son suffixe est vide -- et il porte
-              sa propre page ; les cinq autres portent la page de rubrique, dont le
-              contenu appartient a un lot ulterieur et qui le DIT.
+              sa propre page.
+
+              **DEPUIS `T10` DU LOT 5, LE TROMBINOSCOPE PORTE LA SIENNE AUSSI**, et
+              la correspondance est une TABLE plutot qu'une chaine de ternaires :
+              chaque lot qui livre sa rubrique y ajoutera une ligne, et `T11` en
+              ajoutera une pour le profil. Les rubriques sans page livree gardent
+              `PageRubrique`, qui DIT quel lot l'apportera.
             */}
             {RUBRIQUES.map((rubrique) =>
               rubrique.suffixe === '' ? (
@@ -112,15 +139,26 @@ export function App(): JSX.Element {
                   key={rubrique.cle}
                   path={rubrique.suffixe}
                   element={
-                    <PageRubrique
-                      cle={rubrique.cle}
-                      libelle={rubrique.libelle}
-                      lot={rubrique.lot}
-                    />
+                    PAGES_LIVREES[rubrique.cle] ?? (
+                      <PageRubrique
+                        cle={rubrique.cle}
+                        libelle={rubrique.libelle}
+                        lot={rubrique.lot}
+                      />
+                    )
                   }
                 />
               ),
             )}
+            {/*
+              **LA FICHE PROFIL A L'ECRAN — la route existe, son contenu est `T11`.**
+              « "Voir plus" ouvre le profil » est un critere de `US003`, donc de
+              `T10` : le lien doit MENER quelque part. Un lien qui tombe sur le
+              fourre-tout 404 est atteignable et inutile, et la navigation serait
+              simulee plutot que prouvee -- c'est le motif de `PageRubrique`, pose
+              au `T4` du LOT 4.
+            */}
+            <Route path={SUFFIXE_PROFIL} element={<PageProfil />} />
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**

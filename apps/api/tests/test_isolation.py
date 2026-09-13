@@ -11,7 +11,7 @@ DEMONTRE PAS EN MONTRANT QU'UN CAS EST REFUSE.
 
   La liste des huit cles etrangeres composites est donc **DERIVEE DU CATALOGUE
   PostgreSQL** par `test_les_cles_composites_sont_toutes_couvertes`, et confrontee a
-  la table `COUVERTURE` ci-dessous. **Une neuvieme cle composite fera echouer ce
+  la table `COUVERTURE` ci-dessous. **Une DIXIEME cle composite fera echouer ce
   test** jusqu'a ce qu'elle ait son propre test de refus -- plutot que d'etre
   ignoree en silence.
 
@@ -72,6 +72,16 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "professional_status_assignment",
         "entity_membership",
     ): "test_une_situation_sur_une_appartenance_d_une_autre_entite_est_refusee",
+    #  LOT 5, `T1` — la NEUVIEME cle composite. **Son test vit dans
+    #  `test_medias.py`**, avec les autres refus des tables de media : le
+    #  dupliquer ici serait deux exemplaires d'une meme preuve, ce que le §7.27
+    #  refuse. Le garde-fou ci-dessous ne verifie pas l'existence du test nomme --
+    #  `COUVERTURE` est une table d'etiquettes -- mais il exige que le NOMBRE de
+    #  cles composites du catalogue egale le nombre d'entrees ici.
+    (
+        "media_variant",
+        "media_asset",
+    ): "test_une_variante_ne_peut_pas_pointer_l_actif_d_une_AUTRE_entite [test_medias.py]",
 }
 
 
@@ -220,7 +230,10 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     disparus = set(COUVERTURE) - reelles
     assert not manquants, f"cle(s) composite(s) SANS test de refus : {sorted(manquants)}"
     assert not disparus, f"test(s) portant sur une cle composite disparue : {sorted(disparus)}"
-    assert len(reelles) == len(COUVERTURE) == 8, f"{len(reelles)} chemins, 8 attendus"
+    #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5.** Le nombre est ecrit, et c'est
+    #  delibere : sa mise a jour est ce qui force la decision. Une cle composite
+    #  ajoutee sans test ferait echouer ce test, et c'est son objet.
+    assert len(reelles) == len(COUVERTURE) == 9, f"{len(reelles)} chemins, 9 attendus"
 
 
 # ---------------------------------------------------------------------------

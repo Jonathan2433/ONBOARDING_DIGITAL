@@ -125,17 +125,28 @@ describe('les couleurs de marque, employees en accent sur le fond de page', () =
 });
 
 describe('les neutres et les etats, repris de T5', () => {
-  const couples = [
-    ...(['encre', 'encreDouce', 'ok', 'ko'] as const).map(
-      (n) => [`clair/${n}`, THEMES.clair.fond, THEMES.clair[n]] as const,
+  //  **DEUX SURFACES ET NON UNE, ET C'EST `T11` QUI L'A RENDU NECESSAIRE.**
+  //
+  //  Cette mesure ne portait que sur `fond`. Or `fondDoux` EST une surface : la
+  //  page de statut l'emploie depuis `T5`, les blocs du cadre depuis le LOT 4, et
+  //  l'en-tete de la fiche profil depuis `T11`. Du texte y a donc toujours ete
+  //  pose, **sans qu'aucun couple ne soit mesure** -- le garde-fou etait exact
+  //  pour la surface qu'il regardait, et aveugle a l'autre. §7.31.
+  //
+  //  Le critere de sortie de `T11` dit « contraste mesure » : le mesurer sur la
+  //  seule surface deja couverte aurait ete le cocher sans rien apprendre.
+  const surfaces = ['fond', 'fondDoux'] as const;
+  const encres = ['encre', 'encreDouce', 'ok', 'ko'] as const;
+  const couples = (['clair', 'sombre'] as const).flatMap((theme) =>
+    surfaces.flatMap((surface) =>
+      encres.map(
+        (n) => [`${theme}/${n} sur ${surface}`, THEMES[theme][surface], THEMES[theme][n]] as const,
+      ),
     ),
-    ...(['encre', 'encreDouce', 'ok', 'ko'] as const).map(
-      (n) => [`sombre/${n}`, THEMES.sombre.fond, THEMES.sombre[n]] as const,
-    ),
-  ];
+  );
 
-  it('forme bien les huit couples attendus, quatre par theme', () => {
-    expect(couples).toHaveLength(8);
+  it('forme bien les SEIZE couples attendus — deux themes, deux surfaces, quatre encres', () => {
+    expect(couples).toHaveLength(16);
   });
 
   it.each(couples)('%s atteint AA pour du texte normal', (nom, fond, couleur) => {

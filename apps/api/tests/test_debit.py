@@ -32,6 +32,7 @@ import uuid
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import cast
 
 import pytest
 import redis
@@ -69,6 +70,26 @@ MAUVAIS_MOT_DE_PASSE = "Ce-N-Est-Pas-Le-Bon-Mot-De-Passe-9"
 #  Les memes que `T3` : ceux qui varient d'une reponse a l'autre sans rien dire
 #  du contenu de la base.
 EN_TETES_VARIABLES = frozenset({"x-request-id", "date"})
+
+#  **CE QUI VARIE DANS LE CORPS, ET QUI N'EST PAS UNE FUITE.**
+#
+#  `secondes_avant_reprise` est un DECOMPTE : il vient du TTL d'une cle Redis
+#  creee a la PREMIERE demande de chaque adresse. Les deux sequences du test
+#  s'enchainent, si bien qu'elles peuvent se trouver de part et d'autre d'une
+#  seconde -- et le decompte vaut alors 3600 pour l'une, 3599 pour l'autre.
+#
+#  **CE N'EST PAS UNE DIFFERENCE QUI REVELE L'EXISTENCE D'UN COMPTE.** Les deux
+#  adresses recoivent une cle des leur premiere demande, connue ou non : c'est
+#  precisement ce que le §22.5 exige, et c'est pourquoi le decompte mesure
+#  l'INSTANT DU TEST, jamais l'etat du compte.
+#
+#  Il est donc **neutralise avant la comparaison, et NOMME** -- comme
+#  `identifiant_correlation` -- puis controle a part : il doit exister, etre
+#  positif, et rester dans la fenetre configuree. Le taire l'aurait retire du
+#  controle ; le comparer a l'egalite rendait la porte instable, ce que le §7.25
+#  nomme pire qu'aucun garde-fou.
+CHAMPS_VARIABLES_DU_CORPS = ("identifiant_correlation",)
+CHAMPS_DE_DUREE_DU_CORPS = ("secondes_avant_reprise",)
 
 CAHIER = Path(__file__).resolve().parents[3] / "docs/product/CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
 
@@ -605,11 +626,38 @@ def _client(parametres: Parametres) -> TestClient:
 
 
 def _signature(reponse: Response) -> tuple[int, object, dict[str, str]]:
-    """Ce qui doit etre IDENTIQUE entre deux refus, hors identifiant de correlation."""
+    """Ce qui doit etre IDENTIQUE entre deux refus, hors ce qui varie par nature.
+
+    **DEUX FAMILLES NEUTRALISEES, ET LES DEUX SONT NOMMEES** : l'identifiant de
+    correlation, qui varie par construction, et les DUREES, qui mesurent l'instant
+    de l'appel. Les durees sont ensuite controlees a part par `_duree_de_reprise`.
+    """
     corps = reponse.json()
     if isinstance(corps, dict) and "erreur" in corps:
-        corps = {**corps, "erreur": {**corps["erreur"], "identifiant_correlation": "IGNORE"}}
+        erreur = {**corps["erreur"]}
+        for champ in CHAMPS_VARIABLES_DU_CORPS:
+            if champ in erreur:
+                erreur[champ] = "IGNORE"
+        details = erreur.get("details")
+        if isinstance(details, dict):
+            erreur["details"] = {
+                cle: ("IGNORE" if cle in CHAMPS_DE_DUREE_DU_CORPS else valeur)
+                for cle, valeur in details.items()
+            }
+        corps = {**corps, "erreur": erreur}
     return reponse.status_code, corps, {n.lower(): v for n, v in reponse.headers.items()}
+
+
+def _duree_de_reprise(reponse: Response) -> int | None:
+    """Le decompte servi, ou `None` s'il n'y en a pas."""
+    corps = reponse.json()
+    if not isinstance(corps, dict):
+        return None
+    details = corps.get("erreur", {}).get("details")
+    if not isinstance(details, dict):
+        return None
+    valeur = details.get("secondes_avant_reprise")
+    return valeur if isinstance(valeur, int) else None
 
 
 def _demander(client: TestClient, parametres: Parametres, adresse: str) -> Response:
@@ -673,8 +721,10 @@ def test_LES_DEUX_REFUS_SONT_IDENTIQUES_corps_ET_en_tetes(
         for adresse in (connue, inconnue):
             for _ in range(DEMANDES_DE_LIEN_PAR_ADRESSE):
                 assert _demander(client, parametres, adresse).status_code == 202
-        refus_connue = _signature(_demander(client, parametres, connue))
-        refus_inconnue = _signature(_demander(client, parametres, inconnue))
+        brute_connue = _demander(client, parametres, connue)
+        brute_inconnue = _demander(client, parametres, inconnue)
+    refus_connue = _signature(brute_connue)
+    refus_inconnue = _signature(brute_inconnue)
 
     #  **CES DEUX ASSERTIONS SONT UN CORRECTIF, ET C'EST LE §7.0 PROPOSITION 4.**
     #
@@ -703,6 +753,82 @@ def test_LES_DEUX_REFUS_SONT_IDENTIQUES_corps_ET_en_tetes(
                 f"en-tete {nom} : {refus_connue[2].get(nom)!r} != {refus_inconnue[2].get(nom)!r}"
             )
     assert not ecarts, f"la limitation revele l'existence du compte : {ecarts}"
+
+    #  **LE DECOMPTE EST CONTROLE A PART, ET IL EST EXIGE DES DEUX COTES.**
+    #
+    #  Il est neutralise dans la signature parce qu'il mesure l'INSTANT DE
+    #  L'APPEL : les deux sequences s'enchainent, et 3600 puis 3599 rendaient la
+    #  porte instable sans rien prouver de plus. Ce qui est exigeable, c'est qu'il
+    #  EXISTE des deux cotes, qu'il soit positif, et qu'il tienne dans la fenetre
+    #  configuree -- un decompte servi pour l'une et pas pour l'autre revelerait,
+    #  LUI, l'existence du compte.
+    decomptes = (_duree_de_reprise(brute_connue), _duree_de_reprise(brute_inconnue))
+    assert all(d is not None for d in decomptes), f"un decompte manque d'un seul cote : {decomptes}"
+    for decompte in decomptes:
+        assert decompte is not None
+        assert 0 < decompte <= FENETRE_DEMANDES_DE_LIEN, (
+            f"decompte hors de la fenetre configuree : {decompte}"
+        )
+
+
+def test_TEMOIN_la_neutralisation_du_DECOMPTE_ne_rend_pas_le_controle_aveugle() -> None:
+    """**LE TEMOIN DE `_signature`, ET IL EST PERMANENT.**
+
+    Neutraliser un champ pour supprimer une instabilite est exactement le geste
+    qui peut rendre un controle aveugle : si la neutralisation etait trop large,
+    deux refus REELLEMENT differents deviendraient identiques, et le test
+    passerait sur une fuite.
+
+    Trois epreuves, et la premiere est celle qui a motive le correctif :
+
+        deux corps ne differant QUE par le decompte   ->  signatures EGALES
+        deux corps differant par le MESSAGE           ->  signatures DIFFERENTES
+        deux corps differant par le CODE d'erreur     ->  signatures DIFFERENTES
+
+    Sans les deux dernieres, la premiere prouverait seulement qu'on a bien
+    supprime quelque chose -- §7.0, quatrieme proposition.
+    """
+
+    def corps(
+        secondes: int,
+        message: str = "Trop de demandes.",
+        code: str = "trop_de_demandes",
+    ) -> dict[str, object]:
+        return {
+            "erreur": {
+                "code": code,
+                "message": message,
+                "champ": None,
+                "details": {"secondes_avant_reprise": secondes},
+                "identifiant_correlation": "peu importe",
+            }
+        }
+
+    class _Fausse:
+        def __init__(self, charge: object) -> None:
+            self._charge = charge
+            self.status_code = 429
+            self.headers: dict[str, str] = {}
+
+        def json(self) -> object:
+            return self._charge
+
+    def signature(charge: object) -> object:
+        return _signature(cast("Response", _Fausse(charge)))
+
+    #  1. LE DECOMPTE SEUL — c'est l'instabilite mesuree en CI : 3599 contre 3600.
+    assert signature(corps(3599)) == signature(corps(3600))
+
+    #  2. LE MESSAGE — une fuite reelle, et elle doit etre vue.
+    assert signature(corps(3600)) != signature(corps(3600, message="Compte inconnu."))
+
+    #  3. LE CODE — idem.
+    assert signature(corps(3600)) != signature(corps(3600, code="compte_inconnu"))
+
+    #  4. ET LE DECOMPTE RESTE LISIBLE A PART : le neutraliser dans la signature
+    #     ne le retire pas du controle.
+    assert _duree_de_reprise(cast("Response", _Fausse(corps(3600)))) == 3600
+    assert _duree_de_reprise(cast("Response", _Fausse({"erreur": {}}))) is None
 
 
 @pytest.mark.integration

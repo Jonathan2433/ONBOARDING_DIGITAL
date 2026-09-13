@@ -14,35 +14,63 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Dernier lot validé | **LOT 0 — Référentiel projet et préparation**, verrouillé le 27 juillet 2026 |
-| Dernière porte franchie | **G0** — validée le 27 juillet 2026 (`DEC-438`) — [preuves](docs/operations/controles-sortie-lot-0.md) |
-| **Lot en cours** | **LOT 1 — Monorepo, qualité et environnement local**, porte `G1`, tag `v0.1.0`. **Ouvert** le 27 juillet 2026 (`DEC-450`) — [plan](docs/operations/fiche-lot-1.md) |
-| Sous-étape en cours | **`T11` faite — le LOT 1 est complet.** Les huit stories sont livrées et **33 contrôles de sortie sont à zéro**. La [checklist de la porte `G1`](docs/operations/checklist-validation-G1.md) est remise à Jonathan ; le tag `v0.1.0` attend sa validation |
-| Lots 2 à 14 | `Planned` — aucun travail anticipé autorisé |
-| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et pièges de l'environnement |
+| Lots verrouillés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) |
+| Dernière porte franchie | **`G4`** — validée le 24 août 2026 (`DEC-557`), tag **`v0.4.0`** posé sur `main` — [checklist](docs/operations/checklist-validation-G4.md) |
+| **Lot en cours** | **LOT 5 — Collaborateurs, profils et organisation**, porte `G5`. **Ouvert** le 24 août 2026 (`DEC-558`) — [plan](docs/operations/fiche-lot-5.md) |
+| Sous-étape en cours | **`T5` faite.** Le découpage est passé de douze à **onze** sous-étapes le 6 septembre 2026 : `T5` et `T6` ont été **fusionnées** (`DEC-564`). **`T1` à `T5` sont livrées, six restent** ; la prochaine est `T7` — **l'écriture dans son périmètre** (`US006`), qui sera la **première écriture métier** du projet |
+| Lots 6 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et **41 leçons payées par 223 défauts nommés** — les deux nombres se dérivent, voir son §7 |
 
-À l'issue de `T8`, la plateforme **démarre, répond, s'affiche, elle est empaquetée, et elle existe
-en DEUX environnements isolés**. Les huit services du cahier §15.4 tournent en développement, huit
-autres en **recette** — sur les images **publiées dans GHCR**, épinglées par empreinte — et les
-**sept** séparations exigées par le cahier §22.2 sont prouvées sur l'état réel : projet Docker, base
-PostgreSQL, bucket MinIO, volumes, secrets, réseau et ports. L'API expose ses trois endpoints de
-santé à travers Caddy en HTTPS dans les deux, la migration initiale s'applique dans les deux, et une
-**page de statut** affiche l'état réel des trois dépendances sondées sur
-`app.onboarding.localhost` comme sur `app.recette.onboarding.localhost`. Il n'existe toujours
-**aucun écran métier ni aucune donnée métier** : le modèle de données arrive au LOT 2. Voir
-[`docs/README.md`](docs/README.md) §8 pour l'avancement des douze sous-étapes.
+**Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
+elle existe en **deux environnements isolés** — les huit services du cahier §15.4 en développement,
+huit autres en recette sur les images **publiées dans GHCR** et épinglées par empreinte, dont les
+**sept** séparations du cahier §22.2 sont prouvées sur l'état réel.
+
+Au-dessus de ce socle :
+
+| Livré | Depuis |
+|---|---|
+| **29 tables** PostgreSQL, **16 migrations** rejouables, l'isolation multi-entités portée par **neuf clés étrangères composites** | LOT 2 et LOT 3 |
+| **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
+| **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
+| **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, et la **miniature de photo** avec son autorisation | LOT 5, `T1` à `T5` |
+
+**Ce qui n'existe pas encore :** aucun **écran** de collaborateur — les routes sont là, les écrans
+sont **`T10` et `T11`** — aucun cercle (LOT 6), aucun import CSV (LOT 9), et **aucune miniature n'est
+produite** : leur génération est `MVP-L11-US005`, au LOT 11. La route de photo rend donc **404 pour
+tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test.
+
+Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
 
 ### Démarrer sur une machine propre
 
 ```bash
 make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
-make check      # qualite : versions, arborescence, iCloud, format, lint, types, tests
-make up         # demarrer les 8 services et attendre qu'ils soient sains
-make migrate    # appliquer la migration Alembic
+make check      # qualite complete : format, lint, types, tests, sources, documents
+make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
+make migrate    # appliquer les 16 migrations
 make api-check  # interroger les trois endpoints de sante
-make web-check  # controler la page de statut a travers Caddy
+make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```
+
+> **`make up` fait plus que démarrer les conteneurs, et l'ordre compte.** Il crée le bucket MinIO
+> **avant** que l'API doive être saine — sans quoi sa sonde `ready` échoue sur une machine propre
+> (`DEC-477`) — provisionne les **trois** rôles PostgreSQL du moindre privilège (`DEC-520`), et
+> **recharge Caddy**, qui ne surveille pas son fichier de configuration (`DEC-472`).
+
+**Les contrôles de stack, tous dans l'intégration continue.** Chaque sous-étape depuis le LOT 3 en
+ajoute un, et chacun porte ses témoins :
+
+```bash
+make trombinoscope-check   # 38 controles — les trois tailles SERVIES, huit refus, la pagination
+make profil-check          # 17 controles — les 17 champs, aucun masquage, et les OCTETS de la miniature
+make permissions-check     # 15 controles — l'union des droits, et les quatre tables INCHANGEES
+make entites-check         # 13 controles — une entite par etat, les trois non actifs exclus
+make residu-check          # la suite d'integration, ET la preuve qu'elle ne laisse rien en base
+```
+
+`make help` fait foi pour la liste complète — **86 cibles documentées**.
 
 **Et la recette, depuis `T8`.** Elle tire les images publiées, donc elle exige un
 `docker login ghcr.io` — sans quoi elle **refuse de démarrer** plutôt que de se rabattre sur une
@@ -54,13 +82,17 @@ make recette-check     # sante, ports, coherence de .env.recette, et les 7 separ
 make down-recette      # arret, volumes conserves
 ```
 
-Les cibles de stack acceptent `ENVIRONNEMENT=recette` ; `make up-recette` en est l'alias.
-`make help` liste les 50 cibles.
+Les cibles de stack acceptent `ENVIRONNEMENT=recette` ; `make up-recette` en est l'alias. Un nom
+d'environnement fautif **échoue à la lecture du `Makefile`**, avant toute action, et la liste des
+noms valides est **dérivée du disque**.
 
 > **Pour aller plus loin — arrêt, réinitialisation, diagnostic :**
 > [`docs/operations/exploitation-locale.md`](docs/operations/exploitation-locale.md). Toutes ses
 > commandes ont été exécutées et ses sorties sont réelles. Il porte les **14** publications de ports,
-> les **12** volumes et **huit symptômes de diagnostic** réellement rencontrés sur ce projet.
+> les **12** volumes et **quinze symptômes de diagnostic** réellement rencontrés sur ce projet —
+> dont ceux qui n'ont aucun message clair : une variable manquante après une mise à jour du modèle,
+> un port « déjà alloué » par un conteneur **arrêté**, et un Caddy sain qui sert une configuration
+> périmée.
 
 > **La racine de l'autorité interne de Caddy est approuvée** dans le trousseau de session depuis
 > le 29 juillet 2026 : `https://app.onboarding.localhost` s'ouvre sans avertissement. Si le volume
@@ -201,8 +233,17 @@ Voir [`docs/prototype/README.md`](docs/prototype/README.md).
 La configuration passe exclusivement par des variables d'environnement. Le fichier `.env`
 local n'est **jamais** versionné.
 
-- [`.env.example`](.env.example) — modèle documenté en **version 1.2**, 79 variables, aucune valeur
-  réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
+- [`.env.example`](.env.example) — modèle documenté en **version 1.6**, **84 variables**, aucune
+  valeur réelle. Chaque variable porte sa source documentaire et le lot où elle devient effective.
+  **Neuf** valent encore `CHANGE_ME` : sept sont engendrées localement par `make env`, et **deux ne
+  le sont pas et ce n'est pas un oubli** — `IMPORT_SOURCE_RETENTION_DAYS` attend `QO-100` au LOT 9,
+  `UPTIME_KUMA_PUSH_URL` attend le LOT 13.
+- **`make env` ne réconcilie RIEN.** Il ne touche jamais un `.env` existant — c'est voulu, il porte
+  des secrets engendrés — donc une variable ajoutée au modèle **après** la première création n'y
+  arrive jamais. **Lance `make env-check` en début de session** : il nomme les manquantes, et une
+  variable a manqué à *chaque* lot.
+- **Cinq variables ne sont consommées par personne** : les seuils du cahier §20.2, `ECART-034`.
+  Elles portent l'annotation qui le dit, plutôt que de laisser croire qu'elles agissent.
 - [`docs/operations/politique-configuration-et-secrets.md`](docs/operations/politique-configuration-et-secrets.md)
   — séparation des trois environnements, garde-fous de démarrage, rotation, conduite à tenir en
   cas de fuite.
@@ -213,14 +254,35 @@ local n'est **jamais** versionné.
 
 | Registre | Entrées |
 |---|---:|
-| [Décisions](docs/decisions/registre-decisions.md) | 145 |
-| [Écarts](docs/decisions/registre-ecarts.md) | 21 — 5 ouverts, 14 clos, 2 acceptés |
-| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | 38 — 34 ouvertes |
-| [Risques](docs/operations/registre-risques.md) | 32 |
-| [Dépendances externes](docs/operations/registre-dependances-externes.md) | 17 |
-| [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | 29 |
+| [Décisions](docs/decisions/registre-decisions.md) | **232** — 85 reprises des documents validés, **147** de réalisation depuis `DEC-418` |
+| [Écarts](docs/decisions/registre-ecarts.md) | **52** — 10 ouverts, 39 clos, 3 acceptés |
+| [Questions ouvertes](docs/operations/registre-questions-ouvertes.md) | **42** — 32 ouvertes, 10 closes |
+| [Risques](docs/operations/registre-risques.md) | **34** |
+| [Dépendances externes](docs/operations/registre-dependances-externes.md) | **17** |
+| [Contenus inventoriés](docs/product/contenus/inventaire-prototype.md) | **29**, tous au statut `à relire` — **aucun n'est publiable en l'état** |
 
-Preuves de sortie du LOT 0 :
-[contrôles](docs/operations/controles-sortie-lot-0.md) et
-[checklist `G0`](docs/operations/checklist-validation-G0.md).
+> **CES NOMBRES SONT DÉRIVÉS, PAS RECOPIÉS, ET C'EST UN CONTRÔLE QUI LE GARANTIT.**
+>
+> `make docs-check` relève les identifiants que chaque registre **déclare** et les confronte au
+> total que son en-tête **annonce** — il échoue si l'un diverge, et il nomme la ligne fautive. Il
+> vérifie aussi qu'un seul marqueur « prochain identifiant libre » existe par registre, et
+> recalcule les **cinq empreintes SHA-256** des documents immuables.
+>
+> **Ce contrôle ne couvrait qu'un registre sur six jusqu'au 07/09/2026** : le registre des risques
+> annonçait **33** pour **34** déclarés, et ce README en annonçait **32**. `ECART-053`, `DEC-565`.
+> C'est la classe `ECART-021`, rejouée une douzaine de fois sur ce projet — **un nombre qu'on ne
+> dérive pas vieillit en silence à la première addition.**
+
+**Les preuves, porte par porte :**
+
+| Porte | Ce qu'elle a validé |
+|---|---|
+| [`G0`](docs/operations/checklist-validation-G0.md) | le référentiel documentaire — [contrôles de sortie](docs/operations/controles-sortie-lot-0.md) |
+| [`G1`](docs/operations/checklist-validation-G1.md) | le monorepo, la stack, la CI, les images multiarchitecture, la recette |
+| [`G2`](docs/operations/checklist-validation-G2.md) | le socle de données — 18 tables métier, l'historisation, l'isolation |
+| [`G3`](docs/operations/checklist-validation-G3.md) | l'authentification complète et ses huit écrans |
+| [`G4`](docs/operations/checklist-validation-G4.md) | le portail, le cadre applicatif et les permissions — **et ce que le lot n'a PAS fait** |
+
 Arbitrages d'entrée du LOT 1 : [compte rendu `T0`](docs/operations/compte-rendu-t0-lot-1.md).
+Un **compte rendu par sous-étape** consigne le travail, les contrôles, et **les défauts de mes
+propres contrôles** : `docs/operations/compte-rendu-t*-lot-*.md`.

@@ -76,4 +76,75 @@ export {
 } from './portail.js';
 export type { EntiteDuPortail, PermissionsDeLEntite, ReponseDesEntites } from './portail.js';
 
+//  LOT 5, T2 — le trombinoscope pagine. Meme montage : la frontiere
+//  `snake_case` -> `camelCase` est ICI, en un seul endroit, et le validateur
+//  n'est pas contournable puisque `formes.ts` n'est pas reexporte.
+export {
+  CODES_TROMBINOSCOPE,
+  GABARIT_CHEMIN_TROMBINOSCOPE,
+  LONGUEUR_MAXIMALE_RECHERCHE,
+  STATUTS_PROFESSIONNELS,
+  TAILLES_DE_PAGE,
+  TAILLE_PAR_DEFAUT,
+  cheminDePhotoOuNul,
+  cheminTrombinoscope,
+  validerLeTrombinoscope,
+} from './trombinoscope.js';
+export type {
+  CercleDeLaListe,
+  CollaborateurDuTrombinoscope,
+  FiltresDuTrombinoscope,
+  ReponseDuTrombinoscope,
+} from './trombinoscope.js';
+
+//  LOT 5, T4 — la fiche profil. La frontiere `snake_case` -> `camelCase` est ICI,
+//  comme pour le trombinoscope, et le validateur n'est pas contournable.
+export { cheminProfil, CODES_PROFIL, GABARIT_CHEMIN_PROFIL, validerLaFiche } from './profil.js';
+//  LOT 5, T5 — `cheminDePhotoOuNul` est exportee depuis `trombinoscope.js`, ou
+//  elle vit : la liste ET la fiche l'emploient, et une reexportation depuis
+//  `profil.js` donnerait deux chemins vers une meme fonction.
+export type { CercleDuProfil, FicheDuProfil, ResponsabiliteDuProfil } from './profil.js';
+
+//  LOT 5, T11 — l'historique organisationnel, servi par l'API depuis `T9` et
+//  qu'aucun ecran ne lisait. Le validateur porte la distinction que tout le
+//  reste du dispositif a construite : `null` = hors perimetre, `[]` = rien a
+//  montrer. L'absorber « pour simplifier l'ecran » ferait affirmer FAUX.
+export {
+  AXES_DE_L_HISTORIQUE,
+  cheminHistorique,
+  CODES_HISTORIQUE,
+  GABARIT_CHEMIN_HISTORIQUE,
+  validerLHistorique,
+} from './historique.js';
+export type {
+  AxeDeLHistorique,
+  HistoriqueOrganisationnel,
+  PeriodeDeCercle,
+  PeriodeDeDsm,
+  PeriodeDeMetier,
+  PeriodeDeResponsabilite,
+  PeriodeDeStatut,
+} from './historique.js';
+
+//  LOT 5, T11 — le cycle de vie d'un profil : archiver, restaurer, et lire la
+//  fiche d'un archive. L'API le sert depuis `T8`, sans consommateur. Les roles
+//  sont LUS DU MANIFESTE et declares separement de `rolesAdministration`, qui
+//  porte les memes trois valeurs pour une AUTRE raison : les fusionner ferait
+//  suivre l'une quand la matrice change l'autre, en silence.
+export {
+  cheminArchivage,
+  cheminFicheArchivee,
+  cheminRestauration,
+  CODES_ARCHIVAGE,
+  CODES_FICHE_ARCHIVEE,
+  CODES_RESTAURATION,
+  GABARIT_CHEMIN_ARCHIVAGE,
+  GABARIT_CHEMIN_FICHE_ARCHIVEE,
+  GABARIT_CHEMIN_RESTAURATION,
+  peutGererLeCycleDeVie,
+  ROLES_DU_CYCLE_DE_VIE,
+  validerLeResultat,
+} from './cycleDeVie.js';
+export type { ResultatDuCycleDeVie } from './cycleDeVie.js';
+
 export const PACKAGE_NAME = '@onboarding/contracts';

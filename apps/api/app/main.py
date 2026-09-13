@@ -37,6 +37,7 @@ from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.entities.routes import routeur_entites
 from app.health import routeur as routeur_sante
+from app.people.routes import routeur_trombinoscope
 from app.permissions.routes import routeur_permissions
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
 from app.shared.errors import (
@@ -138,6 +139,11 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 4, T8 : les permissions de l'entite consultee. Monte APRES les
     #  entites, dont il reutilise la resolution et le gabarit de 404.
     routeur_v1.include_router(routeur_permissions(config))
+    #  LOT 5, T2 : le trombinoscope pagine. Monte APRES les entites, dont il
+    #  reutilise `resoudre_une_entite_active` et le gabarit de 404 -- deux
+    #  routes d'entite qui distingueraient differemment un code inconnu d'une
+    #  entite non active apprendraient, par comparaison, qu'un brouillon existe.
+    routeur_v1.include_router(routeur_trombinoscope(config))
     application.include_router(routeur_v1)
 
     return application

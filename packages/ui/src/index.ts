@@ -43,6 +43,9 @@ export type { ProprietesBadge, TonBadge } from './Badge.js';
 export { Bouton } from './Bouton.js';
 export type { ProprietesBouton, VarianteBouton } from './Bouton.js';
 export { Carte } from './Carte.js';
+//  LOT 5, T10 — la carte retournable accessible, story MVP-L05-US003.
+export { CarteRetournable } from './CarteRetournable.js';
+export type { ProprietesCarteRetournable } from './CarteRetournable.js';
 export { Alerte } from './Alerte.js';
 export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';

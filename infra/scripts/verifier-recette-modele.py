@@ -107,7 +107,11 @@ CLASSEMENT: dict[int, Classement] = {
             "resultat. Il ne peut pas designer le remplacant -- decision humaine -- "
             "mais il rend l'etat VISIBLE au lieu de le laisser silencieux. Le residuel "
             "n'est donc plus « rien ne le voit » mais « rien ne le corrige "
-            "automatiquement »"
+            "automatiquement ». **ET `T8` DU LOT 5 EN COUVRE LE SECOND CHEMIN** : une "
+            "restauration remet une personne en `active` SANS DSM, et "
+            "`restaurer_un_profil` le NOMME dans `relations_a_redonner` — mesure, non "
+            "supposee, et seulement si la relation a REELLEMENT existe. Les deux "
+            "facons d'atteindre l'etat que le §30.4 interdit sont donc visibles"
         ),
         lot="LOT 7, onboarding — ou un service anterieur",
     ),
@@ -172,7 +176,47 @@ CLASSEMENT: dict[int, Classement] = {
             "test_la_reponse_est_IDENTIQUE_pour_un_profil_archive",
         ),
     ),
-    12: Classement(12, REPORTE, lot="LOT 8 — medias et autorisations de diffusion"),
+    #  **RECLASSE EN `T1` DU LOT 5, ET C'ETAIT UNE ERREUR DE CE SCRIPT.** Il
+    #  rattachait ce controle au LOT 8, decrit comme « medias et autorisations de
+    #  diffusion ». Or le LOT 8 de la roadmap est **« Evenements et accueil
+    #  dynamique »**, et les seuls medias qu'il nomme sont ceux d'un evenement --
+    #  « titre, description, lieu, debut, fin et medias ».
+    #
+    #  C'est le **LOT 5** qui inclut « photo facultative et avatar neutre » ET
+    #  « gestion des autorisations de photo » dans ses *Inclus*, avec DEUX criteres
+    #  de sortie qui en dependent et `MVP-L05-US005` en **`P0`**.
+    #
+    #  **Cause : le classement avait ete fait sur la seule lecture du MODELE**,
+    #  dont le §16 « Medias » est generique, sans confronter a la ROADMAP qui
+    #  repartit ces medias entre deux lots selon leur USAGE. §7.24 -- relire une
+    #  regle ne suffit pas, il faut confronter les regles entre elles. `ECART-047`.
+    #
+    #  **IL ETAIT `REPORTE` AVEC POUR ECHEANCE « LOT 5 `T6` », ET `T6` N'EXISTE
+    #  PLUS.** `DEC-564` l'a fusionnee dans `T5` le 06/09/2026, et `T5` a livre le
+    #  service. L'echeance a survecu trois jours en nommant une sous-etape morte,
+    #  et ce controle passait au vert : il exige que chaque contrôle soit CLASSE,
+    #  pas que son echeance designe une sous-etape REELLE. §7.31, encore une fois --
+    #  exact pour un mode de defaillance, aveugle a un autre.
+    #
+    #  **IL EST ACQUIS DEPUIS `T5`**, et les trois tests nommes couvrent les deux
+    #  sens : le refus des cinq causes, le temoin positif, et le temoin TEMPOREL ou
+    #  seul l'instant avance. `make profil-check` le prouve de plus sur les OCTETS.
+    12: Classement(
+        12,
+        ACQUIS,
+        preuve=(
+            "LOT 5 `T5` — la resolution de la miniature exige une autorisation ACTIVE "
+            "(§12.2), et `null` couvre CINQ causes indistinguables : pas d'autorisation, "
+            "retiree, pas encore active, media non `ready`, aucune variante. "
+            "`make profil-check` le prouve sur les OCTETS, et son controle 16 exerce "
+            "l'autorisation RETIREE."
+        ),
+        tests=(
+            "test_les_cinq_causes_donnent_TOUTES_un_avatar_neutre",
+            "test_LE_TEMOIN_la_miniature_autorisee_est_resolue",
+            "test_l_autorisation_FUTURE_devient_servable_le_jour_venu",
+        ),
+    ),
     13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
     14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),
     15: Classement(15, REPORTE, lot="LOT 7 — reouverture d'une tache"),

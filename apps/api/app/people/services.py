@@ -85,7 +85,11 @@ from typing import TYPE_CHECKING, Final
 from sqlalchemy import text
 
 from app.auth.sessions import REVOCATION_DEPART, revoquer_toutes_les_sessions
-from app.people.modeles import EtatAppartenance
+from app.people.modeles import (
+    ETATS_OCCUPANTS,
+    TRANSITIONS_DU_CYCLE_DE_VIE,
+    EtatAppartenance,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection
@@ -130,13 +134,19 @@ ETATS_ENCORE_ACTIFS: Final[tuple[str, ...]] = (
     EtatAppartenance.FUTURE.value,
 )
 
-#  Les transitions du §24.1 que cette sous-etape realise, et elles seules.
+#  **LES TRANSITIONS QUE CE MODULE REALISE, DERIVEES ET NON RECOPIEES.**
+#
+#  Le §24.1 en compte quatre, declarees dans `app/people/modeles.py`. Celles que
+#  ce module applique sont celles qui **quittent** l'occupation : c'est exactement
+#  ce qui justifie la revocation, et `_appliquer` ne sait rien faire d'autre.
+#
+#  Le discriminant est donc l'etat d'ARRIVEE, jamais une liste ecrite a la main :
+#  `T8` du LOT 5 a ajoute `Archived --> Active` a `TRANSITIONS_DU_CYCLE_DE_VIE`,
+#  et cette constante l'a exclue **sans que personne y pense** -- ce qu'une
+#  troisieme ligne recopiee n'aurait pas fait (§7.27). L'inverse,
+#  `TRANSITIONS_QUI_RESTAURENT`, vit dans `app/people/archivage.py`.
 TRANSITIONS_AUTORISEES: Final[frozenset[tuple[str, str]]] = frozenset(
-    {
-        (EtatAppartenance.ACTIVE.value, EtatAppartenance.DEPARTED.value),
-        (EtatAppartenance.DEPARTED.value, EtatAppartenance.ARCHIVED.value),
-        (EtatAppartenance.FUTURE.value, EtatAppartenance.ARCHIVED.value),
-    }
+    (depuis, vers) for depuis, vers in TRANSITIONS_DU_CYCLE_DE_VIE if vers not in ETATS_OCCUPANTS
 )
 
 

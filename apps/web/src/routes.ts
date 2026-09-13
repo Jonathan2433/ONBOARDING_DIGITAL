@@ -64,6 +64,12 @@ export const CHEMINS = {
   //  AUCUNE clause partielle, donc un code n'est jamais reattribue, ce qui est
   //  ce qu'on exige d'un identifiant d'adresse. Mesure sur le schema reel.
   entite: '/entites/:code',
+  //  **LOT 5, `T10`.** « "Voir plus" ouvre le profil » est un critere de `US003`,
+  //  donc de CETTE sous-etape. La route existe donc des maintenant, et son
+  //  contenu complet appartient a `T11` -- exactement le parti de `PageRubrique`
+  //  au `T4` du LOT 4 : « un lien qui aboutit au fourre-tout 404 est atteignable
+  //  et INUTILE ; la navigation ne serait pas prouvee, elle serait simulee ».
+  profil: '/entites/:code/trombinoscope/:appartenance',
 } as const;
 
 /**
@@ -189,6 +195,27 @@ export const RUBRIQUES: readonly Rubrique[] = [
  *
  * Le code est **encodé**, pour la raison écrite au-dessus de `cheminDeLEntite`.
  */
+/**
+ * L'adresse d'un profil A L'ECRAN — LOT 5, `T10`.
+ *
+ * **A NE PAS CONFONDRE AVEC `cheminProfil` DU CONTRAT**, qui est l'adresse de
+ * l'API. Les deux existent, portent le meme couple `(code, appartenance)`, et ne
+ * designent pas la meme chose : l'une est une route du navigateur, l'autre un
+ * endpoint. Les melanger donnerait un lien qui telecharge du JSON.
+ *
+ * Les deux valeurs sont **encodees**, pour le motif ecrit au-dessus de
+ * `cheminDeLEntite` : `entity.code` est une chaine libre de 64 caracteres.
+ */
+export function cheminDuProfilALEcran(code: string, appartenance: string): string {
+  if (code === '' || appartenance === '') {
+    //  Sans cette garde, le chemin obtenu serait celui de la LISTE.
+    throw new TypeError('code d’entite ou identifiant d’appartenance vide');
+  }
+  return CHEMINS.profil
+    .replace(':code', encodeURIComponent(code))
+    .replace(':appartenance', encodeURIComponent(appartenance));
+}
+
 export function cheminDeRubrique(code: string, suffixe: string): string {
   const base = cheminDeLEntite(code);
   return suffixe === '' ? base : `${base}/${suffixe}`;

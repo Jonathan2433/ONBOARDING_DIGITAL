@@ -209,7 +209,8 @@ ETIQUETTE_LOCALE := onboarding-local
         lint format format-check typecheck test check clean clean-deps \
         env env-check up down destroy ps logs health ports minio-bucket stack-check \
         persistence-test migrate migrate-status test-unit test-integration api-check \
-        web-check caddy-reload caddy-recreate docs-check audit alembic-check test-frontend \
+        web-check caddy-reload caddy-recreate docs-check sources-check sources-temoin \
+        audit alembic-check test-frontend docs-temoin \
         images-check images-build images-inspect images-verify images-push \
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
@@ -377,6 +378,32 @@ test-frontend: ## Tests frontend seuls (Vitest, sans dependance externe)
 docs-check: ## Verifier l'integrite des documents immuables et les sequences d'identifiants
 	@python3 infra/scripts/verifier-documentation.py
 
+# Existe a cause de ECART-054 : `docs-check` etait exact pour les six registres et
+# AVEUGLE a la passation, si bien que `CLAUDE.md` a annonce `DEC-541` libre alors que
+# `DEC-565` etait en usage -- une collision d'identifiant garantie pour qui s'y fierait.
+# Le controle a ete etendu ; ce temoin prouve qu'il MORD. Il travaille sur des copies
+# en repertoire temporaire et ne touche jamais le depot.
+docs-temoin: ## Temoin negatif du controle de documentation et de la passation
+	@python3 infra/scripts/temoin-documentation.py
+
+# Existe a cause de T1 du LOT 5 : le module `apps/api/app/media/` a ete ecrit et
+# teste, `make check` est sorti en 0, et `git add -A` ne l'a PAS ajoute -- la
+# ligne `media/` de .gitignore, ecrite au LOT 0 contre les medias DEPOSES, vaut a
+# toute profondeur et attrapait le module du meme nom. Classe §7.34 : un motif
+# ecrit contre un exemple ne couvre que cet exemple. Le controle est dans `make
+# check` ET NOMME DANS `ci.yml`, et non dans `icloud-verify`, parce que le moment
+# ou il faut le savoir est la PULL REQUEST, pas le debut de session.
+#
+# ATTENTION : `ci.yml` N'INVOQUE PAS `make check`. Il appelle les cibles UNE PAR
+# UNE -- trente-huit invocations. Une cible ajoutee a `make check` n'entre donc
+# PAS dans l'integration continue. C'est le defaut T1-5 : j'avais mesure sur un
+# grep qui matchait `make check` dans un COMMENTAIRE du workflow.
+sources-check: ## Verifier qu'aucun fichier source du disque n'est ignore par git
+	@python3 infra/scripts/verifier-sources-suivies.py
+
+sources-temoin: ## Temoin negatif du controle des sources suivies
+	@python3 infra/scripts/verifier-sources-suivies.py --temoin
+
 # Controle 10 des onze du cahier 23.1. La tolerance d'un avis nomme est declaree
 # dans pnpm-workspace.yaml, avec son motif mesure : voir DEC-474.
 audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
@@ -385,7 +412,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check sources-check sources-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -1087,6 +1114,37 @@ entites-check: ## Prouver que la page nationale ne propose QUE des entites activ
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
 	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
 	$(UV) run python infra/scripts/verifier-entites.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+# LOT 5, T2. Il EXIGE que le conteneur porte le code du depot : lance
+# `make code-refresh && make code-check` d'abord, sinon il eprouve un autre
+# artefact en paraissant sain (§7.28).
+#
+# SON CONTROLE LE PLUS UTILE EST UN TEMOIN, PAS UN REFUS. Ma premiere version de
+# la route typait `taille` en `Literal[25, 50, 100]` ; un parametre d'URL arrive
+# en CHAINE, et Pydantic refuse « 25 » contre un Literal d'entiers. La route
+# refusait donc les TROIS tailles valides, et les huit epreuves de refus
+# passaient toutes -- elles demandaient un refus et l'obtenaient, pour la
+# mauvaise raison. Defaut T2-3.
+trombinoscope-check: ## Prouver que le trombinoscope est pagine et ne rend QUE des profils publies (LOT 5, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-trombinoscope.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
+# LOT 5, T4. Comme le precedent, il EXIGE que le conteneur porte le code du depot.
+#
+# SON CONTROLE LE PLUS UTILE RELIE LA FICHE A LA LISTE : il prend l'identifiant
+# que le TROMBINOSCOPE rend, verifie que sa fiche est servie, puis prend un
+# profil que la liste EXCLUT et verifie que sa fiche est refusee. Sans ce lien,
+# une fiche accessible pour un profil masque rendrait le filtre de la liste
+# decoratif, et aucun controle de la liste seule ne le verrait.
+profil-check: ## Prouver que la fiche ne masque rien, sert la MINIATURE, et qu'un DSM n'ecrit QUE dans son perimetre (LOT 5, US004, US005 et US006)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-profil.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 permissions-check: ## Prouver que le changement d'entite recharge les droits sans en transferer (LOT 4, US002)

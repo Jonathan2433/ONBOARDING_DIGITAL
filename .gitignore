@@ -21,7 +21,7 @@
 *.p12
 *.pfx
 *.keystore
-secrets/
+/secrets/
 *.secret
 credentials*.json
 
@@ -56,22 +56,22 @@ docs/prototype/V1.html
 *.mkv
 *.mp3
 *.wav
-uploads/
-media/
+/uploads/
+/media/
 
 # ─────────────────────────────────────────────────────────────
 # Donnees locales, volumes et sauvegardes
 # ─────────────────────────────────────────────────────────────
-data/
-volumes/
-backups/
+/data/
+/volumes/
+/backups/
 *.sqlite
 *.sqlite3
 *.db
 *.dump
 *.sql.gz
 *.tar.gz
-restic-repo/
+/restic-repo/
 
 # ─────────────────────────────────────────────────────────────
 # Dependances et caches (utiles a partir du LOT 1)
@@ -110,7 +110,7 @@ test-results/
 # Logs
 # ─────────────────────────────────────────────────────────────
 *.log
-logs/
+/logs/
 npm-debug.log*
 pnpm-debug.log*
 

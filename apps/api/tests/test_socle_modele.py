@@ -511,6 +511,14 @@ TABLES_DECLAREES = {
     "service_account",
     "service_token",
     "auth_event",
+    # LOT 5, T1 — modele §16.1, §16.2 et §12.2
+    #
+    #  TROIS TABLES SUR QUATRE. `media_usage` (§16.3) n'est PAS creee : elle ne
+    #  sert qu'a la mediatheque V1 -- matrice §12.2 -- donc elle serait une table
+    #  sans consommateur, ce que `DEC-537` refuse. Arbitre par `DEC-558`.
+    "media_asset",
+    "media_variant",
+    "photo_authorization",
 }
 
 
