@@ -73,18 +73,48 @@ class ErreurDeService(RuntimeError):
 def responsabilite_dsm_active(
     connexion: Connection, *, entite: uuid.UUID, personne: uuid.UUID
 ) -> uuid.UUID | None:
-    """Rendre l'identifiant de la responsabilite `DSM` active de la personne, dans CETTE entite."""
+    """Rendre l'identifiant de la responsabilite `DSM` active de la personne, dans CETTE entite.
+
+    **ELLE FILTRAIT SUR `ends_at IS NULL` SEUL JUSQU'AU 09/09/2026, ET C'ETAIT UN
+    DEFAUT LATENT** -- `ECART-056`, trouve en ouvrant `T7` du LOT 5, qui est la
+    premiere ecriture metier et allait consommer ce predicat.
+
+    Une affectation FUTURE, dont `starts_at` est a venir, a elle aussi un
+    `ends_at` nul. Aucune contrainte ne l'interdit : mesure du 09/09/2026, les
+    deux seuls `CHECK` de `framework_responsibility_assignment` portent sur le
+    type et sur la portee, pas sur le temps.
+
+    **LE SCENARIO D'ECHEC EST PRECIS.** `attribuer_la_categorie_dg` SAUTE la
+    creation de la responsabilite quand cette fonction rend non-`None`. Une
+    personne promue DG aujourd'hui, portant une responsabilite DSM programmee le
+    mois prochain, n'obtenait donc AUCUNE responsabilite DSM active -- alors que
+    le §8.4 l'exige -- et l'action rendait un succes.
+
+    **ET LA FONCTION JUSTE EN DESSOUS DOCUMENTAIT DEJA POURQUOI** : dix lignes du
+    docstring de `peut_attribuer_la_categorie_dg` expliquent que
+    « `ends_at IS NULL` ne suffirait pas », et elle emploie `period @> :instant`.
+    Deux fonctions voisines repondaient a la meme question differemment. C'etait
+    la seule requete applicative du depot a filtrer ainsi -- tout le code des
+    LOTS 4 et 5 emploie `period @> :instant`.
+
+    **L'instant est releve ici et non passe en argument**, comme le fait
+    `peut_attribuer_la_categorie_dg` juste en dessous : changer la signature
+    aurait touche ses deux appelants pour un gain nul, et le §7.27 vaut aussi
+    pour la coherence entre voisines.
+    """
     return connexion.execute(
         text(
             "SELECT id FROM framework_responsibility_assignment "
             "WHERE person_id = :personne AND entity_id = :entite "
-            "  AND responsibility_type = :type_responsabilite AND ends_at IS NULL "
+            "  AND responsibility_type = :type_responsabilite "
+            "  AND archived_at IS NULL AND period @> :instant "
             "LIMIT 1"
         ),
         {
             "personne": personne,
             "entite": entite,
             "type_responsabilite": RESPONSABILITE_DSM,
+            "instant": dt.datetime.now(tz=dt.UTC),
         },
     ).scalar_one_or_none()
 

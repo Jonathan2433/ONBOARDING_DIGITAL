@@ -90,7 +90,8 @@ Réglages à appliquer sur `main`, puis sur `develop` :
 | Rejet des push directs | Activé | Intégrité de l'historique |
 | Rejet des push forcés | Activé | Un historique validé ne se réécrit pas |
 | Rejet des suppressions de branche | Activé | — |
-| Contrôles d'intégration obligatoires | À activer **au LOT 1**, quand la CI existe | Cahier §23.1 |
+| Contrôles d'intégration obligatoires | **Activés** depuis `T6` du LOT 1 — la porte de `ci.yml`, **contexte unique**, `strict` actif, sur `develop` **et** `main` (`DEC-476`) | Cahier §23.1 |
+| ~~La porte de `images.yml`~~ | **NON requise, et ne doit pas le devenir** — elle ne s'exécute jamais sur une pull request (cahier §23.1), donc l'exiger bloquerait toute fusion sur un contrôle qui ne peut pas rendre de verdict | `DEC-475` |
 | Résolution des conversations avant fusion | Activé | Traçabilité de la revue |
 | Historique linéaire requis | **Sur `develop` seulement** | Voir l'avertissement ci-dessous : appliqué à `main`, ce réglage rend le §2.1 inapplicable. `DEC-495` |
 

@@ -266,6 +266,47 @@ class VisibiliteProfil(enum.StrEnum):
 
 VISIBILITES_PROFIL: tuple[str, ...] = tuple(membre.value for membre in VisibiliteProfil)
 
+#  **LA REGLE « PROFIL LISTABLE », EN UN SEUL ENDROIT.**
+#
+#  Trois modules l'emploient -- le trombinoscope, la fiche, et la photo -- et
+#  elle etait d'abord definie dans le trombinoscope. `T5` a fait apparaitre le
+#  probleme sous la forme d'un IMPORT CIRCULAIRE : `media/photo.py` avait besoin
+#  du filtre, et le trombinoscope avait besoin des conditions de la photo.
+#
+#  Le cycle disait la verite : cette regle n'appartient a aucun des trois. Elle
+#  est **derivee des deux enumerations ci-dessus**, et sa place est ici, aux cotes
+#  d'`ETATS_OCCUPANTS`, qui est de la meme nature.
+#
+#  **LES DEUX SONT NECESSAIRES, ET AUCUNE N'EST REDONDANTE** : le §22.5 etape 5
+#  « masquage du profil » n'est implemente nulle part, donc un partant reste
+#  `published` ; et un nouvel arrivant est `active` des son arrivee avec un profil
+#  `draft`. Le motif complet est dans l'en-tete de `app/people/trombinoscope.py`.
+ETAT_LISTE: str = EtatAppartenance.ACTIVE.value
+VISIBILITE_LISTEE: str = VisibiliteProfil.PUBLISHED.value
+
+#  **LES QUATRE TRANSITIONS DU §24.1, ET ELLES SEULES.**
+#
+#  Le diagramme du §24.1 est la source. Il ne porte **aucune** transition
+#  `Active --> Archived` : archiver quelqu'un d'actif passe donc par `Departed`,
+#  ce que le cahier appelle « archivage fonctionnel ». La quatrieme,
+#  `Archived --> Active` -- « reactivation explicite autorisee » -- est celle que
+#  `T8` du LOT 5 realise ; les trois autres viennent du `T9` du LOT 3.
+#
+#  **ELLES VIVENT ICI, ET NON DANS LE SERVICE QUI LES APPLIQUE.** Deux modules
+#  en ont besoin pour des raisons differentes : `people/services.py` pour
+#  refuser une transition, `permissions/perimetre.py` pour savoir quelle ACTION
+#  de cycle de vie l'etat courant rend possible. Les laisser dans le service
+#  ferait dependre le module de permissions d'un module d'ecriture, et une copie
+#  dans chacun divergerait au premier ajout -- §7.27. C'est le meme constat que
+#  pour `ETAT_LISTE` ci-dessus, et le meme remede : un fait du MODELE se declare
+#  aupres du modele.
+TRANSITIONS_DU_CYCLE_DE_VIE: tuple[tuple[str, str], ...] = (
+    (EtatAppartenance.ACTIVE.value, EtatAppartenance.DEPARTED.value),
+    (EtatAppartenance.DEPARTED.value, EtatAppartenance.ARCHIVED.value),
+    (EtatAppartenance.FUTURE.value, EtatAppartenance.ARCHIVED.value),
+    (EtatAppartenance.ARCHIVED.value, EtatAppartenance.ACTIVE.value),
+)
+
 
 class EntityMembership(ChampsCommuns, RessourceLocale, Base):
     """Profil d'une personne dans une entite — modele §6.2."""

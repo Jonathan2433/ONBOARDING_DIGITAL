@@ -97,6 +97,69 @@ intervient quand le lot est validé, puis un tag est posé.
 
 ---
 
+## 3.1 Trois règles payées cher, et qui ne se devinent pas
+
+### **Une branche de sous-étape part TOUJOURS de `develop`. Jamais empilée.**
+
+Empiler la branche d'une sous-étape sur celle de la précédente, non encore fusionnée, paraît
+raisonnable : le diff montre alors exactement le travail de la sous-étape. **Deux conséquences,
+toutes deux mesurées le 24/08/2026 :**
+
+| Conséquence | Mesure |
+|---|---|
+| **aucune intégration continue** | `ci.yml` filtre `branches: [develop, main]`. Une pull request visant une **autre** base n'en déclenche **aucune**. Ce n'était pas « pas encore là » — c'était **structurel** |
+| **fermée d'office, sans avertissement** | la fusion de la base avec `--delete-branch` a **supprimé** la branche de base, et GitHub a **clos** la pull request empilée. `gh pr reopen` refuse ensuite : « Could not open the pull request » — **en sortant en 0** |
+
+Si une sous-étape dépend d'un travail non fusionné, **attends la fusion**. Et si un rebasage est
+nécessaire :
+
+```bash
+git rebase --onto origin/develop <ancienne-base>
+git diff origin/develop...HEAD    # verifie le DIFF, jamais le verdict du rebase
+```
+
+### **`Closes #N` ne referme pas une issue depuis `develop`. Referme à la main.**
+
+GitHub n'applique le mot-clé que pour une fusion dans la branche **par défaut**, ici `main`. Or
+**toutes** les fusions de sous-étape vont dans `develop` : aucune ne referme son issue.
+
+```bash
+~/.local/bin/gh issue close <n> --comment "…"   # A LA MAIN, apres chaque fusion
+```
+
+**Le commentaire de fermeture est l'endroit où cocher les critères d'acceptation avec leurs
+preuves**, ce que le backlog §11 exige. Et **une story qu'un seul lot n'achève pas ne se referme
+pas** : `#92` du LOT 4 et `#120` du LOT 5 restent ouvertes, avec le commentaire qui dit ce qui est
+prouvé **et ce qui manque**.
+
+### **« Aucun conflit » ne veut pas dire « le résultat est celui que je veux ».**
+
+Une résolution en `git merge -X theirs` **a réussi** — code 0, aucun conflit signalé — et avait
+gardé, du côté abandonné, un fragment **non conflictuel** : 41 lignes dupliquées, et une réserve
+technique réapparaissant *après* le texte qui la levait.
+
+**Le succès de la fusion et sa justesse sont deux grandeurs différentes.** Le contrôle qui
+discrimine ne porte pas sur le verdict de l'outil mais sur son **résultat** — l'arbre :
+
+```bash
+git rev-parse origin/main^{tree} origin/develop^{tree}   # doivent etre IDENTIQUES
+git merge-base --is-ancestor origin/develop origin/main  # doit sortir en 0
+git rev-parse origin/main^@ | wc -l                      # 2 = merge commit, 1 = squash
+```
+
+> **Et une contradiction documentaire a rendu cela nécessaire.** Les conventions Git posaient, à
+> onze lignes d'intervalle, « historique linéaire requis » **et** « `develop` → `main` : merge
+> commit ». **Aucune des deux n'est fausse**, et elles sont **incompatibles** : l'historique
+> linéaire refuse tout merge commit. Les deux ont été appliquées, la fusion s'est rabattue sur le
+> squash, et `main` s'est trouvée **coupée de l'histoire de `develop`** — neuf fichiers en conflit
+> alors que le contenu ne divergeait pas.
+>
+> **Relire une règle ne suffit pas : il faut confronter les règles entre elles.** Et le défaut ne
+> s'est manifesté qu'à la **seconde** fusion vers `main` — une contradiction peut rester invisible
+> tant qu'une seule de ses branches a été exercée.
+
+---
+
 ## 4. Ce qu'une pull request doit contenir
 
 Le gabarit [`.github/pull_request_template.md`](.github/pull_request_template.md) est

@@ -127,6 +127,81 @@ def lire_env(chemin: str) -> dict[str, str]:
     return valeurs
 
 
+#  Une trace d'authentification SANS ACTEUR : ni personne, ni compte utilisateur,
+#  ni compte de service. C'est la signature d'un REFUS, et le §7.32 dit pourquoi
+#  aucun nettoyage ne peut l'atteindre : il n'y a pas d'identite par laquelle la
+#  supprimer.
+#  La requete est un LITTERAL, sans interpolation : `compter()` fait de meme, et
+#  cela evite d'avoir a desarmer S608 par un `noqa` sur une requete qui n'a de
+#  toute facon aucune entree variable.
+_COMPTER_LES_TRACES_SANS_ACTEUR = (
+    "SELECT count(*) FROM auth_event "
+    "WHERE person_id IS NULL AND user_account_id IS NULL AND service_account_id IS NULL;"
+)
+
+
+def ventiler(compose: list[str], env: dict[str, str], comptes: dict[str, int]) -> int:
+    """Nommer le residu PREALABLE table par table, et rendre ce qu'il reste d'inexplique.
+
+    **POURQUOI CETTE FONCTION EXISTE.** Ce controle annoncait « N ligne(s) avant »
+    et rien d'autre, et le §7.30 de la passation en concluait : « sur une base
+    propre il vaut 0, et toute autre valeur est un residu a nommer avant de le
+    supprimer ». Mesure du 08/09/2026 : il valait **7**, et la passation ne
+    donnait aucun moyen de savoir ou. Un nombre qu'on ne peut pas ventiler
+    n'apprend rien -- et il apprend a ne plus le lire, ce qui est le §7.21.
+
+    **CE QUI EST STRUCTUREL EST DIT STRUCTUREL, ET SEULEMENT CELA.** Les traces
+    sans acteur d'`auth_event` sont produites par nos propres controles de stack :
+    `verifier-magic-link.py` et `verifier-connexion-admin.py` demandent
+    DELIBEREMENT un lien pour une adresse inconnue, pour prouver que la reponse
+    est identique connue ou non (§22.5). Chacune ecrit un refus que le §12.2
+    interdit de rattacher a quiconque -- l'y rattacher revelerait l'existence de
+    l'adresse. Il n'existe donc aucun nettoyage possible, et exiger zero
+    exigerait de renoncer a la preuve.
+
+    **MAIS L'EXEMPTION EST MESUREE, PAS ACCORDEE A LA TABLE.** Exclure
+    `auth_event` en bloc masquerait un vrai residu : une trace PORTANT un acteur,
+    laissee par un test qui n'a pas nettoye. Le discriminant est donc la colonne,
+    jamais le nom de la table -- c'est la lecon du §7.25, ou le discriminant
+    n'etait pas dans le texte source mais dans le TYPE de colonne.
+    """
+    peuplees = {table: n for table, n in comptes.items() if n > 0}
+    if not peuplees:
+        print("    ok       aucun residu prealable : les tables comptees sont vides")
+        return 0
+
+    structurelles = 0
+    if peuplees.get("auth_event"):
+        code, sortie = psql(compose, env, _COMPTER_LES_TRACES_SANS_ACTEUR)
+        if code == 0 and sortie.strip().isdigit():
+            structurelles = int(sortie.strip())
+        else:
+            print(f"    info     auth_event : ventilation illisible ({sortie[:80]})")
+
+    print("    info     residu prealable, table par table :")
+    for table, nombre in sorted(peuplees.items()):
+        detail = ""
+        if table == "auth_event" and structurelles:
+            detail = f"  dont {structurelles} SANS ACTEUR, donc structurelle(s)"
+        print(f"               {table:34s} {nombre:6d}{detail}")
+
+    inexplique = sum(peuplees.values()) - structurelles
+    if structurelles:
+        print(
+            f"    info     les {structurelles} trace(s) sans acteur d'`auth_event` sont des REFUS,"
+        )
+        print("             ecrits par `magic-link-check` et `admin-check` qui demandent")
+        print("             un lien pour une adresse INCONNUE afin de prouver que la reponse")
+        print("             est identique (§22.5). Le §12.2 interdit de les rattacher a")
+        print("             quiconque : aucun nettoyage par identite ne peut les atteindre,")
+        print("             et exiger zero exigerait de renoncer a la preuve. §7.32")
+    if inexplique:
+        print(f"    info     {inexplique} ligne(s) qu'aucune cause structurelle n'explique —")
+        print("             a NOMMER avant de supprimer, et non l'inverse : elles peuvent")
+        print("             etre du jeu de recette, ou un vrai residu de test. §7.30")
+    return inexplique
+
+
 def main() -> int:
     analyseur = argparse.ArgumentParser(description=__doc__)
     analyseur.add_argument("--env-file", required=True)
@@ -146,6 +221,14 @@ def main() -> int:
 
     avant = compter(compose, env)
     print(f"    info     {len(avant)} tables comptees, {sum(avant.values())} ligne(s) avant")
+    ventiler(compose, env, avant)
+    #  **VIDER LE TAMPON AVANT DE LANCER PYTEST, SINON LE JOURNAL EST ILLISIBLE.**
+    #  Nos `print` sont tamponnes des que la sortie n'est pas un terminal -- en CI,
+    #  elle ne l'est jamais -- tandis que le sous-processus ecrit DIRECTEMENT sur le
+    #  meme descripteur. Sans ce vidage, la ventilation apparait APRES les points de
+    #  pytest, donc apres ce qu'elle est censee expliquer. Mesure du 08/09/2026 :
+    #  redirige vers un fichier, l'en-tete arrivait en fin de journal.
+    sys.stdout.flush()
 
     #  **`sys.executable -m pytest` ET NON `uv run pytest`.** Un chemin partiel --
     #  `uv` -- depend du `PATH`, et le §5.1 rappelle que `uv` n'y est PAS par defaut

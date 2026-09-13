@@ -60,12 +60,7 @@ from sqlalchemy import text
 
 from app.auth.courriel import EchecDEnvoi, envoyer
 from app.auth.csrf import (
-    EN_TETE_JETON,
-    CsrfRefuse,
-    controler_l_origine,
-    controler_le_jeton,
     jeton_pour,
-    origine_attendue,
 )
 from app.auth.debit import (
     DEMANDES_DE_LIEN_PAR_ADRESSE,
@@ -83,6 +78,9 @@ from app.auth.debit import (
     empreinte_pour_le_debit,
     lire,
     reinitialiser,
+)
+from app.auth.dependances import (
+    proteger_du_csrf,
 )
 from app.auth.idempotence import (
     EN_TETE_CLE,
@@ -208,12 +206,6 @@ MESSAGE_SESSION_REFUSEE = (
 #  porte du sens : 401 signifie « authentifie-toi », ce qui est faux ici -- une
 #  session valide peut tres bien accompagner une requete CSRF refusee. 403 dit
 #  « je sais qui tu es, et je refuse cette requete-la », ce qui est exact.
-CODE_CSRF_REFUSE = "requete_refusee"
-MESSAGE_CSRF_REFUSE = (
-    "Cette requete a ete refusee par la protection contre les requetes forgees. "
-    "Rechargez la page et recommencez."
-)
-
 CODE_IDEMPOTENCE_INVALIDE = "cle_idempotence_invalide"
 CODE_MEMOIRE_INDISPONIBLE = "memoire_indisponible"
 MESSAGE_MEMOIRE_INDISPONIBLE = (
@@ -487,7 +479,7 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  rien reveler.
         reponse.headers["Cache-Control"] = "no-store"
         #  LOT 3, T7 — route AMONT : l'origine seule, aucun jeton possible.
-        _proteger_du_csrf(parametres, requete)
+        proteger_du_csrf(parametres, requete)
         #  LOT 3, T8 — **LA LIMITATION PRECEDE TOUT LE RESTE**, y compris la
         #  reservation de la cle d'idempotence, qui ecrit elle aussi dans Redis :
         #  une protection qui laisserait inonder la protection suivante ne
@@ -584,7 +576,7 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  suppose une session pour le delivrer, et ces routes la precedent.
         #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
         #  ce qui est une preuve plus forte qu'un jeton.
-        _proteger_du_csrf(parametres, requete)
+        proteger_du_csrf(parametres, requete)
         #  LOT 3, T8 — **DETECTION SEULE, ET AUCUNE LIMITATION PAR JETON.** Le
         #  §20.2 ne donne aucun seuil sur la consommation, et un jeton de 256 bits
         #  ne se force pas : compter les essais par jeton protegerait contre une
@@ -694,7 +686,7 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  suppose une session pour le delivrer, et ces routes la precedent.
         #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
         #  ce qui est une preuve plus forte qu'un jeton.
-        _proteger_du_csrf(parametres, requete)
+        proteger_du_csrf(parametres, requete)
         #  LOT 3, T8 — la detection par origine, puis la limitation par adresse.
         #  **ELLE COMBLE LE TROU DU VERROU DE `T5`** : `failed_login_count` vit
         #  sur `user_account`, donc une adresse sans compte n'a aucun compteur.
@@ -781,7 +773,7 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  suppose une session pour le delivrer, et ces routes la precedent.
         #  Le changement de mot de passe exige de plus le mot de passe ACTUEL,
         #  ce qui est une preuve plus forte qu'un jeton.
-        _proteger_du_csrf(parametres, requete)
+        proteger_du_csrf(parametres, requete)
         empreinte = _empreinte_d_origine(parametres, requete)
         instant = dt.datetime.now(tz=dt.UTC)
 
@@ -913,7 +905,7 @@ def routeur_authentification(parametres: Parametres) -> APIRouter:
         #  **SANS COOKIE, AUCUN JETON N'EST EXIGE** : il n'y aurait rien a
         #  proteger, et exiger un jeton ferait echouer une deconnexion qui doit
         #  rendre 200 en toute circonstance.
-        _proteger_du_csrf(parametres, requete, jeton_de_session=jeton if jeton else None)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton if jeton else None)
         empreinte = _empreinte_d_origine(parametres, requete)
 
         with moteur(parametres).begin() as connexion:
@@ -978,47 +970,6 @@ def _retirer_le_cookie_de_session(parametres: Parametres, reponse: Response) -> 
         secure=parametres.SESSION_COOKIE_SECURE,
         samesite=parametres.SESSION_COOKIE_SAMESITE,
     )
-
-
-def _proteger_du_csrf(
-    parametres: Parametres, requete: Request, *, jeton_de_session: str | None = None
-) -> None:
-    """Appliquer les barrieres CSRF a une ecriture — cahier §7.4, §20.1.
-
-    **DEUX BARRIERES, ET LEUR PORTEE DIFFERE.** L'origine est controlee sur
-    TOUTES les ecritures ; le jeton seulement quand une session existe, parce
-    qu'un jeton suppose une session pour le delivrer.
-
-    Args:
-        jeton_de_session: le jeton du cookie, si cette route en exige un. `None`
-            signifie « route amont » : seule l'origine est controlee.
-
-    Raises:
-        ErreurApplicative: 403, avec le meme gabarit pour les trois causes.
-    """
-    try:
-        controler_l_origine(
-            origine=requete.headers.get("origin"),
-            attendue=origine_attendue(parametres.PUBLIC_BASE_URL),
-        )
-        if jeton_de_session is not None:
-            controler_le_jeton(
-                presente=requete.headers.get(EN_TETE_JETON),
-                empreinte_de_session=empreinte_de_session(jeton_de_session),
-                cle=parametres.APP_SECRET_KEY,
-            )
-    except CsrfRefuse as refus:
-        #  Le motif interne est journalise, jamais rendu : distinguer les causes
-        #  dirait a un attaquant s'il s'est approche.
-        journal.warning(
-            "requete refusee par la protection CSRF",
-            extra={"resultat": "refus", "code_erreur": refus.motif},
-        )
-        raise ErreurApplicative(
-            code=CODE_CSRF_REFUSE,
-            message=MESSAGE_CSRF_REFUSE,
-            statut=status.HTTP_403_FORBIDDEN,
-        ) from None
 
 
 def _reserver_l_idempotence(parametres: Parametres, requete: Request, *, route: str) -> str | None:

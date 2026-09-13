@@ -1,20 +1,38 @@
 # Registre des risques
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 29 juillet 2026, sous-étape `T7` du LOT 1
+**Dernière mise à jour :** 7 septembre 2026, sous-étape `T5` du LOT 5 — et cette date **était la preuve du défaut corrigé ce jour-là** : elle disait `T7` du LOT 1 alors que `ROAD-RSK-034` a été ouvert en **`T8`**, si bien que le corps avait reçu le risque et l'en-tête non
 **Sources reprises :** roadmap §14 et cahier des charges §33
 
 | Origine | Identifiants | Nombre |
 |---|---|---:|
 | Roadmap §14, déjà numérotés | `ROAD-RSK-001` à `012` | 12 |
 | Cahier des charges §33, numérotés par `DEC-430` | `ROAD-RSK-013` à `024` | 12 |
-| Constatés pendant la réalisation | `ROAD-RSK-025` à `033` | 9 |
-| **Total** | | **33** |
+| Constatés pendant la réalisation | `ROAD-RSK-025` à `034` | 10 |
+| **Total** | | **34** |
 
 **Prochain identifiant libre : `ROAD-RSK-035`.**
 
 Échelle d'impact reprise des documents sources : `Très élevé`, `Critique`, `Élevé`, `Moyen`,
 plus les qualifications spécifiques `Accessibilité` et `Calendrier` employées au cahier §33.
+
+> **CES TROIS NOMBRES ÉTAIENT FAUX JUSQU'AU 07/09/2026, ET ILS SONT DÉSORMAIS DÉRIVÉS.**
+>
+> Le tableau annonçait « `025` à `033` », **9** risques de réalisation et un total de **33**. Le
+> corps en déclare **dix** — `ROAD-RSK-034`, ouvert en `T8` du LOT 1, mesure que publier un port
+> perce l'isolement inter-réseaux de Docker — donc **34** au total. La date de mise à jour, restée
+> à `T7`, était la preuve du mécanisme : classe `ECART-021`, un nombre affirmé sans être dérivé de
+> sa source vieillit **en silence** à la première addition.
+>
+> **`make docs-check` les DÉRIVE désormais**, ce qu'il ne faisait que pour le registre des
+> décisions — `ECART-053`, `DEC-565`. La commande qui fait foi, et qui compte **les déclarations
+> barrées comme les autres** :
+>
+> ```bash
+> uv run python infra/scripts/verifier-documentation.py
+> ```
+>
+> **Ne rétablis aucun de ces nombres à la main sans relancer ce contrôle.**
 
 ---
 
@@ -62,7 +80,7 @@ Leur libellé et leur impact sont inchangés.
 
 ---
 
-# 3. Risques constatés pendant la réalisation — `ROAD-RSK-025` à `033`
+# 3. Risques constatés pendant la réalisation — `ROAD-RSK-025` à `034`
 
 ## `ROAD-RSK-025` — Données personnelles et mot de passe en clair dans le prototype conservé
 

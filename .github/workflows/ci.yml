@@ -110,7 +110,37 @@ jobs:
           make tree
 
       - name: Documents immuables et sequences d'identifiants
-        run: make docs-check
+        # LOT 5. `docs-temoin` est NOMME ici, et pas seulement ajoute a
+        # `make check` : ce workflow appelle les cibles UNE PAR UNE et
+        # n'invoque jamais `make check` -- §7.36, defaut `T1-5`.
+        run: |
+          make docs-check
+          make docs-temoin
+
+      - name: Aucun fichier source ignore par git
+        # LOT 5, T1. STATIQUE : ni demon Docker, ni base -- git et python3
+        # suffisent, donc la tache qualite.
+        #
+        # IL EST NE D'UN DEFAUT MESURE, et le defaut etait SILENCIEUX dans le
+        # sens dangereux : le module `apps/api/app/media/` a ete ecrit, ses
+        # vingt tests passaient, `make check` est sorti en 0, `make
+        # icloud-verify` en 0 -- et `git add -A` NE L'A PAS AJOUTE. La ligne 60
+        # de .gitignore portait `media/`, motif ecrit au LOT 0 contre les medias
+        # DEPOSES, et qui vaut a toute profondeur : il attrapait le module
+        # source du meme nom. La migration et les tests seraient partis SANS le
+        # module qu'ils exercent.
+        #
+        # Tous nos controles lisent le DISQUE ; git lit son INDEX. Deux
+        # grandeurs differentes -- §7.0 sixieme proposition appliquee non pas a
+        # deux nombres mais a deux SOURCES. C'est pourquoi il est ICI : le
+        # moment ou il faut le savoir est la pull request.
+        #
+        # `sources-temoin` l'eprouve dans les DEUX sens, avec un vrai fichier
+        # source a un vrai chemin ignore -- un temoin qui n'exerce pas un
+        # controle ne prouve rien de ce controle (§7.25).
+        run: |
+          make sources-check
+          make sources-temoin
 
       - name: Le cadre applicatif, ses jetons et ses routes internes
         # LOT 4, T3. STATIQUE : aucun demon Docker, donc dans la tache qualite.
@@ -381,6 +411,49 @@ jobs:
         #     FIXEE plutot qu'un champ exclu. Seul `date` echappe -- l'horloge de
         #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
         run: make entites-check
+
+      - name: Le trombinoscope pagine, servi a travers Caddy
+        # LOT 5, T2, story MVP-L05-US001.
+        #
+        # SON CONTROLE LE PLUS UTILE EST UN TEMOIN, PAS UN REFUS. Ma premiere
+        # version typait `taille` en Literal[25, 50, 100] ; un parametre d'URL
+        # arrive en CHAINE, et Pydantic refuse « 25 » contre un Literal
+        # d'entiers. La route refusait donc les TROIS tailles valides des
+        # qu'elles etaient ecrites -- et les HUIT epreuves de refus passaient
+        # toutes, puisqu'elles demandaient un refus et l'obtenaient, pour la
+        # mauvaise raison. Seul le temoin qui exige que 25, 50 et 100 SOIENT
+        # servies discrimine les deux situations. Defaut T2-3, §7.0.
+        #
+        # LA PAGINATION EST PROUVEE PAR RECOMPOSITION : compter 25 lignes sur
+        # une page ne prouve rien, un ordre non total rendant le meme compte
+        # tout en repetant des lignes. Le controle parcourt toutes les pages et
+        # exige que chaque identifiant apparaisse UNE fois. Le decor porte des
+        # HOMONYMES, sans quoi le tri par nom suffirait et le troisieme critere
+        # -- la cle primaire -- ne serait pas exerce.
+        #
+        # DEUX FILTRES, ET AUCUN N'EST REDONDANT : `departed` et `archived`
+        # gardent `published` dans le decor, parce que c'est l'etat REEL de la
+        # base apres un depart -- le §22.5 etape 5 « masquage du profil » n'est
+        # implemente nulle part.
+        run: make trombinoscope-check
+
+      - name: La fiche profil, servie a travers Caddy
+        # LOT 5, T4, story MVP-L05-US004.
+        #
+        # SON CONTROLE LE PLUS UTILE RELIE LA FICHE A LA LISTE. Le trombinoscope
+        # exclut quatre etats ; si la fiche etait accessible pour un profil que la
+        # liste refuse, le filtre de la liste serait DECORATIF -- et aucun
+        # controle de la liste seule ne le verrait. Le controle prend donc
+        # l'identifiant que la LISTE rend, verifie que sa fiche est servie, puis
+        # prend un profil exclu et exige le MEME 404 qu'un identifiant inconnu.
+        # Eprouve : en retirant le filtre de population, il rend « 200/404 ».
+        #
+        # ET L'ABSENCE DE MASQUAGE EST EPROUVEE, PAS SUPPOSEE. La matrice ne
+        # definit aucune visibilite par champ -- ECART-051 -- et le controle
+        # appelle avec un compte sans appartenance, sans responsabilite et sans
+        # role technique, en exigeant que les SIX champs sensibles du §10.2 soient
+        # tous renseignes.
+        run: make profil-check
 
       - name: 4bis · Le changement d'entite recharge les droits, sans en transferer
         # LOT 4, T8 — story `MVP-L04-US002`. Les CINQ regles du cahier §23.3 et de
