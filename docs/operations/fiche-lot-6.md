@@ -104,7 +104,7 @@ pull request la fusionne. **Une sous-étape à la fois**, et elle part toujours 
 
 | # | Sous-étape | Stories | Ce qui la rend non triviale |
 |---|---|---|---|
-| `T1` | **Les trois tables éditoriales** — `content_page`, `content_block`, `internal_link`, migration `0017` | socle | **Aucune des trois n'existe** : mesuré sur le schéma réel, 28 tables plus `alembic_version`. Et **`ECART-031` s'instruit ICI**, parce que c'est le seul endroit où un état de publication peut naître |
+| ~~`T1`~~ | ~~**Les trois tables éditoriales** — `content_page`, `content_block`, `internal_link`, migration `0017`~~ **FAITE le 13/09/2026**, `DEC-578`, `QO-120` ouverte | socle | **Aucune des trois n'existait** : mesuré sur le schéma réel, 28 tables plus `alembic_version`. Et **`ECART-031` s'instruit ICI**, parce que c'est le seul endroit où un état de publication peut naître |
 | `T2` | **La page Framework en lecture** — les trois familles de cartes | `US001` | la page est une **synthèse**, donc elle joint trois sources ; un contrôle « 200 et des cartes » passerait avec une famille vide |
 | `T3` | **Les cercles en lecture** — liste et page détaillée | `US002` | **le couple du §7.42** : un cercle **avec** jeton et un cercle **sans**, `color_token` étant nullable. C'est le critère 4, et c'est le défaut `T10-8` qui l'a appris |
 | `T4` | **Les bureaux en lecture** — liste et page détaillée | `US003` | « un à trois responsables actifs » est un **comptage borné**, qu'aucune contrainte de ligne n'exprime. Voir `ECART-031` |
@@ -289,11 +289,15 @@ présentation**, et il fond « cartes » et « liens » en une seule « carte de
 — cartes, liens, blocs de présentation. Trois n'existent que dans le modèle — carte de lien,
 citation, appel à l'action interne.
 
-> **ET L'UNION N'A PAS DE COMPTE UNIQUE, CE QUI EST PRÉCISÉMENT LE PROBLÈME.** Elle vaut **neuf**
-> types si les « cartes » et les « liens » du cahier sont la seule « carte de lien » du modèle, et
-> **dix** s'ils sont deux types distincts. **Aucune des deux lectures n'est déductible des
-> documents**, et j'avais d'abord écrit « huit » sans le compter — §7.0, septième point : n'écris
-> jamais un compte que tu n'as pas relevé.
+> **ET L'UNION N'A PAS DE COMPTE UNIQUE, CE QUI EST PRÉCISÉMENT LE PROBLÈME.** Tout tient au trio
+> « cartes » et « liens » du cahier contre « carte de lien » du modèle : **neuf** types si les trois
+> libellés n'en désignent qu'un, **dix** si « cartes » vaut « carte de lien » et « liens » est à
+> part, **onze** s'ils sont distincts. **Aucune des trois lectures n'est déductible des documents.**
+>
+> **CE COMPTE A ÉTÉ FAUX DEUX FOIS DE SUITE, ET LES DEUX FOIS DE MA MAIN.** J'ai d'abord écrit
+> « huit » sans compter, puis « neuf ou dix » avec un script dont l'arithmétique comptait « carte
+> de lien » deux fois. Le §7.0 septième point interdit d'écrire un compte qu'on n'a pas relevé ;
+> il faut y ajouter qu'un compte relevé par un script faux n'est pas relevé.
 >
 > **TRANCHÉ le 13/09/2026 — `DEC-577` : l'UNION, et `QO-119` est OUVERTE.** Le cahier prévaut (§3),
 > mais sa liste n'est pas fermée — « Le produit permet de gérer », même forme que le « à prévoir
