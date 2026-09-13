@@ -412,6 +412,22 @@ jobs:
         #     Caddy -- et le controle ANNONCE en sortie ce qu'il n'a pas compare.
         run: make entites-check
 
+      - name: La page Framework, trois familles de cartes
+        # LOT 6, T2, story MVP-L06-US001.
+        #
+        # QUI LIT : la matrice §5, ligne « Framework », accorde la Lecture aux
+        # HUIT roles authentifies sans distinction, `EMP` et `NEW` compris, et la
+        # refuse a `ANON`. L'ANNEXE A §10.1 N'A NI COLONNE `EMP` NI COLONNE
+        # `NEW` : la lire seule aurait exclu l'acteur que la story nomme. Meme
+        # piege que la colonne `OFFICE` du §6.1 au LOT 5.
+        #
+        # SON CONTROLE LE PLUS UTILE N'EST PAS UN REFUS : c'est la recherche de
+        # la chaine « None » dans les OCTETS servis. Le defaut T10-8 l'a servie
+        # sur 100 % des cercles pendant deux lots, et aucun controle de forme ne
+        # l'a vue -- un jeton « None » est parfaitement plausible. Le decor porte
+        # un cercle AVEC jeton et un cercle SANS.
+        run: make framework-check
+
       - name: Le trombinoscope pagine, servi a travers Caddy
         # LOT 5, T2, story MVP-L05-US001.
         #

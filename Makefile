@@ -1109,6 +1109,13 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo; \
 	echo "  --> le controle discrimine"
 
+framework-check: ## Prouver la page Framework : trois familles de cartes (LOT 6, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-framework.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 entites-check: ## Prouver que la page nationale ne propose QUE des entites actives (LOT 4, US001)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
