@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `578` en usage | `DEC-579` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `579` en usage | `DEC-580` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -287,6 +287,10 @@ Framework en lecture.
 > expression**, qu'autogenerate ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et
 > **aucun test** n'exigeait son existence : le piège était debout pour toutes les sous-étapes
 > suivantes. `T1` ajoute le test qui le **nommera** si quelqu'un le fait disparaître.
+
+**`T2` EST FAITE** le 13/09/2026, `DEC-579` : la page Framework en lecture, trois familles de cartes, `GET …/entities/{code}/framework`. **17 tests Python, 12 Vitest, 13 contrôles de stack** à travers Caddy avec une vraie session, témoin exécuté dans les deux sens.
+
+> **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
 **Deux questions attendent Léa** : `QO-119`, le vocabulaire des blocs — `T1` en pose **onze**, la
 lecture la plus large — et `QO-120`, la liste des protocoles d'URL, **que le corpus nomme deux fois

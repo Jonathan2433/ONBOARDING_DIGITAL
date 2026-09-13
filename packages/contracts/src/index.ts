@@ -148,3 +148,20 @@ export {
 export type { ResultatDuCycleDeVie } from './cycleDeVie.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';
+
+//  LOT 6, T2 : la page Framework. TROIS familles, et le cahier §10.3 les nomme.
+export {
+  cheminFramework,
+  CODES_FRAMEWORK,
+  GABARIT_CHEMIN_FRAMEWORK,
+  RESPONSABILITES_FRAMEWORK,
+  validerLaPageFramework,
+} from './framework.js';
+export type {
+  CarteDeBureau,
+  CarteDeCercle,
+  CarteDeResponsabilite,
+  PageFramework,
+  ResponsabiliteFramework,
+  TitulaireFramework,
+} from './framework.js';

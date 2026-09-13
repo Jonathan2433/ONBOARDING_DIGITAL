@@ -105,7 +105,7 @@ pull request la fusionne. **Une sous-étape à la fois**, et elle part toujours 
 | # | Sous-étape | Stories | Ce qui la rend non triviale |
 |---|---|---|---|
 | ~~`T1`~~ | ~~**Les trois tables éditoriales** — `content_page`, `content_block`, `internal_link`, migration `0017`~~ **FAITE le 13/09/2026**, `DEC-578`, `QO-120` ouverte | socle | **Aucune des trois n'existait** : mesuré sur le schéma réel, 28 tables plus `alembic_version`. Et **`ECART-031` s'instruit ICI**, parce que c'est le seul endroit où un état de publication peut naître |
-| `T2` | **La page Framework en lecture** — les trois familles de cartes | `US001` | la page est une **synthèse**, donc elle joint trois sources ; un contrôle « 200 et des cartes » passerait avec une famille vide |
+| ~~`T2`~~ | ~~**La page Framework en lecture** — les trois familles de cartes~~ **FAITE le 13/09/2026**, `DEC-579` | `US001` | la page est une **synthèse**, donc elle joint trois sources ; un contrôle « 200 et des cartes » passerait avec une famille vide |
 | `T3` | **Les cercles en lecture** — liste et page détaillée | `US002` | **le couple du §7.42** : un cercle **avec** jeton et un cercle **sans**, `color_token` étant nullable. C'est le critère 4, et c'est le défaut `T10-8` qui l'a appris |
 | `T4` | **Les bureaux en lecture** — liste et page détaillée | `US003` | « un à trois responsables actifs » est un **comptage borné**, qu'aucune contrainte de ligne n'exprime. Voir `ECART-031` |
 | `T5` | **Le rendu des blocs, et le refus de l'injection** | `US004` (1/3) | **les deux ensemble ou aucun** : « aucun HTML arbitraire » est satisfait par une route qui ne rend rien. Le témoin positif est un bloc légitime **rendu** |
