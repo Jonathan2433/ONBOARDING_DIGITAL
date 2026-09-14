@@ -35,7 +35,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **89 cibles** documentées — `framework-check` (LOT 6 `T2`), `parametres-check` et `parametres-temoin` (hors lot, `DEC-580`) sont les dernières. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **163 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **164 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 2**. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -476,7 +476,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`580` en usage | **`DEC-581`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`581` en usage | **`DEC-582`** |
 | `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`120`, **5 trous** | **`QO-121`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -518,7 +518,7 @@ réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 | minio | `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a3…` |
 | mailpit | `ghcr.io/axllent/mailpit:v1.30@sha256:7f33095f80e9…` |
 | caddy | `caddy:2.11-alpine@sha256:5f5c8640aae0…` |
-| api, worker | `python:3.12-slim@sha256:57cd7c3a7a27…` — **slim, pas Alpine** : roues absentes en musl |
+| api, worker | `python:3.12-slim@sha256:78387bc3881b…` — **slim, pas Alpine** : roues absentes en musl. **Montée de `3.12.13` à `3.12.14-slim-trixie` le 14/09/2026, `DEC-581`**, et les deux `Dockerfile` portent désormais **une couche `apt` épinglée** : `perl-base=5.40.1-6+deb13u1`. **La montée seule n'aurait rien corrigé** — mesuré, le condensat amont porte encore la version vulnérable sur les **deux** architectures |
 | web | `node:24.16-alpine@sha256:21f403ab171f…` |
 | construction | `ghcr.io/astral-sh/uv:0.11.32@sha256:df4cae8f3a96…` |
 
@@ -1420,9 +1420,20 @@ Vérifié dans les deux sens — l'audit est vert **avec et sans** la tolérance
 > couvre plus rien** : une tolérance morte avalerait silencieusement une réapparition du même avis,
 > donc elle est moins sûre que pas de tolérance du tout.
 
-**`ROAD-RSK-033` est exactement dans cette situation** — 23 avis `HIGH`/`CRITICAL` de
-`python:3.12-slim` « dont aucun n'a de correctif », mesuré en `T7`. À réexaminer avant le LOT 13, et
-la même surprise est possible.
+**`ROAD-RSK-033` ÉTAIT EXACTEMENT DANS CETTE SITUATION, ET LA SURPRISE A EU LIEU LE 14/09/2026.**
+23 avis `HIGH`/`CRITICAL` de `python:3.12-slim` « dont aucun n'a de correctif », mesuré en `T7` — et
+`CVE-2026-13221` de `perl-base`, **`CRITICAL`**, en a reçu un : `5.40.1-6+deb13u1`, candidat dans
+`trixie/main`. **Deuxième fois que cette leçon paie**, après `brace-expansion` en `T10` du LOT 1.
+
+> **ET LE DÉCLENCHEUR DE RÉÉVALUATION DU RISQUE ÉTAIT ÉCRIT UN CRAN TROP EN AVAL.** Il disait « la
+> publication […] d'un `python:3.12-slim` **corrigeant** `perl-base` ». Or l'image amont ne l'a pas
+> corrigé — **c'est Debian qui a publié le correctif**, et l'image de base ne l'a pas encore reprise.
+> Mesuré : le condensat amont du 01/09/2026 porte encore `5.40.1-6` sur `amd64` **et** `arm64`.
+>
+> **Un correctif devient actionnable quand la DISTRIBUTION le publie, pas quand l'image de base le
+> reprend.** Attendre le second, c'est attendre un tiers qui n'a aucune raison de se presser. Le
+> déclencheur est corrigé au registre, et `DEC-581` prend le correctif par une **couche `apt`
+> épinglée** plutôt que d'attendre.
 
 **Et une seconde leçon, sur la façon d'attribuer une régression.** Quand `make audit` est devenu
 rouge en cours de sous-étape, la tentation était de chercher ce que `T10` avait cassé. La mesure
@@ -2544,7 +2555,7 @@ sous-étapes, et **aucune n'est faite**.
 | **`ECART-061`** | **`changement_exige` n'a AUCUN consommateur.** `make admin-local` pose un mot de passe provisoire et `must_change = true` ; la connexion ouvre quand même la session, et **toutes** les routes métier répondent 200 — mesuré. Les **huit** écrans du LOT 3 sont ceux que le cahier §17.5 énumère, et le changement de mot de passe **n'y est pas**. La phrase « `T11` doit le consommer » du compte rendu de `T5` du LOT 3 était une **prévision**, §7.41. Ni garde d'API ni écran : les deux se tiennent ensemble, et c'est une décision de Jonathan. **LOT 13** |
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
 | **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13.** Mesure du 08/09/2026 sur les images publiées : `api` et `worker` ne portent **qu'un** `CRITICAL`, `CVE-2026-13221` de `perl-base`, **sans correctif** — donc correctement ignoré par la porte, et `ROAD-RSK-033` est **inchangé dans sa nature** |
-| **`images.yml` EST ROUGE, ET CE N'EST PAS ENCORE CONSIGNÉ DANS UN REGISTRE** | **Cinq exécutions consécutives en échec depuis `T2` du LOT 5**, le 05/09/2026. **La construction et les deux lancements d'architecture PASSENT** ; seule la tâche **Trivy** échoue, et sur la **seule image `web`** : `CVE-2026-56854`, **CRITICAL** et **corrigeable** (`golang.org/x/crypto` v0.52.0 → 0.55.0), héritée de la base `caddy:2.11-alpine`. **La porte fait donc exactement son travail**, `DEC-482` bloquant sur `CRITICAL` corrigeable. Deux choses à savoir : le **même condensat** sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert ; et la porte d'`images.yml` **n'est pas un contexte requis**, donc **les fusions ne sont pas bloquées**. **Aucun identifiant n'a été ouvert** : Jonathan a choisi le 08/09/2026 de ne pas instruire ce point dans la pull request d'hygiène, et une montée de base Caddy doit d'abord être **mesurée** dans ce qu'elle casse (§7.0, cinquième proposition) |
+| **`images.yml` : la porte est refermée le 14/09/2026, `DEC-581`** | **Elle a été rouge du 05/09 au 14/09**, et **cette cellule a décrit la cause FAUSSEMENT pendant tout ce temps** : elle annonçait `CVE-2026-56854` sur la **seule image `web`**, héritée de `caddy:2.11-alpine`. **La mesure du 13/09/2026 sur le run réel dit autre chose** : `CVE-2026-13221` dans **`perl-base`**, `CRITICAL`, sur **`api` et `worker`**, héritée de `python:3.12-slim`. Ni le même avis, ni la même image, ni la même base. C'est le §9.0 — vérifie ce que la documentation affirme, y compris quand c'est ce document. **Ce qui a toujours été vrai, en revanche** : la construction et les deux lancements d'architecture **passent**, seule Trivy échouait, et la porte d'`images.yml` **n'est pas un contexte requis**, donc les fusions n'ont jamais été bloquées. **Et un résiduel reste nommé** : le **même condensat** de Caddy sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert |
 | **10 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé. **Ce nombre annonçait « 11 » jusqu'à `T12`**, et il n'était pas dérivé — la mesure donne 13 acquis, 1 partiel, 1 inapplicable et **10** reportés, qui vont aux LOTS 7, 9, 10, 11 et 12. `ECART-021`, la énième fois |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
