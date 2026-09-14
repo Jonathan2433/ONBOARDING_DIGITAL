@@ -398,6 +398,12 @@ docs-temoin: ## Temoin negatif du controle de documentation et de la passation
 # UNE -- trente-huit invocations. Une cible ajoutee a `make check` n'entre donc
 # PAS dans l'integration continue. C'est le defaut T1-5 : j'avais mesure sur un
 # grep qui matchait `make check` dans un COMMENTAIRE du workflow.
+parametres-check: ## Verifier qu'aucun parametre lie ne sert deux types de colonne differents
+	@$(UV) run python infra/scripts/verifier-parametres-lies.py
+
+parametres-temoin: ## Temoin du controle des parametres lies — il doit MORDRE et se TAIRE
+	@$(UV) run python infra/scripts/verifier-parametres-lies.py --temoin
+
 sources-check: ## Verifier qu'aucun fichier source du disque n'est ignore par git
 	@python3 infra/scripts/verifier-sources-suivies.py
 
@@ -412,7 +418,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check sources-check sources-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check sources-check sources-temoin parametres-check parametres-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 

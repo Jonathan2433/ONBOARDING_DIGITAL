@@ -142,6 +142,29 @@ jobs:
           make sources-check
           make sources-temoin
 
+      - name: Aucun parametre lie ne sert deux types de colonne differents
+        # Pose le 14/09/2026, hors numerotation, apres QUATRE diagnostics de la
+        # meme classe -- T4-2 et T8-3 du LOT 2, les six fabriques du meme lot, et
+        # T1-2 du LOT 6.
+        #
+        # POURQUOI IL EST ICI ET NON DANS LA TACHE STACK : il lit les types dans
+        # les METADONNEES SQLAlchemy, pas dans le catalogue. Aucune base n'est
+        # requise, et le moment ou il faut le savoir est la PULL REQUEST.
+        # `make migrations-check` prouve deja que le schema egale ces metadonnees.
+        #
+        # LE DISCRIMINANT EST LE TYPE, JAMAIS LE TEXTE. Les deux tentatives
+        # precedentes echouaient sur du code conforme : l'une sur le COMMENTAIRE
+        # expliquant le motif, l'autre sur `:p` partage entre deux colonnes
+        # `uuid` -- reutilisation legitime. Mesure du 14/09/2026 : ce depot porte
+        # 34 partages LEGITIMES, autant de faux positifs qu'un controle textuel
+        # aurait produits.
+        #
+        # `parametres-temoin` l'eprouve dans les DEUX sens : il exige que le
+        # defaut de T1-2 soit VU, et que le partage legitime soit ACCEPTE.
+        run: |
+          make parametres-check
+          make parametres-temoin
+
       - name: Le cadre applicatif, ses jetons et ses routes internes
         # LOT 4, T3. STATIQUE : aucun demon Docker, donc dans la tache qualite.
         #
