@@ -33,9 +33,9 @@ d'agir.
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **86 cibles** documentées — `docs-temoin` est nouvelle. **`ECART-049` : 26 d'entre elles ne sont PAS dans `.PHONY`** — 86 documentées moins 60 déclarées. **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
+| Makefile | **89 cibles** documentées — `framework-check` (LOT 6 `T2`), `parametres-check` et `parametres-temoin` (hors lot, `DEC-580`) sont les dernières. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **162 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **163 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 2**. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -476,7 +476,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`579` en usage | **`DEC-580`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`580` en usage | **`DEC-581`** |
 | `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`120`, **5 trous** | **`QO-121`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -534,6 +534,10 @@ réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 Environnement   tools versions tree icloud-exclude icloud-verify install
 Qualité         lint format format-check typecheck test test-unit test-integration check
                 docs-check sources-check sources-temoin audit
+                parametres-check parametres-temoin      ← hors lot, DEC-580
+                (SANS BASE : les types viennent des METADONNEES, pas du
+                 catalogue, donc le controle tourne dans la tache QUALITE.
+                 Le moment ou il faut le savoir est la PULL REQUEST)
 Stack           env env-check up down destroy ps logs health ports minio-bucket
                 stack-check persistence-test caddy-reload caddy-recreate
 API             migrate migrate-status api-check alembic-check
@@ -1562,6 +1566,34 @@ mais `person.email` et `email_normalized` sont **tous deux** `character varying(
 > §7.21, dans un autre costume. **Un contrôle exact vaut mieux qu'un contrôle large** — et si
 > l'exactitude demande de lire le catalogue au lieu du texte, lis le catalogue. Une heuristique dans
 > un contrôle est un défaut : leçon `T9-2`, confirmée.
+
+**LE GARDE-FOU EXISTE DEPUIS LE 14/09/2026, ET IL A FALLU UNE QUATRIÈME OCCURRENCE POUR L'ÉCRIRE.**
+`DEC-580`, `make parametres-check`, dans `make check` **et** dans `ci.yml`.
+
+> **Ce paragraphe a longtemps décrit deux tentatives échouées sans dire qu'aucune troisième n'avait
+> été livrée**, et un agent — moi, le 13/09/2026 — y a lu qu'un garde-fou existait. Il a écrit dans
+> un compte rendu que « le garde-fou s'est tu », puis a dû se corriger après l'avoir cherché par son
+> nom, par son motif et dans le `Makefile` : **il n'existait pas**. C'est le §9.0 appliqué à ce
+> document-ci.
+>
+> **Ce que le contrôle fait, et c'est exactement ce que ce paragraphe spécifiait déjà :** il relève
+> chaque paramètre partagé par plusieurs colonnes dans une requête `text(...)`, résout chaque colonne
+> **positionnellement**, lit son type dans les **métadonnées SQLAlchemy compilées pour PostgreSQL**,
+> et refuse quand les types diffèrent. Le type est compilé pour le bon dialecte parce que c'est le
+> **serveur** qui produit l'erreur : `Uuid` rend `CHAR(32)` en générique et `UUID` en PostgreSQL.
+>
+> **Le nombre qui justifie l'exactitude est 34.** Mesure du 14/09/2026 : 653 requêtes lues dans
+> 161 fichiers, et **34 partages parfaitement légitimes** — autant de faux positifs qu'un contrôle
+> textuel aurait produits, et un garde-fou à faux positifs apprend à passer outre.
+>
+> **Il lit les MÉTADONNÉES et non le catalogue**, donc aucune base n'est requise et il tourne dans la
+> tâche **qualité** : le moment où il faut le savoir est la **pull request**. `make migrations-check`
+> prouve déjà que le schéma égale ces métadonnées.
+>
+> **Et il DIT où il s'arrête** : `INSERT … VALUES` et `UPDATE … SET`, dont la résolution est
+> positionnelle donc exacte — **pas** les `WHERE a = :x` d'une requête à jointures, dont la
+> résolution de colonne serait une **heuristique**. Les **quatre** occurrences historiques étaient
+> toutes des `INSERT`. Les **58** SQL en f-string sont **comptés en sortie**, jamais devinés (§7.20).
 
 **Et une seconde leçon, sur les témoins.** `T11` a écrit un témoin qui exige les **quatre** messages
 attendus, non un simple code de sortie non nul. Il a servi immédiatement : sa première version ne
