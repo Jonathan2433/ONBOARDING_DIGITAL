@@ -170,7 +170,7 @@ consomme pas.
 | **Les contenus de Bordeaux sont des données réelles d'entreprise** | textes, liens et images relus avant publication (critère 1). **Aucune donnée réelle de collaborateur** n'entre, règle n°3 |
 | **Le générique et le local se ressemblent** | le critère 2 se satisfait tout seul si le générique est vide et le local jamais créé. Le témoin est une **entité neuve réellement créée** |
 | **`ROAD-RSK-033` / `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13**, inchangés ici |
-| **`images.yml` est rouge depuis `T2` du LOT 5** | `CVE-2026-56854`, **CRITICAL et corrigeable**, dans la base `caddy:2.11-alpine` de l'image `web`. La porte fait son travail (`DEC-482`), et elle **n'est pas un contexte requis** : les fusions ne sont pas bloquées. **Aucun identifiant n'a été ouvert**, par choix de Jonathan du 08/09/2026 |
+| ~~**`images.yml` est rouge**~~ **REFERMÉE le 14/09/2026, `DEC-581`** | **Et cette ligne nommait la mauvaise cause** : elle annonçait `CVE-2026-56854` sur `web`, héritée de `caddy:2.11-alpine`. La mesure du 13/09 sur le run réel dit `CVE-2026-13221` dans **`perl-base`**, sur **`api` et `worker`**, héritée de `python:3.12-slim`. Ni le même avis, ni la même image. **La montée d'empreinte seule n'aurait rien corrigé** — mesuré : le condensat amont porte encore la version vulnérable sur les deux architectures. Le correctif est pris par une **couche `apt` à version épinglée**, et la porte est verte |
 
 ---
 
