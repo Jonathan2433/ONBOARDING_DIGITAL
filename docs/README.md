@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `583` en usage | `DEC-584` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `584` en usage | `DEC-585` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
 | `ECART-nnn` | Écarts |  `001` à `061` |  `ECART-062` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `120` | `QO-121` | [questions](operations/registre-questions-ouvertes.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `121` | `QO-122` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -292,7 +292,9 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2`, `T3` ET `T4` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), membres **paginés** selon le §18.2, et la page détaillée d'un bureau le 15/09 (`DEC-583`). **29 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T5`, le rendu des blocs.
+**`T2` À `T5` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`). **35 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T6`, l'écriture d'un contenu dans son périmètre.
+
+> **`T5` A OUVERT `QO-121`, ET C'EST LA RÈGLE §6.5 APPLIQUÉE À LA LETTRE.** Le §15.2 dit qu'un bloc porte « des **champs structurés** ; un `payload_json` **validé par type lorsque nécessaire** » — et **le corpus n'en nomme aucun**, mesuré. En inventer un schéma aurait coûté une migration **et** un changement de contrat sur onze types. Le contenu est donc servi comme une **donnée opaque**, et ce qui est tenu est la seule chose que le corpus écrit — quatre fois : « aucun HTML arbitraire n'est stocké ou exécuté ». **Tenu par la structure, pas par un filtre** : un filtre textuel serait une heuristique, donc un défaut. **`QO-121` est bloquante pour `T10`**, les écrans d'édition, qui auront besoin de noms de champs.
 
 > **`T4` A RENVERSÉ UNE PRÉVISION DE LA FICHE, ET C'EST LE §7.41.** Le §8 de `fiche-lot-6.md` annonçait que `T4` poserait le **déclencheur** du comptage borné « un à trois responsables actifs ». Deux choses l'ont démentie : le critère de `MVP-L06-US003` dit « **sont affichés** », et la borne ne mord « lorsqu'il est publié » alors qu'**aucune route n'écrit dans `content_page`** — le déclencheur n'aurait eu **aucun écrivain**. Il va à `T7` (`DEC-583`), et `T4` fait mieux : **son décor produit ce que la borne interdit**, un bureau publié à zéro responsable et un autre à quatre, et exige que la lecture les rende tels quels.
 

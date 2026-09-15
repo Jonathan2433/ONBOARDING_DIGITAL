@@ -197,3 +197,17 @@ export {
   validerLaPageDuBureau,
 } from './bureaux.js';
 export type { PageDuBureau, ResponsableDuBureau } from './bureaux.js';
+
+//  LE RENDU DES BLOCS — LOT 6, `T5`.
+//  `texteDuBloc` rend une `string` et rien d'autre : un ecran qui passe par elle
+//  ne peut pas obtenir de balisage a interpreter, quelle que soit la donnee
+//  stockee (§7.35). Les clefs du contenu ne sont pas contraintes — `QO-121`.
+export {
+  cheminPageDeContenu,
+  CODES_PAGE_DE_CONTENU,
+  GABARIT_CHEMIN_PAGE_DE_CONTENU,
+  texteDuBloc,
+  TYPES_DE_PAGE_NOMMES,
+  validerLaPageDeContenu,
+} from './contenus.js';
+export type { BlocDeContenu, PageDeContenu } from './contenus.js';
