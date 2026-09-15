@@ -165,3 +165,19 @@ export type {
   ResponsabiliteFramework,
   TitulaireFramework,
 } from './framework.js';
+
+//  LOT 6, T3 : la page detaillee d'un cercle. La couleur n'est jamais seule, et
+//  c'est le TYPE qui le tient — §8.1 du modele, pas seulement la roadmap.
+export {
+  cheminCercle,
+  CODES_CERCLE,
+  GABARIT_CHEMIN_CERCLE,
+  TYPES_D_APPARTENANCE_AU_CERCLE,
+  validerLaPageDuCercle,
+} from './cercles.js';
+export type {
+  MembreDuCercle,
+  PageDuCercle,
+  TitulaireDuCercle,
+  TypeDAppartenanceAuCercle,
+} from './cercles.js';
