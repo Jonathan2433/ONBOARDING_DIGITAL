@@ -181,3 +181,19 @@ export type {
   TitulaireDuCercle,
   TypeDAppartenanceAuCercle,
 } from './cercles.js';
+
+//  LA PAGE DETAILLEE D'UN BUREAU — LOT 6, `T4`.
+//  `RESPONSABLES_MINIMUM` et `RESPONSABLES_MAXIMUM` sont exportes pour qu'un
+//  ecran puisse SIGNALER l'ecart au §8.4, jamais pour qu'un validateur l'impose :
+//  la borne n'est pas tenue en base, et le declencheur qui la tiendra est en
+//  `T7` (`DEC-583`). `respecteLaBorneDuHuitQuatre` porte cette question.
+export {
+  cheminBureau,
+  CODES_BUREAU,
+  GABARIT_CHEMIN_BUREAU,
+  respecteLaBorneDuHuitQuatre,
+  RESPONSABLES_MAXIMUM,
+  RESPONSABLES_MINIMUM,
+  validerLaPageDuBureau,
+} from './bureaux.js';
+export type { PageDuBureau, ResponsableDuBureau } from './bureaux.js';

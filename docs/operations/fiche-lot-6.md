@@ -107,7 +107,7 @@ pull request la fusionne. **Une sous-étape à la fois**, et elle part toujours 
 | ~~`T1`~~ | ~~**Les trois tables éditoriales** — `content_page`, `content_block`, `internal_link`, migration `0017`~~ **FAITE le 13/09/2026**, `DEC-578`, `QO-120` ouverte | socle | **Aucune des trois n'existait** : mesuré sur le schéma réel, 28 tables plus `alembic_version`. Et **`ECART-031` s'instruit ICI**, parce que c'est le seul endroit où un état de publication peut naître |
 | ~~`T2`~~ | ~~**La page Framework en lecture** — les trois familles de cartes~~ **FAITE le 13/09/2026**, `DEC-579` | `US001` | la page est une **synthèse**, donc elle joint trois sources ; un contrôle « 200 et des cartes » passerait avec une famille vide |
 | ~~`T3`~~ | ~~**Les cercles en lecture** — liste et page détaillée~~ **FAITE le 14/09/2026**, `DEC-582`. La liste vient de `T2` ; `T3` sert la **page détaillée**, membres paginés | `US002` | **le couple du §7.42** : un cercle **avec** jeton et un cercle **sans**, `color_token` étant nullable. C'est le critère 4, et c'est le défaut `T10-8` qui l'a appris |
-| `T4` | **Les bureaux en lecture** — liste et page détaillée | `US003` | « un à trois responsables actifs » est un **comptage borné**, qu'aucune contrainte de ligne n'exprime. Voir `ECART-031` |
+| ~~`T4`~~ | ~~**Les bureaux en lecture** — liste et page détaillée~~ **FAITE le 15/09/2026**, `DEC-583`. La liste vient de `T2`, qui émettait déjà le chemin **dans le vide** ; `T4` sert la **page détaillée** | `US003` | « un à trois responsables actifs » est un **comptage borné** qu'aucune contrainte de ligne n'exprime, et **le déclencheur qui le tiendra est à `T7`** (`DEC-583`) : la borne ne mord qu'à la publication, et aucune route n'écrit encore dans `content_page`. Ce qui rend `T4` non triviale est donc l'inverse — **son décor produit ce que la borne interdit**, zéro responsable et quatre, et la lecture doit les rendre tels quels |
 | `T5` | **Le rendu des blocs, et le refus de l'injection** | `US004` (1/3) | **les deux ensemble ou aucun** : « aucun HTML arbitraire » est satisfait par une route qui ne rend rien. Le témoin positif est un bloc légitime **rendu** |
 | `T6` | **L'écriture d'un contenu dans son périmètre** | `US004` (2/3) | **les trois pièges du §2.1** — et la grille de l'écriture du LOT 5 ne se réemploie pas, elle **élargirait un droit** |
 | `T7` | **Brouillon, publication, archivage, restauration** | `US006` | `ARB-DROIT-003` distingue la restauration **fonctionnelle** de la **technique** ; le §13 distingue « Entité » de « Périmètre » |
@@ -232,10 +232,23 @@ rattacher la publication aux **contenus** du §15, qui portent déjà `state` et
 > bureaux. La première exigeait une nouvelle version d'un document **immuable** ; la troisième
 > rendrait publié tout bureau **dès sa création**.
 >
-> **La conséquence est assumée et elle commande `T4`** : un bureau **sans page publiée** n'est pas
-> publié, et la règle « entre un et trois responsables actifs » ne mord qu'à partir de là. Comme
-> « entre un et trois » est un **comptage borné** qu'aucune contrainte de ligne n'exprime, `T4`
-> posera un **déclencheur**. `ECART-031` est **clos**.
+> **La conséquence est assumée** : un bureau **sans page publiée** n'est pas publié, et la règle
+> « entre un et trois responsables actifs » ne mord qu'à partir de là. Comme « entre un et trois »
+> est un **comptage borné** qu'aucune contrainte de ligne n'exprime, il demande un **déclencheur**.
+> `ECART-031` est **clos**.
+>
+> **CORRECTION DU 15/09/2026, `DEC-583` — LE DÉCLENCHEUR VA À `T7`, PAS À `T4`.** Cette ligne
+> disait « `T4` posera un déclencheur », et c'était une **prévision**, non une mesure (§7.41).
+> Deux choses la démentent. **La première est le critère de la story elle-même** : `US003` dit
+> « un à trois responsables actifs **sont affichés** » — de l'affichage, pas une interdiction.
+> **La seconde est une mesure** : la borne ne mord « lorsqu'il est publié », et au 15/09/2026
+> **aucune route n'écrit dans `content_page`** — zéro `INSERT INTO` et zéro `UPDATE` dans `app/`.
+> Un déclencheur posé à `T4` n'aurait donc **aucun écrivain** avant `T7`, et son témoin positif —
+> publier un bureau conforme et voir la borne laisser passer — vivrait dans une sous-étape
+> ultérieure : ce que le §7.39 a appris à refuser quand `T5` et `T6` du LOT 5 ont dû fusionner
+> pour exactement cette raison. **`T4` lit, et son décor produit ce que la borne interdit** — un
+> bureau publié à **zéro** responsable, un autre à **quatre** — pour prouver que la lecture ne
+> s'effondre ni ne mente. Arbitrage de Jonathan du 15/09/2026.
 
 ### `ECART-059` — le responsable de bureau a un périmètre « Bureau », et rien ne rattache une personne à un bureau
 

@@ -39,6 +39,7 @@ CHEMIN_CONNEXION = "/api/v1/auth/connexion"
 CHEMIN_FRAMEWORK = "/api/v1/entities/{code}/framework"
 CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
 CHEMIN_CERCLE = "/api/v1/entities/{code}/circles/{code_cercle}"
+CHEMIN_BUREAU = "/api/v1/entities/{code}/offices/{code_bureau}"
 
 MARQUEUR = f"t2l6-{uuid.uuid4().hex[:10]}"
 DELAI_HTTP = 30
@@ -195,7 +196,7 @@ def main() -> int:
     #  est un `uuid4`. `psql` n'accepte pas de parametre lie dans un bloc `DO`.
     decor = f"""
     DO $$
-    DECLARE e uuid; p uuid; c uuid; ce uuid; cs uuid; bu uuid;
+    DECLARE e uuid; p uuid; c uuid; ce uuid; cs uuid; bu uuid; bp uuid;
             mp uuid; ms uuid; md uuid; ap uuid; a2 uuid; a3 uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone, activated_at)
@@ -224,6 +225,26 @@ def main() -> int:
 
       INSERT INTO office (entity_id, code, name, display_order)
       VALUES (e, '{MARQUEUR}-BDS', 'Bureau des sports', 1) RETURNING id INTO bu;
+
+      -- **LE DECOR DE `T4`, ET IL PRODUIT CE QUE LE §8.4 INTERDIT.**
+      --
+      -- Un bureau PUBLIE a ZERO responsable. Aucune contrainte de base ne
+      -- l'empeche -- « entre un et trois » est un comptage borne, et le
+      -- declencheur qui le tiendra est en `T7` (`DEC-583`). Une lecture qui
+      -- supposerait « au moins un » s'effondrerait ici, et personne ne l'aurait
+      -- vu avec un decor a deux responsables.
+      --
+      -- Il porte AUSSI l'autre moitie du couple du §7.42 : `location_text` est
+      -- « Facultatif » au §8.3, donc nullable, et le bureau ci-dessus n'en a pas.
+      INSERT INTO office (entity_id, code, name, location_text, display_order)
+      VALUES (e, '{MARQUEUR}-PUB', 'Bureau publie', 'Bordeaux, 2e etage', 2)
+      RETURNING id INTO bp;
+      -- **C'EST LA PAGE QUI PUBLIE, JAMAIS LA TABLE `office`** -- `DEC-576`.
+      INSERT INTO content_page (entity_id, page_type, office_id, title, slug, state)
+      VALUES (e, 'OFFICE', bp, 'Bureau publie', '{MARQUEUR}-pub', 'published');
+      -- Un bureau ARCHIVE, qui doit rendre le MEME 404 qu'un code inconnu.
+      INSERT INTO office (entity_id, code, name, display_order, archived_at)
+      VALUES (e, '{MARQUEUR}-BARCH', 'Bureau archive', 3, now());
 
       -- Un ESM ACTIF, un Booster ACTIF sur le cercle AVEC jeton, et un
       -- responsable de bureau ACTIF. Le cercle SANS jeton n'a PAS de Booster :
@@ -284,8 +305,9 @@ def main() -> int:
         print(f"    ECHEC    decor impossible : {sortie[:250]}")
         return 1
     print(
-        "    ok       decor : 1 entite active, 1 brouillon, 3 cercles, 1 bureau, "
-        "4 responsabilites dont UNE future, 3 membres dont UN en brouillon"
+        "    ok       decor : 1 entite active, 1 brouillon, 3 cercles, 3 bureaux "
+        "dont UN publie a ZERO responsable et UN archive, 4 responsabilites dont "
+        "UNE future, 3 membres dont UN en brouillon"
     )
 
     try:
@@ -439,14 +461,32 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    DSM futur={titulaires_dsm}, ESM actif={titulaires_esm}")
 
-        # --- 11. le bureau et son responsable
+        # --- 11. les bureaux, leurs responsables, et l'archive EXCLU
+        #
+        #  **CE CONTROLE ATTENDAIT UN SEUL BUREAU JUSQU'AU 15/09/2026**, et c'est
+        #  `T4` qui l'a rendu faux en ajoutant a ce decor un bureau PUBLIE a zero
+        #  responsable et un bureau ARCHIVE. §7.21 : un controle ne devient pas
+        #  faux tout seul, il le devient quand on change le monde autour de lui.
+        #
+        #  Il n'a pas ete affaibli mais RENDU PLUS EXACT (§7.20) : il exige
+        #  desormais le couple — un bureau qui a un responsable, un qui n'en a
+        #  aucun — et l'exclusion de l'archive.
         controles += 1
         bureaux = corps.get("bureaux", [])
-        if len(bureaux) == 1 and len(bureaux[0].get("responsables", [])) == 1:
-            print("    ok       le bureau rend son responsable ACTIF")
+        par_code = {b.get("code"): b for b in bureaux}
+        avec = par_code.get(f"{MARQUEUR}-BDS", {})
+        sans = par_code.get(f"{MARQUEUR}-PUB", {})
+        if (
+            len(bureaux) == 2
+            and f"{MARQUEUR}-BARCH" not in par_code
+            and len(avec.get("responsables", [])) == 1
+            and sans.get("responsables") == []
+        ):
+            print("    ok       DEUX bureaux non archives : un AVEC responsable, un SANS —")
+            print("             le couple, et l'archive est exclu de la synthese")
         else:
             echecs += 1
-            print(f"    ECHEC    bureaux : {json.dumps(bureaux)[:180]}")
+            print(f"    ECHEC    bureaux : {json.dumps(bureaux)[:220]}")
 
         # --- 12. un code INCONNU et une entite NON ACTIVE rendent le MEME 404
         controles += 1
@@ -617,6 +657,149 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    cercle sans membre : total={total_sans!r}, pages={pages_sans!r}")
 
+        # =====================================================================
+        #  `T4` — la page detaillee d'un bureau. MEME decor, MEME session, MEME
+        #  menage : un second verificateur les aurait dupliques (§7.27), et il
+        #  aurait fallu l'ajouter a `ci.yml` (§7.36).
+        # =====================================================================
+
+        # --- 22. la page du bureau AVEC responsable est servie
+        controles += 1
+        chemin_bureau = CHEMIN_BUREAU.format(code=code_actif, code_bureau=f"{MARQUEUR}-BDS")
+        page_bureau = appeler(arguments.base, chemin_bureau, contexte, en_tetes=entetes)
+        corps_bureau = page_bureau.json()
+        if page_bureau.statut == 200 and isinstance(corps_bureau, dict):
+            print("    ok       page du bureau : 200 et un objet JSON")
+        else:
+            echecs += 1
+            print(f"    ECHEC    page du bureau : {page_bureau.statut}")
+            raise RuntimeError("sans page de bureau, les controles suivants ne prouvent rien")
+
+        # --- 23. UN BUREAU PUBLIE A ZERO RESPONSABLE EST SERVI TEL QUEL
+        #
+        #  **C'EST LE CONTROLE LE PLUS UTILE DE `T4`.** Le §8.4 veut « entre un
+        #  et trois responsables actifs lorsqu'il est publie » ; aucune
+        #  contrainte de base ne l'exprime, et le declencheur est en `T7`
+        #  (`DEC-583`). Une lecture qui supposerait « au moins un » s'effondrerait
+        #  ici — et le couple est indispensable : sans le bureau A responsable,
+        #  une route qui ne rendrait JAMAIS personne passerait aussi.
+        controles += 1
+        chemin_pub = CHEMIN_BUREAU.format(code=code_actif, code_bureau=f"{MARQUEUR}-PUB")
+        page_pub = appeler(arguments.base, chemin_pub, contexte, en_tetes=entetes)
+        corps_pub = page_pub.json()
+        zero = isinstance(corps_pub, dict) and corps_pub.get("responsables") == []
+        publie = isinstance(corps_pub, dict) and corps_pub.get("publie") is True
+        un_seul = len(corps_bureau.get("responsables", [])) == 1
+        pas_publie = corps_bureau.get("publie") is False
+        if page_pub.statut == 200 and zero and publie and un_seul and pas_publie:
+            print("    ok       le COUPLE : un bureau PUBLIE a ZERO responsable — ce que le")
+            print("             §8.4 interdit et que la base permet — et un bureau NON publie")
+            print("             qui a son responsable. La lecture ne suppose pas la borne")
+        else:
+            echecs += 1
+            avec_r = corps_bureau.get("responsables")
+            print(f"    ECHEC    publie={corps_pub!r:.140} / avec={avec_r!r:.80}")
+
+        # --- 24. `publie` VIENT DE LA PAGE DE CONTENU, ET LES DEUX SE DISTINGUENT
+        #
+        #  `DEC-576` : la table `office` ne porte aucun etat de publication. Les
+        #  deux bureaux ne different QUE par l'existence d'une `content_page` de
+        #  type `OFFICE` a l'etat `published`.
+        controles += 1
+        if publie and pas_publie:
+            print("    ok       `publie` distingue les deux bureaux, et seule la PAGE de")
+            print("             contenu les separe — `DEC-576`, apres `ECART-031`")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    publie(PUB)={corps_pub.get('publie')!r}, "
+                f"publie(BDS)={corps_bureau.get('publie')!r}"
+            )
+
+        # --- 25. LA LOCALISATION ABSENTE N'EST JAMAIS LA CHAINE « None »
+        #
+        #  Le §8.3 declare `location_text` « Facultatif ». La chaine est cherchee
+        #  dans les OCTETS servis, pas dans la structure decodee : c'est ainsi que
+        #  le defaut `T10-8` a ete trouve, et un jeton « None » est une valeur
+        #  d'apparence parfaitement plausible.
+        controles += 1
+        lieu_present = isinstance(corps_bureau, dict) and "localisation" in corps_bureau
+        lieu_nul = lieu_present and corps_bureau["localisation"] is None
+        lieu_servi = isinstance(corps_pub, dict) and corps_pub.get("localisation") == (
+            "Bordeaux, 2e etage"
+        )
+        octets_sains = b'"localisation":"None"' not in page_bureau.corps.replace(b", ", b",")
+        if lieu_nul and lieu_servi and octets_sains:
+            print("    ok       le COUPLE de localisation : `null` servi comme `null`, la")
+            print("             valeur servie telle quelle, et « None » ABSENTE des octets")
+        else:
+            echecs += 1
+            print(f"    ECHEC    nul={lieu_nul}, servi={lieu_servi}, octets={octets_sains}")
+
+        # --- 26. LES DEUX GRANDEURS S'ACCORDENT — §7.0, sixieme proposition
+        controles += 1
+        accords = [
+            isinstance(c, dict)
+            and c.get("nombre_de_responsables") == len(c.get("responsables", []))
+            for c in (corps_bureau, corps_pub)
+        ]
+        if all(accords):
+            print("    ok       `nombre_de_responsables` vaut la longueur du tableau sur les")
+            print("             DEUX bureaux, y compris celui a zero")
+        else:
+            echecs += 1
+            print(f"    ECHEC    accords={accords}")
+
+        # --- 27. LE CHEMIN SERVI EST CELUI QUE LA CARTE DU FRAMEWORK EMET
+        #
+        #  **SANS CE CONTROLE, LA CARTE POURRAIT POINTER DANS LE VIDE.** `T2` emet
+        #  `chemin_detaille` sur chaque carte ; si la page detaillee en forgeait
+        #  un autre, le lien serait mort et aucun test ne le dirait.
+        controles += 1
+        carte = par_code.get(f"{MARQUEUR}-BDS", {})
+        if carte.get("chemin_detaille") == corps_bureau.get("chemin_detaille") != None:  # noqa: E711
+            print("    ok       le chemin de la CARTE et celui de la PAGE sont le meme —")
+            print(f"             {corps_bureau.get('chemin_detaille')}")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    carte={carte.get('chemin_detaille')!r} vs "
+                f"page={corps_bureau.get('chemin_detaille')!r}"
+            )
+
+        # --- 28. un bureau ARCHIVE et un code INCONNU rendent le MEME 404
+        controles += 1
+        bureau_inconnu = appeler(
+            arguments.base,
+            CHEMIN_BUREAU.format(code=code_actif, code_bureau=f"{MARQUEUR}-ZZZ"),
+            contexte,
+            en_tetes={**entetes, "X-Request-ID": CORRELATION_FIXE},
+        )
+        bureau_archive = appeler(
+            arguments.base,
+            CHEMIN_BUREAU.format(code=code_actif, code_bureau=f"{MARQUEUR}-BARCH"),
+            contexte,
+            en_tetes={**entetes, "X-Request-ID": CORRELATION_FIXE},
+        )
+        if (
+            bureau_archive.statut == 404
+            and bureau_archive.signature() == bureau_inconnu.signature()
+        ):
+            print("    ok       404 identique pour un bureau ARCHIVE et un code inconnu —")
+            print("             corps ET en-tetes, distinguer apprendrait son existence")
+        else:
+            echecs += 1
+            print(f"    ECHEC    archive {bureau_archive.statut}, inconnu {bureau_inconnu.statut}")
+
+        # --- 29. SANS COOKIE : la matrice §5 met `ANON` a tiret sur « Bureaux »
+        controles += 1
+        bureau_anonyme = appeler(arguments.base, chemin_bureau, contexte)
+        if bureau_anonyme.statut == 401:
+            print("    ok       sans session : 401 — le §5 refuse « Bureaux » a `ANON`")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans session : {bureau_anonyme.statut}, 401 attendu")
+
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**
         #
@@ -642,10 +825,17 @@ def main() -> int:
             f"framework_responsibility_assignment WHERE entity_id IN ({entites})",
             f"circle_membership WHERE entity_id IN ({entites})",
             f"entity_membership WHERE entity_id IN ({entites})",
-            f"circle WHERE entity_id IN ({entites})",
-            f"office WHERE entity_id IN ({entites})",
+            #  **`content_block` ET `content_page` AVANT `circle` ET `office`.**
+            #  `content_page` porte `circle_id` ET `office_id` : supprimer le
+            #  bureau d'abord rend « violates foreign key constraint ». L'ordre
+            #  inverse a tenu tant qu'AUCUNE page ne pointait un bureau, et `T4`
+            #  en a cree une -- defaut `T4-3`, classe §7.30, neuvieme occurrence.
+            #  Et c'est le garde-fou pose apres `T2-2` qui l'a dit, en lisant les
+            #  codes de sortie : sans lui l'echec aurait ete SILENCIEUX.
             f"content_block WHERE entity_id IN ({entites})",
             f"content_page WHERE entity_id IN ({entites})",
+            f"circle WHERE entity_id IN ({entites})",
+            f"office WHERE entity_id IN ({entites})",
             f"admin_password_credential WHERE user_account_id IN ({comptes})",
             f"user_session WHERE person_id IN ({personnes})",
             #  **`auth_event` AVANT `user_account`** : il reference les DEUX, la
@@ -666,13 +856,17 @@ def main() -> int:
                 f"    ECHEC    {residus} suppression(s) en echec — des lignes SUBSISTENT, et "
                 "elles feront echouer des tests sans rapport (§7.30)"
             )
-        print(f"    ok       nettoyage — tout ce qui portait `{MARQUEUR}` est retire")
+        else:
+            #  **CE `ok` S'IMPRIMAIT MEME APRES UN ECHEC** — il annonçait « tout
+            #  est retire » a la ligne suivant « des lignes SUBSISTENT ».
+            #  Un avertissement faux apprend a ne plus le lire (§7.21).
+            print(f"    ok       nettoyage — tout ce qui portait `{MARQUEUR}` est retire")
 
     print()
     if echecs:
         print(f"  ECHEC : {echecs} controle(s) non conformes sur {controles}")
         return 1
-    print(f"  --> {controles} controles du Framework et des cercles, 0 echec")
+    print(f"  --> {controles} controles du Framework, des cercles et des bureaux, 0 echec")
     return 0
 
 
