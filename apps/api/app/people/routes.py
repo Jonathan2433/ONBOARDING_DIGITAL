@@ -68,9 +68,7 @@ from app.people.profil import (
 )
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
-    TAILLE_PAR_DEFAUT,
     Filtres,
-    TailleDePage,
     lister_le_trombinoscope,
 )
 from app.permissions.dependances import exiger_un_role_dans_l_entite
@@ -88,6 +86,7 @@ from app.permissions.perimetre import (
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
 
 #  **LE GABARIT DU CHEMIN DE PHOTO, EN UNE SEULE SOURCE.** La route le declare,
 #  les deux reponses l'emploient : deux copies divergeraient au premier

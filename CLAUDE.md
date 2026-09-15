@@ -22,21 +22,21 @@ d'agir.
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, **13/09/2026**, `DEC-574`, **tag `v0.5.0` POSÉ** sur `14b2bd1`) |
 | **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux.** Ouvert par Jonathan le **13/09/2026** (`DEC-575`), découpage validé le même jour : **DOUZE** sous-étapes, `MVP-L06-US004` découpée en **trois** parce qu'elle est la seule `XL` et que trois stories en dépendent. **AUCUNE sous-étape n'est faite.** Plan : [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : `T1` et `T2`** — les trois tables éditoriales, puis la page Framework en lecture |
-| **Prochaine action** | **`T3` DU LOT 6 : les cercles en lecture**, story `MVP-L06-US002`, issue `#147`. **LE COUPLE DU §7.42 EST OBLIGATOIRE DANS CHAQUE DÉCOR** : `circle.color_token` est **nullable** au catalogue, et `str(None)` a servi la chaîne « None » sur **100 %** des cercles pendant deux lots — un cercle **avec** jeton et un cercle **sans**, et la chaîne cherchée dans les **octets** servis. C'est le critère de sortie n°4 du lot. **ET LIS LA MATRICE §5 AVANT L'ANNEXE A** : le §5 règle la **consultation** et donne la Lecture aux huit rôles, `EMP` et `NEW` compris ; les tableaux §10.x de l'annexe règlent la **modification** et **n'ont pas ces deux colonnes**. `T2` l'a mesuré. **DEUX QUESTIONS ATTENDENT LÉA** : `QO-119` avant `T11`, `QO-120` avant `T8`. **N'OUVRE AUCUN AUTRE LOT** — règle n°1 du §2 |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : `T1`, `T2` et `T3`** — les trois tables éditoriales, la page Framework, puis la page détaillée d'un cercle. Plus **deux** pull requests hors numérotation : le garde-fou du paramètre lié (`DEC-580`) et la montée de l'image de base (`DEC-581`) |
+| **Prochaine action** | **`T4` DU LOT 6 : les bureaux en lecture**, story `MVP-L06-US003`, issue `#148`. **ET C'EST LÀ QUE `DEC-576` MORD** : le §8.4 veut « entre un et trois responsables actifs **lorsqu'il est publié** », `DEC-576` a tranché qu'un bureau est publié quand sa `content_page` de type `OFFICE` l'est, et **« entre un et trois » est un comptage borné qu'aucune contrainte de ligne n'exprime** : il demande un **déclencheur**. **RÉUTILISE, NE REDÉCLARE PAS** : la pagination est dans `app/shared/pagination.py` depuis `T3`, et la visibilité dans `app/people/modeles.py`. **ET LIS LA MATRICE §5 AVANT L'ANNEXE A** : le §5 règle la **consultation** et donne la Lecture aux huit rôles, `EMP` et `NEW` compris ; les tableaux §10.x règlent la **modification** et **n'ont pas ces deux colonnes**. **DEUX QUESTIONS ATTENDENT LÉA** : `QO-119` avant `T11`, `QO-120` avant `T8`. **N'OUVRE AUCUN AUTRE LOT** — règle n°1 du §2 |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 6 sur 8** · **LOT 6 : 0 sur 7**. **LES DEUX QUI RESTENT OUVERTES AU LOT 5 SONT NOMMÉES, ET ELLES NE SONT PAS UN OUBLI** : `#120` — « **retrait possible** » n'est pas tenu, aucune route ne retire une autorisation de photo, LOT 9 — et `#121` — l'API de modification est complète depuis `T7`, **aucun écran ne l'appelle**. Un critère d'acceptation non tenu ne se referme pas. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), `v0.4.0` (`G4`), **`v0.5.0` (`G5`)** — ce dernier sur `14b2bd1`, et **les trois contrôles ont été relevés avant ET après la fusion** : `origin/main` et `origin/develop` portent le même arbre `d262e2a4…`, `develop` est un **ancêtre** de `main`, et le commit porte **deux** parents. Le squash de `G2` avait coupé l'histoire, `ECART-026` |
-| **Tests** | **1 432** : **980 pytest** — dont **659 d'intégration** — et **452 Vitest** (**149 `contracts`**, **111 `ui`**, **192 `web`**). **Recompte**, ne recopie pas |
+| **Tests** | **1 478** : **1 011 pytest** — dont **688 d'intégration** — et **467 Vitest** (**164 `contracts`**, **111 `ui`**, **192 `web`**). **Recompte**, ne recopie pas |
 | Schéma PostgreSQL | **32 tables**, **9 déclencheurs**, **17 migrations**, tête `0017`. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **89 cibles** documentées — `framework-check` (LOT 6 `T2`), `parametres-check` et `parametres-temoin` (hors lot, `DEC-580`) sont les dernières. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **164 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 2**. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
+| Registres | **165 décisions** `DEC-418+` · **61 écarts** (**11 ouverts**) · **44 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, et il **échoue** si l'un diverge. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 7**, dérivés le 15/09/2026 par la règle exacte ci-dessous — `T1-1`, `T1-2`, `T2-1`, `T2-2`, `T3-1`, `T3-2`, `T3-3`. **Et ce nombre a changé DEUX FOIS pendant la rédaction de `T3`** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -49,6 +49,22 @@ grep -cE '^[a-z][a-z0-9-]*:.*##' Makefile
 grep -cE '^[A-Z_][A-Z0-9_]*=' .env.example
 ls apps/api/alembic/versions/*.py | wc -l
 for l in 1 2 3 4 5; do grep -ohE '`T[0-9]+-[0-9]+`' docs/operations/compte-rendu-t*-lot-$l.md | sort -u | wc -l; done
+
+# La regle EXACTE -- un marqueur `Tn-m` ne compte que dans `compte-rendu-tN` si n == N.
+# La commande ci-dessus SUR-COMPTE : elle releve aussi les defauts d'un AUTRE lot cites
+# comme precedents. Celle-ci ne compte que les defauts DECLARES.
+# LE HEREDOC N'EST PAS UN ORNEMENT : en `python3 -c "..."`, les accents graves du motif
+# sont interpretes par le SHELL -- « Td+-d+: command not found », puis une SyntaxError.
+# Mesure du 15/09/2026, defaut `T3-3`. Vois aussi le §7.2 : ici encore, la parade est de
+# ne pas faire traverser le shell a ce qu'on veut passer tel quel.
+LOT=6 python3 - <<'PY'
+import os, pathlib, re
+lot, d = os.environ["LOT"], set()
+for f in pathlib.Path("docs/operations").glob(f"compte-rendu-t*-lot-{lot}.md"):
+    n = re.match(r"compte-rendu-t(\d+)-", f.name).group(1)
+    d |= {m for m in re.findall(r"`(T\d+-\d+)`", f.read_text()) if m.split("-")[0] == f"T{n}"}
+print(len(d), sorted(d))
+PY
 ```
 
 > **DEUX NOMBRES ONT ÉTÉ RETIRÉS DE CE TABLEAU PLUTÔT QUE CORRIGÉS : le compte de commits et le
@@ -122,7 +138,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 6 ?** | **`docs/operations/fiche-lot-6.md`** — **7** stories, **7** critères de sortie **dérivés des DEUX sources qui concordent**, **DOUZE** sous-étapes validées le 13/09/2026 (`DEC-575`). **Son §2.1 porte TROIS pièges mesurés**, tous dans le même sens : `ADM-E` est à **tiret** sur l'affectation du Booster et des responsables, et `OFFICE` n'a que le **contenu** d'un bureau, pas sa structure. **Son §8 instruit SEPT écarts** — deux sont clos par `DEC-576`, trois relèvent de **Léa**. **Et son §8.3 a trouvé ce que personne n'avait relevé** : le cahier §10.7 et le modèle §15.2 donnent **deux listes de blocs différentes**, dont l'union vaut **neuf ou dix** selon une lecture qu'aucun document ne tranche — `QO-119` |
-| **Comment a-t-on fait les sous-étapes du LOT 6 ?** | **`docs/operations/compte-rendu-t{1,…}-lot-6.md`** — `T1` : les trois tables éditoriales. **Son §4 porte le défaut le plus utile du lot** : `alembic --autogenerate` a proposé de **supprimer l'index de recherche du LOT 5**, un index sur EXPRESSION qu'il ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et **aucun test** n'exigeait son existence — le piège était debout pour toutes les sous-étapes suivantes. **Lis cette section avant de relancer un `--autogenerate`** |
+| **Comment a-t-on fait les sous-étapes du LOT 6 ?** | **`docs/operations/compte-rendu-t{1,…}-lot-6.md`** — `T1` les trois tables éditoriales, `T2` la page Framework, `T3` la page détaillée d'un cercle. **Le §2.1 de `T3` porte une leçon de structure** : les trois tailles du §18.2 vivaient dans le trombinoscope, et `T3` en étant le second consommateur, un **import circulaire mesuré** a imposé de les déplacer dans `app/shared/pagination.py` — *un fait du CAHIER se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Même remède que pour `ETAT_LISTE`. **Son §4 porte le défaut le plus utile du lot** : `alembic --autogenerate` a proposé de **supprimer l'index de recherche du LOT 5**, un index sur EXPRESSION qu'il ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et **aucun test** n'exigeait son existence — le piège était debout pour toutes les sous-étapes suivantes. **Lis cette section avant de relancer un `--autogenerate`** |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
 | **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,12}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **62** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
@@ -476,7 +492,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`581` en usage | **`DEC-582`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`582` en usage | **`DEC-583`** |
 | `ECART-nnn` | `001`–`061` | **`ECART-062`** |
 | `QO-nnn` | `072`–`120`, **5 trous** | **`QO-121`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -2615,6 +2631,21 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
                                           trombinoscope ; un import CIRCULAIRE
                                           avec media/photo.py a dit qu'elles
                                           n'appartenaient a aucun des deux
+                 app/shared/pagination.py ← les TROIS tailles du §18.2 (LOT 6, T3).
+                                          Elles vivaient dans le trombinoscope ; un import
+                                          CIRCULAIRE l'a refuse -- `people` importe DEJA
+                                          `organization.modeles`. Un fait du CAHIER se
+                                          declare dans `shared`, pas dans le premier module
+                                          qui en a eu besoin
+                 app/organization/cercles.py ← la page DETAILLEE d'un cercle (LOT 6, T3).
+                                          Elle REUTILISE `ETAT_LISTE` et `VISIBILITE_LISTEE`
+                                          de `people/modeles.py` -- une copie divergerait au
+                                          premier ajout. La couleur n'est jamais seule, et
+                                          c'est le §8.1 du MODELE qui l'exige : `code` et
+                                          `nom` obligatoires, jeton NULLABLE
+                 app/organization/framework.py ← la SYNTHESE Framework (LOT 6, T2). La
+                                          matrice §5 l'accorde aux HUIT roles ; l'annexe A
+                                          §10.1 n'a ni colonne `EMP` ni `NEW`
                  app/content/modeles.py  ← les TROIS tables du §15 (LOT 6, T1).
                                           `content_block` porte un `entity_id`
                                           que le §15.2 n'ecrit PAS : le §25.3 est

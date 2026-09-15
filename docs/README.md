@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `581` en usage | `DEC-582` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `582` en usage | `DEC-583` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -291,6 +291,12 @@ Framework en lecture.
 **`T2` EST FAITE** le 13/09/2026, `DEC-579` : la page Framework en lecture, trois familles de cartes, `GET …/entities/{code}/framework`. **17 tests Python, 12 Vitest, 13 contrôles de stack** à travers Caddy avec une vraie session, témoin exécuté dans les deux sens.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
+
+**`T2` et `T3` SONT FAITES** — la page Framework en lecture le 13/09 (`DEC-579`), et la page détaillée d'un cercle le 14/09 (`DEC-582`), membres **paginés** selon le §18.2. **21 contrôles de stack** à travers Caddy, témoin exécuté dans les deux sens. La prochaine est `T4`, les bureaux.
+
+> **`T3` A IMPOSÉ UN DÉPLACEMENT, ET C'EST UN IMPORT CIRCULAIRE QUI L'A DIT.** Les trois tailles du §18.2 vivaient dans `app/people/trombinoscope.py`. `T3` en est le second consommateur, et `people` importe **déjà** `app.organization.modeles` : l'import inverse fermait le cycle. Elles sont donc dans **`app/shared/pagination.py`** — *un fait du cahier se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Les 36 tests du trombinoscope passent inchangés.
+
+> **ET DEUX PULL REQUESTS HORS NUMÉROTATION ONT ÉTÉ LIVRÉES** : `DEC-580`, le garde-fou du paramètre lié, après quatre diagnostics de la même classe ; et `DEC-581`, la montée de l'image de base avec un correctif `perl-base` **épinglé** — la porte d'`images.yml` est verte, et le tag `v0.5.0` a désormais ses trois images.
 
 **Deux questions attendent Léa** : `QO-119`, le vocabulaire des blocs — `T1` en pose **onze**, la
 lecture la plus large — et `QO-120`, la liste des protocoles d'URL, **que le corpus nomme deux fois

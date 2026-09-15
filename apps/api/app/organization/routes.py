@@ -30,9 +30,9 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from pydantic import BaseModel
 
 from app.auth.dependances import exiger_une_session
@@ -42,6 +42,7 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.organization.cercles import CercleDetaille, MembreDuCercle, lire_le_cercle
 from app.organization.framework import (
     CarteDeBureau,
     CarteDeCercle,
@@ -51,6 +52,7 @@ from app.organization.framework import (
 )
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Parametres
@@ -136,6 +138,74 @@ class ReponseDuFramework(BaseModel):
     responsabilites: list[ResponsabiliteRendue]
     cercles: list[CercleRendu]
     bureaux: list[BureauRendu]
+
+
+class MembreRendu(BaseModel):
+    """Un membre du cercle, actif a l'instant de l'appel.
+
+    `type_d_appartenance` vaut `principal` ou `secondary` — §8.2. La distinction
+    n'est pas decorative : `ARB-DROIT-004` donne au Booster la gestion de
+    l'appartenance **secondaire** et lui refuse le cercle principal, le DSM, le
+    client et le statut d'un membre seulement secondaire.
+    """
+
+    appartenance: uuid.UUID
+    prenom: str
+    nom: str
+    type_d_appartenance: str
+
+
+class ReponseDuCercle(BaseModel):
+    """Un cercle et une PAGE de ses membres — `MVP-L06-US002`.
+
+    **LA COULEUR N'EST JAMAIS LA SEULE INFORMATION, ET C'EST STRUCTUREL.** Le
+    §8.1 l'exige parmi les contraintes de `circle` — ce n'est donc pas qu'un
+    critere de sortie de la roadmap. `code` et `nom` sont obligatoires,
+    `jeton_de_couleur` est nullable : il n'existe aucune reponse de cette forme
+    ou le jeton serait present et le nom absent (§7.35).
+
+    **`pages` VAUT AU MOINS 1, MEME SANS MEMBRE.** Un client qui lirait `0` ne
+    saurait pas s'il doit afficher « aucun membre » ou « chargement ».
+    """
+
+    identifiant: uuid.UUID
+    code: str
+    nom: str
+    description: str | None
+    jeton_de_couleur: str | None
+    booster: TitulaireRendu | None
+    membres: list[MembreRendu]
+    total_des_membres: int
+    page: int
+    taille: int
+    pages: int
+    chemin_detaille: str
+
+
+def _membre(membre: MembreDuCercle) -> MembreRendu:
+    return MembreRendu(
+        appartenance=membre.appartenance,
+        prenom=membre.prenom,
+        nom=membre.nom,
+        type_d_appartenance=membre.type_d_appartenance,
+    )
+
+
+def _cercle_detaille(cercle: CercleDetaille) -> ReponseDuCercle:
+    return ReponseDuCercle(
+        identifiant=cercle.identifiant,
+        code=cercle.code,
+        nom=cercle.nom,
+        description=cercle.description,
+        jeton_de_couleur=cercle.jeton_de_couleur,
+        booster=None if cercle.booster is None else _titulaire(cercle.booster),
+        membres=[_membre(m) for m in cercle.membres],
+        total_des_membres=cercle.total_des_membres,
+        page=cercle.page,
+        taille=cercle.taille,
+        pages=cercle.pages,
+        chemin_detaille=cercle.chemin_detaille,
+    )
 
 
 def _titulaire(titulaire: TitulaireFramework) -> TitulaireRendu:
@@ -246,5 +316,104 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
             cercles=[_cercle(c) for c in page.cercles],
             bureaux=[_bureau(b) for b in page.bureaux],
         )
+
+    @routeur.get(
+        "/entities/{code}/circles/{code_cercle}",
+        #  `dependencies=` et non `Annotated[...]` pour la DEPENDANCE : voir la
+        #  route du Framework ci-dessus. La matrice §5 accorde la lecture des
+        #  cercles aux huit roles sans distinction, donc l'appelant n'est pas lu.
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuCercle,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour CINQ causes, a dessein : code d'entite "
+                    "inconnu, entite non active, code de cercle inconnu, cercle "
+                    "d'une AUTRE entite, ou cercle archive. Distinguer "
+                    "apprendrait l'existence d'un cercle qu'on n'a pas a voir."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`taille` hors des trois valeurs du cahier §18.2, ou `page` "
+                    "inferieure a 1. Format du §18.3, produit par le "
+                    "gestionnaire de validation et non par cette route."
+                )
+            },
+        },
+        summary="La page detaillee d'un cercle, ses membres pagines",
+        description=(
+            "Couleur, description, membres et Booster — `MVP-L06-US002`. "
+            "Exige une session : la matrice §5 refuse cette ressource a `ANON` et "
+            "l'accorde aux huit roles authentifies **sans distinction**, `EMP` et "
+            "`NEW` compris. "
+            "**Les membres sont pagines** : le cahier §18.2 s'intitule "
+            "« Pagination », vit dans le chapitre API et ne nomme aucune "
+            "ressource — 25 par defaut, options 25, 50 et 100. "
+            "Seuls les profils `published` d'une appartenance `active` sont "
+            "rendus, et seules les appartenances au cercle ACTIVES a l'instant : "
+            "une periode close ou future ne designe personne. "
+            "Un cercle archive rend 404 ; sa lecture aura sa propre route, comme "
+            "`fiche-archivee` au LOT 5."
+        ),
+    )
+    def lire_un_cercle(
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite consultee, tel qu'il vit dans l'adresse",
+        ),
+        code_cercle: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` du cercle, unique dans l'entite (§8.1)",
+        ),
+        page: int = Query(
+            1,
+            ge=1,
+            description="Numero de page, 1-indexee comme celui que l'ecran affiche",
+        ),
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Membres par page — les trois valeurs du cahier §18.2, seules"),
+        ] = TAILLE_PAR_DEFAUT,
+    ) -> ReponseDuCercle:
+        """La page detaillee d'un cercle — cahier §10.3, backlog `MVP-L06-US002`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            #  La resolution et la lecture sont dans la MEME transaction : une
+            #  entite suspendue entre les deux rendrait la page d'une entite
+            #  devenue inaccessible.
+            cercle = lire_le_cercle(
+                connexion,
+                entite=entite.id,
+                code_entite=entite.code,
+                code_cercle=code_cercle,
+                page=page,
+                #  `int(taille)` : `TailleDePage` est un `IntEnum`, et le service
+                #  compare a un tuple d'entiers.
+                taille=int(taille),
+                instant=instant,
+            )
+            if cercle is None:
+                #  Trois causes de plus, meme reponse : code inconnu, autre
+                #  entite, ou archive.
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+
+        return _cercle_detaille(cercle)
 
     return routeur
