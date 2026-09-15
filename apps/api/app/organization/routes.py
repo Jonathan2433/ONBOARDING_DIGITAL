@@ -42,6 +42,7 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.organization.bureaux import BureauDetaille, lire_le_bureau
 from app.organization.cercles import CercleDetaille, MembreDuCercle, lire_le_cercle
 from app.organization.framework import (
     CarteDeBureau,
@@ -115,7 +116,12 @@ class BureauRendu(BaseModel):
     Le §8.4 en veut « entre un et trois **lorsqu'il est publie** », et `DEC-576`
     dit a partir de quand cela mord : quand sa page de contenu de type `OFFICE`
     est publiee. **Cette route ne l'exige pas** -- elle rend ce qui est, y compris
-    zero responsable, et c'est `T4` qui posera le declencheur.
+    zero responsable.
+
+    **`DEC-583`, 15/09/2026 : le declencheur qui tiendra la borne est a `T7`**, et
+    non a `T4` comme cette ligne l'annonçait. La borne ne mord qu'a la
+    publication, et aucune route n'ecrivait dans `content_page` : un declencheur
+    pose en lecture n'aurait eu aucun ecrivain pour l'exercer (§7.39, §7.41).
     """
 
     identifiant: uuid.UUID
@@ -182,6 +188,41 @@ class ReponseDuCercle(BaseModel):
     chemin_detaille: str
 
 
+class ReponseDuBureau(BaseModel):
+    """Un bureau, ses responsables ACTIFS, et son etat de publication — `MVP-L06-US003`.
+
+    **`responsables` N'EST PAS BORNE ICI, ET C'EST LE POINT DELICAT DE CETTE
+    ROUTE.** Le §8.4 veut « entre un et trois responsables actifs **lorsqu'il est
+    publie** » ; aucune contrainte de base ne l'exprime -- c'est un comptage
+    borne -- et le declencheur qui le tiendra est pose en `T7`, la ou la
+    publication a un ecrivain (`DEC-583`). Cette route rend donc **ce qui est**,
+    y compris zero responsable et y compris plus de trois.
+
+    **ELLE NE PAGINE PAS, ET CE N'EST PAS UN OUBLI.** Le §18.2 regit les
+    POPULATIONS -- c'est pourquoi les membres d'un cercle se paginent en `T3`.
+    Les responsables d'un bureau sont un ensemble que le §8.4 declare **borne** :
+    paginer trois elements au plus inventerait un parametre que le cahier ne
+    demande pas (§6.5).
+
+    **`publie` VIENT DE LA PAGE DE CONTENU, JAMAIS DE LA TABLE `office`**, qui ne
+    porte aucun etat de publication -- `DEC-576`, apres `ECART-031`. Sans lui, la
+    reponse ne saurait pas distinguer un zero **legitime**, celui d'un bureau en
+    brouillon, d'un zero qui **enfreint** le §8.4.
+    """
+
+    identifiant: uuid.UUID
+    code: str
+    nom: str
+    description: str | None
+    localisation: str | None
+    responsables: list[TitulaireRendu]
+    #  Le compte REEL, jamais le compte attendu. Il peut valoir zero, et il peut
+    #  depasser trois : voir le docstring ci-dessus.
+    nombre_de_responsables: int
+    publie: bool
+    chemin_detaille: str
+
+
 def _membre(membre: MembreDuCercle) -> MembreRendu:
     return MembreRendu(
         appartenance=membre.appartenance,
@@ -244,6 +285,21 @@ def _bureau(carte: CarteDeBureau) -> BureauRendu:
         localisation=carte.localisation,
         responsables=[_titulaire(r) for r in carte.responsables],
         chemin_detaille=carte.chemin_detaille,
+    )
+
+
+def _bureau_detaille(bureau: BureauDetaille) -> ReponseDuBureau:
+    return ReponseDuBureau(
+        identifiant=bureau.identifiant,
+        code=bureau.code,
+        nom=bureau.nom,
+        description=bureau.description,
+        localisation=bureau.localisation,
+        responsables=[_titulaire(r) for r in bureau.responsables],
+        #  Derive du tuple, jamais compte a part : deux sources divergeraient.
+        nombre_de_responsables=bureau.nombre_de_responsables,
+        publie=bureau.publie,
+        chemin_detaille=bureau.chemin_detaille,
     )
 
 
@@ -415,5 +471,91 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 )
 
         return _cercle_detaille(cercle)
+
+    @routeur.get(
+        "/entities/{code}/offices/{code_bureau}",
+        #  `dependencies=` et non `Annotated[...]` pour la DEPENDANCE : voir la
+        #  route du Framework. La matrice §5 accorde la lecture des bureaux aux
+        #  huit roles sans distinction, donc l'appelant n'est pas lu.
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuBureau,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour CINQ causes, a dessein : code d'entite "
+                    "inconnu, entite non active, code de bureau inconnu, bureau "
+                    "d'une AUTRE entite, ou bureau archive. Distinguer "
+                    "apprendrait l'existence d'un bureau qu'on n'a pas a voir."
+                )
+            },
+        },
+        summary="La page detaillee d'un bureau, ses responsables actifs",
+        description=(
+            "Les responsables actifs d'un bureau, sa description, sa "
+            "localisation — `MVP-L06-US003`. "
+            "Exige une session : la matrice §5 refuse cette ressource a `ANON` et "
+            "l'accorde aux huit roles authentifies **sans distinction**, `EMP` et "
+            "`NEW` compris. "
+            "**Aucune pagination** : le §18.2 regit les populations, et le §8.4 "
+            "declare les responsables d'un bureau BORNES — « entre un et trois "
+            "actifs lorsqu'il est publie ». "
+            "**La borne n'est pas tenue en base et cette route ne la suppose "
+            "pas** : elle rend ce qui est, zero compris et plus de trois compris. "
+            "Le declencheur qui la tiendra est pose en `T7`, la ou la publication "
+            "a un ecrivain (`DEC-583`). "
+            "`publie` vient de la page de contenu de type `OFFICE`, jamais de la "
+            "table `office`, qui ne porte aucun etat de publication (`DEC-576`). "
+            "Seules les affectations ACTIVES a l'instant nomment quelqu'un : une "
+            "periode close ou future ne designe personne. "
+            "Un bureau archive rend 404 ; sa lecture aura sa propre route."
+        ),
+    )
+    def lire_un_bureau(
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite consultee, tel qu'il vit dans l'adresse",
+        ),
+        code_bureau: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` du bureau, unique dans l'entite (§8.3)",
+        ),
+    ) -> ReponseDuBureau:
+        """La page detaillee d'un bureau — cahier §10.3, backlog `MVP-L06-US003`."""
+        #  L'instant est releve UNE FOIS : deux appels a `now()` pourraient tomber
+        #  de part et d'autre de la borne d'une periode.
+        instant = dt.datetime.now(tz=dt.UTC)
+
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            #  Resolution et lecture dans la MEME transaction : une entite
+            #  suspendue entre les deux rendrait la page d'une entite devenue
+            #  inaccessible.
+            bureau = lire_le_bureau(
+                connexion,
+                entite=entite.id,
+                code_entite=entite.code,
+                code_bureau=code_bureau,
+                instant=instant,
+            )
+            if bureau is None:
+                #  Trois causes de plus, meme reponse : code inconnu, autre
+                #  entite, ou archive.
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+
+        return _bureau_detaille(bureau)
 
     return routeur

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `582` en usage | `DEC-583` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `583` en usage | `DEC-584` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -292,7 +292,9 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` et `T3` SONT FAITES** — la page Framework en lecture le 13/09 (`DEC-579`), et la page détaillée d'un cercle le 14/09 (`DEC-582`), membres **paginés** selon le §18.2. **21 contrôles de stack** à travers Caddy, témoin exécuté dans les deux sens. La prochaine est `T4`, les bureaux.
+**`T2`, `T3` ET `T4` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), membres **paginés** selon le §18.2, et la page détaillée d'un bureau le 15/09 (`DEC-583`). **29 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T5`, le rendu des blocs.
+
+> **`T4` A RENVERSÉ UNE PRÉVISION DE LA FICHE, ET C'EST LE §7.41.** Le §8 de `fiche-lot-6.md` annonçait que `T4` poserait le **déclencheur** du comptage borné « un à trois responsables actifs ». Deux choses l'ont démentie : le critère de `MVP-L06-US003` dit « **sont affichés** », et la borne ne mord « lorsqu'il est publié » alors qu'**aucune route n'écrit dans `content_page`** — le déclencheur n'aurait eu **aucun écrivain**. Il va à `T7` (`DEC-583`), et `T4` fait mieux : **son décor produit ce que la borne interdit**, un bureau publié à zéro responsable et un autre à quatre, et exige que la lecture les rende tels quels.
 
 > **`T3` A IMPOSÉ UN DÉPLACEMENT, ET C'EST UN IMPORT CIRCULAIRE QUI L'A DIT.** Les trois tailles du §18.2 vivaient dans `app/people/trombinoscope.py`. `T3` en est le second consommateur, et `people` importe **déjà** `app.organization.modeles` : l'import inverse fermait le cycle. Elles sont donc dans **`app/shared/pagination.py`** — *un fait du cahier se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Les 36 tests du trombinoscope passent inchangés.
 

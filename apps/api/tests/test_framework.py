@@ -319,7 +319,9 @@ def test_un_bureau_rend_ses_responsables_ACTIFS_de_zero_a_trois(
 
     **CETTE ROUTE N'EXIGE RIEN** : elle rend ce qui est, zero compris. `DEC-576`
     dit a partir de quand la borne mord — quand la page de contenu du bureau est
-    publiee — et c'est `T4` qui posera le declencheur.
+    publiee — et le declencheur qui la tiendra
+    est a `T7` -- `DEC-583`, 15/09/2026 : la borne ne mord qu'a la publication, et
+    une lecture n'a pas d'ecrivain pour l'exercer.
     """
     entite, code = _entite(cx, f"BUR{combien}")
     bureau = _bureau(cx, entite, "BDS")
