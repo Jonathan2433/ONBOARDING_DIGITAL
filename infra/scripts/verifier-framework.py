@@ -41,6 +41,13 @@ CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
 CHEMIN_CERCLE = "/api/v1/entities/{code}/circles/{code_cercle}"
 CHEMIN_BUREAU = "/api/v1/entities/{code}/offices/{code_bureau}"
 CHEMIN_PAGE = "/api/v1/entities/{code}/pages/{type_de_page}/{slug}"
+#  LOT 6, `T6` : l'ECRITURE. La creation adresse la collection, l'ecriture
+#  adresse la page par son IDENTIFIANT -- elle porte d'abord sur des BROUILLONS,
+#  que la lecture ne sert pas.
+CHEMIN_CREATION = "/api/v1/entities/{code}/pages"
+CHEMIN_CONTENU = "/api/v1/entities/{code}/pages/{page}/contenu"
+CHEMIN_SESSION = "/api/v1/auth/session"
+EN_TETE_JETON = "X-CSRF-Token"
 #  La charge qui a coule des projets entiers. Elle est SERVIE, et c'est le
 #  propos de `T5` : elle doit arriver comme une DONNEE, dans du JSON.
 INJECTION = "<script>alert('xss')</script>"
@@ -122,16 +129,24 @@ def appeler(
     chemin: str,
     contexte: ssl.SSLContext,
     *,
-    charge: dict[str, str] | None = None,
+    charge: dict[str, object] | None = None,
     en_tetes: dict[str, str] | None = None,
+    methode: str | None = None,
 ) -> Reponse:
+    """Un aller-retour HTTP. `methode` n'est explicite que pour `PUT`.
+
+    **`T6` A AJOUTE `methode`, POUR LE MEME MOTIF QUE `T7` DU LOT 5.** La
+    deduction « charge => POST, sinon GET » couvrait les routes de lecture ;
+    l'ecriture d'un contenu est un `PUT`, et l'envoyer en `POST` rendrait **405**
+    -- un refus, donc un controle de refus vert pour la mauvaise raison.
+    """
     entetes = {"Content-Type": "application/json"} if charge is not None else {}
     entetes.update(en_tetes or {})
     requete = urllib.request.Request(  # noqa: S310 — https impose par `base`
         f"{base}{chemin}",
         data=json.dumps(charge).encode("utf-8") if charge is not None else None,
         headers=entetes,
-        method="POST" if charge is not None else "GET",
+        method=methode or ("POST" if charge is not None else "GET"),
     )
     try:
         with urllib.request.urlopen(requete, timeout=DELAI_HTTP, context=contexte) as r:  # noqa: S310
@@ -156,6 +171,7 @@ def main() -> int:
     env = lire_env(arguments.env_file)
 
     from app.auth.mots_de_passe import ALGORITHME, hacher
+    from app.content.modeles import TYPES_DE_BLOC
     from app.organization.framework import (
         RESPONSABILITES_A_PAGE_PROPRE,
         RESPONSABILITES_FRAMEWORK,
@@ -173,6 +189,10 @@ def main() -> int:
     adresse_p = f"{MARQUEUR}-principale@{domaine}"
     adresse_s = f"{MARQUEUR}-secondaire@{domaine}"
     adresse_d = f"{MARQUEUR}-brouillon@{domaine}"
+    #  **`T6` : UNE PERSONNE AVEC UN COMPTE ET AUCUNE RESPONSABILITE.** Sans
+    #  elle, le refus de role ne serait prouve par rien a travers la pile : la
+    #  personne du decor est ESM, Booster ET responsable de bureau.
+    adresse_sans_droit = f"{MARQUEUR}-sansdroit@{domaine}"
     mot_de_passe = "un-mot-de-passe-de-verification-sans-portee"
     nom_cookie = env.get("SESSION_COOKIE_NAME", "exalt_session")
 
@@ -205,7 +225,7 @@ def main() -> int:
     decor = f"""
     DO $$
     DECLARE e uuid; p uuid; c uuid; ce uuid; cs uuid; bu uuid; bp uuid; pg uuid;
-            mp uuid; ms uuid; md uuid; ap uuid; a2 uuid; a3 uuid;
+            mp uuid; ms uuid; md uuid; ap uuid; a2 uuid; a3 uuid; sd uuid; csd uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone, activated_at)
       VALUES ('{code_actif}', 'Entite {MARQUEUR}', 'Bordeaux', 'FR', 'active',
@@ -320,6 +340,19 @@ def main() -> int:
         (entity_id, entity_membership_id, circle_id, membership_type, starts_at)
       VALUES (e, a2, ce, 'secondary', now() - interval '1 day');
 
+      -- **`T6` : UNE PERSONNE AVEC UN COMPTE ET AUCUNE RESPONSABILITE.** Elle
+      -- se connecte comme les autres -- un temoin l'exige -- et n'a donc que
+      -- `EMP` : le §13 ne lui donne aucune ecriture editoriale.
+      INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
+      VALUES ('{adresse_sans_droit}', '{adresse_sans_droit}', 'Sans', 'Droit', 'active')
+      RETURNING id INTO sd;
+      INSERT INTO user_account (person_id, account_type, state, failed_login_count)
+      VALUES (sd, 'ADMIN_LOCAL', 'active', 0) RETURNING id INTO csd;
+      INSERT INTO admin_password_credential
+        (user_account_id, password_hash, algorithm, parameters, changed_at, must_change)
+      VALUES (csd, '{empreinte_mdp}', '{ALGORITHME}',
+              '{json.dumps(parametres_hachage)}'::jsonb, now(), FALSE);
+
       INSERT INTO person (email, email_normalized, first_name, last_name, account_state)
       VALUES ('{adresse_d}', '{adresse_d}', 'Cle', 'Brouillon', 'active') RETURNING id INTO md;
       INSERT INTO entity_membership
@@ -329,6 +362,30 @@ def main() -> int:
       INSERT INTO circle_membership
         (entity_id, entity_membership_id, circle_id, membership_type, starts_at)
       VALUES (e, a3, ce, 'principal', now() - interval '1 day');
+      -- **`T6` : LES DEUX ACTEURS ONT UNE APPARTENANCE, ET C'EST INDISPENSABLE.**
+      --
+      -- `resoudre_les_permissions` part de `entite_principale(personne)` : une
+      -- personne SANS appartenance occupante ressort avec un ensemble de roles
+      -- VIDE, quelles que soient ses responsabilites Framework. Le decor n'en
+      -- posait aucune, si bien que l'ESM du decor -- qui porte pourtant une
+      -- responsabilite `ESM` active -- recevait **403 `acces_refuse`** sur la
+      -- creation. Defaut `T6-4`.
+      --
+      -- **AUCUN TEST UNITAIRE NE POUVAIT LE DIRE** : les trente-six tests de
+      -- `T6` passent `roles` a la main, la pile les DERIVE. C'est le §7.43 --
+      -- un bouchon prouve ce qu'on a ecrit dans le bouchon.
+      --
+      -- Celle de `sd` compte autant que celle de `p` : sans elle, son refus
+      -- viendrait de l'absence d'appartenance et non de la grille du §13, et
+      -- le controle prouverait autre chose que ce qu'il annonce.
+      INSERT INTO entity_membership
+        (entity_id, person_id, arrival_date, membership_state, professional_category,
+         profile_visibility)
+      VALUES (e, p, date '2026-01-01', 'active', 'consultant', 'published');
+      INSERT INTO entity_membership
+        (entity_id, person_id, arrival_date, membership_state, professional_category,
+         profile_visibility)
+      VALUES (e, sd, date '2026-01-01', 'active', 'consultant', 'published');
     END $$;
     """  # noqa: S608
     code, sortie = psql(compose, env, decor)
@@ -338,7 +395,8 @@ def main() -> int:
     print(
         "    ok       decor : 1 entite active, 1 brouillon, 3 cercles, 3 bureaux "
         "dont UN publie a ZERO responsable et UN archive, 4 responsabilites dont "
-        "UNE future, 3 membres dont UN en brouillon"
+        "UNE future, 5 appartenances dont UN profil en brouillon, et 1 compte "
+        "SANS aucune responsabilite"
     )
 
     try:
@@ -939,6 +997,388 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    sans session : {page_anonyme.statut}, 401 attendu")
+
+        # ==================================================================
+        #
+        #  `T6` — L'ECRITURE D'UN CONTENU DANS SON PERIMETRE, `MVP-L06-US004`
+        #
+        #    **UN BOUCHON PROUVE CE QU'ON A ECRIT DANS LE BOUCHON** (§7.43), et
+        #    les trente-six tests de `T6` appellent le SERVICE. Ils ne disent
+        #    rien du routage, de la session, du CSRF, du code HTTP ni des
+        #    OCTETS. Ces controles-la font l'aller-retour REEL : creer, ecrire,
+        #    publier, relire -- et la charge d'injection est cherchee dans les
+        #    octets servis, comme `T5` le fait pour la lecture.
+        #
+        # ==================================================================
+
+        # --- 36. SANS COOKIE, LA CREATION REND 401
+        controles += 1
+        creation_anonyme = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={"type_de_page": "HOME", "titre": "x", "slug": f"{MARQUEUR}-anon"},
+        )
+        if creation_anonyme.statut == 401:
+            print("    ok       creation sans session : 401 — la matrice §5 met `ANON` a tiret")
+        else:
+            echecs += 1
+            print(f"    ECHEC    creation sans session : {creation_anonyme.statut}")
+
+        # --- 37. TEMOIN : `GET /auth/session` rend le jeton CSRF de l'ESM
+        controles += 1
+        session = appeler(arguments.base, CHEMIN_SESSION, contexte, en_tetes=entetes)
+        corps_session = session.json()
+        jeton_csrf = corps_session.get("jeton_csrf", "") if isinstance(corps_session, dict) else ""
+        if session.statut == 200 and jeton_csrf:
+            print("    ok       TEMOIN : la session de l'ESM rend un jeton CSRF")
+        else:
+            echecs += 1
+            print(f"    ECHEC    session {session.statut}, jeton {'oui' if jeton_csrf else 'NON'}")
+            raise RuntimeError("sans jeton CSRF, aucune ecriture ne prouverait quoi que ce soit")
+        ecriture = {**entetes, EN_TETE_JETON: jeton_csrf, "Origin": arguments.base}
+
+        # --- 38. SANS JETON CSRF, L'ECRITURE EST REFUSEE
+        #
+        #  La session est valide et le role suffisant : **seul le jeton manque**.
+        #  Sans ce controle, la protection CSRF d'une route d'ecriture metier ne
+        #  serait prouvee par rien -- aucun test unitaire ne peut l'observer.
+        controles += 1
+        sans_csrf = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={"type_de_page": "HOME", "titre": "x", "slug": f"{MARQUEUR}-csrf"},
+            en_tetes={**entetes, "Origin": arguments.base},
+        )
+        corps_csrf = sans_csrf.json()
+        code_csrf = (
+            corps_csrf.get("erreur", {}).get("code") if isinstance(corps_csrf, dict) else None
+        )
+        if sans_csrf.statut == 403 and code_csrf == "requete_refusee":
+            print("    ok       sans jeton CSRF : 403 `requete_refusee` — la session et le")
+            print("             role suffisent pourtant ; SEUL le jeton manque")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans jeton CSRF : {sans_csrf.statut}, {str(corps_csrf)[:140]}")
+
+        # --- 39. LA CREATION REND 201, ET LA PAGE NAIT EN BROUILLON
+        controles += 1
+        slug_t6 = f"{MARQUEUR}-t6"
+        creation = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={"type_de_page": "HOME", "titre": "Page de T6", "slug": slug_t6},
+            en_tetes=ecriture,
+        )
+        corps_creation = creation.json()
+        page_creee = corps_creation.get("identifiant") if isinstance(corps_creation, dict) else None
+        etat_creee = corps_creation.get("etat") if isinstance(corps_creation, dict) else None
+        if creation.statut == 201 and page_creee and etat_creee == "draft":
+            print("    ok       creation : 201, et la page nait `draft` — le §13 separe")
+            print("             « Modifier » (Entite) de « Publier » (PERIMETRE), `US006`")
+        else:
+            echecs += 1
+            print(f"    ECHEC    creation : {creation.statut}, {str(corps_creation)[:160]}")
+            raise RuntimeError("sans page creee, la suite ne prouverait rien")
+
+        # --- 40. L'ECRITURE DU CONTENU REND 200, ET LES ORDRES SONT CEUX DU TABLEAU
+        controles += 1
+        chemin_contenu = CHEMIN_CONTENU.format(code=code_actif, page=page_creee)
+        ecrit = appeler(
+            arguments.base,
+            chemin_contenu,
+            contexte,
+            charge={
+                "version": 1,
+                "titre": "Page de T6",
+                "blocs": [
+                    {"type_de_bloc": "TITLE", "contenu": {"texte": "Bienvenue"}},
+                    {"type_de_bloc": "RICH_TEXT", "contenu": {"texte": INJECTION}},
+                ],
+            },
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_ecrit = ecrit.json()
+        blocs_ecrits = corps_ecrit.get("blocs", []) if isinstance(corps_ecrit, dict) else []
+        ordres = [b.get("ordre") for b in blocs_ecrits]
+        if ecrit.statut == 200 and ordres == [0, 1] and corps_ecrit.get("version") == 2:
+            print("    ok       ecriture : 200, ordres [0, 1] DERIVES du tableau, version a 2")
+        else:
+            echecs += 1
+            print(f"    ECHEC    ecriture : {ecrit.statut}, {str(corps_ecrit)[:200]}")
+
+        # --- 41. LA PAGE EN BROUILLON N'EST PAS SERVIE, MEME A SON AUTEUR
+        controles += 1
+        avant_publication = appeler(
+            arguments.base,
+            CHEMIN_PAGE.format(code=code_actif, type_de_page="HOME", slug=slug_t6),
+            contexte,
+            en_tetes=entetes,
+        )
+        if avant_publication.statut == 404:
+            print("    ok       le brouillon n'est PAS servi, meme a qui vient de l'ecrire —")
+            print("             le critere de sortie n°1 : relus AVANT publication")
+        else:
+            echecs += 1
+            print(f"    ECHEC    brouillon servi : {avant_publication.statut}")
+
+        # --- 42. **L'ALLER-RETOUR COMPLET, ET IL PORTE SUR LES OCTETS**
+        #
+        #  La publication est faite en SQL, parce que la route de publication est
+        #  `T7` : ce controle prouve l'ECRITURE, pas la publication. Ce qu'il
+        #  exige ensuite est ce que `T5` exige de la lecture -- type de contenu
+        #  `application/json`, et la charge INTACTE dans les octets.
+        #
+        #  **Un filtre qui aurait mange la chaine donnerait la meme observation
+        #  qu'une absence d'injection** : c'est pourquoi on la cherche dans les
+        #  octets, et non « un 200 et des blocs ».
+        controles += 1
+        code_pub, sortie_pub = psql(
+            compose,
+            env,
+            #  S608 : `page_creee` est un identifiant rendu par NOTRE API, jamais
+            #  une entree de tiers. La publication passe par SQL parce que la
+            #  route de publication est `T7` : ce controle prouve l'ECRITURE.
+            "UPDATE content_page SET state = 'published', published_at = now() "  # noqa: S608
+            f"WHERE id = '{page_creee}'",
+        )
+        apres = appeler(
+            arguments.base,
+            CHEMIN_PAGE.format(code=code_actif, type_de_page="HOME", slug=slug_t6),
+            contexte,
+            en_tetes=entetes,
+        )
+        corps_apres = apres.json()
+        blocs_lus = corps_apres.get("blocs", []) if isinstance(corps_apres, dict) else []
+        type_servi_t6 = apres.en_tetes.get("content-type", "")
+        intacte = INJECTION.encode("utf-8") in apres.corps
+        rendu_comme_donnee = (
+            len(blocs_lus) == 2
+            and blocs_lus[1].get("contenu", {}).get("texte") == INJECTION
+            and type_servi_t6.startswith("application/json")
+        )
+        if code_pub == 0 and apres.statut == 200 and rendu_comme_donnee and intacte:
+            print("    ok       ALLER-RETOUR REEL : ecrit par l'API, relu par l'API — la charge")
+            print("             traverse INTACTE dans les octets, en `application/json`, et")
+            print("             rien n'a ete retire en silence")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    aller-retour : publication={code_pub} ({sortie_pub[:60]}), "
+                f"lecture={apres.statut}, intacte={intacte}, type={type_servi_t6!r}"
+            )
+
+        # --- 43. UN SECOND PASSAGE ARCHIVE LES BLOCS RETIRES, ET LE DIT
+        controles += 1
+        reduit = appeler(
+            arguments.base,
+            chemin_contenu,
+            contexte,
+            charge={
+                "version": 2,
+                "titre": "Page de T6",
+                "blocs": [{"type_de_bloc": "TITLE", "contenu": {"texte": "Seul"}}],
+            },
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_reduit = reduit.json()
+        archives = corps_reduit.get("blocs_archives") if isinstance(corps_reduit, dict) else None
+        code_cpt, sortie_cpt = psql(
+            compose,
+            env,
+            "SELECT count(*) FROM content_block "  # noqa: S608
+            f"WHERE content_page_id = '{page_creee}'",
+        )
+        total_en_base = valeur(sortie_cpt)
+        if reduit.statut == 200 and archives == 2 and total_en_base == "3":
+            print("    ok       les blocs retires sont ARCHIVES et non SUPPRIMES (modele §2.4) :")
+            print("             `blocs_archives` = 2, et 3 lignes SUBSISTENT en base")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    archivage : {reduit.statut}, archives={archives}, "
+                f"lignes en base={total_en_base!r} (code {code_cpt})"
+            )
+
+        # --- 44. L'ECRITURE NE TOUCHE NI `state` NI `published_at`
+        #
+        #  La page vient d'etre publiee, puis reecrite deux fois. Si `T6`
+        #  touchait l'etat, le §13 serait enfreint dans un sens ou dans l'autre.
+        controles += 1
+        code_etat, sortie_etat = psql(
+            compose,
+            env,
+            "SELECT state || '|' || (published_at IS NOT NULL)::text "  # noqa: S608
+            f"FROM content_page WHERE id = '{page_creee}'",
+        )
+        etat_final = valeur(sortie_etat)
+        if code_etat == 0 and etat_final == "published|true":
+            print("    ok       apres DEUX ecritures, `state` et `published_at` sont INCHANGES —")
+            print("             « Modifier » n'est pas « Publier », et ce n'est pas une promesse")
+        else:
+            echecs += 1
+            print(f"    ECHEC    etat apres ecriture : {etat_final!r} (code {code_etat})")
+
+        # --- 45. UN TYPE DE BLOC INCONNU REND 422, ET LA REPONSE ENUMERE LES TYPES
+        controles += 1
+        bloc_refuse = appeler(
+            arguments.base,
+            chemin_contenu,
+            contexte,
+            charge={
+                "version": 3,
+                "titre": "Page de T6",
+                "blocs": [{"type_de_bloc": "IFRAME", "contenu": {}}],
+            },
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_refus = bloc_refuse.json()
+        erreur_refus = corps_refus.get("erreur", {}) if isinstance(corps_refus, dict) else {}
+        types_annonces = (erreur_refus.get("details") or {}).get("types_autorises")
+        if (
+            bloc_refuse.statut == 422
+            and erreur_refus.get("code") == "type_de_bloc_refuse"
+            and types_annonces == list(TYPES_DE_BLOC)
+        ):
+            print(f"    ok       type de bloc inconnu : 422, et les {len(TYPES_DE_BLOC)} types")
+            print("             autorises sont ENUMERES — un auteur doit savoir ce qu'il pose")
+        else:
+            echecs += 1
+            print(f"    ECHEC    type de bloc : {bloc_refuse.statut}, {str(corps_refus)[:180]}")
+
+        # --- 46. UNE VERSION OBSOLETE REND 409, ET RIEN N'EST ECRIT
+        controles += 1
+        obsolete = appeler(
+            arguments.base,
+            chemin_contenu,
+            contexte,
+            charge={
+                "version": 1,
+                "titre": "Ecrase",
+                "blocs": [{"type_de_bloc": "TITLE", "contenu": {"texte": "ecrase"}}],
+            },
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_obsolete = obsolete.json()
+        code_obsolete = (
+            corps_obsolete.get("erreur", {}).get("code")
+            if isinstance(corps_obsolete, dict)
+            else None
+        )
+        _, sortie_titre = psql(
+            compose,
+            env,
+            f"SELECT title FROM content_page WHERE id = '{page_creee}'",  # noqa: S608
+        )
+        if obsolete.statut == 409 and code_obsolete == "version_obsolete":
+            if valeur(sortie_titre) == "Page de T6":
+                print("    ok       version obsolete : 409 `version_obsolete`, et le titre en")
+                print("             base est INCHANGE — §18.4, « sans ecrasement silencieux »")
+            else:
+                echecs += 1
+                print(f"    ECHEC    409 rendu mais le titre a change : {valeur(sortie_titre)!r}")
+        else:
+            echecs += 1
+            print(f"    ECHEC    version obsolete : {obsolete.statut}, {str(corps_obsolete)[:160]}")
+
+        # --- 47. TEMOIN : LA PERSONNE SANS RESPONSABILITE OUVRE BIEN UNE SESSION
+        #
+        #  Sans ce temoin, le 403 du controle suivant pourrait venir d'un echec
+        #  d'authentification, et il paraitrait prouver une regle de role.
+        controles += 1
+        connexion_sd = appeler(
+            arguments.base,
+            CHEMIN_CONNEXION,
+            contexte,
+            charge={"email": adresse_sans_droit, "mot_de_passe": mot_de_passe},
+        )
+        cookie_sd = ""
+        for pose in connexion_sd.cookies_poses:
+            if pose.startswith(f"{nom_cookie}="):
+                cookie_sd = pose.split(";")[0]
+        session_sd = appeler(
+            arguments.base, CHEMIN_SESSION, contexte, en_tetes={"Cookie": cookie_sd}
+        )
+        corps_sd = session_sd.json()
+        csrf_sd = corps_sd.get("jeton_csrf", "") if isinstance(corps_sd, dict) else ""
+        if connexion_sd.statut == 200 and cookie_sd and csrf_sd:
+            print("    ok       TEMOIN : la personne SANS responsabilite se connecte et obtient")
+            print("             son jeton — le refus qui suit ne viendra donc pas de la session")
+        else:
+            echecs += 1
+            print(f"    ECHEC    connexion sans droit : {connexion_sd.statut}")
+            raise RuntimeError("sans ce temoin, le refus de role ne prouverait rien")
+
+        # --- 48. SANS AUCUNE RESPONSABILITE : 403 SUR LA CREATION ET SUR L'ECRITURE
+        #
+        #  Elle n'a que `EMP`, et les tableaux §10.x et §13 n'ont pas cette
+        #  colonne : une absence de colonne n'est pas une exclusion, mais le §5
+        #  ne lui donne que « Lecture ». C'est l'API qui refuse, pas l'ecran.
+        controles += 1
+        entetes_sd = {"Cookie": cookie_sd, EN_TETE_JETON: csrf_sd, "Origin": arguments.base}
+        creation_sd = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={"type_de_page": "HOME", "titre": "x", "slug": f"{MARQUEUR}-sd"},
+            en_tetes=entetes_sd,
+        )
+        ecriture_sd = appeler(
+            arguments.base,
+            chemin_contenu,
+            contexte,
+            charge={"version": 3, "titre": "x", "blocs": []},
+            en_tetes=entetes_sd,
+            methode="PUT",
+        )
+        corps_creation_sd = creation_sd.json()
+        code_creation_sd = (
+            corps_creation_sd.get("erreur", {}).get("code")
+            if isinstance(corps_creation_sd, dict)
+            else None
+        )
+        if (
+            creation_sd.statut == 403
+            and ecriture_sd.statut == 403
+            and code_creation_sd == "acces_refuse"
+        ):
+            print("    ok       sans responsabilite : 403 `acces_refuse` sur la creation ET sur")
+            print("             l'ecriture — l'API est l'autorite finale (§2.6)")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    sans droit : creation={creation_sd.statut}, "
+                f"ecriture={ecriture_sd.statut}, code={code_creation_sd!r}"
+            )
+
+        # --- 49. UNE PAGE D'UNE AUTRE ENTITE : 403, ET LE TEMOIN EST LA MEME PAGE
+        #
+        #  L'ESM du decor ecrit sa page (controle 40). La MEME page, adressee par
+        #  le chemin d'une AUTRE entite, est refusee : le §5.1 dit que « les
+        #  controles cote API utilisent l'entite de la RESSOURCE ».
+        controles += 1
+        ailleurs = appeler(
+            arguments.base,
+            CHEMIN_CONTENU.format(code=code_brouillon, page=page_creee),
+            contexte,
+            charge={"version": 3, "titre": "x", "blocs": []},
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        #  `code_brouillon` designe une entite NON ACTIVE : le 404 est celui de
+        #  toutes les routes d'entite, et il precede la question du perimetre.
+        if ailleurs.statut == 404:
+            print("    ok       la MEME page par le chemin d'une entite non active : 404 —")
+            print("             l'entite du chemin est resolue AVANT tout perimetre")
+        else:
+            echecs += 1
+            print(f"    ECHEC    autre entite : {ailleurs.statut}")
 
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**

@@ -4,6 +4,7 @@
 **Épic :** `MVP-L06`
 **Ouvert par Jonathan le :** 13 septembre 2026
 **État :** **OUVERT**, découpage **validé** le 13/09/2026 — `DEC-575`
+**Dernière mise à jour :** 18 septembre 2026, à la sortie de `T6`
 **Porte de sortie :** `G6`, tag `v0.6.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -109,7 +110,7 @@ pull request la fusionne. **Une sous-étape à la fois**, et elle part toujours 
 | ~~`T3`~~ | ~~**Les cercles en lecture** — liste et page détaillée~~ **FAITE le 14/09/2026**, `DEC-582`. La liste vient de `T2` ; `T3` sert la **page détaillée**, membres paginés | `US002` | **le couple du §7.42** : un cercle **avec** jeton et un cercle **sans**, `color_token` étant nullable. C'est le critère 4, et c'est le défaut `T10-8` qui l'a appris |
 | ~~`T4`~~ | ~~**Les bureaux en lecture** — liste et page détaillée~~ **FAITE le 15/09/2026**, `DEC-583`. La liste vient de `T2`, qui émettait déjà le chemin **dans le vide** ; `T4` sert la **page détaillée** | `US003` | « un à trois responsables actifs » est un **comptage borné** qu'aucune contrainte de ligne n'exprime, et **le déclencheur qui le tiendra est à `T7`** (`DEC-583`) : la borne ne mord qu'à la publication, et aucune route n'écrit encore dans `content_page`. Ce qui rend `T4` non triviale est donc l'inverse — **son décor produit ce que la borne interdit**, zéro responsable et quatre, et la lecture doit les rendre tels quels |
 | ~~`T5`~~ | ~~**Le rendu des blocs, et le refus de l'injection**~~ **FAITE le 15/09/2026**, `DEC-584`, **`QO-121` ouverte** — le corpus ne nomme aucun champ de `payload_json`, le contenu est donc servi comme une **donnée opaque** | `US004` (1/3) | **les deux ensemble ou aucun** : « aucun HTML arbitraire » est satisfait par une route qui ne rend rien. Le témoin positif est un bloc légitime **rendu** |
-| `T6` | **L'écriture d'un contenu dans son périmètre** | `US004` (2/3) | **les trois pièges du §2.1** — et la grille de l'écriture du LOT 5 ne se réemploie pas, elle **élargirait un droit** |
+| ~~`T6`~~ | ~~**L'écriture d'un contenu dans son périmètre**~~ **FAITE le 18/09/2026**, `DEC-585`, **`ECART-062` et `ECART-063` ouverts** | `US004` (2/3) | **la grille du §13 diffère de celle du LOT 5 DANS LES DEUX SENS** : `DSM` y est à tiret alors qu'il porte cinq champs au §6.1, et `OFFICE` y porte un droit réel alors que sa colonne du §6.1 est entièrement à tiret. La réutiliser aurait **accordé** un droit à l'un et **retiré** le sien à l'autre |
 | `T7` | **Brouillon, publication, archivage, restauration** | `US006` | `ARB-DROIT-003` distingue la restauration **fonctionnelle** de la **technique** ; le §13 distingue « Entité » de « Périmètre » |
 | `T8` | **La présentation de l'entité et les liens internes** | `US005` | les URL sont validées « selon une **liste de protocoles autorisés** » (§15.3), et une liste blanche fermée est aussi fautive qu'une absence de liste (§7.29) |
 | `T9` | **Les écrans de lecture** — Framework, cercle, bureau | `US001`–`US003` | le critère 5, `prefers-reduced-motion`, et le critère 4 **à l'écran** : la couleur n'est jamais seule |
