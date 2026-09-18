@@ -26,6 +26,7 @@ d'agir.
 | **Prochaine action** | **`T6` DU LOT 6 : l'écriture d'un contenu dans son périmètre**, story `MVP-L06-US004` (2 sur 3), issue `#149`. **ELLE TIENT LE TROISIÈME VERBE** : le corpus écrit quatre fois « aucun HTML arbitraire n'est **stocké** ou **exécuté** », « ni script n'est **accepté** » — `T1` tient le *stocké*, `T5` l'*exécuté*, **`T6` l'accepté**. **ET LA GRILLE DE L'ÉCRITURE DU LOT 5 NE SE RÉEMPLOIE PAS** : l'annexe A §13 donne « Modifier un contenu de cercle » au Booster avec portée **Cercle** et au DSM **rien du tout** — la réutiliser élargirait un droit. **ET « Publier » N'EST PAS « Modifier »** : le §13 donne à l'ESM **Entité** pour modifier et **Périmètre** pour publier ; c'est `T7`. **`QO-121` ATTEND LÉA** — les champs de chaque type de bloc — et elle est **non bloquante pour `T6`**, qui valide la forme et non les champs, mais **bloquante pour `T10`**. **`QO-119` ATTEND LÉA** avant `T11`, **`QO-120`** avant `T8`. **N'OUVRE AUCUN AUTRE LOT** — règle n°1 du §2 |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 6 sur 8** · **LOT 6 : 0 sur 7**. **LES DEUX QUI RESTENT OUVERTES AU LOT 5 SONT NOMMÉES, ET ELLES NE SONT PAS UN OUBLI** : `#120` — « **retrait possible** » n'est pas tenu, aucune route ne retire une autorisation de photo, LOT 9 — et `#121` — l'API de modification est complète depuis `T7`, **aucun écran ne l'appelle**. Un critère d'acceptation non tenu ne se referme pas. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
+| Branche `demo` | **Elle existe depuis le 16/09/2026 et elle est EMPILÉE sur la branche de `T5`**, non fusionnée à sa création. Elle porte une **démonstration client** — cibles `make`, script `infra/scripts/preparer-demo-client.py`, guide `docs/demo/` — produite par Codex, `#160` fusionnée dedans et **`#161` encore ouverte**. **Après la fusion de `T5` en squash, `demo` doit être REBASÉE sur `develop`** : son histoire contient l'ancien commit de `T5`, que le squash a remplacé. `git rebase --onto origin/develop f16adf4 demo`, puis on vérifie le **diff**, jamais le verdict du rebase (§7.24). **C'est le travail de Jonathan, pas le tien** |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), `v0.4.0` (`G4`), **`v0.5.0` (`G5`)** — ce dernier sur `14b2bd1`, et **les trois contrôles ont été relevés avant ET après la fusion** : `origin/main` et `origin/develop` portent le même arbre `d262e2a4…`, `develop` est un **ancêtre** de `main`, et le commit porte **deux** parents. Le squash de `G2` avait coupé l'histoire, `ECART-026` |
 | **Tests** | **1 565** : **1 056 pytest** — dont **727 d'intégration** — et **509 Vitest** (**206 `contracts`**, **111 `ui`**, **192 `web`**). **Recompte**, ne recopie pas |
@@ -2816,6 +2817,25 @@ make env-check            # .env contre .env.example — une variable a manque a
                           # la PULL REQUEST, pas le debut de session. §7.36
 make check                # qualite complete, tests compris
 make audit                # zero avis, zero tolerance depuis DEC-493
+
+# ETAT DE CETTE MACHINE AU 18/09/2026 : LA BASE DE DEV PORTE UN JEU DE DEMO.
+#
+#   Mesure : 26 entites, 5 155 personnes, 5 155 appartenances, 100 cercles.
+#   Consequence : `make check` rend 74 ECHECS, et AUCUN ne vient du code. Ce
+#   sont des tests des LOTS 2 et 3 qui comptent des lignes en ABSOLU --
+#   « assert 5157 == 2 » -- exactement le piege que le §5.3 decrit pour
+#   `make jeu-de-donnees`.
+#
+#   **NE REINITIALISE PAS LA BASE SANS L'ACCORD DE JONATHAN.** Ces donnees
+#   servent une DEMO CLIENT preparee sur la branche `demo`. Le remede du §5.3
+#   les detruirait.
+#
+#   Ce qui PROUVE quand meme ton travail, et c'est suffisant :
+#     - les tests de TA sous-etape, lances seuls, passent sur cette base ;
+#     - la PORTE de la pull request tourne sur une base NEUVE, et c'est elle
+#       qui fait foi (§7.28 : lis ce que la cible fait, pas son nom).
+#   Verifie donc `gh pr checks <n>` plutot que de conclure sur le `make check`
+#   local -- et DIS dans ton rapport que les 74 echecs sont environnementaux.
 
 make up                   # les 8 services, le bucket MinIO, les DEUX roles, Caddy recharge
 make stack-check          # sante + ports
