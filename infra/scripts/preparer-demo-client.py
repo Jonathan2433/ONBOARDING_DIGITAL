@@ -20,6 +20,7 @@ import sys
 from dataclasses import dataclass
 
 from sqlalchemy import inspect, text
+from sqlalchemy.engine import Connection
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RACINE / "apps" / "api"))
@@ -110,9 +111,42 @@ def parametres_et_moteurs() -> tuple[object, object]:
     return moteur(parametres), moteur_migrations(parametres)
 
 
+def preparer_identite_administrateur(connexion: Connection) -> None:
+    """Poser l'identite metier fictive avant l'amorcage du compte administrateur.
+
+    `admin-local` refuse, a raison, d'inventer une personne : une commande
+    d'exploitation ne doit pas devenir une source d'identites metier. Le decor
+    de demonstration, lui, EST la source explicite de cette identite fictive.
+    Elle doit donc etre creee ici avant que `demo-init` appelle `admin-local`.
+    """
+    connexion.execute(
+        text(
+            "INSERT INTO person "
+            "(email, email_normalized, first_name, last_name, account_state) "
+            "VALUES (:adresse, :adresse, 'Demo', 'Client', 'active') "
+            "ON CONFLICT (email_normalized) DO UPDATE SET "
+            "account_state='active', archived_at=NULL, updated_at=now()"
+        ),
+        {"adresse": ADRESSE_ADMIN},
+    )
+    connexion.execute(
+        text(
+            "INSERT INTO technical_role_assignment "
+            "(person_id, entity_id, role_type, starts_at) "
+            "SELECT id, NULL, 'SUPER_ADMIN', now() FROM person "
+            "WHERE email_normalized=:adresse AND NOT EXISTS ("
+            "SELECT 1 FROM technical_role_assignment tra "
+            "WHERE tra.person_id=person.id AND tra.role_type='SUPER_ADMIN' "
+            "AND tra.ends_at IS NULL AND tra.archived_at IS NULL)"
+        ),
+        {"adresse": ADRESSE_ADMIN},
+    )
+
+
 def enrichir() -> int:
     moteur_execution, _ = parametres_et_moteurs()
     with moteur_execution.begin() as connexion:
+        preparer_identite_administrateur(connexion)
         lignes = (
             connexion.execute(
                 text(
@@ -190,6 +224,7 @@ def enrichir() -> int:
 
     print(f"  ok       {len(PERSONAS)} personas fictifs poses dans {CODE_ENTITE}")
     print(f"  ok       {len(COULEURS)} couleurs de cercle issues des jetons existants")
+    print(f"  ok       identite administrateur fictive posee : {ADRESSE_ADMIN}")
     return 0
 
 
@@ -242,19 +277,22 @@ def verifier() -> int:
         administrateur = connexion.execute(
             text(
                 "SELECT count(*) FROM person p JOIN user_account ua ON ua.person_id=p.id "
-                "WHERE p.email_normalized=:adresse AND ua.state='active'"
+                "JOIN technical_role_assignment tra ON tra.person_id=p.id "
+                "WHERE p.email_normalized=:adresse AND ua.state='active' "
+                "AND tra.role_type='SUPER_ADMIN' AND tra.ends_at IS NULL "
+                "AND tra.archived_at IS NULL"
             ),
             {"adresse": ADRESSE_ADMIN},
         ).scalar_one()
         if administrateur != 1:
-            erreurs.append(f"compte administrateur absent : {ADRESSE_ADMIN}")
+            erreurs.append(f"compte ou role SUPER_ADMIN absent : {ADRESSE_ADMIN}")
 
     if erreurs:
         for erreur in erreurs:
             print(f"  ECHEC    {erreur}")
         return 1
     print(f"  ok       {CODE_ENTITE} et les {len(PERSONAS)} personas sont prets")
-    print(f"  ok       compte administrateur actif : {ADRESSE_ADMIN}")
+    print(f"  ok       compte administrateur actif avec role SUPER_ADMIN : {ADRESSE_ADMIN}")
     print("  ok       toutes les adresses demo utilisent exemple.test")
     print("  ok       les quatre cercles portent un jeton compris par le frontend")
     return 0

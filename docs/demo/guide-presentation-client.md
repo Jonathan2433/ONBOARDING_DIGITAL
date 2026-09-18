@@ -42,7 +42,8 @@ Ne l'exécute pas sur une base contenant un travail à conserver.
 1. démarre les huit services locaux ;
 2. applique les migrations ;
 3. engendre 25 entités et 5 000 profils fictifs ;
-4. transforme huit profils de Bordeaux en personas stables ;
+4. transforme huit profils de Bordeaux en personas stables et pose l'identité fictive du compte
+   de démonstration ;
 5. reconstruit les services applicatifs ;
 6. crée le compte `demo.client@exemple.test` ;
 7. affiche un mot de passe temporaire, qui n'est jamais enregistré ;

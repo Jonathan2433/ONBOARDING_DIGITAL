@@ -6,6 +6,7 @@ import importlib.util
 import pathlib
 import sys
 from types import ModuleType
+from typing import Any
 
 RACINE = pathlib.Path(__file__).resolve().parents[3]
 SCRIPT = RACINE / "infra" / "scripts" / "preparer-demo-client.py"
@@ -47,3 +48,29 @@ def test_compte_de_demo_emploie_le_domaine_reserve() -> None:
     module = charger_script()
 
     assert module.ADRESSE_ADMIN == "demo.client@exemple.test"
+
+
+def test_enrichissement_prepare_l_identite_attendue_par_admin_local() -> None:
+    module = charger_script()
+
+    class ConnexionEspionne:
+        def __init__(self) -> None:
+            self.requetes: list[str] = []
+            self.parametres: list[dict[str, Any]] = []
+
+        def execute(self, requete: Any, parametres: dict[str, Any]) -> None:
+            self.requetes.append(str(requete))
+            self.parametres.append(parametres)
+
+    connexion = ConnexionEspionne()
+    module.preparer_identite_administrateur(connexion)
+
+    assert len(connexion.requetes) == 2
+    assert "INSERT INTO person" in connexion.requetes[0]
+    assert "ON CONFLICT (email_normalized) DO UPDATE" in connexion.requetes[0]
+    assert "INSERT INTO technical_role_assignment" in connexion.requetes[1]
+    assert "'SUPER_ADMIN'" in connexion.requetes[1]
+    assert connexion.parametres == [
+        {"adresse": "demo.client@exemple.test"},
+        {"adresse": "demo.client@exemple.test"},
+    ]
