@@ -215,7 +215,8 @@ ETIQUETTE_LOCALE := onboarding-local
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
         sessions-check sessions-temoin csrf-check \
-        up-recette down-recette stack-check-recette recette-check
+        up-recette down-recette stack-check-recette recette-check \
+        demo-init demo-check demo-info demo-reset
 
 # ---------------------------------------------------------------------------
 
@@ -967,6 +968,50 @@ recette-modele-check: ## Classer les 25 controles de recette du modele 30
 jeu-de-donnees: ## Ensemencer la base avec le jeu fictif (25 entites, 5000 profils)
 	@uv run python infra/scripts/engendrer-jeu-de-donnees.py \
 		--env-file "$(ENV_FILE)" $(ARGS)
+
+# ---------------------------------------------------------------------------
+#  Demonstration client — exclusivement sur le developpement local.
+#
+#  Le jeu volumetrique et le decor narratif ont deux responsabilites distinctes :
+#  `jeu-de-donnees` fournit la masse et les cas limites ; le second script rend
+#  huit profils stables et racontables sans modifier la fabrique de recette.
+# ---------------------------------------------------------------------------
+
+demo-init: ## Preparer la demo client complete sur une base locale vide
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-init est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(MAKE) --no-print-directory up ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory migrate ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory jeu-de-donnees ENVIRONNEMENT=dev
+	@$(UV) run python infra/scripts/preparer-demo-client.py enrichir --env-file "$(ENV_FILE)"
+	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=dev | tail -1
+	@$(MAKE) --no-print-directory admin-local \
+		ADRESSE=demo.client@exemple.test REINITIALISER=1 ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory demo-check ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory demo-info ENVIRONNEMENT=dev
+
+demo-check: ## Verifier les personas, le compte et les invariants de la demo
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-check est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(UV) run python infra/scripts/preparer-demo-client.py verifier --env-file "$(ENV_FILE)"
+
+demo-info: ## Afficher les adresses et le parcours de la demonstration client
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-info est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@echo
+	@echo "  Demonstration client"
+	@echo "    connexion      https://$${CADDY_SITE_APP:-app.onboarding.localhost}/connexion/administrateur"
+	@echo "    compte         demo.client@exemple.test"
+	@echo "    portail        https://$${CADDY_SITE_APP:-app.onboarding.localhost}/"
+	@echo "    Bordeaux       https://$${CADDY_SITE_APP:-app.onboarding.localhost}/entites/BORDEA00/trombinoscope"
+	@echo "    recherche      Alice, puis alice"
+	@echo "    profil vedette Alice Martin"
+	@echo
+	@echo "  Le mot de passe n'est jamais stocke. La cible demo-init l'affiche et le renouvelle."
+	@echo "  Conducteur : docs/demo/guide-presentation-client.md"
+
+demo-reset: ## Vider uniquement les donnees applicatives de la demo locale
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-reset est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(UV) run python infra/scripts/preparer-demo-client.py reinitialiser \
+		--env-file "$(ENV_FILE)" --confirmation EFFACER-LA-DEMO
 
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current
