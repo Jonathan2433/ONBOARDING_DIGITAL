@@ -35,6 +35,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import __version__
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
+from app.content.routes import routeur_contenus
 from app.entities.routes import routeur_entites
 from app.health import routeur as routeur_sante
 from app.organization.routes import routeur_framework
@@ -143,6 +144,7 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 6, T2 : la page Framework en lecture. Monte apres les entites, dont
     #  elle reutilise la resolution et le gabarit de 404.
     routeur_v1.include_router(routeur_framework(config))
+    routeur_v1.include_router(routeur_contenus(config))
     #  LOT 5, T2 : le trombinoscope pagine. Monte APRES les entites, dont il
     #  reutilise `resoudre_une_entite_active` et le gabarit de 404 -- deux
     #  routes d'entite qui distingueraient differemment un code inconnu d'une

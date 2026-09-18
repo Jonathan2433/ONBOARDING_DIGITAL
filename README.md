@@ -14,12 +14,12 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) |
-| Dernière porte franchie | **`G4`** — validée le 24 août 2026 (`DEC-557`), tag **`v0.4.0`** posé sur `main` — [checklist](docs/operations/checklist-validation-G4.md) |
-| **Lot en cours** | **LOT 5 — Collaborateurs, profils et organisation**, porte `G5`. **Ouvert** le 24 août 2026 (`DEC-558`) — [plan](docs/operations/fiche-lot-5.md) |
-| Sous-étape en cours | **`T5` faite.** Le découpage est passé de douze à **onze** sous-étapes le 6 septembre 2026 : `T5` et `T6` ont été **fusionnées** (`DEC-564`). **`T1` à `T5` sont livrées, six restent** ; la prochaine est `T7` — **l'écriture dans son périmètre** (`US006`), qui sera la **première écriture métier** du projet |
-| Lots 6 à 14 | `Planned` — aucun travail anticipé autorisé |
-| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et **41 leçons payées par 223 défauts nommés** — les deux nombres se dérivent, voir son §7 |
+| Lots verrouillés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, 13/09, `v0.5.0`) |
+| Dernière porte franchie | **`G5`** — validée le 13 septembre 2026 (`DEC-574`), tag **`v0.5.0`** posé sur `main` — [checklist](docs/operations/checklist-validation-G5.md) |
+| **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux**, porte `G6`. **Ouvert** le 13 septembre 2026 (`DEC-575`), découpage validé le même jour : **douze** sous-étapes — [plan](docs/operations/fiche-lot-6.md) |
+| Sous-étape en cours | **`T1` à `T5` sont livrées, sept restent.** Les trois tables éditoriales, la page Framework, les pages détaillées d'un cercle et d'un bureau, puis le **rendu des blocs**. La prochaine est **`T6` — l'écriture d'un contenu dans son périmètre** (`US004`, 2 sur 3) |
+| Lots 7 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
 elle existe en **deux environnements isolés** — les huit services du cahier §15.4 en développement,
@@ -30,15 +30,24 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **29 tables** PostgreSQL, **16 migrations** rejouables, l'isolation multi-entités portée par **neuf clés étrangères composites** | LOT 2 et LOT 3 |
+| **32 tables** PostgreSQL — `alembic_version` comprise — **17 migrations** rejouables, **9 déclencheurs**, et l'isolation multi-entités portée par **12 clés étrangères à deux colonnes** (§25.3). *Relevés au catalogue le 18/09/2026, pas recopiés* | LOT 2, LOT 3 et LOT 6 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
-| **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, et la **miniature de photo** avec son autorisation | LOT 5, `T1` à `T5` |
+| **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
+| **le Framework en lecture** — sa synthèse à trois familles, les pages détaillées d'un **cercle** et d'un **bureau**, et le **rendu des blocs** d'une page de contenu | LOT 6, `T1` à `T5` |
 
-**Ce qui n'existe pas encore :** aucun **écran** de collaborateur — les routes sont là, les écrans
-sont **`T10` et `T11`** — aucun cercle (LOT 6), aucun import CSV (LOT 9), et **aucune miniature n'est
-produite** : leur génération est `MVP-L11-US005`, au LOT 11. La route de photo rend donc **404 pour
-tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test.
+**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** **aucun
+écran du LOT 6** — le Framework, les cercles, les bureaux et les contenus sont servis par l'API, et
+leurs écrans sont `T9` et `T10` ; **aucune écriture de contenu** — `T6` la pose ; **aucune
+publication** — `T7` ; aucun onboarding (LOT 7), aucun import CSV (LOT 9), et **aucune miniature
+n'est produite** : leur génération est `MVP-L11-US005`, au LOT 11. La route de photo rend donc
+**404 pour tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test.
+
+> **Les issues des stories du LOT 6 restent OUVERTES après la fusion de leur sous-étape**, et ce
+> n'est pas un oubli : leurs critères d'acceptation disent « **affichés** », et aucun écran n'existe
+> encore. Un critère non tenu ne se referme pas — c'est la même discipline que `#120` et `#121` au
+> LOT 5. **11 issues sont ouvertes** au 18/09/2026 ; mesure, jamais mémoire :
+> `gh issue list --state open --limit 300 --json number --jq 'length'`.
 
 Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
 
@@ -49,7 +58,7 @@ make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
 make check      # qualite complete : format, lint, types, tests, sources, documents
 make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
-make migrate    # appliquer les 16 migrations
+make migrate    # appliquer les 17 migrations
 make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```
@@ -282,6 +291,7 @@ local n'est **jamais** versionné.
 | [`G2`](docs/operations/checklist-validation-G2.md) | le socle de données — 18 tables métier, l'historisation, l'isolation |
 | [`G3`](docs/operations/checklist-validation-G3.md) | l'authentification complète et ses huit écrans |
 | [`G4`](docs/operations/checklist-validation-G4.md) | le portail, le cadre applicatif et les permissions — **et ce que le lot n'a PAS fait** |
+| [`G5`](docs/operations/checklist-validation-G5.md) | les collaborateurs, les profils et l'organisation — les **sept** critères, huit gestes de démonstration, et **son §7 : ce que le lot n'a PAS fait**, qu'il faut lire en premier |
 
 Arbitrages d'entrée du LOT 1 : [compte rendu `T0`](docs/operations/compte-rendu-t0-lot-1.md).
 Un **compte rendu par sous-étape** consigne le travail, les contrôles, et **les défauts de mes

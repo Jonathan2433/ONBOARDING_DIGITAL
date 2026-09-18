@@ -40,6 +40,10 @@ CHEMIN_FRAMEWORK = "/api/v1/entities/{code}/framework"
 CHEMIN_UNE_ENTITE = "/api/v1/entities/{code}"
 CHEMIN_CERCLE = "/api/v1/entities/{code}/circles/{code_cercle}"
 CHEMIN_BUREAU = "/api/v1/entities/{code}/offices/{code_bureau}"
+CHEMIN_PAGE = "/api/v1/entities/{code}/pages/{type_de_page}/{slug}"
+#  La charge qui a coule des projets entiers. Elle est SERVIE, et c'est le
+#  propos de `T5` : elle doit arriver comme une DONNEE, dans du JSON.
+INJECTION = "<script>alert('xss')</script>"
 
 MARQUEUR = f"t2l6-{uuid.uuid4().hex[:10]}"
 DELAI_HTTP = 30
@@ -194,9 +198,13 @@ def main() -> int:
 
     #  S608 : les seules valeurs interpolees viennent de ce module — `MARQUEUR`
     #  est un `uuid4`. `psql` n'accepte pas de parametre lie dans un bloc `DO`.
+    #  **PAS DE DOUBLEMENT D'ACCOLADES ICI.** Une valeur SUBSTITUEE dans une
+    #  f-string est inseree telle quelle : seules les accolades LITTERALES du
+    #  gabarit se doublent. Les doubler aurait produit du JSON invalide.
+    injection = json.dumps({"texte": INJECTION})
     decor = f"""
     DO $$
-    DECLARE e uuid; p uuid; c uuid; ce uuid; cs uuid; bu uuid; bp uuid;
+    DECLARE e uuid; p uuid; c uuid; ce uuid; cs uuid; bu uuid; bp uuid; pg uuid;
             mp uuid; ms uuid; md uuid; ap uuid; a2 uuid; a3 uuid;
     BEGIN
       INSERT INTO entity (code, display_name, city, country_code, status, timezone, activated_at)
@@ -241,7 +249,30 @@ def main() -> int:
       RETURNING id INTO bp;
       -- **C'EST LA PAGE QUI PUBLIE, JAMAIS LA TABLE `office`** -- `DEC-576`.
       INSERT INTO content_page (entity_id, page_type, office_id, title, slug, state)
-      VALUES (e, 'OFFICE', bp, 'Bureau publie', '{MARQUEUR}-pub', 'published');
+      VALUES (e, 'OFFICE', bp, 'Bureau publie', '{MARQUEUR}-pub', 'published')
+      RETURNING id INTO pg;
+
+      -- **LE DECOR DE `T5`.** Trois blocs sur la page publiee : deux legitimes
+      -- dans un ordre a retablir, et un ARCHIVE qui ne doit pas paraitre.
+      -- Le second porte du BALISAGE : il doit arriver comme une chaine JSON.
+      INSERT INTO content_block
+        (entity_id, content_page_id, block_type, display_order, payload_json)
+      VALUES (e, pg, 'TITLE', 2, '{{"texte": "Le second"}}'::jsonb);
+      INSERT INTO content_block
+        (entity_id, content_page_id, block_type, display_order, payload_json)
+      -- **GUILLEMET-DOLLAR, ET C'EST NECESSAIRE** : la charge contient des
+      -- APOSTROPHES -- `alert('xss')` -- qui casseraient un litteral SQL
+      -- ordinaire. Les doubler marcherait aussi, mais altererait la chaine
+      -- que le controle cherchera ensuite dans les OCTETS servis.
+      VALUES (e, pg, 'RICH_TEXT', 1, $json${injection}$json$::jsonb);
+      INSERT INTO content_block
+        (entity_id, content_page_id, block_type, display_order, payload_json, archived_at)
+      VALUES (e, pg, 'QUOTE', 3, '{{"texte": "archive"}}'::jsonb, now());
+
+      -- Une page en BROUILLON : elle doit rendre le MEME 404 qu'un slug inconnu,
+      -- sans quoi `US006` -- previsualiser puis publier -- n'aurait plus de sens.
+      INSERT INTO content_page (entity_id, page_type, title, slug, state)
+      VALUES (e, 'HOME', 'Brouillon', '{MARQUEUR}-draft', 'draft');
       -- Un bureau ARCHIVE, qui doit rendre le MEME 404 qu'un code inconnu.
       INSERT INTO office (entity_id, code, name, display_order, archived_at)
       VALUES (e, '{MARQUEUR}-BARCH', 'Bureau archive', 3, now());
@@ -800,6 +831,115 @@ def main() -> int:
             echecs += 1
             print(f"    ECHEC    sans session : {bureau_anonyme.statut}, 401 attendu")
 
+        # =====================================================================
+        #  `T5` — le rendu des blocs. MEME decor, MEME session, MEME menage.
+        # =====================================================================
+
+        # --- 30. LA PAGE PUBLIEE EST SERVIE, SES BLOCS DANS L'ORDRE
+        #
+        #  **LE TEMOIN POSITIF DU CRITERE NEGATIF.** « Aucun HTML arbitraire » se
+        #  satisfait tout seul quand rien n'est rendu (§7.39) : c'est ce controle
+        #  qui rend les suivants non triviaux.
+        controles += 1
+        chemin_page = CHEMIN_PAGE.format(
+            code=code_actif, type_de_page="OFFICE", slug=f"{MARQUEUR}-pub"
+        )
+        page_contenu = appeler(arguments.base, chemin_page, contexte, en_tetes=entetes)
+        corps_page = page_contenu.json()
+        blocs = corps_page.get("blocs", []) if isinstance(corps_page, dict) else []
+        rangs = [b.get("ordre") for b in blocs]
+        if page_contenu.statut == 200 and rangs == [1, 2]:
+            print("    ok       page de contenu : 200, DEUX blocs dans l'ordre 1, 2 —")
+            print("             le troisieme est ARCHIVE et n'est pas rendu")
+        else:
+            echecs += 1
+            print(f"    ECHEC    page de contenu : {page_contenu.statut}, rangs={rangs}")
+            raise RuntimeError("sans page de contenu, les controles suivants ne prouvent rien")
+
+        # --- 31. LE BALISAGE ARRIVE COMME UNE DONNEE, DANS DES OCTETS JSON
+        #
+        #  **C'EST LE CONTROLE LE PLUS UTILE DE `T5`, ET IL PORTE SUR LES OCTETS.**
+        #  Le type de contenu est `application/json` et non `text/html` : aucun
+        #  navigateur n'interpretera cette reponse comme un document. Et la charge
+        #  s'y trouve TELLE QUELLE, ce qui prouve que rien n'a ete retire en
+        #  silence -- un filtre qui aurait mange la chaine donnerait la meme
+        #  observation qu'une absence d'injection.
+        controles += 1
+        type_servi = page_contenu.en_tetes.get("content-type", "")
+        octets = page_contenu.corps
+        premier = blocs[0].get("contenu", {}) if blocs else {}
+        json_et_pas_html = type_servi.startswith("application/json")
+        charge_intacte = premier.get("texte") == INJECTION
+        dans_les_octets = INJECTION.encode("utf-8") in octets
+        if json_et_pas_html and charge_intacte and dans_les_octets:
+            print("    ok       le balisage arrive COMME UNE DONNEE : type de contenu")
+            print(f"             `{type_servi.split(';')[0]}`, charge INTACTE dans les octets —")
+            print("             rien n'est interprete, et rien n'est retire en silence")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    type={type_servi!r}, intacte={charge_intacte}, "
+                f"octets={dans_les_octets}"
+            )
+
+        # --- 32. `nombre_de_blocs` VAUT LA LONGUEUR DU TABLEAU
+        controles += 1
+        annonce = corps_page.get("nombre_de_blocs") if isinstance(corps_page, dict) else None
+        if annonce == len(blocs) == 2:
+            print("    ok       `nombre_de_blocs` vaut la longueur du tableau")
+        else:
+            echecs += 1
+            print(f"    ECHEC    annonce={annonce!r}, rendus={len(blocs)}")
+
+        # --- 33. UNE PAGE EN BROUILLON REND LE MEME 404 QU'UN SLUG INCONNU
+        #
+        #  Distinguer apprendrait l'existence du brouillon, et viderait `US006`
+        #  -- « previsualiser puis publier » -- de son sens. C'est `T7`.
+        controles += 1
+        brouillon = appeler(
+            arguments.base,
+            CHEMIN_PAGE.format(code=code_actif, type_de_page="HOME", slug=f"{MARQUEUR}-draft"),
+            contexte,
+            en_tetes={**entetes, "X-Request-ID": CORRELATION_FIXE},
+        )
+        slug_inconnu = appeler(
+            arguments.base,
+            CHEMIN_PAGE.format(code=code_actif, type_de_page="HOME", slug=f"{MARQUEUR}-zzz"),
+            contexte,
+            en_tetes={**entetes, "X-Request-ID": CORRELATION_FIXE},
+        )
+        if brouillon.statut == 404 and brouillon.signature() == slug_inconnu.signature():
+            print("    ok       404 identique pour un BROUILLON et un slug inconnu —")
+            print("             corps ET en-tetes ; `US006` garde son sens")
+        else:
+            echecs += 1
+            print(f"    ECHEC    brouillon {brouillon.statut}, inconnu {slug_inconnu.statut}")
+
+        # --- 34. UN TYPE DE PAGE INCONNU REND LE MEME 404
+        controles += 1
+        type_inconnu = appeler(
+            arguments.base,
+            CHEMIN_PAGE.format(code=code_actif, type_de_page="INEXISTANT", slug=f"{MARQUEUR}-pub"),
+            contexte,
+            en_tetes={**entetes, "X-Request-ID": CORRELATION_FIXE},
+        )
+        if type_inconnu.signature() == slug_inconnu.signature():
+            print("    ok       un TYPE de page inconnu rend le meme 404 — le refuser en")
+            print("             422 decrirait le schema a qui n'y a pas droit")
+        else:
+            echecs += 1
+            print(f"    ECHEC    type inconnu : {type_inconnu.statut}")
+
+        # --- 35. SANS COOKIE : le §5 refuse la ressource a `ANON`
+        controles += 1
+        page_anonyme = appeler(arguments.base, chemin_page, contexte)
+        if page_anonyme.statut == 401:
+            print("    ok       sans session : 401 — et l'annexe A §13, dont la ligne")
+            print("             « Consulter » n'a ni `EMP` ni `NEW`, n'y change rien")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans session : {page_anonyme.statut}, 401 attendu")
+
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**
         #
@@ -866,7 +1006,10 @@ def main() -> int:
     if echecs:
         print(f"  ECHEC : {echecs} controle(s) non conformes sur {controles}")
         return 1
-    print(f"  --> {controles} controles du Framework, des cercles et des bureaux, 0 echec")
+    print(
+        f"  --> {controles} controles du Framework, des cercles, des bureaux et des "
+        "contenus, 0 echec"
+    )
     return 0
 
 
