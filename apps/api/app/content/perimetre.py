@@ -1,4 +1,4 @@
-"""Qui peut ECRIRE quel contenu — annexe A §13, §10.2 et §10.3. LOT 6, `T6`.
+"""Qui peut ECRIRE, PUBLIER, ARCHIVER et RESTAURER — annexe A §13, §18. LOT 6, `T6` et `T7`.
 
 LA GRILLE DE L'ECRITURE DU LOT 5 NE SE REEMPLOIE PAS, ET LA REUTILISER
 ELARGIRAIT UN DROIT
@@ -34,12 +34,35 @@ ELARGIRAIT UN DROIT
   en lui donnant « Modifier le contenu du cercle ». Celui qui cree la ressource
   cree sa page ; celui qui a la portee locale en ecrit le contenu.
 
-« ENTITE » N'EST PAS « PERIMETRE », ET C'EST `T7` QUI LE PAIERA
+« ENTITE » N'EST PAS « PERIMETRE » — ET `T7` A MESURE QUE, POUR L'ESM, SI
 
   Toujours au §13, l'`ESM` a « Entite » pour creer et modifier, et
-  **« Perimetre »** pour publier et archiver. Une grille unique par role les
-  confondrait. Ce module ne porte QUE la modification ; la publication,
-  l'archivage et la restauration sont `US006`, sous-etape `T7`.
+  **« Perimetre »** pour publier et archiver. Deux mots differents dans la meme
+  colonne du meme tableau : `T6` en a conclu, prudemment, qu'il fallait les
+  traiter separement.
+
+  **LA LEGENDE §4 NE DEFINIT PAS `Perimetre`.** Mesure du 19/09/2026 : elle
+  definit la coche, `—`, `Soi`, `Consultants`, `Cercle`, `Bureau`, `Entite`, `Global`,
+  `Lecture` et `Conditionnel` -- dix valeurs, et `Perimetre` n'y est pas, alors
+  qu'il est employe dans plus de vingt cellules.
+
+  **MAIS LE §3 LE DEFINIT, DANS UNE COLONNE QUI S'APPELLE « PERIMETRE
+  PRINCIPAL » :**
+
+      DSM      « Ses consultants dans son entite »
+      ESM      « **Ensemble de son entite** »
+      BOOST    « Son cercle et ses membres »
+      OFFICE   « Son bureau »
+      ADM-E    « Ensemble de son entite »
+      SUPER    « Toutes les entites »
+
+  Or la legende §4 definit `Entite` par « **Ensemble de l'entite principale** ».
+  **Pour l'`ESM`, `Perimetre` et `Entite` denotent donc le MEME ensemble**, et
+  les deux mots du §13 ne se contredisent pas : ils se lisent l'un par l'autre.
+  `RIGHTS-009` le redit -- « l'ESM dispose des pouvoirs fonctionnels transverses
+  de son entite ».
+
+  C'est ce qui resout `ECART-063` -- voir plus bas.
 
 CE QUE LES §10.2 ET §10.3 AJOUTENT, ET ILS CONCORDENT
 
@@ -65,6 +88,58 @@ CE QUE LE CORPUS NE TRANCHE PAS, ET QUI EST CONSIGNE PLUTOT QU'INVENTE
   **Aucun droit n'est donc accorde au DSM ici**, ce qui suit le §13 a la lettre.
   Lui ouvrir toutes les pages `FRAMEWORK` serait plus large que ce que le §10.1
   ecrit, et le §6.5 interdit l'hypothese deguisee en decision. `ECART-062`.
+
+`ECART-063` — LES DEUX GRILLES D'ARCHIVAGE, ET CE QUE LA MESURE EN A FAIT
+
+  `T6` a releve que le §13 et le §18 donnent deux grilles pour « Archiver un
+  contenu », divergentes **dans les deux sens**. La mesure du 19/09/2026 les
+  reduit a **une seule cellule**, en lisant `Perimetre` par le §3 :
+
+      role     §13 « Archiver »      §18 « Archiver un contenu »   concordent ?
+      DSM      —                     Perimetre                     **NON**
+      ESM      Perimetre = Entite    Entite                        OUI, meme ensemble
+      BOOST    Cercle                Cercle                        OUI
+      OFFICE   Bureau                Bureau                        OUI
+      ADM-E    Entite                Entite                        OUI
+      SUPER    Global                Global                        OUI
+
+  **CINQ ROLES SUR SIX CONCORDENT**, et la divergence apparente de l'`ESM`
+  n'etait qu'une difference de VOCABULAIRE. Reste le `DSM`, et sa cellule du §18
+  n'est pas implementable :
+
+    - le §3 definit son perimetre comme « ses **consultants** dans son entite »,
+      donc un ensemble de PERSONNES ;
+    - `content_page` ne porte aucune colonne qui rattache une page a un `DSM` --
+      mesure sur le catalogue : `entity_id`, `page_type`, `circle_id`,
+      `office_id`, `title`, `slug`, `state`, `published_at`, plus les champs
+      communs du §3.1. Ni `person_id`, ni `dsm_id` ;
+    - lui accorder un droit exigerait donc d'INVENTER un rattachement, ce que le
+      §6.5 interdit -- et le §10.1 du cahier confirme dans le meme sens, sa ligne
+      « Archiver/restaurer une page » mettant le `DSM` a **tiret**.
+
+  **Le `—` du §13 est donc retenu**, et ce n'est pas seulement la lecture la plus
+  restrictive : c'est la seule que le modele permette d'ecrire.
+
+LA RESTAURATION A UNE GRILLE PLUS ETROITE, ET TROIS SOURCES LE DISENT
+
+      source                                DSM  ESM            BOOST  OFFICE  ADM-E   SUPER
+      matrice §13 « Restaurer »             —    Conditionnel   —      —       Entite  Global
+      matrice §18 « Restaurer un contenu »  —    Entite, fonct. —      —       Entite  Global
+      cahier §10.1 « Archiver/restaurer »   —    Conditionnel   —      —       Entite  Global
+
+  **Le Booster et le responsable de bureau ARCHIVENT leur page et ne la
+  RESTAURENT pas.** C'est asymetrique, c'est ecrit trois fois, et c'est
+  exactement la lecon de `T8` du LOT 5 : le §6.1 y portait deja deux grilles, et
+  reutiliser la premiere aurait accorde l'archivage a deux roles qui en sont
+  exclus.
+
+  **`Conditionnel` EST DEFINI** -- §4, « autorise si une regle metier
+  complementaire est satisfaite » -- et `ARB-DROIT-003` nomme la regle :
+  « l'ESM peut restaurer dans son entite un profil, un **contenu**, un evenement,
+  un cercle ou un bureau. Les restaurations **techniques, massives ou liees aux
+  imports** restent reservees a l'administrateur d'entite et au
+  super-administrateur. » Restaurer UNE page est une restauration fonctionnelle :
+  la condition est satisfaite, et ce module n'offre aucun geste massif.
 """
 
 from __future__ import annotations
@@ -78,21 +153,32 @@ from typing import Final
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from app.content.modeles import TypeDePage
+from app.content.modeles import EtatDePage, TypeDePage
 from app.organization.modeles import TypeResponsabilite
 from app.permissions.services import RoleDeLaMatrice
 
 
 class ActionEditoriale(enum.StrEnum):
-    """Les deux actions de `T6`, et elles ont des grilles DIFFERENTES.
+    """Les cinq lignes d'action du §13, et elles n'ont PAS toutes la meme grille.
 
-    `PUBLIER`, `ARCHIVER` et `RESTAURER` ne sont pas ici : ce sont les trois
-    dernieres lignes du §13, story `US006`, sous-etape `T7`. Les declarer sans
-    les implementer donnerait des membres que personne ne lit -- §7.32.
+    `T6` n'en portait que deux et disait pourquoi les trois autres n'etaient pas
+    declarees : « des membres que personne ne lit » (§7.32). `T7` les lit.
+
+    **TROIS GRILLES DISTINCTES POUR CINQ ACTIONS**, et c'est le document qui les
+    separe, pas ce module :
+
+        CREER                 `ESM`, `ADM-E`, `SUPER`  -- une seule ligne au §13
+        MODIFIER PUBLIER      les memes, plus `BOOST` sur son cercle et `OFFICE`
+        ARCHIVER              sur son bureau
+        RESTAURER             `ESM`, `ADM-E`, `SUPER` -- `BOOST` et `OFFICE` en
+                              sont EXCLUS, et trois sources le disent
     """
 
     CREER = "creer"
     MODIFIER = "modifier"
+    PUBLIER = "publier"
+    ARCHIVER = "archiver"
+    RESTAURER = "restaurer"
 
 
 #  §13, ligne « Creer un contenu general ». **Une seule ligne de creation dans
@@ -167,6 +253,47 @@ ROLES_D_ECRITURE_EDITORIALE: Final[frozenset[RoleDeLaMatrice]] = ROLES_DE_PORTEE
     portee.role for portee in PORTEES_LOCALES.values()
 }
 
+#  §13 « Restaurer », §18 « Restaurer un contenu » et cahier §10.1
+#  « Archiver/restaurer une page » -- **les trois concordent**, et les trois
+#  mettent `BOOST` et `OFFICE` a tiret. La grille de la restauration est donc
+#  celle des roles de portee ENTITE, et rien d'autre.
+#
+#  **DECLARE PLUTOT QU'ALIASE SUR `ROLES_DE_PORTEE_ENTITE`, ET C'EST DELIBERE.**
+#  Les deux ensembles coincident aujourd'hui pour une raison qui leur est
+#  PROPRE -- l'un parce que trois documents excluent les portees locales de la
+#  restauration, l'autre parce que le §13 n'a qu'une ligne de creation. Les
+#  aliaser les ferait bouger ENSEMBLE le jour ou une seule des deux raisons
+#  change. Un test MESURE leur egalite d'aujourd'hui et echouera si elle cesse,
+#  ce qui forcera la decision au lieu de la prendre en silence (§7.32).
+ROLES_DE_RESTAURATION: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  Ce qu'une portee LOCALE -- Booster, responsable de bureau -- permet sur la
+#  page de sa ressource. **`RESTAURER` EN EST ABSENT**, et c'est la seule
+#  difference avec la portee d'entite.
+#
+#  **ECRIT EN EXTENSION, JAMAIS PAR SOUSTRACTION**, contrairement a
+#  `TYPES_SANS_PORTEE_LOCALE` -- et les deux partis sont justes pour la meme
+#  raison. Un TYPE DE PAGE nouveau doit tomber dans le regime le plus restrictif,
+#  donc par soustraction ; une ACTION nouvelle ne doit PAS etre accordee d'office
+#  a une portee locale, donc en extension. Un test exige que l'union couvre
+#  l'enumeration, si bien qu'un sixieme membre fera echouer le test au lieu de
+#  s'accorder tout seul.
+ACTIONS_DES_PORTEES_LOCALES: Final[frozenset[ActionEditoriale]] = frozenset(
+    {ActionEditoriale.MODIFIER, ActionEditoriale.PUBLIER, ActionEditoriale.ARCHIVER}
+)
+
+#  Ce qu'une portee d'ENTITE permet sur une page existante. `CREER` n'en est pas :
+#  elle ne porte sur aucune page, et `peut_creer_une_page` y repond.
+ACTIONS_DES_ROLES_D_ENTITE: Final[frozenset[ActionEditoriale]] = ACTIONS_DES_PORTEES_LOCALES | {
+    ActionEditoriale.RESTAURER
+}
+
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class PerimetreEditorial:
@@ -182,23 +309,26 @@ class PerimetreEditorial:
     actions: frozenset[ActionEditoriale]
 
 
-#  La page existe-t-elle dans cette entite, et quel est son rattachement ? Le
-#  couple `(id, entity_id)` porte l'isolation (§25.3) ; un `WHERE` sur l'entite
-#  seule confondrait deux pages d'entites differentes.
+#  La page existe-t-elle dans cette entite, quel est son rattachement, et dans
+#  quel ETAT est-elle ? Le couple `(id, entity_id)` porte l'isolation (§25.3) ;
+#  un `WHERE` sur l'entite seule confondrait deux pages d'entites differentes.
 #
-#  **`archived_at IS NULL` : ON NE MODIFIE PAS UNE PAGE ARCHIVEE.** §23.2, « une
+#  **`T6` FILTRAIT `archived_at IS NULL` ICI, ET `T7` A DU LE REMONTER D'UN CRAN.**
+#  Ce filtre disait « on ne modifie pas une page archivee » -- §23.2, « une
 #  interdiction liee a la ressource ou a l'etat prevaut sur le cumul des roles ».
-#  La restaurer est une AUTRE ligne du §13, a une AUTRE grille -- « Restaurer |
-#  ESM Conditionnel » -- et c'est `T7`. Cela vaut aussi pour `SUPER`.
+#  Il est toujours vrai, mais il ne peut plus vivre dans la REQUETE : une page
+#  archivee est precisement la cible de `RESTAURER`, et une requete qui l'exclut
+#  rendrait la restauration impossible a resoudre. L'etat est donc LU, et c'est
+#  `_actions_selon_l_etat` qui en derive ce qui est permis.
 #
-#  **AUCUN FILTRE SUR `state`, ET C'EST DELIBERE.** On edite precisement un
-#  BROUILLON : exiger `published` rendrait la route inutilisable pour ce qu'elle
-#  sert. La lecture de `T5` ne sert que le publie parce qu'elle sert le PUBLIC ;
-#  celle-ci sert l'AUTEUR, qui a deja du prouver un role d'ecriture.
-_PAGE_MODIFIABLE: Final[str] = """
-SELECT page_type, circle_id, office_id
+#  **AUCUN FILTRE SUR `state` NON PLUS, ET C'EST TOUJOURS DELIBERE.** On edite
+#  precisement un BROUILLON : exiger `published` rendrait la route inutilisable
+#  pour ce qu'elle sert. La lecture de `T5` ne sert que le publie parce qu'elle
+#  sert le PUBLIC ; celle-ci sert l'AUTEUR, qui a deja du prouver un role.
+_PAGE_CIBLE: Final[str] = """
+SELECT page_type, circle_id, office_id, state, archived_at
   FROM content_page
- WHERE id = :page AND entity_id = :entite AND archived_at IS NULL
+ WHERE id = :page AND entity_id = :entite
 """
 
 #  §8.4 : une responsabilite ACTIVE de ce type, sur CETTE ressource.
@@ -241,6 +371,48 @@ SELECT 1 FROM framework_responsibility_assignment
 """
 
 
+def _actions_selon_l_etat(*, etat: str, archivee: bool) -> frozenset[ActionEditoriale]:
+    """Ce que l'ETAT de la page permet, quels que soient les roles — §23.2.
+
+    « Une interdiction liee a la ressource ou a l'**etat** prevaut sur le cumul
+    des roles. » Cette fonction porte cette moitie-la, et elle ne connait aucun
+    role : `resoudre_le_perimetre_editorial` intersecte les deux.
+
+        archivee              RESTAURER, et elle seule
+        draft, non archivee   MODIFIER, PUBLIER, ARCHIVER
+        published, idem       MODIFIER, ARCHIVER -- PUBLIER ne s'offre pas deux fois
+
+    **`archived_at` EST LE DISCRIMINANT, PAS `state`, ET LES DEUX PEUVENT
+    DIVERGER.** Le §15.1 declare `state` a trois valeurs dont `archived` ; le
+    §3.1 declare `archived_at` sur toute table metier. **Le corpus ne dit nulle
+    part qu'ils sont equivalents**, et aucune contrainte ne l'exige -- le decor
+    de `T4` produit d'ailleurs les deux divergences, deliberement, pour prouver
+    que sa lecture de `publie` est exacte. En poser une les rendrait impossibles
+    et detruirait cette preuve pour rien (§6.5, §7.41).
+
+    Les deux divergences se lisent donc, et **dans le sens le plus restrictif** :
+
+      - `state = archived` sans `archived_at` : la page n'est pas archivee comme
+        RESSOURCE, donc modifiable et archivable -- mais pas publiable, son etat
+        n'etant pas `draft` ;
+      - `state = published` avec `archived_at` : la page EST archivee, donc seule
+        la restauration s'offre -- et la restauration remet `state` a `draft`, ce
+        qui repare la divergence au passage.
+
+    **CE QUI GARANTIT QUE L'API N'EN CREE JAMAIS** n'est pas une contrainte,
+    c'est que `archiver_une_page` et `restaurer_une_page` ecrivent les deux
+    colonnes dans le MEME `UPDATE` : les separer exigerait de casser le code, pas
+    d'oublier un appel (§7.35). Un test l'exige dans les deux sens.
+    """
+    if archivee:
+        return frozenset({ActionEditoriale.RESTAURER})
+    if etat == EtatDePage.DRAFT.value:
+        return frozenset(
+            {ActionEditoriale.MODIFIER, ActionEditoriale.PUBLIER, ActionEditoriale.ARCHIVER}
+        )
+    return frozenset({ActionEditoriale.MODIFIER, ActionEditoriale.ARCHIVER})
+
+
 def resoudre_le_perimetre_editorial(
     connexion: Connection,
     *,
@@ -252,6 +424,12 @@ def resoudre_le_perimetre_editorial(
 ) -> PerimetreEditorial:
     """Les actions editoriales que `acteur` peut mener sur `page`, dans `entite`.
 
+    **LE RESULTAT EST UNE INTERSECTION DE DEUX CHOSES INDEPENDANTES** : ce que
+    les ROLES accordent -- §13, §18 -- et ce que l'ETAT de la page permet --
+    §23.2. Les melanger donnerait une regle unique ou deux sources se
+    confondraient, et c'est precisement ce que `T6` a refuse de faire pour les
+    deux grilles d'ecriture.
+
     `roles` vient de `resoudre_les_permissions`, donc le §5.1 est **deja
     applique** : hors de son entite principale une personne n'a que `EMP`, et
     `EMP` ne porte aucun droit editorial. Le redire ici donnerait deux regles
@@ -261,14 +439,14 @@ def resoudre_le_perimetre_editorial(
     creer ne porte sur aucune page existante, donc sur aucune cible que cette
     signature puisse recevoir. `peut_creer_une_page` repond a cette question-la.
     """
-    ligne = connexion.execute(
-        text(_PAGE_MODIFIABLE), {"page": page, "entite": entite}
-    ).one_or_none()
+    ligne = connexion.execute(text(_PAGE_CIBLE), {"page": page, "entite": entite}).one_or_none()
     if ligne is None:
         return PerimetreEditorial(actions=frozenset())
 
+    selon_l_etat = _actions_selon_l_etat(etat=str(ligne[3]), archivee=ligne[4] is not None)
+
     if roles & ROLES_DE_PORTEE_ENTITE:
-        return PerimetreEditorial(actions=frozenset({ActionEditoriale.MODIFIER}))
+        return PerimetreEditorial(actions=selon_l_etat & ACTIONS_DES_ROLES_D_ENTITE)
 
     portee = PORTEES_LOCALES.get(str(ligne[0]))
     #  **`portee.role not in roles` N'EST PAS REDONDANT AVEC LA REQUETE QUI SUIT,
@@ -309,7 +487,11 @@ def resoudre_le_perimetre_editorial(
     ).first()
     if active is None:
         return PerimetreEditorial(actions=frozenset())
-    return PerimetreEditorial(actions=frozenset({ActionEditoriale.MODIFIER}))
+    #  **L'INTERSECTION EST CE QUI RETIRE `RESTAURER` AU BOOSTER**, et elle le
+    #  fait sans qu'aucun test explicite ne le nomme ici : sa page archivee
+    #  n'offre que `RESTAURER`, que `ACTIONS_DES_PORTEES_LOCALES` ne contient
+    #  pas. Le resultat est l'ensemble vide, donc le meme 403 que partout.
+    return PerimetreEditorial(actions=selon_l_etat & ACTIONS_DES_PORTEES_LOCALES)
 
 
 def peut_creer_une_page(roles: frozenset[RoleDeLaMatrice]) -> bool:

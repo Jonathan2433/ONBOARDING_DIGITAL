@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `585` en usage | `DEC-586` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `586` en usage | `DEC-587` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `063` |  `ECART-064` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `121` | `QO-122` | [questions](operations/registre-questions-ouvertes.md) |
+| `ECART-nnn` | Écarts |  `001` à `064` |  `ECART-065` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `122` | `QO-123` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -292,9 +292,9 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` À `T6` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), et l'**écriture d'un contenu** le 18/09 (`DEC-585`). **49 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T7`, brouillon, publication, archivage et restauration.
+**`T2` À `T7` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), et le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`). **61 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T8`, la présentation de l'entité et les liens internes.
 
-> **`T6` A OUVERT DEUX ÉCARTS, ET L'UN D'EUX BLOQUE `T7`.** **`ECART-063`** : l'annexe A **§13 et §18 donnent deux grilles différentes** pour « Archiver un contenu », et elles divergent **dans les deux sens** — le §18 accorde « Périmètre » au `DSM` que le §13 lui refuse, et « Entité » à l'`ESM` que le §13 borne au « Périmètre ». **Surtout pas l'union** : le §23.1 cumule les droits d'une **personne**, pas deux rédactions d'une même cellule. **`ECART-062`** : le §10.1 donne au DSM « Modifier la page DSM », et **aucun `page_type` du §15.1 ne porte cette page** — `T6` suit le §13, la lecture la plus restrictive, et la question relève de Léa avant `T9`.
+> **`ECART-063` EST CLOS PAR `T7`, ET IL L'EST PAR LA MESURE.** Il annonçait deux grilles divergentes pour « Archiver un contenu ». **La légende §4 ne définit pas `Périmètre`** — dix valeurs y figurent, pas celle-là — **mais le §3 le définit**, dans une colonne intitulée « Périmètre principal », où l'`ESM` a « **ensemble de son entité** », soit mot pour mot la définition de `Entité`. **Cinq rôles sur six concordaient donc déjà**, et la sixième cellule — celle du `DSM` — **n'est pas exprimable** : son périmètre est un ensemble de **personnes**, et `content_page` ne porte aucune colonne qui rattache une page à un DSM. **`ECART-062` reste ouvert** et relève de Léa avant `T9` ; **`ECART-064` est ouvert par `T7`** — le §18.1 exige un motif pour toute intervention d'un super-administrateur dans une entité, et **aucune route du dépôt n'en demande un**.
 
 > **`T6` A TROUVÉ UN DÉFAUT DANS SON PROPRE OUTIL DE MESURE, ET C'EST SA LEÇON LA PLUS TRANSFÉRABLE.** Sa campagne de témoins retire quinze filtres un par un ; elle en annonçait **cinq** muets, et trois de ces cinq exécutaient en réalité le **bytecode d'une variante précédente** — CPython invalide un `.pyc` sur le couple `(mtime tronqué à la seconde, taille)`, et quatre variantes pesaient **exactement 13 487 octets**. « 0 échec » était la **même observation** pour « ce filtre ne travaille pas » et « ce filtre n'a jamais été retiré ». Parade `PYTHONDONTWRITEBYTECODE=1`, **mesurée avant d'être appliquée**, et la campagne relancée a révélé **deux vrais trous** que la première passe noyait. `CLAUDE.md` §7.44.
 

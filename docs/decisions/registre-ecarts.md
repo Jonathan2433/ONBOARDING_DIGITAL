@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 18 septembre 2026, `T6` du LOT 6 — `ECART-062` et `ECART-063` ouverts
+**Dernière mise à jour :** 19 septembre 2026, `T7` du LOT 6 — `ECART-063` **clos par la mesure**, `ECART-064` ouvert
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 63 | 13 | 47 | 3 |
+| Total 64 | 13 | 48 | 3 |
 
 ---
 
@@ -80,7 +80,8 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-060` | Le §10.1 veut « des filtres combinables » ; **quatre des cinq que l'API accepte n'ont aucune liste de référence à proposer** | Non — l'API les accepte, l'écran ne peut pas les peupler | Ouvert, à reprendre aux LOTS 6 et 9 |
 | `ECART-061` | Le modèle §10.2 et `DEC-527` veulent qu'un mot de passe provisoire soit changé ; **`changement_exige` est servi par l'API et aucun écran ne le lit** — la session est ouverte et toutes les routes répondent | Non pour le MVP, **oui avant la production** | Ouvert, à instruire au LOT 13 |
 | `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | Ouvert, avant `T9` |
-| `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non pour `T6`, **oui pour `T7`** | Ouvert, avant `T7` |
+| `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
+| `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -204,11 +205,26 @@ formulée, et son caractère bloquant est explicité.
 | Cause | Le §13 est la section **thématique** des contenus éditoriaux ; le §18 est la section **transversale** de l'archivage, qui reprend en une ligne ce que chaque section détaille. Une reprise de ce genre vieillit ou diverge dès sa rédaction — c'est la forme exacte d'`ECART-023`, où une fiche énumérait six des sept séparations du cahier. |
 | Bloquant | **Non pour `T6`, qui n'archive aucune page.** La sous-étape écrit le **contenu** d'une page — son titre et ses blocs — et retirer un bloc n'est pas « archiver un contenu » : c'est le mécanisme même de « Modifier un contenu de … ». La route n'écrit jamais `content_page.archived_at`, et un test l'exige.<br>**Bloquant pour `T7`**, qui livre précisément l'archivage et la restauration. |
 | Recommandation | **Ne pas trancher ici, et surtout ne pas prendre l'union.** Le §23.1 pose l'union des droits pour le **cumul de rôles** d'une même personne, pas pour le cumul de deux rédactions d'une même cellule : appliquer l'union accorderait au `DSM` un droit d'archivage que la section thématique lui refuse **en cellule**, et élargirait l'`ESM` au-delà de sa portée déclarée.<br>La règle de préséance ne départage pas non plus : les deux sections appartiennent au même document, et aucune n'est plus récente que l'autre. **La question est donc à instruire au début de `T7`**, en confrontant les deux au §23.2 — « une interdiction liée à la ressource prévaut » — et en retenant, à défaut de réponse, la **plus restrictive** des deux pour chaque cellule.<br>**Recommandation générale** : deux sections d'un même document peuvent régler la même action, et il faut les **confronter** avant d'en appliquer une — §7.24, « deux règles justes séparément peuvent s'exclure ». Ici la divergence a été trouvée en lisant le §18 pour une **autre** question, celle du motif d'archivage (§18.1). |
-| Résolution | **Ouvert.** Échéance : **avant `T7` du LOT 6**. `T6` n'archive aucune page et ne dépend donc d'aucune des deux lectures. |
+| Résolution | **CLOS le 19 septembre 2026, en instruisant `T7`, et par la MESURE — pas par un arbitrage.** Trois faits, dans cet ordre.<br>**(1) LA LÉGENDE §4 NE DÉFINIT PAS `Périmètre`.** Elle définit la coche, `—`, `Soi`, `Consultants`, `Cercle`, `Bureau`, `Entité`, `Global`, `Lecture` et `Conditionnel` — **dix valeurs**, et `Périmètre` n'y est pas, alors qu'il est employé dans plus de vingt cellules du document.<br>**(2) MAIS LE §3 LE DÉFINIT, DANS UNE COLONNE QUI S'APPELLE « PÉRIMÈTRE PRINCIPAL »** : `DSM` « ses consultants dans son entité », `ESM` « **ensemble de son entité** », `BOOST` « son cercle », `OFFICE` « son bureau », `ADM-E` « ensemble de son entité », `SUPER` « toutes les entités ». Or la légende §4 définit `Entité` par « **ensemble de l'entité principale** ». **Pour l'`ESM`, `Périmètre` et `Entité` dénotent donc le MÊME ensemble** — `RIGHTS-009` le redit — et la divergence apparente de cette colonne **n'était qu'une différence de vocabulaire**. Cinq rôles sur six concordent.<br>**(3) RESTE LA CELLULE DU `DSM`, ET ELLE N'EST PAS EXPRIMABLE.** Le §3 fait de son périmètre un ensemble de **personnes** ; `content_page` ne porte aucune colonne qui rattache une page à un DSM — mesuré sur le catalogue : `entity_id`, `page_type`, `circle_id`, `office_id`, `title`, `slug`, `state`, `published_at`, plus les champs communs du §3.1. Lui accorder ce droit exigerait d'**inventer un rattachement** (§6.5), et le cahier §10.1 met lui aussi le `DSM` à **tiret** sur « Archiver/restaurer une page ». **Le `—` du §13 est donc retenu**, et ce n'est pas seulement la lecture la plus restrictive : c'est la seule que le modèle permette d'écrire.<br>**Ce que la clôture laisse ouvert** : `ECART-062` reste en attente de Léa sur la page DSM, et c'est la même racine — le corpus décrit un droit du DSM sur des contenus qu'aucun `page_type` ne porte. |
+| Leçon | **UN MOT EMPLOYÉ COMME VALEUR ET ABSENT DE LA LÉGENDE SE DÉFINIT AILLEURS DANS LE DOCUMENT.** J'ai d'abord lu « deux mots différents dans la même colonne, donc deux droits différents » — une lecture prudente, et `T6` a eu raison de s'y tenir. Ce qui l'a corrigée n'est pas un raisonnement mais une **recherche du mot dans tout le document**, qui l'a trouvé en titre de colonne au §3. C'est le §7.29 dans un troisième costume : avant de trancher entre deux lectures, cherche si le document définit le terme **ailleurs que là où tu le lis**. |
 
 ---
 
-**Prochain identifiant libre : `ECART-064`.**
+**Prochain identifiant libre : `ECART-065`.**
+
+---
+
+## `ECART-064` — le motif du §18.1 n'est demandé par aucune route, et deux colonnes l'attendent
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 19 septembre 2026, en instruisant l'archivage d'un contenu pour `T7` du LOT 6 |
+| Source | Matrice, annexe A **§18.1** (« Motif obligatoire ») · `RIGHTS-017` · modèle §3.1 (`archive_reason`) et §8.4 (`assignment_reason`) |
+| Constat | Le §18.1 énumère **cinq** cas où un motif est obligatoire : purge définitive, révocation manuelle d'un accès actif, changement sensible de rôle, rollback d'import, et **« intervention du super-administrateur dans une entité »**. `RIGHTS-017` le redit : « une intervention globale du super-administrateur dans une entité exige une traçabilité renforcée ».<br>**Aucune route du dépôt ne demande de motif, et les deux colonnes prévues pour le porter sont vides.** Mesure du 19/09/2026 : `archive_reason` et `assignment_reason` n'apparaissent **nulle part** dans `apps/api/app/` hors de leur déclaration — zéro écriture, zéro lecture. L'archivage d'un profil (`T8` du LOT 5) ne l'écrit pas davantage. |
+| Cause | Les quatre premiers cas appartiennent à des lots ultérieurs — purge et anonymisation au LOT 10, rollback d'import au LOT 9. **Le cinquième, lui, est transversal** : il porte sur **toute** action d'un super-administrateur dans une entité, donc sur des routes déjà livrées. Il n'a jamais été instruit parce qu'aucune sous-étape ne l'avait sous les yeux : c'est le §18.1 lu pour une autre question — « faut-il un motif pour archiver un contenu ? » — qui l'a fait apparaître. |
+| Bloquant | **Non pour le MVP.** Aucune donnée réelle n'est manipulée, il n'existe qu'un super-administrateur, et la trace minimale existe : `archived_by_person_id`, `updated_by_person_id` et `created_by_person_id` nomment l'auteur de chaque écriture. Ce qui manque est le **motif**, et la table qui le conserverait. |
+| Recommandation | **Ne pas l'implémenter dans `T7` seul.** Demander un motif ici et nulle part ailleurs donnerait une règle appliquée à une route sur quarante, ce qui est la forme exacte du garde-fou à couverture partielle du §7.40 — et un champ obligatoire sur une seule route apprend surtout à le remplir de n'importe quoi.<br>**L'instruire avec `audit_event`**, §21.1 du modèle, **LOT 10** : c'est là que le motif trouve une table qui le conserve et un lecteur qui le lit. Un motif stocké dans `archive_reason` sans consommateur serait un champ que personne ne lit — `ECART-061` a montré ce que cela coûte, `changement_exige` étant servi depuis `T5` du LOT 3 sans qu'aucun écran ne le lise.<br>**Recommandation générale** : quand une règle transversale est découverte en lisant une section pour autre chose, mesure d'abord **combien de routes déjà livrées elle concerne**. Ici la réponse est « toutes celles qu'un `SUPER` peut appeler », et c'est ce qui la sort du périmètre d'une sous-étape. |
+| Résolution | **Ouvert.** Échéance : **avant la production**, à instruire au LOT 10 avec `audit_event`. À annoncer à la porte `G6`. |
 
 ---
 

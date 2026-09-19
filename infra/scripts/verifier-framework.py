@@ -46,6 +46,9 @@ CHEMIN_PAGE = "/api/v1/entities/{code}/pages/{type_de_page}/{slug}"
 #  que la lecture ne sert pas.
 CHEMIN_CREATION = "/api/v1/entities/{code}/pages"
 CHEMIN_CONTENU = "/api/v1/entities/{code}/pages/{page}/contenu"
+CHEMIN_PUBLICATION = "/api/v1/entities/{code}/pages/{page}/publication"
+CHEMIN_ARCHIVAGE = "/api/v1/entities/{code}/pages/{page}/archivage"
+CHEMIN_RESTAURATION = "/api/v1/entities/{code}/pages/{page}/restauration"
 CHEMIN_SESSION = "/api/v1/auth/session"
 EN_TETE_JETON = "X-CSRF-Token"
 #  La charge qui a coule des projets entiers. Elle est SERVIE, et c'est le
@@ -1379,6 +1382,406 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    autre entite : {ailleurs.statut}")
+
+        # ================================================================
+        #  `T7` — brouillon, publication, archivage, restauration
+        # ================================================================
+
+        # --- 50. `T7` PART D'UNE PAGE NEUVE, ET C'EST UN DEFAUT QUI L'A APPRIS
+        #
+        #  **`T7-2` : LA PAGE DE `T6` EST DEJA PUBLIEE.** Le controle 44 la publie
+        #  PAR SQL pour prouver que l'ecriture n'y touche pas -- la route de
+        #  publication n'existait pas alors. Mes premiers controles la croyaient
+        #  en brouillon, et ils ont echoue en disant « brouillon servi : 200 ».
+        #
+        #  Le remede n'est pas de defaire cet etat : c'est de partir d'une page
+        #  que `T7` cree lui-meme. Un controle qui herite d'un etat qu'il n'a pas
+        #  pose mesure le decor d'un autre (§9.0 — verifier avant de batir dessus).
+        controles += 1
+        slug_t7 = f"{MARQUEUR}-t7"
+        creation_t7 = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={"type_de_page": "HOME", "titre": "Page de T7", "slug": slug_t7},
+            en_tetes=ecriture,
+        )
+        corps_t7 = creation_t7.json()
+        page_t7 = corps_t7.get("identifiant") if isinstance(corps_t7, dict) else None
+        etat_t7 = corps_t7.get("etat") if isinstance(corps_t7, dict) else None
+        if creation_t7.statut == 201 and page_t7 and etat_t7 == "draft":
+            version = 1
+            print("    ok       `T7` part d'une page NEUVE, en `draft` — jamais d'un etat pose")
+            print("             par une autre sous-etape")
+        else:
+            echecs += 1
+            print(f"    ECHEC    creation pour `T7` : {creation_t7.statut}, {str(corps_t7)[:160]}")
+            raise RuntimeError("sans page neuve, le cycle ne prouverait rien")
+
+        #  Le contenu, avec la charge d'injection : elle doit traverser la
+        #  publication intacte, ce que le controle 53 mesure dans les OCTETS.
+        ecrit_t7 = appeler(
+            arguments.base,
+            CHEMIN_CONTENU.format(code=code_actif, page=page_t7),
+            contexte,
+            charge={
+                "version": 1,
+                "titre": "Page de T7",
+                "blocs": [{"type_de_bloc": "RICH_TEXT", "contenu": {"texte": INJECTION}}],
+            },
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        if ecrit_t7.statut != 200:
+            echecs += 1
+            print(f"    ECHEC    contenu de la page de `T7` : {ecrit_t7.statut}")
+        else:
+            version = 2
+
+        chemin_public = CHEMIN_PAGE.format(code=code_actif, type_de_page="HOME", slug=slug_t7)
+        chemin_publication = CHEMIN_PUBLICATION.format(code=code_actif, page=page_t7)
+        chemin_archivage = CHEMIN_ARCHIVAGE.format(code=code_actif, page=page_t7)
+        chemin_restauration = CHEMIN_RESTAURATION.format(code=code_actif, page=page_t7)
+
+        # --- 51. TEMOIN AVANT : LE BROUILLON N'EST PAS SERVI
+        #
+        #  Sans lui, le « elle est servie » du controle suivant ne prouverait pas
+        #  que c'est la PUBLICATION qui l'a rendue visible.
+        controles += 1
+        avant = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        if avant.statut == 404:
+            print("    ok       TEMOIN AVANT : le brouillon rend 404 — indistinguable d'un slug")
+            print("             inconnu, ce que `US006` exige de « previsualiser PUIS publier »")
+        else:
+            echecs += 1
+            print(f"    ECHEC    brouillon servi : {avant.statut} sur {chemin_public}")
+
+        # --- 52. PUBLIER REND LA PAGE SERVIE — LE TEMOIN DE TOUTE LA SOUS-ETAPE
+        #
+        #  « Brouillon et publication sont distingues » est satisfait par une API
+        #  qui ne publie RIEN (§7.39). Ce qui le prouve est que la MEME adresse,
+        #  qui rendait 404 a la ligne precedente, serve desormais la page — et
+        #  c'est la route de `T5`, ecrite avant et sans rapport, qui le dit.
+        controles += 1
+        publication = appeler(
+            arguments.base,
+            chemin_publication,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        corps_publication = publication.json()
+        etat_publie = corps_publication.get("etat") if isinstance(corps_publication, dict) else None
+        date_publication = (
+            corps_publication.get("publiee_le") if isinstance(corps_publication, dict) else None
+        )
+        servie = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        if (
+            publication.statut == 200
+            and etat_publie == "published"
+            and date_publication
+            and servie.statut == 200
+        ):
+            version += 1
+            print("    ok       publication : 200, etat `published`, date posee — ET LA MEME")
+            print("             ADRESSE QUI RENDAIT 404 SERT MAINTENANT LA PAGE")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    publication : {publication.statut}, "
+                f"lecture publique : {servie.statut}, {str(corps_publication)[:140]}"
+            )
+            raise RuntimeError("sans publication, le reste du cycle ne prouverait rien")
+
+        # --- 53. LA CHARGE D'INJECTION DE `T6` TRAVERSE LA PUBLICATION INTACTE
+        #
+        #  Elle a ete ECRITE par le controle 40 et SERVIE par le controle 43,
+        #  mais jamais a travers une page PUBLIEE par l'API. C'est le verbe
+        #  « accepte » de `T6` relu apres le geste de `T7`.
+        controles += 1
+        if INJECTION.encode("utf-8") in servie.corps:
+            print("    ok       le balisage ecrit par `T6` est resservi OCTET POUR OCTET apres")
+            print("             publication — conserve tel quel, jamais interprete (`DEC-584`)")
+        else:
+            echecs += 1
+            print("    ECHEC    la charge n'est pas dans les octets servis apres publication")
+
+        # --- 54. REPUBLIER EST REFUSE, ET LA DATE NE BOUGE PAS
+        #
+        #  Ecraser `published_at` detruirait la donnee meme que `US006` demande
+        #  d'identifier. Le refus vient de l'ETAT, pas du role : le meme acteur,
+        #  la meme page, et la seule chose qui a change est qu'elle est publiee.
+        controles += 1
+        republication = appeler(
+            arguments.base,
+            chemin_publication,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        code_date, sortie_date = psql(
+            compose,
+            env,
+            f"SELECT published_at FROM content_page WHERE id = '{page_t7}'",  # noqa: S608
+        )
+        corps_republication = republication.json()
+        code_republication = (
+            corps_republication.get("erreur", {}).get("code")
+            if isinstance(corps_republication, dict)
+            else None
+        )
+        if (
+            republication.statut == 403
+            and code_republication == "contenu_hors_perimetre"
+            and code_date == 0
+            and valeur(sortie_date)
+        ):
+            print("    ok       republier : 403 `contenu_hors_perimetre`, et la date de")
+            print("             publication est TOUJOURS en base — rien n'a ete ecrase")
+        else:
+            echecs += 1
+            print(f"    ECHEC    republication : {republication.statut}, {code_republication!r}")
+
+        # --- 55. ARCHIVER ECRIT LES DEUX COLONNES ET RETIRE LA PAGE DU PUBLIC
+        controles += 1
+        archivage = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        corps_archivage = archivage.json()
+        apres_archivage = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        code_colonnes, sortie_colonnes = psql(
+            compose,
+            env,
+            "SELECT state || '|' || (archived_at IS NOT NULL)::text || '|' || "  # noqa: S608
+            f"(published_at IS NOT NULL)::text FROM content_page WHERE id = '{page_t7}'",
+        )
+        if (
+            archivage.statut == 200
+            and apres_archivage.statut == 404
+            and code_colonnes == 0
+            and valeur(sortie_colonnes) == "archived|true|true"
+        ):
+            version += 1
+            print("    ok       archivage : `state` ET `archived_at` ecrits dans le MEME UPDATE,")
+            print("             `published_at` CONSERVE, et la page quitte la lecture publique")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    archivage : {archivage.statut}, public : "
+                f"{apres_archivage.statut}, base : {valeur(sortie_colonnes)!r}, "
+                f"{str(corps_archivage)[:120]}"
+            )
+
+        # --- 56. RESTAURER NE REPUBLIE PAS — LE CONTROLE LE PLUS UTILE DE `T7`
+        #
+        #  Apres restauration la page est VIVANTE, donc modifiable et publiable,
+        #  et pourtant TOUJOURS PAS SERVIE. C'est `RIGHTS-001` : une page
+        #  redevenue visible sans que personne ne l'ait publiee serait une
+        #  publication que personne n'a decidee. Puis le second geste la ressert,
+        #  sans quoi le refus mesure ici pourrait venir de n'importe quel defaut.
+        controles += 1
+        restauration = appeler(
+            arguments.base,
+            chemin_restauration,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        corps_restauration = restauration.json()
+        etat_restaure = (
+            corps_restauration.get("etat") if isinstance(corps_restauration, dict) else None
+        )
+        apres_restauration = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        if (
+            restauration.statut == 200
+            and etat_restaure == "draft"
+            and apres_restauration.statut == 404
+        ):
+            version += 1
+            print("    ok       restauration : 200, etat `draft`, ET LA PAGE N'EST TOUJOURS PAS")
+            print("             SERVIE — restaurer n'est pas publier (§13, deux lignes)")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    restauration : {restauration.statut}, etat={etat_restaure!r}, "
+                f"public={apres_restauration.statut}"
+            )
+
+        # --- 57. LE TEMOIN DU CYCLE : LE SECOND GESTE LA RESSERT
+        controles += 1
+        republiee = appeler(
+            arguments.base,
+            chemin_publication,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        servie_a_nouveau = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        if republiee.statut == 200 and servie_a_nouveau.statut == 200:
+            version += 1
+            print("    ok       TEMOIN : republiee explicitement, la page est servie a nouveau —")
+            print("             le cycle complet brouillon > publie > archive > brouillon > publie")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    republication apres restauration : {republiee.statut}, "
+                f"public : {servie_a_nouveau.statut}"
+            )
+
+        # --- 58. UNE VERSION OBSOLETE REFUSE L'ARCHIVAGE, ET N'ECRIT RIEN
+        controles += 1
+        archivage_obsolete = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": 1},
+            en_tetes=ecriture,
+        )
+        code_etat_t7, sortie_etat_t7 = psql(
+            compose,
+            env,
+            f"SELECT state FROM content_page WHERE id = '{page_t7}'",  # noqa: S608
+        )
+        corps_obsolete_t7 = archivage_obsolete.json()
+        code_obsolete_t7 = (
+            corps_obsolete_t7.get("erreur", {}).get("code")
+            if isinstance(corps_obsolete_t7, dict)
+            else None
+        )
+        if (
+            archivage_obsolete.statut == 409
+            and code_obsolete_t7 == "version_obsolete"
+            and code_etat_t7 == 0
+            and valeur(sortie_etat_t7) == "published"
+        ):
+            print("    ok       version obsolete a l'archivage : 409, et l'etat en base est")
+            print("             INCHANGE — §18.4, « sans ecrasement silencieux »")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    archivage obsolete : {archivage_obsolete.statut}, "
+                f"{code_obsolete_t7!r}, etat={valeur(sortie_etat_t7)!r}"
+            )
+
+        # --- 59. LES TROIS ROUTES EXIGENT LE JETON CSRF, ET LES TROIS SONT VERIFIEES
+        #
+        #  **LES TROIS, ET PAS UNE.** Une garde posee sur deux routes sur trois
+        #  est exactement le defaut qu'un controle portant sur une seule route
+        #  laisserait passer -- §7.40, « un garde-fou ecrit contre UNE instance
+        #  ne couvre pas la classe ».
+        controles += 1
+        sans_jeton = {**entetes, "Origin": arguments.base}
+        refus_csrf = [
+            appeler(
+                arguments.base, chemin, contexte, charge={"version": version}, en_tetes=sans_jeton
+            ).statut
+            for chemin in (chemin_publication, chemin_archivage, chemin_restauration)
+        ]
+        if refus_csrf == [403, 403, 403]:
+            print("    ok       sans jeton CSRF : 403 sur LES TROIS routes du cycle — la")
+            print("             session et le role suffisent pourtant, SEUL le jeton manque")
+        else:
+            echecs += 1
+            print(f"    ECHEC    CSRF sur les trois routes : {refus_csrf}")
+
+        # --- 60. SANS RESPONSABILITE : 403 SUR LES TROIS ROUTES
+        controles += 1
+        refus_sd = [
+            appeler(
+                arguments.base, chemin, contexte, charge={"version": version}, en_tetes=entetes_sd
+            ).statut
+            for chemin in (chemin_publication, chemin_archivage, chemin_restauration)
+        ]
+        if refus_sd == [403, 403, 403]:
+            print("    ok       sans responsabilite : 403 sur les trois — l'API est l'autorite")
+            print("             finale (§2.6), et le temoin du controle 47 exclut la session")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans droit sur les trois routes : {refus_sd}")
+
+        # --- 61. LA BORNE DU §8.4 MORD A LA PUBLICATION — ET ELLE A SON TEMOIN
+        #
+        #  `DEC-583` a renvoye ici le declencheur du comptage borne, et c'est le
+        #  SEUL geste du projet qui le fasse mordre. Un declencheur qui refuserait
+        #  TOUTE publication passerait le refus ; seul le temoin positif, sur la
+        #  MEME page et apres la seule addition d'un responsable, le distingue.
+        controles += 1
+        bureau_t7 = f"{MARQUEUR}-T7B"
+        code_bureau_t7, sortie_bureau_t7 = psql(
+            compose,
+            env,
+            "INSERT INTO office (entity_id, code, name, display_order) "  # noqa: S608
+            f"SELECT id, '{bureau_t7}', 'Bureau T7', 9 FROM entity WHERE code = '{code_actif}'",
+        )
+        creation_bureau = appeler(
+            arguments.base,
+            CHEMIN_CREATION.format(code=code_actif),
+            contexte,
+            charge={
+                "type_de_page": "OFFICE",
+                "titre": "Bureau de T7",
+                "slug": f"{MARQUEUR}-t7b",
+                "bureau": bureau_t7,
+            },
+            en_tetes=ecriture,
+        )
+        corps_bureau = creation_bureau.json()
+        page_bureau = corps_bureau.get("identifiant") if isinstance(corps_bureau, dict) else None
+        if code_bureau_t7 or creation_bureau.statut != 201 or not page_bureau:
+            echecs += 1
+            print(
+                f"    ECHEC    decor de la borne : office={sortie_bureau_t7[:80]}, "
+                f"page={creation_bureau.statut}"
+            )
+        else:
+            chemin_publication_bureau = CHEMIN_PUBLICATION.format(code=code_actif, page=page_bureau)
+            sans_responsable = appeler(
+                arguments.base,
+                chemin_publication_bureau,
+                contexte,
+                charge={"version": 1},
+                en_tetes=ecriture,
+            )
+            corps_borne = sans_responsable.json()
+            code_borne = (
+                corps_borne.get("erreur", {}).get("code") if isinstance(corps_borne, dict) else None
+            )
+            #  Un responsable ACTIF, et rien d'autre ne change.
+            code_resp, sortie_resp = psql(
+                compose,
+                env,
+                "INSERT INTO framework_responsibility_assignment (person_id, entity_id, "  # noqa: S608
+                "responsibility_type, office_id, assigned_by_person_id, starts_at) "
+                "SELECT p.id, o.entity_id, 'OFFICE_MANAGER', o.id, p.id, now() - interval '1 day' "
+                f"FROM office o, person p WHERE o.code = '{bureau_t7}' "
+                f"AND p.email_normalized = '{adresse}' ",
+            )
+            avec_responsable = appeler(
+                arguments.base,
+                chemin_publication_bureau,
+                contexte,
+                charge={"version": 1},
+                en_tetes=ecriture,
+            )
+            if (
+                sans_responsable.statut == 409
+                and code_borne == "borne_des_responsables"
+                and code_resp == 0
+                and avec_responsable.statut == 200
+            ):
+                print("    ok       borne du §8.4 : ZERO responsable -> 409")
+                print("             `borne_des_responsables` ; UN responsable actif ajoute, et LA")
+                print("             MEME publication passe — `DEC-583`, le declencheur `0018`")
+            else:
+                echecs += 1
+                print(
+                    f"    ECHEC    borne : sans={sans_responsable.statut}/{code_borne!r}, "
+                    f"avec={avec_responsable.statut}, insert={sortie_resp[:80]}"
+                )
 
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**
