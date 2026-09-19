@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 13 septembre 2026, à l'ouverture du LOT 6 — `ECART-031` et `ECART-059` clos par `DEC-576`
+**Dernière mise à jour :** 18 septembre 2026, `T6` du LOT 6 — `ECART-062` et `ECART-063` ouverts
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 61 | 11 | 47 | 3 |
+| Total 63 | 13 | 47 | 3 |
 
 ---
 
@@ -79,6 +79,8 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-059` | La matrice donne au responsable de bureau un périmètre « Bureau » sur l'audit, mais **aucune table ne rattache un collaborateur à un bureau** | Non — le §6.2 tranche dans le même sens | **Clos le 13/09/2026, `DEC-576`** |
 | `ECART-060` | Le §10.1 veut « des filtres combinables » ; **quatre des cinq que l'API accepte n'ont aucune liste de référence à proposer** | Non — l'API les accepte, l'écran ne peut pas les peupler | Ouvert, à reprendre aux LOTS 6 et 9 |
 | `ECART-061` | Le modèle §10.2 et `DEC-527` veulent qu'un mot de passe provisoire soit changé ; **`changement_exige` est servi par l'API et aucun écran ne le lit** — la session est ouverte et toutes les routes répondent | Non pour le MVP, **oui avant la production** | Ouvert, à instruire au LOT 13 |
+| `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | Ouvert, avant `T9` |
+| `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non pour `T6`, **oui pour `T7`** | Ouvert, avant `T7` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -178,7 +180,35 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-062`.**
+## `ECART-062` — le §10.1 donne au DSM « Modifier la page DSM », et AUCUN type de page ne la porte
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 18 septembre 2026, en instruisant la grille d'écriture de `T6` du LOT 6 |
+| Source | Matrice, annexe A §10.1 (« Structure Framework ») · annexe A §13 (« Contenus éditoriaux et liens internes ») · modèle §15.1 (`page_type`) · `apps/api/app/organization/framework.py`, `RESPONSABILITES_A_PAGE_PROPRE` |
+| Constat | Le §10.1 porte deux lignes — « Modifier la page **DSM** » et « Modifier la page **ESM** » — et la première donne au `DSM` la portée **« Entité ou propre contenu »**. C'est le **seul** endroit du corpus où le DSM reçoit un droit d'écriture éditoriale.<br>**Or aucun `page_type` du §15.1 ne porte cette page.** La liste est « `HOME`, `FRAMEWORK`, `CIRCLE`, `OFFICE`, `LEGAL`, autre type contrôlé » : ni `DSM` ni `ESM` n'y figurent. `T2` du LOT 6 a bien émis un **chemin d'écran** pour les deux — `/entites/{code}/framework/responsabilites/{type}` — mais rien ne dit quel **contenu** les porte.<br>**Et le §13, qui est la section des contenus éditoriaux, met la colonne `DSM` entièrement à tiret** sur ses trois lignes de modification. Les deux sections ne se contredisent pas frontalement — elles règlent deux ressources différentes — mais la première accorde un droit sur un objet que le modèle ne sait pas désigner. |
+| Cause | Deux lectures sont possibles et **aucune n'est déductible** : *(a)* « la page DSM » est une page `FRAMEWORK` particulière, que rien ne distingue des autres pages `FRAMEWORK` ; *(b)* c'est un « autre type contrôlé » qui reste à créer, ce que le §15.1 autorise sans le nommer.<br>Sous *(a)*, accorder le droit au DSM lui ouvrirait **toutes** les pages `FRAMEWORK`, alors que le §10.1 lui refuse « Modifier la présentation générale ». Sous *(b)*, il faudrait inventer un type, ce que le §6.5 interdit. |
+| Bloquant | **Non.** `T6` suit le §13 — le DSM n'écrit aucun contenu — et cette lecture est la **plus restrictive** des deux, donc la seule qui ne puisse pas accorder un droit que le corpus ne donne pas. Un refus se relâche ; une permission accordée à tort a déjà été exercée. |
+| Recommandation | **Ne rien accorder au DSM tant que la page n'est pas désignable**, et le dire au lieu de le taire (§7.20). La question relève de **Léa** — elle porte sur ce qu'est « la page DSM » comme objet de produit — et elle devra être tranchée **avant `T9`**, où les écrans de lecture serviront les pages de responsabilité que `T2` a déjà annoncées par un chemin.<br>**Recommandation générale, et c'est l'apport de cet écart** : quand une grille de droits nomme une **ressource**, vérifie que le modèle sait la désigner. Une cellule de matrice qui porte sur un objet inexistant n'est ni applicable ni ignorable — elle est à **nommer**. |
+| Résolution | **Ouvert.** Échéance : **avant `T9` du LOT 6**. `T6` livre sans rien accorder au DSM, et le module `app/content/perimetre.py` porte le motif en clair. |
+
+---
+
+## `ECART-063` — l'annexe A §13 et le §18 divergent sur l'archivage d'un contenu
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 18 septembre 2026, en instruisant la grille d'écriture de `T6` du LOT 6 |
+| Source | Matrice, annexe A §13 (« Contenus éditoriaux et liens internes ») · annexe A §18 (« Archives, restauration et purge ») |
+| Constat | Les deux sections règlent la même action, et **elles donnent deux grilles différentes** :<br>• §13, ligne « **Archiver** » : `DSM` **—** · `ESM` **Périmètre** · `BOOST` Cercle · `OFFICE` Bureau · `ADM-E` Entité · `SUPER` Global ;<br>• §18, ligne « **Archiver un contenu dans son périmètre** » : `DSM` **Périmètre** · `ESM` **Entité** · `BOOST` Cercle · `OFFICE` Bureau · `ADM-E` Entité · `SUPER` Global.<br>**Deux colonnes divergent, et dans les deux sens** : le §18 accorde au `DSM` un périmètre que le §13 lui refuse, et il élargit l'`ESM` de « Périmètre » à « Entité » là où le §13 le restreint. |
+| Cause | Le §13 est la section **thématique** des contenus éditoriaux ; le §18 est la section **transversale** de l'archivage, qui reprend en une ligne ce que chaque section détaille. Une reprise de ce genre vieillit ou diverge dès sa rédaction — c'est la forme exacte d'`ECART-023`, où une fiche énumérait six des sept séparations du cahier. |
+| Bloquant | **Non pour `T6`, qui n'archive aucune page.** La sous-étape écrit le **contenu** d'une page — son titre et ses blocs — et retirer un bloc n'est pas « archiver un contenu » : c'est le mécanisme même de « Modifier un contenu de … ». La route n'écrit jamais `content_page.archived_at`, et un test l'exige.<br>**Bloquant pour `T7`**, qui livre précisément l'archivage et la restauration. |
+| Recommandation | **Ne pas trancher ici, et surtout ne pas prendre l'union.** Le §23.1 pose l'union des droits pour le **cumul de rôles** d'une même personne, pas pour le cumul de deux rédactions d'une même cellule : appliquer l'union accorderait au `DSM` un droit d'archivage que la section thématique lui refuse **en cellule**, et élargirait l'`ESM` au-delà de sa portée déclarée.<br>La règle de préséance ne départage pas non plus : les deux sections appartiennent au même document, et aucune n'est plus récente que l'autre. **La question est donc à instruire au début de `T7`**, en confrontant les deux au §23.2 — « une interdiction liée à la ressource prévaut » — et en retenant, à défaut de réponse, la **plus restrictive** des deux pour chaque cellule.<br>**Recommandation générale** : deux sections d'un même document peuvent régler la même action, et il faut les **confronter** avant d'en appliquer une — §7.24, « deux règles justes séparément peuvent s'exclure ». Ici la divergence a été trouvée en lisant le §18 pour une **autre** question, celle du motif d'archivage (§18.1). |
+| Résolution | **Ouvert.** Échéance : **avant `T7` du LOT 6**. `T6` n'archive aucune page et ne dépend donc d'aucune des deux lectures. |
+
+---
+
+**Prochain identifiant libre : `ECART-064`.**
 
 ---
 
