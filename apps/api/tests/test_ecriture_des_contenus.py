@@ -344,6 +344,19 @@ def _page(
     ).identifiant
 
 
+#  **`T7` A ELARGI CE QUE CETTE FONCTION REND, ET LES ASSERTIONS ONT SUIVI.**
+#  Quand `T6` les a ecrites, `resoudre_le_perimetre_editorial` ne pouvait rendre
+#  que `MODIFIER` : comparer l'ensemble ENTIER etait alors la forme la plus
+#  exacte. `T7` lui fait rendre aussi `PUBLIER`, `ARCHIVER` et `RESTAURER` selon
+#  l'etat de la page, si bien que l'egalite stricte mesurerait desormais une
+#  grandeur que ces tests-ci ne visent pas.
+#
+#  Ce qu'ils prouvent est INCHANGE -- la grille de roles et de portees du §13 sur
+#  le verbe MODIFIER -- et ils le prouvent toujours : `MODIFIER in perimetre` pour
+#  un droit, `== frozenset()` pour un refus, et **les onze refus n'ont pas
+#  bouge**. **L'exactitude sur les ensembles COMPLETS est portee par les tests de
+#  `T7`**, ou elle est le sujet : c'est la, et pas ici, qu'un Booster doit se voir
+#  refuser `RESTAURER` tout en gardant `ARCHIVER`.
 def _perimetre(
     cx: Connection,
     *,
@@ -608,9 +621,9 @@ def test_un_BOOSTER_ecrit_la_page_de_SON_cercle_et_PAS_celle_d_un_autre(cx: Conn
     assert autre is not None
 
     roles = {RoleDeLaMatrice.BOOSTER}
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page_sienne, roles=roles) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=page_sienne, roles=roles
+    )
     assert _perimetre(cx, entite=entite, acteur=acteur, page=page_autre, roles=roles) == frozenset()
 
 
@@ -652,7 +665,7 @@ def test_une_responsabilite_FUTURE_n_accorde_RIEN_et_SEUL_l_instant_change(cx: C
     )
 
     assert avant == frozenset()
-    assert apres == {ActionEditoriale.MODIFIER}
+    assert ActionEditoriale.MODIFIER in apres
 
 
 @pytest.mark.integration
@@ -687,9 +700,9 @@ def test_un_responsable_de_BUREAU_ecrit_SON_bureau_et_PAS_une_page_de_cercle(
     )
 
     roles = {RoleDeLaMatrice.RESPONSABLE_DE_BUREAU}
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page_bureau, roles=roles) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=page_bureau, roles=roles
+    )
     #  **LE CROISEMENT EST LE POINT** : un responsable de bureau n'ecrit pas une
     #  page de cercle, et un Booster n'ecrit pas une page de bureau. Sans lui,
     #  une portee locale indexee par role et non par TYPE passerait.
@@ -716,9 +729,9 @@ def test_un_DSM_n_ecrit_AUCUN_contenu_et_le_temoin_est_ESM_sur_la_MEME_page(
         _perimetre(cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.DSM})
         == frozenset()
     )
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.ESM}) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.ESM}
+    )
 
 
 @pytest.mark.integration
@@ -747,9 +760,9 @@ def test_un_BOOSTER_n_ecrit_PAS_une_page_generale_meme_dans_SON_entite(cx: Conne
 
     #  TEMOIN : le meme Booster ecrit bien la page de SON cercle.
     sienne = _page(cx, entite, acteur, type_de_page="CIRCLE", slug="c", cercle=f"{MARQUEUR}-C")
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=sienne, roles=roles) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=sienne, roles=roles
+    )
 
 
 @pytest.mark.integration
@@ -778,9 +791,9 @@ def test_une_page_d_une_AUTRE_entite_est_refusee_MEME_au_SUPER_ADMINISTRATEUR(
         == frozenset()
     )
     #  TEMOIN : la meme page, resolue dans SON entite.
-    assert _perimetre(
+    assert ActionEditoriale.MODIFIER in _perimetre(
         cx, entite=autre, acteur=acteur, page=page, roles={RoleDeLaMatrice.SUPER_ADMINISTRATEUR}
-    ) == {ActionEditoriale.MODIFIER}
+    )
 
 
 @pytest.mark.integration
@@ -790,7 +803,12 @@ def test_une_page_ARCHIVEE_est_refusee_MEME_au_SUPER_ADMINISTRATEUR(cx: Connecti
 
     On ne **modifie** pas une page archivee, on la **restaure** — et « Restaurer »
     est une autre ligne du §13, a une autre grille : « ESM **Conditionnel** ».
-    C'est `T7`, et l'anticiper ici confondrait deux droits.
+
+    **`T7` A LIVRE CETTE AUTRE LIGNE, ET CE TEST EN EST DEVENU PLUS FORT.** Quand
+    `T6` l'a ecrit, le perimetre d'une page archivee etait VIDE, et c'est ce qu'il
+    exigeait. Il exige desormais l'ensemble EXACT `{RESTAURER}` : la page n'est
+    toujours pas modifiable — la moitie que `T6` prouvait — et l'unique action
+    qu'elle offre est nommee. Un ensemble vide serait aujourd'hui un defaut.
     """
     entite = _entite(cx, "ARCH")
     acteur = _personne(cx, "super")
@@ -799,16 +817,20 @@ def test_une_page_ARCHIVEE_est_refusee_MEME_au_SUPER_ADMINISTRATEUR(cx: Connecti
 
     #  TEMOIN AVANT : elle est modifiable tant qu'elle n'est pas archivee. Sans
     #  lui, le refus mesure ensuite pourrait venir d'autre chose.
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page, roles=roles) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=page, roles=roles
+    )
 
     cx.execute(
         text("UPDATE content_page SET archived_at = :instant WHERE id = :p"),
         {"instant": DEMAIN, "p": page},
     )
 
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page, roles=roles) == frozenset()
+    apres = _perimetre(cx, entite=entite, acteur=acteur, page=page, roles=roles)
+    assert ActionEditoriale.MODIFIER not in apres, "une page archivee ne se modifie pas"
+    assert apres == {ActionEditoriale.RESTAURER}, (
+        "et elle n'offre QUE la restauration — §18, `ARB-DROIT-003`"
+    )
 
 
 @pytest.mark.integration
@@ -828,9 +850,9 @@ def test_une_page_en_BROUILLON_est_MODIFIABLE_et_c_est_tout_le_propos(cx: Connec
     ).scalar_one()
     assert etat == EtatDePage.DRAFT.value
 
-    assert _perimetre(cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.ESM}) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.ESM}
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -1364,9 +1386,9 @@ def test_la_responsabilite_d_UNE_AUTRE_PERSONNE_n_accorde_RIEN(cx: Connection) -
 
     assert _perimetre(cx, entite=entite, acteur=autre, page=page, roles=roles) == frozenset()
     #  TEMOIN : le titulaire, sur la MEME page.
-    assert _perimetre(cx, entite=entite, acteur=titulaire, page=page, roles=roles) == {
-        ActionEditoriale.MODIFIER
-    }
+    assert ActionEditoriale.MODIFIER in _perimetre(
+        cx, entite=entite, acteur=titulaire, page=page, roles=roles
+    )
 
 
 @pytest.mark.integration
@@ -1402,9 +1424,9 @@ def test_une_responsabilite_REELLE_n_accorde_RIEN_si_le_ROLE_n_est_pas_dans_le_p
         == frozenset()
     )
     #  TEMOIN : la MEME responsabilite, dans son entite principale.
-    assert _perimetre(
+    assert ActionEditoriale.MODIFIER in _perimetre(
         cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.BOOSTER}
-    ) == {ActionEditoriale.MODIFIER}
+    )
 
 
 # ----------------------------------------------------------------------------

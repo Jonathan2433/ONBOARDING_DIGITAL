@@ -47,12 +47,20 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Final, TypeVar
 
 from fastapi import APIRouter, Depends, Path, Request, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
+from app.content.cycle_de_vie import (
+    PageArchivee,
+    PagePubliee,
+    PageRestauree,
+    archiver_une_page,
+    publier_une_page,
+    restaurer_une_page,
+)
 from app.content.ecriture import (
     BlocDemande,
     creer_une_page,
@@ -78,6 +86,8 @@ from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Callable
+
     from sqlalchemy.engine import Connection
 
     from app.configuration.settings import Parametres
@@ -239,6 +249,67 @@ class ReponseDEcritureDuContenu(BaseModel):
     blocs: list[BlocDeContenuRendu]
     nombre_de_blocs: int
     blocs_archives: int
+
+
+class DemandeDeTransition(BaseModel):
+    """Publier, archiver ou restaurer — **la version, et rien d'autre**.
+
+    **AUCUN CHAMP D'ETAT CIBLE, ET C'EST LE MEME PARTI QUE LA CREATION DE `T6`.**
+    Un champ `etat` laisserait croire a une machine a etats pilotee par
+    l'appelant, et il faudrait alors refuser toutes les transitions que le §13
+    n'ecrit pas. L'etat cible est porte par la ROUTE : trois chemins, trois
+    lignes du §13, et les transitions absentes du document sont **inexprimables**
+    plutot que refusees (§7.35).
+
+    **AUCUN MOTIF NON PLUS.** Le §18.1 enumere les cinq cas ou un motif est
+    obligatoire, et archiver un contenu n'y est pas. En demander un ici seulement
+    donnerait une regle appliquee a une route sur quarante -- `ECART-064`.
+    """
+
+    #  §18.4, « concurrence optimiste [...] sans ecrasement silencieux ».
+    #  Obligatoire comme pour l'ecriture : publier ce qu'un autre vient de
+    #  reecrire est exactement ce que ce verrou existe pour empecher.
+    version: int = Field(ge=1, description="La version lue — §18.4, concurrence optimiste")
+
+
+class ReponseDePublication(BaseModel):
+    """`US006`, « la version publiee est identifiable » — la voici, datee."""
+
+    version: int
+    etat: str
+    publiee_le: dt.datetime
+
+
+class ReponseDArchivageDUnContenu(BaseModel):
+    """Ce que l'archivage a produit.
+
+    `publiee_le` reste rendu : une page archivee **apres** publication garde la
+    date a laquelle elle a ete publiee, et `null` distingue celle qui ne l'a
+    jamais ete. Deux histoires differentes, deux valeurs differentes.
+    """
+
+    version: int
+    etat: str
+    archivee_le: dt.datetime
+    publiee_le: dt.datetime | None
+
+
+class ReponseDeRestaurationDUnContenu(BaseModel):
+    """La page revient en BROUILLON, et `etat` le DIT plutot que la doc.
+
+    Republier est un second geste, explicite, a la grille du §13 « Publier ».
+    """
+
+    version: int
+    etat: str
+    publiee_le: dt.datetime | None
+
+
+#  Le resultat d'une transition : `PagePubliee`, `PageArchivee` ou `PageRestauree`.
+#  Un `TypeVar` plutot qu'une union, pour que chaque route recoive EXACTEMENT le
+#  type de son service -- une union obligerait chaque appelant a le retrecir, et
+#  mypy cesserait de verifier qu'on lit les bons champs.
+_Resultat = TypeVar("_Resultat")
 
 
 def _proteger(parametres: Parametres, requete: Request) -> None:
@@ -614,6 +685,290 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
             ],
             nombre_de_blocs=len(ecrit.blocs),
             blocs_archives=ecrit.blocs_archives,
+        )
+
+    #  **LES TROIS ROUTES DU CYCLE PARTAGENT UNE SEULE GARDE, ET C'EST EXACT.**
+    #  `ROLES_DE_RESTAURATION` est INCLUS dans `ROLES_D_ECRITURE_EDITORIALE` --
+    #  un test le mesure -- donc cette garde laisse passer tout ayant-droit des
+    #  trois actions. Ce qui separe la restauration des deux autres n'est pas le
+    #  role NU mais le couple (role, page) : un Booster franchit la garde puis se
+    #  voit refuser par le perimetre, exactement comme il l'est deja sur la page
+    #  d'un autre cercle. Une seconde garde donnerait DEUX endroits ou lire la
+    #  meme grille, et c'est ce que `DEC-466` interdit.
+    garde_du_cycle = garde_d_ecriture
+
+    def _agir(
+        requete: Request,
+        *,
+        code: str,
+        page: uuid.UUID,
+        action: ActionEditoriale,
+        appelant: SessionEtablie,
+        executer: Callable[[Connection, uuid.UUID, dt.datetime], _Resultat],
+    ) -> _Resultat:
+        """Le chemin commun des trois transitions — CSRF, entite, roles, perimetre.
+
+        **ECRIT UNE FOIS PLUTOT QUE TROIS**, et le motif n'est pas l'economie de
+        lignes : trois copies d'une meme sequence de garde divergent au premier
+        changement, et la copie oubliee est celle qu'aucun test de format
+        n'examine. C'est `ECART-022` et `DEC-466`, appliques a une route.
+
+        **LES PERMISSIONS SONT RESOLUES A NOUVEAU DANS CETTE TRANSACTION.** La
+        garde a resolu les SIENNES, dans sa propre connexion et a son propre
+        instant : s'y fier ferait agir sur ce qui a ete autorise ailleurs.
+        """
+        _proteger(parametres, requete)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_editorial(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                page=page,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if action not in perimetre.actions:
+                #  **UN SEUL GABARIT POUR CINQ CAUSES** : la page n'existe pas,
+                #  elle est d'une autre entite, le role ne porte pas sur elle, la
+                #  transition n'est pas offerte par son etat, ou l'action n'est
+                #  pas de sa portee -- le Booster qui veut restaurer. Les
+                #  distinguer apprendrait l'existence et l'etat d'une page a qui
+                #  n'a pas le droit d'y toucher, et le §2.5 pose le refus par
+                #  defaut. C'est l'idiome de `T8` du LOT 5, ou « la cible est
+                #  deja archivee » rend le meme 403 que « aucun role ».
+                raise ErreurApplicative(
+                    code=CODE_CONTENU_HORS_PERIMETRE,
+                    message=MESSAGE_CONTENU_HORS_PERIMETRE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            return executer(connexion, entite.id, instant)
+
+    @routeur.post(
+        "/entities/{code}/pages/{page}/publication",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDePublication,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Deux causes, deux codes. `acces_refuse` : aucun role editorial dans "
+                    "cette entite. `contenu_hors_perimetre` : le role existe mais pas sur "
+                    "CETTE page, **ou la page n'est pas un brouillon** — republier "
+                    "ecraserait la date meme que `US006` demande d'identifier, et "
+                    "l'archive se restaure avant de se publier."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la page a change depuis votre lecture (§18.4). "
+                    "`borne_des_responsables` : publier la page d'un bureau exige entre "
+                    "un et trois responsables **actifs** — modele §8.4, `DEC-583`. C'est "
+                    "le seul geste du projet qui fasse mordre cette borne."
+                )
+            },
+        },
+        summary="Publier une page — le brouillon devient public",
+        description=(
+            "Backlog `MVP-L06-US006`, matrice §13 « Publier immediatement ». La page "
+            "passe de `draft` a `published` et **recoit sa date de publication**, ce qui "
+            "la rend servie par la lecture de `T5`.<br><br>"
+            "**Il n'existe aucune depublication** : le §13 porte « Publier », « Archiver » "
+            "et « Restaurer », et aucune ligne ne ramene une page publiee au brouillon. "
+            "Retirer une page du public se fait en l'archivant."
+        ),
+    )
+    def publier_une_page_de_contenu(
+        demande: DemandeDeTransition,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[uuid.UUID, Path(description="L'identifiant de la page")],
+        appelant: SessionEtablie = Depends(garde_du_cycle),  # noqa: B008
+    ) -> ReponseDePublication:
+        """Publier une page — matrice §13, story `MVP-L06-US006`."""
+
+        def executer(connexion: Connection, entite: uuid.UUID, instant: dt.datetime) -> PagePubliee:
+            return publier_une_page(
+                connexion,
+                entite=entite,
+                page=page,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        publiee = _agir(
+            requete,
+            code=code,
+            page=page,
+            action=ActionEditoriale.PUBLIER,
+            appelant=appelant,
+            executer=executer,
+        )
+        return ReponseDePublication(
+            version=publiee.version, etat=publiee.etat, publiee_le=publiee.publiee_le
+        )
+
+    @routeur.post(
+        "/entities/{code}/pages/{page}/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivageDUnContenu,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role editorial. `contenu_hors_perimetre` : le "
+                    "role ne porte pas sur cette page, ou elle est **deja archivee**."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": "`version_obsolete` : la page a change depuis votre lecture."
+            },
+        },
+        summary="Archiver une page — brouillon comme publiee",
+        description=(
+            "Backlog `MVP-L06-US006`, matrice §13 « Archiver » et §18 « Archiver un "
+            "contenu dans son perimetre ». La page quitte la lecture publique.<br><br>"
+            "**`archived_at` ET `state` sont ecrits dans le MEME `UPDATE`**, si bien "
+            "qu'ils ne peuvent pas diverger par cette API.<br><br>"
+            "**L'archivage LIBERE le slug** — l'index unique du §15.1 est partiel sur "
+            "`archived_at IS NULL`. Une page neuve peut donc le reprendre, et c'est "
+            "alors la RESTAURATION qui sera refusee, jamais l'archivage.<br><br>"
+            "**Aucun motif n'est demande** : le §18.1 en enumere cinq cas, et archiver "
+            "un contenu n'en est pas un."
+        ),
+    )
+    def archiver_une_page_de_contenu(
+        demande: DemandeDeTransition,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[uuid.UUID, Path(description="L'identifiant de la page")],
+        appelant: SessionEtablie = Depends(garde_du_cycle),  # noqa: B008
+    ) -> ReponseDArchivageDUnContenu:
+        """Archiver une page — matrice §13 et §18."""
+
+        def executer(
+            connexion: Connection, entite: uuid.UUID, instant: dt.datetime
+        ) -> PageArchivee:
+            return archiver_une_page(
+                connexion,
+                entite=entite,
+                page=page,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        archivee = _agir(
+            requete,
+            code=code,
+            page=page,
+            action=ActionEditoriale.ARCHIVER,
+            appelant=appelant,
+            executer=executer,
+        )
+        return ReponseDArchivageDUnContenu(
+            version=archivee.version,
+            etat=archivee.etat,
+            archivee_le=archivee.archivee_le,
+            publiee_le=archivee.publiee_le,
+        )
+
+    @routeur.post(
+        "/entities/{code}/pages/{page}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestaurationDUnContenu,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role editorial. `contenu_hors_perimetre` : "
+                    "la page n'est pas archivee, **ou l'appelant n'a qu'une portee "
+                    "locale** — le §13, le §18 et le cahier §10.1 mettent tous trois "
+                    "`BOOST` et `OFFICE` a tiret sur la restauration, alors qu'ils "
+                    "portent l'archivage de leur propre page. La grille est asymetrique, "
+                    "et c'est ecrit trois fois."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la page a change depuis votre lecture. "
+                    "`slug_deja_pris` : une page vivante a repris le slug pendant "
+                    "l'archivage — la restaurer le mettrait en double."
+                )
+            },
+        },
+        summary="Restaurer une page archivee — elle revient en BROUILLON",
+        description=(
+            "Backlog `MVP-L06-US006`, matrice §18 « Restaurer un contenu | Entite, "
+            "restauration fonctionnelle », et `ARB-DROIT-003` qui nomme la condition du "
+            "mot « Conditionnel » du §13.<br><br>"
+            "**La page revient en `draft`, jamais en `published`** : restaurer n'est pas "
+            "publier, le §13 en fait deux lignes a deux grilles, et `RIGHTS-001` refuse "
+            "par defaut ce qui n'est pas explicitement accorde. Republier est un second "
+            "geste, et il laisse sa trace. `QO-122` porte la question a Lea.<br><br>"
+            "**`published_at` est CONSERVE** : la page a ete publiee ce jour-la, et "
+            "l'effacer detruirait un fait."
+        ),
+    )
+    def restaurer_une_page_de_contenu(
+        demande: DemandeDeTransition,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[uuid.UUID, Path(description="L'identifiant de la page")],
+        appelant: SessionEtablie = Depends(garde_du_cycle),  # noqa: B008
+    ) -> ReponseDeRestaurationDUnContenu:
+        """Restaurer une page archivee — matrice §18, `ARB-DROIT-003`."""
+
+        def executer(
+            connexion: Connection, entite: uuid.UUID, instant: dt.datetime
+        ) -> PageRestauree:
+            return restaurer_une_page(
+                connexion,
+                entite=entite,
+                page=page,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        restauree = _agir(
+            requete,
+            code=code,
+            page=page,
+            action=ActionEditoriale.RESTAURER,
+            appelant=appelant,
+            executer=executer,
+        )
+        return ReponseDeRestaurationDUnContenu(
+            version=restauree.version, etat=restauree.etat, publiee_le=restauree.publiee_le
         )
 
     return routeur

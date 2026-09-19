@@ -588,6 +588,80 @@
       ]
     },
     {
+      "cle": "publicationDUnePageDeContenu",
+      "chemin": "/api/v1/entities/{code}/pages/{page}/publication",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDePublication",
+      "role": [
+        "Publier une page — LOT 6, T7, story MVP-L06-US006.",
+        "LE BROUILLON DEVIENT PUBLIC, et la page recoit sa date de publication.",
+        "La lecture de `pageDeContenu` ne sert que le publie : la MEME adresse qui",
+        "rendait 404 sert ensuite la page. C'est ce couple qui rend « brouillon et",
+        "publication sont distingues » non trivial, un critere negatif etant",
+        "satisfait par une API qui ne publierait rien.",
+        "IL N'EXISTE AUCUNE DEPUBLICATION. Le 13 porte « Publier immediatement »,",
+        "« Archiver » et « Restaurer », et aucune ligne ne ramene une page publiee",
+        "au brouillon. Retirer une page du public se fait en l'archivant.",
+        "ET AUCUNE REPUBLICATION : republier ecraserait `published_at`, donc la date",
+        "meme que la story demande d'identifier. Le refus est un 403, la meme forme",
+        "unique que tous les autres refus de perimetre.",
+        "409 `borne_des_responsables` : publier la page d'un bureau exige entre un et",
+        "trois responsables ACTIFS -- modele 8.4, DEC-583. C'est le seul geste du",
+        "projet qui fasse mordre cette borne, et un declencheur la tient."
+      ]
+    },
+    {
+      "cle": "archivageDUnePageDeContenu",
+      "chemin": "/api/v1/entities/{code}/pages/{page}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDUnContenu",
+      "role": [
+        "Archiver une page — LOT 6, T7, matrice 13 « Archiver » et 18.",
+        "UN BROUILLON COMME UNE PAGE PUBLIEE peuvent etre archives : ni le 13 ni le",
+        "18 ne posent de condition d'etat.",
+        "`state` ET `archived_at` SONT ECRITS DANS LE MEME UPDATE, si bien qu'ils ne",
+        "peuvent pas diverger par cette API. Le corpus ne les couple pourtant pas, et",
+        "aucune contrainte ne l'exige : le decor de T4 fabrique deliberement les deux",
+        "divergences pour prouver que sa lecture de `publie` est exacte.",
+        "`publiee_le` SURVIT A L'ARCHIVAGE, et `null` distingue une page qui n'a",
+        "jamais ete publiee d'une page qui l'a ete. Deux histoires, deux valeurs.",
+        "AUCUN MOTIF N'EST DEMANDE : le 18.1 enumere cinq cas ou il est obligatoire,",
+        "et archiver un contenu n'en est pas un.",
+        "L'ARCHIVAGE LIBERE LE SLUG -- l'index unique du 15.1 est partiel sur",
+        "`archived_at IS NULL`. C'est la RESTAURATION qui s'en trouvera refusee si une",
+        "page vivante l'a repris, jamais l'archivage."
+      ]
+    },
+    {
+      "cle": "restaurationDUnePageDeContenu",
+      "chemin": "/api/v1/entities/{code}/pages/{page}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDUnContenu",
+      "role": [
+        "Restaurer une page archivee — LOT 6, T7, matrice 18, ARB-DROIT-003.",
+        "LA GRILLE EST PLUS ETROITE QUE CELLE DE L'ARCHIVAGE, ET TROIS SOURCES",
+        "CONCORDANTES LE DISENT : matrice 13 « Restaurer », matrice 18 « Restaurer un",
+        "contenu », cahier 10.1 « Archiver/restaurer une page ». Les trois mettent",
+        "`BOOST` et `OFFICE` a TIRET, alors que les deux ARCHIVENT leur propre page.",
+        "`rolesRestaurationDUnContenu` la porte, et un test Python la confronte a",
+        "`ROLES_DE_RESTAURATION` de `app/content/perimetre.py`.",
+        "« Conditionnel » EST DEFINI par le 4 -- « autorise si une regle metier",
+        "complementaire est satisfaite » -- et ARB-DROIT-003 nomme la regle : l'ESM",
+        "restaure FONCTIONNELLEMENT dans son entite ; les restaurations techniques,",
+        "massives ou liees aux imports restent a l'ADM-E et au SUPER. Restaurer UNE",
+        "page est fonctionnel, et cette route n'offre aucun geste massif.",
+        "LA PAGE REVIENT EN BROUILLON, JAMAIS EN PUBLIE. Restaurer n'est pas publier :",
+        "le 13 en fait deux lignes a deux grilles, et RIGHTS-001 refuse par defaut ce",
+        "qui n'est pas explicitement accorde. Republier est un second geste, explicite,",
+        "et il laisse sa trace. QO-122 porte la question a Lea.",
+        "`published_at` EST CONSERVE : la page a ete publiee ce jour-la.",
+        "409 `slug_deja_pris` : une page vivante a repris le slug pendant l'archivage."
+      ]
+    },
+    {
       "cle": "trombinoscopeDeLEntite",
       "chemin": "/api/v1/entities/{code}/people",
       "methode": "get",
@@ -939,5 +1013,18 @@
     "source, qui vieillirait au premier changement -- c'est la classe ECART-021.",
     "Ce que le frontend doit savoir n'est pas la valeur du seuil mais la FORME de",
     "la reponse : un 429 dont `details.secondes_avant_reprise` dit quand reessayer."
-  ]
+  ],
+  "_commentaire_restauration_contenu": [
+    "LES ROLES QUI RESTAURENT UN CONTENU — LOT 6, T7.",
+    "TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` -- ET C'EST ENCORE UNE",
+    "COINCIDENCE, PAS UNE DERIVATION. `rolesCycleDeVie` vient des trois lignes",
+    "d'archivage du 6.1, qui portent sur un PROFIL ; celle-ci vient des lignes de",
+    "restauration du 13, du 18 et du cahier 10.1, qui portent sur un CONTENU.",
+    "La preuve que ce sont deux grilles distinctes est immediate : sur le CONTENU,",
+    "`BOOST` et `OFFICE` ARCHIVENT -- ce que le 6.1 leur refuse sur un profil --",
+    "et pourtant ils ne RESTAURENT pas. Trois sources concordantes le disent.",
+    "Les fusionner parce qu'elles coincident aujourd'hui ferait suivre l'une quand",
+    "l'autre change, EN SILENCE."
+  ],
+  "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"]
 }
