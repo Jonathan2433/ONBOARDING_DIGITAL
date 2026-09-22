@@ -4,7 +4,7 @@
 **Épic :** `MVP-L06`
 **Ouvert par Jonathan le :** 13 septembre 2026
 **État :** **OUVERT**, découpage **validé** le 13/09/2026 — `DEC-575`
-**Dernière mise à jour :** 19 septembre 2026 — `T7` faite, `DEC-586`, `ECART-063` clos
+**Dernière mise à jour :** 22 septembre 2026 — `T8` faite, `DEC-587`, **`QO-120` close**
 **Porte de sortie :** `G6`, tag `v0.6.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -112,7 +112,7 @@ pull request la fusionne. **Une sous-étape à la fois**, et elle part toujours 
 | ~~`T5`~~ | ~~**Le rendu des blocs, et le refus de l'injection**~~ **FAITE le 15/09/2026**, `DEC-584`, **`QO-121` ouverte** — le corpus ne nomme aucun champ de `payload_json`, le contenu est donc servi comme une **donnée opaque** | `US004` (1/3) | **les deux ensemble ou aucun** : « aucun HTML arbitraire » est satisfait par une route qui ne rend rien. Le témoin positif est un bloc légitime **rendu** |
 | ~~`T6`~~ | ~~**L'écriture d'un contenu dans son périmètre**~~ **FAITE le 18/09/2026**, `DEC-585`, **`ECART-062` et `ECART-063` ouverts** | `US004` (2/3) | **la grille du §13 diffère de celle du LOT 5 DANS LES DEUX SENS** : `DSM` y est à tiret alors qu'il porte cinq champs au §6.1, et `OFFICE` y porte un droit réel alors que sa colonne du §6.1 est entièrement à tiret. La réutiliser aurait **accordé** un droit à l'un et **retiré** le sien à l'autre |
 | ~~`T7`~~ | ~~**Brouillon, publication, archivage, restauration**~~ **FAITE le 19/09/2026**, `DEC-586`, **`ECART-063` CLOS**, `ECART-064` et `QO-122` ouverts | `US006` | **LA GRILLE DE LA RESTAURATION EST PLUS ÉTROITE QUE CELLE DE L'ARCHIVAGE, ET TROIS SOURCES CONCORDANTES LE DISENT** — matrice §13, matrice §18, cahier §10.1 — toutes trois mettant `BOOST` et `OFFICE` à **tiret** alors que les deux **archivent** leur propre page. Et « Entité » n'est pas « Périmètre »… sauf que **le §3 définit `Périmètre` dans une colonne intitulée « Périmètre principal »**, où l'`ESM` a « ensemble de son entité » — la définition même de `Entité`. C'est ce qui a clos `ECART-063` |
-| `T8` | **La présentation de l'entité et les liens internes** | `US005` | les URL sont validées « selon une **liste de protocoles autorisés** » (§15.3), et une liste blanche fermée est aussi fautive qu'une absence de liste (§7.29) |
+| ~~`T8`~~ | ~~**La présentation de l'entité et les liens internes**~~ **FAITE le 22/09/2026**, `DEC-587`, **`QO-120` CLOSE**, `QO-123` ouverte | `US005` | **LA MESURE A DONNÉ DEUX RÉSULTATS QUE LE DÉCOUPAGE N'AVAIT PAS PRÉVUS.** D'abord, **une liste de protocoles ne suffit pas** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource — l'API exige **aussi un hôte**, et c'est le seul refus qu'une lecture littérale de la phrase du corpus aurait omis. Ensuite, **la « présentation de l'entité » n'a demandé aucune ligne de code** : le §13 lui donne une grille identique cellule par cellule à « Créer un contenu général », et c'est une page `HOME` que `T6` écrit déjà — deux tests le MESURENT. Enfin, **le rang d'un lien n'est jamais choisi par l'appelant** : un échange de deux rangs en un seul `UPDATE` est REFUSÉ par l'index unique partiel de `T1`, mesuré, et une route qui aurait laissé poser son rang aurait rendu la permutation impossible |
 | `T9` | **Les écrans de lecture** — Framework, cercle, bureau | `US001`–`US003` | le critère 5, `prefers-reduced-motion`, et le critère 4 **à l'écran** : la couleur n'est jamais seule |
 | `T10` | **Les écrans d'édition** | `US004` (3/3), `US005` | **un aller-retour RÉEL avant de déclarer le client terminé** — §7.43, deux défauts sont tombés ainsi en `T11` du LOT 5 |
 | `T11` | **Le modèle générique, l'amorçage et la reprise relue** | `US007` | le critère 2 se prouve en **créant une entité neuve** et en cherchant les chaînes de Bordeaux dans les **octets** servis |
@@ -285,7 +285,7 @@ documents restreignent au seul **Booster**. Le cahier prévaut, le livrable du L
 | Écart | Ce qu'il demande |
 |---|---|
 | `ECART-014` | Le prototype dit « Représentant de cercle », les documents validés disent « Booster ». **Le corpus prévaut** : l'écran dira « Booster ». À confirmer par Léa, qui possède le vocabulaire produit |
-| `ECART-015` | Le prototype ne fournit **ni descriptions de cercles ni liens internes**, contrairement à ce qu'annonce le cahier §2.2. `US007` ne peut donc pas « reprendre » ce qui n'existe pas : ce sont des **contenus à produire**, et ils relèvent de Léa |
+| `ECART-015` | Le prototype ne fournit **ni descriptions de cercles ni liens internes**, contrairement à ce qu'annonce le cahier §2.2. `US007` ne peut donc pas « reprendre » ce qui n'existe pas : ce sont des **contenus à produire**, et ils relèvent de Léa. **`T8` a livré la MÉCANIQUE des liens ; le CONTENU se referme en `T11`**, la reprise relue — et les liens repris devront être en `https`, la contrainte `ck_internal_link_url_https` de la migration `0019` s'appliquant à eux aussi |
 | `ECART-060` | Quatre des cinq filtres du trombinoscope n'ont **aucune liste de référence** à proposer. Les **cercles** en sont une, et ce lot la produit : `ECART-060` se referme partiellement ici, le reste au LOT 9 |
 
 ## 8.3 Un point que personne n'a encore relevé — **les deux listes de blocs diffèrent**

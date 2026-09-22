@@ -30,23 +30,25 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **32 tables** PostgreSQL — `alembic_version` comprise — **17 migrations** rejouables, **9 déclencheurs**, et l'isolation multi-entités portée par **12 clés étrangères à deux colonnes** (§25.3). *Relevés au catalogue le 18/09/2026, pas recopiés* | LOT 2, LOT 3 et LOT 6 |
+| **32 tables** PostgreSQL — `alembic_version` comprise — **19 migrations** rejouables, **10 déclencheurs**, et l'isolation multi-entités portée par **12 clés étrangères à deux colonnes** (§25.3). *Relevés au catalogue le 22/09/2026, pas recopiés* | LOT 2, LOT 3 et LOT 6 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
 | **le Framework en lecture** — sa synthèse à trois familles, les pages détaillées d'un **cercle** et d'un **bureau**, et le **rendu des blocs** d'une page de contenu | LOT 6, `T1` à `T5` |
+| **l'écriture d'un contenu dans son périmètre**, son **cycle de vie** — brouillon, publication, archivage, restauration — et les **liens internes** Hub, eXalt Academy et SharePoint, dont les **URL sont validées** : `https` seul, `http` refusé sous son propre code (`DEC-587`) | LOT 6, `T6` à `T8` |
 
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** **aucun
-écran du LOT 6** — le Framework, les cercles, les bureaux et les contenus sont servis par l'API, et
-leurs écrans sont `T9` et `T10` ; **aucune écriture de contenu** — `T6` la pose ; **aucune
-publication** — `T7` ; aucun onboarding (LOT 7), aucun import CSV (LOT 9), et **aucune miniature
-n'est produite** : leur génération est `MVP-L11-US005`, au LOT 11. La route de photo rend donc
-**404 pour tout le monde** aujourd'hui, et c'est l'état normal, exigé par un test.
+écran du LOT 6** — le Framework, les cercles, les bureaux, les contenus et les liens internes sont
+tous servis par l'API, et leurs écrans sont `T9` et `T10` ; **aucun contenu repris du prototype** —
+c'est `T11`, et il reste 29 éléments au statut « à relire » ; aucun onboarding (LOT 7), aucun import
+CSV (LOT 9), et **aucune miniature n'est produite** : leur génération est `MVP-L11-US005`, au
+LOT 11. La route de photo rend donc **404 pour tout le monde** aujourd'hui, et c'est l'état normal,
+exigé par un test.
 
 > **Les issues des stories du LOT 6 restent OUVERTES après la fusion de leur sous-étape**, et ce
 > n'est pas un oubli : leurs critères d'acceptation disent « **affichés** », et aucun écran n'existe
 > encore. Un critère non tenu ne se referme pas — c'est la même discipline que `#120` et `#121` au
-> LOT 5. **11 issues sont ouvertes** au 18/09/2026 ; mesure, jamais mémoire :
+> LOT 5. **11 issues sont ouvertes** au 22/09/2026 ; mesure, jamais mémoire :
 > `gh issue list --state open --limit 300 --json number --jq 'length'`.
 
 Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.

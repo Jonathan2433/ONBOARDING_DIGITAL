@@ -1,8 +1,32 @@
-"""Les routes editoriales — LOT 6, `T5` et `T6`, story `MVP-L06-US004`.
+"""Les routes editoriales — LOT 6, `T5` a `T8`, stories `MVP-L06-US004` a `US006`.
 
     GET  /entities/{code}/pages/{type_de_page}/{slug}    `T5`, lire le PUBLIE
     POST /entities/{code}/pages                          `T6`, creer un BROUILLON
     PUT  /entities/{code}/pages/{page}/contenu           `T6`, ecrire le contenu
+    POST /entities/{code}/pages/{page}/publication       `T7`, publier
+    POST /entities/{code}/pages/{page}/archivage         `T7`, archiver
+    POST /entities/{code}/pages/{page}/restauration      `T7`, restaurer
+    GET  /entities/{code}/liens                          `T8`, l'accueil : les ACTIFS
+    GET  /entities/{code}/liens/gestion                  `T8`, l'editeur : tous
+    POST /entities/{code}/liens                          `T8`, creer un lien
+    PUT  /entities/{code}/liens/ordre                    `T8`, reordonner
+    PUT  /entities/{code}/liens/{lien}                   `T8`, modifier un lien
+
+DEUX LECTURES DES LIENS, ET DEUX GRILLES — `T8`
+
+  L'accueil ne sert que les liens **actifs** : c'est la raison d'etre du champ
+  `active` du §15.3, et les servir tous a tout le monde le viderait de son sens.
+  L'ecran de gestion les voit **tous**, sans quoi desactiver un lien serait un
+  aller sans retour. Deux audiences, deux routes, **une seule garde par route** :
+  un garde-fou dont le perimetre depend d'un parametre de requete est un
+  garde-fou qu'on finit par se tromper a relire.
+
+  **L'ORDRE DE DECLARATION DE `/liens/ordre` ET `/liens/{lien}` EST SIGNIFIANT.**
+  FastAPI retient la premiere route dont le MOTIF correspond : `/liens/{lien}`
+  attraperait `/liens/ordre` puis rendrait 422 sur la conversion en UUID, sans
+  jamais laisser la main a la route suivante. `/liens/ordre` est donc declaree
+  AVANT, et un test le mesure -- l'inverser ferait echouer ce test au lieu de
+  casser un ecran (§7.35).
 
 DEUX ADRESSAGES, ET LA DIFFERENCE EST VOULUE
 
@@ -66,11 +90,19 @@ from app.content.ecriture import (
     creer_une_page,
     remplacer_le_contenu,
 )
-from app.content.modeles import TYPES_DE_BLOC, TYPES_DE_PAGE
+from app.content.liens import (
+    LienInterne,
+    creer_un_lien,
+    lister_les_liens,
+    modifier_un_lien,
+    reordonner_les_liens,
+)
+from app.content.modeles import TYPES_DE_BLOC, TYPES_DE_LIEN, TYPES_DE_PAGE
 from app.content.pages import PayloadNonObjet, lire_la_page_de_contenu
 from app.content.perimetre import (
     ROLES_D_ECRITURE_EDITORIALE,
     ROLES_DE_CREATION,
+    ROLES_DE_GESTION_DES_LIENS,
     ActionEditoriale,
     resoudre_le_perimetre_editorial,
 )
@@ -303,6 +335,145 @@ class ReponseDeRestaurationDUnContenu(BaseModel):
     version: int
     etat: str
     publiee_le: dt.datetime | None
+
+
+class LienInterneServi(BaseModel):
+    """Un lien interne, tel que les cinq routes de `T8` le rendent — modele §15.3.
+
+    **UNE SEULE STRUCTURE POUR LES DEUX AUDIENCES**, y compris `actif`, que la
+    lecture publique rend toujours a `true` puisqu'elle ne sert que des actifs.
+    Un champ constant parait inutile ; le taire obligerait l'ecran de gestion a
+    lire une AUTRE structure, et deux structures pour une meme ressource
+    divergent au premier ajout de colonne.
+
+    **`reference_d_icone` EST SERVIE TELLE QUELLE.** Le §15.3 la nomme et ne dit
+    NULLE PART quel vocabulaire elle emploie -- aucune bibliotheque d'icones
+    n'est citee dans le corpus. C'est le meme parti que `payload_json` chez `T5` :
+    une donnee opaque, dont le front connait le sens, plutot qu'une enumeration
+    inventee (§6.5).
+    """
+
+    identifiant: uuid.UUID
+    libelle: str
+    url: str
+    type_de_lien: str
+    description: str | None
+    reference_d_icone: str | None
+    rang: int
+    actif: bool
+    version: int
+
+
+class ReponseDesLiensInternes(BaseModel):
+    """La liste ordonnee, et son compte.
+
+    `nombre_de_liens` est **rapporte plutot que tu** (§7.20) : un ecran qui
+    n'afficherait rien doit pouvoir distinguer « aucun lien » de « la reponse
+    n'est pas arrivee », et un controle qui compte doit confronter son compte a
+    un attendu (§7.0, troisieme proposition).
+    """
+
+    liens: list[LienInterneServi]
+    nombre_de_liens: int
+
+
+class _ChampsDuLien(BaseModel):
+    """Les six champs qui DEFINISSENT un lien — partages par la creation et la modification.
+
+    **NI `rang` NI `identifiant`, ET C'EST LE POINT.** Le rang n'est pas une
+    propriete du lien mais de la LISTE : la creation ajoute en queue, et
+    `PUT …/liens/ordre` seule le reecrit. L'offrir ici rendrait une permutation
+    de deux liens impossible -- mesure du 22/09/2026, l'index unique partiel de
+    `T1` refuse un echange en un seul `UPDATE`.
+
+    **AUCUN CHAMP DE NATURE HTML NON PLUS** : ni `html`, ni `format`, ni `rendu`.
+    `libelle` et `description` sont du TEXTE, et le critere 6 du lot -- « aucun
+    contenu arbitraire ne peut injecter du code » -- est tenu ici par ce qui
+    n'existe pas, exactement comme chez `T6`.
+    """
+
+    libelle: str = Field(min_length=1, description="Le libelle affiche sur la carte (§15.3)")
+    url: str = Field(
+        min_length=1,
+        description=(
+            "L'adresse de la ressource. **Validee selon la liste de protocoles autorises** "
+            "du §15.3 — `DEC-587`, `QO-120` : `https` seul, et `http` est refuse sous son "
+            "propre code pour que l'auteur voie qu'il lui manque un `s`. Une adresse sans "
+            "serveur — « https:quelquechose » — est refusee elle aussi : une liste blanche "
+            "de protocoles ne suffit pas, c'est mesure."
+        ),
+    )
+    type_de_lien: str = Field(
+        min_length=1,
+        #  **LA LONGUEUR VIENT DE LA COLONNE**, §15.3 : `link_type` est
+        #  `varchar(32)`. L'ecrire en dur divergerait au premier changement (§7.27).
+        max_length=32,
+        description="L'un des types du §15.3 — " + ", ".join(f"`{t}`" for t in TYPES_DE_LIEN),
+    )
+    description: str | None = Field(
+        default=None, description="Le texte secondaire de la carte, facultatif (§15.3)"
+    )
+    reference_d_icone: str | None = Field(
+        default=None,
+        #  `icon_reference` est `varchar(64)` au §15.3 — derive, pas recopie.
+        max_length=64,
+        description=(
+            "Une reference d'icone, facultative. **Le corpus n'en donne aucun "
+            "vocabulaire** : elle est servie telle quelle, et le front en connait le sens."
+        ),
+    )
+    actif: bool = Field(
+        default=True,
+        description=(
+            "Un lien inactif n'est plus servi par l'accueil. **C'est le seul moyen de "
+            "retirer un lien** : le §15.3 declare `active` a cote de `archived_at` et "
+            "`T1` a refuse de les fondre ; aucune ligne du §13 ni du §19 ne nomme "
+            "l'archivage d'un lien."
+        ),
+    )
+
+
+class DemandeDeCreationDeLien(_ChampsDuLien):
+    """Creer un lien — §13 « Gerer les cartes Hub/Academy/SharePoint », §19.
+
+    **AUCUN CHAMP `version`**, et ce n'est pas un oubli : il n'y a rien a ne pas
+    ecraser. Le §18.4 borne les modifications, pas les creations.
+    """
+
+
+class DemandeDeModificationDeLien(_ChampsDuLien):
+    """Remplacer la definition d'un lien — §19 « Modifier les liens internes »."""
+
+    #  §18.4 : « les modifications sensibles utilisent une concurrence optimiste.
+    #  Une version obsolete produit un 409 **sans ecrasement silencieux** ».
+    #  Obligatoire, comme chez `T6` et `T7` -- defaut `T11-6` du LOT 5, ou un
+    #  bouchon rendait 200 sur un corps vide la ou l'API rend 422.
+    version: int = Field(ge=1, description="La version lue — §18.4, concurrence optimiste")
+
+
+class DemandeDOrdreDesLiens(BaseModel):
+    """Reecrire l'ordre d'affichage — modele §15.3, `display_order`.
+
+    **LE RANG VAUT L'INDEX DE LA LISTE**, jamais une valeur envoyee : deux liens
+    de meme rang sont **inexprimables** plutot que refuses (§7.35), exactement
+    comme les blocs de `T6`.
+
+    **AUCUN `version` ICI, ET C'EST UN CHOIX QU'IL FAUT DIRE.** La concurrence est
+    portee par l'EXIGENCE D'EXHAUSTIVITE : la liste doit nommer exactement une
+    fois chacun des liens non archives de l'entite, si bien qu'une creation ou une
+    modification concurrente rend l'ordre soumis **incomplet**, donc 422. Un champ
+    `version` aurait exige un porteur, et la collection n'en a pas -- le
+    fabriquer sur `entity.version`, qui change pour tout autre chose, aurait
+    donne un verrou qui se declenche a tort et ne se declenche pas a propos.
+    """
+
+    ordre: list[uuid.UUID] = Field(
+        description=(
+            "Les identifiants des liens, dans l'ordre voulu. **La liste doit etre "
+            "exhaustive** : exactement une fois chacun des liens non archives de "
+            "l'entite, actifs comme inactifs."
+        )
+    )
 
 
 #  Le resultat d'une transition : `PagePubliee`, `PageArchivee` ou `PageRestauree`.
@@ -970,5 +1141,337 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         return ReponseDeRestaurationDUnContenu(
             version=restauree.version, etat=restauree.etat, publiee_le=restauree.publiee_le
         )
+
+    # ========================================================================
+    #
+    #  LES LIENS INTERNES — LOT 6, `T8`, `MVP-L06-US005`
+    #
+    #    **UNE SEULE GARDE D'ECRITURE, ET DEUX SOURCES CONCORDANTES.** Le §13
+    #    « Gerer les cartes Hub/Academy/SharePoint » et le §19 « Modifier les
+    #    liens internes » donnent le meme ensemble -- `ESM`, `ADM-E`, `SUPER` --
+    #    et c'est la premiere grille voisine de ce lot qui concorde. Le §19 n'a
+    #    ni colonne `DSM`, ni `BOOST`, ni `OFFICE` : une absence de colonne n'est
+    #    pas une exclusion, et c'est le §13 qui les met a tiret.
+    #
+    #    **AUCUNE PORTEE LOCALE ICI, A LA DIFFERENCE DES PAGES.** Un lien
+    #    appartient a l'ENTITE : `internal_link` ne porte ni `circle_id` ni
+    #    `office_id`, si bien qu'un Booster n'aurait aucune ressource sur
+    #    laquelle borner son droit. La garde de role suffit donc, et il n'y a
+    #    rien a resoudre apres elle -- au contraire des pages, ou le couple
+    #    (role, page) commande.
+    #
+    # ========================================================================
+    garde_des_liens = exiger_un_role_dans_l_entite(parametres, ROLES_DE_GESTION_DES_LIENS)
+
+    def _servir(liens: tuple[LienInterne, ...]) -> ReponseDesLiensInternes:
+        """La meme forme pour les cinq routes — une seule structure, un seul compte."""
+        return ReponseDesLiensInternes(
+            liens=[
+                LienInterneServi(
+                    identifiant=lien.identifiant,
+                    libelle=lien.libelle,
+                    url=lien.url,
+                    type_de_lien=lien.type_de_lien,
+                    description=lien.description,
+                    reference_d_icone=lien.reference_d_icone,
+                    rang=lien.rang,
+                    actif=lien.actif,
+                    version=lien.version,
+                )
+                for lien in liens
+            ],
+            nombre_de_liens=len(liens),
+        )
+
+    @routeur.get(
+        "/entities/{code}/liens",
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesLiensInternes,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Les liens internes ACTIFS d'une entite",
+        description=(
+            "Les liens Hub, eXalt Academy, SharePoint et autres ressources internes de "
+            "l'entite, dans leur ordre d'affichage — modele §15.3, `MVP-L06-US005`.<br><br>"
+            "**Exige une session, et rien de plus.** La matrice §5 porte une ligne "
+            "« Liens Hub/Academy/SharePoint » qui donne `—` a `ANON` et **Lecture** aux "
+            "huit roles authentifies : c'est le seul tableau du document qui porte `EMP` "
+            "et `NEW`, et lire a sa place la ligne « Consulter » du §13 — six colonnes, "
+            "ni `EMP` ni `NEW` — refuserait la ressource a l'Employe, pour qui ce portail "
+            "existe.<br><br>"
+            "**Seuls les liens ACTIFS sont servis.** C'est la raison d'etre du champ "
+            "`active` du §15.3. La gestion, qui voit aussi les inactifs, est une autre "
+            "route et une autre grille."
+        ),
+    )
+    def lister_les_liens_internes(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+    ) -> ReponseDesLiensInternes:
+        """Les liens internes actifs d'une entite — modele §15.3, matrice §5."""
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            liens = lister_les_liens(connexion, entite=entite.id, inclure_les_inactifs=False)
+        return _servir(liens)
+
+    @routeur.get(
+        "/entities/{code}/liens/gestion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesLiensInternes,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role de gestion des liens dans cette entite. "
+                    "Le §13 et le §19 s'accordent sur `ESM`, `ADM-E` et `SUPER` ; `DSM`, "
+                    "`BOOST` et `OFFICE` sont a tiret au §13, et absents du tableau du §19."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Tous les liens internes, actifs ET inactifs",
+        description=(
+            "La meme liste que l'accueil, **plus les liens desactives** — sans quoi "
+            "desactiver un lien serait un aller sans retour. Reserve aux roles qui "
+            "peuvent les modifier."
+        ),
+    )
+    def lister_les_liens_internes_pour_la_gestion(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        _appelant: SessionEtablie = Depends(garde_des_liens),  # noqa: B008
+    ) -> ReponseDesLiensInternes:
+        """Tous les liens internes non archives — matrice §13 et §19."""
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            liens = lister_les_liens(connexion, entite=entite.id, inclure_les_inactifs=True)
+        return _servir(liens)
+
+    @routeur.post(
+        "/entities/{code}/liens",
+        status_code=status.HTTP_201_CREATED,
+        response_model=LienInterneServi,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : aucun role de gestion des liens ici."
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "Cinq refus d'URL, chacun sous son code, et ils ne sont pas "
+                    "decoratifs — `DEC-587`, `QO-120`. `url_illisible` : aucun protocole. "
+                    "`url_ambigue` : le protocole tape et le protocole lu different — un "
+                    "caractere de controle change la lecture. `url_non_chiffree` : "
+                    "exactement `http`, et il merite son propre message. "
+                    "`url_protocole_refuse` : tout autre protocole, et la reponse "
+                    "**enumere** ceux qui sont acceptes. `url_sans_hote` : protocole "
+                    "autorise mais aucun serveur — « https:quelquechose » passerait une "
+                    "liste blanche de protocoles, c'est mesure. "
+                    "`type_de_lien_refuse` : hors des types du §15.3."
+                )
+            },
+        },
+        summary="Creer un lien interne, EN QUEUE de liste",
+        description=(
+            "Backlog `MVP-L06-US005`, matrice §13 « Gerer les cartes "
+            "Hub/Academy/SharePoint » et §19 « Modifier les liens internes ».<br><br>"
+            "**Aucun champ de rang** : le lien est ajoute en queue, le rang valant "
+            "`max + 1` lu dans la meme transaction. Deux liens de meme rang sont donc "
+            "impossibles a exprimer. Reordonner est un geste distinct, et il doit "
+            "l'etre : l'index unique partiel de `T1` refuse un echange en un seul "
+            "`UPDATE` — mesure du 22/09/2026.<br><br>"
+            "**L'URL est validee selon la liste de protocoles autorises** du §15.3 : "
+            "`https` seul. La meme regle est posee EN BASE par la migration `0019`, si "
+            "bien qu'aucun autre ecrivain — reprise du prototype, modele generique, "
+            "import — ne peut y echapper."
+        ),
+    )
+    def creer_un_lien_interne(
+        demande: DemandeDeCreationDeLien,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appelant: SessionEtablie = Depends(garde_des_liens),  # noqa: B008
+    ) -> LienInterneServi:
+        """Creer un lien interne — modele §15.3, matrice §13 et §19."""
+        _proteger(parametres, requete)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            cree = creer_un_lien(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                libelle=demande.libelle,
+                url=demande.url,
+                type_de_lien=demande.type_de_lien,
+                description=demande.description,
+                reference_d_icone=demande.reference_d_icone,
+                actif=demande.actif,
+                instant=instant,
+            )
+        return _servir((cree,)).liens[0]
+
+    #  **DECLAREE AVANT `/liens/{lien}`, ET L'ORDRE EST SIGNIFIANT.** FastAPI
+    #  retient la premiere route dont le MOTIF correspond : `/liens/{lien}`
+    #  attraperait `/liens/ordre`, puis rendrait 422 sur la conversion en UUID
+    #  sans jamais passer la main. Un test le mesure.
+    @routeur.put(
+        "/entities/{code}/liens/ordre",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesLiensInternes,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : aucun role de gestion des liens ici."
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`ordre_incomplet` : la liste doit nommer **exactement une fois** "
+                    "chacun des liens non archives de l'entite. C'est aussi ce qui tient "
+                    "lieu de concurrence optimiste ici : un lien cree entre votre lecture "
+                    "et votre envoi rend la liste incomplete, donc refusee."
+                )
+            },
+        },
+        summary="Reordonner les liens internes",
+        description=(
+            "Le rang de chaque lien vaut son **index dans la liste soumise**, si bien "
+            "que deux liens de meme rang sont impossibles a exprimer.<br><br>"
+            "**La reecriture se fait en deux temps, et c'est une mesure qui l'exige** : "
+            "un echange de deux rangs en un seul `UPDATE` est REFUSE par "
+            "`uq_internal_link_entity_ordre_non_archive`. Les rangs sont d'abord decales "
+            "d'une valeur derivee, puis reposes."
+        ),
+    )
+    def reordonner_les_liens_internes(
+        demande: DemandeDOrdreDesLiens,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appelant: SessionEtablie = Depends(garde_des_liens),  # noqa: B008
+    ) -> ReponseDesLiensInternes:
+        """Reecrire l'ordre d'affichage des liens — modele §15.3."""
+        _proteger(parametres, requete)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            liens = reordonner_les_liens(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                ordre=tuple(demande.ordre),
+                instant=instant,
+            )
+        return _servir(liens)
+
+    @routeur.put(
+        "/entities/{code}/liens/{lien}",
+        status_code=status.HTTP_200_OK,
+        response_model=LienInterneServi,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : aucun role de gestion des liens ici."
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite inconnue ou non active, ou `lien_introuvable` : **UNE SEULE "
+                    "forme pour trois causes** — le lien n'existe pas, il appartient a "
+                    "une AUTRE entite, ou il est archive. Les distinguer apprendrait "
+                    "l'existence d'un lien d'une entite ou l'appelant n'a rien prouve "
+                    "(§2.5, refus par defaut)."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : le lien a change depuis votre lecture — §18.4, "
+                    "« sans ecrasement silencieux »."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Les memes cinq refus d'URL qu'a la creation, plus le type."
+            },
+        },
+        summary="Modifier un lien interne, ou le DESACTIVER",
+        description=(
+            "Backlog `MVP-L06-US005`, matrice §19 « Modifier les liens internes ».<br><br>"
+            "**`actif = false` est le seul moyen de retirer un lien de l'accueil**, et "
+            "c'est ce que le §15.3 prevoit : il declare `active` a cote de `archived_at`, "
+            "et `T1` a refuse de les fondre — on desactive pour retirer de l'affichage, "
+            "on archive pour sortir du jeu de donnees. **Aucune route n'archive un "
+            "lien** : ni le §13 ni le §19 n'en portent la ligne.<br><br>"
+            "**Le rang n'est pas touche** : il appartient a l'ordre de la liste, que "
+            "`PUT …/liens/ordre` seule reecrit."
+        ),
+    )
+    def modifier_un_lien_interne(
+        demande: DemandeDeModificationDeLien,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        lien: Annotated[
+            uuid.UUID, Path(description="L'identifiant du lien, rendu par la creation et la liste")
+        ],
+        appelant: SessionEtablie = Depends(garde_des_liens),  # noqa: B008
+    ) -> LienInterneServi:
+        """Remplacer la definition d'un lien interne — modele §15.3, matrice §19."""
+        _proteger(parametres, requete)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            modifie = modifier_un_lien(
+                connexion,
+                entite=entite.id,
+                lien=lien,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                libelle=demande.libelle,
+                url=demande.url,
+                type_de_lien=demande.type_de_lien,
+                description=demande.description,
+                reference_d_icone=demande.reference_d_icone,
+                actif=demande.actif,
+                instant=instant,
+            )
+        return _servir((modifie,)).liens[0]
 
     return routeur
