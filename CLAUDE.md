@@ -36,7 +36,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **93 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T7` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, puis **61** contrôles — bénéfice direct du §7.27, aucune cible nouvelle donc **rien à ajouter dans `ci.yml`**. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **169 décisions** `DEC-418+` · **64 écarts** (**13 ouverts**) · **46 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **170 décisions** `DEC-418+` · **64 écarts** (**13 ouverts**) · **46 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 22**, dérivés le 19/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SIX fois en cinq sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -493,7 +493,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`586` en usage | **`DEC-587`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`586` et `588` en usage — **`DEC-587` est allouée à `T8`, dont la pull request est ouverte** | **`DEC-589`** |
 | `ECART-nnn` | `001`–`064` | **`ECART-065`** |
 | `QO-nnn` | `072`–`122`, **5 trous** | **`QO-123`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -2509,6 +2509,59 @@ laquelle est la plus plausible, c'est ce que le document dit **ailleurs**.*
 
 ---
 
+## 7.47 Une date ABSOLUE dans un test est une bombe à retardement datée
+
+**Apport du correctif du 22/09/2026, `DEC-588`, et c'est la seule classe de ce projet
+qui fait rougir `develop` SANS QUE PERSONNE N'AIT TOUCHÉ UNE LIGNE.**
+
+La porte était verte le 19/09 à la fusion de `#164`. Le 22/09, la même `develop` rend
+**dix échecs** — mesuré dans un `git worktree` sur `origin/develop`, sans une ligne de
+la sous-étape en cours.
+
+| Ce qui bougeait | Ce qui ne bougeait pas | Ce qui les compare |
+|---|---|---|
+| `created_at` au défaut `now()` de la base | `expires_at`, dérivé d'un `instant` **injecté** au 22/08/2026 | `ck_service_token_expiration_apres_creation` |
+| `arrival_date` à `current_date - 30` | `departure_date` au 20/08/2026 | le `daterange` du §25.2 |
+
+Le premier a tenu **trente jours** puis a fait tomber **neuf** tests d'un coup ; le second
+a basculé le 20/09, quand `current_date - 30` a dépassé le 20/08 et que l'arrivée est
+passée **après** le départ.
+
+> **La règle, sans jargon :** c'est le §7.0, sixième proposition, appliqué au **temps** —
+> deux grandeurs qu'une contrainte compare doivent venir de la **même source**. Quand tu
+> écris une date dans un décor, demande-toi **à quoi elle sera comparée** : si l'autre
+> borne vient de `now()` ou de `current_date`, alors **elle aussi doit en venir**.
+
+**Et aucune des sept propositions du §7.0 ne pouvait l'attraper**, ce qui est le point.
+Les tests **passaient**. Ils étaient justes le jour de leur écriture, et ils le sont restés
+jusqu'à une date qu'on pouvait calculer mais que personne n'avait calculée. C'est le §7.21
+dans sa forme la plus pure — *un contrôle juste hier peut être faux aujourd'hui* — sauf
+qu'ici **ce n'est pas nous qui l'avons rendu faux, c'est le calendrier**.
+
+**La correction porte sur le MÉCANISME, pas sur les instances.** `creer_un_jeton` écrit
+désormais `created_at` depuis l'instant qu'on lui injecte, ce qui est déjà l'idiome de
+`app/content/ecriture.py` et de `liens.py` — ce service en était l'exception. Et l'ancre
+`INSTANT` est **dérivée de `now()`** : elle ne perd aucun déterminisme, aucune assertion
+du fichier ne dépendant d'une date du calendrier, toutes étant **relatives** à l'ancre.
+*La figer garantissait une panne datée sans rien apporter.*
+
+**LE RÉSIDUEL EST NOMMÉ, ET AUCUN GARDE-FOU AUTOMATIQUE N'EST POSÉ.** Recensement du
+22/09/2026 : **66 dates absolues** dans les tests, dont **11 dans le futur** — neuf
+`DECEMBRE = 2026-12-01`, un `2027-01-01` dans `test_bureaux.py`, un
+`PLUS_TARD = 2027-06-01` dans `test_cycle_de_vie_des_contenus.py`. **Ce sont des
+échéances, pas des défauts.**
+
+Et l'absence de garde-fou est **délibérée, parce qu'elle est mesurée** : la co-occurrence
+d'une date absolue et d'un `now()` dans un même fichier signale **30 fichiers sur 31**.
+Un garde-fou à faux positifs apprend à passer outre (§7.25), et il n'aurait rien discriminé.
+**Une liste datée est actionnable ; une heuristique ne l'aurait pas été.**
+
+> **Si `develop` rougit un matin sans qu'aucun commit ne l'explique, commence ici.** Lis la
+> date des valeurs en cause avant de chercher une régression : le `git worktree` sur
+> `origin/develop` **sur la même base** donne le verdict en deux minutes (§7.22).
+
+---
+
 # 8. Ce qui reste ouvert
 
 ## 8.1 Écarts — **13 ouverts**, dérivés du registre le 18/09/2026 (le total est au §1)
@@ -3096,7 +3149,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **46 leçons** payées par **275 défauts nommés** — 71 + 44 + 57 + 19 + 62 + 22, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **47 leçons** payées par **275 défauts nommés** — 71 + 44 + 57 + 19 + 62 + 22, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
