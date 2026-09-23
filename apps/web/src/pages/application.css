@@ -680,12 +680,17 @@
 
 /* ─── §14.2 : alternatives aux animations ─────────────────────────────── */
 
+/* LOT 6, `T9` — `.framework-carte` porte la meme transition de bordure que
+   `.nat-entite`, et le critere de sortie n°5 du lot — « les animations
+   respectent `prefers-reduced-motion` » — ne se prouve qu'ici et sur la carte
+   retournable du LOT 5 (§7.42, fiche-lot-6.md §1.2). */
 @media (prefers-reduced-motion: reduce) {
   .app-evitement,
   .app-lien,
   .app-navigation-lien,
   .app-barre-lien,
-  .nat-entite {
+  .nat-entite,
+  .framework-carte {
     transition: none;
   }
 }
@@ -1034,4 +1039,214 @@
   gap: var(--espace-xs);
   padding-left: var(--espace-l);
   margin: var(--espace-xs) 0 0;
+}
+
+/* ==========================================================================
+   La page Framework — LOT 6, `T9`, story `MVP-L06-US001`
+   ========================================================================== */
+
+.framework-section {
+  margin-bottom: var(--espace-l);
+}
+
+.framework-section h2 {
+  margin: 0 0 var(--espace-m);
+  font-size: var(--taille-l);
+}
+
+/* La grille est responsive SANS point de rupture ecrit, comme `.trombi-grille`. */
+.framework-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--espace-m);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.framework-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-l);
+  box-shadow: var(--ombre-douce);
+  color: var(--encre);
+  text-decoration: none;
+  transition: border-color 120ms ease-in-out;
+}
+
+.framework-carte:hover {
+  border-color: var(--marque-bleu);
+}
+
+.framework-carte:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* Une carte d'INFORMATION, pas un lien : les responsabilites DSM et ESM ont une
+   page propre au §10.1, qu'`ECART-062` empeche encore de construire — aucune
+   route ne la sert. Meme aspect qu'une carte de cercle ou de bureau, sans
+   `href` ni curseur de pointeur. */
+.framework-carte-information {
+  cursor: default;
+}
+
+/* **`--framework-cercle-couleur` EST DECLAREE ICI, ET `cadre-check` L'EXIGE.**
+   Meme motif que `--profil-cercle` : un repli `var(--x, repli)` cacherait
+   l'absence de jeton au lieu de la signaler (defaut `T10-2`). */
+.framework-carte-cercle {
+  --framework-cercle-couleur: var(--trait);
+
+  border-left: 4px solid var(--framework-cercle-couleur);
+}
+
+.framework-carte-titre {
+  font-weight: 700;
+}
+
+.framework-carte-detail {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+/* ==========================================================================
+   La page detaillee d'un cercle — LOT 6, `T9`, story `MVP-L06-US002`
+   ========================================================================== */
+
+.cercle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+/* Meme motif que `.framework-carte-cercle` : declaree ici avec sa valeur
+   neutre, surchargee en ligne par le composant quand un jeton resout. */
+.cercle-entete {
+  --cercle-couleur: var(--trait);
+
+  padding: var(--espace-m);
+  border-left: 4px solid var(--cercle-couleur);
+}
+
+.cercle-nom {
+  margin: 0 0 var(--espace-xs);
+}
+
+.cercle-description {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.cercle-champs {
+  margin: 0;
+}
+
+.cercle-champs dt {
+  color: var(--encre-douce);
+}
+
+.cercle-liste-membres {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cercle-liste-membres li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-xs) 0;
+  border-bottom: 1px solid var(--trait);
+}
+
+.cercle-membre-type {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.cercle-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-m);
+  margin-top: var(--espace-m);
+}
+
+/* Meme recette que `.trombi-page`, reprise pour cette page — deux ecrans qui
+   paginent, deux jeux de classes propres a chacun (§7.27 dans l'autre sens :
+   la regle visuelle est identique, mais rien ne lie les deux feuilles). */
+.cercle-page {
+  min-height: 44px;
+  padding: 0 var(--espace-m);
+  font: inherit;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+  border: 0;
+  border-radius: var(--rayon-m);
+  cursor: pointer;
+}
+
+.cercle-page:disabled {
+  color: var(--encre-douce);
+  background: var(--fond-doux);
+  cursor: not-allowed;
+}
+
+.cercle-page:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.cercle-retour {
+  margin: 0;
+}
+
+/* ==========================================================================
+   La page detaillee d'un bureau — LOT 6, `T9`, story `MVP-L06-US003`
+   ========================================================================== */
+
+.bureau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.bureau-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.bureau-nom {
+  margin: 0;
+}
+
+.bureau-description {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.bureau-champs {
+  margin: 0;
+}
+
+.bureau-champs dt {
+  color: var(--encre-douce);
+}
+
+.bureau-liste-responsables {
+  padding-left: var(--espace-l);
+  margin: 0;
+}
+
+.bureau-retour {
+  margin: 0;
 }

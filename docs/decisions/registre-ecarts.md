@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 19 septembre 2026, `T7` du LOT 6 — `ECART-063` **clos par la mesure**, `ECART-064` ouvert
+**Dernière mise à jour :** 23 septembre 2026, `T9` du LOT 6 — `ECART-065` ouvert
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 64 | 13 | 48 | 3 |
+| Total 65 | 14 | 48 | 3 |
 
 ---
 
@@ -82,6 +82,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | Ouvert, avant `T9` |
 | `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
 | `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
+| `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -210,7 +211,21 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-065`.**
+**Prochain identifiant libre : `ECART-066`.**
+
+---
+
+## `ECART-065` — le titre `<h1>` du cadre est faux sur toute sous-page paramétrée au-delà d'une rubrique
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 23 septembre 2026, dans un vrai navigateur, en vérifiant les deux écrans détaillés de `T9` du LOT 6 |
+| Source | `apps/web/src/pages/CadreApplicatif.tsx`, fonction `useTitreDeLaPage` |
+| Constat | `useTitreDeLaPage` ne rend le titre d'une rubrique que si le chemin **égale exactement** `cheminDeRubrique(code, rubrique.suffixe)`. Toute route imbriquée **sous** une rubrique — un chemin plus profond — ne correspond à rien, et la fonction retombe sur son titre par défaut, « Accueil de l'entité ». Mesuré à l'écran sur `/entites/BORDEA00/framework/bureaux/SIEGE` : le contenu affiche correctement « Siège Bordeaux », mais le `<h1>` de la page dit « Accueil de l'entité » — une affirmation **fausse**, pas seulement générique. |
+| Cause | Le mécanisme a été posé en `T3` du LOT 4 quand aucune rubrique n'avait de sous-page, et `T4` l'a étendu aux six rubriques sans jamais introduire de route plus profonde qu'une rubrique. La première sous-page paramétrée est la fiche profil, `T11` du LOT 5 — et elle porte donc déjà ce défaut, sans que rien ne l'ait relevé jusqu'ici : aucun test n'exerçait le `<h1>` de cette page précise. |
+| Bloquant | Non. Le contenu de chaque page reste exact ; seul le titre du document (`<h1>`, et par lui le contenu annoncé aux lecteurs d'écran en premier) est faux. C'est un défaut d'accessibilité et de cohérence, pas une fuite de données ni un refus manqué. |
+| Recommandation | **`T9` corrige le mécanisme pour ses deux propres routes** — cercle et bureau — en dérivant deux gabarits de plus de `CHEMINS`, comparés segment par segment plutôt que par égalité de chaîne (§7.27, aucun gabarit recopié). **La fiche profil n'est pas touchée dans cette sous-étape** : la corriger exigerait de rouvrir un fichier du LOT 5, déjà fusionné et passé sa porte, ce qui déborderait le périmètre d'une sous-étape du LOT 6 (§2, règle n°1). La prochaine sous-étape qui touche `CadreApplicatif.tsx` — LOT 7 ou LOT 9, dont plusieurs rubriques auront elles aussi des sous-pages paramétrées — doit généraliser `TITRES_DE_SOUS_PAGE` plutôt que d'empiler un troisième cas ad hoc. |
+| Résolution | **Ouvert pour la fiche profil.** Corrigé pour les deux routes de `T9`, `DEC-589`. |
 
 ---
 
