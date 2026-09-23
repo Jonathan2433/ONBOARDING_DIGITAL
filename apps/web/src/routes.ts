@@ -70,6 +70,16 @@ export const CHEMINS = {
   //  au `T4` du LOT 4 : « un lien qui aboutit au fourre-tout 404 est atteignable
   //  et INUTILE ; la navigation ne serait pas prouvee, elle serait simulee ».
   profil: '/entites/:code/trombinoscope/:appartenance',
+  //  **LOT 6, `T9`.** Les pages detaillees d'un cercle et d'un bureau, stories
+  //  `MVP-L06-US002` et `US003`. **LE GABARIT N'EST PAS INVENTE ICI** : c'est
+  //  celui que l'API emet deja dans `carte.cheminDetaille`, `chemin_du_cercle`
+  //  et `chemin_du_bureau` de `app/organization/framework.py`, poses des `T2`.
+  //  Les cartes de la page Framework s'y rendent avec la chaine que l'API
+  //  rend, jamais avec une adresse reconstruite ici -- une seconde regle de
+  //  construction divergerait au premier changement (§7.27). Ce module doit
+  //  seulement declarer le MEME gabarit pour que le routeur le reconnaisse.
+  frameworkCercle: '/entites/:code/framework/cercles/:codeCercle',
+  frameworkBureau: '/entites/:code/framework/bureaux/:codeBureau',
 } as const;
 
 /**

@@ -47,7 +47,10 @@ import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur
 import { CadreApplicatif } from './pages/CadreApplicatif';
 import { PageRubrique } from './pages/PageRubrique';
 import { PageDeconnexion } from './pages/PageDeconnexion';
+import { PageBureau } from './pages/PageBureau';
+import { PageCercle } from './pages/PageCercle';
 import { PageEntite } from './pages/PageEntite';
+import { PageFramework } from './pages/PageFramework';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { PageNationale } from './pages/PageNationale';
@@ -66,6 +69,8 @@ import { CHEMINS, RUBRIQUES } from './routes';
  */
 const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
   trombinoscope: <PageTrombinoscope />,
+  //  LOT 6, `T9` — la synthese Framework, story `MVP-L06-US001`.
+  framework: <PageFramework />,
 };
 
 /**
@@ -76,6 +81,13 @@ const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
  * copie du meme chemin (§7.27).
  */
 const SUFFIXE_PROFIL = CHEMINS.profil.replace(`${CHEMINS.entite}/`, '');
+
+/**
+ * Les suffixes des pages de cercle et de bureau, DERIVES pour la meme raison —
+ * LOT 6, `T9`, stories `MVP-L06-US002` et `US003`.
+ */
+const SUFFIXE_CERCLE = CHEMINS.frameworkCercle.replace(`${CHEMINS.entite}/`, '');
+const SUFFIXE_BUREAU = CHEMINS.frameworkBureau.replace(`${CHEMINS.entite}/`, '');
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -159,6 +171,14 @@ export function App(): JSX.Element {
               au `T4` du LOT 4.
             */}
             <Route path={SUFFIXE_PROFIL} element={<PageProfil />} />
+            {/*
+              **LOT 6, `T9`** — les pages detaillees d'un cercle et d'un bureau,
+              stories `MVP-L06-US002` et `US003`. Meme motif que la fiche profil
+              ci-dessus : la route existe des que le contenu existe, sous le
+              gabarit que l'API emet deja dans `carte.cheminDetaille`.
+            */}
+            <Route path={SUFFIXE_CERCLE} element={<PageCercle />} />
+            <Route path={SUFFIXE_BUREAU} element={<PageBureau />} />
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**

@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `588` en usage | `DEC-589` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `589` en usage | `DEC-590` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `064` |  `ECART-065` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `065` |  `ECART-066` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `123` | `QO-124` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -292,7 +292,7 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` À `T8` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), et les **liens internes** le 22/09 (`DEC-587`). **68 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T9`, les écrans de lecture.
+**`T2` À `T9` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), et les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`). **68 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens, plus **540 tests frontend**. La prochaine est `T10`, les écrans d'édition.
 
 > **`QO-120` EST CLOSE PAR `T8`, ET ELLE ÉTAIT BLOQUANTE — MAIS LE RÉSULTAT LE PLUS UTILE N'EST PAS LA LISTE.** Le modèle §15.3 et le cahier §13 exigent tous deux « une **liste de protocoles autorisés** » sans la donner — zéro occurrence, mesurée. `DEC-587` tranche `https` seul, `http` refusé **sous son propre code** parce qu'une adresse juste à un `s` près mérite mieux que « protocole inconnu » (§7.25). **Et la mesure a montré qu'une liste de protocoles NE SUFFIT PAS** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte** — c'est le cinquième refus, et le seul qu'une lecture littérale de la phrase du corpus aurait omis. La règle vit à **deux étages** : la contrainte `ck_internal_link_url_https` de la migration `0019` est le **plancher**, que trois écrivains futurs déjà nommés au corpus ne peuvent pas contourner ; le service est le **refus exact**, qui distingue cinq causes et exige l'hôte.
 

@@ -98,11 +98,60 @@ export function useEntiteConsultee(): ContexteEntite {
  * de chaine : `/entites/framework-sud` contient « framework » sans etre la
  * rubrique Framework.
  */
+/**
+ * DEUX GABARITS DE PLUS QUE `RUBRIQUES` NE DONNE PAS — LOT 6, `T9`.
+ *
+ * `RUBRIQUES` ne porte que les SIX rubriques du menu, comparees par EGALITE de
+ * chemin. Les pages de cercle et de bureau vivent SOUS la rubrique Framework,
+ * a un chemin plus profond que `cheminDeRubrique(code, 'framework')` : sans ce
+ * cas, elles retombaient sur le titre PAR DEFAUT, « Accueil de l'entite » — un
+ * `<h1>` FAUX, pas seulement generique, et c'est le meme defaut que porte deja
+ * la fiche profil du LOT 5 `T11` (non corrige ici, hors perimetre de `T9`).
+ *
+ * **LES GABARITS SONT DERIVES DE `CHEMINS`, JAMAIS RECOPIES** (§7.27) : un
+ * changement de forme de `CHEMINS.frameworkCercle` se repercute ici sans rien
+ * a modifier.
+ */
+const TITRES_DE_SOUS_PAGE: readonly { readonly gabarit: string; readonly titre: string }[] = [
+  { gabarit: CHEMINS.frameworkCercle, titre: 'Cercle' },
+  { gabarit: CHEMINS.frameworkBureau, titre: 'Bureau' },
+];
+
+/**
+ * Le gabarit d'une route, confronte a CE chemin pour CE code.
+ *
+ * `:code` doit valoir le code de CETTE entite — deux entites ne partagent pas
+ * leurs sous-pages ; tout autre segment `:xxx` est un identifiant quelconque
+ * (`:codeCercle`, `:codeBureau`), dont seule la PRESENCE importe ici : le titre
+ * ne depend pas de sa valeur.
+ */
+function correspondAuGabarit(gabarit: string, code: string, pathname: string): boolean {
+  const segmentsGabarit = gabarit.split('/');
+  const segmentsChemin = pathname.split('/');
+  if (segmentsGabarit.length !== segmentsChemin.length) {
+    return false;
+  }
+  return segmentsGabarit.every((segment, i) => {
+    if (segment === ':code') {
+      return segmentsChemin[i] === encodeURIComponent(code);
+    }
+    if (segment.startsWith(':')) {
+      return segmentsChemin[i] !== '' && segmentsChemin[i] !== undefined;
+    }
+    return segment === segmentsChemin[i];
+  });
+}
+
 function useTitreDeLaPage(defaut: string, code: string): string {
   const { pathname } = useLocation();
   for (const rubrique of RUBRIQUES) {
     if (pathname === cheminDeRubrique(code, rubrique.suffixe)) {
       return rubrique.titre;
+    }
+  }
+  for (const sousPage of TITRES_DE_SOUS_PAGE) {
+    if (correspondAuGabarit(sousPage.gabarit, code, pathname)) {
+      return sousPage.titre;
     }
   }
   return defaut;
