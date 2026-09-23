@@ -1,4 +1,4 @@
-"""Qui peut ECRIRE, PUBLIER, ARCHIVER et RESTAURER — annexe A §13, §18. LOT 6, `T6` et `T7`.
+"""Qui peut ECRIRE, PUBLIER, ARCHIVER, RESTAURER — annexe A §13, §18, §19. `T6` a `T8`.
 
 LA GRILLE DE L'ECRITURE DU LOT 5 NE SE REEMPLOIE PAS, ET LA REUTILISER
 ELARGIRAIT UN DROIT
@@ -88,6 +88,28 @@ CE QUE LE CORPUS NE TRANCHE PAS, ET QUI EST CONSIGNE PLUTOT QU'INVENTE
   **Aucun droit n'est donc accorde au DSM ici**, ce qui suit le §13 a la lettre.
   Lui ouvrir toutes les pages `FRAMEWORK` serait plus large que ce que le §10.1
   ecrit, et le §6.5 interdit l'hypothese deguisee en decision. `ECART-062`.
+
+LA « PRESENTATION DE L'ENTITE » N'A PAS DE GRILLE PROPRE, ET C'EST UNE MESURE
+
+  Le §13 porte une ligne « **Modifier la presentation de l'entite** », et `T8`
+  devait lui trouver une place. Elle n'en demande aucune, et la confrontation du
+  22/09/2026 le dit :
+
+      §13 « Modifier la presentation de l'entite »
+                       DSM —  ESM Entite  BOOST —  OFFICE —  ADM-E Entite  SUPER Global
+      §13 « Creer un contenu general »
+                       DSM —  ESM Entite  BOOST —  OFFICE —  ADM-E Entite  SUPER Global
+
+  **Les deux lignes sont identiques cellule par cellule.** Et la presentation est
+  une page de contenu -- le cahier situe « l'accueil d'une entite contenant **la
+  presentation** et les acces au Framework », et sa page d'accueil commence par
+  « 1. presentation de l'entite » --, donc du type `HOME` du §15.1.
+
+  Or `HOME` appartient a `TYPES_SANS_PORTEE_LOCALE`, par SOUSTRACTION : il n'a
+  aucune entree dans `PORTEES_LOCALES`. `resoudre_le_perimetre_editorial` le
+  reserve donc deja a `ROLES_DE_PORTEE_ENTITE`, soit exactement les trois roles
+  que la ligne du §13 nomme. **Aucune ligne de code n'etait a ecrire**, et deux
+  tests le MESURENT plutot que ce paragraphe ne l'affirme.
 
 `ECART-063` — LES DEUX GRILLES D'ARCHIVAGE, ET CE QUE LA MESURE EN A FAIT
 
@@ -266,6 +288,34 @@ ROLES_D_ECRITURE_EDITORIALE: Final[frozenset[RoleDeLaMatrice]] = ROLES_DE_PORTEE
 #  change. Un test MESURE leur egalite d'aujourd'hui et echouera si elle cesse,
 #  ce qui forcera la decision au lieu de la prendre en silence (§7.32).
 ROLES_DE_RESTAURATION: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  §13 « Gerer les cartes Hub/Academy/SharePoint » et §19 « Modifier les liens
+#  internes » -- **les deux concordent**, et c'est la premiere grille voisine de
+#  ce lot qui le fasse. Confrontation du 22/09/2026 :
+#
+#      §13 (six colonnes)   DSM —  ESM Entite  BOOST —  OFFICE —  ADM-E Entite  SUPER Global
+#      §19 (trois colonnes)        ESM Entite                     ADM-E Entite  SUPER Global
+#
+#  Le §19 n'a **ni colonne `DSM`, ni `BOOST`, ni `OFFICE`**, ce qui est une
+#  absence de colonne et non une exclusion (§7 du `DEC-584`) : c'est le §13, qui
+#  les porte, qui les met a tiret. Les deux lectures s'accordent donc, et **aucune
+#  n'accorde de portee locale** -- un lien appartient a l'ENTITE, et
+#  `internal_link` ne porte ni `circle_id` ni `office_id`.
+#
+#  **DECLARE PLUTOT QU'ALIASE SUR `ROLES_DE_CREATION`, ET C'EST LE PARTI DE
+#  `T7`.** Les deux ensembles coincident aujourd'hui pour des raisons qui leur
+#  sont PROPRES -- l'un parce que le §13 n'a qu'une ligne de creation de contenu,
+#  l'autre parce que deux sections differentes s'accordent sur les liens. Les
+#  aliaser les ferait bouger ENSEMBLE le jour ou une seule des deux raisons
+#  change. Un test MESURE leur egalite d'aujourd'hui et echouera si elle cesse,
+#  ce qui forcera la decision au lieu de la prendre en silence (§7.32).
+ROLES_DE_GESTION_DES_LIENS: Final[frozenset[RoleDeLaMatrice]] = frozenset(
     {
         RoleDeLaMatrice.ESM,
         RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,

@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 19 septembre 2026, à la sortie de **`T7` du LOT 6** — la porte `G5` est franchie
+**Mis à jour le :** 22 septembre 2026, à la sortie de **`T8` du LOT 6** — la porte `G5` est franchie
 **Destinataire :** l'agent qui réalise le **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -10,7 +10,7 @@ Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **
 connaître**, **les erreurs à ne plus commettre**, et **par où commencer**. Lis-le en entier avant
 d'agir.
 
-> **TOUS LES NOMBRES DE CE DOCUMENT ONT ÉTÉ DÉRIVÉS LE 22/08/2026, PAS RECOPIÉS.** C'est la classe
+> **TOUS LES NOMBRES DE CE DOCUMENT ONT ÉTÉ DÉRIVÉS LE 22/09/2026, PAS RECOPIÉS.** C'est la classe
 > d'erreur la plus fréquente du projet — `ECART-021`, rejouée une douzaine de fois. Chaque grandeur
 > est accompagnée de la commande qui la produit. **Recompte avant de réutiliser.**
 
@@ -21,23 +21,23 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, **13/09/2026**, `DEC-574`, **tag `v0.5.0` POSÉ** sur `14b2bd1`) |
-| **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux.** Ouvert par Jonathan le **13/09/2026** (`DEC-575`), découpage validé le même jour : **DOUZE** sous-étapes, `MVP-L06-US004` découpée en **trois** parce qu'elle est la seule `XL` et que trois stories en dépendent. **SEPT sont faites.** Plan : [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : `T1` à `T7`** — les trois tables éditoriales, la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu des blocs**, l'**écriture d'un contenu**, puis son **cycle de vie** — brouillon, publication, archivage, restauration. Plus **deux** pull requests hors numérotation : le garde-fou du paramètre lié (`DEC-580`) et la montée de l'image de base (`DEC-581`) |
-| **Prochaine action** | **`T8` DU LOT 6 : la présentation de l'entité et les liens internes**, story `MVP-L06-US005`, issue `#150`. **ET LA PREMIÈRE CHOSE À INSTRUIRE EST `QO-120`, QUI EST BLOQUANTE** : le §15.3 du modèle **et** le cahier §13 écrivent tous deux « les URL sont validées selon une **liste de protocoles autorisés** », et **ni l'un ni l'autre ne la donne** — zéro occurrence mesurée. Une liste blanche **fermée** serait aussi fautive qu'une absence de liste : c'est le §7.29, et ses deux erreurs symétriques. **`internal_link` EXISTE DEPUIS `T1` ET AUCUNE ROUTE NE LA SERT.** **CONFRONTE LA GRILLE DU §19 À CELLE DU §13 AVANT DE LA RÉUTILISER** : le §19 « Modifier les liens internes » donne `ESM` **Entité**, `ADM-E` **Entité**, `SUPER` **Global**, et son tableau n'a QUE trois colonnes — ni `DSM`, ni `BOOST`, ni `OFFICE` — ce qui n'est **pas** une exclusion mais une absence de colonne (§7 du `DEC-584`). C'est la **quatrième** grille voisine de ce lot, et les trois précédentes différaient toutes. **`QO-119`** avant `T11`, **`QO-121`** bloquante pour `T10`, **`ECART-062`** avant `T9`, et **`ECART-064`** avant la production. **N'OUVRE AUCUN AUTRE LOT** — règle n°1 du §2 |
+| **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux.** Ouvert par Jonathan le **13/09/2026** (`DEC-575`), découpage validé le même jour : **DOUZE** sous-étapes, `MVP-L06-US004` découpée en **trois** parce qu'elle est la seule `XL` et que trois stories en dépendent. **HUIT sont faites.** Plan : [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : `T1` à `T8`** — les trois tables éditoriales, la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu des blocs**, l'**écriture d'un contenu**, son **cycle de vie** — brouillon, publication, archivage, restauration — puis les **liens internes**, avec `QO-120` close. Plus **deux** pull requests hors numérotation : le garde-fou du paramètre lié (`DEC-580`) et la montée de l'image de base (`DEC-581`) |
+| **Prochaine action** | **`T9` DU LOT 6 : LES ÉCRANS DE LECTURE** — Framework, cercle, bureau — stories `MVP-L06-US001` à `US003`, issues `#146` à `#148`. **DEUX DES SEPT CRITÈRES DE SORTIE SE PROUVENT LÀ, ET NULLE PART AILLEURS** : le n°4, « les couleurs de cercle ne sont jamais l'unique information » — le **couple du §7.42**, un cercle avec jeton et un cercle sans, `color_token` étant nullable — et le n°5, « les animations respectent `prefers-reduced-motion` », dont `T10` du LOT 5 a déjà fait la démonstration sur la carte retournable. **`ECART-062` EST À INSTRUIRE AVANT** : le §10.1 donne au DSM « Modifier la page DSM | Entité ou propre contenu » et **aucun `page_type` du §15.1 ne porte cette page** — cela relève de **Léa**. **`QO-121` EST BLOQUANTE POUR `T10`, PAS POUR `T9`** : le contenu est servi comme une donnée opaque, et les écrans de lecture fonctionnent ainsi. **`QO-119` avant `T11`**, **`ECART-064` avant la production**, et **`QO-123` — le vocabulaire de `icon_reference` — bloquante pour `T10`**. **ET LE §7.43 S'APPLIQUE DÈS `T9`** : un bouchon prouve ce que TU as écrit dans le bouchon, jamais ce que l'API fait — deux défauts sont tombés ainsi en `T11` du LOT 5, dès le premier aller-retour réel. **N'OUVRE AUCUN AUTRE LOT** — règle n°1 du §2 |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 6 sur 8** · **LOT 6 : 0 sur 7** — et ce n'est pas un oubli : les critères du lot disent « **affichés** », et les écrans sont `T9` et `T10`. **LES DEUX QUI RESTENT OUVERTES AU LOT 5 SONT NOMMÉES, ET ELLES NE SONT PAS UN OUBLI** : `#120` — « **retrait possible** » n'est pas tenu, aucune route ne retire une autorisation de photo, LOT 9 — et `#121` — l'API de modification est complète depuis `T7`, **aucun écran ne l'appelle**. Un critère d'acceptation non tenu ne se referme pas. Mesure, jamais mémoire : `gh issue list --state open --limit 300 --json number --jq 'length'` |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branche `demo` | **FUSIONNÉE dans `develop` le 19/09/2026, et elle n'existe plus.** Elle portait une **démonstration client** produite par Codex — quatre cibles `make`, le script `infra/scripts/preparer-demo-client.py`, le guide `docs/demo/` et quatre tests statiques — et elle a vécu trois jours à côté de `develop` sans jamais voir la porte : `ci.yml` filtre `branches: [develop, main]`, et **aucun run n'a jamais tourné sur `demo`** — mesuré, `gh run list --branch demo` rendait zéro. **Elle a décroché DEUX fois en deux jours**, à la fusion en squash de `T6` puis de `T7`, chacune remplaçant le commit sur lequel son histoire était posée. C'est structurel et non accidentel : **toute branche qui vit à côté de `develop` décroche à chaque squash**, et la seule issue durable est de la fusionner ou de la supprimer. Arbitrage de Jonathan du 19/09/2026 : **fusionnée**, et ses quatre fichiers sont désormais éprouvés par la porte comme le reste. |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
 | Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), `v0.4.0` (`G4`), **`v0.5.0` (`G5`)** — ce dernier sur `14b2bd1`, et **les trois contrôles ont été relevés avant ET après la fusion** : `origin/main` et `origin/develop` portent le même arbre `d262e2a4…`, `develop` est un **ancêtre** de `main`, et le commit porte **deux** parents. Le squash de `G2` avait coupé l'histoire, `ECART-026` |
-| **Tests** | **1 641** : **1 132 pytest** — dont **785 d'intégration** — et **509 Vitest** (**206 `contracts`**, **111 `ui`**, **192 `web`**). Dérivés le 19/09/2026. **Recompte**, ne recopie pas |
-| Schéma PostgreSQL | **32 tables**, **10 déclencheurs**, **18 migrations**, tête `0018`. **`T7` en a ajouté un** : `content_page_bureau_publie_borne_les_responsables`, la borne du §8.4 à la **publication** (`DEC-583`, `DEC-586`). **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
+| **Tests** | **1 699** : **1 173 pytest** — dont **801 d'intégration** — et **526 Vitest** (**223 `contracts`**, **111 `ui`**, **192 `web`**). Dérivés le 22/09/2026. **Recompte**, ne recopie pas |
+| Schéma PostgreSQL | **32 tables**, **10 déclencheurs**, **19 migrations**, tête `0019`. **`T8` N'AJOUTE NI TABLE NI COLONNE NI DÉCLENCHEUR** : la migration `0019` pose une seule **contrainte de vérification**, `ck_internal_link_url_https`, qui rend `DEC-587` structurel — `T1` l'avait refusée à juste titre, la liste de protocoles n'étant pas encore tranchée. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **93 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T7` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, puis **61** contrôles — bénéfice direct du §7.27, aucune cible nouvelle donc **rien à ajouter dans `ci.yml`**. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
+| Makefile | **93 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T8` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, puis **68** contrôles — bénéfice direct du §7.27, aucune cible nouvelle donc **rien à ajouter dans `ci.yml`**. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **170 décisions** `DEC-418+` · **64 écarts** (**13 ouverts**) · **46 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
-| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 22**, dérivés le 19/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SIX fois en cinq sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
+| Registres | **171 décisions** `DEC-418+` · **64 écarts** (**13 ouverts**) · **47 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 23**, dérivés le 22/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
 
@@ -98,7 +98,7 @@ Toute modification passe par une branche et une pull request vers `develop`.
 
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
    `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 6 EST OUVERT** depuis le 13/09/2026 (`DEC-575`), son
-   découpage est validé — **DOUZE** sous-étapes — et **SEPT sont faites**. La prochaine est `T8`.
+   découpage est validé — **DOUZE** sous-étapes — et **HUIT sont faites**. La prochaine est `T9`.
    N'écris **rien** qui appartienne au LOT 7 — onboarding — au LOT 9 — import CSV — ni au LOT 11 —
    génération des miniatures et exports. **Aucun ÉVÉNEMENT non plus** : `ARB-DATA-003` cite la table
    `event`, mais les événements sont un lot à part entière, et `content_page` ne recevra pas d'`event_id`
@@ -139,7 +139,7 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
 | **Que fait-on au LOT 6 ?** | **`docs/operations/fiche-lot-6.md`** — **7** stories, **7** critères de sortie **dérivés des DEUX sources qui concordent**, **DOUZE** sous-étapes validées le 13/09/2026 (`DEC-575`). **Son §2.1 porte TROIS pièges mesurés**, tous dans le même sens : `ADM-E` est à **tiret** sur l'affectation du Booster et des responsables, et `OFFICE` n'a que le **contenu** d'un bureau, pas sa structure. **Son §8 instruit SEPT écarts** — deux sont clos par `DEC-576`, trois relèvent de **Léa**. **Et son §8.3 a trouvé ce que personne n'avait relevé** : le cahier §10.7 et le modèle §15.2 donnent **deux listes de blocs différentes**, dont l'union vaut **neuf ou dix** selon une lecture qu'aucun document ne tranche — `QO-119` |
-| **Comment a-t-on fait les sous-étapes du LOT 6 ?** | **`docs/operations/compte-rendu-t{1,…}-lot-6.md`** — `T1` les trois tables éditoriales, `T2` la page Framework, `T3` la page détaillée d'un cercle, `T4` celle d'un bureau, `T5` le rendu des blocs, `T6` l'**écriture**, `T7` le **cycle de vie**. **Le §2.1 de `T7` porte la leçon la plus transférable du lot, et elle a clos un écart** : `Périmètre` est employé dans plus de vingt cellules de la matrice et **ne figure pas dans la légende §4** — mais le **§3 le définit**, dans une colonne intitulée « Périmètre principal », où l'`ESM` a « ensemble de son entité », soit mot pour mot la définition de `Entité`. `ECART-063` annonçait deux grilles divergentes pour l'archivage ; il n'en restait **qu'une cellule**, et elle n'est pas exprimable dans le modèle. **Son §3.4 est la première campagne de témoins du projet à finir avec ZÉRO filtre muet** — cinq l'étaient, et les cinq étaient de vrais trous : tous mes autres cas passaient par le périmètre, si bien que la précondition du **service** n'était exercée par personne. **Son §3.3 dit ce que le déclencheur du §8.4 NE garantit pas** : il garde la **transition**, pas l'état permanent, et un bureau publié peut redevenir non conforme — ce qui **explique** la lecture tolérante de `T4` au lieu de la rendre obsolète. **Le §4 de `T6` porte le défaut le plus transférable du lot** : mon vérificateur de témoins a **menti en silence**, parce que CPython invalide un `.pyc` sur le couple `(mtime TRONQUÉ À LA SECONDE, taille)` et que quatre de mes variantes pesaient **exactement** 13 487 octets. Trois d'entre elles ont exécuté le bytecode d'une variante **précédente**, et le vérificateur annonçait « 0 échec » — la **même observation** que « ce filtre ne travaille pas ». Parade : `PYTHONDONTWRITEBYTECODE=1`, **mesurée avant d'être appliquée**. **Son §3.3 nomme deux filtres REDONDANTS**, troisième occurrence après `T4-2` et `T5-1` — et trois fois sur trois, ce qui protégeait était une **contrainte ailleurs**. **Le §2.2 de `T5` dit ce que le LOT 6 ne validera PAS** : le §15.2 veut « des champs structurés ; un `payload_json` validé par type », et **le corpus n'en nomme aucun** — le contenu est donc servi comme une **donnée opaque**, et `QO-121` porte la question à Léa. **Le §4 de `T4` porte la leçon la plus transférable du lot** : la fiche ET cette passation annonçaient que `T4` poserait le **déclencheur** du comptage borné, et c'était une **prévision** (§7.41) — le critère de la story dit « affichés », et la borne ne mord qu'à la publication, qu'aucune route n'écrit encore. `DEC-583` l'envoie à `T7`. **Le §2.1 de `T3` porte une leçon de structure** : les trois tailles du §18.2 vivaient dans le trombinoscope, et `T3` en étant le second consommateur, un **import circulaire mesuré** a imposé de les déplacer dans `app/shared/pagination.py` — *un fait du CAHIER se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Même remède que pour `ETAT_LISTE`. **Son §4 porte le défaut le plus utile du lot** : `alembic --autogenerate` a proposé de **supprimer l'index de recherche du LOT 5**, un index sur EXPRESSION qu'il ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et **aucun test** n'exigeait son existence — le piège était debout pour toutes les sous-étapes suivantes. **Lis cette section avant de relancer un `--autogenerate`** |
+| **Comment a-t-on fait les sous-étapes du LOT 6 ?** | **`docs/operations/compte-rendu-t{1,…}-lot-6.md`** — `T1` les trois tables éditoriales, `T2` la page Framework, `T3` la page détaillée d'un cercle, `T4` celle d'un bureau, `T5` le rendu des blocs, `T6` l'**écriture**, `T7` le **cycle de vie**, `T8` les **liens internes**. **LE §2.2 DE `T8` PORTE LE CONSTAT LE PLUS TRANSFÉRABLE DU LOT APRÈS CELUI DE `T7`, ET IL CONTREDIT LA LECTURE LITTÉRALE D'UNE EXIGENCE ÉCRITE DEUX FOIS** : le corpus demande que les URL soient validées « selon une **liste de protocoles autorisés** », et **une liste de protocoles ne suffit pas** — `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte**. **Son §2.5 est un résultat déguisé en absence** : la « présentation de l'entité » du §13 n'a demandé **aucune ligne de code**, sa grille étant identique cellule par cellule à « Créer un contenu général » et `HOME` tombant par soustraction dans le régime des rôles d'entité — deux tests le **mesurent**. **Son §4 porte le seul défaut de la sous-étape**, `T8-1`, et il est **non déterministe** : le décalage de la réécriture d'ordre était dérivé du **nombre** de liens, ce qui ne vaut que si les rangs vivants sont `0..n-1` **sans trou** — ce que l'archivage d'un lien détruit. J'avais **mesuré** `max + 1` dans ma sonde préalable, puis écrit `len(ordre)` « pour faire plus simple ». **Son §3.3 est la deuxième campagne du lot à finir avec ZÉRO filtre muet** : six l'étaient, cinq étaient de vrais trous — et le sixième, `FOR UPDATE`, n'est observable par **aucun** test séquentiel, ce qui est **dit** plutôt que tu. **Le §2.1 de `T7` porte la leçon la plus transférable du lot, et elle a clos un écart** : `Périmètre` est employé dans plus de vingt cellules de la matrice et **ne figure pas dans la légende §4** — mais le **§3 le définit**, dans une colonne intitulée « Périmètre principal », où l'`ESM` a « ensemble de son entité », soit mot pour mot la définition de `Entité`. `ECART-063` annonçait deux grilles divergentes pour l'archivage ; il n'en restait **qu'une cellule**, et elle n'est pas exprimable dans le modèle. **Son §3.4 est la première campagne de témoins du projet à finir avec ZÉRO filtre muet** — cinq l'étaient, et les cinq étaient de vrais trous : tous mes autres cas passaient par le périmètre, si bien que la précondition du **service** n'était exercée par personne. **Son §3.3 dit ce que le déclencheur du §8.4 NE garantit pas** : il garde la **transition**, pas l'état permanent, et un bureau publié peut redevenir non conforme — ce qui **explique** la lecture tolérante de `T4` au lieu de la rendre obsolète. **Le §4 de `T6` porte le défaut le plus transférable du lot** : mon vérificateur de témoins a **menti en silence**, parce que CPython invalide un `.pyc` sur le couple `(mtime TRONQUÉ À LA SECONDE, taille)` et que quatre de mes variantes pesaient **exactement** 13 487 octets. Trois d'entre elles ont exécuté le bytecode d'une variante **précédente**, et le vérificateur annonçait « 0 échec » — la **même observation** que « ce filtre ne travaille pas ». Parade : `PYTHONDONTWRITEBYTECODE=1`, **mesurée avant d'être appliquée**. **Son §3.3 nomme deux filtres REDONDANTS**, troisième occurrence après `T4-2` et `T5-1` — et trois fois sur trois, ce qui protégeait était une **contrainte ailleurs**. **Le §2.2 de `T5` dit ce que le LOT 6 ne validera PAS** : le §15.2 veut « des champs structurés ; un `payload_json` validé par type », et **le corpus n'en nomme aucun** — le contenu est donc servi comme une **donnée opaque**, et `QO-121` porte la question à Léa. **Le §4 de `T4` porte la leçon la plus transférable du lot** : la fiche ET cette passation annonçaient que `T4` poserait le **déclencheur** du comptage borné, et c'était une **prévision** (§7.41) — le critère de la story dit « affichés », et la borne ne mord qu'à la publication, qu'aucune route n'écrit encore. `DEC-583` l'envoie à `T7`. **Le §2.1 de `T3` porte une leçon de structure** : les trois tailles du §18.2 vivaient dans le trombinoscope, et `T3` en étant le second consommateur, un **import circulaire mesuré** a imposé de les déplacer dans `app/shared/pagination.py` — *un fait du CAHIER se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Même remède que pour `ETAT_LISTE`. **Son §4 porte le défaut le plus utile du lot** : `alembic --autogenerate` a proposé de **supprimer l'index de recherche du LOT 5**, un index sur EXPRESSION qu'il ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et **aucun test** n'exigeait son existence — le piège était debout pour toutes les sous-étapes suivantes. **Lis cette section avant de relancer un `--autogenerate`** |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
 | **Comment a-t-on fait les sous-étapes du LOT 5 ?** | **`docs/operations/compte-rendu-t{1,…,5,7,…,12}-lot-5.md`** — les trois tables de média, le trombinoscope en lecture, la recherche, la fiche, la miniature, l'écriture, l'archivage, l'historique, et le **premier écran métier**. **Ne recopie pas leur nombre de défauts** : `grep -ohE '`\`T[0-9]+-[0-9]+\`'` sur ces fichiers, `sort -u | wc -l` — **62** au 12/09/2026, et **presque tous sont dans mes propres contrôles**. `T3` en a nommé treize à elle seule, dont **six dans la mesure** |
 | **Que faisait-on au LOT 4 ?** | **`docs/operations/fiche-lot-4.md`** — 12 sous-étapes, **les DOUZE barrées**, **découpage validé le 22/08/2026**. **LES DOUZE sont faites**, et son §8 n'a plus aucun point ouvert. **Son §8 n'a plus AUCUN point ouvert**, et une mise à jour du 24/08/2026 y dit que **les cinq règles du §23.3 sont tenues et prouvées**. **Son §8 porte une correction en tête** : il annonçait deux points ouverts, il n'en reste qu'un |
@@ -493,9 +493,9 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`586` et `588` en usage — **`DEC-587` est allouée à `T8`, dont la pull request est ouverte** | **`DEC-589`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`588` en usage | **`DEC-589`** |
 | `ECART-nnn` | `001`–`064` | **`ECART-065`** |
-| `QO-nnn` | `072`–`122`, **5 trous** | **`QO-123`** |
+| `QO-nnn` | `072`–`123`, **5 trous** | **`QO-124`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
 | `CONT-nnn` | `001`–`029` | **`CONT-030`** |
@@ -924,7 +924,7 @@ corpus ne définissait pas. Trois fois, la bonne réponse a été d'ouvrir une q
 
 # 7. Les erreurs à ne plus commettre
 
-**275 défauts NOMMÉS au 19/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4, **62** au LOT 5 et **22** au LOT 6 — 71 + 44 + 57 + 19 + 62 + 22,
+**276 défauts NOMMÉS au 22/09/2026** : **71** au LOT 1, **44** au LOT 2, **57** au LOT 3, **19** au LOT 4, **62** au LOT 5 et **23** au LOT 6 — 71 + 44 + 57 + 19 + 62 + 23,
 dérivés par la commande ci-dessous et non recopiés. **Le « 15 au LOT 3 » qui figurait ici était faux** :
 il datait de `T2`, et le total de 172 qui l'accompagnait était juste, ce qui rendait l'erreur invisible
 à la lecture. S'y ajoutent 7 au LOT 0 et 3 en `T0`, qui ne portent pas de marqueur `Tn-m` et n'entrent
@@ -2509,6 +2509,53 @@ laquelle est la plus plausible, c'est ce que le document dit **ailleurs**.*
 
 ---
 
+## 7.46 Quand un document NOMME une validation, demande-toi si c'est LA validation
+
+**Apport de `T8` du LOT 6, et c'est le §7.29 d'un cran plus bas.**
+
+Le §7.29 apprend à chercher une décision qu'on te dit à prendre ; le §7.45, à chercher
+un **mot** dont on te laisse deviner le sens. Celui-ci porte sur une **règle** que le
+document écrit en toutes lettres, et qui **ne suffit pas**.
+
+Le modèle §15.3 et le cahier §13 écrivent tous deux, mot pour mot : « Les URL sont
+validées selon une **liste de protocoles autorisés** ». C'est une exigence claire, écrite
+deux fois, et l'appliquer à la lettre laisse un trou. Mesure du 22/09/2026 :
+
+| Adresse | `scheme` | `netloc` | Une liste blanche de protocoles ? |
+|---|---|---|---|
+| `https://hub.exemple.test/` | `https` | `hub.exemple.test` | acceptée, et c'est juste |
+| **`https:alert(1)`** | **`https`** | **vide** | **acceptée, et elle n'adresse RIEN** |
+| `https:/hub.exemple.test` | `https` | vide | acceptée, idem |
+| `https://` | `https` | vide | acceptée, idem |
+
+**Un contrôle qui aurait fait exactement ce que le corpus demande aurait accepté trois
+chaînes qui ne désignent aucune ressource**, et qu'un navigateur traite comme des
+références relatives.
+
+> **La règle, sans jargon :** quand un document nomme une validation — « selon une liste
+> de protocoles », « au format attendu », « parmi les valeurs autorisées » — il nomme **un**
+> critère, pas forcément **le** critère. **Demande-toi ce que la valeur doit DÉSIGNER, pas
+> seulement de quoi elle a l'air.** Une URL doit désigner un serveur ; un protocole
+> autorisé n'en fait pas une adresse.
+
+**Et la parade est celle du §7.0, quatrième proposition, posée à l'endroit du besoin :**
+avant d'écrire le contrôle, énumère ce qui le **passerait** sans satisfaire l'intention.
+Trois minutes de `urlsplit` sur dix chaînes ont donné la réponse, et le refus manquant —
+`url_sans_hote` — est devenu le cinquième code d'erreur.
+
+**Un second constat de la même mesure, et il porte sur les analyseurs.** `urlsplit`
+**retire silencieusement** `\t`, `\r` et `\n` : `java\nscript:` rend le protocole
+`javascript`. Un contrôle qui lirait la chaîne **brute** verrait `java\nscript` là où le
+navigateur verra `javascript`.
+
+La parade retenue n'énumère **aucun caractère interdit** — recopier la liste interne de
+CPython la ferait vieillir à la première version (§7.27), et c'est précisément la faute que
+le §7.34 décrit. Elle exige que **le segment tapé soit, à la casse près, celui que
+l'analyseur a lu**, et refuse toute divergence sans chercher laquelle. *Quand tu ne peux pas
+énumérer ce qui est dangereux, exige que ce que tu lis soit ce qui a été écrit.*
+
+---
+
 ## 7.47 Une date ABSOLUE dans un test est une bombe à retardement datée
 
 **Apport du correctif du 22/09/2026, `DEC-588`, et c'est la seule classe de ce projet
@@ -2605,6 +2652,8 @@ ou une affirmation non dérivés de leur source — dont le plus sérieux n'éta
 | `QO-094` | Second référent technique — conditionne `DEC-429` | avant production |
 | `QO-106` | 9 étiquettes GitHub par défaut subsistent | choix de Jonathan |
 | `QO-114` | **Droits d'administration pour la production temporaire locale.** Jonathan n'en a aucun : `restic`, Uptime Kuma et les services au démarrage en réclament habituellement | **LOT 13, à instruire avant** |
+| ~~`QO-120`~~ | **CLOSE en `T8` du LOT 6**, `DEC-587` : un lien interne n'accepte que `https`, et `http` est refusé **sous son propre code**. Le corpus exigeait « une liste de protocoles autorisés » **sans la donner** — zéro occurrence mesurée | close |
+| `QO-123` | **Quel vocabulaire pour `internal_link.icon_reference` ?** Le §15.3 nomme le champ et **ne dit rien de son contenu** ; aucune bibliothèque d'icônes n'est citée dans le corpus, et le design system du LOT 1 n'en pose aucune. **Même classe que `QO-121`**, et servi comme une donnée **opaque** en attendant | **bloquante pour `T10`** |
 
 ## 8.3 Risques ouverts qui te concernent
 
@@ -2660,14 +2709,14 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 
 **Les LOTS 0 à 5 sont terminés.** `G5` a été franchie le **13/09/2026** (`DEC-574`), tag `v0.5.0` sur
 `14b2bd1`. **Le LOT 6 est ouvert** depuis le même jour (`DEC-575`), son découpage compte **douze**
-sous-étapes, et **sept sont faites**.
+sous-étapes, et **huit sont faites**.
 
 | Fait | Ce que ça donne |
 |---|---|
 | LOT 3 | l'authentification complète : magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service, **et les huit écrans** |
 | LOT 4 | le portail national, le cadre applicatif, l'entité consultée, la navigation, la carte, et la résolution des permissions de la matrice §23.1 |
 | LOT 5, les ONZE | les trois tables de média, le trombinoscope paginé, la recherche sans accents, la fiche profil, la miniature et son autorisation, l'écriture dans son périmètre, l'archivage et la restauration, l'historique organisationnel, et les **deux écrans** — le trombinoscope et la page de profil |
-| LOT 6, les SEPT | les trois tables éditoriales (migration `0017`), la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu** des blocs, l'**écriture** d'un contenu dans son périmètre, et son **cycle de vie** — brouillon, publication, archivage, restauration. **La migration `0018` n'ajoute AUCUNE colonne** : elle pose un **déclencheur**, la borne du §8.4 à la publication |
+| LOT 6, les HUIT | les trois tables éditoriales (migration `0017`), la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu** des blocs, l'**écriture** d'un contenu dans son périmètre, son **cycle de vie** — brouillon, publication, archivage, restauration — et les **liens internes**, avec `QO-120` close. **Ni `0018` ni `0019` n'ajoutent de colonne** : la première pose un **déclencheur**, la borne du §8.4 à la publication ; la seconde une **contrainte de vérification**, `ck_internal_link_url_https` |
 | Recette | **réépinglée** sur les images de `3bc68b9`, et son API se connecte avec le rôle d'**exécution** — `DEC-539`, mesuré |
 | Contrôles | les contrôles de stack sont **tous** dans la CI, chacun portant ses témoins. **`make help` et `ci.yml` font foi sur leur nombre**, jamais cette cellule |
 
@@ -2678,7 +2727,7 @@ sous-étapes, et **sept sont faites**.
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le lot est ouvert et son découpage est validé** — douze sous-étapes, `DEC-575`. La prochaine est
-**`T8` : la présentation de l'entité et les liens internes**, et le détail est dans [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) §3.
+**`T9` : les écrans de lecture** — Framework, cercle, bureau — et le détail est dans [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) §3.
 
 1. **Lire la matrice — l'annexe A du cahier — §10.1, §10.2, §10.3 et §13 DANS LE DOCUMENT**, jamais
    dans un résumé. Le §2.1 de la fiche porte **trois** pièges mesurés, tous dans le même sens :
@@ -2830,6 +2879,24 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
                                           ne peuvent pas diverger par cette API -- mais
                                           AUCUNE contrainte ne les couple, le decor de
                                           `T4` produisant les deux divergences EXPRES
+                 app/content/liens.py    ← LES LIENS INTERNES (LOT 6, T8), et le
+                                          module qui clot `QO-120`. `PROTOCOLES_AUTORISES`
+                                          = {`https`}, `DEC-587` -- et **une liste de
+                                          protocoles NE SUFFIT PAS** : `https:alert(1)` a
+                                          pour protocole `https` et n'adresse RIEN, d'ou
+                                          `url_sans_hote`. `url_ambigue` n'enumere AUCUN
+                                          caractere interdit -- recopier la liste interne
+                                          de CPython vieillirait -- mais exige que le
+                                          protocole TAPE soit celui qui a ete LU.
+                                          Le RANG n'est jamais recu : la creation ajoute EN
+                                          QUEUE, et la reecriture d'ordre vaut l'index de
+                                          la liste. Un echange en un seul `UPDATE` est
+                                          REFUSE par l'index unique partiel de `T1`, mesure
+                                          -- d'ou deux temps, et un decalage `max + 1`
+                                          DERIVE EN SQL, jamais le NOMBRE de liens
+                                          (defaut `T8-1`, NON DETERMINISTE).
+                                          AUCUNE route n'ARCHIVE un lien : ni le §13 ni le
+                                          §19 n'en portent la ligne. On DESACTIVE
                  app/content/ecriture.py  ← le verbe « ACCEPTE » (LOT 6, T6), tenu
                                           par la STRUCTURE : la demande n'offre
                                           AUCUN champ par lequel declarer qu'une
@@ -2885,7 +2952,20 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                 app/{entities,people,clients,organization}/
 │                                        ← 18 tables METIER (LOT 2, T2 a T8)
 │                                          19 avec alembic_version : DIS LAQUELLE
-│                 alembic/versions/      ← 0018 : le DECLENCHEUR de la borne du §8.4,
+│                 alembic/versions/      ← 0019 : la CONTRAINTE de protocole du §15.3,
+                                          `ck_internal_link_url_https` (LOT 6, T8,
+                                          DEC-587). AUCUNE colonne, AUCUNE table. `T1`
+                                          l'avait REFUSEE, et il avait raison a sa date --
+                                          « inventer la liste ici la figerait dans le
+                                          schema ». Ce qui a change n'est pas l'argument,
+                                          c'est que la liste n'est plus une invention.
+                                          Elle est le PLANCHER : trois ecrivains futurs
+                                          sont deja nommes au corpus et n'appellent pas
+                                          `app.content.liens` -- la reprise du prototype
+                                          (T11), les modeles generiques du §19, les imports
+                                          du LOT 9. Elle ne sait PAS exiger un hote, et
+                                          c'est pourquoi le service valide AUSSI
+                                          0018 : le DECLENCHEUR de la borne du §8.4,
 │                                          « un a trois responsables actifs lorsqu'il
 │                                          est publie » (LOT 6, T7, DEC-583). Il garde
 │                                          la TRANSITION -- `BEFORE UPDATE OF state` --
@@ -2928,7 +3008,16 @@ Entra ID, Graph, Teams ou MFA · aucune ligne du prototype historique.
 │                                             entites du portail (LOT 4, T1)
 │                         formes.ts         ← estObjet / exigerChaine, EXTRAITES
 │                                             de sante.ts, un seul exemplaire
-│                         portail.ts porte aussi `cheminEntite`, qui ENCODE le
+│                         liens.ts          ← LA LECTURE des liens internes (LOT 6, T8).
+                                             LE PARTAGE DU LOT : une sous-etape qui sert une
+                                             LECTURE pose son module de contrat, celles qui
+                                             servent une ECRITURE ne le font pas -- T6 et T7
+                                             n'ont rien ajoute ici. `urlEstServable` est la
+                                             TROISIEME barriere, pas la premiere, et elle
+                                             minuscule le protocole : sans cela elle
+                                             refuserait « HTTPS:// » que l'API ACCEPTE, donc
+                                             un faux positif (§7.25)
+                         portail.ts porte aussi `cheminEntite`, qui ENCODE le
 │                         code et LEVE sur une chaine vide -- sinon le chemin
 │                         obtenu serait celui de la LISTE (T2)
 
@@ -3014,8 +3103,10 @@ make audit                # zero avis, zero tolerance depuis DEC-493
 
 # ETAT DE CETTE MACHINE AU 18/09/2026 : LA BASE DE DEV PORTE UN JEU DE DEMO.
 #
-#   Mesure : 26 entites, 5 155 personnes, 5 155 appartenances, 100 cercles.
-#   Consequence : `make check` rend 74 ECHECS, et AUCUN ne vient du code. Ce
+#   Mesure du 22/09/2026 : 26 entites, 5 155 personnes, 100 cercles.
+#   Consequence : `make residu-check` rend 84 ECHECS, et AUCUN ne vient du
+#   code -- le nombre disait 74 au 18/09, et il DERIVE avec le jeu de demo,
+#   donc ne le recopie pas : mesure-le. Ce
 #   sont des tests des LOTS 2 et 3 qui comptent des lignes en ABSOLU --
 #   « assert 5157 == 2 » -- exactement le piege que le §5.3 decrit pour
 #   `make jeu-de-donnees`.
@@ -3027,7 +3118,13 @@ make audit                # zero avis, zero tolerance depuis DEC-493
 #   Ce qui PROUVE quand meme ton travail, et c'est suffisant :
 #     - les tests de TA sous-etape, lances seuls, passent sur cette base ;
 #     - la PORTE de la pull request tourne sur une base NEUVE, et c'est elle
-#       qui fait foi (§7.28 : lis ce que la cible fait, pas son nom).
+#       qui fait foi (§7.28 : lis ce que la cible fait, pas son nom) ;
+#     - et le GESTE qui tranche, pose par `T8` : compare la LISTE des tests
+#       en echec a celle d'`origin/develop`, dans un `git worktree`, SUR LA
+#       MEME BASE. Avant d'attribuer une regression a ton travail, mesure
+#       l'etat d'avant (§7.22). `T8` a mesure 84 des deux cotes, dont une
+#       SEULE difference -- un test que `T8` CORRIGE. Attention : le
+#       worktree partage la base, donc il subit DEJA tes migrations.
 #   Verifie donc `gh pr checks <n>` plutot que de conclure sur le `make check`
 #   local -- et DIS dans ton rapport que les 74 echecs sont environnementaux.
 
@@ -3112,7 +3209,7 @@ make entites-check        # 13 — une entite par etat, les TROIS non actifs exc
 # controles et en oublie un. Il EXIGE que le conteneur porte le code du depot :
 # lance `make code-refresh` d'abord, sinon il eprouve un autre artefact en
 # paraissant sain (§7.28).
-make framework-check      # 61 — la page Framework, les pages de cercle et de bureau, le
+make framework-check      # 68 — la page Framework, les pages de cercle et de bureau, le
                           #      RENDU des blocs, l'ECRITURE d'un contenu, et depuis
                           #      `T7` le CYCLE DE VIE. Son controle le plus utile est un
                           #      COUPLE D'ADRESSES IDENTIQUES : la meme URL rend 404 en
@@ -3124,6 +3221,17 @@ make framework-check      # 61 — la page Framework, les pages de cercle et de 
                           #      la borne du §8.4 : publier la page d'un bureau a zero
                           #      responsable rend 409, et un responsable ACTIF ajoute
                           #      fait passer LA MEME publication.
+                          #      DEPUIS `T8` il eprouve les LIENS INTERNES : les trois
+                          #      destinations que le critere NOMME -- Hub, eXalt Academy,
+                          #      SharePoint -- creees par l'API puis SERVIES par l'accueil ;
+                          #      les CINQ refus d'URL sous CINQ codes distincts, dont
+                          #      `url_sans_hote`, le seul qu'une lecture litterale de
+                          #      « liste de protocoles autorises » aurait omis ; et un
+                          #      `javascript:` insere EN SQL, refuse par la contrainte de
+                          #      la migration `0019` -- le PLANCHER, que le service ne peut
+                          #      pas apporter. Son controle le plus utile apres le temoin
+                          #      est la PERMUTATION : les liens sont inverses en un geste,
+                          #      ce qu'un seul `UPDATE` ne peut pas faire.
 
 # Les controles de schema
 make privileges-check && make secrets-check && make isolation-check && make isolation-temoin
@@ -3149,7 +3257,7 @@ Si Docker ne répond pas : `open -a Docker`, puis attendre.
 
 **Dans quel ordre lire :**
 
-1. **ce document**, en entier — son §7 porte **47 leçons** payées par **275 défauts nommés** — 71 + 44 + 57 + 19 + 62 + 22, dérivés par la commande du §7 ;
+1. **ce document**, en entier — son §7 porte **48 leçons** payées par **276 défauts nommés** — 71 + 44 + 57 + 19 + 62 + 23, dérivés par la commande du §7 ;
 2. [`docs/README.md`](docs/README.md) : quelle porte, quel prochain identifiant ;
 3. [`checklist-validation-G3.md`](docs/operations/checklist-validation-G3.md) : ce que le LOT 3 a
    prouvé, et surtout **ce qu'il n'a pas fait** ;
@@ -3184,7 +3292,7 @@ Jonathan valide vite et lit sérieusement. Ce qui fonctionne avec lui :
 
 - des rapports **denses mais courts**, avec les chiffres réels et non des approximations ;
 - **signaler ses propres erreurs** dès que les contrôles les révèlent, sans les enjoliver. Les
-  130 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
+  276 défauts sont documentés, y compris le trou de sécurité que j'avais laissé dans mon propre
   filtre de masquage, les **six** fois où j'ai conclu sur un code de sortie qui n'était pas celui
   que je croyais lire, et l'**empreinte SHA-256 inventée** que `T7` a écrite dans un workflow avant
   de la remplacer par la valeur mesurée. En `T5`, **cinq défauts sur huit étaient dans mes

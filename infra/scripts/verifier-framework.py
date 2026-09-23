@@ -49,6 +49,13 @@ CHEMIN_CONTENU = "/api/v1/entities/{code}/pages/{page}/contenu"
 CHEMIN_PUBLICATION = "/api/v1/entities/{code}/pages/{page}/publication"
 CHEMIN_ARCHIVAGE = "/api/v1/entities/{code}/pages/{page}/archivage"
 CHEMIN_RESTAURATION = "/api/v1/entities/{code}/pages/{page}/restauration"
+#  `T8` — les liens internes. **DEUX LECTURES, ET C'EST VOULU** : l'accueil ne
+#  sert que les liens ACTIFS, la gestion les sert tous. Un lien desactive qu'on
+#  ne pourrait plus voir serait un lien qu'on ne pourrait plus reactiver.
+CHEMIN_LIENS = "/api/v1/entities/{code}/liens"
+CHEMIN_LIENS_GESTION = "/api/v1/entities/{code}/liens/gestion"
+CHEMIN_ORDRE_DES_LIENS = "/api/v1/entities/{code}/liens/ordre"
+CHEMIN_UN_LIEN = "/api/v1/entities/{code}/liens/{lien}"
 CHEMIN_SESSION = "/api/v1/auth/session"
 EN_TETE_JETON = "X-CSRF-Token"
 #  La charge qui a coule des projets entiers. Elle est SERVIE, et c'est le
@@ -1783,6 +1790,380 @@ def main() -> int:
                     f"avec={avec_responsable.statut}, insert={sortie_resp[:80]}"
                 )
 
+        # ====================================================================
+        #
+        #  `T8` — LA PRESENTATION DE L'ENTITE ET LES LIENS INTERNES
+        #         story `MVP-L06-US005`, `DEC-587`, `QO-120` close
+        #
+        # ====================================================================
+
+        # --- 62. LE TEMOIN : LES TROIS DESTINATIONS DU CRITERE, CREEES PUIS SERVIES
+        #
+        #  « Presentation, Hub, Academy et SharePoint sont modifiables
+        #  localement ; les URL sont validees » est PARFAITEMENT tenu par une API
+        #  qui refuse tout (§7.39). Ce qui le prouve est que les trois
+        #  destinations NOMMEES par le critere soient creees par l'API, puis
+        #  rendues par la route de l'accueil — a travers Caddy, en HTTPS.
+        controles += 1
+        crees: list[str] = []
+        statuts_creation: list[int] = []
+        for libelle, type_de_lien, url in (
+            ("Hub", "HUB", "https://hub.exemple.test/"),
+            ("eXalt Academy", "ACADEMY", "https://academy.exemple.test/"),
+            ("SharePoint", "SHAREPOINT", "https://sharepoint.exemple.test/bordeaux"),
+        ):
+            creation_lien = appeler(
+                arguments.base,
+                CHEMIN_LIENS.format(code=code_actif),
+                contexte,
+                charge={"libelle": libelle, "url": url, "type_de_lien": type_de_lien},
+                en_tetes=ecriture,
+            )
+            statuts_creation.append(creation_lien.statut)
+            corps_lien = creation_lien.json()
+            if isinstance(corps_lien, dict) and corps_lien.get("identifiant"):
+                crees.append(str(corps_lien["identifiant"]))
+        accueil = appeler(
+            arguments.base, CHEMIN_LIENS.format(code=code_actif), contexte, en_tetes=entetes
+        )
+        corps_accueil = accueil.json()
+        liens_servis = corps_accueil.get("liens", []) if isinstance(corps_accueil, dict) else []
+        libelles = [lien.get("libelle") for lien in liens_servis if isinstance(lien, dict)]
+        rangs = [lien.get("rang") for lien in liens_servis if isinstance(lien, dict)]
+        if (
+            statuts_creation == [201, 201, 201]
+            and accueil.statut == 200
+            and libelles == ["Hub", "eXalt Academy", "SharePoint"]
+            and rangs == [0, 1, 2]
+        ):
+            print("    ok       LE TEMOIN : Hub, eXalt Academy et SharePoint crees par l'API")
+            print("             puis SERVIS par l'accueil, rangs 0-1-2 — ajoutes EN QUEUE, et")
+            print("             AUCUN champ de rang n'est offert a l'appelant")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    temoin des liens : creations={statuts_creation}, "
+                f"accueil={accueil.statut}, libelles={libelles}, rangs={rangs}"
+            )
+
+        # --- 63. LES CINQ REFUS D'URL, CHACUN SOUS SON CODE — `QO-120`, `DEC-587`
+        #
+        #  **CINQ REFUS INDISTINGUABLES SERAIENT SATISFAITS PAR UNE ROUTE QUI
+        #  REFUSE TOUT**, et c'est le defaut `T2-3` du LOT 5, ou HUIT epreuves de
+        #  refus passaient sur une route qui refusait aussi les valeurs valides.
+        #  Chaque refus porte donc SON code, et le controle 62 est leur temoin.
+        controles += 1
+        refus_url: list[tuple[int, object]] = []
+        for url_fautive in (
+            "hub.exemple.test",
+            "java\nscript:alert(1)",
+            "http://hub.exemple.test/",
+            "javascript:alert(1)",
+            "https:alert(1)",
+        ):
+            refus = appeler(
+                arguments.base,
+                CHEMIN_LIENS.format(code=code_actif),
+                contexte,
+                charge={"libelle": "fautif", "url": url_fautive, "type_de_lien": "OTHER"},
+                en_tetes=ecriture,
+            )
+            corps_refus = refus.json()
+            refus_url.append(
+                (
+                    refus.statut,
+                    corps_refus.get("erreur", {}).get("code")
+                    if isinstance(corps_refus, dict)
+                    else None,
+                )
+            )
+        attendu_url = [
+            (422, "url_illisible"),
+            (422, "url_ambigue"),
+            (422, "url_non_chiffree"),
+            (422, "url_protocole_refuse"),
+            (422, "url_sans_hote"),
+        ]
+        code_compte_liens, sortie_compte_liens = psql(
+            compose,
+            env,
+            "SELECT count(*) FROM internal_link WHERE entity_id IN "  # noqa: S608
+            f"(SELECT id FROM entity WHERE code = '{code_actif}')",
+        )
+        if (
+            refus_url == attendu_url
+            and code_compte_liens == 0
+            and valeur(sortie_compte_liens) == str(len(crees))
+        ):
+            print("    ok       les CINQ refus d'URL portent CINQ codes distincts, et AUCUN")
+            print("             n'a ecrit — `url_illisible`, `url_ambigue`, `url_non_chiffree`,")
+            print("             `url_protocole_refuse`, `url_sans_hote`. `QO-120`, `DEC-587`")
+            print("             LE DERNIER EST CELUI QUE LA MESURE A TROUVE : `https:alert(1)`")
+            print("             passe une liste blanche de PROTOCOLES et n'adresse rien")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    refus d'URL : {refus_url}, attendu {attendu_url}, "
+                f"liens en base={valeur(sortie_compte_liens)!r} pour {len(crees)} crees"
+            )
+
+        # --- 64. LA CONTRAINTE DE LA MIGRATION `0019` EST LE PLANCHER
+        #
+        #  Le service refuse plus tot et plus finement ; la contrainte couvre ce
+        #  qu'il ne peut pas couvrir — une insertion SQL, une reprise du LOT 11,
+        #  un import du LOT 9. Le couple est complet : le temoin `https://` passe
+        #  par le MEME chemin SQL.
+        controles += 1
+        #  `S608` : l'interpolation ne porte que `code_actif`, une constante de ce
+        #  script, et des litteraux ecrits ici. Le `noqa` va sur la DERNIERE
+        #  PREMIERE ligne de la concatenation implicite — c'est la que ruff
+        #  l'attribue, mesure du 22/09/2026 (et non la fermeture, comme pour
+        #  une chaine triple-guillemets : les deux conventions different).
+        insertion = (
+            "INSERT INTO internal_link (entity_id, label, url, link_type, display_order, "  # noqa: S608
+            "created_at, updated_at) SELECT id, 'brut', '{url}', 'OTHER', {rang}, now(), now() "
+            f"FROM entity WHERE code = '{code_actif}'"
+        )
+        code_hostile, sortie_hostile = psql(
+            compose, env, insertion.format(url="javascript:alert(1)", rang=90)
+        )
+        code_temoin_sql, sortie_temoin_sql = psql(
+            compose, env, insertion.format(url="https://plancher.exemple.test/", rang=91)
+        )
+        if (
+            code_hostile != 0
+            and "ck_internal_link_url_https" in sortie_hostile
+            and code_temoin_sql == 0
+        ):
+            print("    ok       la contrainte `ck_internal_link_url_https` refuse un")
+            print("             `javascript:` insere EN SQL, et laisse passer un `https://` —")
+            print("             « aucune URL hostile en base » est STRUCTUREL (§7.35, `0019`)")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    plancher SQL : hostile={code_hostile}/{sortie_hostile[:120]}, "
+                f"temoin={code_temoin_sql}/{sortie_temoin_sql[:80]}"
+            )
+
+        # --- 65. DESACTIVER RETIRE DE L'ACCUEIL, ET LA GESTION LE VOIT ENCORE
+        #
+        #  **LE COUPLE COMPLET**, sans quoi le champ `active` du §15.3 serait un
+        #  aller sans retour. Les deux lectures sont interrogees au MEME instant,
+        #  et seule l'audience change.
+        controles += 1
+        if len(crees) == 3:
+            desactivation = appeler(
+                arguments.base,
+                CHEMIN_UN_LIEN.format(code=code_actif, lien=crees[1]),
+                contexte,
+                charge={
+                    "version": 1,
+                    "libelle": "eXalt Academy",
+                    "url": "https://academy.exemple.test/",
+                    "type_de_lien": "ACADEMY",
+                    "actif": False,
+                },
+                en_tetes=ecriture,
+                methode="PUT",
+            )
+            apres_accueil = appeler(
+                arguments.base, CHEMIN_LIENS.format(code=code_actif), contexte, en_tetes=entetes
+            )
+            apres_gestion = appeler(
+                arguments.base,
+                CHEMIN_LIENS_GESTION.format(code=code_actif),
+                contexte,
+                en_tetes=entetes,
+            )
+            corps_a = apres_accueil.json()
+            corps_g = apres_gestion.json()
+            n_accueil = corps_a.get("nombre_de_liens") if isinstance(corps_a, dict) else None
+            n_gestion = corps_g.get("nombre_de_liens") if isinstance(corps_g, dict) else None
+            #  **LE PLANCHER SQL A POSE UN LIEN DE PLUS**, actif : la gestion en
+            #  compte donc quatre et l'accueil trois. Les nombres sont DERIVES de
+            #  ce qui a ete pose, jamais ecrits en dur (§7.27).
+            attendus_gestion = len(crees) + (1 if code_temoin_sql == 0 else 0)
+            if (
+                desactivation.statut == 200
+                and n_accueil == attendus_gestion - 1
+                and n_gestion == attendus_gestion
+            ):
+                print("    ok       un lien DESACTIVE quitte l'accueil et reste en gestion —")
+                print(f"             accueil {n_accueil}, gestion {n_gestion}. Le §15.3 declare")
+                print("             `active` A COTE de `archived_at`, et `T1` a refuse de les")
+                print("             fondre : on desactive pour cacher, on archive pour sortir")
+            else:
+                echecs += 1
+                print(
+                    f"    ECHEC    desactivation : {desactivation.statut}, accueil={n_accueil}, "
+                    f"gestion={n_gestion}, attendus={attendus_gestion}"
+                )
+        else:
+            echecs += 1
+            print(f"    ECHEC    decor des liens incomplet : {len(crees)} cree(s) sur 3")
+
+        # --- 66. REORDONNER ECHANGE DEUX LIENS — CE QU'UN SEUL `UPDATE` NE PEUT PAS
+        #
+        #  Mesure du 22/09/2026 : un echange de rangs en un seul ordre est REFUSE
+        #  par `uq_internal_link_entity_ordre_non_archive`. La reecriture se fait
+        #  donc en deux temps, avec un decalage DERIVE du maximum — et non du
+        #  NOMBRE de liens, qui est le defaut `T8-1`.
+        controles += 1
+        gestion_avant = appeler(
+            arguments.base,
+            CHEMIN_LIENS_GESTION.format(code=code_actif),
+            contexte,
+            en_tetes=entetes,
+        )
+        corps_avant = gestion_avant.json()
+        avant_ids = [
+            str(servi["identifiant"])
+            for servi in (corps_avant.get("liens", []) if isinstance(corps_avant, dict) else [])
+            if isinstance(servi, dict)
+        ]
+        inverse = list(reversed(avant_ids))
+        reordonnancement = appeler(
+            arguments.base,
+            CHEMIN_ORDRE_DES_LIENS.format(code=code_actif),
+            contexte,
+            charge={"ordre": inverse},
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_ordre = reordonnancement.json()
+        obtenus = [
+            str(servi["identifiant"])
+            for servi in (corps_ordre.get("liens", []) if isinstance(corps_ordre, dict) else [])
+            if isinstance(servi, dict)
+        ]
+        #  Une liste INCOMPLETE est refusee : c'est ce qui tient lieu de
+        #  concurrence optimiste ici, la collection n'ayant pas de porteur de
+        #  version.
+        partielle = appeler(
+            arguments.base,
+            CHEMIN_ORDRE_DES_LIENS.format(code=code_actif),
+            contexte,
+            charge={"ordre": inverse[:1]},
+            en_tetes=ecriture,
+            methode="PUT",
+        )
+        corps_partielle = partielle.json()
+        code_partielle = (
+            corps_partielle.get("erreur", {}).get("code")
+            if isinstance(corps_partielle, dict)
+            else None
+        )
+        if (
+            len(avant_ids) >= 2
+            and reordonnancement.statut == 200
+            and obtenus == inverse
+            and partielle.statut == 422
+            and code_partielle == "ordre_incomplet"
+        ):
+            print(f"    ok       les {len(avant_ids)} liens sont INVERSES en un geste — ce qu'un")
+            print("             seul `UPDATE` ne peut pas faire, l'index unique partiel de `T1`")
+            print("             le refusant (mesure). Et une liste PARTIELLE rend 422")
+            print("             `ordre_incomplet` : c'est la concurrence optimiste de `T8`")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    ordre : {reordonnancement.statut}, obtenus={obtenus}, "
+                f"attendu={inverse}, partielle={partielle.statut}/{code_partielle!r}"
+            )
+
+        # --- 67. LES TROIS ECRITURES EXIGENT LE JETON CSRF, ET LA LECTURE NON
+        #
+        #  **LES TROIS, ET PAS UNE** — §7.40, « un garde-fou ecrit contre UNE
+        #  instance ne couvre pas la classe ». Le temoin est la LECTURE : elle
+        #  passe sans jeton, ce qui prouve que le 403 vient bien du jeton et non
+        #  d'un refus general.
+        controles += 1
+        sans_jeton_liens = {**entetes, "Origin": arguments.base}
+        refus_csrf_liens = [
+            appeler(
+                arguments.base,
+                CHEMIN_LIENS.format(code=code_actif),
+                contexte,
+                charge={"libelle": "x", "url": "https://x.exemple.test/", "type_de_lien": "OTHER"},
+                en_tetes=sans_jeton_liens,
+            ).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_ORDRE_DES_LIENS.format(code=code_actif),
+                contexte,
+                charge={"ordre": avant_ids},
+                en_tetes=sans_jeton_liens,
+                methode="PUT",
+            ).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_UN_LIEN.format(code=code_actif, lien=avant_ids[0] if avant_ids else "x"),
+                contexte,
+                charge={
+                    "version": 1,
+                    "libelle": "x",
+                    "url": "https://x.exemple.test/",
+                    "type_de_lien": "OTHER",
+                },
+                en_tetes=sans_jeton_liens,
+                methode="PUT",
+            ).statut,
+        ]
+        lecture_sans_jeton = appeler(
+            arguments.base,
+            CHEMIN_LIENS.format(code=code_actif),
+            contexte,
+            en_tetes=sans_jeton_liens,
+        ).statut
+        if refus_csrf_liens == [403, 403, 403] and lecture_sans_jeton == 200:
+            print("    ok       sans jeton CSRF : 403 sur LES TROIS ecritures de liens, et la")
+            print("             LECTURE passe — le refus vient du jeton, pas d'un blocage large")
+        else:
+            echecs += 1
+            print(f"    ECHEC    CSRF des liens : {refus_csrf_liens}, lecture={lecture_sans_jeton}")
+
+        # --- 68. SANS ROLE DE GESTION : LES ECRITURES SONT REFUSEES, LA LECTURE NON
+        #
+        #  **LA MATRICE §5 ACCORDE LA LECTURE AUX HUIT ROLES AUTHENTIFIES** — sa
+        #  ligne « Liens Hub/Academy/SharePoint » — et le §13 comme le §19
+        #  reservent l'ecriture a `ESM`, `ADM-E` et `SUPER`. Le couple prouve les
+        #  DEUX moities : refuser la lecture aussi serait plus restrictif que le
+        #  document, et c'est ce que le temoin distingue.
+        controles += 1
+        ecritures_sd = [
+            appeler(
+                arguments.base,
+                CHEMIN_LIENS.format(code=code_actif),
+                contexte,
+                charge={"libelle": "x", "url": "https://x.exemple.test/", "type_de_lien": "OTHER"},
+                en_tetes=entetes_sd,
+            ).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_ORDRE_DES_LIENS.format(code=code_actif),
+                contexte,
+                charge={"ordre": avant_ids},
+                en_tetes=entetes_sd,
+                methode="PUT",
+            ).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_LIENS_GESTION.format(code=code_actif),
+                contexte,
+                en_tetes=entetes_sd,
+            ).statut,
+        ]
+        lecture_sd = appeler(
+            arguments.base, CHEMIN_LIENS.format(code=code_actif), contexte, en_tetes=entetes_sd
+        ).statut
+        if ecritures_sd == [403, 403, 403] and lecture_sd == 200:
+            print("    ok       sans role de gestion : 403 a la creation, a l'ordre ET a la")
+            print("             liste de GESTION ; la lecture de l'accueil rend 200 — matrice")
+            print("             §5 « Liens Hub/Academy/SharePoint », Lecture aux HUIT roles")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans role : ecritures={ecritures_sd}, lecture={lecture_sd}")
+
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**
         #
@@ -1817,6 +2198,12 @@ def main() -> int:
             #  codes de sortie : sans lui l'echec aurait ete SILENCIEUX.
             f"content_block WHERE entity_id IN ({entites})",
             f"content_page WHERE entity_id IN ({entites})",
+            #  `T8` : `internal_link` ne reference que l'entite, donc son rang
+            #  dans cette liste est libre — mais l'OUBLIER laisserait des lignes
+            #  qui feraient echouer des tests sans rapport (§7.30, dixieme
+            #  occurrence de la classe). C'est la suppression de l'`entity` qui
+            #  echouerait, en nommant `fk_internal_link_entity_id_entity`.
+            f"internal_link WHERE entity_id IN ({entites})",
             f"circle WHERE entity_id IN ({entites})",
             f"office WHERE entity_id IN ({entites})",
             f"admin_password_credential WHERE user_account_id IN ({comptes})",

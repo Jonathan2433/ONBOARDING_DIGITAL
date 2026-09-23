@@ -985,6 +985,119 @@
         "inexistante, appartenance d'une AUTRE entite, ou cible hors du perimetre de",
         "l'appelant. Distinguer apprendrait a un DSM de qui il n'est pas responsable."
       ]
+    },
+    {
+      "cle": "liensInternesDUneEntite",
+      "chemin": "/api/v1/entities/{code}/liens",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDesLiensInternes",
+      "role": [
+        "Les liens internes ACTIFS d'une entite — LOT 6, T8, story MVP-L06-US005.",
+        "QUI LIT : la matrice §5 porte une ligne « Liens Hub/Academy/SharePoint »",
+        "qui donne `—` a `ANON` et **Lecture** aux HUIT roles authentifies. C'est le",
+        "seul tableau du corpus qui porte `EMP` et `NEW` ; lire a sa place la ligne",
+        "« Consulter » du §13 — six colonnes — refuserait la ressource a l'Employe.",
+        "SEULS LES ACTIFS SONT SERVIS, et c'est la raison d'etre du champ `active`",
+        "du modele §15.3. `T1` a refuse de le fondre avec `archived_at` : on",
+        "DESACTIVE pour retirer de l'affichage, on ARCHIVE pour sortir du jeu de",
+        "donnees. La gestion, qui voit les deux, est une autre route et une autre",
+        "grille.",
+        "L'ORDRE EST TOTAL : l'index unique partiel de `T1` interdit deux rangs",
+        "egaux parmi les non archives, si bien que `ORDER BY display_order` ne",
+        "depend d'aucun plan."
+      ]
+    },
+    {
+      "cle": "gestionDesLiensInternes",
+      "chemin": "/api/v1/entities/{code}/liens/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesLiensInternes",
+      "role": [
+        "Tous les liens internes non archives — actifs ET inactifs. LOT 6, T8.",
+        "ELLE EXISTE POUR QUE DESACTIVER NE SOIT PAS UN ALLER SANS RETOUR : un lien",
+        "absent de l'accueil doit rester visible de celui qui peut le reactiver.",
+        "DEUX AUDIENCES, DEUX ROUTES, UNE SEULE GARDE PAR ROUTE. Un garde-fou dont",
+        "le perimetre dependrait d'un parametre de requete est un garde-fou qu'on",
+        "finit par se tromper a relire."
+      ]
+    },
+    {
+      "cle": "creationDUnLienInterne",
+      "chemin": "/api/v1/entities/{code}/liens",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "LienInterneServi",
+      "role": [
+        "Creer un lien interne — LOT 6, T8, story MVP-L06-US005.",
+        "QUI ECRIT : le §13 « Gerer les cartes Hub/Academy/SharePoint » et le §19",
+        "« Modifier les liens internes » donnent le MEME ensemble — ESM, ADM-E,",
+        "SUPER. C'est la quatrieme grille voisine du lot, et la premiere qui",
+        "concorde. Le §19 n'a que trois colonnes : une absence de colonne n'est pas",
+        "une exclusion, et c'est le §13 qui met DSM, BOOST et OFFICE a tiret.",
+        "AUCUNE PORTEE LOCALE : `internal_link` ne porte ni `circle_id` ni",
+        "`office_id`, donc un Booster n'aurait aucune ressource sur laquelle borner",
+        "son droit. Un lien appartient a l'ENTITE.",
+        "L'URL EST VALIDEE SELON LA LISTE DE PROTOCOLES DU §15.3 — DEC-587, QO-120 :",
+        "`https` seul, et `http` refuse sous son PROPRE code pour que l'auteur voie",
+        "qu'il lui manque un `s`.",
+        "UNE LISTE DE PROTOCOLES NE SUFFIT PAS, ET C'EST MESURE : `https:alert(1)` a",
+        "pour protocole `https` et n'adresse aucune ressource. `url_sans_hote` est le",
+        "refus qu'une lecture litterale de la phrase du corpus aurait omis.",
+        "AUCUN CHAMP DE RANG : le lien est ajoute EN QUEUE, le rang valant `max + 1`.",
+        "Deux liens de meme rang sont donc impossibles a exprimer. Reordonner est un",
+        "geste distinct, et il DOIT l'etre — l'index unique partiel de T1 refuse un",
+        "echange de rangs en un seul UPDATE, mesure du 22/09/2026.",
+        "LA MEME REGLE EST POSEE EN BASE par la migration 0019, si bien qu'aucun",
+        "autre ecrivain — reprise du prototype, modele generique, import — ne peut y",
+        "echapper."
+      ]
+    },
+    {
+      "cle": "ordreDesLiensInternes",
+      "chemin": "/api/v1/entities/{code}/liens/ordre",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDesLiensInternes",
+      "role": [
+        "Reordonner les liens internes — LOT 6, T8, modele §15.3.",
+        "LE RANG VAUT L'INDEX DE LA LISTE SOUMISE, jamais une valeur envoyee : deux",
+        "liens de meme rang sont inexprimables plutot que refuses, exactement comme",
+        "les blocs de T6.",
+        "LA LISTE DOIT ETRE EXHAUSTIVE — exactement une fois chacun des liens non",
+        "archives. C'est aussi ce qui tient lieu de concurrence optimiste : un lien",
+        "cree entre la lecture et l'envoi rend la liste incomplete, donc 422. Un",
+        "champ `version` aurait exige un porteur, et la collection n'en a pas.",
+        "DEUX TEMPS, ET LE DECALAGE EST DERIVE : un echange en un seul UPDATE est",
+        "REFUSE par `uq_internal_link_entity_ordre_non_archive`, mesure du",
+        "22/09/2026. Une constante magique serait fausse au millieme lien, et la",
+        "contrainte `ordre_positif` interdit de passer par des rangs negatifs.",
+        "CETTE ROUTE EST DECLAREE AVANT `/liens/{lien}`, et l'ordre est signifiant :",
+        "FastAPI retient le premier MOTIF qui correspond."
+      ]
+    },
+    {
+      "cle": "modificationDUnLienInterne",
+      "chemin": "/api/v1/entities/{code}/liens/{lien}",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "LienInterneServi",
+      "role": [
+        "Modifier un lien interne, ou le DESACTIVER — LOT 6, T8, matrice §19.",
+        "`actif = false` EST LE SEUL MOYEN DE RETIRER UN LIEN de l'accueil, et c'est",
+        "ce que le §15.3 prevoit : il declare `active` a cote de `archived_at`, et T1",
+        "a refuse de les fondre. AUCUNE ROUTE N'ARCHIVE UN LIEN — ni le §13 ni le §19",
+        "n'en portent la ligne, et en inventer une serait le §6.5.",
+        "409 `version_obsolete` : concurrence optimiste du §18.4, « sans ecrasement",
+        "silencieux ». La version est OBLIGATOIRE — defaut T11-6 du LOT 5, ou un",
+        "bouchon rendait 200 sur un corps vide la ou l'API rend 422.",
+        "404 POUR TROIS CAUSES INDISTINGUABLES : le lien n'existe pas, il appartient",
+        "a une AUTRE entite, ou il est archive. Les distinguer apprendrait l'existence",
+        "d'un lien d'une entite ou l'appelant n'a rien prouve (§2.5).",
+        "LE RANG N'EST PAS TOUCHE : il appartient a l'ordre de la liste, que",
+        "`PUT …/liens/ordre` seule reecrit."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -1026,5 +1139,27 @@
     "Les fusionner parce qu'elles coincident aujourd'hui ferait suivre l'une quand",
     "l'autre change, EN SILENCE."
   ],
-  "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"]
+  "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_liens_internes": [
+    "LOT 6, T8, story MVP-L06-US005. QUATRIEME GRILLE VOISINE DU LOT, ET LA",
+    "PREMIERE QUI CONCORDE : le §13 « Gerer les cartes Hub/Academy/SharePoint »",
+    "et le §19 « Modifier les liens internes » donnent le meme ensemble. Elle est",
+    "DECLAREE SEPAREMENT de `rolesCycleDeVie` et de `rolesAdministration`, qui",
+    "coincident aujourd'hui pour des raisons qui leur sont propres : les aliaser",
+    "les ferait bouger ENSEMBLE le jour ou une seule de ces raisons change."
+  ],
+  "rolesGestionDesLiensInternes": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_protocoles": [
+    "DEC-587, et QO-120 est close. Le modele §15.3 et le cahier §13 ecrivent tous",
+    "deux « les URL sont validees selon une liste de protocoles autorises » et NE",
+    "LA DONNENT PAS — zero occurrence, mesuree le 22/09/2026 sur les cinq",
+    "documents de cadrage. La liste est donc DECLAREE, minimale, et migrable d'une",
+    "ligne : une liste blanche FERMEE serait aussi fautive qu'une absence de",
+    "liste (§7.29).",
+    "ELLE EST DANS LE MANIFESTE POUR QUE L'ECRAN PUISSE LE DIRE AVANT QUE L'API",
+    "NE REFUSE. `http` est refuse sous son propre code, `url_non_chiffree`.",
+    "ET UNE LISTE DE PROTOCOLES NE SUFFIT PAS : `https:alert(1)` a pour protocole",
+    "`https` et n'adresse aucune ressource. L'API exige AUSSI un hote."
+  ],
+  "protocolesDeLienAutorises": ["https"]
 }

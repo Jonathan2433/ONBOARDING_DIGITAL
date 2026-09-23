@@ -304,6 +304,22 @@ class InternalLink(ChampsCommuns, RessourceLocale, Base):
         #  Inventer la liste ici la figerait dans le schema. `QO-120` est
         #  ouverte, et `T8` ecrira la validation quand elle aura sa reponse.
         CheckConstraint("length(btrim(url)) > 0", name="url_non_vide"),
+        #  **`T8` A POSE LE PROTOCOLE, ET L'ARGUMENT CI-DESSUS TIENT TOUJOURS.**
+        #  Ce qui a change n'est pas le raisonnement -- ne pas inventer une liste
+        #  que le corpus ne donne pas -- c'est que `DEC-587` la TRANCHE : `https`
+        #  seul, `http` refuse nommement, `QO-120` close. Une fois la liste
+        #  decidee, la figer coute une migration d'une ligne, exactement comme
+        #  `contrainte_enumeration`, et cela rend « aucune URL `javascript:`
+        #  n'existe en base » STRUCTUREL plutot que promis (§7.35) : trois
+        #  ecrivains futurs sont deja nommes au corpus -- la reprise du prototype
+        #  (`T11`), les modeles generiques du §19, les imports du LOT 9 -- et
+        #  aucun n'appelle `app.content.liens`.
+        #
+        #  **ELLE NE SAIT PAS EXIGER UN HOTE**, et c'est pourquoi le service
+        #  valide AUSSI : `https:///chemin` passe ce motif sans designer aucun
+        #  serveur. La contrainte est le plancher, `valider_une_url` le refus
+        #  exact -- et un test confronte les deux listes (migration `0019`).
+        CheckConstraint("url LIKE 'https://%'", name="url_https"),
         CheckConstraint("length(btrim(label)) > 0", name="label_non_vide"),
         #  §25.1 « notamment » : deux liens de meme rang dans une entite
         #  rendraient l'ordre d'affichage non deterministe -- meme motif que

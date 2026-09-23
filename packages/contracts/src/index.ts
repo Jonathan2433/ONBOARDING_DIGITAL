@@ -211,3 +211,21 @@ export {
   validerLaPageDeContenu,
 } from './contenus.js';
 export type { BlocDeContenu, PageDeContenu } from './contenus.js';
+
+//  LES LIENS INTERNES — LOT 6, `T8`, `MVP-L06-US005`.
+//  **LA LECTURE SEULE**, comme `T2` a `T5` : une sous-etape qui sert une lecture
+//  pose son module de contrat, celles qui servent une ecriture ne le font pas —
+//  `T6` et `T7` n'ont rien ajoute ici. Les ecrans de lecture sont `T9`.
+//  `PROTOCOLES_DE_LIEN_AUTORISES` est LU DU MANIFESTE (`DEC-587`, `QO-120`) pour
+//  qu'un formulaire puisse dire ce qui est accepte avant que l'API ne refuse ; il
+//  ne decide rien, l'API restant l'autorite finale (matrice §2.6).
+export {
+  cheminLiensInternes,
+  CODES_LIENS_INTERNES,
+  GABARIT_CHEMIN_LIENS_INTERNES,
+  PROTOCOLES_DE_LIEN_AUTORISES,
+  TYPES_DE_LIEN_NOMMES,
+  urlEstServable,
+  validerLesLiensInternes,
+} from './liens.js';
+export type { LienInterne, LiensInternes } from './liens.js';

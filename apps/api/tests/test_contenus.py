@@ -445,14 +445,28 @@ def test_TEMOIN_les_quatre_types_de_lien_sont_acceptes(cx: Connection, type_de_l
 @pytest.mark.integration
 @pytest.mark.parametrize(
     ("colonne", "valeur", "contrainte"),
-    [("url", "   ", "url_non_vide"), ("label", "", "label_non_vide")],
+    [("url", "   ", "url_https"), ("label", "", "label_non_vide")],
 )
 def test_un_lien_a_URL_ou_LIBELLE_vide_est_refuse(
     cx: Connection, colonne: str, valeur: str, contrainte: str
 ) -> None:
-    """La contrainte borne la FORME. **Le PROTOCOLE n'est pas borne ici** : le
-    corpus dit deux fois « une liste de protocoles autorises » et ne la donne
-    jamais -- `QO-120`, et c'est `T8` qui ecrira la validation."""
+    """La contrainte borne la FORME, et **`T8` A CHANGE LAQUELLE NOMME L'URL VIDE**.
+
+    `T1` attendait ici `ck_internal_link_url_non_vide`, et c'etait juste a sa
+    date. La migration `0019` a pose `ck_internal_link_url_https` -- `DEC-587`,
+    `QO-120` close -- et les deux contraintes sont desormais **emboitees** : une
+    URL blanche viole les DEUX, puisqu'elle ne peut pas commencer par
+    « https:// ». PostgreSQL en nomme une seule, et **ce n'est pas a nous de
+    choisir laquelle** : l'ordre d'evaluation n'est pas garanti.
+
+    Mesure du 22/09/2026 : c'est `url_https` qui sort. L'attendu est donc corrige
+    plutot qu'affaibli (§7.20, §7.21) -- un test qui accepterait « l'une ou
+    l'autre » ne dirait plus rien du jour ou aucune ne mordrait.
+
+    **`url_non_vide` N'EST PLUS ATTEIGNABLE SEULE, ET ELLE EST CONSERVEE** : elle
+    le redeviendrait si la liste de protocoles s'elargissait a un schema sans
+    `//`. La retirer aujourd'hui serait retirer un plancher pour la seule raison
+    qu'un mur plus haut le cache."""
     entite = _entite(cx, "LKX")
     valeurs = {"e": entite, "label": "Hub", "url": "https://hub.exalt.test"}
     valeurs[colonne] = valeur
