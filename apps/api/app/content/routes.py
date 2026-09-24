@@ -1,5 +1,7 @@
-"""Les routes editoriales — LOT 6, `T5` a `T8`, stories `MVP-L06-US004` a `US006`.
+"""Les routes editoriales — LOT 6, `T5` a `T10`, stories `MVP-L06-US004` a `US006`.
 
+    GET  /entities/{code}/pages/gestion                  `T10`, l'editeur : toutes, tous etats
+    GET  /entities/{code}/pages/{page:uuid}/gestion       `T10`, une page, tous etats + `version`
     GET  /entities/{code}/pages/{type_de_page}/{slug}    `T5`, lire le PUBLIE
     POST /entities/{code}/pages                          `T6`, creer un BROUILLON
     PUT  /entities/{code}/pages/{page}/contenu           `T6`, ecrire le contenu
@@ -11,6 +13,16 @@
     POST /entities/{code}/liens                          `T8`, creer un lien
     PUT  /entities/{code}/liens/ordre                    `T8`, reordonner
     PUT  /entities/{code}/liens/{lien}                   `T8`, modifier un lien
+
+LES DEUX ROUTES DE GESTION DES PAGES SONT DECLAREES **AVANT** LA LECTURE DE `T5`,
+ET L'ORDRE EST SIGNIFIANT — `T10`
+
+  Meme piege que `/liens/ordre` face a `/liens/{lien}` : `/pages/{page}/gestion`
+  partage sa FORME (deux segments apres `/pages/`) avec la lecture publique
+  `/pages/{type_de_page}/{slug}`. Sans l'ordre de declaration ET le
+  convertisseur `{page:uuid}`, une page PUBLIEE dont le slug vaudrait
+  litteralement « gestion » serait interceptee par la mauvaise route — mesure
+  avec `Route.matches()` de Starlette, voir le detail dans `routeur_contenus`.
 
 DEUX LECTURES DES LIENS, ET DEUX GRILLES — `T8`
 
@@ -98,7 +110,12 @@ from app.content.liens import (
     reordonner_les_liens,
 )
 from app.content.modeles import TYPES_DE_BLOC, TYPES_DE_LIEN, TYPES_DE_PAGE
-from app.content.pages import PayloadNonObjet, lire_la_page_de_contenu
+from app.content.pages import (
+    PayloadNonObjet,
+    lire_la_page_de_contenu,
+    lire_une_page_pour_edition,
+    lister_les_pages_de_l_entite,
+)
 from app.content.perimetre import (
     ROLES_D_ECRITURE_EDITORIALE,
     ROLES_DE_CREATION,
@@ -281,6 +298,50 @@ class ReponseDEcritureDuContenu(BaseModel):
     blocs: list[BlocDeContenuRendu]
     nombre_de_blocs: int
     blocs_archives: int
+
+
+class PageDeGestionRendue(BaseModel):
+    """Le sommaire d'une page, TOUS ETATS confondus — `T10`.
+
+    `circle_id`/`office_id` servent a l'ecran a retrouver LA page de SON cercle
+    ou de SON bureau, en les confrontant a l'identifiant deja connu — le meme
+    que celui que `T3`/`T4` rendent sous `identifiant`.
+    """
+
+    identifiant: uuid.UUID
+    type_de_page: str
+    titre: str
+    slug: str
+    etat: str
+    version: int
+    circle_id: uuid.UUID | None
+    office_id: uuid.UUID | None
+
+
+class ReponseDesPagesDeGestion(BaseModel):
+    """Toutes les pages de l'entite — `T10`. Meme parti que `/liens/gestion`."""
+
+    pages: list[PageDeGestionRendue]
+
+
+class ReponseDeLaPageDeContenuPourEdition(BaseModel):
+    """Une page et ses blocs, TOUS ETATS confondus, avec sa `version` — `T10`.
+
+    **PORTE `version` ET `etat`, QUE LA LECTURE PUBLIQUE DE `T5` NE PORTE PAS** :
+    c'est precisement ce qui manquait pour qu'un editeur puisse relire son propre
+    brouillon apres un rechargement, et l'ecrire ensuite avec la concurrence
+    optimiste du §18.4.
+    """
+
+    identifiant: uuid.UUID
+    type_de_page: str
+    titre: str
+    slug: str
+    etat: str
+    version: int
+    publiee_le: str | None
+    blocs: list[BlocDeContenuRendu]
+    nombre_de_blocs: int
 
 
 class DemandeDeTransition(BaseModel):
@@ -516,6 +577,200 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
     """Routeur du rendu et de l'ecriture editoriale, monte sous le prefixe versionne."""
     routeur = APIRouter(tags=["contenus"])
 
+    #  **DEUX GARDES, DEFINIES ICI ET NON PLUS BAS, POUR UNE RAISON D'ORDRE DE
+    #  ROUTES ET NON DE LISIBILITE.** Voir le motif complet au-dessus de
+    #  `lire_une_page_pour_gestion` : `/pages/{page}/gestion` doit etre
+    #  ENREGISTREE avant `/pages/{type_de_page}/{slug}`, et la garde qu'elle
+    #  emploie doit donc exister avant cette declaration.
+    garde_de_creation = exiger_un_role_dans_l_entite(parametres, ROLES_DE_CREATION)
+    garde_d_ecriture = exiger_un_role_dans_l_entite(parametres, ROLES_D_ECRITURE_EDITORIALE)
+
+    # ========================================================================
+    #
+    #  LA LECTURE POUR L'EDITEUR — LOT 6, `T10`
+    #
+    #    **UN TROU DEPUIS `T6`, PAS UN REPORT VOULU.** La lecture de `T5`,
+    #    juste en dessous, ne sert que le PUBLIE (`US006`) : un editeur qui
+    #    recharge son ecran en cours de redaction, ou revient sur un brouillon
+    #    jamais publie, n'avait alors AUCUNE route pour relire son propre
+    #    travail — ni `version`, dont l'ecriture suivante a besoin pour la
+    #    concurrence optimiste du §18.4.
+    #
+    #    **MEME PARTI QUE `T8` POUR LES LIENS** : `/liens` ne sert que l'actif,
+    #    `/liens/gestion` sert les deux. Ici, la lecture publique ne sert que
+    #    le publie, `/pages/gestion` et `/pages/{page}/gestion` servent les
+    #    TROIS etats — un editeur qui archive doit pouvoir retrouver sa page
+    #    pour la restaurer.
+    #
+    #    **`/pages/{page}/gestion` EST DECLAREE AVANT `/pages/{type_de_page}/
+    #    {slug}`, ET L'ORDRE EST SIGNIFIANT — MEME PIEGE QUE `/liens/ordre`.**
+    #    Les deux routes ont DEUX segments apres `/pages/`, et le second de la
+    #    lecture publique (`{slug}`) est aussi generique que n'importe quel
+    #    segment : sans cet ordre, `GET …/pages/<uuid>/gestion` matcherait
+    #    D'ABORD la lecture publique, avec `type_de_page=<uuid>` et
+    #    `slug='gestion'`, et rendrait 404 avant que ma route n'ait la main.
+    #    **Mesure, pas suppose** : `Route.matches()` de Starlette confirme le
+    #    FULL match sur la lecture publique quand l'ordre inverse est essaye.
+    #
+    # ========================================================================
+
+    @routeur.get(
+        "/entities/{code}/pages/gestion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesPagesDeGestion,
+        dependencies=[Depends(garde_d_ecriture)],
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role d'ecriture editoriale dans cette entite."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Toutes les pages de l'entite, tous etats confondus",
+        description=(
+            "`T10`. **AUCUNE PORTEE LOCALE N'EST APPLIQUEE ICI** : la garde verifie qu'un "
+            "role d'ecriture editoriale existe quelque part dans l'entite, exactement comme "
+            "`/liens/gestion`, qui n'a pas de portee locale non plus. Un Booster voit donc "
+            "TOUTES les pages de son entite, mais ne pourra OUVRIR que la sienne — refusee "
+            "en 403 par `/pages/{page}/gestion`, qui resout le perimetre."
+        ),
+    )
+    def lister_les_pages_pour_gestion(
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite consultee",
+        ),
+    ) -> ReponseDesPagesDeGestion:
+        """Le sommaire de toutes les pages d'une entite — `T10`."""
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            pages = lister_les_pages_de_l_entite(connexion, entite=entite.id)
+
+        return ReponseDesPagesDeGestion(
+            pages=[
+                PageDeGestionRendue(
+                    identifiant=p.identifiant,
+                    type_de_page=p.type_de_page,
+                    titre=p.titre,
+                    slug=p.slug,
+                    etat=p.etat,
+                    version=p.version,
+                    circle_id=p.circle_id,
+                    office_id=p.office_id,
+                )
+                for p in pages
+            ]
+        )
+
+    @routeur.get(
+        #  **`{page:uuid}`, ET NON `{page}`.** Un slug utilisateur peut valoir
+        #  litteralement « gestion » (§15.1 : texte libre, jusqu'a 160 caracteres).
+        #  Sans le convertisseur, Starlette route sur la FORME du chemin avant
+        #  tout controle de type -- mesure avec `Route.matches()` -- et cette
+        #  route, enregistree en premier, aurait alors intercepte pour de bon
+        #  `GET …/pages/{type_de_page}/gestion` d'une page PUBLIEE reelle. Avec
+        #  le convertisseur, un premier segment non-UUID echoue a CETTE route et
+        #  retombe sur la lecture publique -- verifie dans les deux sens.
+        "/entities/{code}/pages/{page:uuid}/gestion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLaPageDeContenuPourEdition,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Deux causes, deux codes — memes que l'ecriture. `acces_refuse` : "
+                    "aucun role d'ecriture editoriale. `contenu_hors_perimetre` : le role "
+                    "existe mais pas sur CETTE page."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou page inconnue — un seul gabarit, meme motif que l'ecriture."
+                )
+            },
+        },
+        summary="Une page et ses blocs, tous etats confondus, avec sa version",
+        description=(
+            "`T10`. Sert a l'ecran d'edition de charger ou de recharger une page en cours "
+            "de redaction — BROUILLON compris, ce que la lecture publique de `T5` refuse. "
+            "**Meme grille que l'ecriture** : le role est verifie, puis le perimetre sur "
+            "CETTE page precisement, avec la MEME resolution que `PUT …/contenu`."
+        ),
+    )
+    def lire_une_page_pour_gestion(
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[uuid.UUID, Path(description="L'identifiant de la page")],
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeLaPageDeContenuPourEdition:
+        """Une page et ses blocs, tous etats confondus, pour l'ecran d'edition — `T10`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_editorial(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                page=page,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if not perimetre.actions:
+                #  **L'ENSEMBLE VIDE, PAS L'ABSENCE DE `MODIFIER`.** Mesure le
+                #  22/09/2026 : `_actions_selon_l_etat` ne rend que `RESTAURER`
+                #  sur une page ARCHIVEE — « on ne modifie pas un archive, on le
+                #  restaure ». Exiger `MODIFIER` ici refusait donc CETTE route a
+                #  la seule situation qui la justifie : retrouver une page
+                #  archivee pour la restaurer. Meme gabarit unique que
+                #  l'ecriture pour les autres causes : la page n'existe pas,
+                #  elle est d'une autre entite, ou aucun role ne porte sur elle.
+                raise ErreurApplicative(
+                    code=CODE_CONTENU_HORS_PERIMETRE,
+                    message=MESSAGE_CONTENU_HORS_PERIMETRE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            trouvee = lire_une_page_pour_edition(connexion, entite=entite.id, page=page)
+            if trouvee is None:
+                #  Le perimetre a resolu des ACTIONS sur cette page : si la
+                #  lecture ne la retrouve plus dans la MEME transaction, c'est
+                #  qu'aucune ligne ne correspond — un 404, jamais un 500.
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+
+        return ReponseDeLaPageDeContenuPourEdition(
+            identifiant=trouvee.identifiant,
+            type_de_page=trouvee.type_de_page,
+            titre=trouvee.titre,
+            slug=trouvee.slug,
+            etat=trouvee.etat,
+            version=trouvee.version,
+            publiee_le=trouvee.publiee_le,
+            blocs=[
+                BlocDeContenuRendu(
+                    identifiant=b.identifiant,
+                    type_de_bloc=b.type_de_bloc,
+                    ordre=b.ordre,
+                    contenu=b.contenu,
+                )
+                for b in trouvee.blocs
+            ],
+            nombre_de_blocs=trouvee.nombre_de_blocs,
+        )
+
     @routeur.get(
         "/entities/{code}/pages/{type_de_page}/{slug}",
         #  `dependencies=` et non `Annotated[...]` : sous `from __future__ import
@@ -646,8 +901,9 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
     #    droit reel. Les deux grilles different dans les deux sens.
     #
     # ========================================================================
-    garde_de_creation = exiger_un_role_dans_l_entite(parametres, ROLES_DE_CREATION)
-    garde_d_ecriture = exiger_un_role_dans_l_entite(parametres, ROLES_D_ECRITURE_EDITORIALE)
+    #  **LES DEUX GARDES SONT DEFINIES PLUS HAUT DESORMAIS** — voir la note au
+    #  debut de `routeur_contenus`, motivee par l'ordre d'enregistrement de
+    #  `/pages/{page}/gestion` face a la lecture publique ci-dessus.
 
     @routeur.post(
         "/entities/{code}/pages",

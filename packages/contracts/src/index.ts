@@ -209,6 +209,7 @@ export {
   texteDuBloc,
   TYPES_DE_PAGE_NOMMES,
   validerLaPageDeContenu,
+  validerUnBlocDeContenu,
 } from './contenus.js';
 export type { BlocDeContenu, PageDeContenu } from './contenus.js';
 
@@ -220,12 +221,85 @@ export type { BlocDeContenu, PageDeContenu } from './contenus.js';
 //  qu'un formulaire puisse dire ce qui est accepte avant que l'API ne refuse ; il
 //  ne decide rien, l'API restant l'autorite finale (matrice §2.6).
 export {
+  cheminCreationDeLien,
+  cheminGestionDesLiens,
   cheminLiensInternes,
+  cheminModificationDeLien,
+  cheminOrdreDesLiens,
+  CODES_CREATION_DE_LIEN,
+  CODES_GESTION_DES_LIENS,
   CODES_LIENS_INTERNES,
+  CODES_MODIFICATION_DE_LIEN,
+  CODES_ORDRE_DES_LIENS,
+  GABARIT_CHEMIN_CREATION_DE_LIEN,
+  GABARIT_CHEMIN_GESTION_DES_LIENS,
   GABARIT_CHEMIN_LIENS_INTERNES,
+  GABARIT_CHEMIN_MODIFICATION_DE_LIEN,
+  GABARIT_CHEMIN_ORDRE_DES_LIENS,
+  peutGererLesLiensInternes,
   PROTOCOLES_DE_LIEN_AUTORISES,
+  ROLES_GESTION_DES_LIENS_INTERNES,
   TYPES_DE_LIEN_NOMMES,
   urlEstServable,
   validerLesLiensInternes,
+  validerUnLienInterneServi,
 } from './liens.js';
-export type { LienInterne, LiensInternes } from './liens.js';
+export type {
+  DemandeDeChampsDeLien,
+  DemandeDeCreationDeLien,
+  DemandeDeModificationDeLien,
+  DemandeDOrdreDesLiens,
+  LienInterne,
+  LiensInternes,
+} from './liens.js';
+
+//  L'ECRITURE EDITORIALE, LE CYCLE DE VIE D'UN CONTENU ET SA GESTION — LOT 6,
+//  `T10`. `contenus.ts` reste T5/lecture seule ; ce module porte ce que `T6`,
+//  `T7` et `T10` ont ajoute, dont les deux routes que `T10` a du poser pour
+//  qu'un editeur puisse relire un BROUILLON avec sa `version`.
+export {
+  cheminArchivageDuContenu,
+  cheminCreationDePage,
+  cheminEcritureDuContenu,
+  cheminPagesDeGestion,
+  cheminPageDeGestion,
+  cheminPublication,
+  cheminRestaurationDuContenu,
+  CODES_ARCHIVAGE_DU_CONTENU,
+  CODES_CREATION_DE_PAGE,
+  CODES_ECRITURE_DU_CONTENU,
+  CODES_PAGES_DE_GESTION,
+  CODES_PAGE_DE_GESTION,
+  CODES_PUBLICATION,
+  CODES_RESTAURATION_DU_CONTENU,
+  GABARIT_CHEMIN_ARCHIVAGE_DU_CONTENU,
+  GABARIT_CHEMIN_CREATION_DE_PAGE,
+  GABARIT_CHEMIN_ECRITURE_DU_CONTENU,
+  GABARIT_CHEMIN_PAGES_DE_GESTION,
+  GABARIT_CHEMIN_PAGE_DE_GESTION,
+  GABARIT_CHEMIN_PUBLICATION,
+  GABARIT_CHEMIN_RESTAURATION_DU_CONTENU,
+  peutCreerUnContenu,
+  peutEditerUnContenu,
+  peutRestaurerUnContenu,
+  ROLES_CREATION_DE_CONTENU,
+  ROLES_ECRITURE_EDITORIALE,
+  ROLES_RESTAURATION_D_UN_CONTENU,
+  validerLaPageCreee,
+  validerLaPageDeContenuPourEdition,
+  validerLaTransitionDeContenu,
+  validerLEcritureDuContenu,
+  validerLesPagesDeGestion,
+} from './gestionDuContenu.js';
+export type {
+  BlocSoumis,
+  ContenuEcrit,
+  DemandeDeCreationDePage,
+  DemandeDEcritureDuContenu,
+  DemandeDeTransition,
+  PageCreee,
+  PageDeContenuPourEdition,
+  PageDeGestion,
+  ReponseDesPagesDeGestion,
+  TransitionDeContenu,
+} from './gestionDuContenu.js';

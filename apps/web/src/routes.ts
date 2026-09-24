@@ -80,6 +80,15 @@ export const CHEMINS = {
   //  seulement declarer le MEME gabarit pour que le routeur le reconnaisse.
   frameworkCercle: '/entites/:code/framework/cercles/:codeCercle',
   frameworkBureau: '/entites/:code/framework/bureaux/:codeBureau',
+  //  **LOT 6, `T10`.** Les ecrans d'edition, `MVP-L06-US004` (3/3) et `US005`.
+  //  Sous la meme rubrique Framework que la lecture, avec un suffixe propre —
+  //  meme gabarit qu'une adresse de lecture n'est PAS reutilisable, une action
+  //  d'edition n'etant pas une consultation.
+  editionCercle: '/entites/:code/framework/cercles/:codeCercle/editer',
+  editionBureau: '/entites/:code/framework/bureaux/:codeBureau/editer',
+  //  Les liens internes sont de portee ENTITE, jamais locale a un cercle ou un
+  //  bureau (§13, §19) : leur gestion vit donc sous l'entite, pas sous Framework.
+  gestionDesLiens: '/entites/:code/liens/gestion',
 } as const;
 
 /**
@@ -224,6 +233,37 @@ export function cheminDuProfilALEcran(code: string, appartenance: string): strin
   return CHEMINS.profil
     .replace(':code', encodeURIComponent(code))
     .replace(':appartenance', encodeURIComponent(appartenance));
+}
+
+/**
+ * Les adresses des ecrans d'edition et de gestion — LOT 6, `T10`.
+ *
+ * **ENCODEES, POUR LE MEME MOTIF QUE `cheminDeLEntite`** : `entity.code`,
+ * `circle.code` et `office.code` sont des chaines libres de 64 caracteres.
+ */
+export function cheminEditionCercle(code: string, codeCercle: string): string {
+  if (code === '' || codeCercle === '') {
+    throw new TypeError('code d’entite ou code de cercle vide');
+  }
+  return CHEMINS.editionCercle
+    .replace(':code', encodeURIComponent(code))
+    .replace(':codeCercle', encodeURIComponent(codeCercle));
+}
+
+export function cheminEditionBureau(code: string, codeBureau: string): string {
+  if (code === '' || codeBureau === '') {
+    throw new TypeError('code d’entite ou code de bureau vide');
+  }
+  return CHEMINS.editionBureau
+    .replace(':code', encodeURIComponent(code))
+    .replace(':codeBureau', encodeURIComponent(codeBureau));
+}
+
+export function cheminGestionDesLiensALEcran(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return CHEMINS.gestionDesLiens.replace(':code', encodeURIComponent(code));
 }
 
 export function cheminDeRubrique(code: string, suffixe: string): string {

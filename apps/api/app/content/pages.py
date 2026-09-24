@@ -86,6 +86,7 @@ from __future__ import annotations
 
 import dataclasses
 import uuid
+from typing import Final
 
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
@@ -243,6 +244,146 @@ def lire_la_page_de_contenu(
         #  **NULLABLE AU §15.1, ET LE MODELE NE LIE PAS `state` A `published_at`.**
         #  Une page `published` sans date n'est interdite nulle part -- `T1` l'a
         #  releve. `str(None)` rendrait la chaine « None » (defaut `T10-8`).
+        publiee_le=None if publiee is None else publiee.isoformat(),
+        blocs=tuple(blocs),
+    )
+
+
+# ============================================================================
+#  LA LECTURE POUR L'EDITEUR — LOT 6, `T10`
+#
+#  **UN TROU QUE `T6` ET `T7` N'AVAIENT PAS COMBLE.** `lire_la_page_de_contenu`
+#  ne sert que le PUBLIE, a dessein (US006). Mais un editeur qui recharge son
+#  ecran en cours de redaction, ou qui revient sur un brouillon jamais publie,
+#  n'a alors AUCUNE route pour relire son propre travail : la seule source de
+#  verite devenait l'etat en memoire du navigateur, perdu au moindre rechargement.
+#
+#  **MEME PARTI QUE `T8` POUR LES LIENS** : la lecture publique ne sert que
+#  l'actif ; `…/liens/gestion` sert les deux, parce qu'un editeur qui desactive
+#  doit pouvoir reactiver. Ici, la lecture publique ne sert que le publie ;
+#  `…/pages/…/gestion` sert les TROIS etats, parce qu'un editeur qui archive doit
+#  pouvoir retrouver la page pour la restaurer.
+#
+#  **AUCUNE PORTEE LOCALE N'EST APPLIQUEE DANS LA REQUETE ELLE-MEME.** Le meme
+#  parti que `resoudre_le_perimetre_editorial` : la garde de role verifie qu'un
+#  acteur peut ecrire QUELQUE PART, la resolution de perimetre verifie qu'il peut
+#  ecrire ICI. Un Booster qui listerait les pages de l'entite verrait donc TOUTES
+#  les pages -- ce que `T8` fait deja pour les liens, qui n'ont pas de portee
+#  locale -- mais ne pourrait OUVRIR que la sienne, refusee en 403 par la route
+#  de detail qui, elle, resout le perimetre exactement comme l'ecriture.
+# ============================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PageDeGestion:
+    """Le sommaire d'une page, TOUS ETATS confondus — pour la liste de gestion."""
+
+    identifiant: uuid.UUID
+    type_de_page: str
+    titre: str
+    slug: str
+    etat: str
+    version: int
+    circle_id: uuid.UUID | None
+    office_id: uuid.UUID | None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PageDeContenuPourEdition:
+    """Une page et ses blocs, TOUS ETATS confondus, avec ce que l'ecriture exige.
+
+    **PORTE `version` ET `etat`, QUE LA LECTURE PUBLIQUE NE PORTE PAS.** C'est
+    precisement ce qui manquait : sans `version`, aucune ecriture suivante ne
+    peut s'appuyer sur la concurrence optimiste du §18.4.
+    """
+
+    identifiant: uuid.UUID
+    type_de_page: str
+    titre: str
+    slug: str
+    etat: str
+    version: int
+    publiee_le: str | None
+    blocs: tuple[BlocRendu, ...]
+
+    @property
+    def nombre_de_blocs(self) -> int:
+        return len(self.blocs)
+
+
+_PAGES_DE_L_ENTITE: Final = text(
+    """
+    SELECT id, page_type, title, slug, state, version, circle_id, office_id
+      FROM content_page
+     WHERE entity_id = :entite
+     ORDER BY page_type, title, id
+    """
+)
+
+_PAGE_POUR_EDITION: Final = text(
+    """
+    SELECT id, page_type, title, slug, state, version, published_at
+      FROM content_page
+     WHERE id = :page AND entity_id = :entite
+    """
+)
+
+
+def lister_les_pages_de_l_entite(
+    connexion: Connection, *, entite: uuid.UUID
+) -> tuple[PageDeGestion, ...]:
+    """Le sommaire de TOUTES les pages de l'entite, tous etats confondus.
+
+    Sert a un editeur a retrouver la page de SON cercle ou de SON bureau — en
+    confrontant `circle_id`/`office_id` a l'identifiant qu'il consulte deja —
+    et a retrouver une page ARCHIVEE en vue de sa restauration.
+    """
+    lignes = connexion.execute(_PAGES_DE_L_ENTITE, {"entite": entite})
+    return tuple(
+        PageDeGestion(
+            identifiant=ligne[0],
+            type_de_page=str(ligne[1]),
+            titre=str(ligne[2]),
+            slug=str(ligne[3]),
+            etat=str(ligne[4]),
+            version=int(ligne[5]),
+            circle_id=ligne[6],
+            office_id=ligne[7],
+        )
+        for ligne in lignes
+    )
+
+
+def lire_une_page_pour_edition(
+    connexion: Connection, *, entite: uuid.UUID, page: uuid.UUID
+) -> PageDeContenuPourEdition | None:
+    """Une page et ses blocs, TOUS ETATS confondus, avec sa `version`.
+
+    `None` couvre deux causes, sans les distinguer : la page n'existe pas, ou
+    elle appartient a une AUTRE entite — la cle composite `(id, entity_id)` du
+    §25.3 rend la seconde aussi sure qu'un filtre explicite.
+    """
+    ligne = connexion.execute(_PAGE_POUR_EDITION, {"page": page, "entite": entite}).one_or_none()
+    if ligne is None:
+        return None
+
+    blocs: list[BlocRendu] = []
+    for b in connexion.execute(_BLOCS, {"page": ligne[0], "entite": entite}):
+        charge = b[3]
+        if not isinstance(charge, dict):
+            raise PayloadNonObjet(b[0], type(charge).__name__)
+        blocs.append(
+            BlocRendu(identifiant=b[0], type_de_bloc=str(b[1]), ordre=int(b[2]), contenu=charge)
+        )
+
+    publiee = ligne[6]
+    return PageDeContenuPourEdition(
+        identifiant=ligne[0],
+        type_de_page=str(ligne[1]),
+        titre=str(ligne[2]),
+        slug=str(ligne[3]),
+        etat=str(ligne[4]),
+        version=int(ligne[5]),
         publiee_le=None if publiee is None else publiee.isoformat(),
         blocs=tuple(blocs),
     )

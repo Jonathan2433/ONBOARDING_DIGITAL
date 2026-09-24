@@ -588,6 +588,46 @@
       ]
     },
     {
+      "cle": "pagesDeLEntitePourGestion",
+      "chemin": "/api/v1/entities/{code}/pages/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesPagesDeGestion",
+      "role": [
+        "Toutes les pages d'une entite, TOUS ETATS confondus — LOT 6, T10.",
+        "UN TROU DEPUIS T6, PAS UN REPORT VOULU : la lecture de T5 ne sert que",
+        "le PUBLIE, et un editeur n'avait aucun moyen de retrouver LA page de",
+        "son cercle ou de son bureau, ni une page ARCHIVEE en vue de sa",
+        "restauration. Meme parti que /liens/gestion pour les liens internes.",
+        "circle_id/office_id servent a l'ecran a confronter cette page a",
+        "l'identifiant du cercle ou du bureau deja consulte.",
+        "AUCUNE PORTEE LOCALE ICI : la garde verifie qu'un role d'ecriture",
+        "editoriale existe QUELQUE PART dans l'entite, exactement comme",
+        "/liens/gestion. Un Booster voit donc toutes les pages de son entite,",
+        "mais ne pourra OUVRIR que la sienne — refusee en 403 par la route",
+        "de detail, qui resout le perimetre."
+      ]
+    },
+    {
+      "cle": "pageDeContenuPourGestion",
+      "chemin": "/api/v1/entities/{code}/pages/{page}/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeLaPageDeContenuPourEdition",
+      "role": [
+        "Une page et ses blocs, TOUS ETATS confondus, avec sa version — T10.",
+        "PORTE `version` ET `etat`, QUE LA LECTURE PUBLIQUE DE T5 NE PORTE PAS :",
+        "sans cette route, un editeur qui rechargeait son ecran en cours de",
+        "redaction — ou revenait sur un brouillon jamais publie — perdait tout",
+        "moyen de relire son propre travail, et la version dont l'ecriture",
+        "suivante a besoin pour la concurrence optimiste du §18.4.",
+        "MEME GRILLE QUE L'ECRITURE : le role est verifie, puis le perimetre",
+        "sur CETTE page precisement, avec la MEME resolution que PUT …/contenu.",
+        "403 `contenu_hors_perimetre` quand le role existe mais pas sur cette",
+        "page. Un seul gabarit 404 pour page inconnue ou d'une autre entite."
+      ]
+    },
+    {
       "cle": "publicationDUnePageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{page}/publication",
       "methode": "post",
@@ -1149,6 +1189,36 @@
     "les ferait bouger ENSEMBLE le jour ou une seule de ces raisons change."
   ],
   "rolesGestionDesLiensInternes": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_ecriture_editoriale": [
+    "LOT 6, T10 -- ET C'EST UN TROU DEPUIS T6, PAS UN REPORT VOULU.",
+    "Aucun ecran n'a consomme l'ecriture avant T10, et la discipline DEC-492 --",
+    "une grille exposee des la sous-etape qui l'ecrit -- n'a ete suivie ni par T6",
+    "ni par T7 pour LEURS propres roles : `rolesRestaurationDUnContenu` (T7) et",
+    "`rolesGestionDesLiensInternes` (T8) SONT exposees en anticipation d'un ecran",
+    "qui n'existait pas encore ; la creation et l'ecriture de blocs (T6), elles,",
+    "ne l'etaient pas. Sans cette cle, l'ecran de T10 n'a aucun moyen cote client",
+    "de savoir qui peut creer une page ou en modifier les blocs -- il devrait",
+    "proposer les actions a tout le monde et laisser l'API trancher en 403, ce",
+    "que la doctrine du contrat permet mais que les trois grilles voisines du lot",
+    "evitent deja.",
+    "`rolesCreationDeContenu` N'EST PAS UNE COINCIDENCE AVEC LES AUTRES GRILLES --",
+    "c'est `ROLES_DE_CREATION` de `app/content/perimetre.py`, la ligne UNIQUE de",
+    "creation du §13, qui ne porte ni BOOST ni OFFICE.",
+    "`rolesEcritureEditoriale` N'EST PAS DECLAREE EN COINCIDENCE NON PLUS -- ELLE",
+    "EST DERIVEE, ET LE CODE LE DIT : `ROLES_D_ECRITURE_EDITORIALE` vaut",
+    "`ROLES_DE_CREATION` UNI aux roles de portee locale (`BOOST` sur son cercle,",
+    "`OFFICE` sur son bureau, §13 lignes de modification). Elle est donc PLUS",
+    "LARGE que `rolesCreationDeContenu` : un Booster ne peut pas creer de page",
+    "mais peut modifier celle de son cercle. Un test Python confronte les deux",
+    "cles aux deux constantes, dans les deux sens -- la source unique de",
+    "`DEC-492`.",
+    "LE FRONTEND N'EST PAS L'AUTORITE : cette liste sert a ne pas proposer un",
+    "bouton que l'API refuserait, et rien de plus -- `resoudre_le_perimetre_",
+    "editorial` reste seul a trancher la portee LOCALE (le Booster de CE cercle,",
+    "pas de tous les cercles), qu'aucune cle de manifeste ne peut exprimer."
+  ],
+  "rolesCreationDeContenu": ["ESM", "ADM-E", "SUPER"],
+  "rolesEcritureEditoriale": ["ESM", "ADM-E", "SUPER", "BOOST", "OFFICE"],
   "_commentaire_protocoles": [
     "DEC-587, et QO-120 est close. Le modele §15.3 et le cahier §13 ecrivent tous",
     "deux « les URL sont validees selon une liste de protocoles autorises » et NE",

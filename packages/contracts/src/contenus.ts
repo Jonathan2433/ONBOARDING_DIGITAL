@@ -98,6 +98,33 @@ export function texteDuBloc(bloc: BlocDeContenu, clef: string): string {
   return typeof valeur === 'string' ? valeur : '';
 }
 
+/**
+ * Valider UN bloc — extraite pour `T10`, qui lit des pages avec la meme forme
+ * de bloc mais un enveloppe different (`version`, `etat` en plus). Une seconde
+ * copie de ce parsing divergerait au premier ajout de champ (`DEC-466`).
+ */
+export function validerUnBlocDeContenu(brut: unknown, rang: number): BlocDeContenu {
+  if (!estObjet(brut)) {
+    throw new TypeError(`bloc : blocs[${String(rang)}] non objet`);
+  }
+  const contenu = brut['contenu'];
+  if (!estObjet(contenu)) {
+    //  Le §15.2 parle de « champs structures » : un scalaire ou un tableau ne
+    //  peut pas les porter, et l'accepter ferait deviner sa forme a l'ecran.
+    throw new TypeError(`bloc : blocs[${String(rang)}].contenu n’est pas un objet`);
+  }
+  const ordre = brut['ordre'];
+  if (typeof ordre !== 'number' || !Number.isInteger(ordre)) {
+    throw new TypeError(`bloc : blocs[${String(rang)}].ordre n’est pas un entier`);
+  }
+  return {
+    identifiant: exigerChaine(brut, 'identifiant'),
+    typeDeBloc: exigerChaine(brut, 'type_de_bloc'),
+    ordre,
+    contenu,
+  };
+}
+
 function chaineOuNul(source: Record<string, unknown>, champ: string): string | null {
   const brut = source[champ];
   if (brut === null) {
@@ -126,27 +153,7 @@ export function validerLaPageDeContenu(valeur: unknown): PageDeContenu {
     throw new TypeError('page de contenu : « blocs » n’est pas un tableau');
   }
 
-  const blocs = brutBlocs.map((brut, rang) => {
-    if (!estObjet(brut)) {
-      throw new TypeError(`page de contenu : blocs[${String(rang)}] non objet`);
-    }
-    const contenu = brut['contenu'];
-    if (!estObjet(contenu)) {
-      //  Le §15.2 parle de « champs structures » : un scalaire ou un tableau ne
-      //  peut pas les porter, et l'accepter ferait deviner sa forme a l'ecran.
-      throw new TypeError(`page de contenu : blocs[${String(rang)}].contenu n’est pas un objet`);
-    }
-    const ordre = brut['ordre'];
-    if (typeof ordre !== 'number' || !Number.isInteger(ordre)) {
-      throw new TypeError(`page de contenu : blocs[${String(rang)}].ordre n’est pas un entier`);
-    }
-    return {
-      identifiant: exigerChaine(brut, 'identifiant'),
-      typeDeBloc: exigerChaine(brut, 'type_de_bloc'),
-      ordre,
-      contenu,
-    };
-  });
+  const blocs = brutBlocs.map((brut, rang) => validerUnBlocDeContenu(brut, rang));
 
   const nombre = valeur['nombre_de_blocs'];
   if (typeof nombre !== 'number' || !Number.isInteger(nombre)) {

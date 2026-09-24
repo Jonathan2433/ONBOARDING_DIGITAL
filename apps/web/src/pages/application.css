@@ -1250,3 +1250,181 @@
 .bureau-retour {
   margin: 0;
 }
+
+/* ==========================================================================
+   L'edition d'un contenu — LOT 6, `T10`, `MVP-L06-US004` (3/3)
+   ========================================================================== */
+
+.edition-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+  align-items: flex-start;
+}
+
+.edition-etat {
+  margin: 0;
+}
+
+.edition-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  width: 100%;
+  max-width: 32rem;
+}
+
+.edition-champ input {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.edition-blocs {
+  width: 100%;
+}
+
+.edition-liste-blocs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: var(--espace-s) 0 0;
+  list-style: none;
+}
+
+.edition-bloc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.edition-bloc-type {
+  font-weight: 600;
+}
+
+.edition-bloc-apercu {
+  flex: 1 1 16rem;
+  min-width: 0;
+  padding: var(--espace-xs);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  border-radius: var(--rayon-s);
+  background: var(--fond);
+  font-family: var(--police-monospace);
+  font-size: var(--taille-xs);
+  color: var(--encre-douce);
+}
+
+.edition-bloc-actions {
+  display: flex;
+  gap: var(--espace-xs);
+}
+
+.edition-cycle-de-vie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+/* ==========================================================================
+   La gestion des liens internes — LOT 6, `T10`, `MVP-L06-US005`
+   ========================================================================== */
+
+.liens-gestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.liens-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.liens-lien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.liens-lien[data-actif='false'] {
+  opacity: 0.6;
+}
+
+.liens-lien-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--espace-l);
+  height: var(--espace-l);
+  color: var(--encre-douce);
+}
+
+.liens-lien-details {
+  flex: 1 1 16rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.liens-lien-libelle {
+  font-weight: 600;
+}
+
+.liens-lien-url {
+  overflow-wrap: anywhere;
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.liens-lien-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-xs);
+}
+
+.liens-formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  max-width: 32rem;
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.liens-formulaire label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.liens-formulaire input {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.liens-formulaire-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}

@@ -112,9 +112,21 @@ export function useEntiteConsultee(): ContexteEntite {
  * changement de forme de `CHEMINS.frameworkCercle` se repercute ici sans rien
  * a modifier.
  */
+/**
+ * TROIS GABARITS DE PLUS — LOT 6, `T10`. Meme piege, meme parade : sans ces
+ * entrees, `/entites/CODE/framework/cercles/C1/editer` retombait sur « Cercle »
+ * (le gabarit de LECTURE de `T9` matche un prefixe plus court en segments... en
+ * realite NON, `correspondAuGabarit` EXIGE le MEME nombre de segments, donc
+ * cette route serait retombee sur le defaut « Accueil de l'entite » — exactement
+ * le defaut `ECART-065` que `T9` a nomme et laisse pour la prochaine sous-page
+ * parametree. C'est celle-ci.
+ */
 const TITRES_DE_SOUS_PAGE: readonly { readonly gabarit: string; readonly titre: string }[] = [
   { gabarit: CHEMINS.frameworkCercle, titre: 'Cercle' },
   { gabarit: CHEMINS.frameworkBureau, titre: 'Bureau' },
+  { gabarit: CHEMINS.editionCercle, titre: 'Editer le cercle' },
+  { gabarit: CHEMINS.editionBureau, titre: 'Editer le bureau' },
+  { gabarit: CHEMINS.gestionDesLiens, titre: 'Gestion des liens internes' },
 ];
 
 /**
