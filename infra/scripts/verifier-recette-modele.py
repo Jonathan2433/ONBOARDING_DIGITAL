@@ -139,16 +139,48 @@ CLASSEMENT: dict[int, Classement] = {
         preuve="`T8` — declencheur `booster_une_seule_entite`. Voir `ECART-032` sur la PORTEE",
         tests=("test_une_personne_ne_peut_PAS_etre_Booster_dans_DEUX_entites",),
     ),
+    #  **RECLASSE EN `T12` DU LOT 6, ET C'ETAIT UN CLASSEMENT PERIME PAR CE MEME
+    #  LOT.** `ECART-031` — cite ci-dessous comme motif d'`INAPPLICABLE` — est
+    #  CLOS depuis `DEC-576`, avant meme `T1` : `DEC-576` dit qu'un bureau est
+    #  « publie » au sens du §8.4 quand sa `content_page` de type `OFFICE` est a
+    #  l'etat `published`, et le declencheur qui tient le comptage borne est pose
+    #  en `T7` (migration `0018`, `DEC-583`). La condition a desormais a quoi se
+    #  rattacher, et §30.8 n'est donc plus INAPPLICABLE.
+    #
+    #  **PAS `ACQUIS` NON PLUS, ET C'EST MESURE, PAS SUPPOSE** : le declencheur
+    #  est `BEFORE UPDATE OF state`, donc il garde la TRANSITION vers `published`,
+    #  jamais l'etat permanent. Un bureau publie peut redevenir non conforme si
+    #  ses responsables sont retires APRES la publication — aucune contrainte
+    #  permanente ne l'en empeche, et `T4` documente ce residuel explicitement
+    #  (`app/organization/bureaux.py`) : la lecture rend ce qui EST, zero et
+    #  quatre compris, sans jamais supposer que la borne tient. Meme structure
+    #  que le §30.4 ci-dessus : l'INVARIANT A L'ECRITURE est acquis, l'invariant
+    #  PERMANENT ne l'est pas et ne peut pas l'etre sans un second declencheur
+    #  `AFTER DELETE/UPDATE` sur `framework_responsibility_assignment` — hors
+    #  perimetre d'une sous-etape de lecture/ecriture de contenu.
     8: Classement(
         8,
-        INAPPLICABLE,
-        residuel=(
-            "`ECART-031` — le §8.4 exige « un bureau PUBLIE », mais le §8.3 ne declare AUCUN "
-            "etat de publication sur `office`. La condition n'a rien a quoi se rattacher. "
-            "Et « entre un et trois » est un comptage borne, qu'aucune contrainte de ligne "
-            "n'exprime : il faudra un declencheur le jour ou l'etat existera"
+        PARTIEL,
+        preuve=(
+            "`T7` — declencheur `0018` (`DEC-583`) : publier un bureau a zero, quatre ou "
+            "une responsabilite FUTURE est refuse sous `CODE_BORNE_DES_RESPONSABLES` ; "
+            "publier a un, deux ou trois responsables ACTIFS reussit — temoin positif sur "
+            "les TROIS valeurs, pas sur une seule"
         ),
-        lot="a instruire avant le LOT 6",
+        tests=(
+            "test_LE_TEMOIN_un_bureau_a_un_deux_ou_trois_responsables_SE_PUBLIE",
+            "test_un_bureau_HORS_BORNE_ne_se_publie_PAS",
+            "test_une_responsabilite_FUTURE_ne_compte_PAS_dans_la_borne",
+            "test_la_borne_ne_mord_PAS_sur_un_AUTRE_type_de_page",
+        ),
+        residuel=(
+            "le declencheur garde la TRANSITION, jamais l'etat permanent — un bureau "
+            "publie CONFORME peut le rester en apparence alors que ses responsables sont "
+            "retires ensuite, rien ne l'en empeche. `T4` NE MENT PAS sur ce residuel : sa "
+            "lecture rend zero, un, deux, trois OU quatre responsables actifs, jamais une "
+            "hypothese — `test_un_bureau_rend_ses_responsables_ACTIFS_de_zero_a_trois`"
+        ),
+        lot="LOT 7 ou au-dela, si un second declencheur permanent est un jour exige",
     ),
     9: Classement(
         9,
