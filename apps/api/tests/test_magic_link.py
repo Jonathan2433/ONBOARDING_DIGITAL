@@ -344,20 +344,36 @@ def _appartenance(
     LOT 2, l'a refusee. Defaut `T3-1`, et c'est la base qui a fait son travail --
     un decor de test qui contourne une contrainte du modele n'eprouve pas le
     modele.
+
+    **ET LA DATE DE DEPART EST DERIVEE DE LA MEME REFERENCE QUE L'ARRIVEE.**
+    Elle valait `dt.date(2026, 8, 20)` -- une date ABSOLUE -- contre une arrivee
+    a `current_date - 30`, qui BOUGE. Le 20/09/2026, `current_date - 30` a
+    depasse le 20/08, l'arrivee est passee APRES le depart, et la periode
+    `daterange` du §25.2 est devenue invalide : « range lower bound must be less
+    than or equal to range upper bound ». Une bombe a retardement, posee sans le
+    savoir et explosee sur du code que personne n'avait touche.
+
+    **Les deux bornes viennent donc du MEME `current_date`**, si bien qu'aucune
+    date du calendrier ne peut les inverser. C'est le §7.0, sixieme proposition,
+    applique au temps : deux grandeurs qu'une contrainte compare doivent venir
+    de la meme source.
     """
     connexion.execute(
         text(
             "INSERT INTO entity_membership "
             "(person_id, entity_id, arrival_date, departure_date, membership_state, "
             " professional_category, profile_visibility) "
-            "VALUES (:personne, :entite, current_date - 30, :depart, :etat, "
+            "VALUES (:personne, :entite, current_date - 30, "
+            "        CASE WHEN :depart THEN current_date - 10 END, :etat, "
             "        'consultant', 'draft')"
         ),
         {
             "personne": personne,
             "entite": entite,
             "etat": etat,
-            "depart": dt.date(2026, 8, 20) if etat == "departed" else None,
+            #  **DERIVE, JAMAIS ABSOLU** : `current_date - 10` tombe toujours
+            #  APRES `current_date - 30`, quelle que soit la date du jour.
+            "depart": etat == "departed",
         },
     )
 

@@ -293,6 +293,39 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
     }
   });
 
+  it(
+    'derive AUSSI le titre des pages de cercle et de bureau — LOT 6, `T9`. ' +
+      "Sans ce cas, l'h1 disait FAUX : « Accueil de l'entite » sur une page qui " +
+      "n'en est pas une (defaut trouve dans un navigateur, meme classe que le " +
+      'profil du LOT 5 T11, non corrige ici, hors perimetre de T9)',
+    async () => {
+      const casDeSousPage = [
+        { chemin: '/entites/bordeaux/framework/cercles/data', titreAttendu: 'Cercle' },
+        { chemin: '/entites/bordeaux/framework/bureaux/siege', titreAttendu: 'Bureau' },
+      ];
+      for (const { chemin, titreAttendu } of casDeSousPage) {
+        cleanup();
+        vi.stubGlobal(
+          'fetch',
+          vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+        );
+        render(
+          <MemoryRouter initialEntries={[chemin]}>
+            <Routes>
+              <Route path={CHEMINS.entite} element={<CadreApplicatif />}>
+                <Route path="framework/cercles/:codeCercle" element={<p>Contenu du cercle</p>} />
+                <Route path="framework/bureaux/:codeBureau" element={<p>Contenu du bureau</p>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>,
+        );
+        await waitFor(() =>
+          expect(screen.getByRole('heading', { name: titreAttendu })).toBeTruthy(),
+        );
+      }
+    },
+  );
+
   it("le lien d'evitement precede le menu, donc il le saute", async () => {
     vi.stubGlobal(
       'fetch',

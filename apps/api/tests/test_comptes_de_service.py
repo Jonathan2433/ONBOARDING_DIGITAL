@@ -72,7 +72,27 @@ from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative, gerer_erreur_applicative
 
 CAHIER = Path(__file__).resolve().parents[3] / "docs/product/CAHIER_DES_CHARGES_EXALT_BORDEAUX.md"
-INSTANT = dt.datetime(2026, 8, 22, 12, 0, tzinfo=dt.UTC)
+#  **L'ANCRE DU TEMPS EST DERIVEE DE `now()`, ET SUREMENT PAS UNE DATE ABSOLUE.**
+#
+#  Elle valait `dt.datetime(2026, 8, 22, 12, 0)`, et c'etait une **bombe a
+#  retardement** : ce fichier cree des jetons a `INSTANT` puis en eprouve deux
+#  **A TRAVERS LA ROUTE HTTP**, qui ne recoit aucun instant et appelle `now()`.
+#  Tant que `now()` restait dans les trente jours suivant `INSTANT`, tout passait.
+#
+#  Le 22/09/2026 -- trente et un jours plus tard -- **neuf tests sont tombes d'un
+#  coup** sur du code que personne n'avait touche : `expires_at`, derive de
+#  `INSTANT`, etait passe AVANT `created_at`, derive de `now()`, et la contrainte
+#  `ck_service_token_expiration_apres_creation` a mordu.
+#
+#  **Le temps s'injecte partout OU IL PEUT L'ETRE, et l'ancre suit `now()` la ou
+#  il ne le peut pas.** Aucune assertion de ce fichier ne depend d'une date du
+#  calendrier : toutes sont RELATIVES a cette ancre, ce qui est precisement ce
+#  que « le temps s'injecte » veut dire. La figer n'apportait aucun determinisme
+#  utile, et elle garantissait une panne datee.
+#
+#  C'est le §7.0, sixieme proposition, applique au TEMPS : deux grandeurs qu'une
+#  contrainte compare doivent venir de la MEME source.
+INSTANT = dt.datetime.now(tz=dt.UTC).replace(microsecond=0)
 PLAFOND = 90
 
 

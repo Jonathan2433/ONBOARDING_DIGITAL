@@ -76,13 +76,15 @@ from app.people.modeles import (
 from app.people.trombinoscope import (
     COLONNES_EXPOSEES,
     LONGUEUR_MAXIMALE_RECHERCHE,
+    lister_le_trombinoscope,
+)
+from app.shared.database import moteur
+from app.shared.pagination import (
     TAILLE_MAXIMALE,
     TAILLE_PAR_DEFAUT,
     TAILLES_DE_PAGE,
     TailleDePage,
-    lister_le_trombinoscope,
 )
-from app.shared.database import moteur
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterator

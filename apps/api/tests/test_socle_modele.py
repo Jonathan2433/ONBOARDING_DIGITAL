@@ -519,6 +519,14 @@ TABLES_DECLAREES = {
     "media_asset",
     "media_variant",
     "photo_authorization",
+    # LOT 6, T1 — modele §15.1 a §15.3, les trois tables editoriales
+    #
+    #  `content_block` porte un `entity_id` que le §15.2 n'ecrit PAS : le §25.3
+    #  est aussi le modele, et sans lui la cle etrangere vers `content_page`
+    #  serait SIMPLE. Meme raisonnement que `media_variant`, meme document.
+    "content_page",
+    "content_block",
+    "internal_link",
 }
 
 

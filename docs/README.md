@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `573` en usage | `DEC-574` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `596` en usage | `DEC-597` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `061` |  `ECART-062` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `118` | `QO-119` | [questions](operations/registre-questions-ouvertes.md) |
+| `ECART-nnn` | Écarts |  `001` à `065` |  `ECART-066` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -130,8 +130,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
 | ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
-| `G5` | Fin du trombinoscope | Profils et permissions validés | **Porte courante** — LOT 5 ouvert le 24/08/2026 (`DEC-558`), tag `v0.5.0` prévu. Plan : [`fiche-lot-5.md`](operations/fiche-lot-5.md), **onze** sous-étapes depuis le 06/09/2026 (`DEC-564`) |
-| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | Planifiée |
+| ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
+| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **Porte courante** — LOT 6 ouvert le 13/09/2026 (`DEC-575`), tag `v0.6.0` prévu. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), **douze** sous-étapes |
 | `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | Planifiée |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
@@ -270,7 +270,66 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 
 ---
 
-## 12. Avancement du LOT 5 — **lot OUVERT**, porte `G5`
+## 13. Avancement du LOT 6 — **lot OUVERT**, porte `G6`
+
+**Ouvert par Jonathan le 13 septembre 2026 (`DEC-575`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-6.md`](operations/fiche-lot-6.md) — **7** stories, **sept** critères de sortie
+**dérivés des deux sources, qui concordent**, **douze** sous-étapes, tag `v0.6.0` prévu.
+
+**`T1` EST FAITE** le 13/09/2026, `DEC-578` : les trois tables éditoriales `content_page`,
+`content_block` et `internal_link`, migration `0017`. Le schéma passe de **29 à 32 tables**, et
+**48 tests** les éprouvent, chaque refus apparié à son témoin. La prochaine est `T2`, la page
+Framework en lecture.
+
+> **`T1` A ÉVITÉ UN INCIDENT QUI VISAIT LE LOT 5, ET C'EST SON LIVRABLE LE PLUS UTILE.**
+> `alembic --autogenerate` a proposé de **supprimer `ix_person_recherche_nom`**, l'index de la
+> recherche du trombinoscope, dans la même migration que les trois tables. C'est un index **sur
+> expression**, qu'autogenerate ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et
+> **aucun test** n'exigeait son existence : le piège était debout pour toutes les sous-étapes
+> suivantes. `T1` ajoute le test qui le **nommera** si quelqu'un le fait disparaître.
+
+**`T2` EST FAITE** le 13/09/2026, `DEC-579` : la page Framework en lecture, trois familles de cartes, `GET …/entities/{code}/framework`. **17 tests Python, 12 Vitest, 13 contrôles de stack** à travers Caddy avec une vraie session, témoin exécuté dans les deux sens.
+
+> **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
+
+**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T12`, recette et checklist `G6` — la dernière du lot.
+
+> **`QO-120` EST CLOSE PAR `T8`, ET ELLE ÉTAIT BLOQUANTE — MAIS LE RÉSULTAT LE PLUS UTILE N'EST PAS LA LISTE.** Le modèle §15.3 et le cahier §13 exigent tous deux « une **liste de protocoles autorisés** » sans la donner — zéro occurrence, mesurée. `DEC-587` tranche `https` seul, `http` refusé **sous son propre code** parce qu'une adresse juste à un `s` près mérite mieux que « protocole inconnu » (§7.25). **Et la mesure a montré qu'une liste de protocoles NE SUFFIT PAS** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte** — c'est le cinquième refus, et le seul qu'une lecture littérale de la phrase du corpus aurait omis. La règle vit à **deux étages** : la contrainte `ck_internal_link_url_https` de la migration `0019` est le **plancher**, que trois écrivains futurs déjà nommés au corpus ne peuvent pas contourner ; le service est le **refus exact**, qui distingue cinq causes et exige l'hôte.
+
+> **ET `T8` N'A ÉCRIT AUCUNE LIGNE POUR LA « PRÉSENTATION DE L'ENTITÉ » — C'EST UN RÉSULTAT, PAS UN MANQUE.** Le §13 lui donne une grille **identique cellule par cellule** à « Créer un contenu général » ; le cahier la situe dans la page d'accueil, donc c'est une page `HOME` ; et `HOME` tombe **par soustraction** dans `TYPES_SANS_PORTEE_LOCALE`, donc dans le régime des rôles de portée entité. `T6` la crée et l'écrit, `T7` la publie. **Deux tests le mesurent** au lieu de l'affirmer, et ils échoueront si un lot ultérieur donne une portée locale à `HOME`. **`QO-123` est ouverte** : `icon_reference` n'a aucun vocabulaire dans le corpus — même classe que `QO-121`, non bloquante avant `T10`.
+
+> **`ECART-063` EST CLOS PAR `T7`, ET IL L'EST PAR LA MESURE.** Il annonçait deux grilles divergentes pour « Archiver un contenu ». **La légende §4 ne définit pas `Périmètre`** — dix valeurs y figurent, pas celle-là — **mais le §3 le définit**, dans une colonne intitulée « Périmètre principal », où l'`ESM` a « **ensemble de son entité** », soit mot pour mot la définition de `Entité`. **Cinq rôles sur six concordaient donc déjà**, et la sixième cellule — celle du `DSM` — **n'est pas exprimable** : son périmètre est un ensemble de **personnes**, et `content_page` ne porte aucune colonne qui rattache une page à un DSM. **`ECART-062` reste ouvert** et relève de Léa avant `T9` ; **`ECART-064` est ouvert par `T7`** — le §18.1 exige un motif pour toute intervention d'un super-administrateur dans une entité, et **aucune route du dépôt n'en demande un**.
+
+> **`T6` A TROUVÉ UN DÉFAUT DANS SON PROPRE OUTIL DE MESURE, ET C'EST SA LEÇON LA PLUS TRANSFÉRABLE.** Sa campagne de témoins retire quinze filtres un par un ; elle en annonçait **cinq** muets, et trois de ces cinq exécutaient en réalité le **bytecode d'une variante précédente** — CPython invalide un `.pyc` sur le couple `(mtime tronqué à la seconde, taille)`, et quatre variantes pesaient **exactement 13 487 octets**. « 0 échec » était la **même observation** pour « ce filtre ne travaille pas » et « ce filtre n'a jamais été retiré ». Parade `PYTHONDONTWRITEBYTECODE=1`, **mesurée avant d'être appliquée**, et la campagne relancée a révélé **deux vrais trous** que la première passe noyait. `CLAUDE.md` §7.44.
+
+> **`T5` A OUVERT `QO-121`, ET C'EST LA RÈGLE §6.5 APPLIQUÉE À LA LETTRE.** Le §15.2 dit qu'un bloc porte « des **champs structurés** ; un `payload_json` **validé par type lorsque nécessaire** » — et **le corpus n'en nomme aucun**, mesuré. En inventer un schéma aurait coûté une migration **et** un changement de contrat sur onze types. Le contenu est donc servi comme une **donnée opaque**, et ce qui est tenu est la seule chose que le corpus écrit — quatre fois : « aucun HTML arbitraire n'est stocké ou exécuté ». **Tenu par la structure, pas par un filtre** : un filtre textuel serait une heuristique, donc un défaut. **`QO-121` est bloquante pour `T10`**, les écrans d'édition, qui auront besoin de noms de champs.
+
+> **`T4` A RENVERSÉ UNE PRÉVISION DE LA FICHE, ET C'EST LE §7.41.** Le §8 de `fiche-lot-6.md` annonçait que `T4` poserait le **déclencheur** du comptage borné « un à trois responsables actifs ». Deux choses l'ont démentie : le critère de `MVP-L06-US003` dit « **sont affichés** », et la borne ne mord « lorsqu'il est publié » alors qu'**aucune route n'écrit dans `content_page`** — le déclencheur n'aurait eu **aucun écrivain**. Il va à `T7` (`DEC-583`), et `T4` fait mieux : **son décor produit ce que la borne interdit**, un bureau publié à zéro responsable et un autre à quatre, et exige que la lecture les rende tels quels.
+
+> **`T3` A IMPOSÉ UN DÉPLACEMENT, ET C'EST UN IMPORT CIRCULAIRE QUI L'A DIT.** Les trois tailles du §18.2 vivaient dans `app/people/trombinoscope.py`. `T3` en est le second consommateur, et `people` importe **déjà** `app.organization.modeles` : l'import inverse fermait le cycle. Elles sont donc dans **`app/shared/pagination.py`** — *un fait du cahier se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Les 36 tests du trombinoscope passent inchangés.
+
+> **ET DEUX PULL REQUESTS HORS NUMÉROTATION ONT ÉTÉ LIVRÉES** : `DEC-580`, le garde-fou du paramètre lié, après quatre diagnostics de la même classe ; et `DEC-581`, la montée de l'image de base avec un correctif `perl-base` **épinglé** — la porte d'`images.yml` est verte, et le tag `v0.5.0` a désormais ses trois images.
+
+**Trois questions attendent Léa** : `QO-119`, le vocabulaire des blocs — `T1` en pose **onze**, la
+lecture la plus large — `QO-121`, les champs de `payload_json`, et `QO-123`, le vocabulaire de
+`icon_reference`. **`QO-120` est close** par `DEC-587`.
+
+> **DEUX DÉCISIONS SONT PRISES AVANT `T1`, ET ELLES LA COMMANDENT.** `DEC-576` — la publication d'un
+> bureau est portée par sa **page de contenu**, jamais par la table `office` : cela clôt `ECART-031`
+> **et** `ECART-059`, qui portaient sur la même table et la même absence. `DEC-577` — les types de
+> blocs sont l'**union** des deux listes du corpus, chacun rattaché au document qui le nomme, et
+> **`QO-119`** porte le vocabulaire à Léa.
+>
+> **`MVP-L06-US004` est découpée en TROIS** — lire, écrire, afficher — parce qu'elle est la seule
+> `XL` du lot et que trois stories en dépendent. Et **quatre des sept critères de sortie sont
+> négatifs**, si bien que chacun reçoit son **témoin positif dans la même sous-étape** : c'est la
+> leçon `CLAUDE.md` §7.39, appliquée **au découpage** cette fois, et non après coup.
+
+**Traçabilité GitHub :** épic `#145`, jalon `G6`, stories `#146` à `#152` — créées le 13/09/2026.
+
+---
+
+## 12. Avancement du LOT 5 — **lot VERROUILLÉ**, porte `G5` franchie
 
 **Ouvert par Jonathan le 24 août 2026 (`DEC-558`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-5.md`](operations/fiche-lot-5.md) — 8 stories, **sept** critères de sortie
@@ -282,10 +341,19 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 > séparément, et le motif est mesurable — **le critère « l'originale n'est jamais servie » serait
 > parfaitement satisfait par une route qui ne sert RIEN**. Nouvelle leçon `CLAUDE.md` §7.39.
 
-**LES ONZE SOUS-ÉTAPES DU LOT 5 SONT TERMINÉES.** Le lot attend sa porte `G5` —
-[`checklist-validation-G5.md`](operations/checklist-validation-G5.md), décision `DEC-574`, prise
-par Jonathan. `T11` a été livrée en **deux** pull requests (`DEC-572`) : la lecture — fiche et
-historique — puis les deux actions du cycle de vie.
+**LES ONZE SOUS-ÉTAPES DU LOT 5 SONT TERMINÉES, ET LA PORTE `G5` EST FRANCHIE** le **13/09/2026**,
+décision `DEC-574`, tag **`v0.5.0`** posé sur `14b2bd1` — arbre **vérifié identique** à celui de
+`develop`, `develop` **ancêtre** de `main`, et **deux** parents au commit.
+[`checklist-validation-G5.md`](operations/checklist-validation-G5.md). `T11` a été livrée en **deux**
+pull requests (`DEC-572`) : la lecture — fiche et historique — puis les deux actions du cycle de vie.
+
+> **SIX STORIES SUR HUIT SONT FERMÉES, ET LES DEUX QUI RESTENT NE SONT PAS UN OUBLI.** `#120` —
+> `MVP-L05-US005` — porte un critère « **retrait possible** » qui **n'est pas tenu** : la lecture
+> honore le retrait, mais **aucune route ne retire**, mesuré le 13/09/2026. `#121` —
+> `MVP-L05-US006` — a une API complète depuis `T7` et **aucun écran ne l'appelle**, si bien que
+> l'acteur que la story nomme ne peut pas accomplir le geste. **Un critère d'acceptation non tenu
+> ne se referme pas** : les refermer ferait croire acquis ce que le §7 de la checklist nomme en
+> premier.
 
 > **`ECART-012` EST MAINTENANT À L'ÉCRAN, ET IL ATTEND TOUJOURS LÉA.** Le trombinoscope de `T10`
 > affiche « En intercontrat » pour une catégorie `dg`, exactement ce que la fiche §8.1 annonçait

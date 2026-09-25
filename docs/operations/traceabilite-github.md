@@ -159,15 +159,25 @@ Chemin dans l'interface : `Settings` → `Branches` → `Add branch protection r
 ## 6. État de la mise en place
 
 Au 27 juillet 2026, sous-étape `T0` du LOT 1. `ECART-010` **clos**, `QO-107` et `QO-108`
-**closes**. **État des issues remesuré le 7 septembre 2026**, `T5` du LOT 5.
+**closes**. **État des issues remesuré le 13 septembre 2026**, `T1` du LOT 6.
+
+**À la porte `G5`, franchie le 13/09/2026 :** six des huit stories du LOT 5 ont été refermées —
+`#116`, `#117`, `#118`, `#119`, `#122`, `#123` — chacune avec un commentaire cochant ses critères
+d'acceptation et leurs preuves, ce que le backlog §11 exige. **`#120`, `#121` et l'épic `#115`
+restent OUVERTES**, et ce n'est pas un oubli : `US005` porte un critère « retrait possible » qui
+n'est pas tenu, et `US006` a une API complète qu'aucun écran n'appelle. **Un critère d'acceptation
+non tenu ne se referme pas.**
+
+**Le LOT 6 a reçu sa traçabilité le 13/09/2026** : épic `#145`, stories `#146` à `#152`, jalon `G6`.
+Les huit corps ont été **engendrés depuis le backlog** et non transcrits — §6.4.
 
 > **LES NOMBRES CI-DESSOUS SE DÉRIVENT, ET LA COMMANDE FAIT FOI.** Ce tableau a annoncé
 > « épics et stories des LOTS 2 à 14 : **non créés** » pendant **quatre lots** — classe
 > `ECART-021`.
 >
 > ```bash
-> ~/.local/bin/gh issue list --state all  --limit 300 --json number --jq 'length'   # 44
-> ~/.local/bin/gh issue list --state open --limit 300 --json number --jq 'length'   #  9
+> ~/.local/bin/gh issue list --state all  --limit 300 --json number --jq 'length'   # 52
+> ~/.local/bin/gh issue list --state open --limit 300 --json number --jq 'length'   # 11
 > ```
 
 | Élément | État | Contrôle |

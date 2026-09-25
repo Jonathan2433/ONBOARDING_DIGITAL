@@ -244,6 +244,14 @@ la session s'ouvre, toutes les routes répondent. Les **huit** écrans du LOT 3 
 §17.5 énumère, et le changement de mot de passe **n'y est pas**. `DEC-527` affirme le contraire de ce
 qui est. Deux options nommées au registre, à instruire au **LOT 13**.
 
+> **CORRECTION DATÉE DU 14/09/2026 — CE PARAGRAPHE NOMME LA MAUVAISE CAUSE, ET IL N'EST PAS RÉÉCRIT.**
+> Le relevé d'une porte franchie se corrige, il ne se réécrit pas. La mesure du 13/09/2026 sur le run
+> réel donne `CVE-2026-13221` dans **`perl-base`**, `CRITICAL`, sur **`api` et `worker`**, héritée de
+> `python:3.12-slim` — **ni le même avis, ni la même image, ni la même base** que ce qui est écrit
+> ci-dessous. La porte a été refermée le 14/09/2026 par `DEC-581`, en prenant un correctif que
+> **Debian** avait publié et que l'image amont n'avait pas reprise. Ce qui reste vrai ci-dessous : la
+> construction et les lancements passaient, et la porte d'`images.yml` n'est pas un contexte requis.
+
 **3. `images.yml` est rouge, et ce n'est pas bloquant.** Seule la tâche **Trivy** échoue, sur la
 **seule** image `web` : `CVE-2026-56854`, `CRITICAL` et **corrigeable**, héritée de la base
 `caddy:2.11-alpine`. **La porte fait exactement son travail** — `DEC-482` bloque sur `CRITICAL`

@@ -82,6 +82,24 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "media_variant",
         "media_asset",
     ): "test_une_variante_ne_peut_pas_pointer_l_actif_d_une_AUTRE_entite [test_medias.py]",
+    #  LOT 6, `T1` — les TROIS cles composites des tables editoriales. Leurs
+    #  tests vivent dans `test_contenus.py`, avec les autres refus de ces
+    #  tables : les dupliquer ici serait deux exemplaires d'une meme preuve.
+    #
+    #  **C'est ce garde-fou qui a exige le troisieme test.** J'avais pose trois
+    #  chemins et n'en eprouvais que deux ; il a echoue, et il a eu raison.
+    (
+        "content_page",
+        "circle",
+    ): "test_une_page_ne_peut_pas_pointer_le_cercle_d_une_AUTRE_entite [test_contenus.py]",
+    (
+        "content_page",
+        "office",
+    ): "test_une_page_ne_peut_pas_pointer_le_bureau_d_une_AUTRE_entite [test_contenus.py]",
+    (
+        "content_block",
+        "content_page",
+    ): "test_un_bloc_ne_peut_pas_pointer_la_page_d_une_AUTRE_entite [test_contenus.py]",
 }
 
 
@@ -230,10 +248,12 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     disparus = set(COUVERTURE) - reelles
     assert not manquants, f"cle(s) composite(s) SANS test de refus : {sorted(manquants)}"
     assert not disparus, f"test(s) portant sur une cle composite disparue : {sorted(disparus)}"
-    #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5.** Le nombre est ecrit, et c'est
-    #  delibere : sa mise a jour est ce qui force la decision. Une cle composite
-    #  ajoutee sans test ferait echouer ce test, et c'est son objet.
-    assert len(reelles) == len(COUVERTURE) == 9, f"{len(reelles)} chemins, 9 attendus"
+    #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5, DOUZE DEPUIS `T1` DU LOT 6.**
+    #  Le nombre est ecrit, et c'est delibere : sa mise a jour est ce qui force la
+    #  decision. Une cle composite ajoutee sans test ferait echouer ce test, et
+    #  c'est son objet -- il l'a fait le 13/09/2026, sur les trois tables
+    #  editoriales, et j'avais alors pose trois chemins pour deux tests.
+    assert len(reelles) == len(COUVERTURE) == 12, f"{len(reelles)} chemins, 12 attendus"
 
 
 # ---------------------------------------------------------------------------

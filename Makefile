@@ -215,7 +215,8 @@ ETIQUETTE_LOCALE := onboarding-local
         images-pin separations-check \
         domaines-provision magic-link-check admin-local admin-check \
         sessions-check sessions-temoin csrf-check \
-        up-recette down-recette stack-check-recette recette-check
+        up-recette down-recette stack-check-recette recette-check \
+        demo-init demo-check demo-info demo-reset
 
 # ---------------------------------------------------------------------------
 
@@ -398,6 +399,12 @@ docs-temoin: ## Temoin negatif du controle de documentation et de la passation
 # UNE -- trente-huit invocations. Une cible ajoutee a `make check` n'entre donc
 # PAS dans l'integration continue. C'est le defaut T1-5 : j'avais mesure sur un
 # grep qui matchait `make check` dans un COMMENTAIRE du workflow.
+parametres-check: ## Verifier qu'aucun parametre lie ne sert deux types de colonne differents
+	@$(UV) run python infra/scripts/verifier-parametres-lies.py
+
+parametres-temoin: ## Temoin du controle des parametres lies — il doit MORDRE et se TAIRE
+	@$(UV) run python infra/scripts/verifier-parametres-lies.py --temoin
+
 sources-check: ## Verifier qu'aucun fichier source du disque n'est ignore par git
 	@python3 infra/scripts/verifier-sources-suivies.py
 
@@ -412,7 +419,7 @@ audit: ## Auditer les dependances Python (pip-audit) et JavaScript (pnpm audit)
 	@echo "==> pnpm audit"
 	$(PNPM) audit
 
-check: versions tree icloud-verify docs-check sources-check sources-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
+check: versions tree icloud-verify docs-check sources-check sources-temoin parametres-check parametres-temoin images-check recette-modele-check sessions-temoin cadre-check cadre-temoin format-check lint typecheck test ## Tout verifier
 	@echo
 	@echo "  Tous les controles sont passes."
 
@@ -962,6 +969,50 @@ jeu-de-donnees: ## Ensemencer la base avec le jeu fictif (25 entites, 5000 profi
 	@uv run python infra/scripts/engendrer-jeu-de-donnees.py \
 		--env-file "$(ENV_FILE)" $(ARGS)
 
+# ---------------------------------------------------------------------------
+#  Demonstration client — exclusivement sur le developpement local.
+#
+#  Le jeu volumetrique et le decor narratif ont deux responsabilites distinctes :
+#  `jeu-de-donnees` fournit la masse et les cas limites ; le second script rend
+#  huit profils stables et racontables sans modifier la fabrique de recette.
+# ---------------------------------------------------------------------------
+
+demo-init: ## Preparer la demo client complete sur une base locale vide
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-init est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(MAKE) --no-print-directory up ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory migrate ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory jeu-de-donnees ENVIRONNEMENT=dev
+	@$(UV) run python infra/scripts/preparer-demo-client.py enrichir --env-file "$(ENV_FILE)"
+	@$(MAKE) --no-print-directory code-refresh ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory code-check ENVIRONNEMENT=dev | tail -1
+	@$(MAKE) --no-print-directory admin-local \
+		ADRESSE=demo.client@exemple.test REINITIALISER=1 ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory demo-check ENVIRONNEMENT=dev
+	@$(MAKE) --no-print-directory demo-info ENVIRONNEMENT=dev
+
+demo-check: ## Verifier les personas, le compte et les invariants de la demo
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-check est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(UV) run python infra/scripts/preparer-demo-client.py verifier --env-file "$(ENV_FILE)"
+
+demo-info: ## Afficher les adresses et le parcours de la demonstration client
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-info est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@echo
+	@echo "  Demonstration client"
+	@echo "    connexion      https://$${CADDY_SITE_APP:-app.onboarding.localhost}/connexion/administrateur"
+	@echo "    compte         demo.client@exemple.test"
+	@echo "    portail        https://$${CADDY_SITE_APP:-app.onboarding.localhost}/"
+	@echo "    Bordeaux       https://$${CADDY_SITE_APP:-app.onboarding.localhost}/entites/BORDEA00/trombinoscope"
+	@echo "    recherche      Alice, puis alice"
+	@echo "    profil vedette Alice Martin"
+	@echo
+	@echo "  Le mot de passe n'est jamais stocke. La cible demo-init l'affiche et le renouvelle."
+	@echo "  Conducteur : docs/demo/guide-presentation-client.md"
+
+demo-reset: ## Vider uniquement les donnees applicatives de la demo locale
+	@test "$(ENVIRONNEMENT)" = "dev" || { echo "  REFUS    demo-reset est reserve a ENVIRONNEMENT=dev"; exit 1; }
+	@$(UV) run python infra/scripts/preparer-demo-client.py reinitialiser \
+		--env-file "$(ENV_FILE)" --confirmation EFFACER-LA-DEMO
+
 migrate-status: ## Afficher la revision appliquee
 	@$(DC) exec -T --workdir /app/apps/api api alembic current
 
@@ -1108,6 +1159,13 @@ cadre-temoin: ## Eprouver `cadre-check` lui-meme : il DOIT echouer
 	echo "             un composant exporte qu'aucun ecran n'emploie (critere T11)"; \
 	echo; \
 	echo "  --> le controle discrimine"
+
+framework-check: ## Prouver la page Framework : trois familles de cartes (LOT 6, US001)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-framework.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
 entites-check: ## Prouver que la page nationale ne propose QUE des entites actives (LOT 4, US001)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
