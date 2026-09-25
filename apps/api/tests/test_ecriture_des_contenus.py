@@ -31,6 +31,8 @@ CE QUE LA SUITE PROUVE DE LA GRILLE, ET POURQUOI ELLE EST NEUVE
 from __future__ import annotations
 
 import datetime as dt
+import json
+import pathlib
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -41,6 +43,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.configuration.settings import Parametres
+from app.content.cycle_de_vie import archiver_une_page, publier_une_page
 from app.content.ecriture import (
     CODE_RATTACHEMENT_REQUIS,
     CODE_RESSOURCE_INTROUVABLE,
@@ -55,7 +58,11 @@ from app.content.ecriture import (
     remplacer_le_contenu,
 )
 from app.content.modeles import TYPES_DE_BLOC, TYPES_DE_PAGE, EtatDePage, TypeDePage
-from app.content.pages import lire_la_page_de_contenu
+from app.content.pages import (
+    lire_la_page_de_contenu,
+    lire_une_page_pour_edition,
+    lister_les_pages_de_l_entite,
+)
 from app.content.perimetre import (
     PORTEES_LOCALES,
     ROLES_D_ECRITURE_EDITORIALE,
@@ -1479,3 +1486,246 @@ def test_deux_filtres_du_module_sont_REDONDANTS_et_la_BASE_est_ce_qui_protege(
     ).scalar_one()
     assert "(circle_id, entity_id)" in composite
     assert "circle(id, entity_id)" in composite
+
+
+# ============================================================================
+#  9. Le manifeste, T10 -- un trou depuis T6, ferme par DEC-492
+# ============================================================================
+MANIFESTE_DU_CONTRAT = "packages/contracts/src/contrat-api.json"
+
+
+def test_le_MANIFESTE_expose_ENFIN_les_deux_grilles_d_ecriture() -> None:
+    """**LA DISCIPLINE `DEC-492` N'AVAIT PAS ETE SUIVIE ICI, ET C'EST UN TROU,
+    PAS UN REPORT.**
+
+    `rolesRestaurationDUnContenu` (`T7`) et `rolesGestionDesLiensInternes`
+    (`T8`) sont exposees dans le manifeste des leur sous-etape, en anticipation
+    d'un ecran qui n'existait pas encore -- c'est la doctrine de `DEC-492` :
+    une seule source, lue par TypeScript ET par Python. `T6` ne l'avait pas
+    fait pour SES DEUX grilles, et `T10` n'avait donc aucun moyen cote client
+    de savoir qui peut creer une page ou en modifier les blocs.
+
+    **LES DEUX CLES NE SONT PAS EQUIVALENTES, ET LE TEST LE PROUVE SUR LA MEME
+    ASSERTION.** `rolesCreationDeContenu` vaut `ROLES_DE_CREATION` -- la ligne
+    UNIQUE de creation du §13, sans `BOOST` ni `OFFICE`. `rolesEcritureEditoriale`
+    vaut `ROLES_D_ECRITURE_EDITORIALE`, strictement PLUS LARGE : elle y ajoute
+    les deux roles de portee locale, parce qu'un Booster ne peut pas CREER une
+    page mais peut MODIFIER celle de son cercle. Confondre les deux cles aurait
+    soit retire un droit de modification a un Booster, soit accorde a tort un
+    droit de creation.
+    """
+    manifeste = json.loads(
+        (pathlib.Path(__file__).resolve().parents[3] / MANIFESTE_DU_CONTRAT).read_text(
+            encoding="utf-8"
+        )
+    )
+
+    codes_creation = manifeste["rolesCreationDeContenu"]
+    assert codes_creation, "le manifeste ne declare aucun role de creation de contenu"
+    assert {RoleDeLaMatrice(code) for code in codes_creation} == ROLES_DE_CREATION
+
+    codes_ecriture = manifeste["rolesEcritureEditoriale"]
+    assert codes_ecriture, "le manifeste ne declare aucun role d'ecriture editoriale"
+    assert {RoleDeLaMatrice(code) for code in codes_ecriture} == ROLES_D_ECRITURE_EDITORIALE
+
+    #  La difference elle-meme est ce que l'ecran doit lire pour distinguer
+    #  "je peux creer" de "je peux seulement modifier ce qui existe deja".
+    assert ROLES_DE_CREATION < ROLES_D_ECRITURE_EDITORIALE, "strictement incluse"
+
+    #  **DEUX CLES DISTINCTES, JAMAIS FUSIONNEES** -- meme motif que les
+    #  grilles voisines du lot (§7.32) : les confondre ferait bouger la
+    #  creation quand seule la portee locale change, en silence.
+    assert "rolesCreationDeContenu" in manifeste
+    assert "rolesEcritureEditoriale" in manifeste
+    assert manifeste["rolesCreationDeContenu"] != manifeste["rolesEcritureEditoriale"]
+
+
+# ============================================================================
+#  10. La lecture pour l'editeur — T10, le trou comble de la section 9
+# ============================================================================
+@pytest.mark.integration
+def test_la_LISTE_rend_les_TROIS_etats_et_ISOLE_l_entite(cx: Connection) -> None:
+    """**SANS CE TEST, LA LISTE POURRAIT NE SERVIR QUE LE PUBLIE**, exactement le
+    defaut que cette route existe pour corriger. Elle doit rendre un brouillon,
+    un publie ET un archive de la MEME entite -- et RIEN d'une AUTRE.
+    """
+    entite = _entite(cx, "L1")
+    autre_entite = _entite(cx, "L2")
+    acteur = _personne(cx, "auteur")
+
+    brouillon = _page(cx, entite, acteur, type_de_page="HOME", slug="brouillon")
+    a_publier = _page(cx, entite, acteur, type_de_page="LEGAL", slug="a-publier")
+    publier_une_page(
+        cx, entite=entite, page=a_publier, acteur=acteur, version_attendue=1, instant=DEMAIN
+    )
+    a_archiver = _page(cx, entite, acteur, type_de_page="LEGAL", slug="a-archiver")
+    archiver_une_page(
+        cx, entite=entite, page=a_archiver, acteur=acteur, version_attendue=1, instant=DEMAIN
+    )
+    _page(cx, autre_entite, _personne(cx, "ailleurs"), type_de_page="HOME", slug="brouillon")
+
+    pages = {p.identifiant: p for p in lister_les_pages_de_l_entite(cx, entite=entite)}
+
+    assert len(pages) == 3, "les trois pages de CETTE entite, et pas une de plus"
+    assert pages[brouillon].etat == EtatDePage.DRAFT.value
+    assert pages[a_publier].etat == EtatDePage.PUBLISHED.value
+    assert pages[a_archiver].etat == EtatDePage.ARCHIVED.value
+    #  L'isolement n'est pas verifie par un compte : une page de l'AUTRE entite
+    #  qui porterait le meme identifiant serait un accident statistique. Il est
+    #  verifie en verifiant qu'aucun identifiant de l'autre entite n'apparait.
+    autres = {p.identifiant for p in lister_les_pages_de_l_entite(cx, entite=autre_entite)}
+    assert not (autres & pages.keys()), "aucune page ne doit apparaitre dans les deux listes"
+
+
+@pytest.mark.integration
+def test_la_LISTE_porte_circle_id_et_office_id_pour_que_l_ecran_s_y_retrouve(
+    cx: Connection,
+) -> None:
+    """C'est ce que l'ecran confronte a l'identifiant du cercle deja consulte —
+    sans cette colonne, aucun moyen de savoir QUELLE page est celle d'un cercle.
+    """
+    entite = _entite(cx, "L3")
+    acteur = _personne(cx, "auteur")
+    cercle = _cercle(cx, entite, "C1")
+    page = _page(cx, entite, acteur, type_de_page="CIRCLE", slug="mon-cercle", cercle="C1")
+
+    pages = {p.identifiant: p for p in lister_les_pages_de_l_entite(cx, entite=entite)}
+
+    assert pages[page].circle_id == cercle
+    assert pages[page].office_id is None
+
+
+@pytest.mark.integration
+def test_la_LECTURE_D_EDITION_sert_le_BROUILLON_que_T5_refuse(cx: Connection) -> None:
+    """**LE COUPLE QUI PROUVE LA RAISON D'ETRE DE CETTE ROUTE.** La meme page,
+    au meme instant : `lire_la_page_de_contenu` (T5) la refuse parce qu'elle
+    n'est pas publiee ; `lire_une_page_pour_edition` (T10) la sert, PARCE
+    qu'elle ne l'est pas encore — c'est l'ecran d'edition qui en a besoin.
+    """
+    entite = _entite(cx, "L4")
+    acteur = _personne(cx, "auteur")
+    page = _page(cx, entite, acteur, type_de_page="HOME", slug="en-cours")
+
+    assert lire_la_page_de_contenu(cx, entite=entite, type_de_page="HOME", slug="en-cours") is None
+
+    pour_edition = lire_une_page_pour_edition(cx, entite=entite, page=page)
+    assert pour_edition is not None
+    assert pour_edition.etat == EtatDePage.DRAFT.value
+    assert pour_edition.version == 1
+    assert pour_edition.blocs == ()
+
+
+@pytest.mark.integration
+def test_la_LECTURE_D_EDITION_sert_AUSSI_l_ARCHIVE(cx: Connection) -> None:
+    """Sans quoi retrouver une page archivee pour la restaurer serait impossible
+    — exactement le second motif du docstring de la route.
+    """
+    entite = _entite(cx, "L5")
+    acteur = _personne(cx, "auteur")
+    page = _page(cx, entite, acteur, type_de_page="LEGAL", slug="ancienne")
+    archiver_une_page(
+        cx, entite=entite, page=page, acteur=acteur, version_attendue=1, instant=DEMAIN
+    )
+
+    pour_edition = lire_une_page_pour_edition(cx, entite=entite, page=page)
+    assert pour_edition is not None
+    assert pour_edition.etat == EtatDePage.ARCHIVED.value
+
+
+@pytest.mark.integration
+def test_la_LECTURE_D_EDITION_rend_None_pour_une_page_d_une_AUTRE_entite(cx: Connection) -> None:
+    """La cle composite `(id, entity_id)` du §25.3 rend ce filtre aussi sur
+    qu'une jointure explicite — meme garantie que la lecture publique de `T5`.
+    """
+    entite = _entite(cx, "L6")
+    autre_entite = _entite(cx, "L7")
+    acteur = _personne(cx, "auteur")
+    page = _page(cx, entite, acteur, type_de_page="HOME", slug="accueil")
+
+    assert lire_une_page_pour_edition(cx, entite=autre_entite, page=page) is None
+
+
+@pytest.mark.integration
+def test_la_VERSION_lue_pour_edition_PERMET_une_ecriture_qui_S_APPUIE_dessus(
+    cx: Connection,
+) -> None:
+    """**LE ROND-POINT COMPLET, ET C'EST LE CRITERE REEL DE LA ROUTE** : un
+    editeur qui recharge doit pouvoir relire SA version, puis ecrire avec elle
+    sans jamais tomber sur `version_obsolete`.
+    """
+    entite = _entite(cx, "L8")
+    acteur = _personne(cx, "auteur")
+    page = _page(cx, entite, acteur, type_de_page="HOME", slug="accueil")
+
+    ecrit = remplacer_le_contenu(
+        cx,
+        entite=entite,
+        page=page,
+        acteur=acteur,
+        version_attendue=1,
+        titre="Premier jet",
+        blocs=(BlocDemande(type_de_bloc="TITLE", contenu={"texte": "Bonjour"}),),
+        instant=DEMAIN,
+    )
+    assert ecrit.version == 2
+
+    pour_edition = lire_une_page_pour_edition(cx, entite=entite, page=page)
+    assert pour_edition is not None
+    assert pour_edition.version == 2, "la lecture d'edition doit refleter le dernier ecrit"
+    assert len(pour_edition.blocs) == 1
+
+    #  La version RELUE reussit ; l'ANCIENNE, elle, doit toujours echouer —
+    #  sans quoi cette route inviterait a un ecrasement silencieux (§18.4).
+    reecrit = remplacer_le_contenu(
+        cx,
+        entite=entite,
+        page=page,
+        acteur=acteur,
+        version_attendue=pour_edition.version,
+        titre="Second jet",
+        blocs=(),
+        instant=DEMAIN,
+    )
+    assert reecrit.version == 3
+
+    with pytest.raises(ErreurApplicative) as erreur:
+        remplacer_le_contenu(
+            cx,
+            entite=entite,
+            page=page,
+            acteur=acteur,
+            version_attendue=1,
+            titre="Ecrasement tente",
+            blocs=(),
+            instant=DEMAIN,
+        )
+    assert erreur.value.code == CODE_VERSION_OBSOLETE
+
+
+@pytest.mark.integration
+def test_le_PERIMETRE_d_une_page_ARCHIVEE_n_est_PAS_l_ensemble_vide(cx: Connection) -> None:
+    """**REGRESSION MESUREE EN STACK, PAS EN UNITAIRE.** `make framework-check`
+
+    a fait tomber ce defaut au premier passage reel : la route `T10` refusait
+    `ActionEditoriale.MODIFIER not in perimetre.actions`, et
+    `_actions_selon_l_etat` ne rend jamais `MODIFIER` sur une page ARCHIVEE --
+    seulement `RESTAURER`. La route qui existe precisement pour retrouver une
+    page archivee la refusait donc systematiquement, 403, a qui avait pourtant
+    tous les droits.
+
+    **LE TEST EXACT N'EST PAS "MODIFIER EST ABSENT" -- CE SERAIT LE SYMPTOME.**
+    Il est que l'ensemble n'est PAS VIDE : c'est `not perimetre.actions` que la
+    route doit tester, jamais l'absence d'une action precise.
+    """
+    entite = _entite(cx, "L9")
+    acteur = _personne(cx, "auteur")
+    page = _page(cx, entite, acteur, type_de_page="LEGAL", slug="archivee-t10")
+    archiver_une_page(
+        cx, entite=entite, page=page, acteur=acteur, version_attendue=1, instant=DEMAIN
+    )
+
+    perimetre = _perimetre(cx, entite=entite, acteur=acteur, page=page, roles={RoleDeLaMatrice.ESM})
+
+    assert perimetre == frozenset({ActionEditoriale.RESTAURER})
+    assert perimetre, "l'ensemble n'est PAS vide : la route de gestion doit donc servir cette page"
+    assert ActionEditoriale.MODIFIER not in perimetre

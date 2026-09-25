@@ -26,10 +26,10 @@ import { Link, useParams } from 'react-router';
 
 import { couleurDuCercle } from '../affichage';
 import { lireLeCercle } from '../api/organisation';
-import { cheminDeRubrique } from '../routes';
+import { cheminDeRubrique, cheminEditionCercle } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
-import { TAILLE_PAR_DEFAUT, type PageDuCercle } from '@onboarding/contracts';
+import { peutEditerUnContenu, TAILLE_PAR_DEFAUT, type PageDuCercle } from '@onboarding/contracts';
 import { Alerte } from '@onboarding/ui';
 
 const TAILLE = TAILLE_PAR_DEFAUT;
@@ -45,7 +45,7 @@ type Etat =
   | { readonly phase: 'erreur'; readonly statut: number };
 
 export function PageCercle(): JSX.Element {
-  const { entite } = useEntiteConsultee();
+  const { entite, permissions } = useEntiteConsultee();
   const { codeCercle } = useParams<{ codeCercle: string }>();
   const [page, setPage] = useState(1);
   const [etat, setEtat] = useState<Etat>({ phase: 'chargement' });
@@ -75,11 +75,26 @@ export function PageCercle(): JSX.Element {
     };
   }, [entite.code, codeCercle, page]);
 
+  const roles = permissions?.roles ?? null;
+  //  **REFUS PAR DEFAUT, §20.1** — pas de lien pour une action que l'API
+  //  refuserait. `T10` : la portee LOCALE (SON cercle) reste resolue par
+  //  l'API seule, ce predicat ne fait que ne pas PROPOSER un lien inutile.
+  const peutEditer = roles !== null && peutEditerUnContenu(roles);
+
   const retour = (
     <p className="cercle-retour">
       <Link className="app-lien" to={cheminDeRubrique(entite.code, 'framework')}>
         Retour au Framework
       </Link>
+      {codeCercle !== undefined && peutEditer ? (
+        <>
+          {' '}
+          ·{' '}
+          <Link className="app-lien" to={cheminEditionCercle(entite.code, codeCercle)}>
+            Editer ce cercle
+          </Link>
+        </>
+      ) : null}
     </p>
   );
 

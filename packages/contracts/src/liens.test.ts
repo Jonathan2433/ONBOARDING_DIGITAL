@@ -18,13 +18,20 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  cheminCreationDeLien,
+  cheminGestionDesLiens,
   cheminLiensInternes,
+  cheminModificationDeLien,
+  cheminOrdreDesLiens,
   CODES_LIENS_INTERNES,
   GABARIT_CHEMIN_LIENS_INTERNES,
+  peutGererLesLiensInternes,
   PROTOCOLES_DE_LIEN_AUTORISES,
+  ROLES_GESTION_DES_LIENS_INTERNES,
   TYPES_DE_LIEN_NOMMES,
   urlEstServable,
   validerLesLiensInternes,
+  validerUnLienInterneServi,
 } from './liens.js';
 
 function lien(modifications: Record<string, unknown> = {}): Record<string, unknown> {
@@ -192,5 +199,34 @@ describe('validerLesLiensInternes', () => {
       charge({ liens: [lien({ url: 'https://Hub.Exemple.TEST/Chemin' })] }),
     );
     expect(servi.liens[0]?.url).toBe('https://Hub.Exemple.TEST/Chemin');
+  });
+});
+
+describe('la gestion des liens — T10, lue du manifeste depuis T8', () => {
+  it('les roles sont les TROIS de la creation de contenu, declares separement', () => {
+    expect([...ROLES_GESTION_DES_LIENS_INTERNES].sort()).toEqual(['ADM-E', 'ESM', 'SUPER']);
+  });
+
+  it.each(['EMP', 'NEW', 'DSM', 'BOOST', 'OFFICE'])('« %s » ne se le voit PAS proposer', (role) => {
+    //  Le §19 n'a ni colonne DSM ni BOOST ni OFFICE — une ABSENCE de colonne,
+    //  et c'est le §13 qui les met a tiret (T8).
+    expect(peutGererLesLiensInternes([role])).toBe(false);
+  });
+
+  it('un ESM se le voit proposer', () => {
+    expect(peutGererLesLiensInternes(['ESM'])).toBe(true);
+  });
+
+  it('les quatre chemins d’ecriture, encodes', () => {
+    expect(cheminGestionDesLiens('BORDEAUX')).toBe('/api/v1/entities/BORDEAUX/liens/gestion');
+    expect(cheminCreationDeLien('BORDEAUX')).toBe('/api/v1/entities/BORDEAUX/liens');
+    expect(cheminOrdreDesLiens('BORDEAUX')).toBe('/api/v1/entities/BORDEAUX/liens/ordre');
+    expect(cheminModificationDeLien('BORDEAUX', 'l1')).toBe('/api/v1/entities/BORDEAUX/liens/l1');
+  });
+
+  it('validerUnLienInterneServi valide un OBJET seul, meme forme qu’une entree de liste', () => {
+    const servi = validerUnLienInterneServi(lien());
+    expect(servi.identifiant).toBe('l1');
+    expect(servi.actif).toBe(true);
   });
 });

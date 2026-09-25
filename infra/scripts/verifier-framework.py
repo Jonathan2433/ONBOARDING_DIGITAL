@@ -49,6 +49,11 @@ CHEMIN_CONTENU = "/api/v1/entities/{code}/pages/{page}/contenu"
 CHEMIN_PUBLICATION = "/api/v1/entities/{code}/pages/{page}/publication"
 CHEMIN_ARCHIVAGE = "/api/v1/entities/{code}/pages/{page}/archivage"
 CHEMIN_RESTAURATION = "/api/v1/entities/{code}/pages/{page}/restauration"
+#  `T10` — LA LECTURE POUR L'EDITEUR. Le trou que `T6` et `T7` n'avaient pas
+#  comble : la lecture de `T5` (`CHEMIN_PAGE`) ne sert que le PUBLIE, sans
+#  `version`. Ces deux routes servent TOUS les etats, avec elle.
+CHEMIN_PAGES_GESTION = "/api/v1/entities/{code}/pages/gestion"
+CHEMIN_PAGE_GESTION = "/api/v1/entities/{code}/pages/{page}/gestion"
 #  `T8` — les liens internes. **DEUX LECTURES, ET C'EST VOULU** : l'accueil ne
 #  sert que les liens ACTIFS, la gestion les sert tous. Un lien desactive qu'on
 #  ne pourrait plus voir serait un lien qu'on ne pourrait plus reactiver.
@@ -2163,6 +2168,160 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    sans role : ecritures={ecritures_sd}, lecture={lecture_sd}")
+
+        # ==================================================================
+        #
+        #  `T10` — LA LECTURE POUR L'EDITEUR
+        #
+        #    **UN TROU DEPUIS `T6`, PAS UN REPORT VOULU.** La lecture de `T5`
+        #    (controle 41) ne sert que le PUBLIE, sans `version` : un editeur
+        #    qui rechargeait son ecran en cours de redaction, ou revenait sur
+        #    un brouillon jamais publie, n'avait alors AUCUNE route pour
+        #    relire son propre travail. `page_t7` a deja traverse tout le
+        #    cycle du §13 -- aucune page neuve n'est necessaire ici.
+        #
+        # ==================================================================
+
+        # --- 69. SANS COOKIE, LES DEUX ROUTES RENDENT 401
+        controles += 1
+        sans_gestion = [
+            appeler(arguments.base, CHEMIN_PAGES_GESTION.format(code=code_actif), contexte).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_PAGE_GESTION.format(code=code_actif, page=page_t7),
+                contexte,
+            ).statut,
+        ]
+        if sans_gestion == [401, 401]:
+            print("    ok       sans cookie : 401 sur la liste ET sur le detail")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans cookie : {sans_gestion}")
+
+        # --- 70. LA LISTE REFLETE L'ETAT REEL — `page_t7` EST PUBLIEE, ET LE DIT
+        controles += 1
+        liste_gestion = appeler(
+            arguments.base, CHEMIN_PAGES_GESTION.format(code=code_actif), contexte, en_tetes=entetes
+        )
+        corps_liste = liste_gestion.json()
+        pages_listees = corps_liste.get("pages", []) if isinstance(corps_liste, dict) else []
+        trouvee_t7 = next((p for p in pages_listees if p.get("identifiant") == page_t7), None)
+        if (
+            liste_gestion.statut == 200
+            and trouvee_t7 is not None
+            and trouvee_t7.get("etat") == "published"
+            and trouvee_t7.get("version") == version
+        ):
+            print("    ok       la liste de gestion : 200, `page_t7` y figure `published`,")
+            print(f"             version {version} — le meme couple que la base")
+        else:
+            echecs += 1
+            print(f"    ECHEC    liste de gestion : {liste_gestion.statut}, trouvee={trouvee_t7!r}")
+
+        # --- 71. LE DETAIL SERT LES OCTETS, INJECTION COMPRISE, AVEC LA VERSION
+        controles += 1
+        detail_gestion = appeler(
+            arguments.base,
+            CHEMIN_PAGE_GESTION.format(code=code_actif, page=page_t7),
+            contexte,
+            en_tetes=entetes,
+        )
+        octets_detail = detail_gestion.corps
+        if (
+            detail_gestion.statut == 200
+            and INJECTION.encode("utf-8") in octets_detail
+            and b'"version":%d' % version in octets_detail
+        ):
+            print(f"    ok       le detail : 200, `version` a {version} DANS LES OCTETS, et la")
+            print("             charge d'injection de `T7` traverse intacte — memes octets que")
+            print("             la lecture publique, plus ce qu'elle ne porte pas")
+        else:
+            echecs += 1
+            print(f"    ECHEC    detail : {detail_gestion.statut}, {octets_detail[:200]!r}")
+
+        # --- 72. LE COUPLE CENTRAL : ARCHIVEE, LA PAGE RESTE LISIBLE ICI —
+        #         C'EST TOUTE LA RAISON D'ETRE DE CETTE SOUS-ETAPE
+        #
+        #  Sans ce controle, « sert tous les etats » serait une affirmation
+        #  jamais mise a l'epreuve : le detail pourrait tout aussi bien ne
+        #  servir que le publie, comme `T5`, et rien ici ne l'aurait vu.
+        controles += 1
+        archivage_t10 = appeler(
+            arguments.base,
+            chemin_archivage,
+            contexte,
+            charge={"version": version},
+            en_tetes=ecriture,
+        )
+        if archivage_t10.statut == 200:
+            version += 1
+        apres_archivage_t10 = appeler(
+            arguments.base,
+            CHEMIN_PAGE_GESTION.format(code=code_actif, page=page_t7),
+            contexte,
+            en_tetes=entetes,
+        )
+        corps_apres = apres_archivage_t10.json()
+        etat_apres = corps_apres.get("etat") if isinstance(corps_apres, dict) else None
+        toujours_publique = appeler(arguments.base, chemin_public, contexte, en_tetes=entetes)
+        if (
+            archivage_t10.statut == 200
+            and apres_archivage_t10.statut == 200
+            and etat_apres == "archived"
+            and toujours_publique.statut == 404
+        ):
+            print("    ok       ARCHIVEE, la page rend 404 en LECTURE PUBLIQUE et 200 `archived`")
+            print("             ICI — un editeur retrouve une page archivee pour la restaurer,")
+            print("             ce que la lecture de `T5` seule ne permettait pas")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    archivage={archivage_t10.statut}, "
+                f"detail={apres_archivage_t10.statut}/{etat_apres!r}, "
+                f"public={toujours_publique.statut}"
+            )
+
+        # --- 73. SANS ROLE EDITORIAL : 403 SUR LES DEUX ROUTES
+        controles += 1
+        sans_role_gestion = [
+            appeler(
+                arguments.base,
+                CHEMIN_PAGES_GESTION.format(code=code_actif),
+                contexte,
+                en_tetes=entetes_sd,
+            ).statut,
+            appeler(
+                arguments.base,
+                CHEMIN_PAGE_GESTION.format(code=code_actif, page=page_t7),
+                contexte,
+                en_tetes=entetes_sd,
+            ).statut,
+        ]
+        if sans_role_gestion == [403, 403]:
+            print("    ok       sans role editorial : 403 sur la liste ET sur le detail — la")
+            print("             meme garde que l'ecriture, `garde_d_ecriture`")
+        else:
+            echecs += 1
+            print(f"    ECHEC    sans role : {sans_role_gestion}")
+
+        # --- 74. LA MEME PAGE PAR LE CHEMIN D'UNE AUTRE ENTITE : 404
+        #
+        #  Meme motif que le controle 49 : l'entite du CHEMIN est resolue
+        #  avant tout perimetre, `code_brouillon` designant une entite non
+        #  active.
+        controles += 1
+        ailleurs_t10 = appeler(
+            arguments.base,
+            CHEMIN_PAGE_GESTION.format(code=code_brouillon, page=page_t7),
+            contexte,
+            en_tetes=entetes,
+        )
+        if ailleurs_t10.statut == 404:
+            print("    ok       la MEME page par le chemin d'une entite non active : 404 —")
+            print("             meme motif que l'ecriture (controle 49)")
+        else:
+            echecs += 1
+            print(f"    ECHEC    autre entite : {ailleurs_t10.statut}")
 
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**

@@ -5,13 +5,17 @@
  * 1. presentation de l'entite ; 2. Framework ; 3. arrivees recentes ;
  * 4. prochains evenements ; **5. liens internes** ».
  *
- * CE QUE CE MODULE PORTE, ET CE QU'IL NE PORTE PAS
+ * CE QUE CE MODULE PORTAIT, ET CE QU'IL PORTE DEPUIS `T10`
  *
- *   La **lecture** seule — le chemin de l'accueil, ses codes, la forme servie et
- *   le validateur. C'est le partage que le lot suit depuis `T2` : une sous-etape
- *   qui sert une LECTURE pose son module de contrat, celles qui servent une
- *   ECRITURE ne le font pas (`T6` et `T7` n'ont rien ajoute ici). Les ecrans de
- *   lecture sont `T9`, ceux d'edition `T10`.
+ *   Jusqu'a `T9`, la **lecture** seule — le chemin de l'accueil, ses codes, la
+ *   forme servie et le validateur. C'est le partage que le lot a suivi depuis
+ *   `T2` : une sous-etape qui sert une LECTURE pose son module de contrat,
+ *   celles qui servent une ECRITURE ne le font pas (`T6` et `T7` n'ont rien
+ *   ajoute ici). `T10`, l'ecran d'edition, AJOUTE la gestion — `/liens/gestion`,
+ *   creation, modification, reordonnancement — dans CE module plutot que dans
+ *   un second, precisement parce que ce docstring l'anticipait deja : « la
+ *   gestion vit au manifeste sous `rolesGestionDesLiensInternes`, et l'ecran
+ *   d'edition de `T10` l'y lira ».
  *
  * QUI LIT : LA MATRICE §5, ET ELLE NOMME CETTE RESSOURCE
  *
@@ -173,6 +177,37 @@ function entier(source: Record<string, unknown>, champ: string, ou: string): num
   return brut;
 }
 
+/**
+ * Valider UN lien — extraite pour `T10`, qui reutilise cette forme pour la
+ * reponse de creation et de modification (`LienInterneServi`, un OBJET plutot
+ * qu'un tableau). Une seconde copie divergerait au premier ajout (`DEC-466`).
+ */
+export function validerUnLienInterne(brut: unknown, rang = 0): LienInterne {
+  if (!estObjet(brut)) {
+    throw new TypeError(`lien interne : liens[${String(rang)}] non objet`);
+  }
+  const actif = brut['actif'];
+  if (typeof actif !== 'boolean') {
+    throw new TypeError(`lien interne : liens[${String(rang)}].actif n’est pas un booleen`);
+  }
+  return {
+    identifiant: exigerChaine(brut, 'identifiant'),
+    libelle: exigerChaine(brut, 'libelle'),
+    url: exigerChaine(brut, 'url'),
+    typeDeLien: exigerChaine(brut, 'type_de_lien'),
+    description: chaineOuNul(brut, 'description'),
+    referenceDIcone: chaineOuNul(brut, 'reference_d_icone'),
+    rang: entier(brut, 'rang', `liens[${String(rang)}].`),
+    actif,
+    version: entier(brut, 'version', `liens[${String(rang)}].`),
+  };
+}
+
+/** Valider ce que `POST …/liens` ou `PUT …/liens/{lien}` ont rendu — un OBJET seul. */
+export function validerUnLienInterneServi(valeur: unknown): LienInterne {
+  return validerUnLienInterne(valeur);
+}
+
 /** Valider ce que `GET …/liens` a rendu. */
 export function validerLesLiensInternes(valeur: unknown): LiensInternes {
   if (!estObjet(valeur)) {
@@ -187,26 +222,7 @@ export function validerLesLiensInternes(valeur: unknown): LiensInternes {
     throw new TypeError('liens internes : « liens » n’est pas un tableau');
   }
 
-  const liens = brutListe.map((brut, rang): LienInterne => {
-    if (!estObjet(brut)) {
-      throw new TypeError(`liens internes : liens[${String(rang)}] non objet`);
-    }
-    const actif = brut['actif'];
-    if (typeof actif !== 'boolean') {
-      throw new TypeError(`liens internes : liens[${String(rang)}].actif n’est pas un booleen`);
-    }
-    return {
-      identifiant: exigerChaine(brut, 'identifiant'),
-      libelle: exigerChaine(brut, 'libelle'),
-      url: exigerChaine(brut, 'url'),
-      typeDeLien: exigerChaine(brut, 'type_de_lien'),
-      description: chaineOuNul(brut, 'description'),
-      referenceDIcone: chaineOuNul(brut, 'reference_d_icone'),
-      rang: entier(brut, 'rang', `liens[${String(rang)}].`),
-      actif,
-      version: entier(brut, 'version', `liens[${String(rang)}].`),
-    };
-  });
+  const liens = brutListe.map((brut, rang) => validerUnLienInterne(brut, rang));
 
   const nombre = entier(valeur, 'nombre_de_liens', '');
   if (nombre !== liens.length) {
@@ -233,4 +249,95 @@ export function validerLesLiensInternes(valeur: unknown): LiensInternes {
   }
 
   return { liens, nombreDeLiens: nombre };
+}
+
+// ---------------------------------------------------------------------------
+//  LA GESTION — LOT 6, `T10`. La LECTURE de ce module reste T8 ; l'ecran
+//  d'edition lit desormais ce que le manifeste portait deja en attente.
+// ---------------------------------------------------------------------------
+
+/**
+ * Les roles qui gerent les liens internes — §13 et §19, `T8`.
+ *
+ * **LUE DU MANIFESTE, PAS DECLAREE ICI POUR LA PREMIERE FOIS.** Elle y vivait
+ * depuis `T8`, non lue : c'est cette sous-etape, `T10`, qui l'emploie enfin.
+ */
+export const ROLES_GESTION_DES_LIENS_INTERNES: readonly string[] =
+  CONTRAT_API.rolesGestionDesLiensInternes;
+
+/** L'appelant peut-il se voir PROPOSER de gerer les liens internes ? Ne decide rien. */
+export function peutGererLesLiensInternes(roles: readonly string[]): boolean {
+  return roles.some((role) => ROLES_GESTION_DES_LIENS_INTERNES.includes(role));
+}
+
+export const GABARIT_CHEMIN_GESTION_DES_LIENS: string = endpoint('gestionDesLiensInternes').chemin;
+export const GABARIT_CHEMIN_CREATION_DE_LIEN: string = endpoint('creationDUnLienInterne').chemin;
+export const GABARIT_CHEMIN_ORDRE_DES_LIENS: string = endpoint('ordreDesLiensInternes').chemin;
+export const GABARIT_CHEMIN_MODIFICATION_DE_LIEN: string = endpoint(
+  'modificationDUnLienInterne',
+).chemin;
+
+export const CODES_GESTION_DES_LIENS: readonly number[] =
+  endpoint('gestionDesLiensInternes').codesExploitables;
+export const CODES_CREATION_DE_LIEN: readonly number[] =
+  endpoint('creationDUnLienInterne').codesExploitables;
+export const CODES_ORDRE_DES_LIENS: readonly number[] =
+  endpoint('ordreDesLiensInternes').codesExploitables;
+export const CODES_MODIFICATION_DE_LIEN: readonly number[] = endpoint(
+  'modificationDUnLienInterne',
+).codesExploitables;
+
+export function cheminGestionDesLiens(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return GABARIT_CHEMIN_GESTION_DES_LIENS.replace('{code}', encodeURIComponent(code));
+}
+
+export function cheminCreationDeLien(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return GABARIT_CHEMIN_CREATION_DE_LIEN.replace('{code}', encodeURIComponent(code));
+}
+
+export function cheminOrdreDesLiens(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return GABARIT_CHEMIN_ORDRE_DES_LIENS.replace('{code}', encodeURIComponent(code));
+}
+
+export function cheminModificationDeLien(code: string, lien: string): string {
+  if (code === '' || lien === '') {
+    throw new TypeError('code d’entite ou identifiant de lien vide');
+  }
+  return GABARIT_CHEMIN_MODIFICATION_DE_LIEN.replace('{code}', encodeURIComponent(code)).replace(
+    '{lien}',
+    encodeURIComponent(lien),
+  );
+}
+
+/**
+ * Ce qu'un ecran ENVOIE pour creer ou modifier un lien — `snake_case` voulu,
+ * c'est ce que l'API attend (voir la note de `gestionDuContenu.ts`).
+ */
+export interface DemandeDeChampsDeLien {
+  readonly libelle: string;
+  readonly url: string;
+  readonly type_de_lien: string;
+  readonly description?: string;
+  readonly reference_d_icone?: string;
+  readonly actif: boolean;
+}
+
+export type DemandeDeCreationDeLien = DemandeDeChampsDeLien;
+
+export interface DemandeDeModificationDeLien extends DemandeDeChampsDeLien {
+  readonly version: number;
+}
+
+/** `PUT …/liens/ordre` : la liste COMPLETE des identifiants, dans l'ordre voulu. */
+export interface DemandeDOrdreDesLiens {
+  readonly ordre: readonly string[];
 }

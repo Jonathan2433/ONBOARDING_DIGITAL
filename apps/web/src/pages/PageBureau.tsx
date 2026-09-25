@@ -27,10 +27,14 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { lireLeBureau } from '../api/organisation';
-import { cheminDeRubrique } from '../routes';
+import { cheminDeRubrique, cheminEditionBureau } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
-import { type PageDuBureau, respecteLaBorneDuHuitQuatre } from '@onboarding/contracts';
+import {
+  peutEditerUnContenu,
+  type PageDuBureau,
+  respecteLaBorneDuHuitQuatre,
+} from '@onboarding/contracts';
 import { Alerte, Badge } from '@onboarding/ui';
 
 type Etat =
@@ -39,7 +43,7 @@ type Etat =
   | { readonly phase: 'erreur'; readonly statut: number };
 
 export function PageBureau(): JSX.Element {
-  const { entite } = useEntiteConsultee();
+  const { entite, permissions } = useEntiteConsultee();
   const { codeBureau } = useParams<{ codeBureau: string }>();
   const [etat, setEtat] = useState<Etat>({ phase: 'chargement' });
 
@@ -68,11 +72,23 @@ export function PageBureau(): JSX.Element {
     };
   }, [entite.code, codeBureau]);
 
+  const roles = permissions?.roles ?? null;
+  const peutEditer = roles !== null && peutEditerUnContenu(roles);
+
   const retour = (
     <p className="bureau-retour">
       <Link className="app-lien" to={cheminDeRubrique(entite.code, 'framework')}>
         Retour au Framework
       </Link>
+      {codeBureau !== undefined && peutEditer ? (
+        <>
+          {' '}
+          ·{' '}
+          <Link className="app-lien" to={cheminEditionBureau(entite.code, codeBureau)}>
+            Editer ce bureau
+          </Link>
+        </>
+      ) : null}
     </p>
   );
 

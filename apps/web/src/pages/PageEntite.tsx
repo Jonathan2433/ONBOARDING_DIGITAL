@@ -17,23 +17,30 @@
  *   perdre son repere a un lecteur d'ecran sans que rien n'echoue. Meme motif
  *   que `Cadre` pour les huit ecrans d'authentification.
  *
- * SON CONTENU EST DELIBEREMENT MINCE
+ * SON CONTENU RESTE MINCE, ET DEUX SECTIONS DE MOINS SONT EN FAUX — `T10`
  *
- *   Le §8.4 du cahier donne l'ordre des sections de l'accueil d'une entite --
- *   presentation locale, Framework, personnes recemment arrivees, evenements,
- *   cartes -- et **tout cela appartient aux LOTS 5, 6 et 7**. Les poser ici en
- *   faux serait livrer des ecrans que rien n'alimente.
+ *   Le §8.4 du cahier donne l'ordre des sections de l'accueil : presentation
+ *   locale, Framework, personnes recemment arrivees, evenements, liens
+ *   internes. `T10` ecrit l'EDITION de la presentation (une page `HOME`,
+ *   §13 « Creer un contenu general ») et branche le lien vers la gestion des
+ *   liens internes. **Le RENDU de ces sections dans l'accueil n'est pas fait**
+ *   -- aucun ecran ne consommait encore `pageDeContenu`/`liens.ts` en LECTURE
+ *   ici, et l'assembler appartient a une sous-etape que le decoupage de `T3` a
+ *   `T9` n'a jamais nommee. Framework a son propre ecran depuis `T9`
+ *   (`/framework`) ; arrivees recentes et evenements restent LOTS 7 et 8.
  */
 import type { JSX } from 'react';
 import { Link } from 'react-router';
 
-import { CHEMINS } from '../routes';
+import { CHEMINS, cheminDeRubrique, cheminGestionDesLiensALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
+import { PanneauEditionDeContenu } from './PanneauEditionDeContenu';
 
 import { Alerte } from '@onboarding/ui';
 
 export function PageEntite(): JSX.Element {
-  const { entite } = useEntiteConsultee();
+  const { entite, permissions } = useEntiteConsultee();
+  const roles = permissions?.roles ?? null;
 
   return (
     <>
@@ -42,9 +49,29 @@ export function PageEntite(): JSX.Element {
         rechargement, et un lien partage ouvre la meme entite.
       </Alerte>
       <Alerte>
-        Les sections de l&rsquo;accueil — presentation, Framework, arrivees recentes et evenements —
-        arrivent aux LOTS 5 a 7. La navigation principale arrive a la sous-etape suivante.
+        Framework, arrivees recentes et evenements arrivent progressivement — voyez{' '}
+        <Link className="app-lien" to={cheminDeRubrique(entite.code, 'framework')}>
+          la page Framework
+        </Link>{' '}
+        des maintenant.
       </Alerte>
+
+      <section>
+        <h3>Presentation de l&rsquo;entite</h3>
+        <PanneauEditionDeContenu
+          cibleCorrespond={(page) => page.typeDePage === 'HOME' && page.slug === 'presentation'}
+          codeEntite={entite.code}
+          demandeDeCreation={{ type_de_page: 'HOME', titre: entite.nom, slug: 'presentation' }}
+          roles={roles}
+        />
+      </section>
+
+      <p>
+        <Link className="app-lien" to={cheminGestionDesLiensALEcran(entite.code)}>
+          Gerer les liens internes
+        </Link>
+      </p>
+
       <ul className="app-liens">
         <li>
           <Link className="app-lien" to={CHEMINS.statut}>

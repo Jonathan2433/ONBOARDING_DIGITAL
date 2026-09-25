@@ -49,8 +49,11 @@ import { PageRubrique } from './pages/PageRubrique';
 import { PageDeconnexion } from './pages/PageDeconnexion';
 import { PageBureau } from './pages/PageBureau';
 import { PageCercle } from './pages/PageCercle';
+import { PageEditionDeBureau } from './pages/PageEditionDeBureau';
+import { PageEditionDeCercle } from './pages/PageEditionDeCercle';
 import { PageEntite } from './pages/PageEntite';
 import { PageFramework } from './pages/PageFramework';
+import { PageGestionDesLiens } from './pages/PageGestionDesLiens';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { PageNationale } from './pages/PageNationale';
@@ -88,6 +91,10 @@ const SUFFIXE_PROFIL = CHEMINS.profil.replace(`${CHEMINS.entite}/`, '');
  */
 const SUFFIXE_CERCLE = CHEMINS.frameworkCercle.replace(`${CHEMINS.entite}/`, '');
 const SUFFIXE_BUREAU = CHEMINS.frameworkBureau.replace(`${CHEMINS.entite}/`, '');
+//  **LOT 6, `T10`.** Les ecrans d'edition, meme derivation que ci-dessus.
+const SUFFIXE_EDITION_CERCLE = CHEMINS.editionCercle.replace(`${CHEMINS.entite}/`, '');
+const SUFFIXE_EDITION_BUREAU = CHEMINS.editionBureau.replace(`${CHEMINS.entite}/`, '');
+const SUFFIXE_GESTION_DES_LIENS = CHEMINS.gestionDesLiens.replace(`${CHEMINS.entite}/`, '');
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -179,6 +186,13 @@ export function App(): JSX.Element {
             */}
             <Route path={SUFFIXE_CERCLE} element={<PageCercle />} />
             <Route path={SUFFIXE_BUREAU} element={<PageBureau />} />
+            {/*
+              **LOT 6, `T10`** — les ecrans d'edition, `MVP-L06-US004` (3/3) et
+              `US005`. Meme motif : la route existe des que le contenu existe.
+            */}
+            <Route path={SUFFIXE_EDITION_CERCLE} element={<PageEditionDeCercle />} />
+            <Route path={SUFFIXE_EDITION_BUREAU} element={<PageEditionDeBureau />} />
+            <Route path={SUFFIXE_GESTION_DES_LIENS} element={<PageGestionDesLiens />} />
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**
