@@ -17,6 +17,14 @@ LE CONTROLE LE PLUS UTILE DE CE FICHIER N'EST PAS UN REFUS
   controle de forme ne l'a vue : un jeton « None » est un jeton d'apparence
   parfaitement plausible. Le decor porte donc un cercle AVEC jeton et un cercle
   SANS, et les octets sont lus.
+
+DEPUIS `T11` IL PROUVE LE CRITERE DE SORTIE 2 DU LOT
+
+  « Le modele generique ne contient aucune donnee locale. » Une entite GENERIQUE,
+  creee sans aucun decor, et le controle cherche « bordeaux » dans les octets
+  servis — pas dans le JSON desserialise. Le couple de controles 75/76 est le
+  meme motif que le §7.42 : sans le TEMOIN qui trouve « bordeaux » ailleurs, une
+  recherche cassee et une recherche juste rendraient la MEME observation (§7.39).
 """
 
 from __future__ import annotations
@@ -407,11 +415,28 @@ def main() -> int:
     if code:
         print(f"    ECHEC    decor impossible : {sortie[:250]}")
         return 1
+
+    #  **T11 : UNE ENTITE GENERIQUE, SANS AUCUN DECOR** -- le temoin du critere
+    #  de sortie 2 du lot (fiche-lot-6.md §1.2) : « le modele generique ne
+    #  contient aucune donnee locale ». `code_actif` ci-dessus a `city =
+    #  'Bordeaux'` -- un choix du decor de `T2`, pas une fuite -- et sert donc de
+    #  TEMOIN POSITIF pour la meme recherche : une entite qui n'a jamais existe
+    #  avant cette ligne, et qui ne recevra NI cercle NI bureau NI page.
+    code_generique = f"{MARQUEUR}-GEN"
+    decor_generique = f"""
+    INSERT INTO entity (code, display_name, city, country_code, status, timezone, activated_at)
+    VALUES ('{code_generique}', 'Entite generique {MARQUEUR}', 'Nantes', 'FR', 'active',
+            'Europe/Paris', now());
+    """  # noqa: S608
+    code, sortie = psql(compose, env, decor_generique)
+    if code:
+        print(f"    ECHEC    decor generique impossible : {sortie[:250]}")
+        return 1
     print(
         "    ok       decor : 1 entite active, 1 brouillon, 3 cercles, 3 bureaux "
         "dont UN publie a ZERO responsable et UN archive, 4 responsabilites dont "
         "UNE future, 5 appartenances dont UN profil en brouillon, et 1 compte "
-        "SANS aucune responsabilite"
+        "SANS aucune responsabilite, PLUS 1 entite GENERIQUE sans aucun decor"
     )
 
     try:
@@ -2322,6 +2347,87 @@ def main() -> int:
         else:
             echecs += 1
             print(f"    ECHEC    autre entite : {ailleurs_t10.statut}")
+
+        # --- 75. L'ENTITE GENERIQUE NE SERT AUCUN OCTET « BORDEAUX »
+        #
+        #  **LE CRITERE DE SORTIE 2 DU LOT, PROUVE ICI ET NULLE PART AILLEURS.**
+        #  La fiche le nomme : « le modele generique ne contient AUCUNE donnee
+        #  locale », prouve par « une entite creee » et « le controle qui
+        #  cherche les chaines de Bordeaux dans les OCTETS servis » — pas la
+        #  reponse JSON desserialisee, les octets HTTP reels, apres Caddy.
+        controles += 1
+        page_generique = appeler(
+            arguments.base,
+            CHEMIN_FRAMEWORK.format(code=code_generique),
+            contexte,
+            en_tetes=entetes,
+        )
+        entite_generique = appeler(
+            arguments.base,
+            CHEMIN_UNE_ENTITE.format(code=code_generique),
+            contexte,
+            en_tetes=entetes,
+        )
+        fuite = b"bordeaux" in page_generique.corps.lower() or (
+            b"bordeaux" in entite_generique.corps.lower()
+        )
+        if page_generique.statut == 200 and entite_generique.statut == 200 and not fuite:
+            print("    ok       l'entite GENERIQUE (ville Nantes, sans aucun cercle ni")
+            print("             bureau) ne sert AUCUN octet « bordeaux », Framework et")
+            print("             fiche d'entite confondus, apres Caddy")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    generique : framework={page_generique.statut}, "
+                f"entite={entite_generique.statut}, fuite={fuite}"
+            )
+
+        # --- 76. TEMOIN : LA MEME RECHERCHE TROUVE « BORDEAUX » AILLEURS
+        #
+        #  **SANS CE TEMOIN, LE CONTROLE PRECEDENT SE SATISFERAIT TOUT SEUL**
+        #  (§7.39) : une recherche qui ne trouve jamais rien, sur une entite
+        #  jamais peuplee, prouverait la meme chose qu'une recherche cassee.
+        #  `code_actif` porte `city = 'Bordeaux'` depuis le decor de `T2` — un
+        #  fait du decor, pas une fuite — et sert donc de positif.
+        controles += 1
+        entite_actif = appeler(
+            arguments.base,
+            CHEMIN_UNE_ENTITE.format(code=code_actif),
+            contexte,
+            en_tetes=entetes,
+        )
+        if entite_actif.statut == 200 and b"bordeaux" in entite_actif.corps.lower():
+            print("    ok       TEMOIN : la meme recherche trouve bien « bordeaux » sur")
+            print("             l'entite active du decor (ville Bordeaux) — le contrôle 75")
+            print("             discrimine reellement, il ne passe pas a vide")
+        else:
+            echecs += 1
+            print(
+                f"    ECHEC    temoin : {entite_actif.statut}, octets {entite_actif.corps[:80]!r}"
+            )
+
+        # --- 77. L'ENTITE GENERIQUE EST BIEN LA MEME STRUCTURE, JUSTE VIDE
+        #
+        #  Un generique qui rendrait 404 ou une forme differente ne prouverait
+        #  rien du critere : ce n'est pas l'ABSENCE de la page qui est exigee,
+        #  c'est sa VACUITE. Meme motif que `test_les_trois_familles_sont_
+        #  TOUJOURS_presentes_meme_vides` (`test_framework.py`), mais a travers
+        #  la pile reelle et non le service appele directement (§7.43).
+        controles += 1
+        corps_generique = page_generique.json()
+        if (
+            isinstance(corps_generique, dict)
+            and corps_generique.get("cercles") == []
+            and corps_generique.get("bureaux") == []
+            and isinstance(corps_generique.get("responsabilites"), list)
+            and len(corps_generique["responsabilites"]) == 4
+        ):
+            print("    ok       la structure est PRESENTE et VIDE : les quatre")
+            print("             responsabilites du §6.2, zero cercle, zero bureau —")
+            print("             pas une absence de reponse, une reponse qui dit vide")
+        else:
+            echecs += 1
+            print(f"    ECHEC    forme generique : {str(corps_generique)[:200]}")
 
     finally:
         #  **LE MENAGE LIT SON CODE DE SORTIE, ET C'EST LE DEFAUT `T2-2`.**
