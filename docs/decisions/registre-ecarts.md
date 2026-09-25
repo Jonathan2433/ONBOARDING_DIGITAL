@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 23 septembre 2026, `T9` du LOT 6 — `ECART-065` ouvert
+**Dernière mise à jour :** 25 septembre 2026, décisions préalables à `T11` du LOT 6 — `ECART-062` clos
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 65 | 14 | 48 | 3 |
+| Total 65 | 13 | 49 | 3 |
 
 ---
 
@@ -79,7 +79,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-059` | La matrice donne au responsable de bureau un périmètre « Bureau » sur l'audit, mais **aucune table ne rattache un collaborateur à un bureau** | Non — le §6.2 tranche dans le même sens | **Clos le 13/09/2026, `DEC-576`** |
 | `ECART-060` | Le §10.1 veut « des filtres combinables » ; **quatre des cinq que l'API accepte n'ont aucune liste de référence à proposer** | Non — l'API les accepte, l'écran ne peut pas les peupler | Ouvert, à reprendre aux LOTS 6 et 9 |
 | `ECART-061` | Le modèle §10.2 et `DEC-527` veulent qu'un mot de passe provisoire soit changé ; **`changement_exige` est servi par l'API et aucun écran ne le lit** — la session est ouverte et toutes les routes répondent | Non pour le MVP, **oui avant la production** | Ouvert, à instruire au LOT 13 |
-| `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | Ouvert, relancé sous `QO-124` |
+| `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | **Clos le 25/09/2026**, `QO-124`, `DEC-594` — lecture restrictive définitive |
 | `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
 | `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
 | `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
@@ -192,7 +192,7 @@ formulée, et son caractère bloquant est explicité.
 | Cause | Deux lectures sont possibles et **aucune n'est déductible** : *(a)* « la page DSM » est une page `FRAMEWORK` particulière, que rien ne distingue des autres pages `FRAMEWORK` ; *(b)* c'est un « autre type contrôlé » qui reste à créer, ce que le §15.1 autorise sans le nommer.<br>Sous *(a)*, accorder le droit au DSM lui ouvrirait **toutes** les pages `FRAMEWORK`, alors que le §10.1 lui refuse « Modifier la présentation générale ». Sous *(b)*, il faudrait inventer un type, ce que le §6.5 interdit. |
 | Bloquant | **Non.** `T6` suit le §13 — le DSM n'écrit aucun contenu — et cette lecture est la **plus restrictive** des deux, donc la seule qui ne puisse pas accorder un droit que le corpus ne donne pas. Un refus se relâche ; une permission accordée à tort a déjà été exercée. |
 | Recommandation | **Ne rien accorder au DSM tant que la page n'est pas désignable**, et le dire au lieu de le taire (§7.20). La question relève de **Léa** — elle porte sur ce qu'est « la page DSM » comme objet de produit — et elle devra être tranchée **avant `T9`**, où les écrans de lecture serviront les pages de responsabilité que `T2` a déjà annoncées par un chemin.<br>**Recommandation générale, et c'est l'apport de cet écart** : quand une grille de droits nomme une **ressource**, vérifie que le modèle sait la désigner. Une cellule de matrice qui porte sur un objet inexistant n'est ni applicable ni ignorable — elle est à **nommer**. |
-| Résolution | **Ouvert, échéance dépassée une fois : `T9` a livré sans l'instruire (CLAUDE.md le nomme), et `T10` fait de même — sur la MÊME lecture restrictive, appliquée de façon cohérente depuis `T6`.** Aucun écran n'accorde au DSM une action qu'il n'a pas, et aucun n'en refuse une qu'il aurait à tort : le résiduel reste `T6`'s refus, jamais relâché ni durci. **Relancé formellement le 24/09/2026 sous `QO-124`**, pour que la question n'attende plus le prochain écran qui pourrait la croiser sans le savoir. Nouvelle échéance : **avant qu'un écran ne prétende avoir la réponse définitive**, pour éviter une reprise si la lecture change. |
+| Résolution | **CLOS le 25/09/2026, par arbitrage de Jonathan sous `QO-124`, `DEC-594`.** La lecture restrictive du §13 — le DSM n'a aucune page à éditer — est **définitive**. `T9` et `T10` avaient livré sans l'instruire, sur la même lecture appliquée de façon cohérente depuis `T6` ; aucun code ne change, aucun sixième `page_type` n'est à prévoir. Deux échéances dépassées avant la clôture : `T9` puis `T10` ont livré sans trancher, d'où la relance formelle du 24/09/2026 sous `QO-124` qui a produit l'arbitrage. |
 
 ---
 
