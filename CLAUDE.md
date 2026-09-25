@@ -36,7 +36,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **93 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T9` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, puis **68** contrôles, et `T9` n'en a pas ajouté davantage — elle ne touche pas l'API — bénéfice direct du §7.27, aucune cible nouvelle donc **rien à ajouter dans `ci.yml`**. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **172 décisions** `DEC-418+` · **65 écarts** (**14 ouverts**) · **47 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **173 décisions** `DEC-418+` · **65 écarts** (**14 ouverts**) · **47 questions** (**36 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 25**, dérivés le 23/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -493,7 +493,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`589` en usage | **`DEC-590`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`590` en usage | **`DEC-591`** |
 | `ECART-nnn` | `001`–`065` | **`ECART-066`** |
 | `QO-nnn` | `072`–`123`, **5 trous** | **`QO-124`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -532,7 +532,7 @@ réellement en usage. C'est ce contrôle qui aurait attrapé `ECART-021`.**
 |---|---|
 | db | `postgres:17.7@sha256:2006493727bd…` — **Debian, pas Alpine** : musl gère mal les locales. **Depuis `T1` du LOT 2, `POSTGRES_INITDB_ARGS` impose ICU `fr-FR`** (`DEC-497`) |
 | redis | `redis:8.4-alpine@sha256:bd4a0d37e7cd…` |
-| minio | `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a3…` |
+| minio | `bitnamilegacy/minio:2025.7.23-debian-12-r5@sha256:6dabb4a2088c9a79…`, `user: root` — **bascule du 25/09/2026, `DEC-590`, hors lot**. `quay.io/minio/minio` a fermé l'accès anonyme le 24/09/2026, après le retrait de `minio/minio` de Docker Hub le 12/09/2026. Résiduel nommé : archive **gelée**, dernière version réelle datée du 23/07/2025, plus aucune mise à jour de sécurité à attendre — même classe que `ROAD-RSK-033` |
 | mailpit | `ghcr.io/axllent/mailpit:v1.30@sha256:7f33095f80e9…` |
 | caddy | `caddy:2.11-alpine@sha256:5f5c8640aae0…` |
 | api, worker | `python:3.12-slim@sha256:78387bc3881b…` — **slim, pas Alpine** : roues absentes en musl. **Montée de `3.12.13` à `3.12.14-slim-trixie` le 14/09/2026, `DEC-581`**, et les deux `Dockerfile` portent désormais **une couche `apt` épinglée** : `perl-base=5.40.1-6+deb13u1`. **La montée seule n'aurait rien corrigé** — mesuré, le condensat amont porte encore la version vulnérable sur les **deux** architectures |
