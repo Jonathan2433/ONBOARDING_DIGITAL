@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `598` en usage | `DEC-599` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `599` en usage | `DEC-600` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -339,12 +339,20 @@ lecture la plus large — `QO-121`, les champs de `payload_json`, et `QO-123`, l
 critères de sortie **dérivés des deux sources, qui concordent**, **quinze** sous-étapes, tag
 `v0.7.0` prévu.
 
-**Aucune sous-étape n'est faite. La prochaine est `T1`**, les huit tables du lot —
-`arrival_profile` et les six tables d'onboarding, migration `0020`. `photo_authorization` existe
-déjà depuis le LOT 5 et n'est pas recréée.
+**`T1` EST FAITE** le 25/09/2026, `DEC-599` : les huit tables du lot — `arrival_profile` et les six
+tables d'onboarding, migration `0020`. Schéma **32 → 39 tables**, **34 tests**.
+`photo_authorization` existe depuis le LOT 5 et n'a pas été recréée. La prochaine est `T2`, la
+fiche d'arrivée en lecture.
+
+> **`make isolation-check` a trouvé deux classes de défaut que ce lot n'avait jamais rencontrées.**
+> Une clé composite structurellement correcte mais que le contrôle refuse quand même — il exige
+> `entity_id` NOT NULL à la SOURCE sans condition, `T8-1` transposé — et une clé composite dont la
+> table CIBLE a un `entity_id` légitimement nullable, qui aurait silencieusement cassé tout usage
+> GLOBAL. `infra/scripts/verifier-isolation.py` reçoit une **troisième** raison légitime à une clé
+> simple, dérivée du modèle et rapportée. Détail : `compte-rendu-t1-lot-7.md` §2.2.
 
 `ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T1`.
+parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T2`.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 

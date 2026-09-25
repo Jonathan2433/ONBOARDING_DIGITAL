@@ -527,6 +527,15 @@ TABLES_DECLAREES = {
     "content_page",
     "content_block",
     "internal_link",
+    # LOT 7, T1 — modele §12.1 et §13.1 a §13.7, la fiche d'arrivee et l'onboarding
+    "arrival_profile",
+    "onboarding_task_reference",
+    "onboarding_template",
+    "onboarding_template_version",
+    "onboarding_template_task",
+    "onboarding_instance",
+    "onboarding_instance_task",
+    "onboarding_task_event",
 }
 
 
