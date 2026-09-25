@@ -149,9 +149,39 @@ services:
   #  Image servie depuis quay.io et non depuis Docker Hub : c'est le registre
   #  de publication de MinIO, et Docker Hub applique une limite de debit
   #  anonyme qui a deja fait echouer une inspection pendant cette sous-etape.
+  #
+  #  BASCULE DU 25/09/2026, DEC-590, HORS LOT — meme classe que DEC-580 et
+  #  DEC-581. MinIO a ferme l'acces anonyme a `quay.io/minio/minio` le
+  #  24/09/2026, apres avoir deja retire `minio/minio` de Docker Hub le
+  #  12/09/2026 : mesure, `docker pull` en 401 sur TOUTE etiquette, y compris
+  #  `latest`, et l'API du depot repond elle-meme « Requires authentication ».
+  #  Ce n'est pas un debit anonyme (le motif ci-dessus) : le depot entier est
+  #  devenu prive. Confirme externe et large -- de nombreux projets touches le
+  #  meme jour.
+  #
+  #  `quay.io/minio/aistor/minio`, la voie officielle de remplacement,
+  #  EXIGE un fichier de licence pour demarrer (palier gratuit : un seul
+  #  noeud, pas de chiffrement au repos) -- une condition a accepter, decision
+  #  de Jonathan, non prise ici.
+  #
+  #  Retenu : `bitnamilegacy/minio`, l'archive GELEE de Bitnami -- meme
+  #  licence AGPLv3 amont, aucune condition nouvelle, pull anonyme mesure
+  #  fonctionnel. Residuel a connaitre, meme classe que ROAD-RSK-033 : la
+  #  derniere version reelle est `2025.7.23-debian-12-r5`, datee d'avant notre
+  #  ancien epinglage -- l'archive ne recevra plus de mise a jour de securite.
+  #
+  #  ET L'IMAGE N'EST PAS UN REMPLACEMENT TRANSPARENT, MESURE AVANT
+  #  D'EPINGLER (§7.7) : elle tourne par defaut sous un utilisateur non
+  #  privilegie qui ne peut pas ecrire sur un volume vide -- `FATAL Unable to
+  #  initialize backend: file access denied`. `user: root` la fait demarrer ;
+  #  sans cette ligne, le service ne serait JAMAIS sain, dans aucun
+  #  environnement. Confirme par ailleurs : `mc` est sur le `PATH` de l'image,
+  #  donc `make minio-bucket` et le healthcheck ci-dessous n'ont besoin
+  #  d'aucun changement.
   # ---------------------------------------------------------------------------
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5@sha256:6dabb4a2088c9a79908de3bc05f4586c23ad2182c8908e7e3acbf61c1467fb20
+    user: root
     command: ['server', '/data', '--console-address', ':9001']
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}

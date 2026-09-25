@@ -142,7 +142,6 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-import enum
 import uuid
 from typing import TYPE_CHECKING, Any, Final
 
@@ -155,47 +154,13 @@ from app.media.photo import (
 )
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
+from app.shared.pagination import TAILLES_DE_PAGE
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Mapping
 
     from sqlalchemy.engine import Connection
 
-
-#  Cahier §18.2, a la lettre : « options 25, 50 et 100 ; maximum 100 ».
-#
-#  **LE TYPE EST LA SOURCE, ET LE TUPLE EN EST DERIVE.** La route a besoin d'un
-#  type qui fasse produire a FastAPI un 422 nommant les valeurs admises et qui
-#  les documente dans OpenAPI ; le service a besoin d'un tuple pour verifier.
-#  Ecrire les deux cote a cote donnerait DEUX listes a maintenir, et la premiere
-#  sous-etape qui en changerait une oublierait l'autre (§7.27).
-#
-#  **ET CE TYPE EST UN `IntEnum`, PAS UN `Literal` — LE DEFAUT `T2-3` L'A PROUVE.**
-#  Un parametre d'URL arrive TOUJOURS en chaine. Mesure du 25/08/2026 :
-#
-#      TypeAdapter(Literal[25, 50, 100]).validate_python("25")  ->  REFUSE
-#      TypeAdapter(IntEnum(...)).validate_python("25")          ->  25
-#
-#  Avec un `Literal`, la route refusait donc **les trois tailles valides** des
-#  qu'elles etaient ecrites dans l'URL, et n'acceptait plus que le defaut
-#  implicite. **Mes huit tests de refus passaient tous** : ils demandaient un
-#  refus, et ils l'obtenaient -- pour la mauvaise raison. Seul le TEMOIN, celui
-#  qui exige que 25, 50 et 100 SOIENT servies, discrimine les deux situations.
-#  C'est la troisieme proposition du §7.0 : un controle dont l'echec produit la
-#  meme observation que le succes ne prouve rien.
-#
-#  La borne de 100 est le `max` du tuple, jamais une troisieme constante.
-class TailleDePage(enum.IntEnum):
-    """Les trois tailles de page du cahier §18.2, et elles seules."""
-
-    VINGT_CINQ = 25
-    CINQUANTE = 50
-    CENT = 100
-
-
-TAILLES_DE_PAGE: Final[tuple[int, ...]] = tuple(membre.value for membre in TailleDePage)
-TAILLE_PAR_DEFAUT: Final[TailleDePage] = TailleDePage.VINGT_CINQ
-TAILLE_MAXIMALE: Final[int] = max(TAILLES_DE_PAGE)
 
 #  **UNE BORNE SUR LE TERME CHERCHE, ET ELLE N'EST PAS COSMETIQUE.** Sans elle,
 #  une requete peut porter un terme de plusieurs mega-octets, que la base

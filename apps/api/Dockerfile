@@ -18,11 +18,33 @@
 
 FROM ghcr.io/astral-sh/uv:0.11.32@sha256:df4cae8f3a96d175e2e5f992e597550000edbe78fdc2594d5cd8de1a217f504c AS uv
 
-FROM python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de
+FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
 
 # Debian slim et non Alpine : de nombreuses roues Python n'existent pas en
 # musl, ce qui forcerait une compilation depuis les sources a chaque
 # installation. psycopg et les dependances du LOT 2 en beneficieront.
+
+
+# CORRECTIF DE SECURITE PRIS DANS DEBIAN, ET IL EST EPINGLE
+#
+#   `perl-base` 5.40.1-6 porte `CVE-2026-13221`, **CRITICAL**, et le correctif
+#   `5.40.1-6+deb13u1` EXISTE dans `trixie/main` -- mesure du 14/09/2026,
+#   `apt-cache policy` le donne comme candidat. Il n'est dans AUCUNE image
+#   amont : `python:3.12-slim` n'a pas ete reconstruit depuis sa publication, et
+#   les deux architectures portent encore la version vulnerable.
+#
+#   `DEC-482` bloque la porte des images sur un `CRITICAL` **corrigeable**. Le
+#   correctif etant disponible, la porte a RAISON, et la reponse fidele est de le
+#   prendre -- non d'affaiblir la porte (§7.20).
+#
+#   LA VERSION EST EPINGLEE, et c'est ce qui rend cette couche acceptable dans un
+#   depot ou tout l'est : la construction reste reproductible tant que cette
+#   version est au depot, et le jour ou Debian la retire, le build CASSE
+#   BRUYAMMENT au lieu de deriver en silence. C'est le parti du §7.21 -- mieux
+#   vaut un echec qui nomme sa cause qu'une derive que personne ne voit.
+RUN apt-get update \
+ && apt-get install --no-install-recommends -y perl-base=5.40.1-6+deb13u1 \
+ && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \

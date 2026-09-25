@@ -148,3 +148,158 @@ export {
 export type { ResultatDuCycleDeVie } from './cycleDeVie.js';
 
 export const PACKAGE_NAME = '@onboarding/contracts';
+
+//  LOT 6, T2 : la page Framework. TROIS familles, et le cahier §10.3 les nomme.
+export {
+  cheminFramework,
+  CODES_FRAMEWORK,
+  GABARIT_CHEMIN_FRAMEWORK,
+  RESPONSABILITES_FRAMEWORK,
+  validerLaPageFramework,
+} from './framework.js';
+export type {
+  CarteDeBureau,
+  CarteDeCercle,
+  CarteDeResponsabilite,
+  PageFramework,
+  ResponsabiliteFramework,
+  TitulaireFramework,
+} from './framework.js';
+
+//  LOT 6, T3 : la page detaillee d'un cercle. La couleur n'est jamais seule, et
+//  c'est le TYPE qui le tient — §8.1 du modele, pas seulement la roadmap.
+export {
+  cheminCercle,
+  CODES_CERCLE,
+  GABARIT_CHEMIN_CERCLE,
+  TYPES_D_APPARTENANCE_AU_CERCLE,
+  validerLaPageDuCercle,
+} from './cercles.js';
+export type {
+  MembreDuCercle,
+  PageDuCercle,
+  TitulaireDuCercle,
+  TypeDAppartenanceAuCercle,
+} from './cercles.js';
+
+//  LA PAGE DETAILLEE D'UN BUREAU — LOT 6, `T4`.
+//  `RESPONSABLES_MINIMUM` et `RESPONSABLES_MAXIMUM` sont exportes pour qu'un
+//  ecran puisse SIGNALER l'ecart au §8.4, jamais pour qu'un validateur l'impose :
+//  la borne n'est pas tenue en base, et le declencheur qui la tiendra est en
+//  `T7` (`DEC-583`). `respecteLaBorneDuHuitQuatre` porte cette question.
+export {
+  cheminBureau,
+  CODES_BUREAU,
+  GABARIT_CHEMIN_BUREAU,
+  respecteLaBorneDuHuitQuatre,
+  RESPONSABLES_MAXIMUM,
+  RESPONSABLES_MINIMUM,
+  validerLaPageDuBureau,
+} from './bureaux.js';
+export type { PageDuBureau, ResponsableDuBureau } from './bureaux.js';
+
+//  LE RENDU DES BLOCS — LOT 6, `T5`.
+//  `texteDuBloc` rend une `string` et rien d'autre : un ecran qui passe par elle
+//  ne peut pas obtenir de balisage a interpreter, quelle que soit la donnee
+//  stockee (§7.35). Les clefs du contenu ne sont pas contraintes — `QO-121`.
+export {
+  cheminPageDeContenu,
+  CODES_PAGE_DE_CONTENU,
+  GABARIT_CHEMIN_PAGE_DE_CONTENU,
+  texteDuBloc,
+  TYPES_DE_PAGE_NOMMES,
+  validerLaPageDeContenu,
+  validerUnBlocDeContenu,
+} from './contenus.js';
+export type { BlocDeContenu, PageDeContenu } from './contenus.js';
+
+//  LES LIENS INTERNES — LOT 6, `T8`, `MVP-L06-US005`.
+//  **LA LECTURE SEULE**, comme `T2` a `T5` : une sous-etape qui sert une lecture
+//  pose son module de contrat, celles qui servent une ecriture ne le font pas —
+//  `T6` et `T7` n'ont rien ajoute ici. Les ecrans de lecture sont `T9`.
+//  `PROTOCOLES_DE_LIEN_AUTORISES` est LU DU MANIFESTE (`DEC-587`, `QO-120`) pour
+//  qu'un formulaire puisse dire ce qui est accepte avant que l'API ne refuse ; il
+//  ne decide rien, l'API restant l'autorite finale (matrice §2.6).
+export {
+  cheminCreationDeLien,
+  cheminGestionDesLiens,
+  cheminLiensInternes,
+  cheminModificationDeLien,
+  cheminOrdreDesLiens,
+  CODES_CREATION_DE_LIEN,
+  CODES_GESTION_DES_LIENS,
+  CODES_LIENS_INTERNES,
+  CODES_MODIFICATION_DE_LIEN,
+  CODES_ORDRE_DES_LIENS,
+  GABARIT_CHEMIN_CREATION_DE_LIEN,
+  GABARIT_CHEMIN_GESTION_DES_LIENS,
+  GABARIT_CHEMIN_LIENS_INTERNES,
+  GABARIT_CHEMIN_MODIFICATION_DE_LIEN,
+  GABARIT_CHEMIN_ORDRE_DES_LIENS,
+  peutGererLesLiensInternes,
+  PROTOCOLES_DE_LIEN_AUTORISES,
+  ROLES_GESTION_DES_LIENS_INTERNES,
+  TYPES_DE_LIEN_NOMMES,
+  urlEstServable,
+  validerLesLiensInternes,
+  validerUnLienInterneServi,
+} from './liens.js';
+export type {
+  DemandeDeChampsDeLien,
+  DemandeDeCreationDeLien,
+  DemandeDeModificationDeLien,
+  DemandeDOrdreDesLiens,
+  LienInterne,
+  LiensInternes,
+} from './liens.js';
+
+//  L'ECRITURE EDITORIALE, LE CYCLE DE VIE D'UN CONTENU ET SA GESTION — LOT 6,
+//  `T10`. `contenus.ts` reste T5/lecture seule ; ce module porte ce que `T6`,
+//  `T7` et `T10` ont ajoute, dont les deux routes que `T10` a du poser pour
+//  qu'un editeur puisse relire un BROUILLON avec sa `version`.
+export {
+  cheminArchivageDuContenu,
+  cheminCreationDePage,
+  cheminEcritureDuContenu,
+  cheminPagesDeGestion,
+  cheminPageDeGestion,
+  cheminPublication,
+  cheminRestaurationDuContenu,
+  CODES_ARCHIVAGE_DU_CONTENU,
+  CODES_CREATION_DE_PAGE,
+  CODES_ECRITURE_DU_CONTENU,
+  CODES_PAGES_DE_GESTION,
+  CODES_PAGE_DE_GESTION,
+  CODES_PUBLICATION,
+  CODES_RESTAURATION_DU_CONTENU,
+  GABARIT_CHEMIN_ARCHIVAGE_DU_CONTENU,
+  GABARIT_CHEMIN_CREATION_DE_PAGE,
+  GABARIT_CHEMIN_ECRITURE_DU_CONTENU,
+  GABARIT_CHEMIN_PAGES_DE_GESTION,
+  GABARIT_CHEMIN_PAGE_DE_GESTION,
+  GABARIT_CHEMIN_PUBLICATION,
+  GABARIT_CHEMIN_RESTAURATION_DU_CONTENU,
+  peutCreerUnContenu,
+  peutEditerUnContenu,
+  peutRestaurerUnContenu,
+  ROLES_CREATION_DE_CONTENU,
+  ROLES_ECRITURE_EDITORIALE,
+  ROLES_RESTAURATION_D_UN_CONTENU,
+  validerLaPageCreee,
+  validerLaPageDeContenuPourEdition,
+  validerLaTransitionDeContenu,
+  validerLEcritureDuContenu,
+  validerLesPagesDeGestion,
+} from './gestionDuContenu.js';
+export type {
+  BlocSoumis,
+  ContenuEcrit,
+  DemandeDeCreationDePage,
+  DemandeDEcritureDuContenu,
+  DemandeDeTransition,
+  PageCreee,
+  PageDeContenuPourEdition,
+  PageDeGestion,
+  ReponseDesPagesDeGestion,
+  TransitionDeContenu,
+} from './gestionDuContenu.js';

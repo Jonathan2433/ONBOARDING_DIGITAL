@@ -157,16 +157,34 @@ def creer_un_jeton(
 
     valides = controler_les_scopes(list(scopes))
     jeton = engendrer_un_jeton_de_service()
+    #  **`created_at` ET `updated_at` VIENNENT DU MEME `instant` QUE `expires_at`**,
+    #  et ce n'est pas du zele : les laisser au defaut `now()` de la base fait
+    #  cohabiter DEUX references de temps dans UNE ligne, alors que la contrainte
+    #  `ck_service_token_expiration_apres_creation` les compare l'une a l'autre.
+    #
+    #  **C'ETAIT UNE BOMBE A RETARDEMENT, ET ELLE A EXPLOSE LE 22/09/2026.** Un
+    #  appelant qui injecte un instant PASSE -- tout test qui eprouve l'expiration
+    #  sans attendre quatre-vingt-dix jours -- ecrivait `expires_at` derive de cet
+    #  instant et `created_at` derive de `now()`. Le jour ou `now()` a depasse
+    #  l'instant injecte plus la duree, la contrainte a mordu : neuf tests sont
+    #  tombes d'un coup, sur du code que personne n'avait touche.
+    #
+    #  C'est le §7.0, sixieme proposition, applique au TEMPS : deux grandeurs
+    #  qu'une contrainte compare doivent venir de la MEME source. Et c'est
+    #  l'idiome deja suivi par `app/content/ecriture.py` et `liens.py`, qui
+    #  ecrivent `created_at = :instant, updated_at = :instant` explicitement.
     identifiant = connexion.execute(
         text(
             "INSERT INTO service_token "
-            "(service_account_id, token_hash, expires_at, scopes) "
-            "VALUES (:compte, :empreinte, :expire, CAST(:scopes AS jsonb)) RETURNING id"
+            "(service_account_id, token_hash, expires_at, scopes, created_at, updated_at) "
+            "VALUES (:compte, :empreinte, :expire, CAST(:scopes AS jsonb), :instant, :instant) "
+            "RETURNING id"
         ),
         {
             "compte": compte,
             "empreinte": empreinte_de_jeton(jeton),
             "expire": instant + dt.timedelta(days=jours),
+            "instant": instant,
             #  `json.dumps` sur un tuple rendrait un tableau JSON, ce que la
             #  contrainte `ck_service_token_scopes_est_un_tableau` exige.
             "scopes": _en_tableau_json(valides),

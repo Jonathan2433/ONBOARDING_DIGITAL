@@ -346,7 +346,7 @@ def main() -> int:
     env = lire_env(arguments.env_file)
 
     from app.auth.mots_de_passe import ALGORITHME, hacher
-    from app.people.trombinoscope import TAILLE_PAR_DEFAUT, TAILLES_DE_PAGE
+    from app.shared.pagination import TAILLE_PAR_DEFAUT, TAILLES_DE_PAGE
 
     domaines = [
         d.strip().lower().lstrip("@")
