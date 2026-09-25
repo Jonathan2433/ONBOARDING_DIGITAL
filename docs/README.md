@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `594` en usage | `DEC-595` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `595` en usage | `DEC-596` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -292,7 +292,7 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` À `T9` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), et les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`). **68 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens, plus **540 tests frontend**. La prochaine est `T10`, les écrans d'édition.
+**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T12`, recette et checklist `G6` — la dernière du lot.
 
 > **`QO-120` EST CLOSE PAR `T8`, ET ELLE ÉTAIT BLOQUANTE — MAIS LE RÉSULTAT LE PLUS UTILE N'EST PAS LA LISTE.** Le modèle §15.3 et le cahier §13 exigent tous deux « une **liste de protocoles autorisés** » sans la donner — zéro occurrence, mesurée. `DEC-587` tranche `https` seul, `http` refusé **sous son propre code** parce qu'une adresse juste à un `s` près mérite mieux que « protocole inconnu » (§7.25). **Et la mesure a montré qu'une liste de protocoles NE SUFFIT PAS** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte** — c'est le cinquième refus, et le seul qu'une lecture littérale de la phrase du corpus aurait omis. La règle vit à **deux étages** : la contrainte `ck_internal_link_url_https` de la migration `0019` est le **plancher**, que trois écrivains futurs déjà nommés au corpus ne peuvent pas contourner ; le service est le **refus exact**, qui distingue cinq causes et exige l'hôte.
 

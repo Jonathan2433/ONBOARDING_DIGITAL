@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 25 septembre 2026, décisions préalables à `T11` du LOT 6 — décision `DEC-594`
+**Dernière mise à jour :** 25 septembre 2026, `T11` du LOT 6 — décision `DEC-595`
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -99,6 +99,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Bascule de l'image MinIO `DEC-590`, hors numérotation** | 1 | **Soumise le 25/09/2026** |
 | **Réalisation du LOT 6 `DEC-591`, sous-étape `T10`** | 1 | **Soumise le 24/09/2026** |
 | **Réalisation du LOT 6 `DEC-592` à `DEC-594`, avant `T11`** | 3 | **Soumises le 25/09/2026** |
+| **Réalisation du LOT 6 `DEC-595`, sous-étape `T11`** | 1 | **Soumise le 25/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -110,7 +111,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **262** | |
+| **Total** | **263** | |
 
 ---
 
@@ -790,8 +791,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-592` | **`QO-119` close : ONZE types de blocs de contenu, la lecture la plus large — « cartes », « liens » et « carte de lien » restent TROIS types distincts.** Arbitrage de Jonathan, le 25/09/2026, avant `T11`. | **C'est déjà ce que `DEC-577` applique depuis `T1` du LOT 6** : rien ne migre, en base comme au contrat. Resserrer plus tard — fusionner deux types — resterait une migration d'une ligne sur `content_block.block_type` ; élargir aussi. Retenu contre les lectures à neuf ou dix types, qui auraient exigé une migration **immédiate** pour un gain non mesuré. | Soumise le 25/09/2026 |
 | `DEC-593` | **`QO-123` close pour sa part restante : la référence d'icône d'un lien interne reste FACULTATIVE et en texte libre.** Arbitrage de Jonathan, le 25/09/2026, avant `T11`. La bibliothèque était déjà tranchée par `DEC-591` (`lucide-react`). | **C'est déjà ce que `T10` sert** : aucun changement de code, de contrat ni de migration. Retenu contre une icône déduite par défaut du `link_type` — qui aurait demandé une table de correspondance à écrire sans besoin mesuré — et contre une icône obligatoire — qui aurait changé le contrat en champ requis sur une route déjà livrée. | Soumise le 25/09/2026 |
 | `DEC-594` | **`QO-124` close, et `ECART-062` avec elle : la lecture restrictive du §13 est DÉFINITIVE — le DSM n'a et n'aura AUCUNE page à éditer.** Arbitrage de Jonathan, le 25/09/2026, avant `T11`. | **Aucun changement de code : le comportement appliqué depuis `T6` était déjà celui-ci**, et `T9`/`T10` l'avaient suivi sans le trancher. La décision ferme la question plutôt que de laisser une lecture provisoire porter un écran définitif — c'est le risque que `QO-124` nommait explicitement. Un sixième `page_type` n'est donc **pas** à prévoir pour le DSM. | Soumise le 25/09/2026 |
+| `DEC-595` | **`T11` livre le témoin du critère de sortie 2 du lot — « le modèle générique ne contient aucune donnée locale » — et la reprise relue du texte de présentation d'eXalt Bordeaux, `MVP-L06-US007`.** `make framework-check` passe de 74 à 77 contrôles : une entité GÉNÉRIQUE (ville Nantes, aucun cercle, aucun bureau, aucune page) ne sert AUCUN octet « bordeaux » sur `/framework` ni `/entities/{code}`, à travers Caddy — et un TÉMOIN positif, la même recherche sur l'entité du décor dont `city = 'Bordeaux'`, prouve que le contrôle discrimine réellement (§7.39). Le texte de présentation d'`eXalt Bordeaux` du prototype (`docs/prototype/V1.html`, fonction `BordeauxPresentation`) est repris **verbatim** dans le contenu `HOME`/`presentation` de l'entité `BORDEA00` — créé, écrit, publié via l'API existante depuis `T6`/`T7`, sans une ligne de code nouvelle côté écriture. | **LE TÉMOIN A ÉTÉ ÉPROUVÉ DANS LES DEUX SENS AVANT D'ÊTRE RETENU** (§7.0) : le contrôle 75 a été mis en échec **délibérément** — la ville de l'entité générique changée en `'Bordeaux'` le temps d'une exécution — pour prouver qu'il sait échouer pour la bonne raison (`fuite=True`), puis restauré et revérifié vert. Sans le contrôle 76 (le témoin), un contrôle 75 cassé et un contrôle 75 juste auraient rendu la **même observation** sur un décor qui ne teste jamais la présence de la chaîne — exactement le défaut `T5-6` du LOT 1. **LA REPRISE EST VÉRIFIÉE DE BOUT EN BOUT, PAS SEULEMENT ÉCRITE** : création (`201`), écriture (`200`, version 2), publication (`200`, version 3, `état: published`), lecture à travers Caddy avec les octets exacts du prototype, et l'attribution au propriétaire — `created_by_person_id` et `updated_by_person_id` pointent la personne qui a authentifié la session, colonne du §3.1 depuis le LOT 2, aucune migration. **CE QUE `T11` NE FAIT PAS** : aucun contenu de cercle ni de lien interne n'est inventé — `ECART-015` les nomme absents du prototype, ce sont des contenus à produire par Léa. Un second texte existe dans le prototype pour un bureau (« Le BDE crée des moments inoubliables… ») et n'est **pas** repris ici, faute d'un besoin exprimé au-delà du critère de sortie — résiduel nommé, pas oublié. | Soumise le 25/09/2026 |
 
-**Prochain identifiant libre : `DEC-595`.**
+**Prochain identifiant libre : `DEC-596`.**
 
 ---
 
@@ -1032,6 +1034,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-590` — bascule de l'image MinIO, hors numérotation | 1 | 1 |
 | `DEC-591` — réalisation du LOT 6, `T10` | 1 | 1 |
 | `DEC-592` à `DEC-594` — réalisation du LOT 6, avant `T11` | 3 | 3 |
+| `DEC-595` — réalisation du LOT 6, `T11` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1043,7 +1046,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **262** | **262** |
+| **Total** | **263** | **263** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
