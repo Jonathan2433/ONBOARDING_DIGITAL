@@ -525,6 +525,18 @@ def main() -> int:
     cles = lignes(sortie)
     composites: list[list[str]] = []
     vers_globale: list[list[str]] = []
+    #  LOT 7, `T1` : UNE TROISIEME RAISON LEGITIME A UNE CLE SIMPLE, EN PLUS DE
+    #  « cible globale ». Une cle composite exige un couple (colonne, entity_id)
+    #  EXACT des deux cotes. Si le cote SOURCE ou le cote CIBLE a un `entity_id`
+    #  legitimement nullable (`exceptions`, §1 ci-dessus), la composer serait
+    #  soit inerte sous MATCH SIMPLE (source nullable, `T8-1` transpose — regle
+    #  4), soit FAUSSEMENT REFUSEE pour toute ligne cible GLOBALE, dont
+    #  l'`entity_id` ne peut jamais egaler l'`entity_id` non nul de la source
+    #  (`entity_id_de_la_source (scope_circle_id) -> onboarding_template`,
+    #  `task_reference_id -> onboarding_task_reference`). Ni l'un ni l'autre
+    #  n'est une fuite : c'est la PORTEE nullable elle-meme qui rend le couple
+    #  inexprimable, pas un oubli.
+    simples_legitimes: list[list[str]] = []
     print()
     print(f"    info     {len(cles)} cles etrangeres au total")
     for nom, source, cible, cols, rcols, _match in cles:
@@ -533,19 +545,32 @@ def main() -> int:
             continue  # le rattachement a l'entite elle-meme, non une reference locale
         if source in locales and cible in locales:
             if "entity_id" not in colonnes_source:
-                print(
-                    f"    ECHEC    {source} -> {cible} ({cols}) : SIMPLE entre deux tables locales"
-                )
-                print(
-                    "             Le §2.5 exige que les deux ressources soient de la meme entite."
-                )
-                echecs += 1
+                if source in exceptions or cible in exceptions:
+                    simples_legitimes.append([nom, source, cible, cols])
+                else:
+                    print(
+                        f"    ECHEC    {source} -> {cible} ({cols}) : "
+                        "SIMPLE entre deux tables locales"
+                    )
+                    print(
+                        "             Le §2.5 exige que les deux ressources "
+                        "soient de la meme entite."
+                    )
+                    echecs += 1
             else:
                 composites.append([nom, source, cible, cols, rcols])
         elif cible in globales:
             vers_globale.append([nom, source, cible, cols])
 
     print(f"    ok       {len(composites)} cles COMPOSITES entre deux tables locales, 0 simple")
+    if simples_legitimes:
+        print(
+            f"    info     {len(simples_legitimes)} cle(s) SIMPLE(S) legitimes, portee nullable "
+            f"d'un cote ou de l'autre :"
+        )
+        for _nom, source, cible, cols in simples_legitimes:
+            raison = "source" if source in exceptions else "cible"
+            print(f"               {source} -> {cible} ({cols}) — `{raison}` en portee nullable")
     for _nom, source, cible, cols, rcols in composites:
         print(f"               {source} -> {cible} ({cols}) references ({rcols})")
 

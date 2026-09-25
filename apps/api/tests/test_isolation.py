@@ -100,6 +100,47 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "content_block",
         "content_page",
     ): "test_un_bloc_ne_peut_pas_pointer_la_page_d_une_AUTRE_entite [test_contenus.py]",
+    #  LOT 7, `T1` — les SIX cles composites de la fiche d'arrivee et de
+    #  l'onboarding. Leurs tests vivent dans `test_onboarding.py`.
+    (
+        "arrival_profile",
+        "entity_membership",
+    ): (
+        "test_une_fiche_ne_peut_pas_pointer_une_appartenance_d_une_AUTRE_entite "
+        "[test_onboarding.py]"
+    ),
+    (
+        "arrival_profile",
+        "media_asset",
+    ): "test_une_fiche_ne_peut_pas_pointer_une_photo_d_une_AUTRE_entite [test_onboarding.py]",
+    (
+        "onboarding_instance",
+        "entity_membership",
+    ): (
+        "test_une_instance_ne_peut_pas_pointer_une_appartenance_d_une_AUTRE_entite "
+        "[test_onboarding.py]"
+    ),
+    (
+        "onboarding_instance",
+        "onboarding_instance",
+    ): (
+        "test_une_instance_ne_peut_pas_etre_remplacee_par_une_instance_d_une_AUTRE_entite "
+        "[test_onboarding.py]"
+    ),
+    (
+        "onboarding_instance_task",
+        "onboarding_instance",
+    ): (
+        "test_une_tache_d_instance_ne_peut_pas_pointer_une_instance_d_une_AUTRE_entite "
+        "[test_onboarding.py]"
+    ),
+    (
+        "onboarding_task_event",
+        "onboarding_instance_task",
+    ): (
+        "test_un_evenement_ne_peut_pas_pointer_une_tache_d_instance_d_une_AUTRE_entite "
+        "[test_onboarding.py]"
+    ),
 }
 
 
@@ -248,12 +289,14 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     disparus = set(COUVERTURE) - reelles
     assert not manquants, f"cle(s) composite(s) SANS test de refus : {sorted(manquants)}"
     assert not disparus, f"test(s) portant sur une cle composite disparue : {sorted(disparus)}"
-    #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5, DOUZE DEPUIS `T1` DU LOT 6.**
-    #  Le nombre est ecrit, et c'est delibere : sa mise a jour est ce qui force la
-    #  decision. Une cle composite ajoutee sans test ferait echouer ce test, et
-    #  c'est son objet -- il l'a fait le 13/09/2026, sur les trois tables
-    #  editoriales, et j'avais alors pose trois chemins pour deux tests.
-    assert len(reelles) == len(COUVERTURE) == 12, f"{len(reelles)} chemins, 12 attendus"
+    #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5, DOUZE DEPUIS `T1` DU LOT 6,
+    #  DIX-HUIT DEPUIS `T1` DU LOT 7.** Le nombre est ecrit, et c'est delibere :
+    #  sa mise a jour est ce qui force la decision. Une cle composite ajoutee
+    #  sans test ferait echouer ce test, et c'est son objet -- il l'a fait le
+    #  13/09/2026, sur les trois tables editoriales, et j'avais alors pose
+    #  trois chemins pour deux tests -- puis a nouveau le 25/09/2026, sur les
+    #  six cles de la fiche d'arrivee et de l'onboarding.
+    assert len(reelles) == len(COUVERTURE) == 18, f"{len(reelles)} chemins, 18 attendus"
 
 
 # ---------------------------------------------------------------------------

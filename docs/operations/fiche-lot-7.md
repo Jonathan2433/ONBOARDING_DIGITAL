@@ -3,8 +3,8 @@
 **Intitulé :** Fiches d'arrivée et onboarding
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
-**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`
-**Dernière mise à jour :** 25 septembre 2026 — ouverture
+**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` FAITE**, `DEC-599`
+**Dernière mise à jour :** 25 septembre 2026 — `T1`
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -104,7 +104,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 
 | # | Sous-étape | Stories | Ce qui la rend non triviale |
 |---|---|---|---|
-| `T1` | Les huit tables — `arrival_profile` + les six tables d'onboarding, migration `0020` | socle | `photo_authorization` **existe déjà** depuis le LOT 5 (`0014`) : `arrival_profile.photo_media_id` s'y raccroche, rien à recréer. `apps/api/app/modeles.py` doit enregistrer le nouveau module `onboarding_modeles`, sous peine d'échouer le test qui vérifie que tous les modules de modèles sont importés |
+| ~~`T1`~~ | ~~Les huit tables — `arrival_profile` + les six tables d'onboarding, migration `0020`~~ **FAITE le 25/09/2026**, `DEC-599` | socle | `photo_authorization` **existe déjà** depuis le LOT 5 (`0014`), rien à recréer. **`make isolation-check` a trouvé deux classes de défaut inédites** — voir `compte-rendu-t1-lot-7.md` §2.2 — corrigées par une clé simple à trois raisons désormais légitimes plutôt que deux |
 | `T2` | La fiche d'arrivée en lecture — préremplissage verrouillé | `US001` (1/2) | les données organisationnelles affichées viennent des relations **actives** de l'appartenance, **jamais dupliquées** dans la fiche (modèle §12.1) : un test doit prouver qu'un changement d'appartenance se reflète sans réécrire `arrival_profile` |
 | `T3` | Validation et publication — `recent_until`, « ils nous ont rejoints récemment » | `US001` (2/2), `US002` | la publication est **automatique** à la validation (§7.1), pas un second geste — à l'inverse du cycle de vie des contenus du LOT 6, où publier est **distinct** de créer. Un test qui exigerait un geste séparé serait faux ici |
 | `T4` | Le catalogue des tâches — `onboarding_task_reference`, identifiants stables | structurel, ferme `ECART-013` | **la clé de tout le lot** : un identifiant fonctionnel unique par tâche commune, réutilisé par les modèles mission ET intercontrat, jamais la numérotation à deux préfixes du prototype |
