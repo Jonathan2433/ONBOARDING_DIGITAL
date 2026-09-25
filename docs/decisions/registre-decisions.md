@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 25 septembre 2026, `T12` du LOT 6 — décision `DEC-596`, porte `G6` prête
+**Dernière mise à jour :** 25 septembre 2026 — décision `DEC-598`, porte `G6` **franchie** (tag `v0.6.0`), LOT 7 ouvert
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -101,6 +101,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 6 `DEC-592` à `DEC-594`, avant `T11`** | 3 | **Soumises le 25/09/2026** |
 | **Réalisation du LOT 6 `DEC-595`, sous-étape `T11`** | 1 | **Soumise le 25/09/2026** |
 | **Réalisation du LOT 6 `DEC-596`, sous-étape `T12`** | 1 | **Soumise le 25/09/2026** |
+| **Franchissement de la porte `G6` `DEC-597`** | 1 | **Validée le 25/09/2026** |
+| **Ouverture du LOT 7 `DEC-598`** | 1 | **Validée le 25/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -112,7 +114,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **264** | |
+| **Total** | **266** | |
 
 ---
 
@@ -794,8 +796,10 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-594` | **`QO-124` close, et `ECART-062` avec elle : la lecture restrictive du §13 est DÉFINITIVE — le DSM n'a et n'aura AUCUNE page à éditer.** Arbitrage de Jonathan, le 25/09/2026, avant `T11`. | **Aucun changement de code : le comportement appliqué depuis `T6` était déjà celui-ci**, et `T9`/`T10` l'avaient suivi sans le trancher. La décision ferme la question plutôt que de laisser une lecture provisoire porter un écran définitif — c'est le risque que `QO-124` nommait explicitement. Un sixième `page_type` n'est donc **pas** à prévoir pour le DSM. | Soumise le 25/09/2026 |
 | `DEC-595` | **`T11` livre le témoin du critère de sortie 2 du lot — « le modèle générique ne contient aucune donnée locale » — et la reprise relue du texte de présentation d'eXalt Bordeaux, `MVP-L06-US007`.** `make framework-check` passe de 74 à 77 contrôles : une entité GÉNÉRIQUE (ville Nantes, aucun cercle, aucun bureau, aucune page) ne sert AUCUN octet « bordeaux » sur `/framework` ni `/entities/{code}`, à travers Caddy — et un TÉMOIN positif, la même recherche sur l'entité du décor dont `city = 'Bordeaux'`, prouve que le contrôle discrimine réellement (§7.39). Le texte de présentation d'`eXalt Bordeaux` du prototype (`docs/prototype/V1.html`, fonction `BordeauxPresentation`) est repris **verbatim** dans le contenu `HOME`/`presentation` de l'entité `BORDEA00` — créé, écrit, publié via l'API existante depuis `T6`/`T7`, sans une ligne de code nouvelle côté écriture. | **LE TÉMOIN A ÉTÉ ÉPROUVÉ DANS LES DEUX SENS AVANT D'ÊTRE RETENU** (§7.0) : le contrôle 75 a été mis en échec **délibérément** — la ville de l'entité générique changée en `'Bordeaux'` le temps d'une exécution — pour prouver qu'il sait échouer pour la bonne raison (`fuite=True`), puis restauré et revérifié vert. Sans le contrôle 76 (le témoin), un contrôle 75 cassé et un contrôle 75 juste auraient rendu la **même observation** sur un décor qui ne teste jamais la présence de la chaîne — exactement le défaut `T5-6` du LOT 1. **LA REPRISE EST VÉRIFIÉE DE BOUT EN BOUT, PAS SEULEMENT ÉCRITE** : création (`201`), écriture (`200`, version 2), publication (`200`, version 3, `état: published`), lecture à travers Caddy avec les octets exacts du prototype, et l'attribution au propriétaire — `created_by_person_id` et `updated_by_person_id` pointent la personne qui a authentifié la session, colonne du §3.1 depuis le LOT 2, aucune migration. **CE QUE `T11` NE FAIT PAS** : aucun contenu de cercle ni de lien interne n'est inventé — `ECART-015` les nomme absents du prototype, ce sont des contenus à produire par Léa. Un second texte existe dans le prototype pour un bureau (« Le BDE crée des moments inoubliables… ») et n'est **pas** repris ici, faute d'un besoin exprimé au-delà du critère de sortie — résiduel nommé, pas oublié. | Soumise le 25/09/2026 |
 | `DEC-596` | **`T12` livre la recette, le classement du §30 et la checklist `G6` — dernière sous-étape du LOT 6, DOUZE sur DOUZE.** La recette est épinglée sur la dernière publication réussie (`T11`, commit `07571f9`), sa base détruite et reconstruite, `make recette-check` : 57 contrôles, 0 échec, 7/7 séparations du cahier §22.2. `checklist-validation-G6.md` porte les sept critères de sortie, la démonstration guidée, les grandeurs dérivées et les réserves — soumise à la décision de Jonathan. | **UN RECLASSEMENT DU §30 TROUVÉ, ET IL DATAIT D'AVANT `T1`.** `§30.8` — « un bureau publié possède entre un et trois responsables » — était classé `INAPPLICABLE` depuis sa rédaction, citant `ECART-031` comme motif. Or `ECART-031` est clos depuis `DEC-576`, à l'ouverture même du lot : le classement n'avait simplement jamais suivi. Reclassé `PARTIEL`, ni `ACQUIS` ni `INAPPLICABLE` : le déclencheur de `T7` (migration `0018`, `DEC-583`) garde la **transition** vers `published` — quatre tests le prouvent, sur les trois valeurs valides et les deux refusées — mais pas l'**état permanent** : un bureau publié conforme peut le rester en apparence si ses responsables sont retirés ensuite, rien ne l'en empêche. Même structure que le §30.4, déjà `PARTIEL` pour une raison analogue. **13 acquis, 2 partiel, 10 reportés, 0 inapplicable** — contre 13/1/10/1 avant. **UNE COLLISION DE PORT AVEC UN PROJET TIERS, DÉJÀ DOCUMENTÉE (§7.23)** : `observatoire-ecom-studio` occupait le port `8080` que la recette réclame. Arrêté le temps de la recette, relancé ensuite — aucune donnée de ce projet touchée. **PREUVES** : `make images-pin` (3 empreintes, identité vérifiée) ; `make recette-check` 57/57 ; sur `dev`, l'intégralité des contrôles de stack et d'authentification du projet — `framework-check` 77/77, `cadre-check` 25/25, `permissions-check`, les onze contrôles d'authentification, les contrôles de schéma — tous verts ; `make check` : 74 échecs pytest, tous environnementaux, 0 lié au code livré ; vérification visuelle réelle à travers Caddy, session `demo.client@exemple.test`, entité `BORDEA00`. | Soumise le 25/09/2026 |
+| `DEC-597` | **La porte `G6` est franchie et le LOT 6 est verrouillé.** Les **sept** critères de sortie sont prouvés (`checklist-validation-G6.md`), la recette a tourné sur une base **remise à zéro** — `make recette-check` 57/57, 7/7 séparations — et le tag **`v0.6.0`** est posé sur `d2d639e`. `QO-121` reste ouverte, report explicite de Jonathan le 25/09/2026, non bloquante pour la porte. | **La fusion vers `main` a suivi exactement le geste de `G5` — branche de livraison `release/g6-rattraper-develop-dans-main`, jamais `develop → main` directement**, `main` portant `strict: true` et des commits de fusion que `develop` n'a jamais reçus. Ce qui valide n'est pas le verdict de `git merge` mais l'**arbre**, relevé avant ET après la poussée : `origin/main` et `origin/develop` portent tous deux `8f80cf19…`, `develop` est un **ancêtre** de `main`, le commit porte **deux** parents — un merge commit, pas un squash. CI verte sur les trois tâches, dont 14 min de stack réelle. | Validée le 25/09/2026 |
+| `DEC-598` | **Le LOT 7 — Fiches d'arrivée et onboarding — est ouvert, et son découpage compte QUATORZE sous-étapes.** `T1` les huit tables (`arrival_profile` + six tables d'onboarding, migration `0020` — `photo_authorization` existe déjà depuis le LOT 5) · `T2` la fiche d'arrivée en lecture · `T3` sa validation et sa publication · `T4` le catalogue des tâches, qui résout `ECART-013` · `T5` les modèles et leurs versions immuables · `T6` publication, duplication, archivage/restauration d'un modèle · `T7` la création d'une instance depuis la date d'arrivée · `T8` compléter/annuler une tâche dans les 5 minutes · `T9` la réouverture après 5 minutes, qui ferme `§30.15` · `T10` le changement automatique mission ↔ intercontrat, qui ferme `§30.14` · `T11` l'archivage automatique du parcours et la révocation au départ, qui ferme `§30.13` · `T12` le suivi par périmètre · `T13` les écrans du nouvel arrivant · `T14` les écrans d'administration, la recette, le §30 et la checklist `G7`. | **`MVP-L07-US003` ET `US007` SONT LES DEUX SEULES `XL` DU LOT**, et c'est ce qui commande le découpage : les modèles/versions (`US003`) sont scindés en deux sous-étapes (`T5` création, `T6` cycle de vie), et le changement mission/intercontrat (`US007`) reçoit sa propre sous-étape (`T10`) plutôt que d'être fondu dans la création d'instance. **`ECART-012` reste OUVERT, non bloquant** : Jonathan reconduit sa position du 12/09/2026 — ne rien afficher pour une direction générale sans mission — comme hypothèse de travail, **sans que cela ne résolve l'écart, qui reste à Léa**. **`ECART-066` est OUVERTE** : la matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours archivé (§8.1) et d'une version de modèle (§9), et `ARB-DROIT-003` — qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau — ne nomme ni l'un ni l'autre. Rien dans le corpus ne comble ce trou ; à instruire avant `T6`/`T11`. | Validée le 25/09/2026 |
 
-**Prochain identifiant libre : `DEC-597`.**
+**Prochain identifiant libre : `DEC-599`.**
 
 ---
 
@@ -1038,6 +1042,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-592` à `DEC-594` — réalisation du LOT 6, avant `T11` | 3 | 3 |
 | `DEC-595` — réalisation du LOT 6, `T11` | 1 | 1 |
 | `DEC-596` — réalisation du LOT 6, `T12` | 1 | 1 |
+| `DEC-597` — porte `G6` | 1 | 1 |
+| `DEC-598` — ouverture du LOT 7 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1049,7 +1055,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **264** | **264** |
+| **Total** | **266** | **266** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
