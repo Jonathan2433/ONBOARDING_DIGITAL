@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `596` en usage | `DEC-597` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `598` en usage | `DEC-599` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `065` |  `ECART-066` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `066` |  `ECART-067` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -131,8 +131,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
-| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **Porte courante** — LOT 6 ouvert le 13/09/2026 (`DEC-575`), tag `v0.6.0` prévu. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), **douze** sous-étapes |
-| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | Planifiée |
+| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
+| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **Porte courante** — LOT 7 ouvert le 25/09/2026 (`DEC-598`), tag `v0.7.0` prévu. Plan : [`fiche-lot-7.md`](operations/fiche-lot-7.md), **quinze** sous-étapes |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
@@ -270,7 +270,7 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 
 ---
 
-## 13. Avancement du LOT 6 — **lot OUVERT**, porte `G6`
+## 13. Avancement du LOT 6 — **lot VERROUILLÉ**, porte `G6` franchie
 
 **Ouvert par Jonathan le 13 septembre 2026 (`DEC-575`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-6.md`](operations/fiche-lot-6.md) — **7** stories, **sept** critères de sortie
@@ -292,7 +292,10 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T12`, recette et checklist `G6` — la dernière du lot.
+**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. **`T12` EST FAITE** le 25/09/2026, `DEC-596` : recette (`make recette-check` 57/57), classement du
+§30 — un reclassement trouvé, `§30.8` était `INAPPLICABLE` depuis avant `T1` — et
+`checklist-validation-G6.md`. **LES DOUZE SONT FAITES. La porte `G6` est FRANCHIE le 25/09/2026**,
+`DEC-597`, tag `v0.6.0` posé sur `d2d639e`. Voir §14 pour le LOT 7, qui lui succède.
 
 > **`QO-120` EST CLOSE PAR `T8`, ET ELLE ÉTAIT BLOQUANTE — MAIS LE RÉSULTAT LE PLUS UTILE N'EST PAS LA LISTE.** Le modèle §15.3 et le cahier §13 exigent tous deux « une **liste de protocoles autorisés** » sans la donner — zéro occurrence, mesurée. `DEC-587` tranche `https` seul, `http` refusé **sous son propre code** parce qu'une adresse juste à un `s` près mérite mieux que « protocole inconnu » (§7.25). **Et la mesure a montré qu'une liste de protocoles NE SUFFIT PAS** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte** — c'est le cinquième refus, et le seul qu'une lecture littérale de la phrase du corpus aurait omis. La règle vit à **deux étages** : la contrainte `ck_internal_link_url_https` de la migration `0019` est le **plancher**, que trois écrivains futurs déjà nommés au corpus ne peuvent pas contourner ; le service est le **refus exact**, qui distingue cinq causes et exige l'hôte.
 
@@ -326,6 +329,24 @@ lecture la plus large — `QO-121`, les champs de `payload_json`, et `QO-123`, l
 > leçon `CLAUDE.md` §7.39, appliquée **au découpage** cette fois, et non après coup.
 
 **Traçabilité GitHub :** épic `#145`, jalon `G6`, stories `#146` à `#152` — créées le 13/09/2026.
+
+---
+
+## 14. Avancement du LOT 7 — **lot OUVERT**, porte `G7`
+
+**Ouvert par Jonathan le 25 septembre 2026 (`DEC-598`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-7.md`](operations/fiche-lot-7.md) — **8** stories, toutes `P0`, **sept**
+critères de sortie **dérivés des deux sources, qui concordent**, **quinze** sous-étapes, tag
+`v0.7.0` prévu.
+
+**Aucune sous-étape n'est faite. La prochaine est `T1`**, les huit tables du lot —
+`arrival_profile` et les six tables d'onboarding, migration `0020`. `photo_authorization` existe
+déjà depuis le LOT 5 et n'est pas recréée.
+
+`ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
+parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T1`.
+
+**Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
 ---
 
