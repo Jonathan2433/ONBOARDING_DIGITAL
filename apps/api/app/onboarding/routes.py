@@ -1,4 +1,5 @@
-"""Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche), `T4` (catalogue), `T5` (modeles).
+"""Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche), `T4` (catalogue), `T5`
+(modeles), `T6` (cycle de vie d'une version).
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
@@ -35,6 +36,17 @@ depuis le LOT 4.
   creer un modele resout la portee DECLAREE par la demande ; creer une
   version ou y composer des taches resout la portee DEJA ECRITE du modele
   EXISTANT, lu en base — jamais celle que l'appelant pretendrait avoir.
+
+`T6` AJOUTE LE CYCLE DE VIE D'UNE VERSION — PUBLIER, ARCHIVER, RESTAURER
+
+  Publier et archiver reutilisent `garde_des_modeles` et `peut_gerer_un_
+  modele_de_cette_portee`, EXACTEMENT comme les trois routes de `T5` — meme
+  grille du §9. **Restaurer emploie une garde SEPAREE, `garde_de_
+  restauration`** : DSM et BOOSTER y sont exclus DES LA GARDE COARSE, jamais
+  seulement au permis fin, parce que la matrice les met a TIRET en bloc sur
+  cette ligne precise — pas de sous-cas « son propre modele » comme ailleurs.
+  Voir `app/onboarding/cycle_de_vie.py` pour les trois transitions et la
+  resolution d'`ECART-066`.
 """
 
 from __future__ import annotations
@@ -45,6 +57,7 @@ from typing import Annotated, Final, Literal
 
 from fastapi import APIRouter, Depends, Path, Request, status
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.engine import Connection
 
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.configuration.settings import Parametres
@@ -58,6 +71,14 @@ from app.onboarding.catalogue import (
     TacheDeReference,
     creer_une_tache_de_reference,
     lire_le_catalogue_de_taches,
+)
+from app.onboarding.cycle_de_vie import (
+    VersionArchivee,
+    VersionPubliee,
+    VersionRestauree,
+    archiver_une_version,
+    publier_une_version,
+    restaurer_une_version,
 )
 from app.onboarding.ecriture import completer_la_fiche_arrivee, valider_et_publier_la_fiche_arrivee
 from app.onboarding.fiche_arrivee import FicheArrivee, lire_la_fiche_arrivee
@@ -81,11 +102,13 @@ from app.onboarding.gabarits import (
 from app.onboarding.perimetre import (
     ROLES_DE_GESTION_DES_MODELES,
     ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
+    ROLES_DE_RESTAURATION_DES_MODELES,
     peut_completer_la_fiche_arrivee,
     peut_corriger_la_fiche_arrivee_apres_publication,
     peut_creer_une_tache_de_reference_globale,
     peut_gerer_un_modele_de_cette_portee,
     peut_lire_la_fiche_arrivee,
+    peut_restaurer_une_version_de_modele,
     peut_valider_et_publier_la_fiche_arrivee,
 )
 from app.permissions.dependances import (
@@ -430,6 +453,62 @@ def _tache_de_version_en_reponse(tache: TacheDeVersion) -> ReponseDeTacheDeVersi
         due_offset_days=tache.due_offset_days,
         title_override=tache.title_override,
         description_override=tache.description_override,
+    )
+
+
+class ReponseDePublicationDeVersion(BaseModel):
+    """Ce qu'une publication a produit — modele §13.3, `T6`."""
+
+    id: uuid.UUID
+    version_number: int
+    state: str
+    published_at: dt.datetime
+    published_by_person_id: uuid.UUID
+
+
+class ReponseDArchivageDeVersion(BaseModel):
+    """Ce qu'un archivage a produit — pas d'instant ni d'acteur, voir
+    `cycle_de_vie.py`."""
+
+    id: uuid.UUID
+    version_number: int
+    state: str
+
+
+class ReponseDeRestaurationDeVersion(BaseModel):
+    """Ce qu'une restauration a produit — `state` revient a `published`,
+    JAMAIS a `draft`. Voir `cycle_de_vie.py`."""
+
+    id: uuid.UUID
+    version_number: int
+    state: str
+    published_at: dt.datetime | None
+    published_by_person_id: uuid.UUID | None
+
+
+def _publication_en_reponse(version: VersionPubliee) -> ReponseDePublicationDeVersion:
+    return ReponseDePublicationDeVersion(
+        id=version.id,
+        version_number=version.version_number,
+        state=version.state,
+        published_at=version.published_at,
+        published_by_person_id=version.published_by_person_id,
+    )
+
+
+def _archivage_en_reponse(version: VersionArchivee) -> ReponseDArchivageDeVersion:
+    return ReponseDArchivageDeVersion(
+        id=version.id, version_number=version.version_number, state=version.state
+    )
+
+
+def _restauration_en_reponse(version: VersionRestauree) -> ReponseDeRestaurationDeVersion:
+    return ReponseDeRestaurationDeVersion(
+        id=version.id,
+        version_number=version.version_number,
+        state=version.state,
+        published_at=version.published_at,
+        published_by_person_id=version.published_by_person_id,
     )
 
 
@@ -908,6 +987,12 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
     #  cinq roles ; le permis FIN, qui differe par ligne, se resout ensuite
     #  dans chaque route via `peut_gerer_un_modele_de_cette_portee`.
     garde_des_modeles = exiger_un_role_dans_l_entite(parametres, ROLES_DE_GESTION_DES_MODELES)
+    #  §9 « Restaurer une version » : DSM et BOOSTER y sont a TIRET, jamais un
+    #  sous-cas — la garde COARSE les exclut donc deja, contrairement a
+    #  `garde_des_modeles`. `ECART-066` resolu, voir `perimetre.py`.
+    garde_de_restauration = exiger_un_role_dans_l_entite(
+        parametres, ROLES_DE_RESTAURATION_DES_MODELES
+    )
 
     @routeur.post(
         "/entities/{code}/onboarding/templates",
@@ -1185,5 +1270,242 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             )
         servies = [_tache_de_version_en_reponse(tache) for tache in ecrites]
         return ReponseDesTachesDeVersion(taches=servies, nombre_de_taches=len(servies))
+
+    def _resoudre_entite_modele_et_version(
+        connexion: Connection, *, code: str, template_id: uuid.UUID, version_id: uuid.UUID
+    ) -> tuple[uuid.UUID, Modele, VersionDeModele]:
+        """Les trois lectures communes aux trois transitions — factorisees ici
+        plutot que recopiees trois fois (§7.27)."""
+        entite = resoudre_une_entite_active(connexion, code)
+        if entite is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        modele = lire_un_modele(connexion, entite=entite.id, modele=template_id)
+        if modele is None:
+            raise ErreurApplicative(
+                code=CODE_MODELE_INTROUVABLE,
+                message=MESSAGE_MODELE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        version = lire_une_version(connexion, modele=modele.id, version=version_id)
+        if version is None:
+            raise ErreurApplicative(
+                code=CODE_VERSION_INTROUVABLE,
+                message=MESSAGE_VERSION_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return entite.id, modele, version
+
+    @routeur.post(
+        "/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/publication",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDePublicationDeVersion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : la portee DEJA ECRITE de ce modele refuse cet acteur."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite, modele ou version inconnus, ou d'une AUTRE entite."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_version_invalide` : seul un BROUILLON peut etre publie."
+                )
+            },
+        },
+        summary="Publier une version — le brouillon devient immuable",
+        description=(
+            "Matrice §9 « Publier une version ». `draft` devient `published` et recoit "
+            "sa date de publication — modele §13.3. Aucune depublication : retirer une "
+            "version se fait en l'archivant."
+        ),
+    )
+    def publier_une_version_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
+        version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDePublicationDeVersion:
+        """Publier une version — matrice §9, modele §13.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, modele, version = _resoudre_entite_modele_et_version(
+                connexion, code=code, template_id=template_id, version_id=version_id
+            )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite_id, instant)
+            autorise = peut_gerer_un_modele_de_cette_portee(
+                connexion,
+                entite=entite_id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                portee=modele.scope_type,
+                scope_person_id=modele.scope_person_id,
+                scope_circle_id=modele.scope_circle_id,
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            publiee = publier_une_version(
+                connexion, version=version.id, acteur=appelant.personne, instant=instant
+            )
+        return _publication_en_reponse(publiee)
+
+    @routeur.post(
+        "/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivageDeVersion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : la portee DEJA ECRITE de ce modele refuse cet acteur."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite, modele ou version inconnus, ou d'une AUTRE entite."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_version_invalide` : seule une version PUBLIEE peut "
+                    "etre archivee — pas un brouillon, pas une version deja retiree."
+                )
+            },
+        },
+        summary="Archiver une version — la retirer de la circulation",
+        description=(
+            "Matrice §9 « Archiver une version ». `published` devient `retired`. Aucun "
+            "motif : le §18.1 n'enumere pas ce geste parmi ses cinq cas obligatoires."
+        ),
+    )
+    def archiver_une_version_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
+        version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDArchivageDeVersion:
+        """Archiver une version — matrice §9, modele §13.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, modele, version = _resoudre_entite_modele_et_version(
+                connexion, code=code, template_id=template_id, version_id=version_id
+            )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite_id, instant)
+            autorise = peut_gerer_un_modele_de_cette_portee(
+                connexion,
+                entite=entite_id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                portee=modele.scope_type,
+                scope_person_id=modele.scope_person_id,
+                scope_circle_id=modele.scope_circle_id,
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            archivee = archiver_une_version(connexion, version=version.id)
+        return _archivage_en_reponse(archivee)
+
+    @routeur.post(
+        "/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestaurationDeVersion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : DSM et BOOSTER sont exclus EN BLOC sur cette ligne "
+                    "du §9 — jamais un sous-cas de leur propre modele, a la difference "
+                    "des autres gestes. `ECART-066` resolu : l'ESM restaure desormais "
+                    "comme `ADM-E`, dans son entite."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite, modele ou version inconnus, ou d'une AUTRE entite."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_version_invalide` : seule une version RETIREE peut "
+                    "etre restauree."
+                )
+            },
+        },
+        summary="Restaurer une version — la reactiver, sans rouvrir son edition",
+        description=(
+            "Matrice §9 « Restaurer une version ». `retired` redevient `published` — "
+            "JAMAIS `draft` : la version reste immuable, modele §13.3. "
+            "`published_at`/`published_by_person_id` d'origine sont conserves."
+        ),
+    )
+    def restaurer_une_version_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
+        version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_de_restauration),  # noqa: B008
+    ) -> ReponseDeRestaurationDeVersion:
+        """Restaurer une version — matrice §9, modele §13.3, `ECART-066` resolu."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, modele, version = _resoudre_entite_modele_et_version(
+                connexion, code=code, template_id=template_id, version_id=version_id
+            )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite_id, instant)
+            autorise = peut_restaurer_une_version_de_modele(
+                portee=modele.scope_type, roles=frozenset(permissions.roles)
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            restauree = restaurer_une_version(connexion, version=version.id)
+        return _restauration_en_reponse(restauree)
 
     return routeur
