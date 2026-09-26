@@ -1218,6 +1218,46 @@
         "409 `fiche_arrivee_etat_incompatible` : deja publiee, ou aucune ligne",
         "n'existe encore — rien a valider."
       ]
+    },
+    {
+      "cle": "catalogueDesTachesOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/task-references",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "CatalogueDeTaches",
+      "role": [
+        "Le catalogue des taches reutilisables — LOT 7, T4, matrice §9 « Reutiliser",
+        "une tache de reference », ferme ECART-013.",
+        "UNION DE DEUX PERIMETRES : les taches PROPRES a l'entite du chemin ET les",
+        "taches GLOBALES (entity_id NULL, modele §13.1) — un modele de cette entite",
+        "peut reutiliser l'une comme l'autre, T5.",
+        "MEME GRILLE QUE LA CREATION (voir POST ci-dessous) : DSM, ESM, BOOST, ADM-E,",
+        "SUPER — OFFICE a TIRET, troisieme occurrence de ce piege en trois lots."
+      ]
+    },
+    {
+      "cle": "creationDUneTacheDeReference",
+      "chemin": "/api/v1/entities/{code}/onboarding/task-references",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409],
+      "forme": "TacheDeReference",
+      "role": [
+        "Creer une tache de reference — LOT 7, T4, matrice §9, ferme ECART-013.",
+        "Ecriture pure : aucun module de contrat propre — seule la lecture",
+        "ci-dessus en pose un, meme regle que la fiche d'arrivee.",
+        "LE `code` EST L'IDENTIFIANT FONCTIONNEL STABLE que T10 (changement",
+        "automatique mission <-> intercontrat) reutilisera pour conserver une",
+        "tache commune deja terminee — c'est la CLE de ce que T4 ferme.",
+        "`portee: \"ENTITE\"` (par defaut) : DSM, ESM, BOOST, ADM-E ou SUPER, dans",
+        "l'entite du chemin — `Consultants`/`Cercle` s'y reduisent a l'entite,",
+        "cette table ne portant aucune colonne plus fine (voir `perimetre.py`).",
+        "`portee: \"GLOBAL\"` : reservee a SUPER seul — la SEULE colonne du §9 qui",
+        "atteigne `Global` sur cette ligne. Un ESM ou un ADM-E qui la demande",
+        "obtient 403 `acces_refuse` — une ASYMETRIE mesuree, pas une absence",
+        "generale de droit : il possede le droit ENTITE.",
+        "409 `code_de_tache_deja_utilise` : ce code existe deja dans ce perimetre",
+        "(cette entite, ou le catalogue global) — les deux index partiels de T1."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

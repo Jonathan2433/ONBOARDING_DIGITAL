@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 25 septembre 2026, ouverture du LOT 7 — `ECART-066` ouvert
+**Dernière mise à jour :** 26 septembre 2026, `T4` du LOT 7 — `ECART-013` clos structurellement, `DEC-603`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 66 | 14 | 49 | 3 |
+| Total 66 | 13 | 50 | 3 |
 
 ---
 
@@ -30,7 +30,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
 | `ECART-012` | La valeur `intercontract` est imposée à une direction générale, faute de troisième valeur. **Instruit en `T5`** : le coût des deux options est mesuré, la décision revient à Léa | Non | **Ouvert, instruit** |
-| `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
+| `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | **Clos** structurellement le 26/09/2026, `T4` du LOT 7, `DEC-603` |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
 | `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
@@ -414,7 +414,7 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Reprendre cette numérotation ferait échouer une exigence centrale du LOT 7 : lors d'un changement mission ↔ intercontrat, les tâches communes déjà terminées doivent être **conservées** grâce à un identifiant fonctionnel immuable. Avec des identifiants distincts, un collaborateur perdrait la complétion de ces cinq tâches. |
 | Bloquant | Non pour `G0`. **Structurant pour le LOT 7.** |
 | Recommandation | Au LOT 7, attribuer à chaque tâche commune **un seul** code de référence partagé dans `onboarding_task_reference`, réutilisé par les deux modèles. Ne pas transposer la numérotation du prototype. |
-| Résolution | Ouvert. Traitement au LOT 7, story `MVP-L07-US003`. |
+| Résolution | **Clos STRUCTURELLEMENT le 26/09/2026, `T4` du LOT 7 (`DEC-603`).** `onboarding_task_reference` porte un `code` fonctionnel unique par périmètre (deux index partiels — entité, ou global), et `onboarding_template_task.task_reference_id` (posée dès `T1`) pointe toujours vers la MÊME ligne, quel que soit le modèle qui la réutilise. **Ce que `T4` ne fait pas** : créer les cinq tâches communes du prototype elles-mêmes, ni prouver leur conservation lors d'un changement RÉEL de parcours — c'est `T10` (`US007`) qui met ce mécanisme à l'épreuve. |
 
 ## `ECART-014` — Divergence de terminologie sur le responsable de cercle
 

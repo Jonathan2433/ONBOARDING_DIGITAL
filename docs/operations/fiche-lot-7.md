@@ -3,8 +3,8 @@
 **Intitulé :** Fiches d'arrivée et onboarding
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
-**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1`, `T2` et `T3` FAITES**, `DEC-599`, `DEC-600`, `DEC-601`
-**Dernière mise à jour :** 26 septembre 2026 — `T3`
+**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T4` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`
+**Dernière mise à jour :** 26 septembre 2026 — `T4`
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -107,7 +107,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T1`~~ | ~~Les huit tables — `arrival_profile` + les six tables d'onboarding, migration `0020`~~ **FAITE le 25/09/2026**, `DEC-599` | socle | `photo_authorization` **existe déjà** depuis le LOT 5 (`0014`), rien à recréer. **`make isolation-check` a trouvé deux classes de défaut inédites** — voir `compte-rendu-t1-lot-7.md` §2.2 — corrigées par une clé simple à trois raisons désormais légitimes plutôt que deux |
 | ~~`T2`~~ | ~~La fiche d'arrivée en lecture — préremplissage verrouillé~~ **FAITE le 25/09/2026**, `DEC-600` | `US001` (1/2) | les données organisationnelles sont **réutilisées** de `lire_la_fiche` (LOT 5), jamais recalculées — une population élargie (future/active, trois visibilités), pas une deuxième requête. Périmètre du §7 prouvé, `DSM` à tiret malgré un rattachement réel |
 | ~~`T3`~~ | ~~Validation et publication — `recent_until`, « ils nous ont rejoints récemment »~~ **FAITE le 26/09/2026**, `DEC-601` + correctif `DEC-602` | `US001` (2/2), `US002` | la publication est **automatique** à la validation (§7.1), prouvée en un seul appel. `Support`/`Support cercle` (absents de la légende §4) couvrent Entité/Cercle/Global ; `BOOST` diverge sur la seule ligne « Valider et publier ». **Correctif post-fusion** : une quatrième ligne, « Corriger après publication », manquée à la première lecture — sa grille s'inverse sur `NEW`/`DSM` |
-| `T4` | Le catalogue des tâches — `onboarding_task_reference`, identifiants stables | structurel, ferme `ECART-013` | **la clé de tout le lot** : un identifiant fonctionnel unique par tâche commune, réutilisé par les modèles mission ET intercontrat, jamais la numérotation à deux préfixes du prototype |
+| ~~`T4`~~ | ~~Le catalogue des tâches — `onboarding_task_reference`, identifiants stables~~ **FAITE le 26/09/2026**, `DEC-603` | structurel, ferme `ECART-013` | **la clé de tout le lot** : un identifiant fonctionnel unique par tâche commune, réutilisé par les modèles mission ET intercontrat, jamais la numérotation à deux préfixes du prototype. `DSM`/`BOOST` (`Consultants`/`Cercle` au §9) se réduisent à l'`Entité` pour cette table précisément : elle ne porte ni cercle ni DSM, seulement `entity_id` — collapsage documenté, pas une lecture large. Seul `SUPER` atteint `Global` |
 | `T5` | Les modèles et leurs versions — `onboarding_template`, `_version`, `_task`, scopes `GLOBAL/ENTITY/DSM/CIRCLE` | `US003` (1/2) | une version publiée est **immuable** (modèle §13.3) : le témoin est une tentative de modification d'une version déjà publiée, refusée |
 | `T6` | Cycle de vie d'un modèle — publication, duplication, archivage, restauration | `US003` (2/2) | **`ECART-066` s'instruit ICI** : la restauration d'une version archivée par l'ESM est « Conditionnel » et rien ne dit à quoi — à trancher avant d'écrire la route |
 | `T7` | Création d'une instance depuis la date d'arrivée — lecture du parcours, progression calculée | `US004` | ferme le critère 3 (témoin positif, §1.2) ; « une seule instance active par appartenance » (modèle §13.5) est une contrainte d'**unicité**, donc à éprouver au volume (§7.26 du LOT 6) et pas seulement à l'unité |

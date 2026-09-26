@@ -314,3 +314,13 @@ export {
   validerLaFicheArrivee,
 } from './ficheArrivee.js';
 export type { CercleDeLaFicheArrivee, FicheArrivee } from './ficheArrivee.js';
+
+//  LE CATALOGUE DES TACHES EN LECTURE — LOT 7, `T4`, ferme `ECART-013`. Meme
+//  partage : la CREATION, qui ECRIT, n'a pas de module de contrat propre.
+export {
+  cheminCatalogueDeTaches,
+  CODES_CATALOGUE_DE_TACHES,
+  GABARIT_CHEMIN_CATALOGUE_DE_TACHES,
+  validerLeCatalogueDeTaches,
+} from './catalogueDesTaches.js';
+export type { CatalogueDeTaches, TacheDeReference } from './catalogueDesTaches.js';

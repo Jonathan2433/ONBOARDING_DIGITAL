@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-602`, correctif post-fusion de `T3` du LOT 7
+**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-603`, `T4` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -107,6 +107,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-600`, sous-étape `T2`** | 1 | **Soumise le 25/09/2026** |
 | **Réalisation du LOT 7 `DEC-601`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
 | **Correctif post-fusion du LOT 7 `DEC-602`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
+| **Réalisation du LOT 7 `DEC-603`, sous-étape `T4`** | 1 | **Soumise le 26/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -118,7 +119,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **270** | |
+| **Total** | **271** | |
 
 ---
 
@@ -809,7 +810,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-602` | **Correctif post-fusion de `T3` : « Corriger après publication », une quatrième ligne du §7 manquée à la première lecture, est implémentée.** `PATCH …/arrival-profile` accepte désormais l'écriture sur `state='published'`, gardée par une nouvelle grille — `DSM`→Consultants (retrouvé, à tiret sur « Compléter »), `ESM`/`ADM-E`→Entité, `BOOST`→Cercle, `SUPER`→Global, `NEW`→tiret (perdu, §6.2), `OFFICE`→tiret. Seul `archived` reste sans aucune ligne d'écriture. 6 tests remplacent le témoin devenu faux. | **TROUVÉ EN RELISANT LE §7 JUSTE APRÈS LA FUSION DE `DEC-601` (PR #187), PAS PAR UN CONTRÔLE.** Le PR fusionné bloquait toute écriture après publication, pour tout le monde — ce qui laissait `MVP-L07-US002` incomplète : son critère « les corrections ultérieures sont limitées aux rôles autorisés » ne peut pas être satisfait par un blocage total, qui ne distingue aucun rôle. Signalé à Jonathan avant correction plutôt que corrigé en silence ; validation demandée et obtenue de corriger immédiatement plutôt que différer à une sous-étape ultérieure. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 26/09/2026 |
 
-**Prochain identifiant libre : `DEC-603`.**
+| `DEC-603` | **`T4` livre le catalogue des tâches — `GET`/`POST …/onboarding/task-references`, ferme `ECART-013` structurellement.** Une seule grille gouverne « Créer » et « Réutiliser une tâche de référence » (matrice §9) : DSM/ESM/BOOST/ADM-E/SUPER, `OFFICE` à tiret. `portee: "GLOBAL"` (`entity_id` NULL, modèle §13.1) est réservée à `SUPER` seul. Le catalogue lu est une UNION — les tâches de l'entité et les tâches globales. 16 tests d'intégration, 11 tests du contrat TypeScript (`catalogueDesTaches.ts`, lecture — la création, écriture pure, n'a pas de module propre, même règle que `T3`). | **`Consultants`/`Cercle` SE RÉDUISENT À L'ENTITÉ POUR CETTE TABLE PRÉCISÉMENT, ET C'EST DOCUMENTÉ, PAS DEVINÉ** : `onboarding_task_reference` ne porte que `entity_id` (nullable pour le global) — aucune colonne cercle ni DSM, à la différence d'`onboarding_template` qui les recevra à `T5`. Une tâche de référence n'a pas de CIBLE, contrairement à `arrival_profile` où un rattachement réel est vérifié. **UN RÉSIDU DU MODÈLE TROUVÉ EN LISANT `T5` EN AVANCE, LAISSÉ À `T5` PLUTÔT QUE CORRIGÉ ICI** : `onboarding_template_version.state` réutilise l'énumération du conteneur (`draft`/`active`/`archived`) alors que le modèle §13.3 exige `draft`/`published`/`retired` pour la VERSION — deux énumérations distinctes, confondues depuis `T1`. Non bloquant pour `T4`, qui ne touche à aucune des deux tables ; la contrainte actuelle refusera bruyamment `state='published'` le jour où `T5` l'écrira, ce qui n'est pas un défaut silencieux. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 26/09/2026 |
+
+**Prochain identifiant libre : `DEC-604`.**
 
 ---
 
@@ -1058,6 +1061,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-600` — réalisation du LOT 7, `T2` | 1 | 1 |
 | `DEC-601` — réalisation du LOT 7, `T3` | 1 | 1 |
 | `DEC-602` — correctif post-fusion du LOT 7, `T3` | 1 | 1 |
+| `DEC-603` — réalisation du LOT 7, `T4` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1069,7 +1073,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **270** | **270** |
+| **Total** | **271** | **271** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
