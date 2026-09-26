@@ -71,6 +71,45 @@ CE QUE LA MATRICE DONNE, ET LA CELLULE QUI SURPREND
   « Soi » n'est pas une portee organisationnelle, c'est une egalite entre
   l'acteur et la personne de la cible. Elle se vérifie donc AVANT toute
   resolution de role, sans avoir besoin d'interroger `resoudre_les_permissions`.
+
+LE CATALOGUE DES TACHES — matrice §9, `T4`
+
+  **CINQ DES SEPT LIGNES DU §9 PARTAGENT UNE SEULE GRILLE**, celle de « Creer
+  une tache de reference » et « Reutiliser une tache de reference » :
+
+      DSM      Consultants
+      ESM      Entite
+      BOOST    Cercle
+      OFFICE   —
+      ADM-E    Entite
+      SUPER    Global
+
+  Les deux lignes ecartees — « Consulter les modeles publies » (une grille
+  plus large, sans objet pour le catalogue lui-meme) et « Restaurer une
+  version » (`Conditionnel` pour ESM, `ECART-066`, hors perimetre de `T4`) —
+  ne portent pas sur `onboarding_task_reference`.
+
+  **`Consultants` ET `Cercle` NE PEUVENT PAS RESTREINDRE EN DECA DE L'ENTITE
+  ICI, ET CE N'EST PAS UNE LECTURE LARGE — C'EST UNE LIMITE DE LA TABLE.**
+  `onboarding_task_reference` (modele §13.1) ne porte QUE `entity_id`,
+  nullable pour le global : ni `scope_circle_id` ni `scope_person_id`, a la
+  difference d'`onboarding_template` (§13.2) qui les recevra a `T5`. Une tache
+  de reference n'est rattachee a AUCUN cercle ni AUCUN DSM en particulier —
+  contrairement a `arrival_profile`, ou `_MEMBRE_DU_CERCLE_DU_BOOSTER`
+  verifie un rattachement REEL entre l'acteur et la CIBLE. Il n'y a ici
+  aucune cible de cette nature : une tache de reference n'appartient a
+  personne. Le DSM et le Booster recoivent donc, pour CETTE ressource
+  precisement, la MEME portee que l'ESM et l'administrateur d'entite : LEUR
+  entite. Ajouter une colonne pour distinguer plus finement serait une
+  invention que le corpus ne demande pas (§6.5) ; refuser purement et
+  simplement DSM/BOOST en serait une autre, tout aussi fausse — la matrice
+  leur accorde un droit, elle ne dit simplement pas comment le reduire plus
+  loin que l'entite pour cette table-la.
+
+  **SEUL `SUPER` ATTEINT `Global`.** Aucune requete SQL n'est necessaire pour
+  le distinguer : `resoudre_les_permissions` ajoute `SUPER_ADMINISTRATEUR`
+  SANS condition d'entite (§5.1, l'exception globale), donc sa presence dans
+  `roles` suffit — comme pour `peut_valider_et_publier_la_fiche_arrivee`.
 """
 
 from __future__ import annotations
@@ -270,3 +309,29 @@ def peut_corriger_la_fiche_arrivee_apres_publication(
         if ligne is not None:
             return True
     return False
+
+
+#  §9 : « Creer une tache de reference » et « Reutiliser une tache de
+#  reference » — voir l'en-tete du module pour le motif qui reduit
+#  `Consultants`/`Cercle` a l'entite pour CETTE table precisement.
+ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.DSM,
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.BOOSTER,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+
+def peut_creer_une_tache_de_reference_globale(*, roles: frozenset[RoleDeLaMatrice]) -> bool:
+    """Seul `SUPER` atteint `Global` — §9, colonne SUPER de « Creer une tache
+    de reference ». Les quatre autres roles s'arretent a `Entite` (ou
+    `Consultants`/`Cercle`, voir l'en-tete), jamais au global.
+
+    Aucune requete n'est necessaire : `SUPER_ADMINISTRATEUR` est deja une
+    portee de plateforme, garantie par `technical_role_assignment` et ajoutee
+    par `resoudre_les_permissions` sans condition d'entite.
+    """
+    return RoleDeLaMatrice.SUPER_ADMINISTRATEUR in roles

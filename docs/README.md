@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `602` en usage | `DEC-603` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `603` en usage | `DEC-604` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -379,8 +379,6 @@ PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python.
 > grille séparée ; `archived` reste le seul état sans aucune ligne d'écriture. Détail :
 > `compte-rendu-t3-lot-7.md` §2.7.
 
-**1 846 tests** désormais. La prochaine est `T4`, le catalogue des tâches.
-
 > **`Support` N'EST NULLE PART DANS LA LÉGENDE DU §4** — même piège que `Périmètre` au LOT 6.
 > Cherché dans tout le corpus : il couvre exactement `Entité`/`Cercle`/`Global`, sans règle
 > supplémentaire. **`BOOST` DIVERGE SUR LA SEULE LIGNE « VALIDER ET PUBLIER »** : `Support cercle`
@@ -390,8 +388,30 @@ PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python.
 > n'ont AUCUNE route d'écriture — `T7` du LOT 5 les avait explicitement reportés
 > (`compte-rendu-t7-lot-5.md`), jamais rattrapés depuis. Détail : `compte-rendu-t3-lot-7.md` §2.
 
+**`T4` EST FAITE** le 26/09/2026, `DEC-603` : le catalogue des tâches —
+`GET`/`POST …/onboarding/task-references`. Ferme `ECART-013` structurellement : `onboarding_
+task_reference` porte un `code` fonctionnel unique par périmètre (deux index partiels, un par
+entité, un global), et `onboarding_template_task.task_reference_id` (posée dès `T1`) pointera
+toujours vers la MÊME ligne, quel que soit le modèle qui la réutilise.
+
+> **UNE SEULE GRILLE GOUVERNE CINQ DES SEPT LIGNES DU §9** — « Créer » et « Réutiliser une tâche
+> de référence » : `DSM` Consultants, `ESM` Entité, `BOOST` Cercle, `OFFICE` tiret, `ADM-E`
+> Entité, `SUPER` Global. **`Consultants`/`Cercle` SE RÉDUISENT À L'ENTITÉ POUR CETTE TABLE
+> PRÉCISÉMENT, ET C'EST DOCUMENTÉ, PAS DEVINÉ** : `onboarding_task_reference` ne porte que
+> `entity_id` (nullable pour le global) — aucune colonne cercle ni DSM, à la différence
+> d'`onboarding_template` qui les recevra à `T5`. Seul `SUPER` atteint `Global` — un `ESM` qui le
+> demande obtient `403`, une ASYMÉTRIE mesurée et non une absence générale de droit : il possède
+> le droit `ENTITE`. **UN RÉSIDU DU MODÈLE TROUVÉ EN LISANT `T5` EN AVANCE** :
+> `onboarding_template_version.state` réutilise l'énumération du conteneur
+> (`draft`/`active`/`archived`) alors que le §13.3 exige `draft`/`published`/`retired` pour LA
+> VERSION — deux énumérations distinctes, confondues depuis `T1`. Non bloquant pour `T4` ; nommé
+> pour `T5`, qui devra ajouter une énumération propre et corriger la contrainte par une NOUVELLE
+> migration. Détail : `compte-rendu-t4-lot-7.md` §2.
+
+**1 873 tests** désormais. La prochaine est `T5`, les modèles et leurs versions.
+
 `ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T4`.
+parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T5`.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 

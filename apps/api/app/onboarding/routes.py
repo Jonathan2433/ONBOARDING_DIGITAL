@@ -1,4 +1,4 @@
-"""Les routes de l'onboarding — LOT 7, `T2`/`T3` : la fiche d'arrivee.
+"""Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche d'arrivee), `T4` (catalogue).
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
@@ -12,13 +12,22 @@ depuis le LOT 4.
   dans LEUR PROPRE transaction, jamais celle d'un appel anterieur — meme
   discipline que `modifier_le_profil` (LOT 5, `T7`) : une garde perimee
   autoriserait une ecriture sur un etat qui a change entre-temps.
+
+`T4` AJOUTE LE CATALOGUE DES TACHES, SOUS `/entities/{code}/onboarding/task-references`
+
+  Contrairement a la fiche d'arrivee, le permis ne depend ici d'AUCUNE cible
+  precise — matrice §9, une simple appartenance de role dans l'entite (voir
+  `perimetre.py`). Les deux routes emploient donc `exiger_un_role_dans_l_entite`,
+  la garde generique posee au LOT 4 pour exactement ce cas, plutot que de
+  reecrire une resolution manuelle comme `T2`/`T3` le font pour la fiche
+  (ou `Soi` et le rattachement DSM/Booster exigent une cible).
 """
 
 from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import Annotated, Final
+from typing import Annotated, Final, Literal
 
 from fastapi import APIRouter, Depends, Path, Request, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,13 +40,25 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.onboarding.catalogue import (
+    TacheDeReference,
+    creer_une_tache_de_reference,
+    lire_le_catalogue_de_taches,
+)
 from app.onboarding.ecriture import completer_la_fiche_arrivee, valider_et_publier_la_fiche_arrivee
 from app.onboarding.fiche_arrivee import FicheArrivee, lire_la_fiche_arrivee
 from app.onboarding.perimetre import (
+    ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
     peut_completer_la_fiche_arrivee,
     peut_corriger_la_fiche_arrivee_apres_publication,
+    peut_creer_une_tache_de_reference_globale,
     peut_lire_la_fiche_arrivee,
     peut_valider_et_publier_la_fiche_arrivee,
+)
+from app.permissions.dependances import (
+    CODE_ROLE_REFUSE,
+    MESSAGE_ROLE_REFUSE,
+    exiger_un_role_dans_l_entite,
 )
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
@@ -182,6 +203,64 @@ def _en_reponse(fiche: FicheArrivee) -> FicheDArrivee:
         validated_at=fiche.validated_at,
         published_at=fiche.published_at,
         recent_until=fiche.recent_until,
+    )
+
+
+class DemandeDeTacheDeReference(BaseModel):
+    """Creer une tache de reference — matrice §9 « Creer une tache de reference »."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(
+        min_length=1,
+        max_length=64,
+        description="Identifiant fonctionnel STABLE — modele §13.1. Ferme `ECART-013`.",
+    )
+    title: str = Field(min_length=1, description="Libelle — modele §13.1")
+    description: str | None = Field(
+        default=None, description="Instructions affichees au nouvel arrivant, facultatif"
+    )
+    category: str | None = Field(
+        default=None, max_length=64, description="Categorie d'affichage, facultative"
+    )
+    portee: Literal["ENTITE", "GLOBAL"] = Field(
+        default="ENTITE",
+        description=(
+            "`ENTITE` (par defaut) : une tache propre a l'entite du chemin — DSM, ESM, "
+            "BOOST, ADM-E ou SUPER. `GLOBAL` : une tache reutilisable par TOUTE entite "
+            "(`entity_id` NULL, modele §13.1) — reservee a SUPER, matrice §9."
+        ),
+    )
+
+
+class ReponseDeTacheDeReference(BaseModel):
+    """Une ligne du catalogue, telle que servie — modele §13.1."""
+
+    id: uuid.UUID
+    entity_id: uuid.UUID | None
+    code: str
+    title: str
+    description: str | None
+    category: str | None
+    active: bool
+
+
+class ReponseDuCatalogueDeTaches(BaseModel):
+    """La liste, et son compte — §7.20, rapporter plutot que taire."""
+
+    taches: list[ReponseDeTacheDeReference]
+    nombre_de_taches: int
+
+
+def _tache_en_reponse(tache: TacheDeReference) -> ReponseDeTacheDeReference:
+    return ReponseDeTacheDeReference(
+        id=tache.id,
+        entity_id=tache.entity_id,
+        code=tache.code,
+        title=tache.title,
+        description=tache.description,
+        category=tache.category,
+        active=tache.active,
     )
 
 
@@ -502,5 +581,137 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             published_at=validee.published_at,
             recent_until=validee.recent_until,
         )
+
+    #  §9 : « Creer » et « Reutiliser une tache de reference » partagent une
+    #  seule grille (voir `perimetre.py`) — une garde GENERIQUE suffit donc,
+    #  contrairement a la fiche d'arrivee ou le permis depend d'une CIBLE.
+    garde_du_catalogue = exiger_un_role_dans_l_entite(
+        parametres, ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES
+    )
+
+    @routeur.get(
+        "/entities/{code}/onboarding/task-references",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuCatalogueDeTaches,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni DSM, ESM, Booster, ADM-E ni SUPER dans cette entite."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Consulter le catalogue des taches reutilisables",
+        description=(
+            "Matrice §9 « Reutiliser une tache de reference ». Rend les taches PROPRES "
+            "a l'entite du chemin ET les taches GLOBALES — modele §13.1 : un modele de "
+            "cette entite peut reutiliser l'une comme l'autre, `T5`."
+        ),
+    )
+    def lister_le_catalogue_de_taches(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        _appelant: SessionEtablie = Depends(garde_du_catalogue),  # noqa: B008
+    ) -> ReponseDuCatalogueDeTaches:
+        """Le catalogue reutilisable dans cette entite — modele §13.1."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            taches = lire_le_catalogue_de_taches(connexion, entite=entite.id)
+        servies = [_tache_en_reponse(tache) for tache in taches]
+        return ReponseDuCatalogueDeTaches(taches=servies, nombre_de_taches=len(servies))
+
+    @routeur.post(
+        "/entities/{code}/onboarding/task-references",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeTacheDeReference,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    '`acces_refuse` : hors de la matrice §9, ou `portee: "GLOBAL"` '
+                    "demandee par un role autre que SUPER — seul SUPER atteint Global."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`code_de_tache_deja_utilise` : ce code existe deja dans ce perimetre "
+                    "(cette entite, ou le catalogue global)."
+                )
+            },
+        },
+        summary="Creer une tache de reference — ferme ECART-013",
+        description=(
+            "Matrice §9 « Creer une tache de reference ». Le `code` est l'identifiant "
+            "FONCTIONNEL STABLE que `T10` (changement mission <-> intercontrat) "
+            "reutilisera pour conserver une tache commune deja terminee — `ECART-013`."
+        ),
+    )
+    def creer_une_tache_du_catalogue(
+        demande: DemandeDeTacheDeReference,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appelant: SessionEtablie = Depends(garde_du_catalogue),  # noqa: B008
+    ) -> ReponseDeTacheDeReference:
+        """Creer une tache de reference — matrice §9, modele §13.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            #  La garde a deja verifie l'appartenance a l'un des CINQ roles —
+            #  suffisant pour `ENTITE`. `GLOBAL` exige STRICTEMENT SUPER, une
+            #  distinction que la garde generique ne porte pas : resolue ICI.
+            if demande.portee == "GLOBAL":
+                permissions = resoudre_les_permissions(
+                    connexion, appelant.personne, entite.id, instant
+                )
+                if not peut_creer_une_tache_de_reference_globale(
+                    roles=frozenset(permissions.roles)
+                ):
+                    raise ErreurApplicative(
+                        code=CODE_ROLE_REFUSE,
+                        message=MESSAGE_ROLE_REFUSE,
+                        statut=status.HTTP_403_FORBIDDEN,
+                    )
+                entite_de_la_tache = None
+            else:
+                entite_de_la_tache = entite.id
+            creee = creer_une_tache_de_reference(
+                connexion,
+                entite=entite_de_la_tache,
+                code=demande.code,
+                title=demande.title,
+                description=demande.description,
+                category=demande.category,
+            )
+        return _tache_en_reponse(creee)
 
     return routeur
