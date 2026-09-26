@@ -1,10 +1,17 @@
-"""Les routes de l'onboarding — LOT 7, `T2` : la fiche d'arrivee en lecture.
+"""Les routes de l'onboarding — LOT 7, `T2`/`T3` : la fiche d'arrivee.
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
 et le gabarit de 404 unique — un chemin distinct pour « code d'entite inconnu »
 apprendrait qu'une appartenance existe, l'exact defaut que ce projet refuse
 depuis le LOT 4.
+
+`T3` AJOUTE DEUX ECRITURES, `LECTURE` PUIS `PERMISSION` DANS LA MEME TRANSACTION
+
+  Les deux routes d'ecriture relisent la fiche et resolvent les permissions
+  dans LEUR PROPRE transaction, jamais celle d'un appel anterieur — meme
+  discipline que `modifier_le_profil` (LOT 5, `T7`) : une garde perimee
+  autoriserait une ecriture sur un etat qui a change entre-temps.
 """
 
 from __future__ import annotations
@@ -13,10 +20,10 @@ import datetime as dt
 import uuid
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Path, Request, status
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.auth.dependances import SessionEtablie, exiger_une_session
+from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.configuration.settings import Parametres
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
@@ -24,14 +31,22 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.onboarding.ecriture import completer_la_fiche_arrivee, valider_et_publier_la_fiche_arrivee
 from app.onboarding.fiche_arrivee import FicheArrivee, lire_la_fiche_arrivee
-from app.onboarding.perimetre import peut_lire_la_fiche_arrivee
+from app.onboarding.perimetre import (
+    peut_completer_la_fiche_arrivee,
+    peut_lire_la_fiche_arrivee,
+    peut_valider_et_publier_la_fiche_arrivee,
+)
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
 CODE_FICHE_HORS_PERIMETRE: Final = "fiche_arrivee_hors_perimetre"
 MESSAGE_FICHE_HORS_PERIMETRE: Final = "Votre perimetre ne vous permet pas de consulter cette fiche."
+MESSAGE_FICHE_HORS_PERIMETRE_ECRITURE: Final = (
+    "Votre perimetre ne vous permet pas de modifier cette fiche."
+)
 
 
 class CercleDeLaFicheArrivee(BaseModel):
@@ -69,6 +84,72 @@ class FicheDArrivee(BaseModel):
     validated_at: dt.datetime | None
     published_at: dt.datetime | None
     recent_until: dt.date | None
+
+
+class DemandeDeCompletion(BaseModel):
+    """Les deux champs propres de la fiche, tous FACULTATIFS — matrice §7.
+
+    `version` a `None` signifie « aucune ligne n'existe encore d'apres ma
+    derniere lecture » — c'est exactement ce que la lecture rend tant que
+    personne n'a rien ecrit. Une version presente exige la ligne existante et
+    sa version exacte (§18.4).
+
+    `extra="forbid"` : `photo_media_id` N'EST PAS ICI. Aucune route d'upload ni
+    d'autorisation de media n'existe encore — l'accepter en silence ferait
+    croire a un client qu'il peut deja attacher une photo par cette route.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int | None = Field(
+        default=None,
+        ge=1,
+        description="La version lue. `null` si `id`/`version` valaient `null` a la lecture.",
+    )
+    short_intro: str | None = Field(default=None, description="Presentation courte — modele §12.1")
+    fun_fact: str | None = Field(default=None, description="Facultatif — modele §12.1")
+
+
+class ReponseDeCompletion(BaseModel):
+    """Ce que la completion rend : l'identite de la ligne et sa version."""
+
+    id: uuid.UUID
+    version: int
+    state: str
+
+
+class DemandeDeValidation(BaseModel):
+    """La seule chose que « Valider et publier » demande : la version lue."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=1, description="La version lue sur la fiche — cahier §18.4.")
+
+
+class ReponseDeValidation(BaseModel):
+    """Ce que la validation rend : l'etat nouveau et les trois marqueurs ecrits."""
+
+    id: uuid.UUID
+    version: int
+    state: str
+    validated_at: dt.datetime
+    published_at: dt.datetime
+    recent_until: dt.date
+
+
+def _champs_presents(demande: DemandeDeCompletion) -> dict[str, str | None]:
+    """Les champs REELLEMENT envoyes, jamais leurs valeurs par defaut.
+
+    `model_fields_set` distingue « absent » de « envoye a `null` » — un fun
+    fact qu'on retire explicitement n'est pas la meme demande qu'un corps qui
+    ne touche pas au fun fact. Meme discipline que `people/routes.py::
+    _lire_la_demande`.
+    """
+    return {
+        champ: getattr(demande, champ)
+        for champ in ("short_intro", "fun_fact")
+        if champ in demande.model_fields_set
+    }
 
 
 def _en_reponse(fiche: FicheArrivee) -> FicheDArrivee:
@@ -186,5 +267,212 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_403_FORBIDDEN,
                 )
         return _en_reponse(fiche)
+
+    @routeur.patch(
+        "/entities/{code}/people/{appartenance}/arrival-profile",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeCompletion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "La MEME grille que la lecture — matrice §7 : Soi, ESM/ADM-E/"
+                    "SUPER dans l'entite, Booster du cercle de la cible. `DSM` et "
+                    "`OFFICE` sont a TIRET sur cette ligne aussi."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Meme forme que la lecture : trois causes indistinguables."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la fiche a change depuis votre lecture, ou "
+                    "votre `version` ne correspond pas a son existence reelle. "
+                    "`fiche_arrivee_etat_incompatible` : la fiche n'est plus au "
+                    "brouillon — cette route ne modifie plus rien apres validation, "
+                    "et aucune autre ne le fait a sa place : §6.1 reporte encore "
+                    "l'ecriture de `entity_membership.short_bio`/`fun_fact` (`T7` du "
+                    "LOT 5)."
+                )
+            },
+        },
+        summary="Completer photo, presentation et fun fact",
+        description=(
+            "Matrice §7 « Completer photo, presentation et fun fact ». Cree la fiche "
+            "a la premiere completion (`version: null`), la modifie ensuite. Bornee "
+            "au brouillon pour TOUS les acteurs, y compris `Support` : au-dela, la "
+            "presentation vit sur une ligne distincte du §6.1.<br><br>"
+            "**`photo_media_id` n'est pas ici** : aucune route d'upload ou "
+            "d'autorisation de media n'existe encore — residu nomme, comme la "
+            "lecture de `T2` l'a deja ete pour la miniature."
+        ),
+    )
+    def completer_la_fiche(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite, unique et jamais reattribue",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        demande: DemandeDeCompletion,
+        requete: Request,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDeCompletion:
+        """Completer sa fiche d'arrivee — matrice §7, `MVP-L07-US001` (2/2)."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            fiche = lire_la_fiche_arrivee(
+                connexion, entite=entite.id, appartenance=appartenance, instant=instant
+            )
+            if fiche is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_completer_la_fiche_arrivee(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                cible_appartenance=appartenance,
+                cible_personne=fiche.person_id,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_FICHE_HORS_PERIMETRE,
+                    message=MESSAGE_FICHE_HORS_PERIMETRE_ECRITURE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            ecrite = completer_la_fiche_arrivee(
+                connexion,
+                entite=entite.id,
+                appartenance=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                champs=_champs_presents(demande),
+                instant=instant,
+            )
+        return ReponseDeCompletion(id=ecrite.id, version=ecrite.version, state=ecrite.state)
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/arrival-profile/validation",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeValidation,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "Soi, ou ESM/ADM-E/SUPER dans l'entite. **`BOOST` est a TIRET "
+                    "ICI**, la SEULE des trois lignes du §7 ou il l'est : un Booster "
+                    "aide a completer, jamais a valider ni publier."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Meme forme que la lecture : trois causes indistinguables."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la fiche a change depuis votre lecture. "
+                    "`fiche_arrivee_etat_incompatible` : deja validee, ou aucune "
+                    "ligne n'existe encore — rien a valider."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`fiche_arrivee_presentation_manquante` : la presentation courte "
+                    "est obligatoire avant validation — modele §12.1."
+                )
+            },
+        },
+        summary="Valider et publier la fiche d'arrivee",
+        description=(
+            "Matrice §7.1 : la publication est AUTOMATIQUE a la validation, jamais un "
+            "second geste — `state` passe de `draft` a `published` directement, "
+            "`validated_at` et `published_at` portant le MEME instant. `recent_until` "
+            "est calcule par PostgreSQL — modele §12.1, « un mois apres la date "
+            "d'arrivee »."
+        ),
+    )
+    def valider_la_fiche(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite, unique et jamais reattribue",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        demande: DemandeDeValidation,
+        requete: Request,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDeValidation:
+        """Valider et publier — matrice §7.1, `MVP-L07-US002`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            fiche = lire_la_fiche_arrivee(
+                connexion, entite=entite.id, appartenance=appartenance, instant=instant
+            )
+            if fiche is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_valider_et_publier_la_fiche_arrivee(
+                acteur=appelant.personne,
+                cible_personne=fiche.person_id,
+                roles=frozenset(permissions.roles),
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_FICHE_HORS_PERIMETRE,
+                    message=MESSAGE_FICHE_HORS_PERIMETRE_ECRITURE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            validee = valider_et_publier_la_fiche_arrivee(
+                connexion,
+                entite=entite.id,
+                appartenance=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                arrival_date=fiche.arrival_date,
+                instant=instant,
+            )
+        return ReponseDeValidation(
+            id=validee.id,
+            version=validee.version,
+            state=validee.state,
+            validated_at=validee.validated_at,
+            published_at=validee.published_at,
+            recent_until=validee.recent_until,
+        )
 
     return routeur

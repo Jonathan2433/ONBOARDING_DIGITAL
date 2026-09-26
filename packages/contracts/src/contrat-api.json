@@ -1164,6 +1164,51 @@
         "404 POUR TROIS CAUSES INDISTINGUABLES : code d'entite inconnu, appartenance",
         "inexistante ou d'une AUTRE entite, appartenance ni FUTURE ni ACTIVE."
       ]
+    },
+    {
+      "cle": "completionDeLaFicheArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
+      "methode": "patch",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeCompletion",
+      "role": [
+        "Completer photo, presentation et fun fact — LOT 7, T3, matrice §7,",
+        "MVP-L07-US001 (2/2). Ecriture pure : aucun module de contrat ne l'accompagne",
+        "— seule une sous-etape qui SERT une lecture en pose un (liens.ts, LOT 6).",
+        "CREE LA FICHE A LA PREMIERE COMPLETION : `version: null` signifie qu'aucune",
+        "ligne n'existe encore, exactement ce que la lecture rend. Une version",
+        "presente exige la ligne et sa version exactes (§18.4).",
+        "MEME GRILLE QUE LA LECTURE : Soi, ESM/ADM-E/SUPER dans l'entite, Booster du",
+        "cercle de la cible. DSM et OFFICE a tiret sur cette ligne aussi.",
+        "BORNEE AU BROUILLON POUR TOUS LES ACTEURS : completer apres publication rend",
+        "409 `fiche_arrivee_etat_incompatible`, et AUCUNE autre route ne prend le",
+        "relais — le §6.1 reporte encore l'ecriture de entity_membership.short_bio/",
+        "fun_fact (T7 du LOT 5), un champ DISTINCT de arrival_profile.short_intro.",
+        "`photo_media_id` N'EST PAS ACCEPTE : aucune route d'upload ou d'autorisation",
+        "de media n'existe encore — residu nomme, §6.5."
+      ]
+    },
+    {
+      "cle": "validationDeLaFicheArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile/validation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeValidation",
+      "role": [
+        "Valider et publier — LOT 7, T3, matrice §7.1, MVP-L07-US002. Ecriture pure,",
+        "aucun module de contrat propre — meme regle que la completion ci-dessus.",
+        "LA PUBLICATION EST AUTOMATIQUE A LA VALIDATION, PAS UN SECOND GESTE : `state`",
+        "passe de `draft` a `published` en UN SEUL appel, `validated_at` et",
+        "`published_at` portant le MEME instant. `recent_until` est calcule par",
+        "PostgreSQL — modele §12.1, arithmetique de calendrier, pas une duree fixe.",
+        "L'ASYMETRIE DU §7 : `BOOST` est a TIRET ICI, la SEULE des trois lignes de la",
+        "fiche d'arrivee ou il l'est — un Booster aide a completer, jamais a valider",
+        "ni a publier a la place du nouvel arrivant.",
+        "422 `fiche_arrivee_presentation_manquante` : la presentation courte est",
+        "obligatoire avant validation — modele §12.1.",
+        "409 `fiche_arrivee_etat_incompatible` : deja publiee, ou aucune ligne",
+        "n'existe encore — rien a valider."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

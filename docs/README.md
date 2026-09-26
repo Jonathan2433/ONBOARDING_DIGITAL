@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `600` en usage | `DEC-601` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `601` en usage | `DEC-602` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -354,7 +354,7 @@ tables d'onboarding, migration `0020`. Schéma **32 → 39 tables**, **34 tests*
 `GET …/people/{appartenance}/arrival-profile`. Les données organisationnelles sont réutilisées de
 `lire_la_fiche` (LOT 5) avec une population élargie — future ET active, les trois visibilités.
 `id`/`version` valent `null` tant qu'aucune ligne `arrival_profile` n'existe : la lecture n'écrit
-rien. **1 821 tests** desormais. La prochaine est `T3`, validation et publication.
+rien.
 
 > **LE TÉMOIN CENTRAL CONSTRUIT UN DSM RÉELLEMENT RATTACHÉ, ET IL EST REFUSÉ QUAND MÊME.** La
 > matrice §7 met `DSM` à tiret sur la lecture de la fiche, alors qu'il porte « Consultants »
@@ -364,8 +364,24 @@ rien. **1 821 tests** desormais. La prochaine est `T3`, validation et publicatio
 > l'acteur — un ESM ou un Booster sans sa propre appartenance locale ne reçoit AUCUN rôle, en
 > silence. Détail : `compte-rendu-t2-lot-7.md` §2.3.
 
+**`T3` EST FAITE** le 26/09/2026, `DEC-601` : compléter, valider et publier la fiche —
+`PATCH …/arrival-profile` et `POST …/arrival-profile/validation`. La publication est automatique à
+la validation (matrice §7.1) : un seul appel fait passer `state` de `draft` à `published`,
+`validated_at` et `published_at` portant le même instant. `recent_until` est calculé par
+PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python. **1 841 tests** désormais. La prochaine est
+`T4`, le catalogue des tâches.
+
+> **`Support` N'EST NULLE PART DANS LA LÉGENDE DU §4** — même piège que `Périmètre` au LOT 6.
+> Cherché dans tout le corpus : il couvre exactement `Entité`/`Cercle`/`Global`, sans règle
+> supplémentaire. **`BOOST` DIVERGE SUR LA SEULE LIGNE « VALIDER ET PUBLIER »** : `Support cercle`
+> pour compléter, tiret pour valider — un témoin prouve d'abord que le Booster PEUT compléter,
+> pour que son refus de valider ne prouve pas seulement une absence générale de droit.
+> **UNE AFFIRMATION FAUSSE CORRIGÉE AVANT COMMIT** : `entity_membership.short_bio`/`fun_fact`
+> n'ont AUCUNE route d'écriture — `T7` du LOT 5 les avait explicitement reportés
+> (`compte-rendu-t7-lot-5.md`), jamais rattrapés depuis. Détail : `compte-rendu-t3-lot-7.md` §2.
+
 `ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T3`.
+parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T4`.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
