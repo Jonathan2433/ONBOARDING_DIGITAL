@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `599` en usage | `DEC-600` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `600` en usage | `DEC-601` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -341,8 +341,7 @@ critères de sortie **dérivés des deux sources, qui concordent**, **quinze** s
 
 **`T1` EST FAITE** le 25/09/2026, `DEC-599` : les huit tables du lot — `arrival_profile` et les six
 tables d'onboarding, migration `0020`. Schéma **32 → 39 tables**, **34 tests**.
-`photo_authorization` existe depuis le LOT 5 et n'a pas été recréée. La prochaine est `T2`, la
-fiche d'arrivée en lecture.
+`photo_authorization` existe depuis le LOT 5 et n'a pas été recréée.
 
 > **`make isolation-check` a trouvé deux classes de défaut que ce lot n'avait jamais rencontrées.**
 > Une clé composite structurellement correcte mais que le contrôle refuse quand même — il exige
@@ -351,8 +350,22 @@ fiche d'arrivée en lecture.
 > GLOBAL. `infra/scripts/verifier-isolation.py` reçoit une **troisième** raison légitime à une clé
 > simple, dérivée du modèle et rapportée. Détail : `compte-rendu-t1-lot-7.md` §2.2.
 
+**`T2` EST FAITE** le 25/09/2026, `DEC-600` : la fiche d'arrivée en lecture,
+`GET …/people/{appartenance}/arrival-profile`. Les données organisationnelles sont réutilisées de
+`lire_la_fiche` (LOT 5) avec une population élargie — future ET active, les trois visibilités.
+`id`/`version` valent `null` tant qu'aucune ligne `arrival_profile` n'existe : la lecture n'écrit
+rien. **1 821 tests** desormais. La prochaine est `T3`, validation et publication.
+
+> **LE TÉMOIN CENTRAL CONSTRUIT UN DSM RÉELLEMENT RATTACHÉ, ET IL EST REFUSÉ QUAND MÊME.** La
+> matrice §7 met `DSM` à tiret sur la lecture de la fiche, alors qu'il porte « Consultants »
+> ailleurs dans la même annexe (§8.1) — un DSM sans rattachement n'aurait prouvé que le refus d'un
+> inconnu. **ET UN DÉCOR DE TEST A RÉVÉLÉ UNE RÈGLE DU LOT 4 JAMAIS EXERCÉE AINSI** :
+> `resoudre_les_permissions` n'accorde un rôle de responsabilité que dans l'entité PRINCIPALE de
+> l'acteur — un ESM ou un Booster sans sa propre appartenance locale ne reçoit AUCUN rôle, en
+> silence. Détail : `compte-rendu-t2-lot-7.md` §2.3.
+
 `ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T2`.
+parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T3`.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
