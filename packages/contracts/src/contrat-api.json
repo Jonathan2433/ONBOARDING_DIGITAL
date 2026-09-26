@@ -1138,6 +1138,32 @@
         "LE RANG N'EST PAS TOUCHE : il appartient a l'ordre de la liste, que",
         "`PUT …/liens/ordre` seule reecrit."
       ]
+    },
+    {
+      "cle": "ficheDArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "FicheDArrivee",
+      "role": [
+        "La fiche d'arrivee en lecture — LOT 7, T2, cahier §9.4, modele §12.1.",
+        "DONNEES ORGANISATIONNELLES REUTILISEES, PAS RECALCULEES : le meme resolveur",
+        "que `ficheDuProfil` (LOT 5), avec une POPULATION plus large — appartenance",
+        "FUTURE ou ACTIVE, les trois visibilites — puisqu'un nouvel arrivant n'est pas",
+        "encore `active`/`published` avant son premier jour.",
+        "`id` ET `version` VALENT `null` TANT QU'AUCUNE LIGNE `arrival_profile`",
+        "N'EXISTE : cette lecture n'en cree aucune. C'est T3 qui la cree, jamais une",
+        "lecture — un effet de bord qu'aucun corpus ne demande.",
+        "AUCUNE PHOTO SERVIE ICI : le resolveur de miniature du LOT 5 est borne a la",
+        "population du trombinoscope (active/published) par une egalite, pas un",
+        "`= ANY(...)`. L'etendre sans besoin ecrit serait une invention, §6.5.",
+        "PERIMETRE DE LECTURE, matrice §7 — NEW=Soi, DSM=tiret, ESM/ADM-E=Entite,",
+        "BOOST=Cercle, SUPER=Global. DSM EST A TIRET ICI bien qu'il porte",
+        "'Consultants' ailleurs dans la meme annexe — deux lignes distinctes,",
+        "deux grilles distinctes.",
+        "404 POUR TROIS CAUSES INDISTINGUABLES : code d'entite inconnu, appartenance",
+        "inexistante ou d'une AUTRE entite, appartenance ni FUTURE ni ACTIVE."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

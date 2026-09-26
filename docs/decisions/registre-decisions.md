@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 25 septembre 2026 — décision `DEC-599`, `T1` du LOT 7
+**Dernière mise à jour :** 25 septembre 2026 — décision `DEC-600`, `T2` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -104,6 +104,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Franchissement de la porte `G6` `DEC-597`** | 1 | **Validée le 25/09/2026** |
 | **Ouverture du LOT 7 `DEC-598`** | 1 | **Validée le 25/09/2026** |
 | **Réalisation du LOT 7 `DEC-599`, sous-étape `T1`** | 1 | **Soumise le 25/09/2026** |
+| **Réalisation du LOT 7 `DEC-600`, sous-étape `T2`** | 1 | **Soumise le 25/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -115,7 +116,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **267** | |
+| **Total** | **268** | |
 
 ---
 
@@ -801,7 +802,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-598` | **Le LOT 7 — Fiches d'arrivée et onboarding — est ouvert, et son découpage compte QUINZE sous-étapes.** `T1` les huit tables (`arrival_profile` + six tables d'onboarding, migration `0020` — `photo_authorization` existe déjà depuis le LOT 5) · `T2` la fiche d'arrivée en lecture · `T3` sa validation et sa publication · `T4` le catalogue des tâches, qui résout `ECART-013` · `T5` les modèles et leurs versions immuables · `T6` publication, duplication, archivage/restauration d'un modèle · `T7` la création d'une instance depuis la date d'arrivée · `T8` compléter/annuler une tâche dans les 5 minutes · `T9` la réouverture après 5 minutes, qui ferme `§30.15` · `T10` le changement automatique mission ↔ intercontrat, qui ferme `§30.14` · `T11` l'archivage automatique du parcours et la révocation au départ, qui ferme `§30.13` · `T12` le suivi par périmètre · `T13` les écrans du nouvel arrivant · `T14` les écrans d'administration · `T15` la recette, le §30 et la checklist `G7`. | **`MVP-L07-US003` ET `US007` SONT LES DEUX SEULES `XL` DU LOT**, et c'est ce qui commande le découpage : les modèles/versions (`US003`) sont scindés en deux sous-étapes (`T5` création, `T6` cycle de vie), et le changement mission/intercontrat (`US007`) reçoit sa propre sous-étape (`T10`) plutôt que d'être fondu dans la création d'instance. **`T14` et `T15` ont été SÉPARÉES en écrivant la fiche**, pas avant : la règle constante du projet — la recette et la checklist de porte forment toujours une sous-étape seule, sans code — avait d'abord été oubliée dans un `T14` unique. **`ECART-012` reste OUVERT, non bloquant** : Jonathan reconduit sa position du 12/09/2026 — ne rien afficher pour une direction générale sans mission — comme hypothèse de travail, **sans que cela ne résolve l'écart, qui reste à Léa**. **`ECART-066` est OUVERTE** : la matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours archivé (§8.1) et d'une version de modèle (§9), et `ARB-DROIT-003` — qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau — ne nomme ni l'un ni l'autre. Rien dans le corpus ne comble ce trou ; à instruire avant `T6`/`T11`. | Validée le 25/09/2026 |
 | `DEC-599` | **`T1` livre les huit tables du lot — `arrival_profile` et les six tables d'onboarding, migration `0020`.** Le schéma passe de 32 à 39 tables. 34 tests, chaque refus apparié à son témoin ; `test_isolation.py::COUVERTURE` étendue de douze à dix-huit chemins de fuite fermés par une clé composite. | **`make isolation-check` a trouvé deux classes de défaut que la mesure n'avait pas anticipées.** La première : une clé composite reste correcte par construction (`onboarding_template.scope_circle_id`, gardée par une contrainte structurelle) mais le contrôle exige `entity_id` NOT NULL à la SOURCE sans condition — `T8-1` transposé, clé simple retenue. La seconde, JAMAIS rencontrée avant ce lot : une clé composite dont la table CIBLE a un `entity_id` légitimement nullable (une tâche GLOBALE) refuserait silencieusement tout usage global — `infra/scripts/verifier-isolation.py` reçoit une **troisième** raison légitime à une clé simple, dérivée du modèle et rapportée, jamais masquée. **Un témoin a aussi trouvé un défaut NULL classique** : `length(btrim(NULL)) > 0` rend NULL, qu'une `CHECK` accepte — `IS NOT NULL` explicite ajouté. Et une **cinquième** occurrence du paramètre lié partagé (§7.25), cette fois dans mon propre test. **Zéro régression** : `uv run pytest` rend exactement les 74 échecs environnementaux connus, identiques à `origin/develop`. | Soumise le 25/09/2026 |
 
-**Prochain identifiant libre : `DEC-600`.**
+| `DEC-600` | **`T2` livre la fiche d'arrivée en lecture — `GET …/people/{appartenance}/arrival-profile`, `MVP-L07-US001` (1/2).** Les données organisationnelles sont réutilisées depuis `lire_la_fiche` (LOT 5) avec une population élargie — future ET active, les trois visibilités — jamais recalculées. Un périmètre de lecture propre (matrice §7) : Soi, Entité pour ESM/ADM-E/SUPER, Cercle pour Booster, **DSM à tiret**. `id`/`version` valent `null` tant qu'aucune ligne `arrival_profile` n'existe : la lecture n'écrit rien. 11 tests d'intégration à travers le routeur réel, 9 tests du contrat TypeScript. | **UN TÉMOIN CONSTRUIT UN DSM RÉELLEMENT RATTACHÉ AU NOUVEL ARRIVANT, ET IL EST REFUSÉ QUAND MÊME.** La matrice met `DSM` à tiret sur « Consulter sa fiche non publiée » alors qu'il porte « Consultants » ailleurs dans la même annexe (§8.1) — un DSM sans rattachement aurait seulement prouvé qu'un inconnu est refusé. **UN DÉFAUT DE DÉCOR A RÉVÉLÉ UNE RÈGLE DU LOT 4 JAMAIS EXERCÉE AINSI** : `resoudre_les_permissions` n'accorde un rôle de responsabilité que dans l'entité PRINCIPALE de l'acteur — un ESM ou un Booster de test sans sa propre appartenance locale ne reçoit AUCUN rôle, quelle que soit sa responsabilité réelle. Corrigé en donnant à chaque acteur sa propre appartenance ; ce n'est pas un défaut du LOT 7, c'est une règle préexistante que ce lot n'avait pas encore mise à l'épreuve avec un acteur sans appartenance locale. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 25/09/2026 |
+
+**Prochain identifiant libre : `DEC-601`.**
 
 ---
 
@@ -1047,6 +1050,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-597` — porte `G6` | 1 | 1 |
 | `DEC-598` — ouverture du LOT 7 | 1 | 1 |
 | `DEC-599` — réalisation du LOT 7, `T1` | 1 | 1 |
+| `DEC-600` — réalisation du LOT 7, `T2` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1058,7 +1062,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **267** | **267** |
+| **Total** | **268** | **268** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

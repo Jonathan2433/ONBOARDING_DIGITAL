@@ -303,3 +303,14 @@ export type {
   ReponseDesPagesDeGestion,
   TransitionDeContenu,
 } from './gestionDuContenu.js';
+
+//  LA FICHE D'ARRIVEE EN LECTURE — LOT 7, `T2`. « Une sous-etape qui sert une
+//  LECTURE pose son module de contrat » (LOT 6) : `T3`, qui ECRIT, n'en
+//  ajoutera pas un second.
+export {
+  cheminFicheArrivee,
+  CODES_FICHE_ARRIVEE,
+  GABARIT_CHEMIN_FICHE_ARRIVEE,
+  validerLaFicheArrivee,
+} from './ficheArrivee.js';
+export type { CercleDeLaFicheArrivee, FicheArrivee } from './ficheArrivee.js';
