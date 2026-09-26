@@ -35,6 +35,7 @@ from app.onboarding.ecriture import completer_la_fiche_arrivee, valider_et_publi
 from app.onboarding.fiche_arrivee import FicheArrivee, lire_la_fiche_arrivee
 from app.onboarding.perimetre import (
     peut_completer_la_fiche_arrivee,
+    peut_corriger_la_fiche_arrivee_apres_publication,
     peut_lire_la_fiche_arrivee,
     peut_valider_et_publier_la_fiche_arrivee,
 )
@@ -276,9 +277,12 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
             status.HTTP_403_FORBIDDEN: {
                 "description": (
-                    "La MEME grille que la lecture — matrice §7 : Soi, ESM/ADM-E/"
-                    "SUPER dans l'entite, Booster du cercle de la cible. `DSM` et "
-                    "`OFFICE` sont a TIRET sur cette ligne aussi."
+                    "DEUX grilles distinctes selon l'etat de la fiche — matrice §7. "
+                    "Brouillon (« Completer ») : Soi, ESM/ADM-E/SUPER dans l'entite, "
+                    "Booster du cercle de la cible ; `DSM`/`OFFICE` a TIRET. Publiee "
+                    "(« Corriger apres publication ») : l'INVERSE sur `NEW` (perd le "
+                    "droit, §6.2) et `DSM` (le retrouve, Consultants) ; `OFFICE` "
+                    "reste a TIRET."
                 )
             },
             status.HTTP_404_NOT_FOUND: {
@@ -288,20 +292,20 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 "description": (
                     "`version_obsolete` : la fiche a change depuis votre lecture, ou "
                     "votre `version` ne correspond pas a son existence reelle. "
-                    "`fiche_arrivee_etat_incompatible` : la fiche n'est plus au "
-                    "brouillon — cette route ne modifie plus rien apres validation, "
-                    "et aucune autre ne le fait a sa place : §6.1 reporte encore "
-                    "l'ecriture de `entity_membership.short_bio`/`fun_fact` (`T7` du "
-                    "LOT 5)."
+                    "`fiche_arrivee_etat_incompatible` : la fiche est ARCHIVEE — seul "
+                    "etat sans aucune ligne d'ecriture au §7."
                 )
             },
         },
-        summary="Completer photo, presentation et fun fact",
+        summary="Completer, ou corriger apres publication",
         description=(
-            "Matrice §7 « Completer photo, presentation et fun fact ». Cree la fiche "
-            "a la premiere completion (`version: null`), la modifie ensuite. Bornee "
-            "au brouillon pour TOUS les acteurs, y compris `Support` : au-dela, la "
-            "presentation vit sur une ligne distincte du §6.1.<br><br>"
+            "Matrice §7, DEUX lignes servies par la MEME route — l'ecriture ne "
+            "differe pas, seul le PERMIS depend de l'etat. « Completer photo, "
+            "presentation et fun fact » (brouillon) : cree la fiche a la premiere "
+            "completion (`version: null`), la modifie ensuite. « Corriger apres "
+            "publication » : les memes deux champs, apres que `state` soit devenu "
+            "`published` — le nouvel arrivant PERD ce droit (§6.2), le DSM le "
+            "RETROUVE (Consultants).<br><br>"
             "**`photo_media_id` n'est pas ici** : aucune route d'upload ou "
             "d'autorisation de media n'existe encore — residu nomme, comme la "
             "lecture de `T2` l'a deja ete pour la miniature."
@@ -321,7 +325,11 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         requete: Request,
         appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
     ) -> ReponseDeCompletion:
-        """Completer sa fiche d'arrivee — matrice §7, `MVP-L07-US001` (2/2)."""
+        """Completer ou corriger la fiche d'arrivee — matrice §7, selon l'etat.
+
+        `MVP-L07-US001` (2/2) avant publication, `MVP-L07-US002` (corrections
+        ulterieures) apres.
+        """
         jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
         proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
 
@@ -344,15 +352,35 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_404_NOT_FOUND,
                 )
             permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
-            autorise = peut_completer_la_fiche_arrivee(
-                connexion,
-                entite=entite.id,
-                acteur=appelant.personne,
-                cible_appartenance=appartenance,
-                cible_personne=fiche.person_id,
-                roles=frozenset(permissions.roles),
-                instant=instant,
-            )
+            roles = frozenset(permissions.roles)
+            #  LE PERMIS DEPEND DE L'ETAT COURANT — matrice §7, DEUX lignes
+            #  distinctes. `draft` (ou pas de ligne encore) : « Completer »,
+            #  Soi/Support/Support cercle. `published` : « Corriger apres
+            #  publication », l'INVERSE sur `NEW` (perd le droit) et `DSM`
+            #  (le retrouve). Toute autre valeur (`archived`) n'a AUCUNE ligne
+            #  d'ecriture : refusee ici, jamais laissee au service.
+            if fiche.state == "draft":
+                autorise = peut_completer_la_fiche_arrivee(
+                    connexion,
+                    entite=entite.id,
+                    acteur=appelant.personne,
+                    cible_appartenance=appartenance,
+                    cible_personne=fiche.person_id,
+                    roles=roles,
+                    instant=instant,
+                )
+            elif fiche.state == "published":
+                autorise = peut_corriger_la_fiche_arrivee_apres_publication(
+                    connexion,
+                    entite=entite.id,
+                    acteur=appelant.personne,
+                    cible_appartenance=appartenance,
+                    cible_personne=fiche.person_id,
+                    roles=roles,
+                    instant=instant,
+                )
+            else:
+                autorise = False
             if not autorise:
                 raise ErreurApplicative(
                     code=CODE_FICHE_HORS_PERIMETRE,

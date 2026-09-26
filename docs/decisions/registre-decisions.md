@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-601`, `T3` du LOT 7
+**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-602`, correctif post-fusion de `T3` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -106,6 +106,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-599`, sous-étape `T1`** | 1 | **Soumise le 25/09/2026** |
 | **Réalisation du LOT 7 `DEC-600`, sous-étape `T2`** | 1 | **Soumise le 25/09/2026** |
 | **Réalisation du LOT 7 `DEC-601`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
+| **Correctif post-fusion du LOT 7 `DEC-602`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -117,7 +118,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **269** | |
+| **Total** | **270** | |
 
 ---
 
@@ -806,7 +807,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-600` | **`T2` livre la fiche d'arrivée en lecture — `GET …/people/{appartenance}/arrival-profile`, `MVP-L07-US001` (1/2).** Les données organisationnelles sont réutilisées depuis `lire_la_fiche` (LOT 5) avec une population élargie — future ET active, les trois visibilités — jamais recalculées. Un périmètre de lecture propre (matrice §7) : Soi, Entité pour ESM/ADM-E/SUPER, Cercle pour Booster, **DSM à tiret**. `id`/`version` valent `null` tant qu'aucune ligne `arrival_profile` n'existe : la lecture n'écrit rien. 11 tests d'intégration à travers le routeur réel, 9 tests du contrat TypeScript. | **UN TÉMOIN CONSTRUIT UN DSM RÉELLEMENT RATTACHÉ AU NOUVEL ARRIVANT, ET IL EST REFUSÉ QUAND MÊME.** La matrice met `DSM` à tiret sur « Consulter sa fiche non publiée » alors qu'il porte « Consultants » ailleurs dans la même annexe (§8.1) — un DSM sans rattachement aurait seulement prouvé qu'un inconnu est refusé. **UN DÉFAUT DE DÉCOR A RÉVÉLÉ UNE RÈGLE DU LOT 4 JAMAIS EXERCÉE AINSI** : `resoudre_les_permissions` n'accorde un rôle de responsabilité que dans l'entité PRINCIPALE de l'acteur — un ESM ou un Booster de test sans sa propre appartenance locale ne reçoit AUCUN rôle, quelle que soit sa responsabilité réelle. Corrigé en donnant à chaque acteur sa propre appartenance ; ce n'est pas un défaut du LOT 7, c'est une règle préexistante que ce lot n'avait pas encore mise à l'épreuve avec un acteur sans appartenance locale. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 25/09/2026 |
 | `DEC-601` | **`T3` livre la complétion et la validation/publication de la fiche d'arrivée — `PATCH …/arrival-profile` et `POST …/arrival-profile/validation`, `MVP-L07-US001` (2/2), `MVP-L07-US002`.** La publication est automatique à la validation (matrice §7.1) : un seul appel fait passer `state` de `draft` à `published`, `validated_at` et `published_at` portant le même instant. `recent_until` est calculé par PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python. 20 tests d'intégration, CSRF compris. | **`Support` N'EST NULLE PART DANS LA LÉGENDE DU §4** — même piège que `§7.45`/`§7.46` : cherché dans tout le corpus, il couvre exactement `Entité`/`Cercle`/`Global`, sans règle supplémentaire. **`BOOST` DIVERGE SUR UNE SEULE LIGNE DU §7** : `Support cercle` pour compléter, tiret pour valider — la permission de validation est une fonction séparée, testée par un témoin qui prouve d'abord que le Booster PEUT compléter, pour que son refus de valider prouve l'asymétrie et non une absence générale de droit. **UNE AFFIRMATION FAUSSE CORRIGÉE AVANT COMMIT, PAS APRÈS** : la première rédaction croyait `entity_membership.short_bio`/`fun_fact` déjà éditables depuis `T6`/`T11` du LOT 5 — `grep` dans le code ne montre AUCUNE écriture, et `compte-rendu-t7-lot-5.md` confirme que Jonathan les avait explicitement **reportés** à cette sous-étape. La passerelle entre `arrival_profile.short_intro` et `entity_membership.short_bio` reste donc un résidu du LOT 5, non de `T3` — corrigé dans le code, les routes et le manifeste avant de committer. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 26/09/2026 |
 
-**Prochain identifiant libre : `DEC-602`.**
+| `DEC-602` | **Correctif post-fusion de `T3` : « Corriger après publication », une quatrième ligne du §7 manquée à la première lecture, est implémentée.** `PATCH …/arrival-profile` accepte désormais l'écriture sur `state='published'`, gardée par une nouvelle grille — `DSM`→Consultants (retrouvé, à tiret sur « Compléter »), `ESM`/`ADM-E`→Entité, `BOOST`→Cercle, `SUPER`→Global, `NEW`→tiret (perdu, §6.2), `OFFICE`→tiret. Seul `archived` reste sans aucune ligne d'écriture. 6 tests remplacent le témoin devenu faux. | **TROUVÉ EN RELISANT LE §7 JUSTE APRÈS LA FUSION DE `DEC-601` (PR #187), PAS PAR UN CONTRÔLE.** Le PR fusionné bloquait toute écriture après publication, pour tout le monde — ce qui laissait `MVP-L07-US002` incomplète : son critère « les corrections ultérieures sont limitées aux rôles autorisés » ne peut pas être satisfait par un blocage total, qui ne distingue aucun rôle. Signalé à Jonathan avant correction plutôt que corrigé en silence ; validation demandée et obtenue de corriger immédiatement plutôt que différer à une sous-étape ultérieure. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 26/09/2026 |
+
+**Prochain identifiant libre : `DEC-603`.**
 
 ---
 
@@ -1054,6 +1057,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-599` — réalisation du LOT 7, `T1` | 1 | 1 |
 | `DEC-600` — réalisation du LOT 7, `T2` | 1 | 1 |
 | `DEC-601` — réalisation du LOT 7, `T3` | 1 | 1 |
+| `DEC-602` — correctif post-fusion du LOT 7, `T3` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1065,7 +1069,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **269** | **269** |
+| **Total** | **270** | **270** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

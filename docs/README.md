@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `601` en usage | `DEC-602` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `602` en usage | `DEC-603` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -368,8 +368,18 @@ rien.
 `PATCH …/arrival-profile` et `POST …/arrival-profile/validation`. La publication est automatique à
 la validation (matrice §7.1) : un seul appel fait passer `state` de `draft` à `published`,
 `validated_at` et `published_at` portant le même instant. `recent_until` est calculé par
-PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python. **1 841 tests** désormais. La prochaine est
-`T4`, le catalogue des tâches.
+PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python.
+
+> **CORRECTIF POST-FUSION, `DEC-602` : une quatrième ligne du §7, « Corriger après publication »,
+> avait été manquée.** Trouvée en relisant la matrice juste après la fusion de `T3`, pas par un
+> contrôle : sa grille S'INVERSE sur `NEW` (perd le droit après publication, §6.2) et `DSM` (le
+> retrouve, à tiret sur « Compléter »). Sans elle, `MVP-L07-US002` restait incomplète — son
+> critère « corrections limitées aux rôles autorisés » ne peut pas être satisfait par un blocage
+> total. `PATCH …/arrival-profile` accepte désormais l'écriture sur `published`, gardée par une
+> grille séparée ; `archived` reste le seul état sans aucune ligne d'écriture. Détail :
+> `compte-rendu-t3-lot-7.md` §2.7.
+
+**1 846 tests** désormais. La prochaine est `T4`, le catalogue des tâches.
 
 > **`Support` N'EST NULLE PART DANS LA LÉGENDE DU §4** — même piège que `Périmètre` au LOT 6.
 > Cherché dans tout le corpus : il couvre exactement `Entité`/`Cercle`/`Global`, sans règle
