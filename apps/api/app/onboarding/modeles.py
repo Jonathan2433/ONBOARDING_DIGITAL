@@ -63,6 +63,9 @@ CE QUE LE MODELE N'ECRIT PAS, ET QUI RESTE DONC OUVERT
      modele ou d'une instance archives par l'ESM n'est definie nulle part : ce
      module pose les etats `archived`/`replaced` qu'une restauration devra lire,
      mais aucune route ne la sert avant que l'ecart soit tranche (`T6`/`T11`).
+     **`onboarding_template_version.state` PORTE DESORMAIS SA PROPRE
+     ENUMERATION** (`EtatDeLaVersionDuModele`, `T5`, migration `0021`) — ce
+     paragraphe annoncait un residu ici, corrige, jamais en modifiant `0020`.
   3. **`ECART-012` n'est pas resolu.** `target_status` ne porte que
      `mission`/`intercontract`, les deux seules valeurs du modele §6.5 — la MEME
      enumeration que `SituationProfessionnelle`, reutilisee ici plutot que
@@ -302,6 +305,30 @@ class OnboardingTemplate(ChampsCommuns, Base):
     )
 
 
+class EtatDeLaVersionDuModele(enum.StrEnum):
+    """§13.3 : « `state` | `draft`, `published`, `retired` ».
+
+    **DISTINCTE DE `EtatDuModele`, ET C'EST LE RESIDU NOMME PAR `T1`, CORRIGE
+    ICI.** Le conteneur (`onboarding_template`, §13.2) et sa version (§13.3)
+    portent CHACUN une colonne `state`, mais avec des valeurs DIFFERENTES —
+    `draft`/`active`/`archived` pour l'un, `draft`/`published`/`retired` pour
+    l'autre. `T1` avait pose la migration `0020` en reutilisant `EtatDuModele`
+    pour les deux, un defaut trouve en relisant le §13 en preparant `T4`
+    (`compte-rendu-t4-lot-7.md` §2.6) : la contrainte `state_valide` de la
+    version REFUSAIT `published`, la valeur meme que son cycle de vie exige.
+    Migration `0021` : jamais une correction de `0020`, deja appliquee.
+    """
+
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    RETIRED = "retired"
+
+
+ETATS_DE_LA_VERSION_DU_MODELE: tuple[str, ...] = tuple(
+    membre.value for membre in EtatDeLaVersionDuModele
+)
+
+
 class OnboardingTemplateVersion(ChampsCommuns, Base):
     """Une publication immuable d'un modele — modele §13.3.
 
@@ -327,7 +354,7 @@ class OnboardingTemplateVersion(ChampsCommuns, Base):
     __table_args__ = (
         ForeignKeyConstraint(["template_id"], ["onboarding_template.id"]),
         ForeignKeyConstraint(["published_by_person_id"], ["person.id"]),
-        contrainte_enumeration("state", EtatDuModele, "state_valide"),
+        contrainte_enumeration("state", EtatDeLaVersionDuModele, "state_valide"),
         UniqueConstraint(
             "template_id", "version_number", name="uq_onboarding_template_version_number"
         ),
