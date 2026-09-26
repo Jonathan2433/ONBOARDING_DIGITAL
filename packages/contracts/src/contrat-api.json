@@ -1258,6 +1258,60 @@
         "409 `code_de_tache_deja_utilise` : ce code existe deja dans ce perimetre",
         "(cette entite, ou le catalogue global) — les deux index partiels de T1."
       ]
+    },
+    {
+      "cle": "creationDUnModeleOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeModele",
+      "role": [
+        "Creer un modele d'onboarding — LOT 7, T5, matrice §9 « Creer un modele ».",
+        "Ecriture pure : aucun module de contrat propre, meme regle que le catalogue.",
+        "CONTRAIREMENT AU CATALOGUE DE T4, `Consultants`/`Cercle` NE SE REDUISENT PAS",
+        "A L'ENTITE : `onboarding_template` porte de vraies colonnes de portee. Un",
+        "DSM ne cree que pour LUI-MEME (`scope_person_id`), un Booster que pour SON",
+        "cercle (`scope_circle_id`) — 403 `acces_refuse` sinon, une asymetrie mesuree.",
+        "ESM/ADM-E/SUPER gerent N'IMPORTE QUEL DSM/cercle de l'entite (portee",
+        "d'entite, meme parti que le LOT 6). Seul SUPER atteint `portee: GLOBAL`.",
+        "422 `portee_de_modele_incoherente` : `scope_person_id`/`scope_circle_id`",
+        "ne correspondent pas a la `portee` demandee — modele §13.2."
+      ]
+    },
+    {
+      "cle": "creationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404],
+      "forme": "ReponseDeVersion",
+      "role": [
+        "Creer une nouvelle version brouillon — LOT 7, T5, matrice §9. Ecriture",
+        "pure : aucun module de contrat propre.",
+        "`version_number` est calcule en base — modele §13.3. Le permis se resout",
+        "sur la portee DEJA ECRITE du modele existant, jamais une portee declaree.",
+        "404 `modele_introuvable` : inexistant, ou d'une AUTRE entite — isolement,",
+        "meme discipline que le catalogue de T4. Un modele GLOBAL reste atteignable",
+        "depuis N'IMPORTE QUELLE entite du chemin."
+      ]
+    },
+    {
+      "cle": "definitionDesTachesDUneVersion",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/tasks",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDesTachesDeVersion",
+      "role": [
+        "Poser ou reordonner les taches d'une version — LOT 7, T5, matrice §9",
+        "« Ajouter ou reordonner des taches », UNE seule ligne pour les deux gestes.",
+        "Ecriture pure : aucun module de contrat propre.",
+        "LA LISTE ENTIERE REMPLACE LA PRECEDENTE, `display_order` valant l'INDEX de",
+        "chaque ligne recue — meme lecture que `content_block` au LOT 6.",
+        "409 `version_de_modele_immuable` : cette version est publiee ou retiree —",
+        "modele §13.3, LE TEMOIN DE CETTE SOUS-ETAPE.",
+        "422 `tache_hors_perimetre_du_modele` : une tache de reference qui n'est ni",
+        "globale ni propre a l'entite de ce modele — residuel nomme par T1,",
+        "instruit ici par le service."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

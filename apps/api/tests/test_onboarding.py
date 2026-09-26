@@ -216,7 +216,7 @@ def _modele(
 
 
 def _version(
-    cx: Connection, modele: uuid.UUID, *, numero: int = 1, state: str = "active"
+    cx: Connection, modele: uuid.UUID, *, numero: int = 1, state: str = "draft"
 ) -> uuid.UUID:
     return cx.execute(  # type: ignore[no-any-return]
         text(

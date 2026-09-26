@@ -1,4 +1,4 @@
-"""Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche d'arrivee), `T4` (catalogue).
+"""Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche), `T4` (catalogue), `T5` (modeles).
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
@@ -21,6 +21,20 @@ depuis le LOT 4.
   la garde generique posee au LOT 4 pour exactement ce cas, plutot que de
   reecrire une resolution manuelle comme `T2`/`T3` le font pour la fiche
   (ou `Soi` et le rattachement DSM/Booster exigent une cible).
+
+`T5` AJOUTE LES MODELES ET LEURS VERSIONS, SOUS `/entities/{code}/onboarding/templates`
+
+  **MEME GARDE GENERIQUE QU'AU `T4`**, mais le permis FIN ne s'arrete pas a la
+  garde : `onboarding_template` porte de vraies colonnes de portee
+  (`scope_person_id`, `scope_circle_id`), et `peut_gerer_un_modele_de_cette_
+  portee` (`perimetre.py`) doit lire la BASE pour verifier qu'un DSM agit sur
+  SES consultants, ou qu'un Booster agit sur SON cercle — jamais une simple
+  appartenance de role, contrairement au catalogue de `T4`.
+
+  **TROIS ROUTES, LA MEME GARDE, DEUX RESOLUTIONS DE PORTEE DIFFERENTES** :
+  creer un modele resout la portee DECLAREE par la demande ; creer une
+  version ou y composer des taches resout la portee DEJA ECRITE du modele
+  EXISTANT, lu en base — jamais celle que l'appelant pretendrait avoir.
 """
 
 from __future__ import annotations
@@ -47,11 +61,30 @@ from app.onboarding.catalogue import (
 )
 from app.onboarding.ecriture import completer_la_fiche_arrivee, valider_et_publier_la_fiche_arrivee
 from app.onboarding.fiche_arrivee import FicheArrivee, lire_la_fiche_arrivee
+from app.onboarding.gabarits import (
+    CODE_MODELE_INTROUVABLE,
+    CODE_PORTEE_INCOHERENTE,
+    CODE_VERSION_INTROUVABLE,
+    MESSAGE_MODELE_INTROUVABLE,
+    MESSAGE_PORTEE_INCOHERENTE,
+    MESSAGE_VERSION_INTROUVABLE,
+    Modele,
+    NouvelleTacheDeVersion,
+    TacheDeVersion,
+    VersionDeModele,
+    creer_un_modele,
+    creer_une_version,
+    definir_les_taches_de_la_version,
+    lire_un_modele,
+    lire_une_version,
+)
 from app.onboarding.perimetre import (
+    ROLES_DE_GESTION_DES_MODELES,
     ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
     peut_completer_la_fiche_arrivee,
     peut_corriger_la_fiche_arrivee_apres_publication,
     peut_creer_une_tache_de_reference_globale,
+    peut_gerer_un_modele_de_cette_portee,
     peut_lire_la_fiche_arrivee,
     peut_valider_et_publier_la_fiche_arrivee,
 )
@@ -262,6 +295,161 @@ def _tache_en_reponse(tache: TacheDeReference) -> ReponseDeTacheDeReference:
         category=tache.category,
         active=tache.active,
     )
+
+
+class DemandeDeModele(BaseModel):
+    """Creer un modele — matrice §9 « Creer un modele », modele §13.2."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, description="Nom du modele — modele §13.2")
+    target_status: Literal["mission", "intercontract"] = Field(
+        description="Le statut professionnel cible — modele §13.2, §6.5"
+    )
+    portee: Literal["GLOBAL", "ENTITY", "DSM", "CIRCLE"] = Field(
+        description=(
+            "`scope_type` — modele §13.2. `DSM` exige `scope_person_id` (et lui seul), "
+            "`CIRCLE` exige `scope_circle_id` (et lui seul), `ENTITY`/`GLOBAL` n'exigent "
+            "ni l'un ni l'autre."
+        )
+    )
+    scope_person_id: uuid.UUID | None = Field(
+        default=None, description="Le DSM concerne — requis SEULEMENT si `portee: DSM`"
+    )
+    scope_circle_id: uuid.UUID | None = Field(
+        default=None, description="Le cercle concerne — requis SEULEMENT si `portee: CIRCLE`"
+    )
+
+
+class ReponseDeModele(BaseModel):
+    """Le conteneur, tel que cree — modele §13.2."""
+
+    id: uuid.UUID
+    entity_id: uuid.UUID | None
+    name: str
+    target_status: str
+    scope_type: str
+    scope_person_id: uuid.UUID | None
+    scope_circle_id: uuid.UUID | None
+    state: str
+
+
+class DemandeDeVersion(BaseModel):
+    """Creer une nouvelle version brouillon — matrice §9, modele §13.3."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    change_summary: str | None = Field(default=None, description="Resume du changement, facultatif")
+
+
+class ReponseDeVersion(BaseModel):
+    """La version, telle que creee — modele §13.3."""
+
+    id: uuid.UUID
+    template_id: uuid.UUID
+    version_number: int
+    state: str
+    change_summary: str | None
+
+
+class DemandeDeTacheDeVersion(BaseModel):
+    """Une ligne de la liste — modele §13.4. `display_order` n'est PAS ici :
+    il vaut l'INDEX de cette ligne dans la liste recue, jamais un rang saisi.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    task_reference_id: uuid.UUID = Field(description="La tache de reference reutilisee")
+    required: bool = Field(default=True, description="Obligatoire ou facultative — modele §13.4")
+    due_offset_days: int = Field(ge=0, description="Echeance relative a l'arrivee, en jours")
+    title_override: str | None = Field(
+        default=None, description="Libelle de remplacement, facultatif"
+    )
+    description_override: str | None = Field(
+        default=None, description="Instructions de remplacement, facultatives"
+    )
+
+
+class DemandeDesTachesDeVersion(BaseModel):
+    """La liste ENTIERE des taches d'une version — matrice §9 « Ajouter ou
+    reordonner des taches », UNE seule ligne pour les deux gestes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    taches: list[DemandeDeTacheDeVersion]
+
+
+class ReponseDeTacheDeVersion(BaseModel):
+    """Une ligne, telle qu'ecrite — modele §13.4."""
+
+    id: uuid.UUID
+    task_reference_id: uuid.UUID
+    display_order: int
+    required: bool
+    due_offset_days: int
+    title_override: str | None
+    description_override: str | None
+
+
+class ReponseDesTachesDeVersion(BaseModel):
+    """La liste et son compte — §7.20, rapporter plutot que taire."""
+
+    taches: list[ReponseDeTacheDeVersion]
+    nombre_de_taches: int
+
+
+def _modele_en_reponse(modele: Modele) -> ReponseDeModele:
+    return ReponseDeModele(
+        id=modele.id,
+        entity_id=modele.entity_id,
+        name=modele.name,
+        target_status=modele.target_status,
+        scope_type=modele.scope_type,
+        scope_person_id=modele.scope_person_id,
+        scope_circle_id=modele.scope_circle_id,
+        state=modele.state,
+    )
+
+
+def _version_en_reponse(version: VersionDeModele) -> ReponseDeVersion:
+    return ReponseDeVersion(
+        id=version.id,
+        template_id=version.template_id,
+        version_number=version.version_number,
+        state=version.state,
+        change_summary=version.change_summary,
+    )
+
+
+def _tache_de_version_en_reponse(tache: TacheDeVersion) -> ReponseDeTacheDeVersion:
+    return ReponseDeTacheDeVersion(
+        id=tache.id,
+        task_reference_id=tache.task_reference_id,
+        display_order=tache.display_order,
+        required=tache.required,
+        due_offset_days=tache.due_offset_days,
+        title_override=tache.title_override,
+        description_override=tache.description_override,
+    )
+
+
+def _verifier_coherence_de_la_portee(demande: DemandeDeModele) -> None:
+    """Le PLANCHER, avant que la contrainte `colonnes_de_portee_selon_scope_type`
+    (migration `0020`) ne le refuse en 500 — meme parti a deux etages que
+    `content/liens.py` : la contrainte est ce que nul ne contourne, ce refus
+    est le message EXACT, en 422."""
+    if demande.portee == "DSM":
+        coherente = demande.scope_person_id is not None and demande.scope_circle_id is None
+    elif demande.portee == "CIRCLE":
+        coherente = demande.scope_circle_id is not None and demande.scope_person_id is None
+    else:
+        coherente = demande.scope_person_id is None and demande.scope_circle_id is None
+    if not coherente:
+        raise ErreurApplicative(
+            code=CODE_PORTEE_INCOHERENTE,
+            message=MESSAGE_PORTEE_INCOHERENTE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
 
 
 def routeur_onboarding(parametres: Parametres) -> APIRouter:
@@ -713,5 +901,289 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 category=demande.category,
             )
         return _tache_en_reponse(creee)
+
+    #  §9 : « Creer un modele », « Creer une nouvelle version », « Ajouter ou
+    #  reordonner des taches » partagent la MEME grille brute (voir
+    #  `perimetre.py`) — la garde generique borne donc les trois a l'un des
+    #  cinq roles ; le permis FIN, qui differe par ligne, se resout ensuite
+    #  dans chaque route via `peut_gerer_un_modele_de_cette_portee`.
+    garde_des_modeles = exiger_un_role_dans_l_entite(parametres, ROLES_DE_GESTION_DES_MODELES)
+
+    @routeur.post(
+        "/entities/{code}/onboarding/templates",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeModele,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : hors de la matrice §9 pour cette portee — un DSM "
+                    "hors de ses propres consultants, un Booster hors de son propre "
+                    "cercle, `OFFICE`, ou une portee GLOBAL demandee par un role autre "
+                    "que SUPER."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`portee_de_modele_incoherente` : `scope_person_id`/`scope_circle_id` "
+                    "ne correspondent pas a la portee demandee — modele §13.2."
+                )
+            },
+        },
+        summary="Creer un modele d'onboarding",
+        description=(
+            "Matrice §9 « Creer un modele ». Le conteneur seul : aucune version, aucune "
+            "tache — `T5` livre les trois gestes separement, comme le §9 les separe."
+        ),
+    )
+    def creer_un_modele_onboarding(
+        demande: DemandeDeModele,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDeModele:
+        """Creer le conteneur d'un modele — matrice §9, modele §13.2."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+        _verifier_coherence_de_la_portee(demande)
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_gerer_un_modele_de_cette_portee(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                portee=demande.portee,
+                scope_person_id=demande.scope_person_id,
+                scope_circle_id=demande.scope_circle_id,
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            entite_du_modele = None if demande.portee == "GLOBAL" else entite.id
+            cree = creer_un_modele(
+                connexion,
+                entite=entite_du_modele,
+                name=demande.name,
+                target_status=demande.target_status,
+                scope_type=demande.portee,
+                scope_person_id=demande.scope_person_id,
+                scope_circle_id=demande.scope_circle_id,
+            )
+        return _modele_en_reponse(cree)
+
+    @routeur.post(
+        "/entities/{code}/onboarding/templates/{template_id}/versions",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeVersion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : la portee DEJA ECRITE de ce modele refuse cet acteur."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite inconnue, ou `modele_introuvable` — inexistant, ou d'une "
+                    "AUTRE entite (isolation, meme discipline que le catalogue de `T4`)."
+                )
+            },
+        },
+        summary="Creer une nouvelle version brouillon",
+        description=(
+            "Matrice §9 « Creer une nouvelle version ». `version_number` est calcule "
+            "en base — modele §13.3."
+        ),
+    )
+    def creer_une_nouvelle_version(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
+        demande: DemandeDeVersion,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDeVersion:
+        """Creer une nouvelle version brouillon — matrice §9, modele §13.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            modele = lire_un_modele(connexion, entite=entite.id, modele=template_id)
+            if modele is None:
+                raise ErreurApplicative(
+                    code=CODE_MODELE_INTROUVABLE,
+                    message=MESSAGE_MODELE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_gerer_un_modele_de_cette_portee(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                portee=modele.scope_type,
+                scope_person_id=modele.scope_person_id,
+                scope_circle_id=modele.scope_circle_id,
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            creee = creer_une_version(
+                connexion, modele=modele.id, change_summary=demande.change_summary
+            )
+        return _version_en_reponse(creee)
+
+    @routeur.put(
+        "/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/tasks",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesTachesDeVersion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : la portee DEJA ECRITE de ce modele refuse cet acteur."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite, modele (`modele_introuvable`) ou version "
+                    "(`version_de_modele_introuvable`) inconnus."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_de_modele_immuable` : cette version est publiee ou "
+                    "retiree — modele §13.3, le temoin de cette sous-etape."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`tache_hors_perimetre_du_modele` : une tache de reference qui "
+                    "n'est ni globale ni propre a l'entite de ce modele."
+                )
+            },
+        },
+        summary="Poser ou reordonner les taches d'une version",
+        description=(
+            "Matrice §9 « Ajouter ou reordonner des taches », UNE seule ligne pour les "
+            "deux gestes. La liste ENTIERE remplace la precedente, `display_order` "
+            "valant l'INDEX de chaque ligne recue — meme lecture que `content_block` "
+            "au LOT 6."
+        ),
+    )
+    def definir_les_taches_de_la_version_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
+        version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
+        demande: DemandeDesTachesDeVersion,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDesTachesDeVersion:
+        """Poser la liste des taches d'une version brouillon — matrice §9, modele §13.4."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            modele = lire_un_modele(connexion, entite=entite.id, modele=template_id)
+            if modele is None:
+                raise ErreurApplicative(
+                    code=CODE_MODELE_INTROUVABLE,
+                    message=MESSAGE_MODELE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            version = lire_une_version(connexion, modele=modele.id, version=version_id)
+            if version is None:
+                raise ErreurApplicative(
+                    code=CODE_VERSION_INTROUVABLE,
+                    message=MESSAGE_VERSION_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_gerer_un_modele_de_cette_portee(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                portee=modele.scope_type,
+                scope_person_id=modele.scope_person_id,
+                scope_circle_id=modele.scope_circle_id,
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            demandees = [
+                NouvelleTacheDeVersion(
+                    task_reference_id=tache.task_reference_id,
+                    required=tache.required,
+                    due_offset_days=tache.due_offset_days,
+                    title_override=tache.title_override,
+                    description_override=tache.description_override,
+                )
+                for tache in demande.taches
+            ]
+            ecrites = definir_les_taches_de_la_version(
+                connexion, modele=modele, version=version, taches=demandees
+            )
+        servies = [_tache_de_version_en_reponse(tache) for tache in ecrites]
+        return ReponseDesTachesDeVersion(taches=servies, nombre_de_taches=len(servies))
 
     return routeur

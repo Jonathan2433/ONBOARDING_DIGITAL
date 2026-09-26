@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-603`, `T4` du LOT 7
+**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-604`, `T5` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -108,6 +108,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-601`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
 | **Correctif post-fusion du LOT 7 `DEC-602`, sous-étape `T3`** | 1 | **Soumise le 26/09/2026** |
 | **Réalisation du LOT 7 `DEC-603`, sous-étape `T4`** | 1 | **Soumise le 26/09/2026** |
+| **Réalisation du LOT 7 `DEC-604`, sous-étape `T5`** | 1 | **Soumise le 26/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -119,7 +120,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **271** | |
+| **Total** | **272** | |
 
 ---
 
@@ -812,7 +813,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-603` | **`T4` livre le catalogue des tâches — `GET`/`POST …/onboarding/task-references`, ferme `ECART-013` structurellement.** Une seule grille gouverne « Créer » et « Réutiliser une tâche de référence » (matrice §9) : DSM/ESM/BOOST/ADM-E/SUPER, `OFFICE` à tiret. `portee: "GLOBAL"` (`entity_id` NULL, modèle §13.1) est réservée à `SUPER` seul. Le catalogue lu est une UNION — les tâches de l'entité et les tâches globales. 16 tests d'intégration, 11 tests du contrat TypeScript (`catalogueDesTaches.ts`, lecture — la création, écriture pure, n'a pas de module propre, même règle que `T3`). | **`Consultants`/`Cercle` SE RÉDUISENT À L'ENTITÉ POUR CETTE TABLE PRÉCISÉMENT, ET C'EST DOCUMENTÉ, PAS DEVINÉ** : `onboarding_task_reference` ne porte que `entity_id` (nullable pour le global) — aucune colonne cercle ni DSM, à la différence d'`onboarding_template` qui les recevra à `T5`. Une tâche de référence n'a pas de CIBLE, contrairement à `arrival_profile` où un rattachement réel est vérifié. **UN RÉSIDU DU MODÈLE TROUVÉ EN LISANT `T5` EN AVANCE, LAISSÉ À `T5` PLUTÔT QUE CORRIGÉ ICI** : `onboarding_template_version.state` réutilise l'énumération du conteneur (`draft`/`active`/`archived`) alors que le modèle §13.3 exige `draft`/`published`/`retired` pour la VERSION — deux énumérations distinctes, confondues depuis `T1`. Non bloquant pour `T4`, qui ne touche à aucune des deux tables ; la contrainte actuelle refusera bruyamment `state='published'` le jour où `T5` l'écrira, ce qui n'est pas un défaut silencieux. **Zéro régression** : 74 échecs pytest, identiques à `origin/develop`. | Soumise le 26/09/2026 |
 
-**Prochain identifiant libre : `DEC-604`.**
+| `DEC-604` | **`T5` livre les modèles d'onboarding et leurs versions — `POST …/onboarding/templates`, `POST …/templates/{id}/versions`, `PUT …/templates/{id}/versions/{id}/tasks`, `MVP-L07-US003` (1/2).** Trois routes, `app/onboarding/gabarits.py` (service, nommé ainsi car `modeles.py` est déjà pris par l'ORM). Le témoin de la sous-étape : une version `published` (ou `retired`) refuse toute écriture de ses tâches — `409 version_de_modele_immuable`. « Ajouter ou réordonner » est UNE seule ligne : la liste entière remplace la précédente, `display_order` valant l'index reçu, même lecture que `content_block` (LOT 6). 29 tests d'intégration ; aucun module de contrat — trois écritures pures. | **RÉSIDU DE `T1` CORRIGÉ EN PRÉALABLE, PAR UNE NOUVELLE MIGRATION (`0021`), JAMAIS EN MODIFIANT `0020` DÉJÀ APPLIQUÉE** : `onboarding_template_version.state` reçoit sa PROPRE énumération (`draft`/`published`/`retired`) au lieu de celle du conteneur — sans cela, le témoin d'immuabilité de cette sous-étape était irréalisable, la contrainte héritée refusant `published` lui-même. Zéro ligne existante rejetée, la table était vide. **CONTRAIREMENT AU CATALOGUE DE `T4`, `Consultants`/`Cercle` NE SE RÉDUISENT PAS À L'ENTITÉ ICI** : `onboarding_template` porte de vraies colonnes de portée (`scope_person_id`, `scope_circle_id`). Un DSM ne gère QUE ses propres modèles (§9.1 : « destiné à ses consultants »), un Booster QUE ceux de SON cercle — deux témoins d'asymétrie le prouvent, un DSM refusé sur le modèle d'un AUTRE DSM actif, un Booster refusé sur un cercle dont il n'est pas responsable. `ESM`/`ADM-E`/`SUPER`, eux, gèrent N'IMPORTE QUEL DSM ou cercle de l'entité — même parti que `ROLES_DE_PORTEE_ENTITE` du LOT 6 : un rôle de portée entité gère aussi ce qu'un rôle local gérerait, jamais l'inverse. **DEUX RÉSIDUS NOMMÉS PAR `T1` INSTRUITS ICI, PAR LE SERVICE ET NON PAR LA BASE** — faute de clé composite sûre (`make isolation-check` exigeant `entity_id NOT NULL` à la source, ces deux tables cibles l'ayant nullable) : la cohérence d'entité modèle↔cercle (`CIRCLE` doit viser un cercle de la MÊME entité), et modèle↔tâche de référence réutilisée (une tâche doit être GLOBALE ou de la MÊME entité que le modèle — jamais celle d'une autre, la même règle que `T4` documentait déjà). **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`), 87 échecs environnementaux identiques des deux côtés. | Soumise le 26/09/2026 |
+
+**Prochain identifiant libre : `DEC-605`.**
 
 ---
 
@@ -1062,6 +1065,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-601` — réalisation du LOT 7, `T3` | 1 | 1 |
 | `DEC-602` — correctif post-fusion du LOT 7, `T3` | 1 | 1 |
 | `DEC-603` — réalisation du LOT 7, `T4` | 1 | 1 |
+| `DEC-604` — réalisation du LOT 7, `T5` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1073,7 +1077,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **271** | **271** |
+| **Total** | **272** | **272** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

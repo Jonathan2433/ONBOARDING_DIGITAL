@@ -110,6 +110,54 @@ LE CATALOGUE DES TACHES — matrice §9, `T4`
   le distinguer : `resoudre_les_permissions` ajoute `SUPER_ADMINISTRATEUR`
   SANS condition d'entite (§5.1, l'exception globale), donc sa presence dans
   `roles` suffit — comme pour `peut_valider_et_publier_la_fiche_arrivee`.
+
+LES MODELES ET LEURS VERSIONS — matrice §9, `T5`
+
+  **ICI, CONTRAIREMENT AU CATALOGUE, `Consultants` ET `Cercle` NE SE REDUISENT
+  PAS A L'ENTITE.** `onboarding_template` (modele §13.2) porte deux colonnes
+  que `onboarding_task_reference` n'a pas : `scope_person_id` (le DSM, si
+  `scope_type = 'DSM'`) et `scope_circle_id` (le cercle, si `scope_type =
+  'CIRCLE'`). La limite qui collapsait le catalogue a l'entite au `T4`
+  n'existe plus ici : un DSM cree un modele pour SES PROPRES consultants, un
+  Booster pour SON PROPRE cercle — jamais pour un autre.
+
+      Creer un modele / une nouvelle version / ajouter des taches
+      DSM      Consultants   (scope_type=DSM, scope_person_id = LUI-MEME)
+      ESM      Entite        (scope_type=ENTITY)
+      BOOST    Cercle        (scope_type=CIRCLE, scope_circle_id = SON cercle)
+      OFFICE   —
+      ADM-E    Entite        (scope_type=ENTITY)
+      SUPER    Global        (scope_type=GLOBAL)
+
+  **TROIS DES QUATRE LIGNES DU §9 PARTAGENT CETTE MEME GRILLE** — « Creer un
+  modele », « Creer une nouvelle version », « Ajouter ou reordonner des
+  taches » — exactement le motif qui a factorise les lignes du catalogue en
+  `T4` : une seule fonction, `peut_gerer_un_modele_de_cette_portee`, sert les
+  trois, appliquee soit a la portee DECLAREE (creation), soit a la portee DEJA
+  ECRITE du modele existant (version, taches).
+
+  **`ESM`/`ADM-E`/`SUPER` NE SONT PAS BORNES A LEUR PROPRE SCOPE_TYPE**, et
+  c'est le MEME parti que `ROLES_DE_PORTEE_ENTITE` dans
+  `app/content/perimetre.py` (LOT 6) : un role de portee ENTITE gere aussi ce
+  qu'un role LOCAL gererait, jamais l'inverse. Un ESM peut donc creer un
+  modele `DSM` pour n'importe quel DSM ACTIF de son entite, ou `CIRCLE` pour
+  n'importe quel cercle de son entite — le modele §13.2 l'exige d'ailleurs
+  structurellement : « un scope DSM exige un DSM actif dans l'entite », « un
+  scope CIRCLE exige un cercle de la meme entite » — DEUX RESIDUS NOMMES PAR
+  `T1`, faute de cle composite sure (voir `modeles.py`), INSTRUITS ICI PAR LE
+  SERVICE plutot que par la base : `peut_gerer_un_modele_de_cette_portee` lit
+  `framework_responsibility_assignment`/`circle` et refuse en silence — UN
+  SEUL gabarit de refus, `acces_refuse`, que la cause soit un role insuffisant
+  ou une cible invalide (§2.5, meme discipline que `resoudre_le_perimetre_
+  editorial`).
+
+  **UN DSM OU UN BOOSTER, EUX, SONT BORNES A EUX-MEMES.** Un DSM sans role de
+  portee ENTITE ne peut creer un modele `DSM` QUE pour `scope_person_id ==
+  lui-meme` — §9.1 du corpus, « Un modele cree par un DSM doit etre destine a
+  SES consultants ». Un Booster ne peut creer un modele `CIRCLE` QUE pour un
+  cercle ou il est BOOSTER ACTIF — verifie sur `framework_responsibility_
+  assignment`, jamais sur la seule appartenance a `roles` qui ne dit RIEN du
+  cercle precis.
 """
 
 from __future__ import annotations
@@ -335,3 +383,129 @@ def peut_creer_une_tache_de_reference_globale(*, roles: frozenset[RoleDeLaMatric
     par `resoudre_les_permissions` sans condition d'entite.
     """
     return RoleDeLaMatrice.SUPER_ADMINISTRATEUR in roles
+
+
+#  §9 : « Creer un modele », « Creer une nouvelle version », « Ajouter ou
+#  reordonner des taches » — voir l'en-tete pour la grille et le motif.
+ROLES_DE_GESTION_DES_MODELES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.DSM,
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.BOOSTER,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  Les roles dont la portee couvre l'ENTITE entiere sur les modeles — §9,
+#  colonnes ESM/ADM-E/SUPER. Meme parti que `ROLES_DE_PORTEE_ENTITE` de
+#  `app/content/perimetre.py` (LOT 6) : un role d'entite gere aussi ce qu'un
+#  role LOCAL (DSM, Booster) gererait, jamais l'inverse.
+_ROLES_DE_PORTEE_ENTITE_DES_MODELES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  §13.2 : « un scope DSM exige un DSM actif dans l'entite ». Meme forme que
+#  `_RATTACHE_A_CE_DSM`, mais SANS cible : ici on demande seulement si
+#  `:personne` EST un DSM actif, pas si un consultant precis lui est rattache.
+_DSM_ACTIF_DANS_L_ENTITE: Final[str] = """
+SELECT 1 FROM framework_responsibility_assignment
+WHERE person_id = :personne AND entity_id = :entite
+  AND responsibility_type = 'DSM'
+  AND archived_at IS NULL AND period @> :instant
+"""
+
+#  §8.4 : une responsabilite BOOSTER active de l'acteur, sur CE cercle precis
+#  — jamais « l'acteur est Booster quelque part », qui autoriserait n'importe
+#  quel cercle de l'entite au nom d'un role tenu ailleurs.
+_BOOSTER_ACTIF_DE_CE_CERCLE: Final[str] = """
+SELECT 1 FROM framework_responsibility_assignment
+WHERE person_id = :acteur AND entity_id = :entite
+  AND responsibility_type = :type_booster AND circle_id = :cercle
+  AND archived_at IS NULL AND period @> :instant
+"""
+
+#  §13.2 : « un scope CIRCLE exige un cercle de la MEME entite ». Residuel
+#  nomme par `T1` (`modeles.py`) faute de cle composite sure : instruit ici,
+#  par le service, plutot qu'en base.
+_CERCLE_DE_CETTE_ENTITE: Final[str] = """
+SELECT 1 FROM circle WHERE id = :cercle AND entity_id = :entite
+"""
+
+
+def peut_gerer_un_modele_de_cette_portee(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    portee: str,
+    scope_person_id: uuid.UUID | None,
+    scope_circle_id: uuid.UUID | None,
+    instant: dt.datetime,
+) -> bool:
+    """L'acteur peut-il gerer (creer, versionner, composer) un modele de cette
+    portee — §9, trois lignes a la meme grille (voir l'en-tete du module).
+
+    `portee`/`scope_person_id`/`scope_circle_id` sont soit CEUX D'UN MODELE A
+    CREER (declares par l'appelant), soit CEUX D'UN MODELE EXISTANT (lus en
+    base avant de creer une version ou d'y composer des taches) : la fonction
+    ne fait aucune difference entre les deux, exactement comme
+    `resoudre_le_perimetre_editorial` ne distingue pas la page qu'il lit de la
+    portee qu'elle porte deja.
+
+    **UN SEUL BOOLEEN, JAMAIS UN MOTIF** — §2.5, refus par defaut : que la
+    cause soit un role insuffisant, un DSM inactif ou un cercle d'une autre
+    entite, l'appelant recoit le meme refus.
+    """
+    if portee == "GLOBAL":
+        return RoleDeLaMatrice.SUPER_ADMINISTRATEUR in roles
+
+    portee_entite = bool(roles & _ROLES_DE_PORTEE_ENTITE_DES_MODELES)
+
+    if portee == "ENTITY":
+        return portee_entite
+
+    if portee == "DSM":
+        if scope_person_id is None:
+            return False
+        if portee_entite:
+            ligne = connexion.execute(
+                text(_DSM_ACTIF_DANS_L_ENTITE),
+                {"personne": scope_person_id, "entite": entite, "instant": instant},
+            ).first()
+            return ligne is not None
+        if RoleDeLaMatrice.DSM not in roles:
+            return False
+        #  §9.1 : « destine a SES consultants » — jamais a un autre DSM, meme
+        #  actif. Aucune requete necessaire : `roles` porte deja `DSM` pour
+        #  CET acteur, dans CETTE entite (§5.1).
+        return scope_person_id == acteur
+
+    if portee == "CIRCLE":
+        if scope_circle_id is None:
+            return False
+        if portee_entite:
+            ligne = connexion.execute(
+                text(_CERCLE_DE_CETTE_ENTITE), {"cercle": scope_circle_id, "entite": entite}
+            ).first()
+            return ligne is not None
+        if RoleDeLaMatrice.BOOSTER not in roles:
+            return False
+        ligne = connexion.execute(
+            text(_BOOSTER_ACTIF_DE_CE_CERCLE),
+            {
+                "acteur": acteur,
+                "entite": entite,
+                "type_booster": _TYPE_BOOSTER,
+                "cercle": scope_circle_id,
+                "instant": instant,
+            },
+        ).first()
+        return ligne is not None
+
+    return False

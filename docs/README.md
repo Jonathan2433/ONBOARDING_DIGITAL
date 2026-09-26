@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `603` en usage | `DEC-604` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `604` en usage | `DEC-605` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -408,10 +408,30 @@ toujours vers la MÊME ligne, quel que soit le modèle qui la réutilise.
 > pour `T5`, qui devra ajouter une énumération propre et corriger la contrainte par une NOUVELLE
 > migration. Détail : `compte-rendu-t4-lot-7.md` §2.
 
-**1 873 tests** désormais. La prochaine est `T5`, les modèles et leurs versions.
+**`T5` EST FAITE** le 26/09/2026, `DEC-604` : les modèles et leurs versions —
+`POST …/onboarding/templates`, `POST …/templates/{id}/versions`,
+`PUT …/templates/{id}/versions/{id}/tasks`. Le témoin de la sous-étape : une version publiée (ou
+retirée) refuse toute écriture de ses tâches — modèle §13.3, immuabilité. « Ajouter ou réordonner »
+est UNE seule ligne : la liste entière remplace la précédente, `display_order` valant l'index reçu
+— même lecture que `content_block` au LOT 6.
+
+> **RÉSIDU DE `T1` CORRIGÉ EN PRÉALABLE, PAR UNE NOUVELLE MIGRATION (`0021`).**
+> `onboarding_template_version.state` reçoit désormais sa PROPRE énumération —
+> `draft`/`published`/`retired` — au lieu de celle du conteneur : sans cela, le témoin
+> d'immuabilité de cette sous-étape était irréalisable, la contrainte héritée de `0020` refusant
+> `published` elle-même. Zéro ligne existante rejetée. **CONTRAIREMENT AU CATALOGUE DE `T4`,
+> `Consultants`/`Cercle` NE SE RÉDUISENT PAS À L'ENTITÉ ICI** : `onboarding_template` porte de
+> vraies colonnes de portée. Un DSM ne gère que SES propres modèles (§9.1), un Booster que ceux de
+> SON cercle — deux témoins d'asymétrie le prouvent. `ESM`/`ADM-E`/`SUPER` gèrent n'importe quel
+> DSM ou cercle de l'entité, même parti que `ROLES_DE_PORTEE_ENTITE` du LOT 6. **DEUX RÉSIDUS
+> NOMMÉS PAR `T1` INSTRUITS PAR LE SERVICE** — faute de clé composite sûre : la cohérence d'entité
+> modèle↔cercle, et modèle↔tâche de référence réutilisée. Détail : `compte-rendu-t5-lot-7.md`.
+
+**1 902 tests** désormais. La prochaine est `T6`, le cycle de vie d'un modèle.
 
 `ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts, tous deux non bloquants pour `T5`.
+parcours d'onboarding, à trancher avant `T6`) restent ouverts — `ECART-066` devient bloquant pour
+`T6`, qui doit le trancher avant d'écrire la restauration.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
