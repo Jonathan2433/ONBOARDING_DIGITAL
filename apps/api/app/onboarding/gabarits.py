@@ -12,13 +12,15 @@ CE QUE `T5` LIVRE, ET CE QU'IL NE LIVRE PAS
 
   Trois gestes, dans l'ordre du §9 : creer un modele (le conteneur, `onboarding_
   template`), creer une nouvelle version (brouillon, `onboarding_template_
-  version`), composer la liste de ses taches (`onboarding_template_task`). Ni
-  publication, ni archivage, ni restauration, ni duplication : matrice §9,
-  lignes « Publier une version », « Archiver une version », « Restaurer une
-  version » — c'est `T6`, « Cycle de vie d'un modele » (`fiche-lot-7.md` §3).
-  Aucune lecture non plus : ni « Consulter les modeles publies » (grille plus
-  large, sans objet tant que rien n'est publiable), ni « Previsualiser » — les
-  deux arrivent avec les ecrans (`T13`/`T14`) ou le cycle de vie (`T6`).
+  version`), composer la liste de ses taches (`onboarding_template_task`).
+  **`T6` (« Cycle de vie d'un modele », `app/onboarding/cycle_de_vie.py`) livre
+  depuis la publication, l'archivage et la restauration d'une version** —
+  matrice §9, lignes « Publier une version », « Archiver une version »,
+  « Restaurer une version ». Aucune duplication distincte n'existe : arbitrage
+  de Jonathan du 26/09/2026, ce mot du decoupage (`DEC-598`) designe la
+  creation de version deja livree ici, pas une quatrieme route. Aucune lecture
+  non plus : ni « Consulter les modeles publies » (grille plus large), ni
+  « Previsualiser » — les deux arrivent avec les ecrans (`T13`/`T14`).
 
 L'IMMUABILITE D'UNE VERSION PUBLIEE — modele §13.3, LE TEMOIN DE CETTE SOUS-ETAPE
 

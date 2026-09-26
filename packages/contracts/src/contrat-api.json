@@ -1312,6 +1312,55 @@
         "globale ni propre a l'entite de ce modele — residuel nomme par T1,",
         "instruit ici par le service."
       ]
+    },
+    {
+      "cle": "publicationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/publication",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDePublicationDeVersion",
+      "role": [
+        "Publier une version — LOT 7, T6, matrice §9 « Publier une version ».",
+        "Ecriture pure : aucun module de contrat propre.",
+        "`draft` devient `published`, recoit `published_at`/`published_by_person_id`",
+        "— modele §13.3. Meme grille que la creation (T5) : DSM/Booster bornes a",
+        "leur propre modele, ESM/ADM-E a l'entite, SUPER au global.",
+        "409 `transition_de_version_invalide` : seul un brouillon peut etre publie."
+      ]
+    },
+    {
+      "cle": "archivageDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDeVersion",
+      "role": [
+        "Archiver une version — LOT 7, T6, matrice §9 « Archiver une version ».",
+        "Ecriture pure : aucun module de contrat propre.",
+        "`published` devient `retired`. Aucun motif : le §18.1 n'enumere pas ce",
+        "geste. Meme grille que la creation et la publication (T5/T6).",
+        "409 `transition_de_version_invalide` : seule une version publiee peut",
+        "etre archivee — pas un brouillon, pas une version deja retiree."
+      ]
+    },
+    {
+      "cle": "restaurationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDeVersion",
+      "role": [
+        "Restaurer une version — LOT 7, T6, matrice §9 « Restaurer une version »,",
+        "ECART-066 RESOLU. Ecriture pure : aucun module de contrat propre.",
+        "`retired` redevient `published` — JAMAIS `draft` : la version reste",
+        "immuable, modele §13.3. `published_at`/`published_by_person_id` d'origine",
+        "sont conserves, jamais reecrits.",
+        "GRILLE DIFFERENTE des deux autres gestes : DSM et Booster sont EXCLUS EN",
+        "BLOC, jamais bornes a leur propre modele. ESM restaure desormais comme",
+        "ADM-E, dans son entite — arbitrage de Jonathan du 26/09/2026, ECART-066.",
+        "409 `transition_de_version_invalide` : seule une version retiree peut",
+        "etre restauree."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

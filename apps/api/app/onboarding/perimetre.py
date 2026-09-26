@@ -158,6 +158,36 @@ LES MODELES ET LEURS VERSIONS — matrice §9, `T5`
   cercle ou il est BOOSTER ACTIF — verifie sur `framework_responsibility_
   assignment`, jamais sur la seule appartenance a `roles` qui ne dit RIEN du
   cercle precis.
+
+LA RESTAURATION D'UNE VERSION — matrice §9, `T6`, `ECART-066` RESOLU
+
+  Publier et archiver une version REUTILISENT `peut_gerer_un_modele_de_cette_
+  portee` tel quel — memes trois lignes a la meme grille que la creation.
+  « Restaurer une version » est la SEULE ligne du §9 a une grille differente :
+
+      DSM      —             (refuse, MEME sur SON PROPRE modele)
+      ESM      Entite        (`Conditionnel` dans la matrice — RESOLU ci-dessous)
+      BOOST    —             (refuse, MEME sur SON PROPRE cercle)
+      OFFICE   —
+      ADM-E    Entite
+      SUPER    Global
+
+  **`ECART-066` : LA MATRICE DISAIT `Conditionnel` POUR `ESM` SANS DIRE A
+  QUOI.** `ARB-DROIT-003` definit la restauration fonctionnelle pour cinq
+  ressources — profil, contenu, evenement, cercle, bureau — et ne nomme ni un
+  modele d'onboarding ni un parcours. Question posee a Jonathan avant `T6`,
+  comme le recommandait `docs/decisions/registre-ecarts.md` : arbitrage du
+  26/09/2026, l'ESM restaure librement DANS SON ENTITE, meme regime que les
+  cinq autres ressources d'`ARB-DROIT-003`.
+
+  **`DSM`/`BOOST` RESTENT REFUSES EN BLOC, ET CE N'EST PAS UN OUBLI.** A la
+  difference des trois autres lignes du §9, la matrice met `DSM` et `BOOST` a
+  TIRET sur « Restaurer une version » — pas de sous-cas « son propre modele ».
+  `peut_restaurer_une_version_de_modele` n'a donc PAS besoin de lire
+  `framework_responsibility_assignment` ni `circle` : la portee du modele
+  (`GLOBAL` ou non) et l'ensemble `roles` de l'acteur suffisent — aucune
+  requete supplementaire, contrairement a `peut_gerer_un_modele_de_cette_
+  portee`.
 """
 
 from __future__ import annotations
@@ -509,3 +539,26 @@ def peut_gerer_un_modele_de_cette_portee(
         return ligne is not None
 
     return False
+
+
+#  §9 « Restaurer une version », la garde COARSE de la route : DSM et BOOSTER
+#  y sont a TIRET, jamais Conditionnel ni un sous-cas — ils sont donc EXCLUS de
+#  ce role-set, contrairement a `ROLES_DE_GESTION_DES_MODELES`. Alias plutot que
+#  litterale recopiee : memes trois roles que `_ROLES_DE_PORTEE_ENTITE_DES_
+#  MODELES`, et une divergence future serait immediatement visible (§7.27).
+ROLES_DE_RESTAURATION_DES_MODELES: Final[frozenset[RoleDeLaMatrice]] = (
+    _ROLES_DE_PORTEE_ENTITE_DES_MODELES
+)
+
+
+def peut_restaurer_une_version_de_modele(*, portee: str, roles: frozenset[RoleDeLaMatrice]) -> bool:
+    """`ECART-066` resolu : l'ESM restaure librement dans son entite, meme
+    regime qu'`ADM-E`/`SUPER` — voir l'en-tete du module.
+
+    **AUCUNE REQUETE** : DSM et BOOSTER etant refuses EN BLOC sur cette ligne
+    precise (jamais bornes a « leur propre » modele), il n'y a rien a verifier
+    au-dela de la portee et de l'ensemble de roles deja resolu.
+    """
+    if portee == "GLOBAL":
+        return RoleDeLaMatrice.SUPER_ADMINISTRATEUR in roles
+    return bool(roles & ROLES_DE_RESTAURATION_DES_MODELES)

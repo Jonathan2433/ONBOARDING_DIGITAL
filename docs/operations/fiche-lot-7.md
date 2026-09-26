@@ -3,8 +3,8 @@
 **Intitulé :** Fiches d'arrivée et onboarding
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
-**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T5` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`
-**Dernière mise à jour :** 26 septembre 2026 — `T5`
+**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T6` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`, `DEC-605`
+**Dernière mise à jour :** 26 septembre 2026 — `T6`
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -109,7 +109,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T3`~~ | ~~Validation et publication — `recent_until`, « ils nous ont rejoints récemment »~~ **FAITE le 26/09/2026**, `DEC-601` + correctif `DEC-602` | `US001` (2/2), `US002` | la publication est **automatique** à la validation (§7.1), prouvée en un seul appel. `Support`/`Support cercle` (absents de la légende §4) couvrent Entité/Cercle/Global ; `BOOST` diverge sur la seule ligne « Valider et publier ». **Correctif post-fusion** : une quatrième ligne, « Corriger après publication », manquée à la première lecture — sa grille s'inverse sur `NEW`/`DSM` |
 | ~~`T4`~~ | ~~Le catalogue des tâches — `onboarding_task_reference`, identifiants stables~~ **FAITE le 26/09/2026**, `DEC-603` | structurel, ferme `ECART-013` | **la clé de tout le lot** : un identifiant fonctionnel unique par tâche commune, réutilisé par les modèles mission ET intercontrat, jamais la numérotation à deux préfixes du prototype. `DSM`/`BOOST` (`Consultants`/`Cercle` au §9) se réduisent à l'`Entité` pour cette table précisément : elle ne porte ni cercle ni DSM, seulement `entity_id` — collapsage documenté, pas une lecture large. Seul `SUPER` atteint `Global` |
 | ~~`T5`~~ | ~~Les modèles et leurs versions — `onboarding_template`, `_version`, `_task`, scopes `GLOBAL/ENTITY/DSM/CIRCLE`~~ **FAITE le 26/09/2026**, `DEC-604` | `US003` (1/2) | une version publiée est **immuable** (modèle §13.3) : le témoin est une tentative de modification d'une version déjà publiée, refusée. **Contrairement au catalogue de `T4`, `Consultants`/`Cercle` NE se réduisent PAS à l'entité** : `onboarding_template` porte de vraies colonnes de portée, un DSM/Booster ne gère que SON propre DSM-ship/cercle |
-| `T6` | Cycle de vie d'un modèle — publication, duplication, archivage, restauration | `US003` (2/2) | **`ECART-066` s'instruit ICI** : la restauration d'une version archivée par l'ESM est « Conditionnel » et rien ne dit à quoi — à trancher avant d'écrire la route |
+| ~~`T6`~~ | ~~Cycle de vie d'un modèle — publication, archivage, restauration~~ **FAITE le 26/09/2026**, `DEC-605` | `US003` (2/2) | **`ECART-066` (volet version de modèle) résolu ICI, avant d'écrire la route** : l'ESM restaure librement dans son entité. Le volet « parcours » (§8.1) reste ouvert pour `T11`. « Duplication » du libellé initial n'était rien de plus que la création de version déjà livrée par `T5` — aucune quatrième route |
 | `T7` | Création d'une instance depuis la date d'arrivée — lecture du parcours, progression calculée | `US004` | ferme le critère 3 (témoin positif, §1.2) ; « une seule instance active par appartenance » (modèle §13.5) est une contrainte d'**unicité**, donc à éprouver au volume (§7.26 du LOT 6) et pas seulement à l'unité |
 | `T8` | Compléter et annuler une tâche dans les cinq minutes | `US005` | la fenêtre de cinq minutes doit être **injectable**, jamais un `sleep()` de test ni une horloge figée — même discipline que `T` de date du LOT 6, §7.47 |
 | `T9` | Réouverture après cinq minutes — motif obligatoire, `onboarding_task_event` | `US006`, ferme `§30.15` | seuls `ESM`, `ADM-E`, `SUPER` — le témoin négatif porte sur `DSM` et `BOOST`, **explicitement exclus** par §8.3, pas seulement absents de la liste |
@@ -214,12 +214,16 @@ Les cinq tâches communes du prototype portent des identifiants différents entr
 partagé par les deux modèles dès sa création. **La numérotation du prototype n'est jamais reprise
 telle quelle.**
 
-## 8.3 `ECART-066` — ouvert le 25/09/2026, à trancher avant `T6`/`T11`
+## 8.3 `ECART-066` — volet « version de modèle » résolu le 26/09/2026, volet « parcours » ouvert pour `T11`
 
 La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours archivé (§8.1) et d'une
 version de modèle (§9). `ARB-DROIT-003` définit « Conditionnel » pour cinq ressources — profil,
-contenu, événement, cercle, bureau — et n'en nomme aucune des deux. Détail complet et recommandation
-dans `docs/decisions/registre-ecarts.md`. **À poser à Jonathan avant `T6`.**
+contenu, événement, cercle, bureau — et n'en nomme aucune des deux. **Résolu pour la version de
+modèle avant `T6`** : l'ESM restaure librement dans son entité, même régime que les cinq autres
+ressources — `DEC-605`. **Le volet « parcours archivé » (§8.1) n'a pas été reposé** : la question
+posée à Jonathan ne portait que sur la version de modèle, et rien ne permet de présumer la même
+réponse pour un parcours sans la reposer explicitement. **À reposer avant `T11`.** Détail complet
+dans `docs/decisions/registre-ecarts.md`.
 
 ## 8.4 Un point non résolu, découvert en écrivant cette fiche — pas un écart, une question pour Jonathan
 

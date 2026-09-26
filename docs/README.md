@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `604` en usage | `DEC-605` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `605` en usage | `DEC-606` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -427,11 +427,36 @@ est UNE seule ligne : la liste entière remplace la précédente, `display_order
 > NOMMÉS PAR `T1` INSTRUITS PAR LE SERVICE** — faute de clé composite sûre : la cohérence d'entité
 > modèle↔cercle, et modèle↔tâche de référence réutilisée. Détail : `compte-rendu-t5-lot-7.md`.
 
-**1 902 tests** désormais. La prochaine est `T6`, le cycle de vie d'un modèle.
+**`T6` EST FAITE** le 26/09/2026, `DEC-605` : le cycle de vie d'une version de modèle —
+`POST …/versions/{id}/publication`, `/archivage`, `/restauration`. Aucune nouvelle table ni
+colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, trois écritures pures.
 
-`ECART-012` (report à Léa) et `ECART-066` (restauration « Conditionnelle » d'un modèle ou d'un
-parcours d'onboarding, à trancher avant `T6`) restent ouverts — `ECART-066` devient bloquant pour
-`T6`, qui doit le trancher avant d'écrire la restauration.
+> **`ECART-066` (VOLET « VERSION DE MODÈLE ») EST RÉSOLU AVANT LA ROUTE, PAS APRÈS.** Question
+> posée à Jonathan sous forme fermée, restreinte à la version de modèle : **l'ESM restaure
+> librement dans son entité**, même régime que les cinq ressources d'`ARB-DROIT-003`. **Le volet
+> « parcours archivé » (§8.1) N'A PAS été reposé** et reste ouvert pour `T11` — présumer la même
+> réponse aurait été l'erreur exacte que l'écart met en garde contre.
+>
+> **RESTAURER NE ROUVRE PAS L'ÉDITION, ET C'EST LE CHOIX LE PLUS IMPORTANT DE LA SOUS-ÉTAPE.**
+> Contrairement à `restaurer_une_page` (LOT 6, qui rend `draft`), une version restaurée redevient
+> `published`, jamais `draft` : le modèle §13.3 déclare l'immutabilité d'une publication SANS
+> exception, et un retour au brouillon rouvrirait l'écriture des tâches d'une version déjà
+> consommée par de vrais parcours. Témoin direct : après un cycle publier/archiver/restaurer,
+> `PUT .../tasks` refuse TOUJOURS, comme sur une version fraîchement publiée.
+> `published_at`/`published_by_person_id` D'ORIGINE sont conservés, jamais réécrits.
+>
+> **« DUPLICATION » DU LIBELLÉ DE DÉCOUPAGE (`DEC-598`) EST SANS OBJET** : recherchée dans tout le
+> corpus, elle ne désigne rien de plus que la création de version déjà livrée par `T5` — aucune
+> quatrième route. **DSM/BOOSTER SONT EXCLUS EN BLOC SUR LA SEULE LIGNE « RESTAURER »** — jamais un
+> sous-cas de leur propre modèle comme sur les deux autres gestes : deux témoins d'asymétrie le
+> prouvent. Détail : `compte-rendu-t6-lot-7.md`.
+
+**1 920 tests** désormais. La prochaine est `T7`, la création d'une instance depuis la date
+d'arrivée.
+
+`ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
+« version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
+bloquant pour `T11`**.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
