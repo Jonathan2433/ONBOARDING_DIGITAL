@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 26 septembre 2026 — décision `DEC-605`, `T6` du LOT 7
+**Dernière mise à jour :** 27 septembre 2026 — décision `DEC-606`, `T7` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -110,6 +110,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-603`, sous-étape `T4`** | 1 | **Soumise le 26/09/2026** |
 | **Réalisation du LOT 7 `DEC-604`, sous-étape `T5`** | 1 | **Soumise le 26/09/2026** |
 | **Réalisation du LOT 7 `DEC-605`, sous-étape `T6`** | 1 | **Soumise le 26/09/2026** |
+| **Réalisation du LOT 7 `DEC-606`, sous-étape `T7`** | 1 | **Soumise le 27/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -121,7 +122,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **273** | |
+| **Total** | **274** | |
 
 ---
 
@@ -818,7 +819,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-605` | **`T6` livre le cycle de vie d'une version de modèle — `POST …/versions/{id}/publication`, `/archivage`, `/restauration`, `MVP-L07-US003` (2/2).** Trois routes, `app/onboarding/cycle_de_vie.py` (service). Aucune nouvelle table ni colonne — le modèle §13.3 déclarait déjà tout. Aucun module de contrat — trois écritures pures. 18 tests d'intégration. | **`ECART-066` INSTRUIT AVANT LA ROUTE, PAS APRÈS** : la matrice donnait `ESM` → « Conditionnel » sur la restauration d'une version, sans que le corpus définisse cette condition. Question posée à Jonathan sous forme fermée, restreinte à la version de modèle : **l'ESM restaure librement dans son entité, même régime que les cinq ressources d'`ARB-DROIT-003`.** Le volet « parcours archivé » (§8.1) de ce même écart N'A PAS été reposé et reste ouvert pour `T11` — présumer la même réponse aurait été l'erreur exacte que l'écart met en garde contre. **RESTAURER NE ROUVRE PAS L'ÉDITION, ET C'EST LE CHOIX LE PLUS IMPORTANT DE LA SOUS-ÉTAPE** : contrairement à `restaurer_une_page` (LOT 6, qui rend `draft`), une version restaurée redevient `published`, jamais `draft` — le modèle §13.3 déclare l'immutabilité d'une publication SANS exception, et un retour au brouillon rouvrirait l'écriture des tâches d'une version déjà consommée par de vrais parcours. Témoin direct : après un cycle publier/archiver/restaurer, `PUT .../tasks` refuse TOUJOURS, comme sur une version fraîchement publiée. `published_at`/`published_by_person_id` D'ORIGINE sont conservés, jamais réécrits. **« Duplication » du libellé de découpage (`DEC-598`) est sans objet** : recherchée dans tout le corpus, elle ne désigne rien de plus que la création de version déjà livrée par `T5` — aucune quatrième route. **DSM/Booster sont EXCLUS EN BLOC sur la seule ligne « Restaurer »** (jamais un sous-cas de leur propre modèle comme sur les deux autres gestes) : deux témoins d'asymétrie le prouvent, chacun publie et archive son propre modèle mais est refusé sur sa restauration, qu'un ESM mène sans difficulté sur ce même modèle. **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`), 74 échecs environnementaux identiques des deux côtés. | Soumise le 26/09/2026 |
 
-**Prochain identifiant libre : `DEC-606`.**
+| `DEC-606` | **`T7` livre l'affectation et la lecture d'un parcours d'onboarding — `POST`/`GET …/people/{appartenance}/onboarding-parcours`, `MVP-L07-US004`.** Nouveau module `app/onboarding/instances.py`. Aucune nouvelle table — `onboarding_instance`/`onboarding_instance_task` existent depuis `T1`. Un module de contrat, `parcoursOnboarding.ts` : la lecture l'exige, un seul module sert les deux verbes (la création renvoie la même forme). 24 tests d'intégration, 12 tests du contrat TypeScript. | **LA PRIORITÉ DE RÉSOLUTION DU MODÈLE N'ÉTAIT TRANCHÉE NULLE PART, ET LA QUESTION A ÉTÉ POSÉE AVANT TOUT CODE** : un nouvel arrivant porte un DSM et un cercle verrouillés dès sa fiche, et plusieurs modèles publiés peuvent correspondre à son statut à des niveaux différents. Arbitrage de Jonathan du 27/09/2026 : **`DSM` > `CIRCLE` > `ENTITY` > `GLOBAL`, le plus spécifique gagne** — cohérent avec le fait qu'un modèle DSM/Cercle n'existe QUE pour remplacer le modèle général d'un sous-ensemble précis de personnes. Quatre témoins postent les quatre modèles EN MÊME TEMPS et retirent le niveau gagnant un par un, jamais un seul modèle à la fois. **`DSM` A ICI « CONSULTANTS » PLEIN, TROISIÈME GRILLE DU MODULE** : contrairement à la fiche d'arrivée non publiée (`T2`, `DSM` à tiret), il lit pleinement le parcours d'un consultant rattaché (matrice §8.1) — deux témoins le prouvent dans les deux sens. **« AFFECTER » N'A PAS DE `Soi`, SEULE ASYMÉTRIE ENTRE LES DEUX GESTES** : `NEW` ne peut jamais s'affecter lui-même un parcours, un témoin le prouve explicitement là où la lecture l'accepterait. **UNE SEULE INSTANCE ACTIVE PAR APPARTENANCE ÉPROUVÉE AU VOLUME** (§7.26 du LOT 6) : compare-et-pose atomique sur l'index partiel de `T1`, `ON CONFLICT ... DO NOTHING RETURNING`, même idiome que l'usage unique du magic link (LOT 3) — un témoin affecte 40 parcours distincts sans collision. **UN DÉFAUT SQL TROUVÉ AVANT COMMIT** : `:parametre::type` n'est pas résolu par SQLAlchemy `text()`, corrigé en `CAST(:parametre AS type)`. **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`), 74 échecs environnementaux identiques des deux côtés. | Soumise le 27/09/2026 |
+
+**Prochain identifiant libre : `DEC-607`.**
 
 ---
 
@@ -1070,6 +1073,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-603` — réalisation du LOT 7, `T4` | 1 | 1 |
 | `DEC-604` — réalisation du LOT 7, `T5` | 1 | 1 |
 | `DEC-605` — réalisation du LOT 7, `T6` | 1 | 1 |
+| `DEC-606` — réalisation du LOT 7, `T7` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1081,7 +1085,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **273** | **273** |
+| **Total** | **274** | **274** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

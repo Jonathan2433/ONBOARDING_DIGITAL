@@ -188,6 +188,22 @@ LA RESTAURATION D'UNE VERSION — matrice §9, `T6`, `ECART-066` RESOLU
   (`GLOBAL` ou non) et l'ensemble `roles` de l'acteur suffisent — aucune
   requete supplementaire, contrairement a `peut_gerer_un_modele_de_cette_
   portee`.
+
+LE PARCOURS D'UN COLLABORATEUR — matrice §8.1, `T7`
+
+  **`DSM` A ICI « CONSULTANTS » PLEIN, ET C'EST LA TROISIEME GRILLE DU
+  MODULE.** Sur la fiche d'arrivee NON PUBLIEE (`T2`), `DSM` est a TIRET ; sur
+  le parcours d'un collaborateur (§8.1), il porte le MEME droit qu'ESM/ADM-E/
+  SUPER a l'echelle de SES consultants — piege n°1 de `fiche-lot-7.md` §2.1,
+  ne pas confondre les lignes. `peut_lire_le_parcours_onboarding` et
+  `peut_affecter_un_parcours_onboarding` reutilisent `_RATTACHE_A_CE_DSM` et
+  `_MEMBRE_DU_CERCLE_DU_BOOSTER`, deja posees pour `T3` : meme regle de
+  rattachement, jamais une troisieme requete (§7.27).
+
+  **« AFFECTER » N'A PAS DE `Soi` : `NEW` EST A TIRET SUR CETTE LIGNE
+  PRECISE**, contrairement a « Consulter son parcours ». Les deux fonctions
+  partagent donc `_dans_le_perimetre_du_parcours`, et seule la lecture ajoute
+  le raccourci `acteur == cible_personne` par-dessus.
 """
 
 from __future__ import annotations
@@ -562,3 +578,102 @@ def peut_restaurer_une_version_de_modele(*, portee: str, roles: frozenset[RoleDe
     if portee == "GLOBAL":
         return RoleDeLaMatrice.SUPER_ADMINISTRATEUR in roles
     return bool(roles & ROLES_DE_RESTAURATION_DES_MODELES)
+
+
+#  §8.1 « Consulter le parcours d'un collaborateur » et « Affecter un
+#  parcours » — memes trois roles rattachement-dependants que la fiche
+#  d'arrivee (T2/T3), MAIS `DSM` y a « Consultants » PLEIN, jamais a tiret :
+#  troisieme grille du module, distincte des deux precedentes. Voir `T7`.
+ROLES_DU_PARCOURS_ONBOARDING: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.DSM,
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.BOOSTER,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+
+def _dans_le_perimetre_du_parcours(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    cible_appartenance: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> bool:
+    """Entite (ESM/ADM-E/SUPER), DSM RATTACHE, ou Booster RATTACHE — §8.1.
+
+    Reutilise `_RATTACHE_A_CE_DSM` et `_MEMBRE_DU_CERCLE_DU_BOOSTER`, deja
+    posees par `T3` pour « Corriger apres publication » : la MEME regle de
+    rattachement, jamais une troisieme requete (§7.27).
+    """
+    if roles & _ROLES_ENTITE:
+        return True
+    if RoleDeLaMatrice.DSM in roles:
+        rattache = connexion.execute(
+            text(_RATTACHE_A_CE_DSM),
+            {"acteur": acteur, "entite": entite, "cible": cible_appartenance, "instant": instant},
+        ).first()
+        if rattache is not None:
+            return True
+    if RoleDeLaMatrice.BOOSTER in roles:
+        ligne = connexion.execute(
+            text(_MEMBRE_DU_CERCLE_DU_BOOSTER),
+            {
+                "acteur": acteur,
+                "entite": entite,
+                "cible": cible_appartenance,
+                "type_booster": _TYPE_BOOSTER,
+                "instant": instant,
+            },
+        ).first()
+        if ligne is not None:
+            return True
+    return False
+
+
+def peut_lire_le_parcours_onboarding(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    cible_appartenance: uuid.UUID,
+    cible_personne: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> bool:
+    """§8.1 « Consulter son parcours » (`Soi`) + « ... d'un collaborateur »."""
+    if acteur == cible_personne:
+        return True
+    return _dans_le_perimetre_du_parcours(
+        connexion,
+        entite=entite,
+        acteur=acteur,
+        cible_appartenance=cible_appartenance,
+        roles=roles,
+        instant=instant,
+    )
+
+
+def peut_affecter_un_parcours_onboarding(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    cible_appartenance: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> bool:
+    """§8.1 « Affecter un parcours » — PAS de `Soi` : `NEW` y est a tiret,
+    contrairement a la consultation."""
+    return _dans_le_perimetre_du_parcours(
+        connexion,
+        entite=entite,
+        acteur=acteur,
+        cible_appartenance=cible_appartenance,
+        roles=roles,
+        instant=instant,
+    )
