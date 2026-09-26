@@ -1361,6 +1361,39 @@
         "409 `transition_de_version_invalide` : seule une version retiree peut",
         "etre restauree."
       ]
+    },
+    {
+      "cle": "affectationDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDuParcours",
+      "role": [
+        "Affecter un parcours — LOT 7, T7, matrice §8.1 « Affecter un parcours ».",
+        "Ecriture qui RENVOIE la forme de lecture (`parcoursOnboarding.ts`) : un",
+        "seul module de contrat sert les deux verbes, meme reponse des deux cotes.",
+        "Resout le bon modele par la priorite DSM > CIRCLE > ENTITY > GLOBAL — le",
+        "plus specifique gagne, arbitrage de Jonathan du 27/09/2026.",
+        "409 `parcours_deja_actif` : une seule instance active par appartenance,",
+        "modele §13.5, compare-et-pose atomique sur l'index partiel de T1.",
+        "422 `statut_professionnel_introuvable` ou `aucun_modele_publie`."
+      ]
+    },
+    {
+      "cle": "lectureDuParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDuParcours",
+      "role": [
+        "Consulter le parcours — LOT 7, T7, matrice §8.1 « Consulter son",
+        "parcours » (Soi) et « ... d'un collaborateur ». Meme forme que",
+        "l'affectation : `parcoursOnboarding.ts` sert les deux.",
+        "`instance` vaut `null` tant qu'aucun parcours n'a ete affecte — meme",
+        "convention que la fiche d'arrivee (T2).",
+        "La progression est COMPTEE a chaque appel, jamais stockee — critere de",
+        "sortie n°3 du lot (roadmap §LOT 7)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

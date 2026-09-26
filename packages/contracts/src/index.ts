@@ -324,3 +324,19 @@ export {
   validerLeCatalogueDeTaches,
 } from './catalogueDesTaches.js';
 export type { CatalogueDeTaches, TacheDeReference } from './catalogueDesTaches.js';
+
+//  LE PARCOURS D'ONBOARDING — LOT 7, `T7`. UN SEUL MODULE POUR DEUX VERBES :
+//  affecter (`POST`) et consulter (`GET`) rendent la MEME forme.
+export {
+  cheminDuParcours,
+  CODES_AFFECTATION_DU_PARCOURS,
+  CODES_LECTURE_DU_PARCOURS,
+  GABARIT_CHEMIN_PARCOURS,
+  validerLeParcours,
+} from './parcoursOnboarding.js';
+export type {
+  InstanceDeParcours,
+  Parcours,
+  ProgressionDuParcours,
+  TacheDuParcours,
+} from './parcoursOnboarding.js';

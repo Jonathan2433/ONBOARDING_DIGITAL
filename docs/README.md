@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `605` en usage | `DEC-606` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `606` en usage | `DEC-607` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -451,12 +451,30 @@ colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, tro
 > sous-cas de leur propre modèle comme sur les deux autres gestes : deux témoins d'asymétrie le
 > prouvent. Détail : `compte-rendu-t6-lot-7.md`.
 
-**1 920 tests** désormais. La prochaine est `T7`, la création d'une instance depuis la date
-d'arrivée.
+**`T7` EST FAITE** le 27/09/2026, `DEC-606` : affecter et consulter un parcours d'onboarding —
+`POST`/`GET …/people/{appartenance}/onboarding-parcours`. Aucune nouvelle table.
+
+> **LA PRIORITÉ DE RÉSOLUTION DU MODÈLE A ÉTÉ ARBITRÉE AVANT TOUT CODE.** Un nouvel arrivant porte
+> un DSM et un cercle verrouillés dès sa fiche, et plusieurs modèles publiés peuvent correspondre à
+> son statut à des niveaux différents — rien dans le corpus ne dit lequel prime. Arbitrage de
+> Jonathan du 27/09/2026 : **`DSM` > `CIRCLE` > `ENTITY` > `GLOBAL`**, le plus spécifique gagne.
+> Quatre témoins postent les quatre modèles EN MÊME TEMPS et retirent le niveau gagnant un par un —
+> jamais un seul modèle à la fois, ce qui ne prouverait qu'une absence de refus, pas un ordre.
+>
+> **`DSM` A ICI « CONSULTANTS » PLEIN, CONTRAIREMENT À LA FICHE D'ARRIVÉE (`T2`, `DSM` à tiret)** :
+> troisième grille du module, matrice §8.1. Deux témoins le prouvent dans les deux sens. **« AFFECTER »
+> N'A PAS DE `Soi`** — seule asymétrie avec la lecture, `NEW` ne peut jamais s'affecter lui-même un
+> parcours. **UNE SEULE INSTANCE ACTIVE PAR APPARTENANCE ÉPROUVÉE AU VOLUME** (§7.26 du LOT 6) :
+> compare-et-pose atomique, 40 affectations distinctes sans collision. **UN DÉFAUT SQL TROUVÉ AVANT
+> COMMIT** : `:parametre::type` n'est pas résolu par SQLAlchemy `text()`, corrigé en
+> `CAST(:parametre AS type)`. Détail : `compte-rendu-t7-lot-7.md`.
+
+**1 956 tests** désormais. La prochaine est `T8`, compléter et annuler une tâche dans les cinq
+minutes.
 
 `ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
 « version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
-bloquant pour `T11`**.
+bloquant pour `T11`** — sans objet pour `T7`, qui n'archive ni ne restaure aucun parcours.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 

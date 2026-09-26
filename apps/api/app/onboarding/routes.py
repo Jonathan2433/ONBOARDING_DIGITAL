@@ -99,15 +99,27 @@ from app.onboarding.gabarits import (
     lire_un_modele,
     lire_une_version,
 )
+from app.onboarding.instances import (
+    Instance,
+    Parcours,
+    Progression,
+    TacheDuParcours,
+    affecter_un_parcours,
+    lire_l_appartenance,
+    lire_le_parcours,
+)
 from app.onboarding.perimetre import (
     ROLES_DE_GESTION_DES_MODELES,
     ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
     ROLES_DE_RESTAURATION_DES_MODELES,
+    ROLES_DU_PARCOURS_ONBOARDING,
+    peut_affecter_un_parcours_onboarding,
     peut_completer_la_fiche_arrivee,
     peut_corriger_la_fiche_arrivee_apres_publication,
     peut_creer_une_tache_de_reference_globale,
     peut_gerer_un_modele_de_cette_portee,
     peut_lire_la_fiche_arrivee,
+    peut_lire_le_parcours_onboarding,
     peut_restaurer_une_version_de_modele,
     peut_valider_et_publier_la_fiche_arrivee,
 )
@@ -509,6 +521,95 @@ def _restauration_en_reponse(version: VersionRestauree) -> ReponseDeRestauration
         state=version.state,
         published_at=version.published_at,
         published_by_person_id=version.published_by_person_id,
+    )
+
+
+class ReponseDeTacheDuParcours(BaseModel):
+    """Une ligne de `onboarding_instance_task` — snapshot fige, modele §13.6."""
+
+    id: uuid.UUID
+    task_reference_id: uuid.UUID
+    title_snapshot: str
+    description_snapshot: str | None
+    required: bool
+    due_at: dt.datetime
+    state: str
+    completed_at: dt.datetime | None
+    reopened_at: dt.datetime | None
+
+
+class ReponseDeLInstance(BaseModel):
+    """L'instance elle-meme — modele §13.5."""
+
+    id: uuid.UUID
+    template_version_id: uuid.UUID
+    reference_date: dt.date
+    state: str
+    started_at: dt.datetime
+    completed_at: dt.datetime | None
+
+
+class ReponseDeLaProgression(BaseModel):
+    """Comptee a la lecture — jamais stockee, critere de sortie n°3 du lot."""
+
+    taches_obligatoires_totales: int
+    taches_obligatoires_terminees: int
+
+
+class ReponseDuParcours(BaseModel):
+    """`instance` vaut `null` tant qu'aucun parcours n'a ete affecte — meme
+    convention que la fiche d'arrivee (`id`/`version` nuls, `T2`)."""
+
+    instance: ReponseDeLInstance | None
+    progression: ReponseDeLaProgression | None
+    prochaine_tache: ReponseDeTacheDuParcours | None
+    taches: list[ReponseDeTacheDuParcours]
+
+
+def _tache_du_parcours_en_reponse(tache: TacheDuParcours) -> ReponseDeTacheDuParcours:
+    return ReponseDeTacheDuParcours(
+        id=tache.id,
+        task_reference_id=tache.task_reference_id,
+        title_snapshot=tache.title_snapshot,
+        description_snapshot=tache.description_snapshot,
+        required=tache.required,
+        due_at=tache.due_at,
+        state=tache.state,
+        completed_at=tache.completed_at,
+        reopened_at=tache.reopened_at,
+    )
+
+
+def _instance_en_reponse(instance: Instance) -> ReponseDeLInstance:
+    return ReponseDeLInstance(
+        id=instance.id,
+        template_version_id=instance.template_version_id,
+        reference_date=instance.reference_date,
+        state=instance.state,
+        started_at=instance.started_at,
+        completed_at=instance.completed_at,
+    )
+
+
+def _progression_en_reponse(progression: Progression) -> ReponseDeLaProgression:
+    return ReponseDeLaProgression(
+        taches_obligatoires_totales=progression.taches_obligatoires_totales,
+        taches_obligatoires_terminees=progression.taches_obligatoires_terminees,
+    )
+
+
+def _parcours_en_reponse(parcours: Parcours) -> ReponseDuParcours:
+    return ReponseDuParcours(
+        instance=None if parcours.instance is None else _instance_en_reponse(parcours.instance),
+        progression=(
+            None if parcours.progression is None else _progression_en_reponse(parcours.progression)
+        ),
+        prochaine_tache=(
+            None
+            if parcours.prochaine_tache is None
+            else _tache_du_parcours_en_reponse(parcours.prochaine_tache)
+        ),
+        taches=[_tache_du_parcours_en_reponse(t) for t in parcours.taches],
     )
 
 
@@ -1507,5 +1608,165 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 )
             restauree = restaurer_une_version(connexion, version=version.id)
         return _restauration_en_reponse(restauree)
+
+    #  §8.1 « Affecter un parcours » : DSM/ESM/BOOST/ADM-E/SUPER a la garde
+    #  COARSE — OFFICE et EMP refuses avant meme la resolution de portee.
+    garde_d_affectation = exiger_un_role_dans_l_entite(parametres, ROLES_DU_PARCOURS_ONBOARDING)
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDuParcours,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni role d'entite, ni DSM rattache a ce consultant, "
+                    "ni Booster du cercle de cette appartenance."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite ou appartenance inconnues."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`parcours_deja_actif` : une instance active existe deja pour cette "
+                    "appartenance — modele §13.5, une seule a la fois."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`statut_professionnel_introuvable` : aucune situation active. "
+                    "`aucun_modele_publie` : aucun modele ne correspond, a aucun niveau "
+                    "de portee — DSM, cercle, entite ou global."
+                )
+            },
+        },
+        summary="Affecter un parcours d'onboarding",
+        description=(
+            "Matrice §8.1 « Affecter un parcours ». Resout le bon modele par la "
+            "priorite DSM > CIRCLE > ENTITY > GLOBAL — le plus specifique gagne — "
+            "et snapshotte ses taches avec des echeances calculees depuis "
+            "`arrival_date`, jamais recalculees plus tard."
+        ),
+    )
+    def affecter_un_parcours_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_affectation),  # noqa: B008
+    ) -> ReponseDuParcours:
+        """Affecter un parcours — matrice §8.1, modele §13.5."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_affecter_un_parcours_onboarding(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                cible_appartenance=appartenance,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            parcours = affecter_un_parcours(
+                connexion, entite=entite.id, appartenance=appartenance, cible=cible, instant=instant
+            )
+        return _parcours_en_reponse(parcours)
+
+    @routeur.get(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuParcours,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni Soi, ni role d'entite, ni DSM/Booster rattache."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite ou appartenance inconnues."},
+        },
+        summary="Consulter le parcours d'onboarding",
+        description=(
+            "Matrice §8.1 « Consulter son parcours » (Soi) et « ... d'un collaborateur ». "
+            "`instance` vaut `null` tant qu'aucun parcours n'a ete affecte. La progression "
+            "est COMPTEE a chaque appel, jamais stockee — critere de sortie n°3 du lot."
+        ),
+    )
+    def lire_le_parcours_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDuParcours:
+        """Consulter le parcours — matrice §8.1."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = peut_lire_le_parcours_onboarding(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                cible_appartenance=appartenance,
+                cible_personne=cible.person_id,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            parcours = lire_le_parcours(connexion, entite=entite.id, appartenance=appartenance)
+        return _parcours_en_reponse(parcours)
 
     return routeur
