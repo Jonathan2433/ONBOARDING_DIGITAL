@@ -16,6 +16,14 @@ L'ASYMETRIE `BOOST` EST LE SECOND TEMOIN CENTRAL
   SEULE des trois lignes du §7 ou `BOOST` differe. Le decor donne au Booster
   un membre reel de son cercle pour prouver qu'il peut completer SA fiche, et
   la MEME cible pour prouver qu'il ne peut PAS la valider.
+
+`CORRIGER APRES PUBLICATION` — UNE QUATRIEME LIGNE, TROUVEE APRES LA FUSION
+
+  Le §7 porte une ligne de plus, dont la grille S'INVERSE sur `NEW` et `DSM` :
+  le nouvel arrivant PERD son droit de completer (§6.2, « ne peut plus
+  modifier directement son profil »), et le DSM — a tiret sur `Completer` —
+  RETROUVE `Consultants`. Corrige jusqu'a `T3` fusionne (PR #187) : les tests
+  de cette section prouvent l'INVERSION, pas seulement un refus ou un acces.
 """
 
 from __future__ import annotations
@@ -398,40 +406,125 @@ def test_un_EMPLOYE_NU_NE_COMPLETE_PAS_la_fiche_d_un_AUTRE(decor: dict[str, Any]
     assert reponse.status_code == 403, reponse.text
 
 
-@pytest.mark.integration
-def test_completer_APRES_publication_est_refuse_pour_TOUS(decor: dict[str, Any]) -> None:
-    """Borne au brouillon — §6.2, meme pour un role `Support`."""
-    parametres = decor["parametres"]
-    jeton_arrivant = _session(parametres, decor["arrivant_personne"])
+def _publier(parametres: Parametres, decor: dict[str, Any]) -> int:
+    """Complete puis valide/publie avec la session du nouvel arrivant, rend la version publiee."""
+    jeton = _session(parametres, decor["arrivant_personne"])
     chemin = CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"])
     creation = _appeler_ecriture(
-        parametres,
-        "patch",
-        chemin,
-        jeton_arrivant,
-        {"version": None, "short_intro": "Presentation"},
+        parametres, "patch", chemin, jeton, {"version": None, "short_intro": "Presentation"}
     )
-    version = creation.json()["version"]
+    assert creation.status_code == 200, creation.text
     validation = _appeler_ecriture(
         parametres,
         "post",
         CHEMIN_VALIDATION.format(code=decor["code"], appartenance=decor["arrivant"]),
-        jeton_arrivant,
-        {"version": version},
+        jeton,
+        {"version": creation.json()["version"]},
     )
     assert validation.status_code == 200, validation.text
-    version_publiee = validation.json()["version"]
+    return int(validation.json()["version"])
 
-    #  L'ESM, en Support, ne peut pas non plus completer une fiche publiee.
-    apres = _appeler_ecriture(
+
+# ===========================================================================
+#  Corriger apres publication — matrice §7, la QUATRIEME ligne, trouvee
+#  juste apres la fusion de T3 (correctif, DEC-601 bis)
+# ===========================================================================
+
+
+@pytest.mark.integration
+def test_le_nouvel_arrivant_NE_CORRIGE_PLUS_apres_publication(decor: dict[str, Any]) -> None:
+    """`NEW` PERD ce droit a la publication — §6.2, l'INVERSE de « Completer »."""
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    reponse = _appeler_ecriture(
         parametres,
         "patch",
-        chemin,
-        _session(parametres, decor["esm_personne"]),
-        {"version": version_publiee, "short_intro": "Trop tard"},
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["arrivant_personne"]),
+        {"version": version, "short_intro": "Je corrige moi-meme"},
     )
-    assert apres.status_code == 409, apres.text
-    assert apres.json()["erreur"]["code"] == "fiche_arrivee_etat_incompatible"
+    assert reponse.status_code == 403, reponse.text
+    assert reponse.json()["erreur"]["code"] == "fiche_arrivee_hors_perimetre"
+
+
+@pytest.mark.integration
+def test_un_ESM_corrige_une_fiche_PUBLIEE(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    reponse = _appeler_ecriture(
+        parametres,
+        "patch",
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["esm_personne"]),
+        {"version": version, "short_intro": "Corrige par l'ESM"},
+    )
+    assert reponse.status_code == 200, reponse.text
+
+
+@pytest.mark.integration
+def test_un_DSM_RATTACHE_CORRIGE_une_fiche_PUBLIEE(decor: dict[str, Any]) -> None:
+    """`DSM` RETROUVE ce droit a la publication — tiret sur `Completer`, Consultants ici."""
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    reponse = _appeler_ecriture(
+        parametres,
+        "patch",
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["dsm_personne"]),
+        {"version": version, "short_intro": "Corrige par le DSM"},
+    )
+    assert reponse.status_code == 200, reponse.text
+
+
+@pytest.mark.integration
+def test_un_BOOSTER_corrige_une_fiche_PUBLIEE(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    reponse = _appeler_ecriture(
+        parametres,
+        "patch",
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["booster_personne"]),
+        {"version": version, "short_intro": "Corrige par le Booster"},
+    )
+    assert reponse.status_code == 200, reponse.text
+
+
+@pytest.mark.integration
+def test_un_EMPLOYE_NU_NE_corrige_PAS_une_fiche_PUBLIEE(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    reponse = _appeler_ecriture(
+        parametres,
+        "patch",
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["emp_personne"]),
+        {"version": version, "short_intro": "Refuse"},
+    )
+    assert reponse.status_code == 403, reponse.text
+
+
+@pytest.mark.integration
+def test_corriger_une_fiche_ARCHIVEE_est_refuse(decor: dict[str, Any]) -> None:
+    """`archived` est le SEUL etat sans aucune ligne d'ecriture au §7."""
+    parametres = decor["parametres"]
+    version = _publier(parametres, decor)
+    with moteur(parametres).begin() as cx:
+        cx.execute(
+            text(
+                "UPDATE arrival_profile SET state = 'archived', archived_at = now() "
+                "WHERE entity_membership_id = :m"
+            ),
+            {"m": decor["arrivant"]},
+        )
+    reponse = _appeler_ecriture(
+        parametres,
+        "patch",
+        CHEMIN_FICHE.format(code=decor["code"], appartenance=decor["arrivant"]),
+        _session(parametres, decor["esm_personne"]),
+        {"version": version, "short_intro": "Trop tard"},
+    )
+    assert reponse.status_code == 403, reponse.text
 
 
 @pytest.mark.integration

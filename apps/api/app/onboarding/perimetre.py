@@ -43,6 +43,29 @@ CE QUE LA MATRICE DONNE, ET LA CELLULE QUI SURPREND
   `peut_valider_et_publier_la_fiche_arrivee` est donc une fonction SEPAREE, qui
   n'appelle PAS le helper des deux premieres lignes.
 
+  **UNE QUATRIEME LIGNE EXISTE, « CORRIGER APRES PUBLICATION », ET SA GRILLE
+  S'INVERSE SUR `NEW` ET `DSM` :**
+
+      NEW      —          (pouvait completer AVANT publication, plus apres)
+      DSM      Consultants (etait a tiret AVANT publication, plus apres)
+      ESM      Entite
+      BOOST    Cercle
+      OFFICE   —
+      ADM-E    Entite
+      SUPER    Global
+
+  Ce n'est pas une incoherence : avant publication, la fiche appartient encore
+  au nouvel arrivant (`Soi`) et les responsables n'AIDENT que par exception
+  (`Support`) ; apres publication, la fiche est un document officiel que seuls
+  les responsables corrigent — le nouvel arrivant ne le peut plus (§6.2, « le
+  collaborateur ne peut plus modifier directement son profil »), et le DSM, qui
+  etait exclu de l'aide a la redaction, retrouve son droit habituel de
+  correction sur ses consultants. `peut_corriger_la_fiche_arrivee_apres_publication`
+  est une troisieme fonction separee, avec son propre controle DSM — le meme
+  motif SQL que `app/permissions/perimetre.py::_RATTACHE_A_CE_DSM`, recopie ici
+  plutot qu'importe : une dependance croisee vers un module prive d'un autre
+  domaine serait pire qu'une petite requete repetee (§7.27).
+
 `NEW` N'EST PAS UN ROLE DE `RoleDeLaMatrice`
 
   « Soi » n'est pas une portee organisationnelle, c'est une egalite entre
@@ -89,6 +112,15 @@ _ROLES_ENTITE: Final[frozenset[RoleDeLaMatrice]] = frozenset(
         RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
     }
 )
+
+#  §7 « Consultants » — le meme motif que `app/permissions/perimetre.py::
+#  _RATTACHE_A_CE_DSM`, recopie et non importe (§7.27, voir l'en-tete).
+_RATTACHE_A_CE_DSM: Final[str] = """
+SELECT 1 FROM dsm_assignment
+WHERE consultant_membership_id = :cible AND dsm_person_id = :acteur
+  AND entity_id = :entite AND archived_at IS NULL
+  AND period @> :instant
+"""
 
 
 def _dans_le_perimetre_personnel_non_publie(
@@ -193,3 +225,48 @@ def peut_valider_et_publier_la_fiche_arrivee(
     if acteur == cible_personne:
         return True
     return bool(roles & _ROLES_ENTITE)
+
+
+def peut_corriger_la_fiche_arrivee_apres_publication(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    cible_appartenance: uuid.UUID,
+    cible_personne: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> bool:
+    """L'acteur peut-il corriger une fiche DEJA PUBLIEE ? `T3`, correctif.
+
+    **`NEW` N'A PLUS CE DROIT** — `Soi` gouvernait la completion avant
+    publication ; apres, c'est le §6.2 qui parle : « le collaborateur ne peut
+    plus modifier directement son profil ». **`DSM` L'A RETROUVE** — a tiret
+    avant publication, il porte `Consultants` sur cette ligne. Voir l'en-tete
+    du module.
+    """
+    if acteur == cible_personne:
+        return False
+    if roles & _ROLES_ENTITE:
+        return True
+    if RoleDeLaMatrice.DSM in roles:
+        rattache = connexion.execute(
+            text(_RATTACHE_A_CE_DSM),
+            {"acteur": acteur, "entite": entite, "cible": cible_appartenance, "instant": instant},
+        ).first()
+        if rattache is not None:
+            return True
+    if RoleDeLaMatrice.BOOSTER in roles:
+        ligne = connexion.execute(
+            text(_MEMBRE_DU_CERCLE_DU_BOOSTER),
+            {
+                "acteur": acteur,
+                "entite": entite,
+                "cible": cible_appartenance,
+                "type_booster": _TYPE_BOOSTER,
+                "instant": instant,
+            },
+        ).first()
+        if ligne is not None:
+            return True
+    return False

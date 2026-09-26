@@ -36,12 +36,20 @@ LA PHOTO N'EST PAS ECRITE ICI
   chainon que rien ne construit encore (§6.5) : residu nomme, comme la lecture
   de `T2` l'a deja ete pour la miniature.
 
-LA COMPLETION EST BORNEE A L'ETAT `draft`, POUR TOUT LE MONDE
+L'ECRITURE RESTE OUVERTE APRES PUBLICATION, MAIS PAS AU MEME MONDE
 
-  Le §6.2 verrouille EXPLICITEMENT le nouvel arrivant apres validation :
+  **CORRECTIF, TROUVE JUSTE APRES LA FUSION DE `T3` : LE §7 PORTE UNE
+  QUATRIEME LIGNE, « CORRIGER APRES PUBLICATION », QU'UNE PREMIERE LECTURE
+  AVAIT MANQUEE.** Elle donne `DSM`/`ESM`/`BOOST`/`ADM-E`/`SUPER` — jamais
+  `NEW`, jamais `OFFICE` — le droit de corriger une fiche deja publiee. Le
+  §6.2 verrouille EXPLICITEMENT le nouvel arrivant apres validation :
   « Apres validation de la fiche d'arrivee, le collaborateur ne peut plus
-  modifier directement son profil. » Le corpus ne dit rien d'un role
-  `Support` continuant a ecrire APRES publication par cette meme route.
+  modifier directement son profil » — et c'est exactement, mot pour mot, ce
+  que cette ligne du §7 redit pour les RESPONSABLES : eux le peuvent, lui non.
+
+  Une fiche `archived` reste seule etat sans aucune ligne d'ecriture : ni
+  `Completer`, ni `Corriger apres publication` ne s'y appliquent, et c'est le
+  SEUL etat que cette fonction refuse desormais.
 
   **`entity_membership.short_bio`/`fun_fact` NE SONT PAS `arrival_profile.
   short_intro`/`fun_fact` : CE SONT DEUX CHAMPS DISTINCTS, ET LE SECOND N'A
@@ -50,9 +58,9 @@ LA COMPLETION EST BORNEE A L'ETAT `draft`, POUR TOUT LE MONDE
   « Modifier la courte presentation apres validation » — et `T7` du LOT 5 les
   a explicitement **reportees** (`compte-rendu-t7-lot-5.md` : « presentation
   courte, fun fact et cercles secondaires nommes comme reportes »), pas
-  livrees. Border CETTE route au brouillon, pour tous les acteurs, evite
-  seulement de lui faire depasser son propre perimetre — cela ne comble PAS
-  ce residu du LOT 5, hors perimetre de `T3`.
+  livrees. Autoriser cette route sur `published` ne comble PAS ce residu du
+  LOT 5, hors perimetre de `T3` : elle continue de servir les seuls
+  `arrival_profile.short_intro`/`fun_fact`, jamais `entity_membership.*`.
 """
 
 from __future__ import annotations
@@ -78,8 +86,10 @@ MESSAGE_VERSION_OBSOLETE: Final = (
 
 CODE_ETAT_INCOMPATIBLE: Final = "fiche_arrivee_etat_incompatible"
 MESSAGE_ETAT_INCOMPATIBLE_COMPLETION: Final = (
-    "Cette fiche n'est plus au brouillon : elle ne peut plus etre completee par cette route."
+    "Cette fiche est archivee : elle ne peut plus etre modifiee par cette route."
 )
+
+_ETATS_MODIFIABLES: Final[frozenset[str]] = frozenset({"draft", "published"})
 MESSAGE_ETAT_INCOMPATIBLE_VALIDATION: Final = (
     "Cette fiche n'est pas au brouillon, ou n'existe pas encore : rien a valider."
 )
@@ -135,7 +145,11 @@ def completer_la_fiche_arrivee(
     champs: Mapping[str, str | None],
     instant: dt.datetime,
 ) -> FicheArriveeEcrite:
-    """Creer la fiche (premiere completion) ou modifier ses champs propres.
+    """Creer la fiche (premiere completion), la modifier, ou la CORRIGER apres
+    publication — matrice §7, lignes « Completer » et « Corriger apres
+    publication ». Le PERMIS diverge selon l'etat (voir `perimetre.py`), pas
+    cette fonction : elle sert les deux lignes parce que l'ECRITURE elle-meme
+    — les memes deux champs, la meme concurrence optimiste — ne differe pas.
 
     `version_attendue` a `None` signifie « aucune ligne n'existe encore, d'apres
     ma derniere lecture » — exactement ce que `T2` rend. Une valeur presente
@@ -144,6 +158,10 @@ def completer_la_fiche_arrivee(
     `champs` ne porte que les cles REELLEMENT envoyees — l'appelant construit
     ce mapping depuis les champs presents du corps, jamais depuis ses valeurs
     par defaut, sans quoi une demande qui ne touche pas `fun_fact` l'effacerait.
+
+    Refuse `archived` (et l'etat `validated` que la publication ne laisse
+    jamais persister) : aucune ligne du §7 n'accorde de droit d'ecriture sur
+    une fiche archivee, quel que soit le role.
     """
     assert frozenset(champs) <= _CHAMPS_AUTORISES  # noqa: S101 — construit par l'appelant, jamais l'utilisateur
 
@@ -188,7 +206,7 @@ def completer_la_fiche_arrivee(
             statut=status.HTTP_409_CONFLICT,
             details={"version_actuelle": int(ligne["version"])},
         )
-    if str(ligne["state"]) != "draft":
+    if str(ligne["state"]) not in _ETATS_MODIFIABLES:
         raise ErreurApplicative(
             code=CODE_ETAT_INCOMPATIBLE,
             message=MESSAGE_ETAT_INCOMPATIBLE_COMPLETION,

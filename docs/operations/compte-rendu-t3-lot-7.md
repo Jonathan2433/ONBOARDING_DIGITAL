@@ -107,13 +107,56 @@ périmètre de `T3`. Corrigé dans les trois endroits où l'affirmation fausse a
 - **la passerelle `short_intro` → `short_bio`** décrite au §2.5 ci-dessus, résidu du LOT 5, non
   du LOT 7.
 
+## 2.7 Correctif post-fusion, `DEC-602` : une quatrième ligne du §7 manquée à la première lecture
+
+**Le PR #187 a été fusionné en bloquant TOUTE écriture une fois la fiche publiée, pour tout le
+monde.** En relisant le §7 juste après pour préparer la fermeture des stories, une ligne
+supplémentaire s'est révélée : « Corriger après publication », avec sa **propre** grille —
+
+```text
+NEW      —            (perd le droit qu'il avait sur « Compléter »)
+DSM      Consultants  (le retrouve, alors qu'il était à tiret sur « Compléter »)
+ESM      Entité
+BOOST    Cercle
+OFFICE   —
+ADM-E    Entité
+SUPER    Global
+```
+
+**Ce n'est pas une incohérence, et le §6.2 le dit en toutes lettres pour la moitié qui compte** :
+« après validation de la fiche d'arrivée, le collaborateur ne peut plus modifier directement son
+profil ». Avant publication la fiche appartient au nouvel arrivant (`Soi`) et les responsables
+n'aident que par exception (`Support`) ; après, c'est un document officiel que seuls les
+responsables corrigent — le DSM, exclu de l'aide à la rédaction, retrouve son droit habituel de
+correction sur ses consultants.
+
+**Sans ce correctif, `MVP-L07-US002` restait incomplète** : son critère d'acceptation exige que
+« les corrections ultérieures soient limitées aux rôles autorisés » — un critère qu'un blocage
+total ne peut pas satisfaire, puisqu'il ne distingue aucun rôle.
+
+**Ce qui a changé :**
+
+- `peut_corriger_la_fiche_arrivee_apres_publication` (nouvelle fonction, `perimetre.py`) — sa
+  propre vérification DSM, le même motif SQL que `app/permissions/perimetre.py::_RATTACHE_A_CE_DSM`
+  recopié plutôt qu'importé (§7.27, dépendance croisée vers un module privé d'un autre domaine) ;
+- `completer_la_fiche_arrivee` accepte désormais `draft` **et** `published` (`archived` reste le
+  seul état sans aucune ligne d'écriture au §7) ;
+- la route choisit la grille selon `fiche.state` avant d'appeler le service ;
+- six tests remplacent l'ancien témoin devenu faux (`test_completer_APRES_publication_est_refuse_pour_TOUS`,
+  qui affirmait qu'un ESM ne pouvait plus rien après publication) : l'inversion `NEW`/`DSM`, le
+  Booster et l'ESM autorisés, l'employé nu toujours refusé, et une fiche `archived` toujours
+  fermée à tous.
+
+**Zéro régression** : `uv run pytest` rend exactement les 74 échecs environnementaux, identiques à
+`origin/develop`.
+
 ---
 
 # 3. Contrôles exécutés
 
 | Contrôle | Résultat |
 |---|---|
-| `uv run pytest apps/api/tests/test_validation_de_la_fiche_arrivee.py -m integration` | **20/20** |
+| `uv run pytest apps/api/tests/test_validation_de_la_fiche_arrivee.py -m integration` | **26/26** (20 + 6 du correctif §2.7) |
 | `uv run pytest apps/api/tests/test_fiche_arrivee.py -m integration` | **11/11**, aucune régression après le refactor de `perimetre.py` |
 | `uv run pytest apps/api/tests/test_contrat.py` | vert — deux chemins déclarés au manifeste, codes documentés |
 | `make test-frontend` | 595/595, inchangé (écriture pure, aucun module TS) |
@@ -125,7 +168,8 @@ périmètre de `T3`. Corrigé dans les trois endroits où l'affirmation fausse a
 
 # 4. Décisions, écarts et questions
 
-- `DEC-601` (détail dans `docs/decisions/registre-decisions.md`)
+- `DEC-601` (livraison), `DEC-602` (correctif post-fusion, §2.7) — détail dans
+  `docs/decisions/registre-decisions.md`
 - Aucun écart ouvert par cette sous-étape — le résidu du §2.5 est déjà porté par le LOT 5, pas
   un défaut nouveau
 
@@ -133,8 +177,8 @@ périmètre de `T3`. Corrigé dans les trois endroits où l'affirmation fausse a
 
 # 5. Ce que `T3` laisse
 
-- Compléter et valider/publier sont faits ; `T4` — le catalogue des tâches, `onboarding_task_reference` —
-  est la prochaine, et clôt structurellement `ECART-013`
+- Compléter, corriger après publication, et valider/publier sont faits ; `T4` — le catalogue des
+  tâches, `onboarding_task_reference` — est la prochaine, et clôt structurellement `ECART-013`
 - `photo_media_id` reste un résidu nommé, à réexaminer quand une route d'upload existera
 - La passerelle `short_intro`/`short_bio` reste un résidu du LOT 5, non traité ici
 - `ECART-012` et `ECART-066` restent ouverts, non touchés, non bloquants pour `T4`
@@ -142,10 +186,11 @@ périmètre de `T3`. Corrigé dans les trois endroits où l'affirmation fausse a
 # Validation demandée à Jonathan
 
 `T3` est faite : la fiche se complète et se valide, la publication est automatique en un seul
-geste, `recent_until` est exact, et l'asymétrie `BOOST` (aide à compléter, jamais à valider) est
-prouvée. Zéro régression. La prochaine est `T4`.
+geste, `recent_until` est exact, l'asymétrie `BOOST` (aide à compléter, jamais à valider) est
+prouvée, et un correctif post-fusion couvre la ligne « Corriger après publication » manquée à la
+première lecture. Zéro régression. La prochaine est `T4`.
 
 ```bash
-gh pr merge <n> --squash --delete-branch   # fusion de T3
+gh pr merge <n> --squash --delete-branch   # fusion du correctif
 gh pr close <n> --delete-branch            # retour arrière
 ```
