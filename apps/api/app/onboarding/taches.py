@@ -1,14 +1,27 @@
-"""Terminer une tache, l'annuler dans les cinq minutes — matrice §8.1/§8.3, modele §13.6, `T8`.
+"""Terminer, annuler, reouvrir une tache — matrice §8.1/§8.3, modele §13.6, `T8`/`T9`.
 
-CE QUE `T8` LIVRE, ET CE QU'IL NE LIVRE PAS
+CE QUE `T8` LIVRE, ET CE QUE `T9` Y AJOUTE
 
-  Deux gestes, matrice §8.1 : « Marquer une tache comme terminee » et
-  « Annuler la completion dans les 5 minutes ». Les DEUX lignes sont IDENTIQUES
-  — `Soi` uniquement, tiret partout ailleurs, y compris `DSM`/`BOOST` qui ont
-  pourtant « Consultants »/« Cercle » sur la LECTURE du parcours (§2.1 de
-  `fiche-lot-7.md`, piege n°1). La reouverture APRES le delai (§8.3, `ESM`/
-  `ADM-E`/`SUPER`, motif obligatoire) est `T9`, une route SEPAREE : ce module
-  n'y touche pas, et `EtatTacheInstance.REOPENED` n'apparait jamais ici.
+  Trois gestes, matrice §8.1 : « Marquer une tache comme terminee », « Annuler
+  la completion dans les 5 minutes » (`T8`) et « Reouvrir apres le delai de 5
+  minutes » (`T9`). Les DEUX PREMIERES lignes sont IDENTIQUES — `Soi`
+  uniquement, tiret partout ailleurs, y compris `DSM`/`BOOST` qui ont pourtant
+  « Consultants »/« Cercle » sur la LECTURE du parcours (§2.1 de
+  `fiche-lot-7.md`, piege n°1). La TROISIEME est l'INVERSE : `ESM`/`ADM-E`/
+  `SUPER` seulement, `Soi` (et `DSM`/`BOOST`, meme rattaches) EXCLUS EN BLOC —
+  voir `perimetre.py`, cinquieme grille du module.
+
+LE DIAGRAMME §24.2 DU MODELE EST LA SOURCE DE VERITE DES TRANSITIONS
+
+  `Todo -> Completed -> Todo` (annulation, `T8`) ; `Completed -> Reopened`
+  (`T9`) ; **`Reopened -> Completed` : le nouvel arrivant termine A NOUVEAU**,
+  meme geste que la premiere completion. `terminer_une_tache` accepte donc
+  DEUX etats de depart, `todo` ET `reopened` — CORRECTIF `T9` a la fonction
+  ecrite par `T8`, qui n'acceptait que `todo` et laissait une tache reouverte
+  dans une impasse. `completed_at`/`completed_by_person_id` sont ECRASES par
+  la nouvelle completion ; `reopened_at`/`reopened_by_person_id`/
+  `reopen_reason` sont laisses TELS QUELS — aucune section du corpus n'exige
+  de les effacer, et les effacer serait une invention (§6.5).
 
 `annuler_la_completion` NE PRODUIT JAMAIS L'ETAT `cancelled`
 
@@ -36,20 +49,33 @@ LA FENETRE DE CINQ MINUTES EST ANCREE A `completed_at`, JAMAIS A UNE HORLOGE MOC
   jamais figee : `instant` est toujours le vrai `now()` de la route, comme
   partout ailleurs dans ce module (`T2`-`T7`).
 
+  **`T9` REUTILISE LA MEME ANCRE, JAMAIS UN SECOND MECANISME DE FENETRE** —
+  `_FENETRE_DE_CINQ_MINUTES` (renommee depuis `_FENETRE_D_ANNULATION`, qui ne
+  disait plus tout : elle sert desormais les DEUX sens). `annuler_la_
+  completion` exige `completed_at >= instant - 5 min` (encore dans la
+  fenetre) ; `reouvrir_une_tache` exige l'INVERSE STRICT, `completed_at <
+  instant - 5 min` (fenetre CLOSE) — les deux frontieres se touchent sans se
+  chevaucher : au instant exact ou la fenetre se ferme, l'annulation est
+  encore possible (`>=`) et la reouverture ne l'est pas encore (`<` strict).
+
 LA PRECONDITION EST DANS LE `WHERE`, LE DIAGNOSTIC DANS UNE LECTURE SEPAREE
 
   Meme parti que `cycle_de_vie.py` (`T6`) pour l'atomicite de l'ecriture : la
-  transition entiere — etat de depart ET fenetre de temps pour l'annulation —
-  est UNE SEULE clause `WHERE` d'un `UPDATE`, sans lecture prealable qui
-  laisserait une fenetre de course. MAIS, contrairement a `cycle_de_vie.py`
-  (qui replie toute cause d'echec dans UN SEUL code, deliberement), ce module
-  DISTINGUE deux causes d'echec pour `annuler_la_completion` — la tache n'est
-  pas `completed`, ou elle l'est mais hors delai — parce que la difference
-  est UTILE a l'appelant : un delai depasse renvoie vers `T9` (reouverture
-  administrative, motif), un etat different signale une erreur de client.
-  Cette distinction n'exige PAS une seconde ecriture ni une fenetre de
-  course : elle relit, APRES l'echec de l'ecriture, le SEUL etat necessaire
-  pour choisir entre les deux codes — un diagnostic, jamais une decision.
+  transition entiere — etat de depart ET fenetre de temps — est UNE SEULE
+  clause `WHERE` d'un `UPDATE`, sans lecture prealable qui laisserait une
+  fenetre de course. MAIS, contrairement a `cycle_de_vie.py` (qui replie toute
+  cause d'echec dans UN SEUL code, deliberement), `_echouer` DISTINGUE, pour
+  `annuler_la_completion` ET `reouvrir_une_tache`, deux causes d'echec — la
+  tache n'est pas dans l'etat requis, ou elle l'est mais la fenetre est du
+  MAUVAIS cote — parce que la difference est UTILE a l'appelant : une
+  annulation trop tardive renvoie vers `T9` (reouverture administrative,
+  motif) ; une reouverture trop hative renvoie vers l'annulation en libre
+  service (`T8`, que le nouvel arrivant peut encore faire lui-meme). Cette
+  distinction n'exige PAS une seconde ecriture ni une fenetre de course :
+  elle relit, APRES l'echec de l'ecriture, le SEUL etat necessaire pour
+  choisir entre les codes — un diagnostic, jamais une decision.
+  `terminer_une_tache`, elle, n'a PAS de troisieme cause : ses deux etats de
+  depart (`todo`, `reopened`) ne portent aucune precondition de fenetre.
 """
 
 from __future__ import annotations
@@ -88,12 +114,18 @@ MESSAGE_DELAI_DEPASSE: Final = (
     "reouvrir cette tache, avec un motif."
 )
 
-_FENETRE_D_ANNULATION: Final = "5 minutes"
+CODE_REOUVERTURE_PREMATUREE: Final = "reouverture_prematuree"
+MESSAGE_REOUVERTURE_PREMATUREE: Final = (
+    "Le delai de cinq minutes depuis la completion n'est pas encore ecoule — matrice §8.3. "
+    "Le nouvel arrivant peut encore annuler lui-meme sa propre completion."
+)
+
+_FENETRE_DE_CINQ_MINUTES: Final = "5 minutes"
 
 _TERMINER_LA_TACHE: Final = f"""
 UPDATE onboarding_instance_task
    SET state = 'completed', completed_at = :instant, completed_by_person_id = :acteur
- WHERE id = :tache AND onboarding_instance_id = :instance AND state = 'todo'
+ WHERE id = :tache AND onboarding_instance_id = :instance AND state IN ('todo', 'reopened')
 RETURNING {COLONNES_TACHE}
 """  # noqa: S608
 
@@ -101,7 +133,16 @@ _ANNULER_LA_COMPLETION: Final = f"""
 UPDATE onboarding_instance_task
    SET state = 'todo', completed_at = NULL, completed_by_person_id = NULL
  WHERE id = :tache AND onboarding_instance_id = :instance AND state = 'completed'
-   AND completed_at >= CAST(:instant AS timestamptz) - INTERVAL '{_FENETRE_D_ANNULATION}'
+   AND completed_at >= CAST(:instant AS timestamptz) - INTERVAL '{_FENETRE_DE_CINQ_MINUTES}'
+RETURNING {COLONNES_TACHE}
+"""  # noqa: S608
+
+_REOUVRIR_LA_TACHE: Final = f"""
+UPDATE onboarding_instance_task
+   SET state = 'reopened', reopened_at = :instant, reopened_by_person_id = :acteur,
+       reopen_reason = :motif
+ WHERE id = :tache AND onboarding_instance_id = :instance AND state = 'completed'
+   AND completed_at < CAST(:instant AS timestamptz) - INTERVAL '{_FENETRE_DE_CINQ_MINUTES}'
 RETURNING {COLONNES_TACHE}
 """  # noqa: S608
 
@@ -111,12 +152,20 @@ SELECT state FROM onboarding_instance_task WHERE id = :tache AND onboarding_inst
 
 
 def _echouer(
-    connexion: Connection, *, instance: uuid.UUID, tache: uuid.UUID, etat_attendu: str
+    connexion: Connection,
+    *,
+    instance: uuid.UUID,
+    tache: uuid.UUID,
+    etats_attendus: frozenset[str],
+    code_fenetre: str | None = None,
+    message_fenetre: str | None = None,
 ) -> NoReturn:
     """Diagnostic APRES l'echec de l'ecriture atomique — jamais une decision :
     voir l'en-tete. Choisit entre 404 (tache introuvable dans CE parcours),
-    409 transition invalide (mauvais etat de depart), et pour `annuler_la_
-    completion` seul, 409 delai depasse (bon etat, fenetre fermee)."""
+    409 transition invalide (etat de depart hors de `etats_attendus`), et,
+    quand `code_fenetre` est fourni, un TROISIEME code pour l'etat attendu
+    mais la fenetre de temps du MAUVAIS cote (annulation trop tardive,
+    reouverture trop hative)."""
     ligne = connexion.execute(
         text(_LIRE_L_ETAT_ACTUEL), {"tache": tache, "instance": instance}
     ).first()
@@ -126,16 +175,16 @@ def _echouer(
             message=MESSAGE_TACHE_INTROUVABLE,
             statut=status.HTTP_404_NOT_FOUND,
         )
-    if str(ligne[0]) != etat_attendu:
+    if str(ligne[0]) in etats_attendus and code_fenetre is not None:
+        #  L'etat de depart correspond : la SEULE cause d'echec qui reste est
+        #  la fenetre de cinq minutes, du mauvais cote.
         raise ErreurApplicative(
-            code=CODE_TRANSITION_TACHE_INVALIDE,
-            message=MESSAGE_TRANSITION_TACHE_INVALIDE,
-            statut=status.HTTP_409_CONFLICT,
+            code=code_fenetre, message=message_fenetre or "", statut=status.HTTP_409_CONFLICT
         )
-    #  L'etat de depart correspond : la SEULE cause d'echec qui reste, pour
-    #  `annuler_la_completion`, est la fenetre de cinq minutes depassee.
     raise ErreurApplicative(
-        code=CODE_DELAI_DEPASSE, message=MESSAGE_DELAI_DEPASSE, statut=status.HTTP_409_CONFLICT
+        code=CODE_TRANSITION_TACHE_INVALIDE,
+        message=MESSAGE_TRANSITION_TACHE_INVALIDE,
+        statut=status.HTTP_409_CONFLICT,
     )
 
 
@@ -149,7 +198,9 @@ def terminer_une_tache(
     instant: dt.datetime,
 ) -> TacheDuParcours:
     """Matrice §8.1 « Marquer une tache comme terminee » — `Soi` uniquement,
-    verifie par l'appelant (`perimetre.peut_agir_sur_sa_tache_onboarding`)."""
+    verifie par l'appelant (`perimetre.peut_agir_sur_sa_tache_onboarding`).
+    Accepte `todo` ET `reopened` comme etat de depart — voir l'en-tete,
+    diagramme §24.2, correctif `T9`."""
     ligne = (
         connexion.execute(
             text(_TERMINER_LA_TACHE),
@@ -159,7 +210,12 @@ def terminer_une_tache(
         .one_or_none()
     )
     if ligne is None:
-        _echouer(connexion, instance=instance, tache=tache, etat_attendu="todo")
+        _echouer(
+            connexion,
+            instance=instance,
+            tache=tache,
+            etats_attendus=frozenset({"todo", "reopened"}),
+        )
     enregistrer_un_evenement_de_tache(
         connexion,
         entite=entite,
@@ -192,7 +248,14 @@ def annuler_la_completion(
         .one_or_none()
     )
     if ligne is None:
-        _echouer(connexion, instance=instance, tache=tache, etat_attendu="completed")
+        _echouer(
+            connexion,
+            instance=instance,
+            tache=tache,
+            etats_attendus=frozenset({"completed"}),
+            code_fenetre=CODE_DELAI_DEPASSE,
+            message_fenetre=MESSAGE_DELAI_DEPASSE,
+        )
     enregistrer_un_evenement_de_tache(
         connexion,
         entite=entite,
@@ -200,5 +263,60 @@ def annuler_la_completion(
         type_evenement=TypeEvenementTache.CANCELLED.value,
         instant=instant,
         acteur=acteur,
+    )
+    return tache_depuis_la_ligne(ligne)
+
+
+def reouvrir_une_tache(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    instance: uuid.UUID,
+    tache: uuid.UUID,
+    acteur: uuid.UUID,
+    motif: str,
+    instant: dt.datetime,
+) -> TacheDuParcours:
+    """Matrice §8.1 « Reouvrir apres le delai de 5 minutes » / §8.3 — `ESM`,
+    administrateur d'entite ou super-administrateur SEULEMENT, verifie par
+    l'appelant (`perimetre.ROLES_DE_REOUVERTURE_DES_TACHES`, garde de role
+    coarse). `completed_at`/`completed_by_person_id` sont CONSERVES — a la
+    difference de `annuler_la_completion`, la reouverture garde la trace de
+    la completion originale et AJOUTE celle de la reouverture. Le motif est
+    OBLIGATOIRE (§8.3, « exige un motif ») ; la base l'impose aussi, par la
+    contrainte `motif_requis_a_la_reouverture` (modele §13.6, posee des
+    `T1`) — voir §7.32, n'ecris pas de defense contre un etat que la base
+    interdit deja."""
+    ligne = (
+        connexion.execute(
+            text(_REOUVRIR_LA_TACHE),
+            {
+                "tache": tache,
+                "instance": instance,
+                "acteur": acteur,
+                "motif": motif,
+                "instant": instant,
+            },
+        )
+        .mappings()
+        .one_or_none()
+    )
+    if ligne is None:
+        _echouer(
+            connexion,
+            instance=instance,
+            tache=tache,
+            etats_attendus=frozenset({"completed"}),
+            code_fenetre=CODE_REOUVERTURE_PREMATUREE,
+            message_fenetre=MESSAGE_REOUVERTURE_PREMATUREE,
+        )
+    enregistrer_un_evenement_de_tache(
+        connexion,
+        entite=entite,
+        tache=tache,
+        type_evenement=TypeEvenementTache.REOPENED.value,
+        instant=instant,
+        acteur=acteur,
+        motif=motif,
     )
     return tache_depuis_la_ligne(ligne)

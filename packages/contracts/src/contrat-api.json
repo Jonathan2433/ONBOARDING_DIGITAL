@@ -1428,6 +1428,26 @@
         "reouverture administrative (T9) agit ensuite.",
         "404 `aucun_parcours_actif` ou `tache_introuvable`."
       ]
+    },
+    {
+      "cle": "reouvertureDUneTache",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/reouverture",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Reouvrir une tache apres le delai de cinq minutes — LOT 7, T9,",
+        "matrice §8.1/§8.3. Ecriture pure : aucun module de contrat propre.",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT — DSM",
+        "et Booster EXCLUS EN BLOC, meme rattaches (piege n°1 inverse : ils",
+        "portent un droit sur la LECTURE et l'AFFECTATION du parcours, T7,",
+        "mais pas ici). Motif OBLIGATOIRE dans le corps (`motif`, non vide).",
+        "La tache passe a `reopened`, jamais un retour a `todo`.",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `completed`.",
+        "409 `reouverture_prematuree` : moins de cinq minutes depuis la",
+        "completion — le nouvel arrivant peut encore annuler lui-meme (T8).",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

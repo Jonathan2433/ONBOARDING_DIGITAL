@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 septembre 2026 — décision `DEC-608`, `T8` du LOT 7
+**Dernière mise à jour :** 27 septembre 2026 — décision `DEC-609`, `T9` du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -113,6 +113,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-606`, sous-étape `T7`** | 1 | **Soumise le 27/09/2026** |
 | **Correctif trouvé en écrivant `T8` `DEC-607`, sous-étape `T7`** | 1 | **Soumise le 27/09/2026** |
 | **Réalisation du LOT 7 `DEC-608`, sous-étape `T8`** | 1 | **Soumise le 27/09/2026** |
+| **Réalisation du LOT 7 `DEC-609`, sous-étape `T9`** | 1 | **Soumise le 27/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -124,7 +125,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **276** | |
+| **Total** | **277** | |
 
 ---
 
@@ -827,7 +828,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-608` | **`T8` livre terminer/annuler une tâche — `POST …/onboarding-parcours/taches/{tache}/completion`, `/annulation`, `MVP-L07-US005`.** Nouveau module `app/onboarding/taches.py`. Aucune nouvelle table ni colonne — le modèle §13.6 déclarait déjà `state`/`completed_at`/`completed_by_person_id`. Aucun module de contrat propre : `ReponseDeTacheDuParcours` existe déjà depuis `T7`. 15 tests d'intégration. | **LES DEUX LIGNES DU §8.1 SONT `Soi` SEUL, LA GRILLE LA PLUS STRICTE DU MODULE** : contrairement à la lecture du parcours (`T7`), `DSM`/`BOOST` n'ont ICI aucun droit, malgré leur rattachement réel — piège n°1 de `fiche-lot-7.md` §2.1. Le témoin qui compte n'est donc pas un rôle sans rattachement, c'est un `DSM` RATTACHÉ à ce consultant précis, qui lit pleinement son parcours et doit pourtant être refusé d'agir sur sa tâche — deux témoins le prouvent, sur les deux gestes. **`annuler_la_completion` NE PRODUIT JAMAIS L'ÉTAT `cancelled`** : les quatre états du modèle §13.6 laissaient croire à une transition directe `completed` → `cancelled`, ce que le corpus ne dit nulle part — `cancelled` est réservé à `T10` (une tâche rendue obsolète par un changement de statut, jamais désirée à nouveau). Annuler dans les cinq minutes redonne `todo`, `completed_at`/`completed_by_person_id` effacés, et un témoin le prouve DIRECTEMENT en re-terminant la même tâche après l'avoir annulée. **LA FENÊTRE DE CINQ MINUTES EST ANCRÉE À `completed_at`, JAMAIS À UNE HORLOGE MOCKÉE** (exigence explicite de `fiche-lot-7.md` §3, même discipline que l'ancre `INSTANT` du LOT 6, §7.47) : la précondition compare l'`instant` réel de la requête à une valeur déjà stockée en base, et le témoin « hors délai » recule cette valeur par SQL, jamais un `sleep()` ni une horloge figée. **LA PRÉCONDITION EST DANS LE `WHERE`, LE DIAGNOSTIC DANS UNE LECTURE SÉPARÉE APRÈS L'ÉCHEC** — même parti atomique que `cycle_de_vie.py` (`T6`), mais avec une nuance : contrairement à ce module qui replie toute cause d'échec dans un seul code, `T8` DISTINGUE `transition_de_tache_invalide` (mauvais état) de `delai_d_annulation_depasse` (bon état, fenêtre fermée), parce que la différence oriente l'appelant vers `T9` (réouverture administrative) dans le second cas seulement. **AUCUNE GARDE COARSE PAR RÔLE** : la dépendance est `exiger_une_session`, comme la lecture du parcours — un nouvel arrivant sans aucun rôle d'entité doit pouvoir agir sur sa propre tâche. **RÉSIDU NOMMÉ, NON INSTRUIT** : le §8.2 du corpus (matrice et cahier, concordants) écrit en prose « sauf correction technique explicitement auditée par l'administrateur ou le super-administrateur », une exception qu'aucune section ne développe (pas de route, pas de motif ni de champ d'audit dédiés) et que le découpage de `fiche-lot-7.md` §3 n'assigne à aucune des quinze sous-étapes — l'inventer aurait été §6.5. **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`), 74 échecs environnementaux identiques des deux côtés. | Soumise le 27/09/2026 |
 
-**Prochain identifiant libre : `DEC-609`.**
+| `DEC-609` | **`T9` livre la réouverture administrative d'une tâche après le délai de cinq minutes — `POST …/onboarding-parcours/taches/{tache}/reouverture`, `MVP-L07-US006`.** Aucune nouvelle table ni colonne — le modèle §13.6 déclarait déjà `state='reopened'`, `reopened_at`/`reopened_by_person_id`/`reopen_reason` et la contrainte `motif_requis_a_la_reouverture`. Aucun module de contrat propre : `ReponseDeTacheDuParcours` existe depuis `T7`. 17 tests d'intégration. | **CINQUIÈME GRILLE DU MODULE, INVERSE EXACTE DE LA QUATRIÈME (`T8`)** : `ESM`/`ADM-E`/`SUPER` seulement — `Soi`, `DSM` et `BOOST` EXCLUS EN BLOC, même rattachés. Le §8.3 l'écrit en toutes lettres (« Le DSM et le Booster ne peuvent pas effectuer cette correction »), pas seulement par absence de la liste : deux témoins le prouvent sur un DSM et un Booster RATTACHÉS à ce consultant/ce cercle précis, qui lisent et affectent pleinement ce parcours (`T7`) et sont pourtant refusés ici. **AUCUNE FONCTION `peut_...` SÉPARÉE N'EST NÉCESSAIRE** : une tâche d'instance vit toujours dans une entité, jamais au niveau global — la garde de rôle coarse (`ROLES_DE_REOUVERTURE_DES_TACHES`) est la vérification complète, même parti que le catalogue des tâches (`T4`). **LA FENÊTRE EST L'INVERSE STRICTE DE CELLE DE `T8`, ANCRÉE À LA MÊME COLONNE `completed_at`** : `annuler_la_completion` exige `completed_at >= instant - 5 min`, `reouvrir_une_tache` exige l'inverse strict `completed_at < instant - 5 min` — les deux frontières se touchent sans se chevaucher, jamais un second mécanisme de fenêtre ni une horloge mockée. **CORRECTIF À `terminer_une_tache` (`T8`)** : le diagramme §24.2 du modèle exige `Reopened -> Completed`, une transition que `T8` n'avait pas prévue — `_TERMINER_LA_TACHE` acceptait uniquement `todo`. Sans ce correctif, une tâche réouverte restait dans une impasse permanente ; un témoin re-termine directement une tâche après sa réouverture pour le prouver. `completed_at`/`completed_by_person_id` de la complétion ORIGINALE sont conservés lors de la réouverture (contrairement à l'annulation de `T8`, qui les efface) — le corpus n'exige nulle part de les effacer, et le faire aurait été une invention (§6.5). **LE MOTIF EST OBLIGATOIRE AU CORPS ET À LA BASE** : `min_length=1` refuse la chaîne vide côté route, la contrainte `motif_requis_a_la_reouverture` (posée dès `T1`) l'impose aussi côté base — c'est la PREMIÈRE route du projet à exiger et écrire un motif, là où `archive_reason`/`assignment_reason` restent des colonnes jamais écrites (`ECART-064`). **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`), 74 échecs environnementaux identiques des deux côtés. | Soumise le 27/09/2026 |
+
+**Prochain identifiant libre : `DEC-610`.**
 
 ---
 
@@ -1082,6 +1085,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-606` — réalisation du LOT 7, `T7` | 1 | 1 |
 | `DEC-607` — correctif trouvé en écrivant `T8`, `T7` | 1 | 1 |
 | `DEC-608` — réalisation du LOT 7, `T8` | 1 | 1 |
+| `DEC-609` — réalisation du LOT 7, `T9` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1093,7 +1097,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **276** | **276** |
+| **Total** | **277** | **277** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `608` en usage | `DEC-609` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `609` en usage | `DEC-610` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -499,11 +499,36 @@ colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, tro
 > un modèle `GLOBAL` créé avec la session de l'ESM, refusé 403 — corrigé en `ENTITY`. Détail :
 > `compte-rendu-t8-lot-7.md`.
 
-**1 971 tests** désormais. La prochaine est `T9`, réouvrir une tâche après cinq minutes.
+**`T9` EST FAITE** le 27/09/2026, `DEC-609` : réouvrir une tâche après le délai de cinq minutes —
+`POST …/onboarding-parcours/taches/{tache}/reouverture`. Aucune nouvelle table.
+
+> **CINQUIÈME GRILLE DU MODULE, INVERSE EXACTE DE LA QUATRIÈME (`T8`)** : `ESM`/`ADM-E`/`SUPER`
+> seulement — `Soi`, `DSM` et `BOOST` EXCLUS EN BLOC, même rattachés. Le §8.3 l'écrit en toutes
+> lettres, pas seulement par absence de la liste : deux témoins le prouvent sur un DSM et un Booster
+> RATTACHÉS à ce consultant/ce cercle précis, qui lisent et affectent pleinement ce parcours (`T7`)
+> et sont pourtant refusés ici. Aucune fonction `peut_...` séparée n'est nécessaire — la garde de
+> rôle coarse EST la vérification complète, même parti que le catalogue des tâches (`T4`).
+>
+> **LA FENÊTRE EST L'INVERSE STRICTE DE CELLE DE `T8`, ANCRÉE À LA MÊME COLONNE `completed_at`** :
+> `annuler_la_completion` exige `completed_at >= instant - 5 min`, `reouvrir_une_tache` exige
+> l'inverse strict — les deux frontières se touchent sans se chevaucher, jamais un second mécanisme
+> de fenêtre ni une horloge mockée.
+>
+> **CORRECTIF À `terminer_une_tache` (`T8`) : LE DIAGRAMME §24.2 DU MODÈLE EXIGE `Reopened ->
+> Completed`**, une transition que `T8` n'avait pas prévue — sans elle, une tâche réouverte restait
+> dans une impasse permanente. Un témoin re-termine directement une tâche après sa réouverture pour
+> le prouver. `completed_at`/`completed_by_person_id` de la complétion ORIGINALE sont CONSERVÉS lors
+> de la réouverture, contrairement à l'annulation de `T8` qui les efface.
+>
+> **LE MOTIF EST OBLIGATOIRE AU CORPS ET À LA BASE** — la PREMIÈRE route du projet à exiger et
+> écrire un motif, là où `archive_reason`/`assignment_reason` restent des colonnes jamais écrites
+> (`ECART-064`). Détail : `compte-rendu-t9-lot-7.md`.
+
+**1 988 tests** désormais. La prochaine est `T10`, le changement automatique mission ↔ intercontrat.
 
 `ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
 « version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
-bloquant pour `T11`** — sans objet pour `T8`, qui n'archive ni ne restaure aucun parcours.
+bloquant pour `T11`** — sans objet pour `T9`, qui ni n'archive ni ne restaure un parcours.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
