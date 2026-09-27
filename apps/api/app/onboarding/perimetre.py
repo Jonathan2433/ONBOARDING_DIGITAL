@@ -204,6 +204,29 @@ LE PARCOURS D'UN COLLABORATEUR — matrice §8.1, `T7`
   PRECISE**, contrairement a « Consulter son parcours ». Les deux fonctions
   partagent donc `_dans_le_perimetre_du_parcours`, et seule la lecture ajoute
   le raccourci `acteur == cible_personne` par-dessus.
+
+LA REOUVERTURE ADMINISTRATIVE — matrice §8.1/§8.3, `T9`
+
+  **CINQUIEME GRILLE DU MODULE, ET L'INVERSE DE LA QUATRIEME.** « Marquer une
+  tache comme terminee »/« Annuler... » (`T8`) n'accordaient RIEN qu'a `Soi` ;
+  « Reouvrir apres le delai de 5 minutes » n'accorde RIEN A `Soi` — seuls
+  `ESM`, `ADM-E` et `SUPER`. Le §8.3 l'ECRIT EN TOUTES LETTRES, pas seulement
+  par absence de la liste : « Le DSM et le Booster ne peuvent pas effectuer
+  cette correction ». **MEME un DSM ou un Booster RATTACHE** — qui portent
+  pourtant « Consultants »/« Cercle » sur la LECTURE et l'AFFECTATION du
+  parcours (`T7`, section precedente) — reste EXCLU EN BLOC ici, aucun
+  sous-cas de rattachement propre : la meme distinction que `T2` (fiche non
+  publiee, DSM a tiret) contre `T7` (parcours, DSM plein), rejouee une
+  troisieme fois sur une quatrieme ligne.
+
+  **AUCUNE FONCTION `peut_...` SEPAREE N'EST NECESSAIRE ICI.** Contrairement
+  au parcours (`T7`, DSM/Booster RATTACHES admis par requete) et a la
+  restauration de modele (`T6`, distinction GLOBAL/entite), cette grille n'a
+  ni rattachement ni portee a distinguer : une tache d'instance vit toujours
+  dans UNE entite, jamais au niveau global. `ROLES_DE_REOUVERTURE_DES_TACHES`
+  EST la verification complete, portee par la garde de role coarse
+  (`exiger_un_role_dans_l_entite`, `routes.py`) — meme parti que le catalogue
+  des taches (`T4`), ou la garde seule suffisait deja.
 """
 
 from __future__ import annotations
@@ -699,3 +722,11 @@ def peut_agir_sur_sa_tache_onboarding(*, acteur: uuid.UUID, cible_personne: uuid
     """§8.1 « Marquer une tache comme terminee » / « Annuler la completion
     dans les 5 minutes » — `Soi` UNIQUEMENT."""
     return acteur == cible_personne
+
+
+#  §8.1 « Reouvrir apres le delai de 5 minutes » / §8.3 : ESM, ADM-E, SUPER
+#  SEULEMENT — voir l'en-tete du module. Alias de `_ROLES_ENTITE`, jamais une
+#  litterale recopiee (§7.27) : une divergence future serait immediatement
+#  visible. Portee directement par la garde de role coarse dans `routes.py` —
+#  aucune fonction `peut_...` separee, voir l'en-tete.
+ROLES_DE_REOUVERTURE_DES_TACHES: Final[frozenset[RoleDeLaMatrice]] = _ROLES_ENTITE

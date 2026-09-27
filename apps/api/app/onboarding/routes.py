@@ -1,6 +1,6 @@
 """Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche), `T4` (catalogue), `T5`
 (modeles), `T6` (cycle de vie d'une version), `T7` (instance depuis l'arrivee),
-`T8` (terminer/annuler une tache).
+`T8` (terminer/annuler une tache), `T9` (reouverture administrative).
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
@@ -67,6 +67,20 @@ depuis le LOT 4.
   un nouvel arrivant sans aucun role d'entite. Les deux routes resolvent
   l'instance ACTIVE de l'appartenance (`lire_l_instance_active`), jamais « la
   plus recente » : voir `app/onboarding/taches.py`.
+
+`T9` AJOUTE LA REOUVERTURE, SOUS `.../taches/{tache}/reouverture`
+
+  **L'INVERSE DE `T8` : UNE GARDE COARSE SUFFIT, SEULE.** `ROLES_DE_
+  REOUVERTURE_DES_TACHES` (`ESM`/`ADM-E`/`SUPER`, CINQUIEME grille) n'a ni
+  rattachement DSM/Booster ni portee GLOBAL a distinguer — une tache
+  d'instance vit toujours dans UNE entite. `garde_de_reouverture` EST donc
+  la verification complete, meme parti que `garde_du_catalogue` (`T4`) :
+  aucun appel a `resoudre_les_permissions` ni a une fonction `peut_...`
+  n'est necessaire dans le corps de la route. Le motif est OBLIGATOIRE dans
+  le corps de la demande (`DemandeDeReouverture`, `min_length=1`) — la
+  PREMIERE route du projet a exiger et ECRIRE un motif, la ou `archive_
+  reason`/`assignment_reason` restent des colonnes jamais ecrites
+  (`ECART-064`).
 """
 
 from __future__ import annotations
@@ -134,6 +148,7 @@ from app.onboarding.instances import (
 from app.onboarding.perimetre import (
     ROLES_DE_GESTION_DES_MODELES,
     ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
+    ROLES_DE_REOUVERTURE_DES_TACHES,
     ROLES_DE_RESTAURATION_DES_MODELES,
     ROLES_DU_PARCOURS_ONBOARDING,
     peut_affecter_un_parcours_onboarding,
@@ -147,7 +162,7 @@ from app.onboarding.perimetre import (
     peut_restaurer_une_version_de_modele,
     peut_valider_et_publier_la_fiche_arrivee,
 )
-from app.onboarding.taches import annuler_la_completion, terminer_une_tache
+from app.onboarding.taches import annuler_la_completion, reouvrir_une_tache, terminer_une_tache
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
     MESSAGE_ROLE_REFUSE,
@@ -561,6 +576,17 @@ class ReponseDeTacheDuParcours(BaseModel):
     state: str
     completed_at: dt.datetime | None
     reopened_at: dt.datetime | None
+
+
+class DemandeDeReouverture(BaseModel):
+    """§8.3 : « la reouverture exige un motif ». `min_length=1` refuse la
+    chaine vide — `NOT NULL` seul (contrainte de la base) l'aurait laissee
+    passer, meme piege que la `CHECK` de `T1` sur `length(btrim(...))` (voir
+    `compte-rendu-t1-lot-7.md` §2.2)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    motif: str = Field(min_length=1, description="Le motif de la reouverture — matrice §8.3.")
 
 
 class ReponseDeLInstance(BaseModel):
@@ -1991,5 +2017,97 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 instant=instant,
             )
         return _tache_du_parcours_en_reponse(annulee)
+
+    #  §8.1 « Reouvrir apres le delai de 5 minutes » / §8.3 : CINQUIEME grille
+    #  du module, INVERSE de la quatrieme. AUCUN sous-cas DSM/Booster rattache
+    #  ici (a la difference de `garde_d_affectation`) — la garde coarse EST la
+    #  verification complete, meme parti que `garde_du_catalogue` (`T4`).
+    garde_de_reouverture = exiger_un_role_dans_l_entite(parametres, ROLES_DE_REOUVERTURE_DES_TACHES)
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/reouverture",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTacheDuParcours,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : seuls l'ESM, l'administrateur d'entite ou le "
+                    "super-administrateur reouvrent — DSM et Booster explicitement "
+                    "exclus, meme rattaches (matrice §8.3)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou appartenance inconnues. `aucun_parcours_actif` : aucune "
+                    "instance active. `tache_introuvable` : identifiant hors de ce parcours."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_tache_invalide` : la tache n'est pas `completed`. "
+                    "`reouverture_prematuree` : moins de cinq minutes depuis la "
+                    "completion — le nouvel arrivant peut encore annuler lui-meme."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Le motif est obligatoire et ne peut pas etre vide."
+            },
+        },
+        summary="Reouvrir une tache apres le delai de cinq minutes",
+        description=(
+            "Matrice §8.1/§8.3. `ESM`, administrateur d'entite ou super-administrateur "
+            "SEULEMENT, motif obligatoire. La tache passe a `reopened`, jamais un retour "
+            "a `todo` — reservee a l'annulation en libre service (`T8`)."
+        ),
+    )
+    def reouvrir_une_tache_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        tache: Annotated[uuid.UUID, Path(description="L'identifiant de la tache d'instance")],
+        demande: DemandeDeReouverture,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_de_reouverture),  # noqa: B008
+    ) -> ReponseDeTacheDuParcours:
+        """Reouvrir une tache apres le delai — matrice §8.1/§8.3, modele §13.6."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            instance_active = _resoudre_l_instance_active_ou_404(
+                connexion, entite=entite.id, appartenance=appartenance
+            )
+            reouverte = reouvrir_une_tache(
+                connexion,
+                entite=entite.id,
+                instance=instance_active.id,
+                tache=tache,
+                acteur=appelant.personne,
+                motif=demande.motif,
+                instant=instant,
+            )
+        return _tache_du_parcours_en_reponse(reouverte)
 
     return routeur
