@@ -677,3 +677,25 @@ def peut_affecter_un_parcours_onboarding(
         roles=roles,
         instant=instant,
     )
+
+
+#  §8.1 « Marquer une tache comme terminee » et « Annuler la completion dans
+#  les 5 minutes » — QUATRIEME grille du module, et la plus stricte : `Soi`
+#  seul, tiret PARTOUT ailleurs, y compris DSM/BOOST qui portent pourtant
+#  « Consultants »/« Cercle » sur la lecture du parcours (piege n°1,
+#  `fiche-lot-7.md` §2.1). Aucune lecture en base : contrairement aux trois
+#  grilles precedentes, aucun role, aucun rattachement DSM/Booster, aucune
+#  entite ne donne jamais acces — la comparaison d'identite suffit et est
+#  EXHAUSTIVE.
+#
+#  RESIDU NOMME, NON INSTRUIT ICI : le §8.2 du corpus (matrice ET cahier,
+#  concordants) ecrit en prose « sauf correction technique explicitement
+#  auditee par l'administrateur ou le super-administrateur » — une exception
+#  qu'AUCUNE section du corpus ne developpe davantage (pas de route nommee,
+#  pas de motif ni de champ d'audit dedies), et que le decoupage de
+#  `fiche-lot-7.md` §3 n'assigne a AUCUNE des quinze sous-etapes. L'inventer
+#  ici serait §6.5 — une decision non tranchee. Voir le compte rendu de `T8`.
+def peut_agir_sur_sa_tache_onboarding(*, acteur: uuid.UUID, cible_personne: uuid.UUID) -> bool:
+    """§8.1 « Marquer une tache comme terminee » / « Annuler la completion
+    dans les 5 minutes » — `Soi` UNIQUEMENT."""
+    return acteur == cible_personne
