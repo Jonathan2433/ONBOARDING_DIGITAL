@@ -50,6 +50,26 @@ LA PROGRESSION EST CALCULEE A CHAQUE LECTURE, JAMAIS STOCKEE
   terminee dont `due_at` est le plus proche, obligatoire ou non : le modele
   §13.6 ne porte aucun `display_order` sur l'instance (contrairement au
   gabarit, §13.4), et `due_at` est la seule notion d'ordre qui lui survit.
+
+CORRECTIF TROUVE EN ECRIVANT `T8` : L'EVENEMENT `ASSIGNED` MANQUAIT
+
+  Critere de sortie n°4 de la fiche (§1.2) : « les evenements de tache sont
+  historises […] `onboarding_task_event`, ecrit a `T7`-`T10` ». `T7` livrait
+  la table et l'affectation, mais n'ecrivait AUCUN evenement — un residu non
+  nomme dans son propre compte rendu, trouve en relisant ce critere avant
+  d'ecrire `T8`. `affecter_un_parcours` recoit desormais `acteur` et pose un
+  evenement `ASSIGNED` par tache snapshottee, via `enregistrer_un_evenement_
+  de_tache` — la MEME fonction que `T8` emploie pour `COMPLETED`/`CANCELLED`,
+  §7.27 : une seule ecriture d'evenement, jamais une par sous-etape.
+
+`COLONNES_TACHE` ET `tache_depuis_la_ligne` SONT PUBLICS, PAS UN OUBLI
+
+  `T8` (`app/onboarding/taches.py`) ecrit `onboarding_instance_task` a son
+  tour et rend le MEME `TacheDuParcours` : partager la projection colonnes ->
+  dataclasse evite une deuxieme liste qui divergerait de celle-ci au premier
+  ajout de champ (§7.27). Seule cette paire quitte le prefixe prive ; le reste
+  du module — `_instance_depuis_la_ligne`, les requetes de resolution du
+  modele — ne sert qu'ici et le reste.
 """
 
 from __future__ import annotations
@@ -63,6 +83,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.onboarding.modeles import TypeEvenementTache
 from app.shared.errors import ErreurApplicative
 
 CODE_STATUT_INTROUVABLE: Final = "statut_professionnel_introuvable"
@@ -78,6 +99,11 @@ MESSAGE_AUCUN_MODELE_PUBLIE: Final = (
 CODE_PARCOURS_DEJA_ACTIF: Final = "parcours_deja_actif"
 MESSAGE_PARCOURS_DEJA_ACTIF: Final = (
     "Une instance active existe deja pour cette appartenance — modele §13.5."
+)
+
+CODE_AUCUN_PARCOURS_ACTIF: Final = "aucun_parcours_actif"
+MESSAGE_AUCUN_PARCOURS_ACTIF: Final = (
+    "Aucune instance active n'existe pour cette appartenance — modele §13.5."
 )
 
 
@@ -224,7 +250,8 @@ WHERE tt.template_version_id = :version
 ORDER BY tt.display_order
 """
 
-_COLONNES_TACHE: Final = (
+#  PUBLIQUE : partagee avec `app/onboarding/taches.py` (`T8`) — voir l'en-tete.
+COLONNES_TACHE: Final = (
     "id, task_reference_id, title_snapshot, description_snapshot, required, "
     "due_at, state, completed_at, reopened_at"
 )
@@ -237,17 +264,32 @@ VALUES (
     :entite, :instance, :task_reference_id, :title, :description, :required,
     (CAST(:reference_date AS date) + (:due_offset_days || ' days')::interval) AT TIME ZONE 'UTC'
 )
-RETURNING {_COLONNES_TACHE}
+RETURNING {COLONNES_TACHE}
 """  # noqa: S608
 
 _LIRE_LES_TACHES_DE_L_INSTANCE: Final = f"""
-SELECT {_COLONNES_TACHE} FROM onboarding_instance_task
+SELECT {COLONNES_TACHE} FROM onboarding_instance_task
 WHERE onboarding_instance_id = :instance
 ORDER BY due_at
 """  # noqa: S608
 
+#  L'index partiel de `T1` garantit AU PLUS UNE ligne `state = 'active'` par
+#  appartenance — `T8` s'appuie dessus pour resoudre SANS ambiguite l'instance
+#  dont les taches sont actionnables, plutot que « la plus recente » (qui
+#  pourrait etre `replaced`/`archived` une fois `T10`/`T11` ecrites).
+_LIRE_L_INSTANCE_ACTIVE: Final = f"""
+SELECT {_COLONNES_INSTANCE} FROM onboarding_instance
+WHERE entity_membership_id = :appartenance AND entity_id = :entite AND state = 'active'
+"""  # noqa: S608
 
-def _tache_depuis_la_ligne(ligne: Any) -> TacheDuParcours:
+_INSERER_EVENEMENT_TACHE: Final = """
+INSERT INTO onboarding_task_event
+    (entity_id, onboarding_instance_task_id, event_type, occurred_at, actor_person_id, reason)
+VALUES (:entite, :tache, :type_evenement, :instant, :acteur, :motif)
+"""
+
+
+def tache_depuis_la_ligne(ligne: Any) -> TacheDuParcours:
     return TacheDuParcours(
         id=uuid.UUID(str(ligne["id"])),
         task_reference_id=uuid.UUID(str(ligne["task_reference_id"])),
@@ -341,11 +383,56 @@ def lire_l_appartenance(
     )
 
 
+def lire_l_instance_active(
+    connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
+) -> Instance | None:
+    """L'instance `active` de cette appartenance, s'il en existe une — jamais
+    « la plus recente » : `T8` (et plus tard `T9`) n'agissent QUE sur un
+    parcours vivant, jamais sur une instance `replaced`/`archived`/`completed`
+    (`T10`/`T11`, pas encore ecrites). L'index partiel de `T1` garantit qu'au
+    plus une ligne correspond."""
+    ligne = (
+        connexion.execute(
+            text(_LIRE_L_INSTANCE_ACTIVE), {"appartenance": appartenance, "entite": entite}
+        )
+        .mappings()
+        .one_or_none()
+    )
+    return None if ligne is None else _instance_depuis_la_ligne(ligne)
+
+
+def enregistrer_un_evenement_de_tache(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    tache: uuid.UUID,
+    type_evenement: str,
+    instant: dt.datetime,
+    acteur: uuid.UUID | None,
+    motif: str | None = None,
+) -> None:
+    """Journal §13.7 — un acteur NULLABLE, meme nature que `auth_event`
+    (LOT 3) : voir le commentaire du modele sur `OnboardingTaskEvent`. Partagee
+    par `affecter_un_parcours` (`ASSIGNED`, correctif de `T7`) et par
+    `app/onboarding/taches.py` (`COMPLETED`/`CANCELLED`, `T8`)."""
+    connexion.execute(
+        text(_INSERER_EVENEMENT_TACHE),
+        {
+            "entite": entite,
+            "tache": tache,
+            "type_evenement": type_evenement,
+            "instant": instant,
+            "acteur": acteur,
+            "motif": motif,
+        },
+    )
+
+
 def _lire_les_taches(connexion: Connection, *, instance: uuid.UUID) -> tuple[TacheDuParcours, ...]:
     lignes = connexion.execute(
         text(_LIRE_LES_TACHES_DE_L_INSTANCE), {"instance": instance}
     ).mappings()
-    return tuple(_tache_depuis_la_ligne(ligne) for ligne in lignes)
+    return tuple(tache_depuis_la_ligne(ligne) for ligne in lignes)
 
 
 def lire_le_parcours(
@@ -379,6 +466,7 @@ def affecter_un_parcours(
     entite: uuid.UUID,
     appartenance: uuid.UUID,
     cible: Appartenance,
+    acteur: uuid.UUID,
     instant: dt.datetime,
 ) -> Parcours:
     """Matrice §8.1 « Affecter un parcours » — modele §13.5/§13.4.
@@ -392,6 +480,11 @@ def affecter_un_parcours(
     modele a instancier par la priorite DSM > CIRCLE > ENTITY > GLOBAL (voir
     l'en-tete), snapshotte ses taches, et refuse 409 sur une seconde instance
     active — l'index partiel de `T1` le garantit, cette fonction le traduit.
+
+    `acteur` : CORRECTIF trouve en ecrivant `T8` (voir l'en-tete du module) —
+    une tache snapshottee pose desormais son evenement `ASSIGNED`, avec pour
+    acteur la personne qui a affecte ce parcours, jamais `None` : « Affecter
+    un parcours » est un geste HUMAIN (§8.1), pas un automatisme.
     """
     reference_date = cible.arrival_date
 
@@ -463,7 +556,16 @@ def affecter_un_parcours(
             .mappings()
             .one()
         )
-        ecrites.append(_tache_depuis_la_ligne(ecrite))
+        tache_ecrite = tache_depuis_la_ligne(ecrite)
+        enregistrer_un_evenement_de_tache(
+            connexion,
+            entite=entite,
+            tache=tache_ecrite.id,
+            type_evenement=TypeEvenementTache.ASSIGNED.value,
+            instant=instant,
+            acteur=acteur,
+        )
+        ecrites.append(tache_ecrite)
     taches = tuple(ecrites)
     return Parcours(
         instance=instance,

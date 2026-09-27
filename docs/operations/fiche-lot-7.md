@@ -3,8 +3,8 @@
 **Intitulé :** Fiches d'arrivée et onboarding
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
-**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T7` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`, `DEC-605`, `DEC-606`
-**Dernière mise à jour :** 27 septembre 2026 — `T7`
+**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T8` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`, `DEC-605`, `DEC-606` (+ correctif `DEC-607`), `DEC-608`
+**Dernière mise à jour :** 27 septembre 2026 — `T8`
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -111,7 +111,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T5`~~ | ~~Les modèles et leurs versions — `onboarding_template`, `_version`, `_task`, scopes `GLOBAL/ENTITY/DSM/CIRCLE`~~ **FAITE le 26/09/2026**, `DEC-604` | `US003` (1/2) | une version publiée est **immuable** (modèle §13.3) : le témoin est une tentative de modification d'une version déjà publiée, refusée. **Contrairement au catalogue de `T4`, `Consultants`/`Cercle` NE se réduisent PAS à l'entité** : `onboarding_template` porte de vraies colonnes de portée, un DSM/Booster ne gère que SON propre DSM-ship/cercle |
 | ~~`T6`~~ | ~~Cycle de vie d'un modèle — publication, archivage, restauration~~ **FAITE le 26/09/2026**, `DEC-605` | `US003` (2/2) | **`ECART-066` (volet version de modèle) résolu ICI, avant d'écrire la route** : l'ESM restaure librement dans son entité. Le volet « parcours » (§8.1) reste ouvert pour `T11`. « Duplication » du libellé initial n'était rien de plus que la création de version déjà livrée par `T5` — aucune quatrième route |
 | ~~`T7`~~ | ~~Création d'une instance depuis la date d'arrivée — lecture du parcours, progression calculée~~ **FAITE le 27/09/2026**, `DEC-606` | `US004` | ferme le critère 3 (témoin positif, §1.2) ; « une seule instance active par appartenance » (modèle §13.5) éprouvée au volume (40 affectations distinctes), pas seulement à l'unité. Priorité de résolution du modèle DSM > CIRCLE > ENTITY > GLOBAL, arbitrage de Jonathan |
-| `T8` | Compléter et annuler une tâche dans les cinq minutes | `US005` | la fenêtre de cinq minutes doit être **injectable**, jamais un `sleep()` de test ni une horloge figée — même discipline que `T` de date du LOT 6, §7.47 |
+| ~~`T8`~~ | ~~Compléter et annuler une tâche dans les cinq minutes~~ **FAITE le 27/09/2026**, `DEC-608` | `US005` | les deux lignes du §8.1 sont `Soi` **seul** (grille la plus stricte du module, `DSM`/`BOOST` à tiret malgré un rattachement réel) ; `annuler_la_completion` ne produit **jamais** `cancelled` — la tâche redevient `todo` ; la fenêtre de cinq minutes est **ancrée à `completed_at`**, jamais une horloge mockée. **Correctif `DEC-607`** : `T7` ne posait aucun événement `onboarding_task_event`, `ASSIGNED` est désormais posé par l'affectation |
 | `T9` | Réouverture après cinq minutes — motif obligatoire, `onboarding_task_event` | `US006`, ferme `§30.15` | seuls `ESM`, `ADM-E`, `SUPER` — le témoin négatif porte sur `DSM` et `BOOST`, **explicitement exclus** par §8.3, pas seulement absents de la liste |
 | `T10` | Changement automatique mission ↔ intercontrat | `US007`, ferme `§30.14` | l'ancienne instance passe à `replaced`, la nouvelle instantiée depuis le modèle adapté, **les tâches communes déjà terminées conservées par référence stable** — c'est `ECART-013` mis à l'épreuve pour de vrai |
 | `T11` | Archivage automatique du parcours terminé + révocation au départ | ferme `§30.13` | deux déclencheurs distincts : complétion totale des tâches obligatoires (modèle §13.5), et départ d'un collaborateur — qui doit **s'accrocher** à `enregistrer_un_depart` (LOT 3, `T9`) sans le dupliquer (§7.27) |

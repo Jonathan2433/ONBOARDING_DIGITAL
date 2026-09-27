@@ -1394,6 +1394,40 @@
         "La progression est COMPTEE a chaque appel, jamais stockee — critere de",
         "sortie n°3 du lot (roadmap §LOT 7)."
       ]
+    },
+    {
+      "cle": "completionDUneTacheDOnboarding",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Marquer une tache comme terminee — LOT 7, T8, matrice §8.1.",
+        "Ecriture pure : aucun module de contrat propre, `ReponseDeTacheDuParcours`",
+        "est deja validee comme partie de `parcoursOnboarding.ts` (T7).",
+        "`Soi` UNIQUEMENT — tiret partout ailleurs, y compris DSM/BOOST qui portent",
+        "pourtant un droit sur la LECTURE du parcours (piege n°1, fiche-lot-7.md).",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `todo`.",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
+    },
+    {
+      "cle": "annulationDeLaCompletionDUneTache",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/annulation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Annuler la completion d'une tache dans les cinq minutes — LOT 7, T8,",
+        "matrice §8.1/§8.3. Ecriture pure : aucun module de contrat propre.",
+        "`Soi` UNIQUEMENT. La tache redevient `todo`, jamais `cancelled`.",
+        "La fenetre de cinq minutes est ancree a `completed_at`, jamais a une",
+        "horloge mockee — voir `app/onboarding/taches.py`.",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `completed`.",
+        "409 `delai_d_annulation_depasse` : plus de cinq minutes — seule une",
+        "reouverture administrative (T9) agit ensuite.",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

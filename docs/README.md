@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `606` en usage | `DEC-607` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `608` en usage | `DEC-609` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -469,12 +469,41 @@ colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, tro
 > COMMIT** : `:parametre::type` n'est pas résolu par SQLAlchemy `text()`, corrigé en
 > `CAST(:parametre AS type)`. Détail : `compte-rendu-t7-lot-7.md`.
 
-**1 956 tests** désormais. La prochaine est `T8`, compléter et annuler une tâche dans les cinq
-minutes.
+**`T8` EST FAITE** le 27/09/2026, `DEC-608` : terminer et annuler une tâche dans les cinq minutes —
+`POST …/onboarding-parcours/taches/{tache}/completion`, `/annulation`. Aucune nouvelle table.
+
+> **LES DEUX LIGNES DU §8.1 SONT `Soi` SEUL, LA GRILLE LA PLUS STRICTE DU MODULE** : contrairement
+> à la lecture du parcours (`T7`), `DSM`/`BOOST` n'ont ICI aucun droit malgré leur rattachement réel
+> — piège n°1 de `fiche-lot-7.md` §2.1. Le témoin qui compte n'est pas un rôle sans rattachement,
+> c'est un `DSM` RATTACHÉ à ce consultant précis, refusé d'agir sur sa tâche alors qu'il lit
+> pleinement son parcours.
+>
+> **`annuler_la_completion` NE PRODUIT JAMAIS L'ÉTAT `cancelled`.** Les quatre états du modèle §13.6
+> laissaient croire à une transition directe `completed` → `cancelled` ; `cancelled` est réservé à
+> `T10` (une tâche rendue obsolète par un changement de statut). Annuler dans les cinq minutes
+> redonne `todo`, un témoin re-termine la même tâche après l'avoir annulée pour le prouver
+> directement.
+>
+> **LA FENÊTRE DE CINQ MINUTES EST ANCRÉE À `completed_at`, JAMAIS À UNE HORLOGE MOCKÉE** — exigence
+> explicite de `fiche-lot-7.md` §3 : la précondition compare l'instant réel de la requête à une
+> valeur déjà stockée en base, et le témoin « hors délai » recule cette valeur par SQL, jamais un
+> `sleep()`. **LA PRÉCONDITION EST DANS LE `WHERE`, LE DIAGNOSTIC DANS UNE LECTURE SÉPARÉE APRÈS
+> L'ÉCHEC** : contrairement à `cycle_de_vie.py` (`T6`, un seul code pour toute cause), `T8`
+> distingue `transition_de_tache_invalide` de `delai_d_annulation_depasse`, parce que la différence
+> oriente vers `T9` (réouverture administrative) dans le second cas seulement.
+>
+> **CORRECTIF `DEC-607`, TROUVÉ EN ÉCRIVANT `T8` : `T7` NE POSAIT AUCUN ÉVÉNEMENT
+> `onboarding_task_event`**, malgré le critère de sortie 4 (« écrit à `T7`-`T10` ») — un résidu non
+> nommé dans son propre compte rendu. `ASSIGNED` est désormais posé par l'affectation elle-même, via
+> une fonction partagée avec `COMPLETED`/`CANCELLED`. **MON PROPRE DÉCOR A REJOUÉ LE DÉFAUT `T7-5`** :
+> un modèle `GLOBAL` créé avec la session de l'ESM, refusé 403 — corrigé en `ENTITY`. Détail :
+> `compte-rendu-t8-lot-7.md`.
+
+**1 971 tests** désormais. La prochaine est `T9`, réouvrir une tâche après cinq minutes.
 
 `ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
 « version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
-bloquant pour `T11`** — sans objet pour `T7`, qui n'archive ni ne restaure aucun parcours.
+bloquant pour `T11`** — sans objet pour `T8`, qui n'archive ni ne restaure aucun parcours.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 

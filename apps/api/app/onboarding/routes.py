@@ -1,5 +1,6 @@
 """Les routes de l'onboarding — LOT 7, `T2`/`T3` (fiche), `T4` (catalogue), `T5`
-(modeles), `T6` (cycle de vie d'une version).
+(modeles), `T6` (cycle de vie d'une version), `T7` (instance depuis l'arrivee),
+`T8` (terminer/annuler une tache).
 
 Montee sous `/entities/{code}/people/{appartenance}/arrival-profile`, a cote
 des routes de `app.people.routes` dont elle reutilise la resolution d'entite
@@ -47,6 +48,25 @@ depuis le LOT 4.
   cette ligne precise — pas de sous-cas « son propre modele » comme ailleurs.
   Voir `app/onboarding/cycle_de_vie.py` pour les trois transitions et la
   resolution d'`ECART-066`.
+
+`T7` AJOUTE L'INSTANCE DE PARCOURS, SOUS `.../people/{appartenance}/onboarding-parcours`
+
+  Retour a une cible precise, comme `T2`/`T3` : la garde COARSE
+  (`exiger_un_role_dans_l_entite`) est doublee d'un permis FIN qui verifie le
+  rattachement DSM/Booster (« Affecter ») ou accepte `Soi` en plus
+  (« Consulter »). Voir `app/onboarding/instances.py` pour la priorite de
+  resolution du modele et `app/onboarding/perimetre.py` pour la TROISIEME
+  grille du module — `DSM` y a « Consultants » PLEIN, a la difference de `T2`.
+
+`T8` AJOUTE TERMINER/ANNULER UNE TACHE, SOUS `.../onboarding-parcours/taches/{tache}/...`
+
+  **AUCUNE GARDE COARSE** : `Soi` est la SEULE porte possible sur ces deux
+  lignes du §8.1 (QUATRIEME grille, `perimetre.peut_agir_sur_sa_tache_
+  onboarding`), donc la dependance est `exiger_une_session`, comme la LECTURE
+  du parcours — jamais `exiger_un_role_dans_l_entite`, qui refuserait a tort
+  un nouvel arrivant sans aucun role d'entite. Les deux routes resolvent
+  l'instance ACTIVE de l'appartenance (`lire_l_instance_active`), jamais « la
+  plus recente » : voir `app/onboarding/taches.py`.
 """
 
 from __future__ import annotations
@@ -100,12 +120,15 @@ from app.onboarding.gabarits import (
     lire_une_version,
 )
 from app.onboarding.instances import (
+    CODE_AUCUN_PARCOURS_ACTIF,
+    MESSAGE_AUCUN_PARCOURS_ACTIF,
     Instance,
     Parcours,
     Progression,
     TacheDuParcours,
     affecter_un_parcours,
     lire_l_appartenance,
+    lire_l_instance_active,
     lire_le_parcours,
 )
 from app.onboarding.perimetre import (
@@ -114,6 +137,7 @@ from app.onboarding.perimetre import (
     ROLES_DE_RESTAURATION_DES_MODELES,
     ROLES_DU_PARCOURS_ONBOARDING,
     peut_affecter_un_parcours_onboarding,
+    peut_agir_sur_sa_tache_onboarding,
     peut_completer_la_fiche_arrivee,
     peut_corriger_la_fiche_arrivee_apres_publication,
     peut_creer_une_tache_de_reference_globale,
@@ -123,6 +147,7 @@ from app.onboarding.perimetre import (
     peut_restaurer_une_version_de_modele,
     peut_valider_et_publier_la_fiche_arrivee,
 )
+from app.onboarding.taches import annuler_la_completion, terminer_une_tache
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
     MESSAGE_ROLE_REFUSE,
@@ -1697,7 +1722,12 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_403_FORBIDDEN,
                 )
             parcours = affecter_un_parcours(
-                connexion, entite=entite.id, appartenance=appartenance, cible=cible, instant=instant
+                connexion,
+                entite=entite.id,
+                appartenance=appartenance,
+                cible=cible,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _parcours_en_reponse(parcours)
 
@@ -1768,5 +1798,198 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 )
             parcours = lire_le_parcours(connexion, entite=entite.id, appartenance=appartenance)
         return _parcours_en_reponse(parcours)
+
+    #  §8.1 « Marquer une tache comme terminee » / « Annuler la completion
+    #  dans les 5 minutes » : PAS de garde COARSE par role — `Soi` est la
+    #  SEULE porte, verifiee par `peut_agir_sur_sa_tache_onboarding` apres
+    #  resolution de la cible. Meme dependance que la LECTURE du parcours
+    #  (`exiger_une_session`), jamais `exiger_un_role_dans_l_entite` : un
+    #  nouvel arrivant sans aucun role d'entite doit pouvoir agir sur SA
+    #  propre tache.
+
+    def _resoudre_l_instance_active_ou_404(
+        connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
+    ) -> Instance:
+        instance_active = lire_l_instance_active(
+            connexion, entite=entite, appartenance=appartenance
+        )
+        if instance_active is None:
+            raise ErreurApplicative(
+                code=CODE_AUCUN_PARCOURS_ACTIF,
+                message=MESSAGE_AUCUN_PARCOURS_ACTIF,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return instance_active
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTacheDuParcours,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : seul le nouvel arrivant lui-meme agit sur sa tache."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou appartenance inconnues. `aucun_parcours_actif` : aucune "
+                    "instance active. `tache_introuvable` : identifiant hors de ce parcours."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_tache_invalide` : la tache n'est pas `todo` — deja "
+                    "terminee, reouverte ou annulee."
+                )
+            },
+        },
+        summary="Marquer une tache comme terminee",
+        description=(
+            "Matrice §8.1 « Marquer une tache comme terminee ». `Soi` uniquement — "
+            "tiret partout ailleurs, y compris DSM/BOOST (piege n°1, fiche-lot-7.md §2.1)."
+        ),
+    )
+    def terminer_une_tache_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        tache: Annotated[uuid.UUID, Path(description="L'identifiant de la tache d'instance")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDeTacheDuParcours:
+        """Terminer une tache — matrice §8.1, modele §13.6."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            if not peut_agir_sur_sa_tache_onboarding(
+                acteur=appelant.personne, cible_personne=cible.person_id
+            ):
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            instance_active = _resoudre_l_instance_active_ou_404(
+                connexion, entite=entite.id, appartenance=appartenance
+            )
+            terminee = terminer_une_tache(
+                connexion,
+                entite=entite.id,
+                instance=instance_active.id,
+                tache=tache,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return _tache_du_parcours_en_reponse(terminee)
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/annulation",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTacheDuParcours,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : seul le nouvel arrivant lui-meme agit sur sa tache."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou appartenance inconnues. `aucun_parcours_actif` : aucune "
+                    "instance active. `tache_introuvable` : identifiant hors de ce parcours."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`transition_de_tache_invalide` : la tache n'est pas `completed`. "
+                    "`delai_d_annulation_depasse` : plus de cinq minutes depuis la "
+                    "completion — matrice §8.3, seule une reouverture administrative agit."
+                )
+            },
+        },
+        summary="Annuler la completion d'une tache dans les cinq minutes",
+        description=(
+            "Matrice §8.1 « Annuler la completion dans les 5 minutes ». `Soi` uniquement. "
+            "La tache redevient `todo`, jamais `cancelled` — voir `app/onboarding/taches.py`."
+        ),
+    )
+    def annuler_la_completion_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        tache: Annotated[uuid.UUID, Path(description="L'identifiant de la tache d'instance")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDeTacheDuParcours:
+        """Annuler une completion dans les cinq minutes — matrice §8.1/§8.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            if not peut_agir_sur_sa_tache_onboarding(
+                acteur=appelant.personne, cible_personne=cible.person_id
+            ):
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            instance_active = _resoudre_l_instance_active_ou_404(
+                connexion, entite=entite.id, appartenance=appartenance
+            )
+            annulee = annuler_la_completion(
+                connexion,
+                entite=entite.id,
+                instance=instance_active.id,
+                tache=tache,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return _tache_du_parcours_en_reponse(annulee)
 
     return routeur
