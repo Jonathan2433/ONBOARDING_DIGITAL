@@ -140,6 +140,40 @@ CORRECTIF TROUVE EN ECRIVANT `T8` : L'EVENEMENT `ASSIGNED` MANQUAIT
   de_tache` — la MEME fonction que `T8` emploie pour `COMPLETED`/`CANCELLED`,
   §7.27 : une seule ecriture d'evenement, jamais une par sous-etape.
 
+CE QUE `T11` AJOUTE : DEUX DECLENCHEURS AUTOMATIQUES, DEUX GESTES MANUELS
+
+  Matrice §8.1, ligne « Archiver un parcours termine » : `NEW` = Automatique,
+  `ESM`/`ADM-E`/`SUPER` = Entite/Entite/Global, tous les autres a tiret.
+  §8.2 (regle metier) : « le parcours est termine lorsque toutes les taches
+  obligatoires sont terminees » ET « le depart d'un collaborateur archive le
+  parcours et revoque les sessions » — DEUX evenements distincts, DEUX
+  fonctions distinctes :
+
+    - `archiver_le_parcours_si_termine`, appelee automatiquement par
+      `taches.terminer_une_tache` apres CHAQUE completion — transition directe
+      `active -> archived`, `completed_at` POSE (ce parcours a ete acheve) ;
+    - `archiver_le_parcours_au_depart`, appelee automatiquement par
+      `app.people.archivage.archiver_un_profil` AU DEPART (jamais a
+      l'archivage fonctionnel ulterieur de l'appartenance) — meme transition,
+      `completed_at` JAMAIS pose (ce parcours a ete INTERROMPU, pas acheve).
+
+  **AUCUNE DES DEUX N'A DE ROUTE PROPRE** — meme motif qu'au `T10` : la
+  premiere est un sous-effet de « Marquer une tache comme terminee » (`T8`,
+  deja gardee par `Soi`), la seconde un sous-effet du depart (LOT 3 `T9`, deja
+  gardee par la route d'archivage d'un profil, LOT 5 `T8`). Poser une garde
+  ici serait une regle pour un acteur deja verifie ailleurs (§7.27).
+
+  **DEUX GESTES MANUELS ONT NEANMOINS LEUR PROPRE ROUTE**, parce que la
+  matrice leur accorde un droit qui n'est le sous-effet d'AUCUNE autre action
+  deja gardee : « Archiver un parcours termine » (le filet manuel de
+  `ESM`/`ADM-E`/`SUPER` sur un parcours que l'automatique n'aurait pas
+  archive) et « Restaurer un parcours archive » (`ECART-066`, volet parcours,
+  RESOLU le 28/09/2026 — l'ESM restaure librement dans son entite, meme
+  regime que la restauration d'une version de modele, `T6`/`DEC-605`).
+  `perimetre.ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS` gouverne les
+  deux : memes trois roles que la reouverture (`T9`), DSM/BOOST EXCLUS EN
+  BLOC — aucune de ces deux lignes n'admet de sous-cas « son propre ».
+
 `COLONNES_TACHE` ET `tache_depuis_la_ligne` SONT PUBLICS, PAS UN OUBLI
 
   `T8` (`app/onboarding/taches.py`) ecrit `onboarding_instance_task` a son
@@ -182,6 +216,23 @@ MESSAGE_PARCOURS_DEJA_ACTIF: Final = (
 CODE_AUCUN_PARCOURS_ACTIF: Final = "aucun_parcours_actif"
 MESSAGE_AUCUN_PARCOURS_ACTIF: Final = (
     "Aucune instance active n'existe pour cette appartenance — modele §13.5."
+)
+
+CODE_PARCOURS_NON_TERMINE: Final = "parcours_non_termine"
+MESSAGE_PARCOURS_NON_TERMINE: Final = (
+    "Toutes les taches obligatoires ne sont pas encore completees — matrice §8.1, "
+    "« Archiver un parcours termine »."
+)
+
+CODE_PARCOURS_NON_ARCHIVE: Final = "parcours_non_archivable"
+MESSAGE_PARCOURS_NON_ARCHIVE: Final = (
+    "Ce parcours n'est pas archive, ou une autre instance est deja active pour "
+    "cette appartenance — matrice §8.1, « Restaurer un parcours archive »."
+)
+
+CODE_INSTANCE_INTROUVABLE: Final = "instance_introuvable"
+MESSAGE_INSTANCE_INTROUVABLE: Final = (
+    "Aucune instance de ce parcours ne correspond a cet identifiant, pour cette appartenance."
 )
 
 
@@ -318,6 +369,16 @@ ORDER BY started_at DESC
 LIMIT 1
 """  # noqa: S608
 
+#  `T11`, garde 404 de la restauration : PLUSIEURS instances archivees ou
+#  remplacees peuvent exister historiquement pour la MEME appartenance (un
+#  changement de statut en cree une nouvelle a chaque fois, `T10`) — jamais
+#  « la plus recente », contrairement a `lire_le_parcours`. Seul l'appelant
+#  sait LAQUELLE restaurer, d'ou l'identifiant explicite dans le chemin.
+_LIRE_UNE_INSTANCE: Final = f"""
+SELECT {_COLONNES_INSTANCE} FROM onboarding_instance
+WHERE id = :instance AND entity_membership_id = :appartenance AND entity_id = :entite
+"""  # noqa: S608
+
 _TACHES_DE_LA_VERSION: Final = """
 SELECT tt.task_reference_id, tt.required, tt.due_offset_days,
        COALESCE(tt.title_override, tr.title) AS title,
@@ -358,6 +419,18 @@ ORDER BY due_at
 _LIRE_L_INSTANCE_ACTIVE: Final = f"""
 SELECT {_COLONNES_INSTANCE} FROM onboarding_instance
 WHERE entity_membership_id = :appartenance AND entity_id = :entite AND state = 'active'
+"""  # noqa: S608
+
+#  `T11` — voir `lire_l_instance_actionnable` : `active` OU `archived`
+#  (l'archivage AUTOMATIQUE ne doit pas fermer la fenetre de cinq minutes de
+#  `T8`/`T9`), JAMAIS `replaced` (`T10`, une instance supplantee ne recoit
+#  plus AUCUNE action). La plus RECENTE des deux, comme `lire_le_parcours`.
+_LIRE_L_INSTANCE_ACTIONNABLE: Final = f"""
+SELECT {_COLONNES_INSTANCE} FROM onboarding_instance
+WHERE entity_membership_id = :appartenance AND entity_id = :entite
+  AND state IN ('active', 'archived')
+ORDER BY started_at DESC
+LIMIT 1
 """  # noqa: S608
 
 _INSERER_EVENEMENT_TACHE: Final = """
@@ -571,6 +644,185 @@ def remplacer_le_parcours_apres_changement_de_statut(
         )
 
 
+#  `T11` — matrice §8.1 « Archiver un parcours termine », modele §13.5 :
+#  « l'archivage automatique intervient apres completion totale des taches
+#  obligatoires ». La precondition est DANS le `WHERE`, jamais une lecture
+#  prealable : memes discipline que `taches.py` (T8/T9) et que
+#  `cycle_de_vie.py` (T6) pour la restauration d'une version. `completed_at`
+#  EST pose : ce parcours a ete acheve, pas interrompu — voir la variante
+#  « au depart » plus bas, qui ne le pose jamais.
+_ARCHIVER_LE_PARCOURS_TERMINE: Final = f"""
+UPDATE onboarding_instance SET state = 'archived', completed_at = :instant
+ WHERE id = :instance AND entity_id = :entite AND state = 'active'
+   AND NOT EXISTS (
+       SELECT 1 FROM onboarding_instance_task
+       WHERE onboarding_instance_id = :instance AND required = true AND state != 'completed'
+   )
+RETURNING {_COLONNES_INSTANCE}
+"""  # noqa: S608
+
+#  `T11` — matrice §8.2 « le depart d'un collaborateur archive le parcours ».
+#  Aucune precondition de completion : un depart archive le parcours qu'il
+#  soit termine ou non, et `completed_at` reste NULL — ce parcours n'a pas ete
+#  acheve, il a ete INTERROMPU. Appelee par `app.people.archivage.archiver_
+#  un_profil`, jamais dupliquee — voir l'en-tete du module.
+_ARCHIVER_LE_PARCOURS_AU_DEPART: Final = """
+UPDATE onboarding_instance SET state = 'archived'
+ WHERE entity_membership_id = :appartenance AND entity_id = :entite AND state = 'active'
+RETURNING id
+"""
+
+#  `T11` — matrice §8.1 « Restaurer un parcours archive », `ECART-066` (volet
+#  parcours) resolu le 28/09/2026 : l'ESM restaure librement dans son entite,
+#  meme regime que `peut_restaurer_une_version_de_modele` (T6, DEC-605). La
+#  sous-requete correlee refait, de maniere LISIBLE, ce que l'index partiel de
+#  `T1` (`uq_onboarding_instance_membership_active`) interdirait de toute
+#  facon — §7.32, mais en refusant PROPREMENT plutot que de laisser remonter
+#  une `IntegrityError` brute, meme parti que `cycle_de_vie.py` (un seul code
+#  de refus, jamais une distinction des causes). `completed_at` est
+#  DESAPPOSE : une instance de nouveau `active` ne doit pas porter la marque
+#  d'un archivage passe — meme motif que `departure_date` dans
+#  `restaurer_un_profil` (LOT 5). Aucune tache n'est rouverte : restaurer un
+#  PARCOURS n'est pas restaurer une PERSONNE, et rien dans le corpus ne
+#  l'exige.
+_RESTAURER_LE_PARCOURS: Final = f"""
+UPDATE onboarding_instance
+   SET state = 'active', completed_at = NULL
+ WHERE id = :instance AND entity_id = :entite AND state = 'archived'
+   AND NOT EXISTS (
+       SELECT 1 FROM onboarding_instance AS autre
+       WHERE autre.entity_membership_id = onboarding_instance.entity_membership_id
+         AND autre.entity_id = onboarding_instance.entity_id
+         AND autre.state = 'active'
+   )
+RETURNING {_COLONNES_INSTANCE}
+"""  # noqa: S608
+
+
+def lire_une_instance(
+    connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID, instance: uuid.UUID
+) -> Instance | None:
+    """Une instance PRECISE de cette appartenance, quel que soit son etat —
+    contrairement a `lire_l_instance_active` (`active` seule) et a `lire_le_
+    parcours` (la plus recente seule). Sert la garde 404 de la restauration
+    (`T11`), voir l'en-tete de `_LIRE_UNE_INSTANCE`."""
+    ligne = (
+        connexion.execute(
+            text(_LIRE_UNE_INSTANCE),
+            {"instance": instance, "appartenance": appartenance, "entite": entite},
+        )
+        .mappings()
+        .one_or_none()
+    )
+    return None if ligne is None else _instance_depuis_la_ligne(ligne)
+
+
+def archiver_le_parcours_si_termine(
+    connexion: Connection, *, entite: uuid.UUID, instance: uuid.UUID, instant: dt.datetime
+) -> None:
+    """Appelee AUTOMATIQUEMENT par `app.onboarding.taches.terminer_une_tache`,
+    apres CHAQUE completion — matrice §8.1, colonne `NEW` = Automatique.
+
+    Ne fait RIEN, silencieusement, si une tache obligatoire reste `todo` ou
+    `reopened` — ce n'est pas un echec, c'est le cas courant (la tache qui
+    vient d'etre terminee n'etait pas la derniere). Aucune erreur n'est levee
+    ici : completer une tache reste un succes, que l'instance se termine ou
+    non par le meme geste.
+    """
+    connexion.execute(
+        text(_ARCHIVER_LE_PARCOURS_TERMINE),
+        {"instance": instance, "entite": entite, "instant": instant},
+    )
+
+
+def archiver_un_parcours_termine(
+    connexion: Connection, *, entite: uuid.UUID, instance: uuid.UUID, instant: dt.datetime
+) -> Instance:
+    """Matrice §8.1 « Archiver un parcours termine » — `ESM`/`ADM-E`/`SUPER`
+    SEULEMENT (`perimetre.ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS`),
+    geste MANUEL, `T11`.
+
+    L'instance est DEJA resolue par la route (`_resoudre_l_instance_active_
+    ou_404`), meme discipline que `terminer_une_tache`/`reouvrir_une_tache`
+    (`T8`/`T9`) : le 404 « aucun parcours actif » est la garde de la ROUTE,
+    jamais de ce service.
+
+    Refuse 409 si une tache obligatoire n'est pas encore `completed` — cette
+    action n'archive qu'un parcours REELLEMENT termine, jamais un parcours en
+    cours. Le MEME geste se produit AUTOMATIQUEMENT (`archiver_le_parcours_
+    si_termine`, appelee par `taches.terminer_une_tache`) des que la derniere
+    tache obligatoire se termine : en pratique, cette route ne trouve donc
+    RIEN a faire dans le cas courant, l'automatique ayant deja agi. Elle sert
+    de filet pour le residuel — matrice §8.1, l'entitlement existe en toutes
+    lettres pour `ESM`/`ADM-E`/`SUPER`, independamment de ce que l'automatique
+    couvre deja.
+    """
+    ligne = (
+        connexion.execute(
+            text(_ARCHIVER_LE_PARCOURS_TERMINE),
+            {"instance": instance, "entite": entite, "instant": instant},
+        )
+        .mappings()
+        .one_or_none()
+    )
+    if ligne is None:
+        raise ErreurApplicative(
+            code=CODE_PARCOURS_NON_TERMINE,
+            message=MESSAGE_PARCOURS_NON_TERMINE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+    return _instance_depuis_la_ligne(ligne)
+
+
+def archiver_le_parcours_au_depart(
+    connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
+) -> uuid.UUID | None:
+    """Appelee AUTOMATIQUEMENT par `app.people.archivage.archiver_un_profil`,
+    au DEPART (`Active --> Departed`, LOT 3 `T9`) — jamais a l'archivage
+    FONCTIONNEL de l'appartenance elle-meme (`Departed --> Archived`), pour la
+    MEME raison que la revocation des sessions y est deja ancree : le §7.4 (LOT
+    3) interdit la fenetre entre les deux. Matrice §8.2 « le depart d'un
+    collaborateur archive le parcours ». `T11` s'accroche ici SANS dupliquer
+    la logique de revocation — voir l'en-tete du module.
+
+    Rend `None` sans rien ecrire si aucune instance active n'existait : un
+    collaborateur jamais affecte a un parcours, ou dont le parcours est deja
+    `replaced`/`archived`, n'a rien a archiver de plus.
+    """
+    ligne = connexion.execute(
+        text(_ARCHIVER_LE_PARCOURS_AU_DEPART), {"appartenance": appartenance, "entite": entite}
+    ).first()
+    return None if ligne is None else uuid.UUID(str(ligne[0]))
+
+
+def restaurer_un_parcours(
+    connexion: Connection, *, entite: uuid.UUID, instance: uuid.UUID
+) -> Instance:
+    """Matrice §8.1 « Restaurer un parcours archive » — `ESM`/`ADM-E`/`SUPER`
+    SEULEMENT, `T11`, `ECART-066` (volet parcours) RESOLU le 28/09/2026 :
+    l'ESM restaure librement dans son entite, meme regime que la restauration
+    d'une version de modele (`T6`, `DEC-605`) — voir l'en-tete de
+    `_RESTAURER_LE_PARCOURS`.
+
+    L'instance est deja resolue par la route (`lire_une_instance`, 404 si
+    absente de cette appartenance). Refuse 409 si elle n'est pas `archived`,
+    ou si l'appartenance porte deja une instance `active` — l'index partiel
+    de `T1` l'interdirait de toute facon.
+    """
+    ligne = (
+        connexion.execute(text(_RESTAURER_LE_PARCOURS), {"instance": instance, "entite": entite})
+        .mappings()
+        .one_or_none()
+    )
+    if ligne is None:
+        raise ErreurApplicative(
+            code=CODE_PARCOURS_NON_ARCHIVE,
+            message=MESSAGE_PARCOURS_NON_ARCHIVE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+    return _instance_depuis_la_ligne(ligne)
+
+
 def tache_depuis_la_ligne(ligne: Any) -> TacheDuParcours:
     return TacheDuParcours(
         id=uuid.UUID(str(ligne["id"])),
@@ -669,13 +921,54 @@ def lire_l_instance_active(
     connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
 ) -> Instance | None:
     """L'instance `active` de cette appartenance, s'il en existe une — jamais
-    « la plus recente » : `T8` (et plus tard `T9`) n'agissent QUE sur un
-    parcours vivant, jamais sur une instance `replaced`/`archived`/`completed`
-    (`T10`/`T11`, pas encore ecrites). L'index partiel de `T1` garantit qu'au
-    plus une ligne correspond."""
+    « la plus recente » : `T8`/`T9` n'agissent QUE sur un parcours vivant,
+    jamais sur une instance `replaced` (`T10`) ou `archived` (`T11`). L'index
+    partiel de `T1` garantit qu'au plus une ligne correspond.
+
+    **`EtatInstance.COMPLETED` RESTE DECLARE MAIS JAMAIS PRODUIT, ET C'EST
+    VERIFIE, PAS UN OUBLI.** Le modele §13.5 le liste comme une des quatre
+    valeurs possibles de `state`, mais AUCUNE section du corpus ne decrit de
+    transition qui y mene : le cahier dit partout « un parcours termine est
+    ARCHIVE » (§8.2, `US007`/`US008`), jamais « … est COMPLETE ». `T11`
+    transitionne donc directement `active -> archived` des la completion
+    totale des taches obligatoires, sans jamais ecrire `completed` — meme
+    classe que `Completed -> Preserved` pour les taches (`T10`, voir
+    l'en-tete) : une valeur du modele qui ne correspond a AUCUN etat
+    reellement ecrit."""
     ligne = (
         connexion.execute(
             text(_LIRE_L_INSTANCE_ACTIVE), {"appartenance": appartenance, "entite": entite}
+        )
+        .mappings()
+        .one_or_none()
+    )
+    return None if ligne is None else _instance_depuis_la_ligne(ligne)
+
+
+def lire_l_instance_actionnable(
+    connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
+) -> Instance | None:
+    """L'instance sur laquelle `taches.terminer_une_tache`/`annuler_la_
+    completion`/`reouvrir_une_tache` peuvent encore agir — `T11`.
+
+    **`active` OU `archived`, JAMAIS `replaced`.** L'archivage AUTOMATIQUE a
+    la completion (`archiver_le_parcours_si_termine`) ne doit PAS fermer la
+    fenetre de cinq minutes de `T8` ni la reouverture administrative de `T9` :
+    completer la DERNIERE tache obligatoire archive le parcours dans le MEME
+    geste, et le nouvel arrivant doit pouvoir annuler CETTE completion comme
+    n'importe quelle autre. Une instance `replaced` (`T10`), elle, est
+    VRAIMENT supplantee — ses taches restent frigees pour toujours, aucune
+    action n'y a jamais ete permise depuis `T10`.
+
+    La plus RECENTE des deux, meme discipline que `lire_le_parcours` : si un
+    NOUVEAU parcours a ete affecte apres l'archivage automatique d'un
+    precedent, les taches de l'ancien ne sont plus actionnables par cette
+    voie — `restaurer_un_parcours` (`T11`) est le geste EXPLICITE pour les
+    rouvrir, jamais une action de tache qui le ferait par effet de bord.
+    """
+    ligne = (
+        connexion.execute(
+            text(_LIRE_L_INSTANCE_ACTIONNABLE), {"appartenance": appartenance, "entite": entite}
         )
         .mappings()
         .one_or_none()

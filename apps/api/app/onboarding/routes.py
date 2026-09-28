@@ -135,17 +135,24 @@ from app.onboarding.gabarits import (
 )
 from app.onboarding.instances import (
     CODE_AUCUN_PARCOURS_ACTIF,
+    CODE_INSTANCE_INTROUVABLE,
     MESSAGE_AUCUN_PARCOURS_ACTIF,
+    MESSAGE_INSTANCE_INTROUVABLE,
     Instance,
     Parcours,
     Progression,
     TacheDuParcours,
     affecter_un_parcours,
+    archiver_un_parcours_termine,
     lire_l_appartenance,
+    lire_l_instance_actionnable,
     lire_l_instance_active,
     lire_le_parcours,
+    lire_une_instance,
+    restaurer_un_parcours,
 )
 from app.onboarding.perimetre import (
+    ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS,
     ROLES_DE_GESTION_DES_MODELES,
     ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES,
     ROLES_DE_REOUVERTURE_DES_TACHES,
@@ -1847,6 +1854,22 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             )
         return instance_active
 
+    #  `T11` : `active` OU `archived` (jamais `replaced`) — voir l'en-tete de
+    #  `instances.lire_l_instance_actionnable`. Employee par les TROIS routes
+    #  de taches (`T8`/`T9`), jamais par l'affectation ni par l'archivage
+    #  MANUEL, qui restent strictement `active` seule.
+    def _resoudre_l_instance_actionnable_ou_404(
+        connexion: Connection, *, entite: uuid.UUID, appartenance: uuid.UUID
+    ) -> Instance:
+        instance = lire_l_instance_actionnable(connexion, entite=entite, appartenance=appartenance)
+        if instance is None:
+            raise ErreurApplicative(
+                code=CODE_AUCUN_PARCOURS_ACTIF,
+                message=MESSAGE_AUCUN_PARCOURS_ACTIF,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        return instance
+
     @routeur.post(
         "/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion",
         status_code=status.HTTP_200_OK,
@@ -1919,7 +1942,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
-            instance_active = _resoudre_l_instance_active_ou_404(
+            instance_active = _resoudre_l_instance_actionnable_ou_404(
                 connexion, entite=entite.id, appartenance=appartenance
             )
             terminee = terminer_une_tache(
@@ -2005,7 +2028,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
-            instance_active = _resoudre_l_instance_active_ou_404(
+            instance_active = _resoudre_l_instance_actionnable_ou_404(
                 connexion, entite=entite.id, appartenance=appartenance
             )
             annulee = annuler_la_completion(
@@ -2096,7 +2119,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ENTITE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
-            instance_active = _resoudre_l_instance_active_ou_404(
+            instance_active = _resoudre_l_instance_actionnable_ou_404(
                 connexion, entite=entite.id, appartenance=appartenance
             )
             reouverte = reouvrir_une_tache(
@@ -2109,5 +2132,168 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 instant=instant,
             )
         return _tache_du_parcours_en_reponse(reouverte)
+
+    #  §8.1 « Archiver un parcours termine » / « Restaurer un parcours
+    #  archive » — `T11`, `ECART-066` (volet parcours) resolu. MEME garde
+    #  coarse que la reouverture (`T9`) : DSM/BOOST exclus en bloc, aucun
+    #  rattachement ni portee GLOBAL a distinguer.
+    garde_d_archivage_et_restauration = exiger_un_role_dans_l_entite(
+        parametres, ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS
+    )
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLInstance,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : seuls l'ESM, l'administrateur d'entite ou le "
+                    "super-administrateur archivent manuellement — DSM et Booster "
+                    "exclus, meme rattaches (matrice §8.1)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou appartenance inconnues. `aucun_parcours_actif` : "
+                    "aucune instance active a archiver."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`parcours_non_termine` : au moins une tache obligatoire n'est "
+                    "pas encore `completed` — matrice §8.1, « Archiver un parcours "
+                    "termine »."
+                )
+            },
+        },
+        summary="Archiver manuellement un parcours d'onboarding termine",
+        description=(
+            "Matrice §8.1 « Archiver un parcours termine ». Le MEME geste se "
+            "produit automatiquement des que la derniere tache obligatoire est "
+            "completee (`T8`) — cette route sert de filet pour le residuel, et ne "
+            "trouve donc normalement rien a faire dans le cas courant."
+        ),
+    )
+    def archiver_un_parcours_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_archivage_et_restauration),  # noqa: B008
+    ) -> ReponseDeLInstance:
+        """Archiver manuellement un parcours termine — matrice §8.1, `T11`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            instance_active = _resoudre_l_instance_active_ou_404(
+                connexion, entite=entite.id, appartenance=appartenance
+            )
+            archivee = archiver_un_parcours_termine(
+                connexion, entite=entite.id, instance=instance_active.id, instant=instant
+            )
+        return _instance_en_reponse(archivee)
+
+    @routeur.post(
+        "/entities/{code}/people/{appartenance}/onboarding-parcours/{instance}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLInstance,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : seuls l'ESM, l'administrateur d'entite ou le "
+                    "super-administrateur restaurent — DSM et Booster exclus, meme "
+                    "rattaches (matrice §8.1)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Entite ou appartenance inconnues. `instance_introuvable` : cet "
+                    "identifiant ne correspond a aucune instance de cette appartenance."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`parcours_non_archivable` : cette instance n'est pas `archived`, "
+                    "ou l'appartenance porte deja une instance active."
+                )
+            },
+        },
+        summary="Restaurer un parcours d'onboarding archive",
+        description=(
+            "Matrice §8.1 « Restaurer un parcours archive », `ECART-066` (volet "
+            "parcours) resolu le 28/09/2026 : l'ESM restaure librement dans son "
+            "entite. Ne rouvre AUCUNE tache — restaurer un parcours n'est pas "
+            "restaurer une personne."
+        ),
+    )
+    def restaurer_un_parcours_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
+        instance: Annotated[uuid.UUID, Path(description="L'identifiant de l'instance archivee")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_archivage_et_restauration),  # noqa: B008
+    ) -> ReponseDeLInstance:
+        """Restaurer un parcours archive — matrice §8.1, `T11`, `ECART-066`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            cible = lire_l_appartenance(connexion, entite=entite.id, appartenance=appartenance)
+            if cible is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            existante = lire_une_instance(
+                connexion, entite=entite.id, appartenance=appartenance, instance=instance
+            )
+            if existante is None:
+                raise ErreurApplicative(
+                    code=CODE_INSTANCE_INTROUVABLE,
+                    message=MESSAGE_INSTANCE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            restauree = restaurer_un_parcours(connexion, entite=entite.id, instance=instance)
+        return _instance_en_reponse(restauree)
 
     return routeur

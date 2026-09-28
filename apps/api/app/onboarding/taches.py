@@ -76,6 +76,16 @@ LA PRECONDITION EST DANS LE `WHERE`, LE DIAGNOSTIC DANS UNE LECTURE SEPAREE
   choisir entre les codes — un diagnostic, jamais une decision.
   `terminer_une_tache`, elle, n'a PAS de troisieme cause : ses deux etats de
   depart (`todo`, `reopened`) ne portent aucune precondition de fenetre.
+
+`T11` ACCROCHE L'ARCHIVAGE AUTOMATIQUE ICI, APRES CHAQUE COMPLETION
+
+  `terminer_une_tache` appelle desormais `instances.archiver_le_parcours_si_
+  termine` juste apres avoir pose l'evenement `COMPLETED` — matrice §8.1
+  « Archiver un parcours termine », colonne `NEW` = Automatique. Cette
+  fonction ne fait RIEN si une tache obligatoire reste `todo`/`reopened` :
+  c'est le cas courant, et ce n'est jamais un echec de `terminer_une_tache`
+  elle-meme. Voir `app/onboarding/instances.py` pour la transition et le
+  geste MANUEL equivalent, ouvert a `ESM`/`ADM-E`/`SUPER`.
 """
 
 from __future__ import annotations
@@ -91,6 +101,7 @@ from sqlalchemy.engine import Connection
 from app.onboarding.instances import (
     COLONNES_TACHE,
     TacheDuParcours,
+    archiver_le_parcours_si_termine,
     enregistrer_un_evenement_de_tache,
     tache_depuis_la_ligne,
 )
@@ -224,6 +235,11 @@ def terminer_une_tache(
         instant=instant,
         acteur=acteur,
     )
+    #  `T11` : archive l'instance SI cette completion etait la derniere tache
+    #  obligatoire — matrice §8.1 « Archiver un parcours termine », colonne
+    #  `NEW` = Automatique. Ne fait rien, silencieusement, sinon — voir
+    #  `app/onboarding/instances.py::archiver_le_parcours_si_termine`.
+    archiver_le_parcours_si_termine(connexion, entite=entite, instance=instance, instant=instant)
     return tache_depuis_la_ligne(ligne)
 
 
