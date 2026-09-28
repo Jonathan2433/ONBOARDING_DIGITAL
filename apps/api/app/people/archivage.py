@@ -79,6 +79,18 @@ DEUX REFUS QUE LA BASE PRODUIT, ET QU'IL FAUT TRADUIRE SANS LES MASQUER
   appartenance, donc possiblement une autre entite, que le §5.1 ne laisse pas
   lire a l'appelant. Elle est journalisee cote serveur -- meme parti que la
   miniature illisible de `T5`.
+
+LOT 7 `T11` S'ACCROCHE ICI, AU DEPART, SANS DUPLIQUER LA REVOCATION
+
+  Matrice §8.2 (onboarding) : « le depart d'un collaborateur archive le
+  parcours ». `archiver_un_profil` appelle desormais `app.onboarding.
+  instances.archiver_le_parcours_au_depart` juste apres `enregistrer_un_
+  depart`, dans la MEME branche `depuis == ACTIVE` -- jamais a l'archivage
+  fonctionnel qui suit, pour la meme raison que la revocation des sessions
+  est deja ancree au depart et non a l'archivage (§7.4 ci-dessus). Le
+  resultat est rapporte dans `Archivage.parcours_onboarding_archive`
+  (`None` si aucun parcours actif n'existait), jamais tu -- meme discipline
+  que les autres champs de rapport de ce module.
 """
 
 from __future__ import annotations
@@ -94,6 +106,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.onboarding.instances import archiver_le_parcours_au_depart
 from app.people.ecriture import (
     CODE_VERSION_OBSOLETE,
     MESSAGE_VERSION_OBSOLETE,
@@ -144,6 +157,7 @@ class Archivage:
     version: int
     etat_precedent: str
     revocations: tuple[Revocation, ...]
+    parcours_onboarding_archive: uuid.UUID | None = None
 
     @property
     def sessions_revoquees(self) -> int:
@@ -350,6 +364,7 @@ def archiver_un_profil(
     )
 
     revocations: list[Revocation] = []
+    parcours_archive: uuid.UUID | None = None
     try:
         #  **LE DEPART D'ABORD, ET SEULEMENT S'IL Y A LIEU.** `future` et
         #  `departed` vont droit a `archived` ; le §24.1 n'a pas d'autre chemin,
@@ -363,6 +378,13 @@ def archiver_un_profil(
                     instant=instant,
                     date_de_depart=date_de_depart,
                 )
+            )
+            #  LOT 7 `T11` : le parcours d'onboarding actif, s'il en existe un,
+            #  est archive AU DEPART lui-meme — jamais a l'archivage
+            #  fonctionnel ci-dessous — pour la meme raison que la revocation
+            #  y est deja ancree (§7.4). Voir l'en-tete du module.
+            parcours_archive = archiver_le_parcours_au_depart(
+                connexion, entite=entite, appartenance=cible
             )
         revocations.append(
             archiver_une_appartenance(connexion, appartenance=cible, instant=instant)
@@ -383,7 +405,12 @@ def archiver_un_profil(
             {"cible": cible, "entite": entite, "acteur": acteur, "instant": instant},
         ).scalar_one()
     )
-    return Archivage(version=version, etat_precedent=depuis, revocations=tuple(revocations))
+    return Archivage(
+        version=version,
+        etat_precedent=depuis,
+        revocations=tuple(revocations),
+        parcours_onboarding_archive=parcours_archive,
+    )
 
 
 def restaurer_un_profil(

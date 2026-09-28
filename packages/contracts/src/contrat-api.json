@@ -1448,6 +1448,48 @@
         "completion — le nouvel arrivant peut encore annuler lui-meme (T8).",
         "404 `aucun_parcours_actif` ou `tache_introuvable`."
       ]
+    },
+    {
+      "cle": "archivageManuelDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "InstanceDeParcours",
+      "role": [
+        "Archiver manuellement un parcours termine — LOT 7, T11, matrice §8.1.",
+        "Ecriture pure : aucun module de contrat propre, `InstanceDeParcours`",
+        "est deja validee comme partie de `parcoursOnboarding.ts` (T7).",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT — DSM",
+        "et Booster EXCLUS EN BLOC, meme grille que la reouverture (T9).",
+        "Le MEME geste se produit automatiquement des que la derniere tache",
+        "obligatoire est completee (T8) : cette route sert de filet pour le",
+        "residuel, et ne trouve donc normalement rien a faire dans le cas",
+        "courant.",
+        "409 `parcours_non_termine` : au moins une tache obligatoire n'est",
+        "pas encore `completed`.",
+        "404 `aucun_parcours_actif`."
+      ]
+    },
+    {
+      "cle": "restaurationDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/{instance}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "InstanceDeParcours",
+      "role": [
+        "Restaurer un parcours archive — LOT 7, T11, matrice §8.1,",
+        "ECART-066 (volet parcours) resolu le 28/09/2026 : l'ESM restaure",
+        "librement dans son entite, meme regime que la restauration d'une",
+        "version de modele (T6). Ecriture pure : aucun module de contrat",
+        "propre, `InstanceDeParcours` est deja validee (T7).",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT —",
+        "DSM et Booster EXCLUS EN BLOC, meme grille que l'archivage manuel.",
+        "Ne rouvre AUCUNE tache — restaurer un parcours n'est pas restaurer",
+        "une personne.",
+        "409 `parcours_non_archivable` : l'instance n'est pas `archived`,",
+        "ou l'appartenance porte deja une instance active.",
+        "404 `instance_introuvable`."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

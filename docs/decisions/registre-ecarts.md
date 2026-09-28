@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 26 septembre 2026, `T6` du LOT 7 — `ECART-066` (volet version de modèle) résolu, `DEC-605`
+**Dernière mise à jour :** 28 septembre 2026, `T11` du LOT 7 — `ECART-066` (volet parcours) résolu, `DEC-611`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 66 | 13 | 50 | 3 |
+| Total 66 | 12 | 51 | 3 |
 
 ---
 
@@ -83,7 +83,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
 | `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
 | `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
-| `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | **Non pour `T6`, résolu** — reste bloquant pour `T11` (le parcours) seul | **Volet « version de modèle » résolu le 26/09/2026**, `DEC-605` — l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003`. **Volet « parcours archivé » (§8.1) reste ouvert**, à reposer explicitement avant `T11` : la question n'a été posée que pour la version de modèle |
+| `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | Non — les deux volets sont résolus | **Clos le 28/09/2026** — volet « version de modèle » résolu le 26/09/2026 (`DEC-605`, `T6`), volet « parcours archivé » résolu le 28/09/2026 (`DEC-611`, `T11`) : les deux fois, l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -216,7 +216,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-## `ECART-066` — la restauration d'un parcours ou d'une version d'onboarding par l'ESM est « Conditionnelle », sans que rien ne dise à quoi
+## `ECART-066` — CLOS — la restauration d'un parcours ou d'une version d'onboarding par l'ESM est « Conditionnelle », sans que rien ne dise à quoi
 
 | Champ | Valeur |
 |---|---|
@@ -224,9 +224,9 @@ formulée, et son caractère bloquant est explicité.
 | Source | Matrice, annexe A **§8.1** (« Restaurer un parcours archivé », `ESM` → `Conditionnel`) et **§9** (« Restaurer une version », `ESM` → `Conditionnel`) · `ARB-DROIT-003` |
 | Constat | La légende §4 définit `Conditionnel` comme « autorisé si une règle métier complémentaire est satisfaite », sans nommer la règle en cellule. `ARB-DROIT-003` — « Restauration fonctionnelle par l'ESM » — la nomme pour **cinq** ressources : « un profil, un contenu, un événement, un cercle ou un bureau ». **Ni « un parcours d'onboarding » ni « une version de modèle d'onboarding » n'y figurent.** Aucune autre section du cahier, de la matrice ou du modèle ne comble ce trou — mesuré par recherche du mot dans les trois documents. |
 | Cause | `ARB-DROIT-003` a été rédigé le 25/07/2026, avant que le LOT 6 n'introduise le mécanisme d'archivage/restauration des contenus et avant que le LOT 7 n'introduise l'onboarding. Les cinq ressources qu'il nomme sont celles qui existaient déjà dans l'intention du corpus à cette date ; les deux lignes `Conditionnel` du §8.1 et du §9 ont été écrites plus tard dans la matrice sans que l'arbitrage ne soit étendu pour les couvrir. |
-| Bloquant | **Non pour l'ouverture du LOT 7**, et **non pour `T6`, désormais résolu** — voir Résolution. **Reste bloquant pour `T11`** (le parcours), dont le volet n'a pas été reposé. |
+| Bloquant | **Non — CLOS.** Les deux volets sont résolus, voir Résolution. |
 | Recommandation | Ne pas inventer la règle par analogie avec `ARB-DROIT-003` (§6.5) : les cinq ressources qu'il couvre sont toutes des ressources **structurantes de l'entité** consultées en continu, quand un parcours d'onboarding est un objet **temporaire et nominatif**, dont la restauration touche un seul collaborateur — l'analogie n'est pas évidente. À poser à Jonathan avant `T6`, sous la forme d'une question fermée : l'ESM restaure-t-il librement dans son entité, comme pour les cinq autres ressources, ou la restauration d'un parcours/modèle d'onboarding reste-t-elle à l'`ADM-E` et au `SUPER` seuls ? |
-| Résolution | **Volet « version de modèle » (§9) RÉSOLU le 26/09/2026, `DEC-605` — `T6`.** Question posée à Jonathan sous la forme fermée recommandée ci-dessus, restreinte au seul cas de la version de modèle : **l'ESM restaure librement dans son entité, même régime que les cinq autres ressources d'`ARB-DROIT-003`.** `DSM`/`BOOST` restent exclus EN BLOC (jamais un sous-cas de leur propre modèle, à la différence des autres gestes du §9) — voir `app/onboarding/perimetre.py`. **Volet « parcours archivé » (§8.1) reste OUVERT** : la question posée ne portait QUE sur la version de modèle, et rien ne permet de présumer que la même réponse vaudrait pour le parcours sans la reposer explicitement — objet différent (nominatif, temporaire) que l'écart lui-même distinguait déjà dans sa recommandation. **À reposer avant `T11`.** |
+| Résolution | **Volet « version de modèle » (§9) RÉSOLU le 26/09/2026, `DEC-605` — `T6`.** Question posée à Jonathan sous la forme fermée recommandée ci-dessus, restreinte au seul cas de la version de modèle : **l'ESM restaure librement dans son entité, même régime que les cinq autres ressources d'`ARB-DROIT-003`.** `DSM`/`BOOST` restent exclus EN BLOC (jamais un sous-cas de leur propre modèle, à la différence des autres gestes du §9) — voir `app/onboarding/perimetre.py`. **Volet « parcours archivé » (§8.1) RÉSOLU le 28/09/2026, `DEC-611` — `T11`.** La question a été reposée EXPLICITEMENT, spécifiquement pour le parcours — jamais présumée de la réponse donnée pour la version de modèle : **même réponse, l'ESM restaure librement dans son entité**, même régime qu'`ARB-DROIT-003`. `DSM`/`BOOST` exclus EN BLOC, même grille que l'archivage manuel — voir `app/onboarding/perimetre.py::ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS`. **Écart CLOS.** |
 
 ---
 

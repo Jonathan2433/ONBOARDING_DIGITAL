@@ -227,6 +227,21 @@ LA REOUVERTURE ADMINISTRATIVE — matrice §8.1/§8.3, `T9`
   EST la verification complete, portee par la garde de role coarse
   (`exiger_un_role_dans_l_entite`, `routes.py`) — meme parti que le catalogue
   des taches (`T4`), ou la garde seule suffisait deja.
+
+L'ARCHIVAGE MANUEL ET LA RESTAURATION D'UN PARCOURS — matrice §8.1, `T11`
+
+  **MEME GRILLE, MEME PARTI QUE LA REOUVERTURE (`T9`) : AUCUNE FONCTION
+  `peut_...` SEPAREE, UN SIMPLE ALIAS.** « Archiver un parcours termine » et
+  « Restaurer un parcours archive » donnent toutes deux `ESM`/`ADM-E` = Entite,
+  `SUPER` = Global, tout le reste a tiret — DSM et BOOSTER EXCLUS EN BLOC,
+  meme sur LEUR PROPRE consultant ou cercle, aucun sous-cas comme sur
+  l'affectation (`T7`). Une instance d'onboarding vit toujours dans UNE
+  entite : `SUPER` n'a besoin d'aucune distinction GLOBAL/entite, contrairement
+  a la restauration d'un MODELE (`T6`), qui peut etre `GLOBAL`.
+  `ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS` EST la verification
+  complete, portee par la garde de role coarse — `ECART-066` (volet parcours)
+  RESOLU le 28/09/2026 : l'ESM restaure librement dans son entite, meme
+  regime que `peut_restaurer_une_version_de_modele`.
 """
 
 from __future__ import annotations
@@ -730,3 +745,10 @@ def peut_agir_sur_sa_tache_onboarding(*, acteur: uuid.UUID, cible_personne: uuid
 #  visible. Portee directement par la garde de role coarse dans `routes.py` —
 #  aucune fonction `peut_...` separee, voir l'en-tete.
 ROLES_DE_REOUVERTURE_DES_TACHES: Final[frozenset[RoleDeLaMatrice]] = _ROLES_ENTITE
+
+#  §8.1 « Archiver un parcours termine » / « Restaurer un parcours archive » —
+#  `T11`, memes trois roles que la reouverture, voir l'en-tete du module.
+#  Alias distinct (jamais un second nom pour la MEME constante) : une future
+#  divergence entre ces deux lignes et la reouverture resterait possible sans
+#  casser l'une des deux par erreur.
+ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS: Final[frozenset[RoleDeLaMatrice]] = _ROLES_ENTITE

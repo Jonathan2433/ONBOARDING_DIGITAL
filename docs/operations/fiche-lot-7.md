@@ -47,7 +47,7 @@ prescrire autre chose que sa source dès sa rédaction (`ECART-023`) :
 | 2 | les règles de périmètre DSM, Booster et ESM sont testées | un témoin par périmètre à chaque écriture — `T4` à `T12` |
 | 3 | la progression est calculée et non stockée comme source de vérité | `T7` : aucune colonne `progress` en base, et le contrôle exige un **témoin positif** — une progression SERVIE et exacte, pas seulement l'absence de colonne |
 | 4 | les événements de tâche sont historisés | `onboarding_task_event`, écrit à `T7`–`T10` |
-| 5 | le départ d'un collaborateur archive le parcours et révoque les sessions | `T11`, qui doit s'accrocher à `enregistrer_un_depart` (LOT 3, `T9`) — pas le réécrire |
+| 5 | le départ d'un collaborateur archive le parcours et révoque les sessions | **`T11` FAIT le 28/09/2026** — `archiver_le_parcours_au_depart` s'accroche à `enregistrer_un_depart` (LOT 3, `T9`), sans le réécrire |
 | 6 | un parcours réel complet est exécuté en recette | `T15`, un aller-retour complet, `arrival_date` → tâches → complétion → archivage |
 | 7 | Jonathan valide l'organisation et l'onboarding | la démonstration guidée de la checklist `G7` |
 
@@ -109,12 +109,12 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T3`~~ | ~~Validation et publication — `recent_until`, « ils nous ont rejoints récemment »~~ **FAITE le 26/09/2026**, `DEC-601` + correctif `DEC-602` | `US001` (2/2), `US002` | la publication est **automatique** à la validation (§7.1), prouvée en un seul appel. `Support`/`Support cercle` (absents de la légende §4) couvrent Entité/Cercle/Global ; `BOOST` diverge sur la seule ligne « Valider et publier ». **Correctif post-fusion** : une quatrième ligne, « Corriger après publication », manquée à la première lecture — sa grille s'inverse sur `NEW`/`DSM` |
 | ~~`T4`~~ | ~~Le catalogue des tâches — `onboarding_task_reference`, identifiants stables~~ **FAITE le 26/09/2026**, `DEC-603` | structurel, ferme `ECART-013` | **la clé de tout le lot** : un identifiant fonctionnel unique par tâche commune, réutilisé par les modèles mission ET intercontrat, jamais la numérotation à deux préfixes du prototype. `DSM`/`BOOST` (`Consultants`/`Cercle` au §9) se réduisent à l'`Entité` pour cette table précisément : elle ne porte ni cercle ni DSM, seulement `entity_id` — collapsage documenté, pas une lecture large. Seul `SUPER` atteint `Global` |
 | ~~`T5`~~ | ~~Les modèles et leurs versions — `onboarding_template`, `_version`, `_task`, scopes `GLOBAL/ENTITY/DSM/CIRCLE`~~ **FAITE le 26/09/2026**, `DEC-604` | `US003` (1/2) | une version publiée est **immuable** (modèle §13.3) : le témoin est une tentative de modification d'une version déjà publiée, refusée. **Contrairement au catalogue de `T4`, `Consultants`/`Cercle` NE se réduisent PAS à l'entité** : `onboarding_template` porte de vraies colonnes de portée, un DSM/Booster ne gère que SON propre DSM-ship/cercle |
-| ~~`T6`~~ | ~~Cycle de vie d'un modèle — publication, archivage, restauration~~ **FAITE le 26/09/2026**, `DEC-605` | `US003` (2/2) | **`ECART-066` (volet version de modèle) résolu ICI, avant d'écrire la route** : l'ESM restaure librement dans son entité. Le volet « parcours » (§8.1) reste ouvert pour `T11`. « Duplication » du libellé initial n'était rien de plus que la création de version déjà livrée par `T5` — aucune quatrième route |
+| ~~`T6`~~ | ~~Cycle de vie d'un modèle — publication, archivage, restauration~~ **FAITE le 26/09/2026**, `DEC-605` | `US003` (2/2) | **`ECART-066` (volet version de modèle) résolu ICI, avant d'écrire la route** : l'ESM restaure librement dans son entité. Le volet « parcours » (§8.1) **résolu à `T11`**, même régime. « Duplication » du libellé initial n'était rien de plus que la création de version déjà livrée par `T5` — aucune quatrième route |
 | ~~`T7`~~ | ~~Création d'une instance depuis la date d'arrivée — lecture du parcours, progression calculée~~ **FAITE le 27/09/2026**, `DEC-606` | `US004` | ferme le critère 3 (témoin positif, §1.2) ; « une seule instance active par appartenance » (modèle §13.5) éprouvée au volume (40 affectations distinctes), pas seulement à l'unité. Priorité de résolution du modèle DSM > CIRCLE > ENTITY > GLOBAL, arbitrage de Jonathan |
 | ~~`T8`~~ | ~~Compléter et annuler une tâche dans les cinq minutes~~ **FAITE le 27/09/2026**, `DEC-608` | `US005` | les deux lignes du §8.1 sont `Soi` **seul** (grille la plus stricte du module, `DSM`/`BOOST` à tiret malgré un rattachement réel) ; `annuler_la_completion` ne produit **jamais** `cancelled` — la tâche redevient `todo` ; la fenêtre de cinq minutes est **ancrée à `completed_at`**, jamais une horloge mockée. **Correctif `DEC-607`** : `T7` ne posait aucun événement `onboarding_task_event`, `ASSIGNED` est désormais posé par l'affectation |
 | ~~`T9`~~ | ~~Réouverture après cinq minutes — motif obligatoire, `onboarding_task_event`~~ **FAITE le 27/09/2026**, `DEC-609` | `US006`, ferme `§30.15` | seuls `ESM`, `ADM-E`, `SUPER` — le témoin négatif porte sur `DSM` et `BOOST`, **explicitement exclus** par §8.3, pas seulement absents de la liste. **Correctif à `terminer_une_tache` (`T8`)** : le diagramme §24.2 exige `Reopened -> Completed`, transition que `T8` n'avait pas prévue |
 | ~~`T10`~~ | ~~Changement automatique mission ↔ intercontrat~~ **FAITE le 28/09/2026**, `DEC-610` | `US007`, ferme `§30.14` | l'ancienne instance passe à `replaced`, la nouvelle instantiée depuis le modèle adapté, **les tâches communes déjà terminées conservées par référence stable** — `ECART-013` mis à l'épreuve pour de vrai. **Aucune route propre** : la garde déjà exercée sur l'écriture du champ `statut` (LOT 5) est *a fortiori* dans le périmètre du parcours (`T7`), vérifié contre le code des deux modules |
-| `T11` | Archivage automatique du parcours terminé + révocation au départ | ferme `§30.13` | deux déclencheurs distincts : complétion totale des tâches obligatoires (modèle §13.5), et départ d'un collaborateur — qui doit **s'accrocher** à `enregistrer_un_depart` (LOT 3, `T9`) sans le dupliquer (§7.27) |
+| ~~`T11`~~ | ~~Archivage automatique du parcours terminé + révocation au départ~~ **FAITE le 28/09/2026**, `DEC-611` | ferme `§30.13`, `ECART-066` (volet parcours) | deux déclencheurs AUTOMATIQUES, aucune route propre : `archiver_le_parcours_si_termine` (appelée par `terminer_une_tache`, T8) et `archiver_le_parcours_au_depart` (appelée par `archiver_un_profil`, LOT 5 T8 — **accrochée sans dupliquer** `enregistrer_un_depart`, §7.27). Deux gestes MANUELS avec route propre, `ESM`/`ADM-E`/`SUPER` seulement : archiver un parcours résiduel, et **restaurer** un parcours archivé — `ECART-066` (volet parcours) résolu, reposé explicitement, jamais présumé de la réponse donnée pour la version de modèle (`T6`). **Défaut trouvé et corrigé avant fusion** : l'archivage automatique cassait les fenêtres déjà livrées de `T8`/`T9` (annulation cinq minutes, réouverture) — corrigé en distinguant `lire_l_instance_active` (stricte) de `lire_l_instance_actionnable` (`active` ou `archived`, jamais `replaced`) |
 | `T12` | Suivi par périmètre — DSM/ESM/Booster/ADM-E/SUPER | `US008` | « reporting de base » seulement (cahier, Inclus) : aucun graphique, aucun export — ce serait le LOT 10 |
 | `T13` | Écrans du nouvel arrivant — fiche d'arrivée, parcours, tâches | — | un aller-retour réel avant de déclarer un client terminé (§7.43 du LOT 6) : les écrans écrivent (compléter, annuler) |
 | `T14` | Écrans d'administration — catalogue, modèles, suivi par périmètre | — | mêmes grilles de rôles qu'au §2.1, à l'écran cette fois : `OFFICE` ne doit voir apparaître aucune action de gestion |
@@ -177,7 +177,7 @@ pour les comptes de service. Le LOT 7 ne la consomme pas non plus — LOT 9.
 | **Deux stories `XL`, aucune autre l'an dernier** | `US003` (modèles versionnés) et `US007` (changement de parcours) sont les deux pièces les plus complexes du lot, et `US007` dépend du bon fonctionnement des trois précédentes |
 | **`ECART-013` est structurel, pas cosmétique** | si `T4` ne pose pas un identifiant fonctionnel correctement partagé, `T10` (US007) ne peut PAS conserver les tâches communes terminées — le défaut ne se verrait qu'au premier changement réel de statut |
 | **`ECART-012` reste ouvert** | un DG ou toute personne sans mission n'a que `intercontract` par défaut ; `US003`/`US007` en dépendent pour choisir le bon modèle. Non bloquant, position de Jonathan reconduite (§8.1), mais Léa doit encore trancher |
-| **`ECART-066`, nouveau** | la restauration d'un modèle ou d'un parcours archivé par l'ESM est « Conditionnel » sans définition. Bloquant pour `T6` et `T11` seulement |
+| **`ECART-066`** | la restauration d'un modèle ou d'un parcours archivé par l'ESM est « Conditionnel » sans définition. **Résolu** — volet modèle à `T6`, volet parcours à `T11` |
 | **La fenêtre de cinq minutes** | un test qui dort cinq minutes ferait exploser la CI ; le temps doit être injectable dès `T8`, comme l'ancre `INSTANT` du LOT 6 (§7.47) |
 | **`ROAD-RSK-033` / `034`** | inchangés, à réévaluer avant le LOT 13 |
 
@@ -215,16 +215,17 @@ partagé par les deux modèles dès sa création. **La numérotation du prototyp
 telle quelle.** `T4` posait la structure ; `T10` (`DEC-610`) l'a exercée pour de vrai, en retenant
 une tâche `completed` par ce seul identifiant lors d'un changement réel de statut.
 
-## 8.3 `ECART-066` — volet « version de modèle » résolu le 26/09/2026, volet « parcours » ouvert pour `T11`
+## 8.3 `ECART-066` — CLOS, les deux volets résolus (`T6` puis `T11`)
 
 La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours archivé (§8.1) et d'une
 version de modèle (§9). `ARB-DROIT-003` définit « Conditionnel » pour cinq ressources — profil,
 contenu, événement, cercle, bureau — et n'en nomme aucune des deux. **Résolu pour la version de
 modèle avant `T6`** : l'ESM restaure librement dans son entité, même régime que les cinq autres
-ressources — `DEC-605`. **Le volet « parcours archivé » (§8.1) n'a pas été reposé** : la question
-posée à Jonathan ne portait que sur la version de modèle, et rien ne permet de présumer la même
-réponse pour un parcours sans la reposer explicitement. **À reposer avant `T11`.** Détail complet
-dans `docs/decisions/registre-ecarts.md`.
+ressources — `DEC-605`. **Résolu pour le parcours archivé (§8.1) le 28/09/2026, `T11`, `DEC-611`** :
+la question a été reposée EXPLICITEMENT à Jonathan, spécifiquement pour le parcours — jamais
+présumée de la réponse donnée pour la version de modèle, l'écart lui-même ayant noté que les deux
+objets diffèrent (structurant contre nominatif et temporaire). Même réponse : l'ESM restaure
+librement dans son entité. Détail complet dans `docs/decisions/registre-ecarts.md`.
 
 ## 8.4 Un point non résolu, découvert en écrivant cette fiche — pas un écart, une question pour Jonathan
 

@@ -398,6 +398,13 @@ class ReponseDArchivage(BaseModel):
             "`ends_at < starts_at` rendrait la periode invalide."
         )
     )
+    parcours_onboarding_archive: uuid.UUID | None = Field(
+        description=(
+            "LOT 7 `T11` : l'identifiant du parcours d'onboarding archive par ce "
+            "depart, ou `null` si aucun parcours actif n'existait, ou si l'archivage "
+            "vient d'une arrivee annulee (`future`) plutot que d'un depart."
+        )
+    )
 
 
 class ReponseDeRestauration(BaseModel):
@@ -1117,6 +1124,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             consultants_sans_dsm=list(archivage.consultants_sans_dsm),
             roles_globaux_conserves=archivage.roles_globaux_conserves,
             relations_futures_conservees=archivage.relations_futures_conservees,
+            parcours_onboarding_archive=archivage.parcours_onboarding_archive,
         )
 
     @routeur.post(

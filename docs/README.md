@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `610` en usage | `DEC-611` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `611` en usage | `DEC-612` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -434,8 +434,8 @@ colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, tro
 > **`ECART-066` (VOLET « VERSION DE MODÈLE ») EST RÉSOLU AVANT LA ROUTE, PAS APRÈS.** Question
 > posée à Jonathan sous forme fermée, restreinte à la version de modèle : **l'ESM restaure
 > librement dans son entité**, même régime que les cinq ressources d'`ARB-DROIT-003`. **Le volet
-> « parcours archivé » (§8.1) N'A PAS été reposé** et reste ouvert pour `T11` — présumer la même
-> réponse aurait été l'erreur exacte que l'écart met en garde contre.
+> « parcours archivé » (§8.1) N'A PAS été reposé ici** — présumer la même réponse aurait été
+> l'erreur exacte que l'écart met en garde contre. **Résolu à `T11`, même réponse, `DEC-611`.**
 >
 > **RESTAURER NE ROUVRE PAS L'ÉDITION, ET C'EST LE CHOIX LE PLUS IMPORTANT DE LA SOUS-ÉTAPE.**
 > Contrairement à `restaurer_une_page` (LOT 6, qui rend `draft`), une version restaurée redevient
@@ -561,13 +561,55 @@ champ `statut`, après les cinq écritures organisationnelles.
 > stockée — inventer un mécanisme ici pour un seul consommateur aurait été §6.5. 7 tests
 > d'intégration. Détail : `compte-rendu-t10-lot-7.md`.
 
-**1 995 tests** désormais. La prochaine est `T11`, l'archivage automatique du parcours terminé et
-la révocation au départ.
+**`T11` EST FAITE** le 28/09/2026, `DEC-611` : l'archivage automatique du parcours terminé et la
+révocation au départ, `US007`/`US008`, ferme `§30.13` et `ECART-066` (volet parcours). **Aucune
+nouvelle table, aucune migration** : `EtatInstance` déclarait déjà les quatre valeurs de `state`
+depuis `T1`.
 
-`ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
-« version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
-bloquant pour `T11`** — sans objet pour `T10`, qui ni n'archive ni ne restaure un parcours, jamais
-posée que pour la version de modèle et jamais à présumer.
+> **DEUX DÉCLENCHEURS AUTOMATIQUES, DEUX GESTES MANUELS — LA MATRICE §8.1 LES DISTINGUE EN TOUTES
+> LETTRES.** « Archiver un parcours terminé » : `NEW` = Automatique, `ESM`/`ADM-E`/`SUPER` = un
+> droit RÉEL (Entité/Entité/Global) en plus. `archiver_le_parcours_si_termine`
+> (`app/onboarding/instances.py`), appelée par `taches.terminer_une_tache` après CHAQUE complétion,
+> transitionne `active -> archived` dès que toutes les tâches obligatoires sont `completed`
+> (`completed_at` posé) — AUCUNE route propre, sous-effet d'une action déjà gardée (`Soi`, `T8`).
+> `archiver_le_parcours_au_depart`, appelée par `app.people.archivage.archiver_un_profil` (LOT 5,
+> `T8`) AU DÉPART — jamais à l'archivage fonctionnel ultérieur de l'appartenance, même transition,
+> `completed_at` JAMAIS posé : un parcours interrompu n'est pas un parcours achevé. Rapporté dans
+> `Archivage.parcours_onboarding_archive`, jamais tu.
+>
+> **LE GESTE MANUEL EXISTE EN PLUS DE L'AUTOMATIQUE, PAS À SA PLACE — CONFIRMÉ PAR JONATHAN.** La
+> matrice accorde à `ESM`/`ADM-E`/`SUPER` un droit réel sur « Archiver un parcours terminé », en
+> plus de la colonne `NEW` = Automatique : Jonathan a confirmé qu'un geste manuel devait exister,
+> comme filet pour le résiduel que l'automatique ne couvrirait pas — en pratique, l'automatique
+> ayant déjà agi, cette route ne trouve normalement rien à faire dans le cas courant. Même grille
+> pour « Restaurer un parcours archivé », `ECART-066` (volet parcours) RÉSOLU : la question a été
+> reposée EXPLICITEMENT à Jonathan pour le parcours, jamais présumée de la réponse donnée pour la
+> version de modèle (`T6`) — même réponse, l'ESM restaure librement dans son entité. Ne rouvre
+> AUCUNE tâche : restaurer un parcours n'est pas restaurer une personne.
+>
+> **UN DÉFAUT TROUVÉ ET CORRIGÉ AVANT LA FUSION, DANS MES PROPRES TESTS.** Une fois l'archivage
+> automatique branché, 13 tests DÉJÀ FUSIONNÉS de `T8`/`T9` sont tombés : compléter la DERNIÈRE
+> tâche obligatoire archivait l'instance dans le MÊME geste, et le résolveur strict
+> (`state='active'`) ne retrouvait alors plus le parcours pour l'annulation dans les cinq minutes ni
+> pour la réouverture administrative — une dégradation d'une exigence déjà livrée (`DEC-608`,
+> `DEC-609`), interdite sans décision explicite (§2, règle n°7). **Corrigé en distinguant DEUX
+> résolutions d'instance** : `lire_l_instance_active` (stricte, réservée à l'affectation et à
+> l'archivage MANUEL) et `lire_l_instance_actionnable` (`active` OU `archived`, JAMAIS `replaced`),
+> employée par les trois routes de tâches — une instance `replaced` (`T10`) reste vraiment
+> supplantée, l'archivage AUTOMATIQUE ne ferme plus les fenêtres déjà livrées.
+>
+> **CONTRAT MIS À JOUR** : `packages/contracts/src/contrat-api.json` déclare les deux nouvelles
+> routes, forme `InstanceDeParcours` déjà validée dans `parcoursOnboarding.ts` (`T7`) — sans cette
+> mise à jour, `test_contrat.py` (LOT 1, `T10`) aurait échoué. 16 tests d'intégration. Détail :
+> `compte-rendu-t11-lot-7.md`.
+
+**2 011 tests** désormais — **1 393 pytest** (dont **1 014** d'intégration), **618 Vitest**
+inchangé. `T11` clôt les QUINZE sous-étapes de code ; restent `T12` (suivi par périmètre), `T13`/
+`T14` (écrans) et `T15` (recette, §30, checklist `G7`).
+
+`ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
+version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
+sans jamais avoir été présumée.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
