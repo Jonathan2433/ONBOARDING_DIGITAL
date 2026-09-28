@@ -1,11 +1,89 @@
 """Une instance de parcours depuis la date d'arrivee — modele §13.5/§13.6, matrice §8.1, `T7`.
 
-CE QUE `T7` LIVRE
+CE QUE `T7` LIVRE, ET CE QUE `T10` Y AJOUTE
 
   Deux gestes : affecter un parcours (matrice §8.1, « Affecter un parcours »)
   et le lire (« Consulter son parcours » / « ... d'un collaborateur »).
   Aucune nouvelle table : `onboarding_instance` et `onboarding_instance_task`
   existent depuis `T1`, jamais encore ecrites.
+
+  `T10` ajoute un TROISIEME geste, `remplacer_le_parcours_apres_changement_de_
+  statut` — matrice §8.1 « Remplacer le parcours apres changement de statut »,
+  §8.2 « en cas de changement de situation, le parcours est remplace par le
+  nouveau modele », modele §6.5 « un changement de STATUT declenche
+  l'evaluation du parcours d'onboarding », §14.1 (diagramme de sequence).
+
+  **AUCUNE ROUTE PROPRE, ET CE N'EST PAS UN OUBLI.** Le diagramme §14.1 ne
+  nomme que « Service metier » et « PostgreSQL » — aucun acteur HTTP. La
+  grille matrice de cette ligne (`DSM` Consultants, `ESM` Entite, `BOOST`
+  Cercle, `ADM-E` Entite, `SUPER` Global) est EXACTEMENT celle de « Affecter
+  un parcours » (`T7`, `_dans_le_perimetre_du_parcours`) ET celle du champ
+  `STATUT` de `resoudre_le_perimetre` (LOT 5, `app/permissions/perimetre.py`)
+  sur ses trois roles a portee entiere (`ESM`/`ADM-E`/`SUPER` -> tous les
+  champs) et son DSM rattache (meme requete `_RATTACHE_A_CE_DSM`, recopiee
+  dans les deux modules — §7.27). Seule la ligne `BOOST` differe en toutes
+  lettres : LOT 5 restreint au membre PRINCIPAL du cercle, l'onboarding
+  n'importe pas lequel — mais quiconque reussit a ECRIRE le champ `STATUT`
+  (donc a passe la grille LOT 5, la plus stricte des deux) est *a fortiori*
+  dans la grille, plus large, de cette ligne-ci. Poser une SECONDE garde ici
+  serait une regle pour un ensemble d'acteurs deja inclus dans le premier —
+  §7.27 encore. `remplacer_le_parcours_apres_changement_de_statut` est donc
+  appelee PAR `app.people.ecriture._ecrire_le_statut`, dans la MEME
+  transaction, apres que ce module a deja verifie le droit d'ecrire `STATUT`.
+
+  **LE DIAGRAMME §24.2 GOUVERNE ENCORE, POUR SA MOITIE RESTANTE.** `Todo ->
+  Cancelled` (« remplacement de parcours ») et `Completed -> Preserved`
+  (« tache commune conservee ») sont les DEUX transitions que `T7`/`T8`/`T9`
+  n'exercaient pas. Le modele ne declare que QUATRE etats sur
+  `onboarding_instance_task` (§13.6 : `todo`, `completed`, `reopened`,
+  `cancelled`) — pas de cinquieme valeur `preserved`. « Preserved » n'est donc
+  PAS un etat ecrit : une tache RETENUE reste `completed`, dans une instance
+  qui n'est plus `active` — `lire_l_instance_active` ne la trouvera plus
+  jamais, et aucune route (`T8`/`T9`) n'agit sur une instance non active. La
+  preservation est donc GRATUITE, une consequence du garde-fou deja pose,
+  jamais une colonne a ajouter. `todo` ET `reopened` (une tache pas encore
+  refaite) rejoignent tous deux `cancelled` — le diagramme ne nomme que
+  `Todo`, mais `reopened` est le MEME etat « pas termine » sous un autre nom,
+  et le laisser trainer sur une instance devenue `replaced` serait une
+  troisieme forme de tache orpheline que ni le diagramme ni le modele ne
+  decrivent.
+
+  **`ECART-013` EST MIS A L'EPREUVE POUR DE VRAI, ICI.** Le catalogue
+  (`onboarding_task_reference`, `T4`) porte un identifiant STABLE partage par
+  les DEUX modeles (mission et intercontrat) : une tache commune aux deux se
+  reconnait par ce SEUL identifiant, jamais par une correspondance de titre.
+  Les taches `completed` de l'ANCIENNE instance sont donc lues par
+  `task_reference_id`, et toute tache de la NOUVELLE version qui porte le
+  MEME identifiant recoit une ligne `completed` d'emblee — `completed_at`/
+  `completed_by_person_id` COPIES tels quels (meme discipline que `T9` sur la
+  reouverture : preserver la trace, jamais l'inventer), `title_snapshot`/
+  `description_snapshot`/`required`/`due_at` recalcules depuis la NOUVELLE
+  version (une instance est toujours un instantane DE SA VERSION, `T7`).
+  L'evenement pose est `RETAINED_ON_REPLACEMENT`, jamais `ASSIGNED` : cette
+  tache n'a pas ete affectee, elle a ete RETENUE.
+
+  **LA FENETRE DE `reference_date` N'EST PAS `arrival_date`, ET C'EST
+  DELIBERE.** `affecter_un_parcours` ancre les echeances sur la date
+  d'ARRIVEE — la seule date que `T7` connaisse. Un remplacement a lieu des
+  MOIS plus tard : ancrer sur `arrival_date` daterait les echeances de la
+  NOUVELLE version dans le passe (un `due_offset_days=3` tomberait trois
+  jours apres l'embauche, pas apres le remplacement). `reference_date` du
+  nouveau parcours est donc l'INSTANT du changement de statut lui-meme —
+  litteralement `starts_at` de la nouvelle ligne `professional_status_
+  assignment` que `_ecrire_le_statut` vient de poser, la seule date que ce
+  remplacement connaisse et qui ait un sens pour SES propres echeances.
+
+  **AUCUN `outbox_message` NI `async_job` N'EST ECRIT ICI, ET CE N'EST PAS UN
+  OUBLI.** Le diagramme §14.1 termine par « Job disponible via outbox » /
+  « Worker recalcule progression et echeances secondaires ». Mesure avant
+  d'ecrire : AUCUNE ligne du depot n'ecrit encore `outbox_message` ni
+  `async_job` — `app/auth/idempotence.py` (LOT 3 `T7`) nomme deja ces deux
+  tables comme un mecanisme qui « restera porte … au LOT 11 ». Et la
+  progression, critere de sortie n°3 du lot, n'est **JAMAIS STOCKEE** —
+  aucune colonne n'existe pour qu'un worker la « recalcule ». Inventer ici un
+  message pour un consommateur qui n'existe nulle part serait §6.5. Residuel
+  nomme, non bloquant : voir le compte rendu.
+
 
 LE BON MODELE — ORDRE DE PRIORITE, ARBITRAGE DE JONATHAN DU 27/09/2026
 
@@ -287,6 +365,210 @@ INSERT INTO onboarding_task_event
     (entity_id, onboarding_instance_task_id, event_type, occurred_at, actor_person_id, reason)
 VALUES (:entite, :tache, :type_evenement, :instant, :acteur, :motif)
 """
+
+#  `T10`. Precondition dans le `WHERE`, meme discipline que `taches.py` : ne
+#  clore que l'instance encore `active` — voir l'en-tete, aucune deuxieme
+#  cause d'echec n'est distinguee ici, contrairement a `taches.py`, faute
+#  d'appelant externe pouvant se tromper de cible (cette fonction n'est jamais
+#  exposee par une route, voir l'en-tete).
+_CLORE_L_INSTANCE_REMPLACEE: Final = """
+UPDATE onboarding_instance SET state = 'replaced'
+ WHERE id = :instance AND entity_id = :entite AND state = 'active'
+"""
+
+_LIER_LE_REMPLACEMENT: Final = """
+UPDATE onboarding_instance SET replaced_by_instance_id = :nouvelle
+ WHERE id = :ancienne AND entity_id = :entite
+"""
+
+#  `Todo -> Cancelled` ET `Reopened -> Cancelled` — voir l'en-tete du module,
+#  les deux sont « pas encore termine » au sens du diagramme §24.2.
+_ANNULER_LES_TACHES_EN_COURS: Final = f"""
+UPDATE onboarding_instance_task
+   SET state = 'cancelled'
+ WHERE onboarding_instance_id = :instance AND entity_id = :entite
+   AND state IN ('todo', 'reopened')
+RETURNING {COLONNES_TACHE}
+"""  # noqa: S608
+
+#  `Completed -> Preserved` — voir l'en-tete : LU ici par `task_reference_id`,
+#  l'identifiant stable d'`ECART-013`, jamais par titre.
+_TACHES_COMPLETEES_DE_L_INSTANCE: Final = """
+SELECT task_reference_id, completed_at, completed_by_person_id
+FROM onboarding_instance_task
+WHERE onboarding_instance_id = :instance AND entity_id = :entite AND state = 'completed'
+"""
+
+#  Une tache RETENUE : `completed` DES LA CREATION, `completed_at`/
+#  `completed_by_person_id` COPIES de l'ancienne ligne — voir l'en-tete,
+#  jamais effaces ni recalcules. `due_at` est neanmoins recalcule depuis LA
+#  NOUVELLE version : une instance est toujours un instantane de SA version.
+_INSERER_TACHE_PRESERVEE: Final = f"""
+INSERT INTO onboarding_instance_task
+    (entity_id, onboarding_instance_id, task_reference_id, title_snapshot,
+     description_snapshot, required, due_at, state, completed_at, completed_by_person_id)
+VALUES (
+    :entite, :instance, :task_reference_id, :title, :description, :required,
+    (CAST(:reference_date AS date) + (:due_offset_days || ' days')::interval) AT TIME ZONE 'UTC',
+    'completed', :completed_at, :completed_by
+)
+RETURNING {COLONNES_TACHE}
+"""  # noqa: S608
+
+
+def remplacer_le_parcours_apres_changement_de_statut(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    appartenance: uuid.UUID,
+    statut_precedent: str,
+    nouveau_statut: str,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+) -> None:
+    """Matrice §8.1 « Remplacer le parcours apres changement de statut » /
+    §8.2, modele §6.5/§14.1 — voir l'en-tete du module pour le motif complet.
+
+    Appelee UNIQUEMENT par `app.people.ecriture._ecrire_le_statut`, apres
+    l'ecriture de la nouvelle ligne `professional_status_assignment`, et
+    SEULEMENT quand `statut_precedent != nouveau_statut` — un changement de
+    CLIENT seul (meme statut) n'evalue rien ici, voir l'en-tete de
+    `_ecrire_le_statut`. Aucune verification de permission propre : voir
+    l'en-tete de ce module, la garde deja franchie par l'appelant EST la
+    garde de cette ligne.
+
+    Ne fait RIEN si aucune instance `active` n'existe — un collaborateur
+    jamais affecte a un parcours n'a rien a remplacer, ce sera le geste
+    (humain, matrice §8.1) d'« Affecter un parcours ».
+    """
+    active = lire_l_instance_active(connexion, entite=entite, appartenance=appartenance)
+    if active is None:
+        return
+
+    dsm = _dsm_actif(connexion, entite=entite, appartenance=appartenance, instant=instant)
+    cercle = _cercle_principal_actif(
+        connexion, entite=entite, appartenance=appartenance, instant=instant
+    )
+    candidate = connexion.execute(
+        text(_VERSION_A_INSTANCIER),
+        {"statut": nouveau_statut, "dsm": dsm, "cercle": cercle, "entite": entite},
+    ).first()
+    if candidate is None:
+        raise ErreurApplicative(
+            code=CODE_AUCUN_MODELE_PUBLIE,
+            message=MESSAGE_AUCUN_MODELE_PUBLIE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    version_id = uuid.UUID(str(candidate[0]))
+
+    #  Lu AVANT toute ecriture sur l'ancienne instance : ni la cloture ni
+    #  l'annulation des taches en cours ne touchent les lignes `completed`.
+    completees = {
+        uuid.UUID(str(ligne["task_reference_id"])): (
+            ligne["completed_at"],
+            ligne["completed_by_person_id"],
+        )
+        for ligne in connexion.execute(
+            text(_TACHES_COMPLETEES_DE_L_INSTANCE), {"instance": active.id, "entite": entite}
+        ).mappings()
+    }
+
+    annulees = connexion.execute(
+        text(_ANNULER_LES_TACHES_EN_COURS), {"instance": active.id, "entite": entite}
+    ).mappings()
+    for ligne in annulees:
+        enregistrer_un_evenement_de_tache(
+            connexion,
+            entite=entite,
+            tache=ligne["id"],
+            type_evenement=TypeEvenementTache.CANCELLED_ON_REPLACEMENT.value,
+            instant=instant,
+            acteur=acteur,
+        )
+
+    #  CLORE PUIS OUVRIR (meme parti que `app.people.ecriture`) : l'ancienne
+    #  instance doit avoir quitte `active` AVANT l'insertion de la nouvelle,
+    #  sans quoi l'index unique partiel de `T1` refuserait une seconde ligne
+    #  `active` pour la meme appartenance.
+    connexion.execute(text(_CLORE_L_INSTANCE_REMPLACEE), {"instance": active.id, "entite": entite})
+
+    reference_date = instant.date()
+    nouvelle_ligne = (
+        connexion.execute(
+            text(_INSERER_INSTANCE),
+            {
+                "entite": entite,
+                "appartenance": appartenance,
+                "version": version_id,
+                "reference_date": reference_date,
+                "instant": instant,
+            },
+        )
+        .mappings()
+        .one()
+    )
+    nouvelle_instance = _instance_depuis_la_ligne(nouvelle_ligne)
+
+    connexion.execute(
+        text(_LIER_LE_REMPLACEMENT),
+        {"ancienne": active.id, "nouvelle": nouvelle_instance.id, "entite": entite},
+    )
+
+    lignes_taches = connexion.execute(
+        text(_TACHES_DE_LA_VERSION), {"version": version_id}
+    ).mappings()
+    for ligne_tache in lignes_taches:
+        reference = uuid.UUID(str(ligne_tache["task_reference_id"]))
+        conservee = completees.get(reference)
+        if conservee is not None:
+            completed_at, completed_by = conservee
+            ecrite = (
+                connexion.execute(
+                    text(_INSERER_TACHE_PRESERVEE),
+                    {
+                        "entite": entite,
+                        "instance": nouvelle_instance.id,
+                        "task_reference_id": ligne_tache["task_reference_id"],
+                        "title": ligne_tache["title"],
+                        "description": ligne_tache["description"],
+                        "required": ligne_tache["required"],
+                        "reference_date": reference_date,
+                        "due_offset_days": ligne_tache["due_offset_days"],
+                        "completed_at": completed_at,
+                        "completed_by": completed_by,
+                    },
+                )
+                .mappings()
+                .one()
+            )
+            type_evenement = TypeEvenementTache.RETAINED_ON_REPLACEMENT.value
+        else:
+            ecrite = (
+                connexion.execute(
+                    text(_INSERER_TACHE_INSTANCE),
+                    {
+                        "entite": entite,
+                        "instance": nouvelle_instance.id,
+                        "task_reference_id": ligne_tache["task_reference_id"],
+                        "title": ligne_tache["title"],
+                        "description": ligne_tache["description"],
+                        "required": ligne_tache["required"],
+                        "reference_date": reference_date,
+                        "due_offset_days": ligne_tache["due_offset_days"],
+                    },
+                )
+                .mappings()
+                .one()
+            )
+            type_evenement = TypeEvenementTache.ASSIGNED.value
+        enregistrer_un_evenement_de_tache(
+            connexion,
+            entite=entite,
+            tache=ecrite["id"],
+            type_evenement=type_evenement,
+            instant=instant,
+            acteur=acteur,
+        )
 
 
 def tache_depuis_la_ligne(ligne: Any) -> TacheDuParcours:
