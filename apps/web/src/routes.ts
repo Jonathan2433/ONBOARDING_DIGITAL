@@ -328,21 +328,6 @@ export { ROLES_ADMINISTRATION } from '@onboarding/contracts';
 //  attrapee par `tsc`.
 import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
 
-/**
- * **AUCUN PARCOURS D'ONBOARDING NE PEUT EXISTER AU LOT 4, ET C'EST MESURÉ.**
- *
- * Le §8.2 conditionne « Mon onboarding » à « lorsqu'un parcours actif existe ».
- * Le schéma ne porte **aucune** table de parcours ni de fiche d'arrivée : elles
- * appartiennent aux LOTS 7 et 8. La condition est donc **trivialement fausse**,
- * pour tout le monde.
- *
- * Ce n'est pas une invention, c'est l'évaluation correcte d'une condition sur un
- * domaine vide. Et ce n'est pas non plus un `false` en dur qu'on oublierait : un
- * test l'épingle, si bien que le lot qui créera les parcours devra le changer
- * **délibérément**. §7.32 — un test est un meilleur véhicule qu'un commentaire.
- */
-export const UN_PARCOURS_ACTIF_EST_POSSIBLE = false;
-
 /** Ce dont la navigation a besoin pour décider ce qu'elle montre. */
 export interface DroitsDeNavigation {
   readonly aUnParcoursActif: boolean;
@@ -358,16 +343,27 @@ export interface DroitsDeNavigation {
  * donnerait deux implémentations d'une même règle, qui divergeraient — et la
  * règle 5 du projet dit que l'API est l'autorité finale, pas la copie.
  *
- * **`null` REND TOUT À `false`, ET C'EST LE REFUS PAR DÉFAUT DU §20.1.** Mais la
- * raison mérite d'être dite, parce qu'elle est l'inverse de celle qui gouverne la
- * mention du §5.1 dans l'en-tête : cette mention **affirme** quelque chose à
- * l'utilisateur, et on n'affirme pas sur une ignorance. Un menu, lui, ne fait que
- * **proposer** : ne pas proposer coûte un clic, et l'API reste l'autorité. Les
- * deux choix sont donc opposés pour une raison, pas par inadvertance.
+ * **`null` REND `peutAdministrer` À `false`, ET C'EST LE REFUS PAR DÉFAUT DU
+ * §20.1.** Mais la raison mérite d'être dite, parce qu'elle est l'inverse de
+ * celle qui gouverne la mention du §5.1 dans l'en-tête : cette mention
+ * **affirme** quelque chose à l'utilisateur, et on n'affirme pas sur une
+ * ignorance. Un menu, lui, ne fait que **proposer** : ne pas proposer coûte un
+ * clic, et l'API reste l'autorité. Les deux choix sont donc opposés pour une
+ * raison, pas par inadvertance.
+ *
+ * **`aUnParcoursActif` EST UN ARGUMENT, PAS UNE CONSTANTE — LOT 7, `T13`.**
+ * Avant `T13`, aucune table de parcours n'existait et la valeur était figée à
+ * `false` (`UN_PARCOURS_ACTIF_EST_POSSIBLE`, retirée ici — c'est le changement
+ * DÉLIBÉRÉ que ce test épinglait, §7.32). Cette fonction reste PURE : c'est
+ * `CadreApplicatif` qui interroge `GET …/onboarding-parcours` de l'appelant —
+ * via `appartenance` du §5.1, `T13` — et lui passe le résultat.
  */
-export function droitsDeNavigation(roles: readonly string[] | null): DroitsDeNavigation {
+export function droitsDeNavigation(
+  roles: readonly string[] | null,
+  aUnParcoursActif: boolean,
+): DroitsDeNavigation {
   return {
-    aUnParcoursActif: UN_PARCOURS_ACTIF_EST_POSSIBLE,
+    aUnParcoursActif,
     peutAdministrer: roles !== null && roles.some((role) => ROLES_ADMINISTRATION.includes(role)),
   };
 }

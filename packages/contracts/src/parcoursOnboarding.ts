@@ -8,10 +8,14 @@
  * seul validateur les sert toutes les deux — deux cles de manifeste,
  * `affectationDUnParcours` et `lectureDuParcours`, un seul module de contrat.
  *
- * `instance`/`progression`/`prochaineTache` PEUVENT VALOIR `null` ENSEMBLE :
- * tant qu'aucun parcours n'a ete affecte, GET rend les trois a `null` et
- * `taches` a un tableau VIDE — jamais une erreur. Meme convention que
- * `id`/`version` de la fiche d'arrivee.
+ * `instance`/`progression` PEUVENT VALOIR `null` ENSEMBLE : tant qu'aucun
+ * parcours n'a ete affecte, GET rend les deux a `null`, `prochaineTache` a
+ * `null` et `taches` a un tableau VIDE — jamais une erreur. Meme convention
+ * que `id`/`version` de la fiche d'arrivee.
+ *
+ * **`prochaineTache` PEUT VALOIR `null` MEME AVEC UN `instance` NON NUL**, et
+ * ce n'est PAS le meme cas que ci-dessus — voir l'en-tete de
+ * `validerLeParcours` pour le defaut que cette distinction corrige (`T13`).
  */
 
 import { estObjet, exigerChaine } from './formes.js';
@@ -27,6 +31,54 @@ export const CODES_LECTURE_DU_PARCOURS: readonly number[] =
 /** Les codes exploitables de l'affectation. */
 export const CODES_AFFECTATION_DU_PARCOURS: readonly number[] =
   endpoint('affectationDUnParcours').codesExploitables;
+
+/**
+ * Les gabarits et codes des DEUX actions de `T13` — matrice §8.1, `Soi` seul.
+ *
+ * **UN SEUL VALIDATEUR SERT LES DEUX**, `validerUneTacheDuParcours` : les deux
+ * routes rendent EXACTEMENT la forme `ReponseDeTacheDuParcours`, deja validee
+ * par `validerUneTache` (privee) pour chaque ligne du tableau `taches`. Une
+ * seconde fonction publique qui recopierait ses champs divergerait au premier
+ * ajout (§7.27) — elle est donc exportee sous ce nom, pas dupliquee.
+ */
+export const GABARIT_CHEMIN_COMPLETION_DE_TACHE: string = endpoint(
+  'completionDUneTacheDOnboarding',
+).chemin;
+export const GABARIT_CHEMIN_ANNULATION_DE_TACHE: string = endpoint(
+  'annulationDeLaCompletionDUneTache',
+).chemin;
+export const CODES_COMPLETION_DE_TACHE: readonly number[] = endpoint(
+  'completionDUneTacheDOnboarding',
+).codesExploitables;
+export const CODES_ANNULATION_DE_TACHE: readonly number[] = endpoint(
+  'annulationDeLaCompletionDUneTache',
+).codesExploitables;
+
+/** Le chemin d'une action sur une tache, ses TROIS segments encodes. */
+function cheminDeLActionSurUneTache(
+  gabarit: string,
+  code: string,
+  appartenance: string,
+  tache: string,
+): string {
+  if (code === '' || appartenance === '' || tache === '') {
+    //  Sans cette garde, le chemin obtenu designerait une AUTRE ressource —
+    //  meme raisonnement que `cheminDuParcours`.
+    throw new TypeError('code d’entite, appartenance ou identifiant de tache vide');
+  }
+  return gabarit
+    .replace('{code}', encodeURIComponent(code))
+    .replace('{appartenance}', encodeURIComponent(appartenance))
+    .replace('{tache}', encodeURIComponent(tache));
+}
+
+export function cheminCompletionDeTache(code: string, appartenance: string, tache: string): string {
+  return cheminDeLActionSurUneTache(GABARIT_CHEMIN_COMPLETION_DE_TACHE, code, appartenance, tache);
+}
+
+export function cheminAnnulationDeTache(code: string, appartenance: string, tache: string): string {
+  return cheminDeLActionSurUneTache(GABARIT_CHEMIN_ANNULATION_DE_TACHE, code, appartenance, tache);
+}
 
 /** Le chemin du parcours d'une appartenance, ses deux segments encodes. */
 export function cheminDuParcours(code: string, appartenance: string): string {
@@ -120,6 +172,17 @@ function validerUneTache(valeur: unknown): TacheDuParcours {
   };
 }
 
+/**
+ * Valider ce que `POST …/completion` et `POST …/annulation` rendent — `T13`.
+ *
+ * **MEME FORME QU'UNE LIGNE DE `taches`**, exportee sous son propre nom plutot
+ * que de laisser un consommateur importer une fonction privee. Voir l'en-tete
+ * de `GABARIT_CHEMIN_COMPLETION_DE_TACHE`.
+ */
+export function validerUneTacheDuParcours(valeur: unknown): TacheDuParcours {
+  return validerUneTache(valeur);
+}
+
 function validerLInstance(valeur: unknown): InstanceDeParcours {
   if (!estObjet(valeur)) {
     throw new TypeError('parcours : « instance » n’est pas un objet');
@@ -144,7 +207,23 @@ function validerLaProgression(valeur: unknown): ProgressionDuParcours {
   };
 }
 
-/** Valider ce que `GET`/`POST …/onboarding-parcours` ont rendu. */
+/**
+ * Valider ce que `GET`/`POST …/onboarding-parcours` ont rendu.
+ *
+ * **DEFAUT TROUVE ET CORRIGE A `T13`, DANS UN CODE ECRIT A `T7`.** Cette
+ * fonction exigeait que `instance`, `progression` ET `prochaine_tache` soient
+ * NULS ENSEMBLE, ou AUCUN DES TROIS. C'est FAUX pour `prochaine_tache` :
+ * `_prochaine_tache` (`app/onboarding/instances.py`) rend `None` des que
+ * PLUS AUCUNE tache n'est `todo`/`reopened` — completees ou annulees, y
+ * compris quand l'instance reste `active` (une version sans AUCUNE tache
+ * obligatoire, dont toutes les taches facultatives sont terminees, n'est
+ * jamais archivee automatiquement : `T11` n'archive que sur la DERNIERE
+ * tache OBLIGATOIRE). Un parcours reel dans cet etat faisait LEVER ce
+ * validateur, et l'ecran du nouvel arrivant (`T13`) aurait recu `corps: null`
+ * sur un `200` parfaitement legitime — silencieusement, comme `T11-7` du LOT
+ * 5. `instance` et `progression` restent nuls ENSEMBLE (`lire_le_parcours` ne
+ * calcule jamais l'un sans l'autre) ; `prochaine_tache` est verifie a part.
+ */
 export function validerLeParcours(valeur: unknown): Parcours {
   if (!estObjet(valeur)) {
     throw new TypeError('parcours : charge utile non objet');
@@ -152,14 +231,14 @@ export function validerLeParcours(valeur: unknown): Parcours {
   const instanceBrute = valeur['instance'];
   const progressionBrute = valeur['progression'];
   const prochaineTacheBrute = valeur['prochaine_tache'];
-  //  **LES TROIS SONT NULS ENSEMBLE, OU AUCUN DES TROIS** — voir l'en-tete.
-  const nuls = [instanceBrute, progressionBrute, prochaineTacheBrute].filter(
-    (v) => v === null,
-  ).length;
-  if (nuls !== 0 && nuls !== 3) {
-    throw new TypeError(
-      'parcours : « instance », « progression » et « prochaine_tache » doivent etre nuls ensemble',
-    );
+  if ((instanceBrute === null) !== (progressionBrute === null)) {
+    throw new TypeError('parcours : « instance » et « progression » doivent etre nuls ENSEMBLE');
+  }
+  //  **AUCUN parcours affecte -> AUCUNE prochaine tache.** `_AUCUN_PARCOURS`
+  //  (backend) force les trois a `null` dans ce cas precis ; c'est le SEUL
+  //  sens dans lequel `prochaine_tache` est contraint par les deux autres.
+  if (instanceBrute === null && prochaineTacheBrute !== null) {
+    throw new TypeError('parcours : « prochaine_tache » doit etre nul si aucun parcours affecte');
   }
   const taches = valeur['taches'];
   if (!Array.isArray(taches)) {

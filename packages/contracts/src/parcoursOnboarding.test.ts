@@ -9,11 +9,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CODES_AFFECTATION_DU_PARCOURS,
-  CODES_LECTURE_DU_PARCOURS,
+  cheminAnnulationDeTache,
+  cheminCompletionDeTache,
   cheminDuParcours,
+  CODES_AFFECTATION_DU_PARCOURS,
+  CODES_ANNULATION_DE_TACHE,
+  CODES_COMPLETION_DE_TACHE,
+  CODES_LECTURE_DU_PARCOURS,
+  GABARIT_CHEMIN_ANNULATION_DE_TACHE,
+  GABARIT_CHEMIN_COMPLETION_DE_TACHE,
   GABARIT_CHEMIN_PARCOURS,
   validerLeParcours,
+  validerUneTacheDuParcours,
 } from './parcoursOnboarding.js';
 
 function tache(modifications: Record<string, unknown> = {}): Record<string, unknown> {
@@ -103,8 +110,22 @@ describe('validerLeParcours', () => {
     expect(() => validerLeParcours(parcours({ instance: null }))).toThrow(TypeError);
   });
 
-  it('refuse prochaine_tache nulle seule', () => {
-    expect(() => validerLeParcours(parcours({ prochaine_tache: null }))).toThrow(TypeError);
+  it('ACCEPTE prochaine_tache nulle avec une instance ACTIVE — defaut corrige a T13', () => {
+    //  Toutes les taches sont terminees ou annulees : `_prochaine_tache` rend
+    //  `None` cote API meme quand l'instance reste `active` (aucune tache
+    //  obligatoire dans cette version, par exemple). Une version anterieure de
+    //  ce validateur LEVAIT ici, sur une reponse pourtant conforme.
+    const valide = validerLeParcours(
+      parcours({ prochaine_tache: null, taches: [tache({ state: 'completed' })] }),
+    );
+    expect(valide.instance).not.toBeNull();
+    expect(valide.prochaineTache).toBeNull();
+  });
+
+  it('refuse prochaine_tache NON NULLE quand AUCUN parcours n’a ete affecte', () => {
+    expect(() =>
+      validerLeParcours(parcours({ instance: null, progression: null, taches: [] })),
+    ).toThrow(TypeError);
   });
 
   it('refuse une charge utile non objet', () => {
@@ -136,5 +157,58 @@ describe('validerLeParcours', () => {
         }),
       ),
     ).toThrow(TypeError);
+  });
+});
+
+describe('les chemins des deux actions Soi de T13', () => {
+  it('viennent du manifeste, source unique (DEC-492)', () => {
+    expect(GABARIT_CHEMIN_COMPLETION_DE_TACHE).toBe(
+      '/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion',
+    );
+    expect(GABARIT_CHEMIN_ANNULATION_DE_TACHE).toBe(
+      '/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/annulation',
+    );
+    expect(CODES_COMPLETION_DE_TACHE).toContain(409);
+    expect(CODES_ANNULATION_DE_TACHE).toContain(409);
+  });
+
+  it('encodent leurs TROIS segments', () => {
+    expect(cheminCompletionDeTache('BORDEA00', 'a b', 't 1')).toBe(
+      '/api/v1/entities/BORDEA00/people/a%20b/onboarding-parcours/taches/t%201/completion',
+    );
+    expect(cheminAnnulationDeTache('BORDEA00', 'a b', 't 1')).toBe(
+      '/api/v1/entities/BORDEA00/people/a%20b/onboarding-parcours/taches/t%201/annulation',
+    );
+  });
+
+  it('refusent un code, une appartenance ou une tache vide', () => {
+    expect(() => cheminCompletionDeTache('', 'a1', 't1')).toThrow(TypeError);
+    expect(() => cheminCompletionDeTache('BORDEA00', '', 't1')).toThrow(TypeError);
+    expect(() => cheminCompletionDeTache('BORDEA00', 'a1', '')).toThrow(TypeError);
+    expect(() => cheminAnnulationDeTache('BORDEA00', 'a1', '')).toThrow(TypeError);
+  });
+});
+
+describe('validerUneTacheDuParcours — T13', () => {
+  it('accepte la forme d’une tache, meme validateur que le parcours', () => {
+    expect(
+      validerUneTacheDuParcours(
+        tache({ state: 'completed', completed_at: '2026-10-08T09:00:00Z' }),
+      ),
+    ).toEqual({
+      id: 't1',
+      referenceDeLaTache: 'r1',
+      titre: 'Signer le contrat',
+      description: null,
+      obligatoire: true,
+      echeance: '2026-10-08T00:00:00Z',
+      etat: 'completed',
+      termineeLe: '2026-10-08T09:00:00Z',
+      reouverteLe: null,
+    });
+  });
+
+  it('refuse une charge utile non objet', () => {
+    expect(() => validerUneTacheDuParcours(null)).toThrow(TypeError);
   });
 });

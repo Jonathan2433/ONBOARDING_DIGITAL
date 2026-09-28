@@ -46,6 +46,7 @@ import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contract
 
 import { Alerte } from '@onboarding/ui';
 
+import { lireLeParcours } from '../api/onboarding';
 import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
@@ -210,6 +211,16 @@ interface Charge {
   readonly etat: Etat;
   readonly autres: readonly EntiteDuPortail[];
   readonly permissions: PermissionsDeLEntite | null;
+  /**
+   * L'appelant a-t-il un parcours ACTIF dans cette entite ? — LOT 7, `T13`.
+   *
+   * **`false` PAR DEFAUT, ET C'EST LE REFUS PAR DEFAUT DU §20.1** — exactement
+   * comme `permissions: null` avant que la reponse ne revienne : une rubrique
+   * montree a tort suggererait un onboarding qui n'existe pas. Elle ne devient
+   * `true` qu'apres une lecture REUSSIE de `GET …/onboarding-parcours` dont
+   * `instance.etat === 'active'` — jamais une supposition.
+   */
+  readonly aUnParcoursActif: boolean;
   /**
    * L'identifiant de corrélation de la réponse d'entité — §17.4, `T10`.
    *
@@ -432,6 +443,7 @@ export function CadreApplicatif(): JSX.Element {
                 etat: { phase: 'chargement' },
                 autres: [],
                 permissions: null,
+                aUnParcoursActif: false,
                 correlation: null,
               };
         return { ...base, ...apport, code };
@@ -485,6 +497,24 @@ export function CadreApplicatif(): JSX.Element {
       (reponse) => {
         if (reponse.statut === 200 && reponse.corps !== null) {
           fusionner({ permissions: reponse.corps });
+          //  **LE PARCOURS N'EST INTERROGE QUE SI UNE APPARTENANCE EXISTE** —
+          //  LOT 7, `T13`. Hors de l'entite principale, ou sans appartenance
+          //  occupante, `appartenance` vaut `null` et `aUnParcoursActif` reste
+          //  `false` par le refus par defaut deja pose dans la charge de base :
+          //  aucun appel n'est fait pour rien.
+          const { appartenance } = reponse.corps;
+          if (appartenance !== null) {
+            void lireLeParcours(code, appartenance, abandon.signal).then(
+              (parcoursLu) => {
+                if (parcoursLu.statut === 200 && parcoursLu.corps !== null) {
+                  fusionner({
+                    aUnParcoursActif: parcoursLu.corps.instance?.etat === 'active',
+                  });
+                }
+              },
+              (cause: unknown) => cause,
+            );
+          }
         }
       },
       (cause: unknown) => cause,
@@ -598,7 +628,10 @@ export function CadreApplicatif(): JSX.Element {
   //  s'appliquent. Refaire le calcul ici donnerait deux implementations d'une
   //  meme regle -- et la regle 5 du projet dit que l'API est l'autorite finale,
   //  pas la copie.
-  const droits = droitsDeNavigation(courante?.permissions?.roles ?? null);
+  const droits = droitsDeNavigation(
+    courante?.permissions?.roles ?? null,
+    courante?.aUnParcoursActif ?? false,
+  );
 
   //  **LE `<h1>` NE REPETE PAS LE NOM DE L'ENTITE.** Mesure a l'ecran en `T3` :
   //  avec le nom en titre, il apparaissait DEUX fois -- une fois dans l'en-tete,

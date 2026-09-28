@@ -304,16 +304,29 @@ export type {
   TransitionDeContenu,
 } from './gestionDuContenu.js';
 
-//  LA FICHE D'ARRIVEE EN LECTURE — LOT 7, `T2`. « Une sous-etape qui sert une
-//  LECTURE pose son module de contrat » (LOT 6) : `T3`, qui ECRIT, n'en
-//  ajoutera pas un second.
+//  LA FICHE D'ARRIVEE — LECTURE (`T2`) ET ECRITURE (`T3`, consommees par
+//  `T13`, premier ecran). `DemandeDe...` restent en `snake_case`, le format
+//  que l'API attend — seules les REPONSES validees passent en `camelCase`.
 export {
   cheminFicheArrivee,
+  cheminValidationFicheArrivee,
+  CODES_COMPLETION_FICHE_ARRIVEE,
   CODES_FICHE_ARRIVEE,
+  CODES_VALIDATION_FICHE_ARRIVEE,
   GABARIT_CHEMIN_FICHE_ARRIVEE,
+  GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE,
+  validerLaCompletion,
   validerLaFicheArrivee,
+  validerLaValidation,
 } from './ficheArrivee.js';
-export type { CercleDeLaFicheArrivee, FicheArrivee } from './ficheArrivee.js';
+export type {
+  CercleDeLaFicheArrivee,
+  CompletionDeFiche,
+  DemandeDeCompletionDeFiche,
+  DemandeDeValidationDeFiche,
+  FicheArrivee,
+  ValidationDeFiche,
+} from './ficheArrivee.js';
 
 //  LE CATALOGUE DES TACHES EN LECTURE — LOT 7, `T4`, ferme `ECART-013`. Meme
 //  partage : la CREATION, qui ECRIT, n'a pas de module de contrat propre.
@@ -326,13 +339,22 @@ export {
 export type { CatalogueDeTaches, TacheDeReference } from './catalogueDesTaches.js';
 
 //  LE PARCOURS D'ONBOARDING — LOT 7, `T7`. UN SEUL MODULE POUR DEUX VERBES :
-//  affecter (`POST`) et consulter (`GET`) rendent la MEME forme.
+//  affecter (`POST`) et consulter (`GET`) rendent la MEME forme. `T13` y
+//  ajoute les DEUX actions `Soi` du §8.1 — terminer, annuler — qui rendent la
+//  meme forme qu'une ligne de `taches`.
 export {
+  cheminAnnulationDeTache,
+  cheminCompletionDeTache,
   cheminDuParcours,
   CODES_AFFECTATION_DU_PARCOURS,
+  CODES_ANNULATION_DE_TACHE,
+  CODES_COMPLETION_DE_TACHE,
   CODES_LECTURE_DU_PARCOURS,
+  GABARIT_CHEMIN_ANNULATION_DE_TACHE,
+  GABARIT_CHEMIN_COMPLETION_DE_TACHE,
   GABARIT_CHEMIN_PARCOURS,
   validerLeParcours,
+  validerUneTacheDuParcours,
 } from './parcoursOnboarding.js';
 export type {
   InstanceDeParcours,

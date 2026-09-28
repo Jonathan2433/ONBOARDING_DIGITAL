@@ -8,6 +8,13 @@
  * `identifiant` ET `version` PEUVENT VALOIR `null` : aucune ligne
  * `arrival_profile` n'existe tant que `T3` ne l'a pas creee. Un ecran qui
  * recoit les deux `null` sait qu'il doit CREER, jamais mettre a jour.
+ *
+ * **`T13` AJOUTE LES DEUX ECRITURES DE `T3`, ET C'EST LE PREMIER CONSOMMATEUR.**
+ * Ni la completion (`PATCH`) ni la validation (`POST .../validation`) n'avaient
+ * de validateur de reponse avant l'ecran du nouvel arrivant : meme motif que
+ * `DemandeDEcritureDuContenu` (LOT 6, `T10`), les CORPS envoyes restent en
+ * `snake_case`, exactement le format que l'API attend — seules les REPONSES
+ * validees passent en `camelCase`.
  */
 
 import { estObjet, exigerChaine } from './formes.js';
@@ -30,6 +37,106 @@ export function cheminFicheArrivee(code: string, appartenance: string): string {
     '{appartenance}',
     encodeURIComponent(appartenance),
   );
+}
+
+/** Le gabarit du chemin de validation — `POST …/arrival-profile/validation`, `T13`. */
+export const GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE: string = endpoint(
+  'validationDeLaFicheArrivee',
+).chemin;
+
+/** Les codes exploitables de la completion (`PATCH`) — meme chemin que la lecture. */
+export const CODES_COMPLETION_FICHE_ARRIVEE: readonly number[] = endpoint(
+  'completionDeLaFicheArrivee',
+).codesExploitables;
+
+/** Les codes exploitables de la validation (`POST .../validation`). */
+export const CODES_VALIDATION_FICHE_ARRIVEE: readonly number[] = endpoint(
+  'validationDeLaFicheArrivee',
+).codesExploitables;
+
+/** Le chemin de validation d'une appartenance, ses deux segments encodes. */
+export function cheminValidationFicheArrivee(code: string, appartenance: string): string {
+  if (code === '' || appartenance === '') {
+    throw new TypeError('code d’entite ou appartenance vide');
+  }
+  return GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE.replace(
+    '{code}',
+    encodeURIComponent(code),
+  ).replace('{appartenance}', encodeURIComponent(appartenance));
+}
+
+/**
+ * Le corps de `PATCH …/arrival-profile` — matrice §7, DEUX lignes servies par
+ * la MEME route : « Completer » (brouillon) ou « Corriger apres publication ».
+ *
+ * `version: null` signifie « aucune ligne n'existe encore d'apres ma derniere
+ * lecture » — exactement ce que `FicheArrivee.version` rend tant que personne
+ * n'a rien ecrit. `photo_media_id` N'EST PAS ICI : aucune route d'upload ou
+ * d'autorisation de media n'existe encore, cote API (`routes.py`, `T3`).
+ */
+export interface DemandeDeCompletionDeFiche {
+  readonly version: number | null;
+  readonly short_intro?: string;
+  readonly fun_fact?: string;
+}
+
+/** Le corps de `POST …/arrival-profile/validation` — la seule chose qu'il demande. */
+export interface DemandeDeValidationDeFiche {
+  readonly version: number;
+}
+
+/** Ce que `PATCH …/arrival-profile` rend — `ReponseDeCompletion`, `T3`. */
+export interface CompletionDeFiche {
+  readonly identifiant: string;
+  readonly version: number;
+  readonly etat: string;
+}
+
+/** Ce que `POST …/arrival-profile/validation` rend — `ReponseDeValidation`, `T3`. */
+export interface ValidationDeFiche {
+  readonly identifiant: string;
+  readonly version: number;
+  readonly etat: string;
+  readonly valideeLe: string;
+  readonly publieeLe: string;
+  readonly recenteJusquAu: string;
+}
+
+/** Valider ce que `PATCH …/arrival-profile` a rendu. */
+export function validerLaCompletion(valeur: unknown): CompletionDeFiche {
+  if (!estObjet(valeur)) {
+    throw new TypeError('completion de la fiche : charge utile non objet');
+  }
+  return {
+    identifiant: exigerChaine(valeur, 'id'),
+    version: (() => {
+      const brut = valeur['version'];
+      if (typeof brut !== 'number' || !Number.isInteger(brut)) {
+        throw new TypeError('completion de la fiche : « version » absente ou non entiere');
+      }
+      return brut;
+    })(),
+    etat: exigerChaine(valeur, 'state'),
+  };
+}
+
+/** Valider ce que `POST …/arrival-profile/validation` a rendu. */
+export function validerLaValidation(valeur: unknown): ValidationDeFiche {
+  if (!estObjet(valeur)) {
+    throw new TypeError('validation de la fiche : charge utile non objet');
+  }
+  const version = valeur['version'];
+  if (typeof version !== 'number' || !Number.isInteger(version)) {
+    throw new TypeError('validation de la fiche : « version » absente ou non entiere');
+  }
+  return {
+    identifiant: exigerChaine(valeur, 'id'),
+    version,
+    etat: exigerChaine(valeur, 'state'),
+    valideeLe: exigerChaine(valeur, 'validated_at'),
+    publieeLe: exigerChaine(valeur, 'published_at'),
+    recenteJusquAu: exigerChaine(valeur, 'recent_until'),
+  };
 }
 
 export interface CercleDeLaFicheArrivee {

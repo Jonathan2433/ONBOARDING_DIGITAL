@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `612` en usage | `DEC-613` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `613` en usage | `DEC-614` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -633,8 +633,47 @@ aucune migration.**
 > environnementaux IDENTIQUES des deux côtés. 11 tests d'intégration. Détail :
 > `compte-rendu-t12-lot-7.md`.
 
-**2 022 tests** désormais — **1 404 pytest** (dont **1 025** d'intégration), **618 Vitest**
-inchangé. `T12` laisse `T13`/`T14` (écrans) et `T15` (recette, §30, checklist `G7`).
+**`T13` EST FAITE** le 28/09/2026, `DEC-613` : les écrans du nouvel arrivant — fiche d'arrivée,
+parcours, tâches — **UNE SEULE** page, `PageMonOnboarding.tsx`, sous la rubrique `mon-onboarding`
+déjà réservée par `T4` du LOT 4. **Aucune route API nouvelle** : `T2`/`T3`/`T7`/`T8` livraient déjà
+tout ce que l'écran consomme.
+
+> **`GET /entities/{code}/permissions` (LOT 4, `T8`) EST ÉTENDU D'UN CHAMP `appartenance`** —
+> l'entity_membership_id occupant de l'appelant dans l'entité consultée, `null` hors de l'entité
+> principale. C'est le SEUL moyen dont dispose le frontend de savoir quelle URL appeler pour SA
+> propre fiche et SON propre parcours : aucune route de l'onboarding n'accepte de cible implicite
+> (matrice §7, §8.1), et cette page ne porte AUCUN `:appartenance` dans son adresse — contrairement
+> à `PageProfil` (LOT 5). Réutiliser une réponse déjà appelée une fois par page évite un
+> aller-retour réseau de plus. `droitsDeNavigation` devient une fonction PURE prenant
+> `aUnParcoursActif` en argument RÉEL, retirant la constante figée à `false` posée au LOT 4 — la
+> rubrique « Mon onboarding » apparaît désormais VRAIMENT quand un parcours actif existe.
+>
+> **DÉFAUT TROUVÉ ET CORRIGÉ, DANS UN CODE ÉCRIT À `T7`, JAMAIS EXERCÉ PAR UN ÉCRAN AVANT `T13`.**
+> `validerLeParcours` (contrat TypeScript) exigeait `instance`, `progression` et `prochaine_tache`
+> nuls ENSEMBLE, ou aucun des trois — faux pour `prochaine_tache`, qui peut être nul même avec une
+> instance `active` (aucune tâche `todo`/`reopened` restante). Une réponse `200` légitime aurait
+> levé côté client, silencieusement. Corrigé pour distinguer les deux invariants réels.
+>
+> **AUCUNE FENÊTRE DE CINQ MINUTES N'EST CALCULÉE CÔTÉ CLIENT** : le bouton « Annuler » est proposé
+> pour toute tâche `completed`, et c'est le `409` de l'API qui referme la fenêtre. **LE FRONTEND NE
+> PROPOSE PAS UN DROIT DÉJÀ REFUSÉ** : « Valider et publier » reste désactivé sans présentation
+> courte ou avec des modifications non enregistrées ; après publication (§6.2), la fiche bascule en
+> lecture seule.
+>
+> **ALLER-RETOUR RÉEL EFFECTUÉ AVANT DE DÉCLARER L'ÉCRAN TERMINÉ (§7.43 du LOT 6)** : décor réel sur
+> la base de dev, connexion par lien magique RÉEL consommé dans le navigateur, puis lecture,
+> complétion, validation/publication, complétion d'une tâche et son annulation — tous les appels
+> réels à `200`, décor nettoyé après coup. **Aucun script `make onboarding-check` dans cette
+> sous-étape**, décision explicite de Jonathan : reporté à `T14`, qui livre aussi des écrans et
+> recevra sa propre preuve outillée, combinée pour les deux plutôt que dupliquée deux fois de suite.
+>
+> 2 tests d'intégration (le champ `appartenance`), 17 tests Vitest (l'écran), 6 tests Vitest de plus
+> (le fil réel `CadreApplicatif`), 2 tests réécrits délibérément (la constante retirée). Détail :
+> `compte-rendu-t13-lot-7.md`.
+
+**2 072 tests** désormais — **1 406 pytest** (dont **1 027** d'intégration), **666 Vitest** (**308**
+`contracts`, **111** `ui` inchangé, **247** `web`). `T13` laisse `T14` (écrans d'administration) et
+`T15` (recette, §30, checklist `G7`).
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
 version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
