@@ -56,6 +56,7 @@ import { PageFramework } from './pages/PageFramework';
 import { PageGestionDesLiens } from './pages/PageGestionDesLiens';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
+import { PageMonOnboarding } from './pages/PageMonOnboarding';
 import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
@@ -74,6 +75,9 @@ const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
   trombinoscope: <PageTrombinoscope />,
   //  LOT 6, `T9` — la synthese Framework, story `MVP-L06-US001`.
   framework: <PageFramework />,
+  //  LOT 7, `T13` — la fiche d'arrivee, le parcours et les taches du nouvel
+  //  arrivant, toutes trois composees dans CETTE page (voir son en-tete).
+  monOnboarding: <PageMonOnboarding />,
 };
 
 /**

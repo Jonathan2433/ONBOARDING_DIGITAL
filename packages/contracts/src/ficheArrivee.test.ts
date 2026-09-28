@@ -10,9 +10,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cheminFicheArrivee,
+  cheminValidationFicheArrivee,
+  CODES_COMPLETION_FICHE_ARRIVEE,
   CODES_FICHE_ARRIVEE,
+  CODES_VALIDATION_FICHE_ARRIVEE,
   GABARIT_CHEMIN_FICHE_ARRIVEE,
+  GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE,
+  validerLaCompletion,
   validerLaFicheArrivee,
+  validerLaValidation,
 } from './ficheArrivee.js';
 
 function fiche(modifications: Record<string, unknown> = {}): Record<string, unknown> {
@@ -101,4 +107,89 @@ describe('validerLaFicheArrivee', () => {
     delete sansPrenom['first_name'];
     expect(() => validerLaFicheArrivee(sansPrenom)).toThrow(TypeError);
   });
+});
+
+describe('le chemin de validation — T13', () => {
+  it('vient du manifeste, source unique (DEC-492)', () => {
+    expect(GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE).toBe(
+      '/api/v1/entities/{code}/people/{appartenance}/arrival-profile/validation',
+    );
+    expect(CODES_COMPLETION_FICHE_ARRIVEE).toContain(409);
+    expect(CODES_VALIDATION_FICHE_ARRIVEE).toContain(422);
+  });
+
+  it('encode ses deux segments', () => {
+    expect(cheminValidationFicheArrivee('BORDEA00', 'a b')).toBe(
+      '/api/v1/entities/BORDEA00/people/a%20b/arrival-profile/validation',
+    );
+  });
+
+  it('refuse un code ou une appartenance vide', () => {
+    expect(() => cheminValidationFicheArrivee('', 'a1')).toThrow(TypeError);
+    expect(() => cheminValidationFicheArrivee('BORDEA00', '')).toThrow(TypeError);
+  });
+});
+
+describe('validerLaCompletion — T13', () => {
+  const REPONSE = { id: 'a1', version: 2, state: 'draft' };
+
+  it('accepte la forme attendue', () => {
+    expect(validerLaCompletion(REPONSE)).toEqual({
+      identifiant: 'a1',
+      version: 2,
+      etat: 'draft',
+    });
+  });
+
+  it('refuse une charge utile non objet', () => {
+    expect(() => validerLaCompletion(null)).toThrow(TypeError);
+  });
+
+  it('refuse « version » absente ou non entiere', () => {
+    expect(() => validerLaCompletion({ ...REPONSE, version: '2' })).toThrow(TypeError);
+  });
+
+  it('refuse un champ textuel obligatoire absent', () => {
+    const sansEtat: Record<string, unknown> = { ...REPONSE };
+    delete sansEtat['state'];
+    expect(() => validerLaCompletion(sansEtat)).toThrow(TypeError);
+  });
+});
+
+describe('validerLaValidation — T13', () => {
+  const REPONSE = {
+    id: 'a1',
+    version: 3,
+    state: 'published',
+    validated_at: '2026-10-01T09:00:00Z',
+    published_at: '2026-10-01T09:00:00Z',
+    recent_until: '2026-11-01',
+  };
+
+  it('accepte la forme attendue — validation ET publication portent le MEME instant', () => {
+    expect(validerLaValidation(REPONSE)).toEqual({
+      identifiant: 'a1',
+      version: 3,
+      etat: 'published',
+      valideeLe: '2026-10-01T09:00:00Z',
+      publieeLe: '2026-10-01T09:00:00Z',
+      recenteJusquAu: '2026-11-01',
+    });
+  });
+
+  it('refuse une charge utile non objet', () => {
+    expect(() => validerLaValidation(null)).toThrow(TypeError);
+  });
+
+  it('refuse « version » absente ou non entiere', () => {
+    expect(() => validerLaValidation({ ...REPONSE, version: null })).toThrow(TypeError);
+  });
+
+  for (const champ of ['validated_at', 'published_at', 'recent_until']) {
+    it(`refuse « ${champ} » absent`, () => {
+      const tronquee: Record<string, unknown> = { ...REPONSE };
+      delete tronquee[champ];
+      expect(() => validerLaValidation(tronquee)).toThrow(TypeError);
+    });
+  }
 });

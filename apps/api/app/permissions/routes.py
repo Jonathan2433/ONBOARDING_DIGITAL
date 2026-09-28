@@ -35,6 +35,16 @@ LA REPONSE EST BORNEE A CE QUE LA MATRICE DIT, ET PAS PLUS
   frontend a besoin de savoir laquelle des deux, parce que le §5.1 lui interdit
   de PROPOSER des actions hors de son entite principale.
 
+`T13` DU LOT 7 AJOUTE `appartenance`, ET CE N'EST PAS UNE ACTION DE PLUS
+
+  Le §6.5 interdit d'inventer ce que le corpus ne decide pas ; ceci ne decide
+  RIEN de nouveau, ca n'est qu'une IDENTITE. Aucune route de l'onboarding
+  n'accepte de cible implicite (§7, §8.1) : sans cet identifiant, l'ecran
+  « Mon onboarding » n'aurait aucun moyen de savoir quelle URL appeler pour
+  la fiche et le parcours DE L'APPELANT LUI-MEME. Reutiliser cette route
+  plutot qu'en ajouter une troisieme evite un aller-retour reseau de plus —
+  elle est deja appelee une fois par page par le cadre applicatif.
+
 LE 404 EST LE MEME QUE CELUI DE `GET /entities/{code}`, ET C'EST VOULU
 
   La route resout d'abord l'entite ACTIVE. Une entite `draft`, `suspended` ou
@@ -78,12 +88,19 @@ class PermissionsDeLEntiteConsultee(BaseModel):
 
     `roles` porte les codes du §3 de la matrice, tries. L'ordre est total et
     reproductible : le controle de `T8` compare deux reponses octet a octet.
+
+    `appartenance` — LOT 7, `T13`. `None` hors de l'entite principale, ou sans
+    appartenance occupante. Voir `permissions.services._appartenance_occupante` :
+    c'est le SEUL moyen dont dispose l'ecran du nouvel arrivant pour savoir
+    quelle URL appeler pour SA propre fiche et SON propre parcours — aucune
+    route de l'onboarding n'accepte de cible implicite.
     """
 
     entite: uuid.UUID
     code: str
     est_entite_principale: bool
     roles: list[str]
+    appartenance: uuid.UUID | None
 
 
 def routeur_permissions(parametres: Parametres) -> APIRouter:
@@ -155,6 +172,7 @@ def routeur_permissions(parametres: Parametres) -> APIRouter:
             code=entite.code,
             est_entite_principale=permissions.est_entite_principale,
             roles=[role.value for role in permissions.roles],
+            appartenance=permissions.appartenance,
         )
 
     return routeur

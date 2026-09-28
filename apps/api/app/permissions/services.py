@@ -191,6 +191,10 @@ class PermissionsDeLEntite:
     entite: uuid.UUID
     est_entite_principale: bool
     roles: tuple[RoleDeLaMatrice, ...]
+    #  `None` hors de l'entite principale, ou sans appartenance occupante —
+    #  LOT 7, `T13`. Voir `_appartenance_occupante` : l'index unique du LOT 2
+    #  garantit qu'il n'y en a jamais deux, dans CETTE entite ni ailleurs.
+    appartenance: uuid.UUID | None
 
 
 def entite_principale(connexion: Connection, personne: uuid.UUID) -> uuid.UUID | None:
@@ -204,6 +208,35 @@ def entite_principale(connexion: Connection, personne: uuid.UUID) -> uuid.UUID |
     return connexion.execute(
         text(
             "SELECT entity_id FROM entity_membership "
+            "WHERE person_id = :personne "
+            "  AND membership_state = ANY(:etats_occupants) "
+            "  AND archived_at IS NULL"
+        ),
+        {"personne": personne, "etats_occupants": list(ETATS_OCCUPANTS)},
+    ).scalar_one_or_none()
+
+
+def _appartenance_occupante(connexion: Connection, personne: uuid.UUID) -> uuid.UUID | None:
+    """L'identifiant de l'appartenance OCCUPANTE elle-meme — LOT 7, `T13`.
+
+    **POURQUOI CETTE FONCTION EXISTE, ET POURQUOI ELLE N'EST APPELEE QUE DANS
+    L'ENTITE PRINCIPALE.** Aucune route de l'onboarding (fiche d'arrivee,
+    parcours, taches) n'accepte de cible implicite : chacune exige un
+    `entity_membership_id` explicite dans son chemin (§7 et §8.1 de la
+    matrice), exactement comme le reste de l'API depuis `T2` du LOT 7. Sans ce
+    champ, l'ecran du nouvel arrivant n'aurait AUCUN moyen de savoir quelle
+    URL appeler pour SES propres fiche et parcours.
+
+    `uq_entity_membership_person_id_occupante` (LOT 2, `T?`) est UNIQUE sur
+    `person_id` seul, pas sur `(person_id, entity_id)` : une personne a au
+    plus UNE appartenance occupante, tous azimuts. Elle vit donc forcement
+    dans l'entite PRINCIPALE — `resoudre_les_permissions` ne l'appelle que la,
+    jamais hors de l'entite principale, ou elle rendrait `None` de toute
+    facon.
+    """
+    return connexion.execute(
+        text(
+            "SELECT id FROM entity_membership "
             "WHERE person_id = :personne "
             "  AND membership_state = ANY(:etats_occupants) "
             "  AND archived_at IS NULL"
@@ -320,4 +353,5 @@ def resoudre_les_permissions(
         #  L'ordre vient de l'ENUMERATION, jamais d'un tri. Voir le docstring
         #  de `PermissionsDeLEntite` : le tri etait invisible a tout controle.
         roles=tuple(membre for membre in RoleDeLaMatrice if membre in roles),
+        appartenance=_appartenance_occupante(connexion, personne) if est_principale else None,
     )

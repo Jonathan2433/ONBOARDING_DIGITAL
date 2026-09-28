@@ -139,6 +139,17 @@ export interface PermissionsDeLEntite {
   readonly code: string;
   readonly estEntitePrincipale: boolean;
   readonly roles: readonly string[];
+  /**
+   * L'appartenance OCCUPANTE de l'appelant DANS cette entite — LOT 7, `T13`.
+   * `null` hors de l'entite principale, ou sans appartenance occupante.
+   *
+   * **C'EST LE SEUL MOYEN DONT DISPOSE L'ECRAN DU NOUVEL ARRIVANT** de savoir
+   * quelle URL appeler pour SA propre fiche d'arrivee et SON propre parcours :
+   * aucune route de l'onboarding n'accepte de cible implicite (matrice §7,
+   * §8.1). Reutiliser cette reponse, deja appelee une fois par page par le
+   * cadre applicatif, evite un aller-retour reseau de plus.
+   */
+  readonly appartenance: string | null;
 }
 
 /**
@@ -155,6 +166,19 @@ export interface PermissionsDeLEntite {
  * reponse `{}` rendrait une liste vide, indistinguable d'un « aucun droit »
  * legitime.
  */
+function appartenanceOuNulle(valeur: Record<string, unknown>): string | null {
+  const brut = valeur['appartenance'];
+  if (brut === null) {
+    return null;
+  }
+  if (typeof brut !== 'string') {
+    //  **L'ABSENCE N'EST PAS `null`.** Meme discipline que `ficheArrivee.ts` et
+    //  `parcoursOnboarding.ts` : un champ manquant est une reponse malformee.
+    throw new TypeError('champ « appartenance » ni chaine ni null');
+  }
+  return brut;
+}
+
 export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
   if (!estObjet(valeur)) {
     throw new TypeError('permissions non objet');
@@ -177,6 +201,7 @@ export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
       }
       return role;
     }),
+    appartenance: appartenanceOuNulle(valeur),
   };
 }
 
