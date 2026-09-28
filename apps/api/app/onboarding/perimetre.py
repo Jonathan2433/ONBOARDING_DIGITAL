@@ -247,6 +247,7 @@ L'ARCHIVAGE MANUEL ET LA RESTAURATION D'UN PARCOURS — matrice §8.1, `T11`
 from __future__ import annotations
 
 import datetime as dt
+import enum
 import uuid
 from typing import Final
 
@@ -752,3 +753,41 @@ ROLES_DE_REOUVERTURE_DES_TACHES: Final[frozenset[RoleDeLaMatrice]] = _ROLES_ENTI
 #  divergence entre ces deux lignes et la reouverture resterait possible sans
 #  casser l'une des deux par erreur.
 ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS: Final[frozenset[RoleDeLaMatrice]] = _ROLES_ENTITE
+
+
+class PerimetreDuSuivi(enum.Enum):
+    """§8.1 « Consulter les taches en retard » — `T12`. QUATRE portees, jamais
+    une combinaison : la portee s'ajuste au role le PLUS LARGE detenu, du
+    meme ordre que `_dans_le_perimetre_du_parcours` (Entite avant DSM avant
+    Booster), et `SOI` est le plancher universel — voir la fonction."""
+
+    ENTITE = "entite"
+    CONSULTANTS = "consultants"
+    CERCLE = "cercle"
+    SOI = "soi"
+
+
+def resoudre_le_perimetre_du_suivi(*, roles: frozenset[RoleDeLaMatrice]) -> PerimetreDuSuivi:
+    """§8.1 « Consulter les taches en retard » : NEW Soi, DSM Consultants,
+    ESM/ADM-E/SUPER Entite, BOOST Cercle, OFFICE — (sans role supplementaire).
+
+    **`SOI` N'EST PAS LE ROLE `OFFICE`, C'EST LE PLANCHER UNIVERSEL DE
+    N'IMPORTE QUI.** Exactement comme `peut_lire_le_parcours_onboarding` et
+    `peut_agir_sur_sa_tache_onboarding` accordent le geste sur SA PROPRE
+    tache independamment de tout role (l'identite est verifiee avant tout
+    role, jamais apres), ce plancher n'est pas une consequence du role
+    `OFFICE` — la matrice le met a tiret sur cette ligne, comme partout sur
+    les modeles d'onboarding (`fiche-lot-7.md` §2.1). Il vient de ce que
+    N'IMPORTE QUEL appelant authentifie peut toujours voir SES PROPRES
+    taches en retard, role ou pas : c'est la ligne `NEW` -> `Soi`, qui ne
+    depend d'aucune responsabilite. Cette fonction ne resout donc jamais un
+    refus : elle degrade toujours vers `SOI` en dernier recours, et c'est
+    delibere — voir `compte-rendu-t12-lot-7.md` §2.2.
+    """
+    if roles & _ROLES_ENTITE:
+        return PerimetreDuSuivi.ENTITE
+    if RoleDeLaMatrice.DSM in roles:
+        return PerimetreDuSuivi.CONSULTANTS
+    if RoleDeLaMatrice.BOOSTER in roles:
+        return PerimetreDuSuivi.CERCLE
+    return PerimetreDuSuivi.SOI

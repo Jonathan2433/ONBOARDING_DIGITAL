@@ -1490,6 +1490,28 @@
         "ou l'appartenance porte deja une instance active.",
         "404 `instance_introuvable`."
       ]
+    },
+    {
+      "cle": "suiviDesTachesEnRetard",
+      "chemin": "/api/v1/entities/{code}/onboarding-suivi/taches-en-retard",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "PageDeSuiviOnboarding",
+      "role": [
+        "Suivre les taches en retard dans son perimetre — LOT 7, T12, US008,",
+        "matrice §8.1 « Consulter les taches en retard ». Derniere ligne de",
+        "consultation du §8.1 sans consommateur apres T11.",
+        "AUCUN ROLE N'EST REFUSE : la portee s'ajuste au role le plus large",
+        "detenu — Entite (ESM/ADM-E/SUPER), Consultants (DSM), Cercle",
+        "(Booster), ou Soi en dernier recours, disponible a n'importe qui sur",
+        "SES PROPRES taches (jamais une consequence du role OFFICE, qui est a",
+        "tiret sur cette ligne comme partout ailleurs sur les modeles",
+        "d'onboarding).",
+        "« Reporting de base » (cahier, Inclus) SEULEMENT : aucun graphique,",
+        "aucun export — matrice §8.1 « Exporter le suivi », V1, LOT 10.",
+        "Pagination du cahier §18.2, memes trois tailles que le trombinoscope",
+        "(LOT 5, T2)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
