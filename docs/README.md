@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `609` en usage | `DEC-610` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `610` en usage | `DEC-611` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -524,11 +524,50 @@ colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, tro
 > écrire un motif, là où `archive_reason`/`assignment_reason` restent des colonnes jamais écrites
 > (`ECART-064`). Détail : `compte-rendu-t9-lot-7.md`.
 
-**1 988 tests** désormais. La prochaine est `T10`, le changement automatique mission ↔ intercontrat.
+**`T10` EST FAITE** le 28/09/2026, `DEC-610` : le changement automatique de parcours au changement
+de statut, `US007`, ferme `§30.14`. **Aucune nouvelle table, aucune route propre** :
+`remplacer_le_parcours_apres_changement_de_statut` (`app/onboarding/instances.py`) est appelée par
+`_ecrire_le_statut` (LOT 5, `app/people/ecriture.py`) dans la MÊME transaction que l'écriture du
+champ `statut`, après les cinq écritures organisationnelles.
+
+> **AUCUNE GRILLE DE PERMISSION PROPRE, ET C'EST VÉRIFIÉ CONTRE LE CODE, PAS SEULEMENT AFFIRMÉ.**
+> La grille du parcours (`T7`, `_dans_le_perimetre_du_parcours` : ESM/ADM-E/SUPER entité, DSM
+> rattaché, Booster rattaché SANS condition de type d'appartenance — le commentaire du module le
+> dit en toutes lettres) est STRICTEMENT PLUS LARGE que la grille qui autorise déjà l'écriture du
+> champ `statut` (LOT 5 `T7`, `CHAMPS_DU_BOOSTER`, qui exige un Booster PRINCIPAL du cercle cible).
+> Quiconque réussit à écrire `statut` est donc *a fortiori* dans le périmètre du parcours : poser
+> une seconde garde ici aurait été une règle pour un ensemble d'acteurs déjà inclus dans le premier.
+>
+> **`ECART-013` EST MIS À L'ÉPREUVE POUR DE VRAI, ET C'EST LA PREMIÈRE FOIS.** Une tâche `completed`
+> de l'ancienne instance dont le `task_reference_id` (identifiant stable posé par `T4`) existe aussi
+> dans la nouvelle version est RETENUE d'emblée — `completed_at`/`completed_by_person_id` COPIÉS
+> tels quels, `title_snapshot`/`due_at` RECALCULÉS depuis la NOUVELLE version, événement
+> `RETAINED_ON_REPLACEMENT`. Les tâches `todo`/`reopened` de l'ancienne instance deviennent
+> `cancelled`, événement `CANCELLED_ON_REPLACEMENT` — les DEUX dernières transitions du diagramme
+> §24.2, que `T7`/`T8`/`T9` n'exerçaient pas. Un changement de `client` seul, même statut, ne
+> déclenche RIEN : seule la valeur du statut qui change compte, jamais la présence du champ dans la
+> demande. **`reference_date` DE LA NOUVELLE INSTANCE EST L'INSTANT DU CHANGEMENT, JAMAIS
+> `arrival_date`** — un remplacement a lieu des mois après l'arrivée, et ancrer sur l'arrivée
+> daterait les échéances de la nouvelle version dans le passé. L'ancienne instance passe `replaced`
+> AVANT l'insertion de la nouvelle, sans quoi l'index unique partiel de `T1` refuserait une seconde
+> ligne `active`.
+>
+> **DEUX POINTS CONFIRMÉS PAR JONATHAN LE 28/09/2026, PAS PRÉSUMÉS.** `replacement_reason` reste
+> `NULL` : `DemandeDeModification` (LOT 5) ne porte aucun champ motif, et `extra="forbid"` interdit
+> d'en glisser un en silence — le champ attend un écrivain futur (LOT 10, `ECART-064`). Aucun
+> `outbox_message`/`async_job` n'est écrit malgré le diagramme §14.1 du modèle : mesuré avant
+> d'écrire, aucune ligne du dépôt n'écrit encore ces deux tables (`app/auth/idempotence.py`, LOT 3,
+> les nomme déjà réservées au LOT 11), et la progression (critère de sortie n°3) n'est jamais
+> stockée — inventer un mécanisme ici pour un seul consommateur aurait été §6.5. 7 tests
+> d'intégration. Détail : `compte-rendu-t10-lot-7.md`.
+
+**1 995 tests** désormais. La prochaine est `T11`, l'archivage automatique du parcours terminé et
+la révocation au départ.
 
 `ECART-012` (report à Léa) reste ouvert. `ECART-066` est **partiellement résolu** : son volet
 « version de modèle » (`T6`) est clos, son volet « parcours archivé » reste ouvert et **devient
-bloquant pour `T11`** — sans objet pour `T9`, qui ni n'archive ni ne restaure un parcours.
+bloquant pour `T11`** — sans objet pour `T10`, qui ni n'archive ni ne restaure un parcours, jamais
+posée que pour la version de modèle et jamais à présumer.
 
 **Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
 
