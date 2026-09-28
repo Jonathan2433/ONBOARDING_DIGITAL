@@ -89,7 +89,7 @@ import datetime as dt
 import uuid
 from typing import Annotated, Final, Literal
 
-from fastapi import APIRouter, Depends, Path, Request, status
+from fastapi import APIRouter, Depends, Path, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
@@ -168,7 +168,9 @@ from app.onboarding.perimetre import (
     peut_lire_le_parcours_onboarding,
     peut_restaurer_une_version_de_modele,
     peut_valider_et_publier_la_fiche_arrivee,
+    resoudre_le_perimetre_du_suivi,
 )
+from app.onboarding.suivi import lister_les_taches_en_retard
 from app.onboarding.taches import annuler_la_completion, reouvrir_une_tache, terminer_une_tache
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
@@ -178,6 +180,7 @@ from app.permissions.dependances import (
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
 
 CODE_FICHE_HORS_PERIMETRE: Final = "fiche_arrivee_hors_perimetre"
 MESSAGE_FICHE_HORS_PERIMETRE: Final = "Votre perimetre ne vous permet pas de consulter cette fiche."
@@ -622,6 +625,35 @@ class ReponseDuParcours(BaseModel):
     progression: ReponseDeLaProgression | None
     prochaine_tache: ReponseDeTacheDuParcours | None
     taches: list[ReponseDeTacheDuParcours]
+
+
+class TacheEnRetardDuSuivi(BaseModel):
+    """Une tache en retard et la personne qu'elle concerne — matrice §8.1
+    « Consulter les taches en retard », `T12`. Noms en `snake_case`, meme
+    convention que `CollaborateurDuTrombinoscope` (LOT 5, `T10`) : le contrat
+    de `packages/contracts` traduit vers le `camelCase` du frontend."""
+
+    id: uuid.UUID
+    title_snapshot: str
+    due_at: dt.datetime
+    state: str
+    instance_id: uuid.UUID
+    appartenance_id: uuid.UUID
+    person_id: uuid.UUID
+    first_name: str
+    last_name: str
+
+
+class ReponseDuSuivi(BaseModel):
+    """Une page du suivi, et de quoi savoir ou l'on est — meme forme que
+    `ReponseDuTrombinoscope` (LOT 5, `T2`) : `total` porte la population
+    entiere de la portee resolue, `pages` est calcule UNE SEULE fois ici."""
+
+    taches: list[TacheEnRetardDuSuivi]
+    page: int
+    taille: int
+    total: int
+    pages: int
 
 
 def _tache_du_parcours_en_reponse(tache: TacheDuParcours) -> ReponseDeTacheDuParcours:
@@ -2295,5 +2327,91 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 )
             restauree = restaurer_un_parcours(connexion, entite=entite.id, instance=instance)
         return _instance_en_reponse(restauree)
+
+    @routeur.get(
+        "/entities/{code}/onboarding-suivi/taches-en-retard",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuSuivi,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`taille` hors des trois valeurs du cahier §18.2, ou `page` inferieure a 1."
+                )
+            },
+        },
+        summary="Suivre les taches en retard dans son perimetre",
+        description=(
+            "Matrice §8.1 « Consulter les taches en retard », `T12`, `US008`. "
+            "Aucun role n'est refuse : la portee s'ajuste au role le plus large "
+            "detenu — Entite (ESM/ADM-E/SUPER), Consultants (DSM), Cercle "
+            "(Booster), ou Soi en dernier recours, disponible a n'importe qui "
+            "sur ses PROPRES taches. « Reporting de base » (cahier, Inclus) : "
+            "aucun graphique, aucun export — LOT 10."
+        ),
+    )
+    def suivre_les_taches_en_retard(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[
+            int,
+            Query(ge=1, description="Numero de page, 1-indexee comme celui que l'ecran affiche"),
+        ] = 1,
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Elements par page — les trois valeurs du cahier §18.2, seules"),
+        ] = TAILLE_PAR_DEFAUT,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDuSuivi:
+        """Suivre les taches en retard — matrice §8.1, `T12`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_du_suivi(roles=frozenset(permissions.roles))
+            resultat = lister_les_taches_en_retard(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                perimetre=perimetre,
+                page=page,
+                taille=int(taille),
+                instant=instant,
+            )
+
+        pages = -(-resultat.total // int(taille))
+        return ReponseDuSuivi(
+            taches=[
+                TacheEnRetardDuSuivi(
+                    id=tache.id,
+                    title_snapshot=tache.title_snapshot,
+                    due_at=tache.due_at,
+                    state=tache.state,
+                    instance_id=tache.instance_id,
+                    appartenance_id=tache.appartenance_id,
+                    person_id=tache.person_id,
+                    first_name=tache.first_name,
+                    last_name=tache.last_name,
+                )
+                for tache in resultat.taches
+            ],
+            page=page,
+            taille=int(taille),
+            total=resultat.total,
+            pages=pages,
+        )
 
     return routeur

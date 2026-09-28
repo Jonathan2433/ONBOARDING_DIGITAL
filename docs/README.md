@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `611` en usage | `DEC-612` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `612` en usage | `DEC-613` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -603,9 +603,38 @@ depuis `T1`.
 > mise à jour, `test_contrat.py` (LOT 1, `T10`) aurait échoué. 16 tests d'intégration. Détail :
 > `compte-rendu-t11-lot-7.md`.
 
-**2 011 tests** désormais — **1 393 pytest** (dont **1 014** d'intégration), **618 Vitest**
-inchangé. `T11` clôt les QUINZE sous-étapes de code ; restent `T12` (suivi par périmètre), `T13`/
-`T14` (écrans) et `T15` (recette, §30, checklist `G7`).
+**`T12` EST FAITE** le 28/09/2026, `DEC-612` : le suivi par périmètre, `US008`, nouveau module
+`app/onboarding/suivi.py`, `GET …/onboarding-suivi/taches-en-retard`. **Aucune nouvelle table,
+aucune migration.**
+
+> **DERNIÈRE LIGNE DE CONSULTATION DU §8.1 SANS CONSOMMATEUR APRÈS `T11`, ET AUCUN RÔLE N'EST
+> REFUSÉ.** « Consulter les tâches en retard » : `NEW` Soi, `DSM` Consultants, `ESM` Entité,
+> `BOOST` Cercle, `OFFICE` —, `ADM-E` Entité, `SUPER` Global — la portée s'ajuste au rôle le plus
+> large détenu, résolue dans une fonction PURE et testable sans base
+> (`resoudre_le_perimetre_du_suivi`, `app/onboarding/perimetre.py`), et dégrade toujours vers `SOI`
+> en dernier recours plutôt que de refuser — `SOI` n'est jamais une conséquence du rôle `OFFICE`,
+> c'est le plancher universel de n'importe quel appelant sur SES PROPRES tâches. Les deux AUTRES
+> lignes de consultation du §8.1 étaient déjà servies (`T7`, `T11`) : `T12` ajoute le REPORTING,
+> littéralement la seule chose que le §8.1 nommait encore sans réponse. **« REPORTING DE BASE »
+> SEULEMENT (cahier, Inclus)** : aucun graphique, aucun export — `V1`, LOT 10.
+>
+> **SEULES LES INSTANCES `active` SONT COMPTÉES, DÉLIBÉRÉMENT.** Une instance `archived` a déjà vu
+> toutes ses tâches obligatoires terminées (`T11`) ; une tâche non obligatoire encore `todo`,
+> laissée en retard sur une instance désormais archivée, n'est signalée par aucun texte du corpus —
+> l'omettre est la lecture qui n'invente rien. Un témoin construit ce cas précis plutôt que de
+> l'affirmer : deux tâches, l'une rendue optionnelle, l'instance archivée par le geste RÉEL de
+> complétion (`T8`/`T11`).
+>
+> **ERREUR DE MÉTHODE TROUVÉE ET CORRIGÉE DANS LA PREUVE DE ZÉRO RÉGRESSION ELLE-MÊME.** `pytest`
+> lancé depuis `apps/api/` ne rend que 1 326 tests contre les 1 393 attendus : `testpaths` du
+> `pyproject.toml` racine couvre aussi `apps/worker/tests` et `packages/observabilite/tests`, et
+> **`make check`/`make test` invoquent `pytest` DEPUIS LA RACINE** — jamais un sous-répertoire.
+> Relancée depuis la racine : 1 393 sur `origin/develop`, 1 404 (+11) sur la branche, 75 échecs
+> environnementaux IDENTIQUES des deux côtés. 11 tests d'intégration. Détail :
+> `compte-rendu-t12-lot-7.md`.
+
+**2 022 tests** désormais — **1 404 pytest** (dont **1 025** d'intégration), **618 Vitest**
+inchangé. `T12` laisse `T13`/`T14` (écrans) et `T15` (recette, §30, checklist `G7`).
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
 version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
