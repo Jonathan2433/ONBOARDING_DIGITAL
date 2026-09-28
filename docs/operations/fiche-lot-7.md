@@ -3,8 +3,8 @@
 **Intitulé :** Fiches d'arrivée et onboarding
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
-**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T9` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`, `DEC-605`, `DEC-606` (+ correctif `DEC-607`), `DEC-608`, `DEC-609`
-**Dernière mise à jour :** 27 septembre 2026 — `T9`
+**État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T10` FAITES**, `DEC-599`, `DEC-600`, `DEC-601` (+ correctif `DEC-602`), `DEC-603`, `DEC-604`, `DEC-605`, `DEC-606` (+ correctif `DEC-607`), `DEC-608`, `DEC-609`, `DEC-610`
+**Dernière mise à jour :** 28 septembre 2026 — `T10`
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -113,7 +113,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T7`~~ | ~~Création d'une instance depuis la date d'arrivée — lecture du parcours, progression calculée~~ **FAITE le 27/09/2026**, `DEC-606` | `US004` | ferme le critère 3 (témoin positif, §1.2) ; « une seule instance active par appartenance » (modèle §13.5) éprouvée au volume (40 affectations distinctes), pas seulement à l'unité. Priorité de résolution du modèle DSM > CIRCLE > ENTITY > GLOBAL, arbitrage de Jonathan |
 | ~~`T8`~~ | ~~Compléter et annuler une tâche dans les cinq minutes~~ **FAITE le 27/09/2026**, `DEC-608` | `US005` | les deux lignes du §8.1 sont `Soi` **seul** (grille la plus stricte du module, `DSM`/`BOOST` à tiret malgré un rattachement réel) ; `annuler_la_completion` ne produit **jamais** `cancelled` — la tâche redevient `todo` ; la fenêtre de cinq minutes est **ancrée à `completed_at`**, jamais une horloge mockée. **Correctif `DEC-607`** : `T7` ne posait aucun événement `onboarding_task_event`, `ASSIGNED` est désormais posé par l'affectation |
 | ~~`T9`~~ | ~~Réouverture après cinq minutes — motif obligatoire, `onboarding_task_event`~~ **FAITE le 27/09/2026**, `DEC-609` | `US006`, ferme `§30.15` | seuls `ESM`, `ADM-E`, `SUPER` — le témoin négatif porte sur `DSM` et `BOOST`, **explicitement exclus** par §8.3, pas seulement absents de la liste. **Correctif à `terminer_une_tache` (`T8`)** : le diagramme §24.2 exige `Reopened -> Completed`, transition que `T8` n'avait pas prévue |
-| `T10` | Changement automatique mission ↔ intercontrat | `US007`, ferme `§30.14` | l'ancienne instance passe à `replaced`, la nouvelle instantiée depuis le modèle adapté, **les tâches communes déjà terminées conservées par référence stable** — c'est `ECART-013` mis à l'épreuve pour de vrai |
+| ~~`T10`~~ | ~~Changement automatique mission ↔ intercontrat~~ **FAITE le 28/09/2026**, `DEC-610` | `US007`, ferme `§30.14` | l'ancienne instance passe à `replaced`, la nouvelle instantiée depuis le modèle adapté, **les tâches communes déjà terminées conservées par référence stable** — `ECART-013` mis à l'épreuve pour de vrai. **Aucune route propre** : la garde déjà exercée sur l'écriture du champ `statut` (LOT 5) est *a fortiori* dans le périmètre du parcours (`T7`), vérifié contre le code des deux modules |
 | `T11` | Archivage automatique du parcours terminé + révocation au départ | ferme `§30.13` | deux déclencheurs distincts : complétion totale des tâches obligatoires (modèle §13.5), et départ d'un collaborateur — qui doit **s'accrocher** à `enregistrer_un_depart` (LOT 3, `T9`) sans le dupliquer (§7.27) |
 | `T12` | Suivi par périmètre — DSM/ESM/Booster/ADM-E/SUPER | `US008` | « reporting de base » seulement (cahier, Inclus) : aucun graphique, aucun export — ce serait le LOT 10 |
 | `T13` | Écrans du nouvel arrivant — fiche d'arrivée, parcours, tâches | — | un aller-retour réel avant de déclarer un client terminé (§7.43 du LOT 6) : les écrans écrivent (compléter, annuler) |
@@ -207,12 +207,13 @@ ne porte toujours que `mission`/`intercontract` ; une personne dans aucun des de
 aucune instance — c'est la conséquence technique de la position, **pas sa résolution**. Léa décide
 du produit.
 
-## 8.2 `ECART-013` — se résout structurellement, à `T4`
+## 8.2 `ECART-013` — se résout structurellement, à `T4`, **et mis à l'épreuve pour de vrai à `T10`**
 
 Les cinq tâches communes du prototype portent des identifiants différents entre les deux parcours
 (`ic_a1` contre `m_a1`, etc.). `onboarding_task_reference` porte un identifiant fonctionnel **unique**,
 partagé par les deux modèles dès sa création. **La numérotation du prototype n'est jamais reprise
-telle quelle.**
+telle quelle.** `T4` posait la structure ; `T10` (`DEC-610`) l'a exercée pour de vrai, en retenant
+une tâche `completed` par ce seul identifiant lors d'un changement réel de statut.
 
 ## 8.3 `ECART-066` — volet « version de modèle » résolu le 26/09/2026, volet « parcours » ouvert pour `T11`
 

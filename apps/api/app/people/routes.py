@@ -812,7 +812,10 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 "description": (
                     "`valeur_nulle_refusee` : seul `client` accepte `null`, les cinq autres "
                     "colonnes etant `NOT NULL`. `valeur_refusee` : un statut `mission` exige "
-                    "un client et un `intercontract` n'en accepte aucun (§30.5)."
+                    "un client et un `intercontract` n'en accepte aucun (§30.5). "
+                    "`aucun_modele_publie` : un changement de `statut` remplace le parcours "
+                    "d'onboarding actif (`T10`, modele §6.5) et aucun modele publie ne "
+                    "correspond au nouveau statut, pour cette entite, ce DSM ou ce cercle."
                 )
             },
         },
@@ -825,7 +828,12 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             "des lignes DISTINCTES du §6.1, avec leurs propres portees -- `NEW` peut modifier "
             "son fun fact avant validation, ce qui n'est vrai d'aucun champ ci-dessus.<br><br>"
             "**Les quatre relations historisees sont CLOTUREES puis REOUVERTES**, jamais "
-            "ecrasees : §23.4, et une contrainte d'exclusion par table le rend structurel."
+            "ecrasees : §23.4, et une contrainte d'exclusion par table le rend structurel.<br><br>"
+            "**Un changement de `statut` (mission &harr; intercontrat) remplace automatiquement "
+            "le parcours d'onboarding actif** (`T10`, modele §6.5) : l'ancienne instance passe "
+            "`replaced`, une nouvelle est instanciee depuis le modele du nouveau statut, et les "
+            "taches communes deja terminees sont conservees par reference stable. Un changement "
+            "de `client` seul, meme statut, ne remplace rien."
         ),
     )
     def modifier_le_profil(
