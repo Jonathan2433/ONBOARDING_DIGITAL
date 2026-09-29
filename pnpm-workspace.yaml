@@ -27,6 +27,11 @@ storeDir: ${HOME}/.local/share/pnpm/store
 # package.json ne serait qu'un avertissement.
 engineStrict: true
 
+# GHSA-3wwx-pv8p-q78v : jsdom@30 autorise la ligne corrigee ^8.7.0 ;
+# cette contrainte transitive fixe le minimum corrige sans modifier ses consommateurs.
+overrides:
+  undici: 8.10.2
+
 # ============================================================================
 #  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
 #
