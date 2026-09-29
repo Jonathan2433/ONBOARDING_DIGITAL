@@ -115,6 +115,33 @@
     "precisement la source unique lue par TypeScript ET par Python (DEC-492)."
   ],
   "rolesAdministration": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_administration_onboarding": [
+    "LOT 7, T14 -- UNE SECONDE raison d'afficher LA MEME rubrique, PAS UNE",
+    "DERIVATION DE `rolesAdministration`. Question posee explicitement a",
+    "Jonathan avant d'ecrire l'ecran : le 9 de la matrice donne a DSM et",
+    "BOOST de VRAIS droits de gestion sur le catalogue de taches et les",
+    "modeles d'onboarding (dans leur propre perimetre), et `rolesAdministration`",
+    "-- derive du 20, qui ne parle QUE de l'attribution des roles -- ne les",
+    "contient pas. Sans cette seconde liste, un DSM ou un Booster qui a le",
+    "droit de gerer SES modeles ne verrait jamais l'entree de menu pour y",
+    "acceder. Decision de Jonathan : ELARGIR le menu plutot qu'ouvrir un",
+    "second point d'entree -- un seul chemin d'acces, coherent avec",
+    "« Administration, uniquement selon les permissions » (cahier 8.2), lu",
+    "au pluriel et non restreint au 20.",
+    "MEMES CINQ ROLES QUE `ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES` ET",
+    "`ROLES_DE_GESTION_DES_MODELES` (`app/onboarding/perimetre.py`) -- une",
+    "authentique derivation, cette fois, confrontee par un test Python.",
+    "NE JAMAIS FUSIONNER avec `rolesAdministration` : les deux listes gatent",
+    "la MEME rubrique pour DEUX raisons INDEPENDANTES, et `droitsDeNavigation`",
+    "en prend l'UNION -- les fusionner ferait suivre l'une quand l'autre",
+    "change, en silence (7.27), exactement la mise en garde deja ecrite pour",
+    "`rolesCycleDeVie`/`rolesRestaurationDUnContenu` plus bas dans ce fichier.",
+    "Le suivi par perimetre (T12, `suiviDesTachesEnRetard`) N'EST PAS servi",
+    "par cette liste : sa grille ne refuse JAMAIS personne (degrade jusqu'a",
+    "Soi), et l'inclure rendrait la rubrique visible a TOUT LE MONDE, ce qui",
+    "viderait le refus par defaut du 20.1 de son sens pour cette rubrique."
+  ],
+  "rolesAdministrationOnboarding": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
   "endpoints": [
     {
       "cle": "live",
@@ -1260,6 +1287,30 @@
       ]
     },
     {
+      "cle": "consultationDesModelesOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "PageDesModelesOnboarding",
+      "role": [
+        "Consulter les modeles GERES depuis cette entite — LOT 7, T14, l'ecran",
+        "d'administration. TROUVEE EN CONSTRUISANT L'ECRAN, PAS A T5/T6 : sans",
+        "elle, gerer un modele ne pouvait agir que sur ce qui vient d'etre cree",
+        "DANS LA MEME SESSION, jamais revenir sur un modele existant — meme motif",
+        "que l'extension de `/permissions` a T13.",
+        "Rend les modeles ATTEIGNABLES par l'appelant dans SON PROPRE perimetre",
+        "(memes regles que la creation, matrice §9) : un DSM ne voit que les",
+        "siens, un Booster que ceux de SON cercle, un ESM/ADM-E gere N'IMPORTE",
+        "QUEL DSM/cercle de l'entite, SUPER voit aussi les modeles GLOBAUX.",
+        "Chaque modele porte ses VERSIONS, imbriquees — un seul appel plutot",
+        "qu'un aller-retour par modele.",
+        "403 `acces_refuse` : ni DSM, ESM, Booster, ADM-E ni SUPER dans cette",
+        "entite — OFFICE et un employe nu compris, memes le droit de LECTURE",
+        "d'OFFICE sur « Consulter les modeles publies » (§9) reste SANS route :",
+        "aucun critere actuel ne le reclame, T14 ne l'invente pas."
+      ]
+    },
+    {
       "cle": "creationDUnModeleOnboarding",
       "chemin": "/api/v1/entities/{code}/onboarding/templates",
       "methode": "post",
@@ -1554,6 +1605,19 @@
     "l'autre change, EN SILENCE."
   ],
   "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_restauration_modele_onboarding": [
+    "LOT 7, T14 -- MEMES TROIS ROLES QUE `rolesRestaurationDUnContenu` ET",
+    "`rolesCycleDeVie`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE DERIVATION.",
+    "Celle-ci vient de la ligne « Restaurer une version » du 9 : DSM et BOOST y",
+    "sont a TIRET EN BLOC (jamais un sous-cas de LEUR propre modele, a la",
+    "difference des autres gestes de cette meme grille) -- `ECART-066` resolu,",
+    "l'ESM restaure librement dans son entite, meme regime qu'ADM-E/SUPER.",
+    "DECLAREE SEPAREMENT : la fusionner avec `rolesAdministrationOnboarding`",
+    "(qui INCLUT DSM/BOOST) proposerait un bouton « Restaurer » que l'API",
+    "refuserait -- l'avertissement faux du 7.21. Confrontee a",
+    "`ROLES_DE_RESTAURATION_DES_MODELES` (`app/onboarding/perimetre.py`)."
+  ],
+  "rolesRestaurationDesModelesOnboarding": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_liens_internes": [
     "LOT 6, T8, story MVP-L06-US005. QUATRIEME GRILLE VOISINE DU LOT, ET LA",
     "PREMIERE QUI CONCORDE : le §13 « Gerer les cartes Hub/Academy/SharePoint »",

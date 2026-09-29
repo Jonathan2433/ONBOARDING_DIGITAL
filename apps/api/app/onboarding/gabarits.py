@@ -22,6 +22,20 @@ CE QUE `T5` LIVRE, ET CE QU'IL NE LIVRE PAS
   non plus : ni « Consulter les modeles publies » (grille plus large), ni
   « Previsualiser » — les deux arrivent avec les ecrans (`T13`/`T14`).
 
+CE QUE `T14` AJOUTE, ET POURQUOI CE N'ETAIT PAS DECIDE A `T5`
+
+  `lister_les_modeles`/`lister_les_versions` : trouve en construisant l'ecran
+  d'administration — sans elles, « gerer les modeles » ne pourrait agir que
+  sur ce qui vient d'etre cree DANS LA MEME SESSION, jamais revenir sur un
+  modele existant. Ni `T5` ni `T6` n'avaient besoin de lire PLUSIEURS modeles
+  a la fois, donc rien n'existait avant qu'un ecran ne le demande — meme
+  motif que l'extension de `/permissions` a `T13`. Le filtrage par role
+  (§9) reste celui de `perimetre.py`, applique par l'appelant sur la liste
+  brute que ce module rend : aucune seconde regle de portee ici. « Consulter
+  les modeles publies » (§9, grille plus large qu'`OFFICE` atteint aussi) et
+  « Previsualiser » restent SANS route : aucun critere actuel ne les
+  reclame, et `T14` ne les invente pas.
+
 L'IMMUABILITE D'UNE VERSION PUBLIEE — modele §13.3, LE TEMOIN DE CETTE SOUS-ETAPE
 
   « Chaque publication cree une version immuable. » `T5` ne publie rien lui-
@@ -173,6 +187,15 @@ _LIRE_MODELE: Final = f"""
 SELECT {_COLONNES_MODELE} FROM onboarding_template WHERE id = :modele
 """  # noqa: S608
 
+#  T14 : meme lecture que `_LIRE_MODELE` -- un modele GLOBAL (`entity_id IS
+#  NULL`) est SERVI depuis toute entite, le filtrage par role (§9) est fait
+#  par l'appelant via `peut_gerer_un_modele_de_cette_portee`, jamais ici.
+_LISTER_MODELES: Final = f"""
+SELECT {_COLONNES_MODELE} FROM onboarding_template
+WHERE entity_id = :entite OR entity_id IS NULL
+ORDER BY name
+"""  # noqa: S608
+
 _COLONNES_VERSION: Final = "id, template_id, version_number, state, change_summary"
 
 _INSERER_VERSION: Final = f"""
@@ -186,6 +209,14 @@ RETURNING {_COLONNES_VERSION}
 _LIRE_VERSION: Final = f"""
 SELECT {_COLONNES_VERSION} FROM onboarding_template_version
 WHERE id = :version AND template_id = :template
+"""  # noqa: S608
+
+#  T14 : les versions de PLUSIEURS modeles en une seule requete, plutot que
+#  N+1 -- `ANY(:modeles)` sur un tableau, jamais une boucle Python d'appels.
+_LISTER_VERSIONS_DE_PLUSIEURS_MODELES: Final = f"""
+SELECT {_COLONNES_VERSION} FROM onboarding_template_version
+WHERE template_id = ANY(:modeles)
+ORDER BY version_number
 """  # noqa: S608
 
 _COLONNES_TACHE_DE_VERSION: Final = (
@@ -297,6 +328,36 @@ def lire_un_modele(connexion: Connection, *, entite: uuid.UUID, modele: uuid.UUI
     if trouve.entity_id is not None and trouve.entity_id != entite:
         return None
     return trouve
+
+
+def lister_les_modeles(connexion: Connection, *, entite: uuid.UUID) -> tuple[Modele, ...]:
+    """Les modeles ATTEIGNABLES depuis cette entite — les siens, et les GLOBAUX.
+
+    **AUCUN FILTRE DE ROLE ICI** : ni `T5` ni `T6` n'ont jamais lu plusieurs
+    modeles a la fois, donc rien n'existait avant `T14` (l'ecran
+    d'administration) pour ce besoin. Le filtrage fin — un DSM ne voit que
+    SES modeles, un Booster que ceux de SON cercle — est celui de
+    `peut_gerer_un_modele_de_cette_portee` (`perimetre.py`), applique par
+    l'appelant SUR CETTE LISTE, jamais redit ici en SQL : une seconde
+    derivation de la meme regle divergerait au premier changement (§7.27).
+    """
+    lignes = connexion.execute(text(_LISTER_MODELES), {"entite": entite}).mappings().all()
+    return tuple(_modele_depuis_la_ligne(ligne) for ligne in lignes)
+
+
+def lister_les_versions(
+    connexion: Connection, *, modeles: Sequence[uuid.UUID]
+) -> tuple[VersionDeModele, ...]:
+    """Les versions de plusieurs modeles a la fois — T14, l'ecran qui montre
+    l'etat de cycle de vie de chacune sans un aller-retour par modele."""
+    if not modeles:
+        return ()
+    lignes = (
+        connexion.execute(text(_LISTER_VERSIONS_DE_PLUSIEURS_MODELES), {"modeles": list(modeles)})
+        .mappings()
+        .all()
+    )
+    return tuple(_version_depuis_la_ligne(ligne) for ligne in lignes)
 
 
 def creer_une_version(

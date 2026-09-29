@@ -33,6 +33,15 @@ export function cheminCatalogueDeTaches(code: string): string {
   return GABARIT_CHEMIN_CATALOGUE_DE_TACHES.replace('{code}', encodeURIComponent(code));
 }
 
+/** Le corps de `POST …/task-references` — matrice §9, ferme `ECART-013`. */
+export interface DemandeDeTacheDeReference {
+  readonly code: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly category?: string;
+  readonly portee: 'ENTITE' | 'GLOBAL';
+}
+
 export interface TacheDeReference {
   readonly identifiant: string;
   /** `null` : une tache GLOBALE, reutilisable par toute entite — modele §13.1. */
@@ -68,6 +77,15 @@ function entier(source: Record<string, unknown>, champ: string, ou: string): num
     throw new TypeError(`catalogue de taches : ${ou}« ${champ} » n’est pas un entier`);
   }
   return brut;
+}
+
+/**
+ * Valider UNE tache — exportee depuis `T14` : `POST …/task-references` (la
+ * creation) rend exactement cette forme, et l'ecran d'administration en est
+ * le premier consommateur direct, hors liste.
+ */
+export function validerUneTacheDeReference(brut: unknown): TacheDeReference {
+  return validerUneTache(brut, 0);
 }
 
 function validerUneTache(brut: unknown, rang: number): TacheDeReference {

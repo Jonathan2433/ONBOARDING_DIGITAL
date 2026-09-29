@@ -217,3 +217,19 @@ export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
  * dans le manifeste lui-même, à côté de la valeur.
  */
 export const ROLES_ADMINISTRATION: readonly string[] = CONTRAT_API.rolesAdministration;
+
+/**
+ * Une SECONDE raison d'ouvrir la même rubrique « Administration » — LOT 7, `T14`.
+ *
+ * **PAS UNE DÉRIVATION DE `ROLES_ADMINISTRATION`, VOIR LE MANIFESTE.** Le §9 de la
+ * matrice donne à `DSM` et `BOOST` de vrais droits de gestion sur le catalogue de
+ * tâches et les modèles d'onboarding, dans leur propre périmètre — `rolesAdministration`
+ * (§20, l'attribution des rôles) ne les contient pas. Décision de Jonathan :
+ * ÉLARGIR le menu, un seul chemin d'accès plutôt que deux.
+ *
+ * `droitsDeNavigation` en prend l'UNION avec `ROLES_ADMINISTRATION` — jamais une
+ * fusion des deux constantes elles-mêmes, qui divergeraient au premier changement
+ * de l'une sans que l'autre suive (§7.27).
+ */
+export const ROLES_ADMINISTRATION_ONBOARDING: readonly string[] =
+  CONTRAT_API.rolesAdministrationOnboarding;
