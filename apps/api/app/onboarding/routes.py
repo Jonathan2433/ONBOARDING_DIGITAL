@@ -132,6 +132,8 @@ from app.onboarding.gabarits import (
     definir_les_taches_de_la_version,
     lire_un_modele,
     lire_une_version,
+    lister_les_modeles,
+    lister_les_versions,
 )
 from app.onboarding.instances import (
     CODE_AUCUN_PARCOURS_ACTIF,
@@ -481,6 +483,24 @@ class ReponseDesTachesDeVersion(BaseModel):
 
     taches: list[ReponseDeTacheDeVersion]
     nombre_de_taches: int
+
+
+class ReponseDeModeleAvecVersions(ReponseDeModele):
+    """Le conteneur ET ses versions — T14, l'ecran d'administration.
+
+    N'existe QUE pour la liste : les routes qui creent ou lisent un modele
+    seul (`ReponseDeModele`) n'ont pas besoin de ses versions, deja connues
+    de l'appelant a ce moment-la.
+    """
+
+    versions: list[ReponseDeVersion]
+
+
+class ReponseDesModeles(BaseModel):
+    """La liste et son compte — §7.20, rapporter plutot que taire."""
+
+    modeles: list[ReponseDeModeleAvecVersions]
+    nombre_de_modeles: int
 
 
 def _modele_en_reponse(modele: Modele) -> ReponseDeModele:
@@ -1184,6 +1204,82 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
     garde_de_restauration = exiger_un_role_dans_l_entite(
         parametres, ROLES_DE_RESTAURATION_DES_MODELES
     )
+
+    @routeur.get(
+        "/entities/{code}/onboarding/templates",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesModeles,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni DSM, ESM, Booster, ADM-E ni SUPER dans cette entite."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Consulter les modeles geres depuis cette entite — T14",
+        description=(
+            "Matrice §9 : les modeles ATTEIGNABLES par l'appelant dans son propre "
+            "perimetre — un DSM ne voit que les siens, un Booster que ceux de son "
+            "cercle, un ESM/ADM-E/SUPER tous ceux de l'entite (et les GLOBAUX pour "
+            "SUPER). Chaque modele porte ses versions. Trouvee en construisant "
+            "l'ecran d'administration : ni `T5` ni `T6` n'avaient de consommateur "
+            "pour cette lecture."
+        ),
+    )
+    def lister_les_modeles_onboarding(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
+    ) -> ReponseDesModeles:
+        """Les modeles geres par l'appelant, avec leurs versions — matrice §9, T14."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            roles = frozenset(permissions.roles)
+            tous = lister_les_modeles(connexion, entite=entite.id)
+            visibles = [
+                modele
+                for modele in tous
+                if peut_gerer_un_modele_de_cette_portee(
+                    connexion,
+                    entite=entite.id,
+                    acteur=appelant.personne,
+                    roles=roles,
+                    portee=modele.scope_type,
+                    scope_person_id=modele.scope_person_id,
+                    scope_circle_id=modele.scope_circle_id,
+                    instant=instant,
+                )
+            ]
+            versions = lister_les_versions(connexion, modeles=[modele.id for modele in visibles])
+        versions_par_modele: dict[uuid.UUID, list[ReponseDeVersion]] = {}
+        for version in versions:
+            versions_par_modele.setdefault(version.template_id, []).append(
+                _version_en_reponse(version)
+            )
+        servis = [
+            ReponseDeModeleAvecVersions(
+                **_modele_en_reponse(modele).model_dump(),
+                versions=versions_par_modele.get(modele.id, []),
+            )
+            for modele in visibles
+        ]
+        return ReponseDesModeles(modeles=servis, nombre_de_modeles=len(servis))
 
     @routeur.post(
         "/entities/{code}/onboarding/templates",

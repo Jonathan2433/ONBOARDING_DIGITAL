@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `613` en usage | `DEC-614` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `614` en usage | `DEC-615` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -671,9 +671,48 @@ tout ce que l'écran consomme.
 > (le fil réel `CadreApplicatif`), 2 tests réécrits délibérément (la constante retirée). Détail :
 > `compte-rendu-t13-lot-7.md`.
 
-**2 072 tests** désormais — **1 406 pytest** (dont **1 027** d'intégration), **666 Vitest** (**308**
-`contracts`, **111** `ui` inchangé, **247** `web`). `T13` laisse `T14` (écrans d'administration) et
-`T15` (recette, §30, checklist `G7`).
+**`T14` EST FAITE** le 29/09/2026, `DEC-614` : les écrans d'administration — catalogue, modèles,
+suivi par périmètre — **UNE SEULE** page, `PageAdministration.tsx`, sous la rubrique
+`administration` déjà réservée par `T4` du LOT 4.
+
+> **DÉCISION DE JONATHAN : LE MENU S'ÉLARGIT.** `rolesAdministration` (§20, `ESM`/`ADM-E`/`SUPER`)
+> n'ouvrait pas le menu à un `DSM`/`BOOSTER` qui gère pourtant SES modèles et le catalogue (§9).
+> Trois options posées explicitement ; retenu : une nouvelle liste,
+> `rolesAdministrationOnboarding` (`DSM`, `ESM`, `BOOST`, `ADM-E`, `SUPER`), déclarée SÉPARÉMENT de
+> `rolesAdministration` — jamais fusionnée, même discipline que `rolesCycleDeVie` (§7.27) — et
+> `droitsDeNavigation` en prend l'UNION. Un seul chemin d'accès, jamais deux.
+>
+> **ROUTE API NOUVELLE, TROUVÉE EN CONSTRUISANT L'ÉCRAN.** `GET /entities/{code}/onboarding/
+> templates` : ni `T5` ni `T6` n'avaient posé de LECTURE des modèles, seulement leur création et
+> leur cycle de vie — sans elle, « gérer les modèles » n'aurait agi que sur ce qui vient d'être créé
+> DANS LA MÊME SESSION. Chaque modèle avec ses versions imbriquées ; filtrage par rôle appliqué en
+> Python sur la liste brute, jamais une seconde règle SQL. Le droit de lecture d'`OFFICE`
+> (« Consulter les modèles publiés », §9) reste SANS route : aucun critère actuel ne le réclame.
+>
+> **`ECART-066` : LA RESTAURATION RESTE REFUSÉE À DSM/BOOSTER, MÊME SUR LEUR PROPRE MODÈLE.** Une
+> troisième liste, `rolesRestaurationDesModelesOnboarding` (`ESM`, `ADM-E`, `SUPER`), gate le seul
+> bouton « Restaurer » — exclus EN BLOC de cette ligne du §9, jamais un sous-cas de leur propre
+> modèle.
+>
+> **LE SCRIPT DE PILE DIFFÉRÉ PAR `T13` EST CONSTRUIT ICI, COMBINÉ POUR LES DEUX.** `make
+> onboarding-check` (14 contrôles, sur la pile RÉELLE) : le témoin d'asymétrie DSM/ESM (les deux
+> rôles dans la MÊME entité, chacun voit un ensemble de modèles DIFFÉRENT), le cycle de vie complet
+> exercé une fois en vrai, `OFFICE` refusé sur les modèles MAIS reçu sur le suivi, et `ECART-066`
+> éprouvé DANS LE SENS DU REFUS. `make ecrans-check` couvre `PageAdministration.tsx` SANS AUCUNE
+> MODIFICATION DU CONTRÔLE — glob générique, bénéfice direct du §7.27.
+>
+> **ALLER-RETOUR RÉEL EFFECTUÉ (§7.43 du LOT 6)** : décor psql réel, connexion par lien magique
+> réel, cycle complet créer/composer les tâches/publier/archiver/restaurer — tous les appels réels
+> à `200`/`201`, décor nettoyé après coup.
+>
+> 8 tests d'intégration (la liste des modèles, dont le témoin d'asymétrie, et deux confrontations
+> manifeste ↔ service), 28 tests Vitest (les deux nouveaux modules de contrat), 12 tests Vitest de
+> plus (l'écran), 1 test réécrit délibérément (l'ancienne liste restrictive). Détail :
+> `compte-rendu-t14-lot-7.md`.
+
+**2 120 tests** désormais — **1 414 pytest** (dont **1 033** d'intégration), **706 Vitest** (**336**
+`contracts`, **111** `ui` inchangé, **259** `web`). `T14` laisse `T15` (recette, §30, checklist
+`G7`), la dernière sous-étape du lot.
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
 version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux

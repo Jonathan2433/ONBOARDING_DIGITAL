@@ -42,6 +42,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 
 import { FrontiereErreur } from './FrontiereErreur';
 import { Cadre } from './pages/Cadre';
+import { PageAdministration } from './pages/PageAdministration';
 import { PageConnexion } from './pages/PageConnexion';
 import { PageConnexionAdministrateur } from './pages/PageConnexionAdministrateur';
 import { CadreApplicatif } from './pages/CadreApplicatif';
@@ -78,6 +79,10 @@ const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
   //  LOT 7, `T13` — la fiche d'arrivee, le parcours et les taches du nouvel
   //  arrivant, toutes trois composees dans CETTE page (voir son en-tete).
   monOnboarding: <PageMonOnboarding />,
+  //  LOT 7, `T14` — le catalogue, les modeles et le suivi, egalement composes
+  //  dans UNE seule page (voir son en-tete). Le menu est desormais elargi a
+  //  DSM/BOOST via `ROLES_ADMINISTRATION_ONBOARDING`, decision de Jonathan.
+  administration: <PageAdministration />,
 };
 
 /**

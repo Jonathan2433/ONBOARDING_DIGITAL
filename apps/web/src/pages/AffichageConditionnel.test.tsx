@@ -27,7 +27,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
+import { ROLES_ADMINISTRATION, ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
 
 import { droitsDeNavigation, RUBRIQUES, rubriqueEstVisible } from '../routes';
 import { BarreMobile } from './BarreMobile';
@@ -56,11 +56,23 @@ describe('les droits de navigation viennent des rôles que l API a rendus', () =
     }
   });
 
-  it("n'ouvre pas l'administration sur un rôle voisin mais distinct", () => {
-    //  `DSM`, `BOOST` et `OFFICE` sont des responsabilités Framework ; le §20 ne
-    //  leur donne AUCUNE colonne. Un `includes` sur un préfixe ou une casse
-    //  relâchée les laisserait passer.
-    for (const role of ['DSM', 'BOOST', 'OFFICE', 'NEW', 'esm', 'adm-e', 'ADM']) {
+  it("ouvre l'administration pour CHACUN des cinq rôles du §9 — LOT 7, T14", () => {
+    //  **DÉCISION DE JONATHAN, T14** : un DSM/Booster qui gère SES modèles ou
+    //  SON catalogue doit voir l'entrée de menu, en plus d'ESM/ADM-E/SUPER —
+    //  voir `rolesAdministrationOnboarding` au manifeste. UN PAR UN, et non
+    //  tous ensemble, même motif que le test précédent.
+    expect(ROLES_ADMINISTRATION_ONBOARDING.length).toBe(5);
+    for (const role of ROLES_ADMINISTRATION_ONBOARDING) {
+      expect(droitsDeNavigation([role], false).peutAdministrer).toBe(true);
+    }
+  });
+
+  it("n'ouvre PAS l'administration à OFFICE, ni sur un rôle mal formé", () => {
+    //  `OFFICE` est à TIRET partout sur les modèles d'onboarding (§9) comme
+    //  sur les comptes (§20) — aucune des deux grilles ne le contient. Un
+    //  `includes` sur un préfixe ou une casse relâchée laisserait passer les
+    //  variantes malformées.
+    for (const role of ['OFFICE', 'NEW', 'esm', 'adm-e', 'ADM', 'dsm', 'boost']) {
       expect(droitsDeNavigation([role], false).peutAdministrer).toBe(false);
     }
   });

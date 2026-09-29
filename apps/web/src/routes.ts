@@ -205,7 +205,11 @@ export const RUBRIQUES: readonly Rubrique[] = [
     suffixe: 'administration',
     titre: 'Administration',
     condition: 'uniquement selon les permissions',
-    lot: 'LOT 9',
+    //  LOT 7, T14 — catalogue, modeles et suivi. Le champ ne designe plus
+    //  qu'un lot FUTUR : un autre pourrait un jour AJOUTER a cette meme
+    //  rubrique (cahier §10.8, sept groupes), sans que ce champ serve encore
+    //  a rien pour CE contenu, deja livre.
+    lot: 'LOT 7',
   },
 ] as const;
 
@@ -323,10 +327,22 @@ export const ECRANS: readonly Ecran[] = [
  */
 export { ROLES_ADMINISTRATION } from '@onboarding/contracts';
 
-//  Le `export {}` ci-dessus REEXPORTE sans mettre le nom dans la portee de ce
-//  module : l'import est donc necessaire en plus, et son absence aurait ete
-//  attrapee par `tsc`.
-import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
+/**
+ * UNE SECONDE RAISON D'OUVRIR LA MÊME RUBRIQUE — LOT 7, `T14`.
+ *
+ * **NE PAS FUSIONNER AVEC `ROLES_ADMINISTRATION`, VOIR LE MANIFESTE.** Le §9 de
+ * la matrice donne à `DSM` et `BOOST` de vrais droits de gestion sur le
+ * catalogue de tâches et les modèles d'onboarding, dans leur propre périmètre —
+ * `ROLES_ADMINISTRATION` (§20, l'attribution des rôles) ne les contient pas.
+ * Décision de Jonathan : élargir le menu plutôt qu'ouvrir un second point
+ * d'entrée. `droitsDeNavigation` en prend l'UNION avec `ROLES_ADMINISTRATION`.
+ */
+export { ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
+
+//  Les deux `export {}` ci-dessus REEXPORTENT sans mettre les noms dans la
+//  portee de ce module : les imports sont donc necessaires en plus, et leur
+//  absence aurait ete attrapee par `tsc`.
+import { ROLES_ADMINISTRATION, ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
 
 /** Ce dont la navigation a besoin pour décider ce qu'elle montre. */
 export interface DroitsDeNavigation {
@@ -357,6 +373,11 @@ export interface DroitsDeNavigation {
  * DÉLIBÉRÉ que ce test épinglait, §7.32). Cette fonction reste PURE : c'est
  * `CadreApplicatif` qui interroge `GET …/onboarding-parcours` de l'appelant —
  * via `appartenance` du §5.1, `T13` — et lui passe le résultat.
+ *
+ * **`peutAdministrer` EST L'UNION DE DEUX GRILLES, DEPUIS `T14`.** Un rôle qui
+ * ouvre la rubrique pour SA raison propre — l'attribution des rôles (§20) ou la
+ * gestion des modèles/catalogue d'onboarding (§9) — suffit ; les deux listes ne
+ * sont jamais fusionnées, voir leur commentaire au manifeste.
  */
 export function droitsDeNavigation(
   roles: readonly string[] | null,
@@ -364,7 +385,10 @@ export function droitsDeNavigation(
 ): DroitsDeNavigation {
   return {
     aUnParcoursActif,
-    peutAdministrer: roles !== null && roles.some((role) => ROLES_ADMINISTRATION.includes(role)),
+    peutAdministrer:
+      roles !== null &&
+      (roles.some((role) => ROLES_ADMINISTRATION.includes(role)) ||
+        roles.some((role) => ROLES_ADMINISTRATION_ONBOARDING.includes(role))),
   };
 }
 

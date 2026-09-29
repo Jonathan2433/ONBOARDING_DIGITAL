@@ -24,6 +24,8 @@ LE TEMOIN DE CETTE SOUS-ETAPE : L'IMMUABILITE D'UNE VERSION PUBLIEE
 from __future__ import annotations
 
 import datetime as dt
+import json
+import pathlib
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -38,8 +40,17 @@ from app.auth.csrf import EN_TETE_JETON, jeton_pour
 from app.auth.sessions import empreinte_de_session, ouvrir_une_session
 from app.configuration.settings import Parametres
 from app.main import creer_application
+from app.onboarding.perimetre import (
+    ROLES_DE_GESTION_DES_MODELES,
+    ROLES_DE_RESTAURATION_DES_MODELES,
+)
 from app.organization.modeles import TypeResponsabilite, TypeRoleTechnique
+from app.permissions.services import RoleDeLaMatrice
 from app.shared.database import moteur
+
+#  Ancre sur `__file__`, jamais sur le repertoire de travail — §7.28, l'ecart
+#  qui a fait diverger un compte de tests selon d'ou `pytest` est lance.
+MANIFESTE_DU_CONTRAT = "packages/contracts/src/contrat-api.json"
 
 ORIGINE_DE_TEST = "https://testserver"
 CHEMIN_MODELES = "/api/v1/entities/{code}/onboarding/templates"
@@ -352,6 +363,10 @@ def _creer_modele(
     if scope_circle_id is not None:
         corps["scope_circle_id"] = str(scope_circle_id)
     return _appeler_ecriture(parametres, CHEMIN_MODELES.format(code=code_entite), jeton, corps)
+
+
+def _lister_les_modeles(parametres: Parametres, code_entite: str, jeton: str | None) -> Any:
+    return _appeler_lecture(parametres, CHEMIN_MODELES.format(code=code_entite), jeton)
 
 
 def _creer_version(
@@ -947,3 +962,172 @@ def test_definir_les_taches_sans_session_est_401(decor: dict[str, Any]) -> None:
 
     reponse = _definir_les_taches(parametres, decor["code"], modele, version, None, [])
     assert reponse.status_code == 401, reponse.text
+
+
+# ===========================================================================
+#  Lister les modeles — T14, l'ecran d'administration. Trouve en construisant
+#  l'ecran : sans cette route, « gerer les modeles » ne pouvait agir que sur
+#  ce qui vient d'etre cree DANS LA MEME SESSION.
+# ===========================================================================
+
+
+@pytest.mark.integration
+def test_un_DSM_NE_VOIT_QUE_SES_PROPRES_modeles(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    jeton_dsm = _session(parametres, decor["dsm_personne"])
+    jeton_esm = _session(parametres, decor["esm_personne"])
+    _creer_modele(
+        parametres,
+        decor["code"],
+        jeton_dsm,
+        name=f"{decor['marqueur']}-modele-dsm-liste",
+        portee="DSM",
+        scope_person_id=decor["dsm_personne"],
+    )
+    _creer_modele(
+        parametres,
+        decor["code"],
+        jeton_esm,
+        name=f"{decor['marqueur']}-modele-autre-dsm-liste",
+        portee="DSM",
+        scope_person_id=decor["autre_dsm_personne"],
+    )
+
+    reponse = _lister_les_modeles(parametres, decor["code"], jeton_dsm)
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    noms = {modele["name"] for modele in corps["modeles"]}
+    assert f"{decor['marqueur']}-modele-dsm-liste" in noms
+    assert f"{decor['marqueur']}-modele-autre-dsm-liste" not in noms
+    assert corps["nombre_de_modeles"] == len(corps["modeles"])
+
+
+@pytest.mark.integration
+def test_un_ESM_voit_TOUS_les_modeles_de_l_entite(decor: dict[str, Any]) -> None:
+    """Portee ENTITE : un ESM gere aussi ce qu'un role LOCAL gererait — LOT 6,
+    meme parti que la creation (`test_un_ESM_cree_un_modele_DSM_pour_...`)."""
+    parametres = decor["parametres"]
+    jeton_dsm = _session(parametres, decor["dsm_personne"])
+    jeton_booster = _session(parametres, decor["booster_personne"])
+    jeton_esm = _session(parametres, decor["esm_personne"])
+    _creer_modele(
+        parametres,
+        decor["code"],
+        jeton_dsm,
+        name=f"{decor['marqueur']}-modele-esm-voit-dsm",
+        portee="DSM",
+        scope_person_id=decor["dsm_personne"],
+    )
+    _creer_modele(
+        parametres,
+        decor["code"],
+        jeton_booster,
+        name=f"{decor['marqueur']}-modele-esm-voit-cercle",
+        portee="CIRCLE",
+        scope_circle_id=decor["cercle"],
+    )
+
+    reponse = _lister_les_modeles(parametres, decor["code"], jeton_esm)
+    assert reponse.status_code == 200, reponse.text
+    noms = {modele["name"] for modele in reponse.json()["modeles"]}
+    assert f"{decor['marqueur']}-modele-esm-voit-dsm" in noms
+    assert f"{decor['marqueur']}-modele-esm-voit-cercle" in noms
+
+
+@pytest.mark.integration
+def test_SEUL_SUPER_voit_les_modeles_GLOBAUX_dans_la_liste(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    jeton_super = _session(parametres, decor["super_personne"])
+    jeton_esm = _session(parametres, decor["esm_personne"])
+    _creer_modele(
+        parametres,
+        decor["code"],
+        jeton_super,
+        name=f"{decor['marqueur']}-modele-global-liste",
+        portee="GLOBAL",
+    )
+
+    vu_par_super = _lister_les_modeles(parametres, decor["code"], jeton_super)
+    vu_par_esm = _lister_les_modeles(parametres, decor["code"], jeton_esm)
+    assert f"{decor['marqueur']}-modele-global-liste" in {
+        modele["name"] for modele in vu_par_super.json()["modeles"]
+    }
+    assert f"{decor['marqueur']}-modele-global-liste" not in {
+        modele["name"] for modele in vu_par_esm.json()["modeles"]
+    }
+
+
+@pytest.mark.integration
+def test_lister_les_modeles_INCLUT_leurs_versions(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    jeton = _session(parametres, decor["esm_personne"])
+    modele = _creer_modele(
+        parametres,
+        decor["code"],
+        jeton,
+        name=f"{decor['marqueur']}-modele-avec-version",
+        portee="ENTITY",
+    ).json()["id"]
+    version = _creer_version(parametres, decor["code"], modele, jeton).json()
+
+    reponse = _lister_les_modeles(parametres, decor["code"], jeton)
+    assert reponse.status_code == 200, reponse.text
+    trouve = next(m for m in reponse.json()["modeles"] if m["id"] == modele)
+    assert [v["id"] for v in trouve["versions"]] == [version["id"]]
+    assert trouve["versions"][0]["state"] == "draft"
+
+
+@pytest.mark.integration
+def test_un_RESPONSABLE_DE_BUREAU_NE_liste_AUCUN_modele(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    reponse = _lister_les_modeles(
+        parametres, decor["code"], _session(parametres, decor["office_personne"])
+    )
+    assert reponse.status_code == 403, reponse.text
+    assert reponse.json()["erreur"]["code"] == "acces_refuse"
+
+
+@pytest.mark.integration
+def test_lister_les_modeles_sans_session_est_401(decor: dict[str, Any]) -> None:
+    parametres = decor["parametres"]
+    reponse = _lister_les_modeles(parametres, decor["code"], None)
+    assert reponse.status_code == 401, reponse.text
+
+
+def test_le_MANIFESTE_declare_UNE_SECONDE_grille_pour_la_MEME_rubrique() -> None:
+    """T14 — le menu « Administration » doit aussi s'ouvrir a un DSM/Booster qui
+    gere ses propres modeles, decision de Jonathan (voir le manifeste).
+
+    **`rolesAdministrationOnboarding` N'EST PAS UNE COINCIDENCE AVEC
+    `rolesAdministration`, ET LES DEUX RESTENT DEUX DECLARATIONS SEPAREES** —
+    meme discipline que `rolesCycleDeVie`/`rolesRestaurationDUnContenu`
+    (LOT 5/6) : les fusionner ferait suivre l'une quand l'autre change, en
+    silence (§7.27). Celle-ci EST une authentique derivation du §9, confrontee
+    ici a `ROLES_DE_GESTION_DES_MODELES` (`perimetre.py`) dans les deux sens.
+    """
+    chemin = pathlib.Path(__file__).resolve().parents[3] / MANIFESTE_DU_CONTRAT
+    manifeste = json.loads(chemin.read_text(encoding="utf-8"))
+    codes = manifeste["rolesAdministrationOnboarding"]
+    assert codes, "le manifeste ne declare aucun role d'administration onboarding"
+    declares = {RoleDeLaMatrice(code) for code in codes}
+    assert declares == ROLES_DE_GESTION_DES_MODELES
+
+    #  **ET LES DEUX GRILLES RESTENT DEUX DECLARATIONS.** Fusionner les cles
+    #  ferait echouer ici, exactement comme pour `rolesCycleDeVie` (LOT 5).
+    assert "rolesAdministration" in manifeste
+    assert "rolesAdministrationOnboarding" in manifeste
+
+
+def test_le_MANIFESTE_declare_SEPAREMENT_les_roles_qui_RESTAURENT_un_modele() -> None:
+    """T14 — DSM et BOOSTER sont exclus EN BLOC de la restauration (§9), a la
+    difference des autres gestes de `rolesAdministrationOnboarding`. Proposer
+    le bouton « Restaurer » a un DSM/Booster serait l'avertissement faux du
+    §7.21 : cette liste, plus etroite, sert a ne pas le faire."""
+    chemin = pathlib.Path(__file__).resolve().parents[3] / MANIFESTE_DU_CONTRAT
+    manifeste = json.loads(chemin.read_text(encoding="utf-8"))
+    codes = manifeste["rolesRestaurationDesModelesOnboarding"]
+    assert codes, "le manifeste ne declare aucun role de restauration de modele"
+    declares = {RoleDeLaMatrice(code) for code in codes}
+    assert declares == ROLES_DE_RESTAURATION_DES_MODELES
+    assert RoleDeLaMatrice.DSM not in declares
+    assert RoleDeLaMatrice.BOOSTER not in declares

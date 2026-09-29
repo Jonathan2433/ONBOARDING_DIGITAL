@@ -1212,6 +1212,13 @@ permissions-check: ## Prouver que le changement d'entite recharge les droits san
 	$(UV) run python infra/scripts/verifier-permissions.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+onboarding-check: ## Prouver l'asymetrie DSM/ESM, le cycle de vie complet et ECART-066 sur la pile reelle (LOT 7, T14, US003, US008)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-administration-onboarding.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
