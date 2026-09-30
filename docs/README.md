@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `614` en usage | `DEC-615` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `615` en usage | `DEC-616` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -132,7 +132,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
-| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **Porte courante** — LOT 7 ouvert le 25/09/2026 (`DEC-598`), tag `v0.7.0` prévu. Plan : [`fiche-lot-7.md`](operations/fiche-lot-7.md), **quinze** sous-étapes |
+| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **En attente des validations humaines** — les quinze sous-étapes techniques sont faites (`DEC-599` à `DEC-615`) ; [checklist](operations/checklist-validation-G7.md) prête, tag `v0.7.0` prévu |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
@@ -710,15 +710,22 @@ suivi par périmètre — **UNE SEULE** page, `PageAdministration.tsx`, sous la 
 > plus (l'écran), 1 test réécrit délibérément (l'ancienne liste restrictive). Détail :
 > `compte-rendu-t14-lot-7.md`.
 
+**`T15` EST TECHNIQUEMENT FAITE** le 29/09/2026, `DEC-615` : recette isolée épinglée sur les images
+de `T14`, parcours HTTPS réel de la fiche d'arrivée jusqu'à l'archivage automatique, reclassement
+du §30 à **16 acquis, 2 partiels, 7 reportés** et [checklist `G7`](operations/checklist-validation-G7.md).
+Le défaut `T15-1`, trouvé dans le nettoyage initial du décor, a été corrigé puis le scénario a été
+rejoué et nettoyé. La porte n'est **pas** déclarée franchie : le corpus demande encore l'accord de
+Tess, Léa, Diane et Jonathan.
+
 **2 120 tests** désormais — **1 414 pytest** (dont **1 033** d'intégration), **706 Vitest** (**336**
-`contracts`, **111** `ui` inchangé, **259** `web`). `T14` laisse `T15` (recette, §30, checklist
-`G7`), la dernière sous-étape du lot.
+`contracts`, **111** `ui` inchangé, **259** `web`).
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
 version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
 sans jamais avoir été présumée.
 
-**Traçabilité GitHub :** épic `#175`, jalon `G7`, stories `#176` à `#183` — créées le 25/09/2026.
+**Traçabilité GitHub :** épic `#175` ouvert jusqu'à `G7`, jalon `G7`, les huit stories `#176` à
+`#183` fermées manuellement le 29/09/2026 sur leur preuve propre.
 
 ---
 
