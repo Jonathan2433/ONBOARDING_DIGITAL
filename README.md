@@ -14,11 +14,11 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOT 0** (`G0`, 27/07/2026) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, 13/09, `v0.5.0`) |
-| Dernière porte franchie | **`G5`** — validée le 13 septembre 2026 (`DEC-574`), tag **`v0.5.0`** posé sur `main` — [checklist](docs/operations/checklist-validation-G5.md) |
-| **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux**, porte `G6`. **Ouvert** le 13 septembre 2026 (`DEC-575`), découpage validé le même jour : **douze** sous-étapes — [plan](docs/operations/fiche-lot-6.md) |
-| Sous-étape en cours | **`T1` à `T5` sont livrées, sept restent.** Les trois tables éditoriales, la page Framework, les pages détaillées d'un cercle et d'un bureau, puis le **rendu des blocs**. La prochaine est **`T6` — l'écriture d'un contenu dans son périmètre** (`US004`, 2 sur 3) |
-| Lots 7 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
+| Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
+| **Lot en cours** | **Aucun.** Le LOT 8 n'est pas ouvert par la clôture de `G7` |
+| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 8 et la validation de son découpage |
+| Lots 8 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -30,26 +30,20 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **32 tables** PostgreSQL — `alembic_version` comprise — **19 migrations** rejouables, **10 déclencheurs**, et l'isolation multi-entités portée par **12 clés étrangères à deux colonnes** (§25.3). *Relevés au catalogue le 22/09/2026, pas recopiés* | LOT 2, LOT 3 et LOT 6 |
+| **39 tables** PostgreSQL, **21 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6 et 7 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
-| **le Framework en lecture** — sa synthèse à trois familles, les pages détaillées d'un **cercle** et d'un **bureau**, et le **rendu des blocs** d'une page de contenu | LOT 6, `T1` à `T5` |
-| **l'écriture d'un contenu dans son périmètre**, son **cycle de vie** — brouillon, publication, archivage, restauration — et les **liens internes** Hub, eXalt Academy et SharePoint, dont les **URL sont validées** : `https` seul, `http` refusé sous son propre code (`DEC-587`) | LOT 6, `T6` à `T8` |
+| **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
+| **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
 
-**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** **aucun
-écran du LOT 6** — le Framework, les cercles, les bureaux, les contenus et les liens internes sont
-tous servis par l'API, et leurs écrans sont `T9` et `T10` ; **aucun contenu repris du prototype** —
-c'est `T11`, et il reste 29 éléments au statut « à relire » ; aucun onboarding (LOT 7), aucun import
-CSV (LOT 9), et **aucune miniature n'est produite** : leur génération est `MVP-L11-US005`, au
-LOT 11. La route de photo rend donc **404 pour tout le monde** aujourd'hui, et c'est l'état normal,
-exigé par un test.
+**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** les
+événements et l'accueil dynamique du LOT 8, l'import CSV du LOT 9, le pilotage avancé du LOT 10 et
+les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
 
-> **Les issues des stories du LOT 6 restent OUVERTES après la fusion de leur sous-étape**, et ce
-> n'est pas un oubli : leurs critères d'acceptation disent « **affichés** », et aucun écran n'existe
-> encore. Un critère non tenu ne se referme pas — c'est la même discipline que `#120` et `#121` au
-> LOT 5. **11 issues sont ouvertes** au 22/09/2026 ; mesure, jamais mémoire :
-> `gh issue list --state open --limit 300 --json number --jq 'length'`.
+> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Les stories encore ouvertes
+> des lots antérieurs restent explicitement nommées dans leurs fiches : un critère non tenu ne se
+> referme pas par effet de bord d'une porte ultérieure.
 
 Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
 
@@ -60,7 +54,7 @@ make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
 make check      # qualite complete : format, lint, types, tests, sources, documents
 make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
-make migrate    # appliquer les 17 migrations
+make migrate    # appliquer les migrations jusqu'a la tete 0021
 make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```

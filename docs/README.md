@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `616` en usage | `DEC-617` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `617` en usage | `DEC-618` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -132,7 +132,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
-| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **En attente des validations humaines** — les quinze sous-étapes techniques sont faites (`DEC-599` à `DEC-615`) ; [checklist](operations/checklist-validation-G7.md) prête, tag `v0.7.0` prévu |
+| ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
@@ -332,12 +332,12 @@ lecture la plus large — `QO-121`, les champs de `payload_json`, et `QO-123`, l
 
 ---
 
-## 14. Avancement du LOT 7 — **lot OUVERT**, porte `G7`
+## 14. Avancement du LOT 7 — **lot VERROUILLÉ**, porte `G7` franchie
 
 **Ouvert par Jonathan le 25 septembre 2026 (`DEC-598`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-7.md`](operations/fiche-lot-7.md) — **8** stories, toutes `P0`, **sept**
-critères de sortie **dérivés des deux sources, qui concordent**, **quinze** sous-étapes, tag
-`v0.7.0` prévu.
+critères de sortie **dérivés des deux sources, qui concordent**, **quinze** sous-étapes. Porte
+`G7` franchie le 30/09/2026 (`DEC-617`), tag `v0.7.0` posé sur `main`.
 
 **`T1` EST FAITE** le 25/09/2026, `DEC-599` : les huit tables du lot — `arrival_profile` et les six
 tables d'onboarding, migration `0020`. Schéma **32 → 39 tables**, **34 tests**.
@@ -714,8 +714,8 @@ suivi par périmètre — **UNE SEULE** page, `PageAdministration.tsx`, sous la 
 de `T14`, parcours HTTPS réel de la fiche d'arrivée jusqu'à l'archivage automatique, reclassement
 du §30 à **16 acquis, 2 partiels, 7 reportés** et [checklist `G7`](operations/checklist-validation-G7.md).
 Le défaut `T15-1`, trouvé dans le nettoyage initial du décor, a été corrigé puis le scénario a été
-rejoué et nettoyé. La porte n'est **pas** déclarée franchie : le corpus demande encore l'accord de
-Tess, Léa, Diane et Jonathan.
+rejoué et nettoyé. Tess, Léa, Diane et Jonathan ont validé l'ensemble le 30/09/2026 : la porte
+`G7` est franchie (`DEC-617`) et le LOT 7 est verrouillé.
 
 **Correctif de CI le 30/09/2026, `DEC-616` :** des avis publiés après `T15`, déjà présents sur
 `develop`, ont rendu l'audit rouge. Le verrou seul est régénéré : `brace-expansion` passe de
@@ -729,8 +729,8 @@ audit, lint et `make check` passent ; la PR #200 vise `develop`, jamais `main`.
 version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
 sans jamais avoir été présumée.
 
-**Traçabilité GitHub :** épic `#175` ouvert jusqu'à `G7`, jalon `G7`, les huit stories `#176` à
-`#183` fermées manuellement le 29/09/2026 sur leur preuve propre.
+**Traçabilité GitHub :** épic `#175` clos à `G7`, jalon `G7`, les huit stories `#176` à `#183`
+fermées manuellement le 29/09/2026 sur leur preuve propre.
 
 ---
 
