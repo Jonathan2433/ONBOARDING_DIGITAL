@@ -27,14 +27,9 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
+import { ROLES_ADMINISTRATION, ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
 
-import {
-  droitsDeNavigation,
-  RUBRIQUES,
-  rubriqueEstVisible,
-  UN_PARCOURS_ACTIF_EST_POSSIBLE,
-} from '../routes';
+import { droitsDeNavigation, RUBRIQUES, rubriqueEstVisible } from '../routes';
 import { BarreMobile } from './BarreMobile';
 import { NavigationPrincipale } from './NavigationPrincipale';
 
@@ -42,14 +37,14 @@ afterEach(cleanup);
 
 describe('les droits de navigation viennent des rôles que l API a rendus', () => {
   it('rend tout à false quand les droits sont INCONNUS — refus par défaut du §20.1', () => {
-    expect(droitsDeNavigation(null)).toEqual({
+    expect(droitsDeNavigation(null, false)).toEqual({
       aUnParcoursActif: false,
       peutAdministrer: false,
     });
   });
 
   it("n'ouvre PAS l'administration à un simple employé", () => {
-    expect(droitsDeNavigation(['EMP']).peutAdministrer).toBe(false);
+    expect(droitsDeNavigation(['EMP'], false).peutAdministrer).toBe(false);
   });
 
   it("ouvre l'administration pour CHACUN des trois rôles du §20 — pris un par un", () => {
@@ -57,26 +52,45 @@ describe('les droits de navigation viennent des rôles que l API a rendus', () =
     //  satisfaite par une implémentation qui ne reconnaît qu'un seul des trois.
     expect(ROLES_ADMINISTRATION.length).toBe(3);
     for (const role of ROLES_ADMINISTRATION) {
-      expect(droitsDeNavigation([role]).peutAdministrer).toBe(true);
+      expect(droitsDeNavigation([role], false).peutAdministrer).toBe(true);
     }
   });
 
-  it("n'ouvre pas l'administration sur un rôle voisin mais distinct", () => {
-    //  `DSM`, `BOOST` et `OFFICE` sont des responsabilités Framework ; le §20 ne
-    //  leur donne AUCUNE colonne. Un `includes` sur un préfixe ou une casse
-    //  relâchée les laisserait passer.
-    for (const role of ['DSM', 'BOOST', 'OFFICE', 'NEW', 'esm', 'adm-e', 'ADM']) {
-      expect(droitsDeNavigation([role]).peutAdministrer).toBe(false);
+  it("ouvre l'administration pour CHACUN des cinq rôles du §9 — LOT 7, T14", () => {
+    //  **DÉCISION DE JONATHAN, T14** : un DSM/Booster qui gère SES modèles ou
+    //  SON catalogue doit voir l'entrée de menu, en plus d'ESM/ADM-E/SUPER —
+    //  voir `rolesAdministrationOnboarding` au manifeste. UN PAR UN, et non
+    //  tous ensemble, même motif que le test précédent.
+    expect(ROLES_ADMINISTRATION_ONBOARDING.length).toBe(5);
+    for (const role of ROLES_ADMINISTRATION_ONBOARDING) {
+      expect(droitsDeNavigation([role], false).peutAdministrer).toBe(true);
     }
   });
 
-  it('AUCUN parcours actif ne peut exister au LOT 4, et le test l épingle', () => {
+  it("n'ouvre PAS l'administration à OFFICE, ni sur un rôle mal formé", () => {
+    //  `OFFICE` est à TIRET partout sur les modèles d'onboarding (§9) comme
+    //  sur les comptes (§20) — aucune des deux grilles ne le contient. Un
+    //  `includes` sur un préfixe ou une casse relâchée laisserait passer les
+    //  variantes malformées.
+    for (const role of ['OFFICE', 'NEW', 'esm', 'adm-e', 'ADM', 'dsm', 'boost']) {
+      expect(droitsDeNavigation([role], false).peutAdministrer).toBe(false);
+    }
+  });
+
+  it('aUnParcoursActif est un ARGUMENT réel depuis LOT 7, T13 — épreuvé dans les DEUX sens', () => {
     //  Le §8.2 conditionne « Mon onboarding » à « lorsqu'un parcours actif
-    //  existe ». Aucune table de parcours n'existe : la condition est
-    //  trivialement fausse. Ce test force le lot qui les créera à le changer
-    //  DÉLIBÉRÉMENT — §7.32, un test est un meilleur véhicule qu'un commentaire.
-    expect(UN_PARCOURS_ACTIF_EST_POSSIBLE).toBe(false);
-    expect(droitsDeNavigation(['SUPER']).aUnParcoursActif).toBe(false);
+    //  existe ». `droitsDeNavigation` reste PURE : c'est `CadreApplicatif` qui
+    //  interroge l'API et lui passe le résultat (voir son en-tête). Un test qui
+    //  ne vérifierait qu'un sens serait satisfait par une fonction qui ignore
+    //  son second argument — §7.39, un témoin par valeur en cause.
+    expect(droitsDeNavigation(['SUPER'], true).aUnParcoursActif).toBe(true);
+    expect(droitsDeNavigation(['SUPER'], false).aUnParcoursActif).toBe(false);
+  });
+
+  it("aUnParcoursActif ne dépend d'AUCUN rôle — c'est un fait du parcours, pas de la matrice", () => {
+    for (const roles of [null, ['EMP'], ['SUPER'], ['OFFICE']]) {
+      expect(droitsDeNavigation(roles, true).aUnParcoursActif).toBe(true);
+    }
   });
 });
 
@@ -102,18 +116,26 @@ describe('le prédicat de visibilité couvre TOUTES les rubriques conditionnelle
   });
 });
 
-function monterMenu(peutAdministrer: boolean): void {
+function monterMenu(peutAdministrer: boolean, aUnParcoursActif = false): void {
   render(
     <MemoryRouter>
-      <NavigationPrincipale code="bordeaux" peutAdministrer={peutAdministrer} />
+      <NavigationPrincipale
+        code="bordeaux"
+        peutAdministrer={peutAdministrer}
+        aUnParcoursActif={aUnParcoursActif}
+      />
     </MemoryRouter>,
   );
 }
 
-function monterBarre(peutAdministrer: boolean): void {
+function monterBarre(peutAdministrer: boolean, aUnParcoursActif = false): void {
   render(
     <MemoryRouter>
-      <BarreMobile code="bordeaux" peutAdministrer={peutAdministrer} />
+      <BarreMobile
+        code="bordeaux"
+        peutAdministrer={peutAdministrer}
+        aUnParcoursActif={aUnParcoursActif}
+      />
     </MemoryRouter>,
   );
 }
@@ -137,15 +159,20 @@ describe('les deux repères de navigation masquent la MÊME chose', () => {
     expect(screen.getByRole('link', { name: 'Administration' })).toBeTruthy();
   });
 
-  it('« Mon onboarding » est masqué dans les DEUX, quels que soient les droits', () => {
-    //  Aucun parcours ne peut exister : la rubrique est absente partout, et le
-    //  rester est le comportement correct — pas un oubli.
+  it('« Mon onboarding » est masqué SANS parcours actif, et affiché AVEC — LOT 7, T13', () => {
+    //  **LES DEUX SENS, DANS LES DEUX REPÈRES** : un test qui ne vérifierait que
+    //  l'affichage serait satisfait par un menu qui montre tout ; un test qui ne
+    //  vérifierait que le masquage serait satisfait par un menu qui ne montre
+    //  jamais rien. Le §8.2 conditionne la rubrique au parcours, pas aux droits
+    //  d'administration — `peutAdministrer` reste `false` dans les deux appels.
     for (const monter of [monterMenu, monterBarre]) {
-      for (const droit of [false, true]) {
-        monter(droit);
-        expect(screen.queryByRole('link', { name: /onboarding/i })).toBeNull();
-        cleanup();
-      }
+      monter(false, false);
+      expect(screen.queryByRole('link', { name: 'Mon onboarding' })).toBeNull();
+      cleanup();
+
+      monter(false, true);
+      expect(screen.getByRole('link', { name: 'Mon onboarding' })).toBeTruthy();
+      cleanup();
     }
   });
 });

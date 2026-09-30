@@ -184,12 +184,13 @@ def _appartenance(
     *,
     arrivee: dt.date | None = None,
     depart: dt.date | None = None,
-) -> None:
-    connexion.execute(
+) -> uuid.UUID:
+    return connexion.execute(  # type: ignore[no-any-return]
         text(
             "INSERT INTO entity_membership (person_id, entity_id, arrival_date, "
             "departure_date, membership_state, professional_category, profile_visibility) "
-            "VALUES (:personne, :entite, :arrivee, :depart, 'active', 'consultant', 'draft')"
+            "VALUES (:personne, :entite, :arrivee, :depart, 'active', 'consultant', 'draft') "
+            "RETURNING id"
         ),
         {
             "personne": personne,
@@ -197,7 +198,7 @@ def _appartenance(
             "arrivee": arrivee or (ANCRAGE - 30 * JOUR).date(),
             "depart": depart,
         },
-    )
+    ).scalar_one()
 
 
 def _responsabilite(
@@ -291,6 +292,34 @@ def test_hors_de_l_entite_principale_EMP_SEULEMENT(cx: Connection) -> None:
         "une permission locale a ete TRANSFEREE : le §5.1 l'interdit, et le role "
         "de B est bien present en base"
     )
+
+
+@pytest.mark.integration
+def test_l_appartenance_est_rendue_DANS_l_entite_principale(cx: Connection) -> None:
+    """LOT 7, `T13` : `appartenance` porte l'identifiant de la ligne elle-meme,
+    pas seulement un booleen — l'ecran du nouvel arrivant en a besoin pour
+    construire l'URL de sa propre fiche et de son propre parcours."""
+    a = _entite(cx, "T13-APP-A")
+    p = _personne(cx, "t13-appartenance@exalt-company.com")
+    id_appartenance = _appartenance(cx, p, a)
+
+    resolues = resoudre_les_permissions(cx, p, a, ANCRAGE)
+
+    assert resolues.appartenance == id_appartenance
+
+
+@pytest.mark.integration
+def test_l_appartenance_est_NULLE_HORS_de_l_entite_principale(cx: Connection) -> None:
+    """LOT 7, `T13` : meme temoin que `EMP_SEULEMENT`, sur le nouveau champ —
+    une appartenance dans B ne doit pas fuiter quand on consulte A."""
+    a = _entite(cx, "T13-APP-B-PRINC")
+    b = _entite(cx, "T13-APP-B-AUTRE")
+    p = _personne(cx, "t13-appartenance-hors@exalt-company.com")
+    _appartenance(cx, p, a)
+
+    dans_b = resoudre_les_permissions(cx, p, b, ANCRAGE)
+
+    assert dans_b.appartenance is None
 
 
 @pytest.mark.integration

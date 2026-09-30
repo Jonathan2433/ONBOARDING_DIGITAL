@@ -21,6 +21,7 @@ from app.clients import modeles as clients_modeles
 from app.content import modeles as content_modeles
 from app.entities import modeles as entities_modeles
 from app.media import modeles as media_modeles
+from app.onboarding import modeles as onboarding_modeles
 from app.organization import modeles as organization_modeles
 from app.people import modeles as people_modeles
 from app.shared.modele import Base, metadonnees
@@ -37,6 +38,8 @@ MODULES_DE_MODELES = (
     media_modeles,
     #  LOT 6, T1 : les trois tables editoriales du §15.
     content_modeles,
+    #  LOT 7, T1 : la fiche d'arrivee et les six tables d'onboarding.
+    onboarding_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]

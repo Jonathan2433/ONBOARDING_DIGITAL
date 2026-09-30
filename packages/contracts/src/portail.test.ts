@@ -20,6 +20,7 @@ import {
   GABARIT_CHEMIN_ENTITE,
   PREFIXE_VERSIONNE,
   validerLesEntites,
+  validerLesPermissions,
   validerUneEntite,
 } from './index';
 
@@ -153,5 +154,59 @@ describe("le chemin de l'entite consultee — LOT 4, T2", () => {
       delete tronquee[champ];
       expect(() => validerUneEntite(tronquee)).toThrow(TypeError);
     }
+  });
+});
+
+describe('validerLesPermissions — LOT 7, T13', () => {
+  const REPONSE = {
+    entite: '0f8fad5b-d9cb-469f-a165-70867728950e',
+    code: 'bordeaux',
+    est_entite_principale: true,
+    roles: ['EMP', 'ESM'],
+    appartenance: '11111111-1111-1111-1111-111111111111',
+  };
+
+  it('accepte la forme attendue, appartenance COMPRISE', () => {
+    expect(validerLesPermissions(REPONSE)).toEqual({
+      entite: REPONSE.entite,
+      code: REPONSE.code,
+      estEntitePrincipale: true,
+      roles: ['EMP', 'ESM'],
+      appartenance: REPONSE.appartenance,
+    });
+  });
+
+  it('accepte `appartenance: null` — hors de l’entite principale', () => {
+    expect(validerLesPermissions({ ...REPONSE, appartenance: null }).appartenance).toBeNull();
+  });
+
+  it('refuse une reponse qui n’est pas un objet', () => {
+    expect(() => validerLesPermissions(null)).toThrow(TypeError);
+  });
+
+  it('refuse « est_entite_principale » absent ou non booleen', () => {
+    const sansPrincipale: Record<string, unknown> = { ...REPONSE };
+    delete sansPrincipale['est_entite_principale'];
+    expect(() => validerLesPermissions(sansPrincipale)).toThrow(TypeError);
+    expect(() => validerLesPermissions({ ...REPONSE, est_entite_principale: 'oui' })).toThrow(
+      TypeError,
+    );
+  });
+
+  it('refuse « roles » absent ou non tableau', () => {
+    const sansRoles: Record<string, unknown> = { ...REPONSE };
+    delete sansRoles['roles'];
+    expect(() => validerLesPermissions(sansRoles)).toThrow(TypeError);
+    expect(() => validerLesPermissions({ ...REPONSE, roles: 'ESM' })).toThrow(TypeError);
+  });
+
+  it('refuse « appartenance » ABSENT — ni chaine ni null n’est pas la meme chose qu’absent', () => {
+    const sansAppartenance: Record<string, unknown> = { ...REPONSE };
+    delete sansAppartenance['appartenance'];
+    expect(() => validerLesPermissions(sansAppartenance)).toThrow(TypeError);
+  });
+
+  it('refuse « appartenance » ni chaine ni null', () => {
+    expect(() => validerLesPermissions({ ...REPONSE, appartenance: 42 })).toThrow(TypeError);
   });
 });

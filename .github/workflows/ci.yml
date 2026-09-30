@@ -521,6 +521,25 @@ jobs:
         # `user_session.last_activity_at`, entorse acceptee par `DEC-531`.
         run: make permissions-check
 
+      - name: 4ter · Le catalogue, les modeles et le suivi de l'onboarding, sur la pile reelle
+        # LOT 7, T14 — differe explicitement par T13 pour etre combine ici.
+        #
+        # LE TEMOIN CENTRAL EST L'ASYMETRIE DSM/ESM : un DSM ne gere que SES
+        # propres modeles, un ESM tous ceux de l'entite (matrice §9). Les deux
+        # roles sont poses dans la MEME entite, et chacun doit voir un ensemble
+        # DIFFERENT — un controle a un seul role verrait la meme reponse quel
+        # que soit le defaut.
+        #
+        # LE CYCLE DE VIE COMPLET EST EXERCE UNE FOIS, EN VRAI : creer, composer
+        # les taches, publier, archiver, restaurer — chaque transition change
+        # le code HTTP attendu de la suivante, donc un service bloque sur un
+        # etat produit un ECHEC visible, jamais un succes muet.
+        #
+        # `ECART-066` EST EPROUVE DANS LE SENS DU REFUS : le DSM est refuse
+        # (403) en restaurant SON PROPRE modele — exclu EN BLOC de cette seule
+        # ligne du §9, a la difference des cinq autres gestes de la meme grille.
+        run: make onboarding-check
+
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
         # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes

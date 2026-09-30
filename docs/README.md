@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `596` en usage | `DEC-597` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `616` en usage | `DEC-617` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `065` |  `ECART-066` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `066` |  `ECART-067` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -131,8 +131,8 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
-| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **Porte courante** — LOT 6 ouvert le 13/09/2026 (`DEC-575`), tag `v0.6.0` prévu. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), **douze** sous-étapes |
-| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | Planifiée |
+| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
+| `G7` | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **En attente des validations humaines** — les quinze sous-étapes techniques sont faites (`DEC-599` à `DEC-615`) ; [checklist](operations/checklist-validation-G7.md) prête, tag `v0.7.0` prévu |
 | `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
@@ -270,7 +270,7 @@ critères de sortie. Checklist : [`checklist-validation-G4.md`](operations/check
 
 ---
 
-## 13. Avancement du LOT 6 — **lot OUVERT**, porte `G6`
+## 13. Avancement du LOT 6 — **lot VERROUILLÉ**, porte `G6` franchie
 
 **Ouvert par Jonathan le 13 septembre 2026 (`DEC-575`), découpage validé le même jour.** Plan :
 [`operations/fiche-lot-6.md`](operations/fiche-lot-6.md) — **7** stories, **sept** critères de sortie
@@ -292,7 +292,10 @@ Framework en lecture.
 
 > **`T2` A MESURÉ UN PIÈGE QUE LA SEULE ANNEXE A AURAIT FAIT COMMETTRE.** La matrice **§5** accorde la lecture du Framework aux **huit** rôles, `EMP` et `NEW` compris ; les tableaux **§10.x** de l'annexe A **n'ont ni colonne `EMP` ni colonne `NEW`**. Les lire seuls aurait exclu l'acteur que la story nomme. Le §5 règle la **consultation**, le §10.x la **modification**.
 
-**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. La prochaine est `T12`, recette et checklist `G6` — la dernière du lot.
+**`T2` À `T11` SONT FAITES** — la page Framework le 13/09 (`DEC-579`), la page détaillée d'un cercle le 14/09 (`DEC-582`), celle d'un bureau et le **rendu des blocs** le 15/09 (`DEC-583`, `DEC-584`), l'**écriture d'un contenu** le 18/09 (`DEC-585`), le **cycle de vie** — brouillon, publication, archivage, restauration — le 19/09 (`DEC-586`), les **liens internes** le 22/09 (`DEC-587`), les **trois écrans de lecture** — Framework, cercle, bureau — le 23/09 (`DEC-589`), les **écrans d'édition** le 24/09 (`DEC-591`), et **le témoin du critère de sortie 2 et la reprise relue** le 25/09 (`DEC-595`). **77 contrôles de stack** à travers Caddy, témoins exécutés dans les deux sens. **`T12` EST FAITE** le 25/09/2026, `DEC-596` : recette (`make recette-check` 57/57), classement du
+§30 — un reclassement trouvé, `§30.8` était `INAPPLICABLE` depuis avant `T1` — et
+`checklist-validation-G6.md`. **LES DOUZE SONT FAITES. La porte `G6` est FRANCHIE le 25/09/2026**,
+`DEC-597`, tag `v0.6.0` posé sur `d2d639e`. Voir §14 pour le LOT 7, qui lui succède.
 
 > **`QO-120` EST CLOSE PAR `T8`, ET ELLE ÉTAIT BLOQUANTE — MAIS LE RÉSULTAT LE PLUS UTILE N'EST PAS LA LISTE.** Le modèle §15.3 et le cahier §13 exigent tous deux « une **liste de protocoles autorisés** » sans la donner — zéro occurrence, mesurée. `DEC-587` tranche `https` seul, `http` refusé **sous son propre code** parce qu'une adresse juste à un `s` près mérite mieux que « protocole inconnu » (§7.25). **Et la mesure a montré qu'une liste de protocoles NE SUFFIT PAS** : `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte** — c'est le cinquième refus, et le seul qu'une lecture littérale de la phrase du corpus aurait omis. La règle vit à **deux étages** : la contrainte `ck_internal_link_url_https` de la migration `0019` est le **plancher**, que trois écrivains futurs déjà nommés au corpus ne peuvent pas contourner ; le service est le **refus exact**, qui distingue cinq causes et exige l'hôte.
 
@@ -326,6 +329,408 @@ lecture la plus large — `QO-121`, les champs de `payload_json`, et `QO-123`, l
 > leçon `CLAUDE.md` §7.39, appliquée **au découpage** cette fois, et non après coup.
 
 **Traçabilité GitHub :** épic `#145`, jalon `G6`, stories `#146` à `#152` — créées le 13/09/2026.
+
+---
+
+## 14. Avancement du LOT 7 — **lot OUVERT**, porte `G7`
+
+**Ouvert par Jonathan le 25 septembre 2026 (`DEC-598`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-7.md`](operations/fiche-lot-7.md) — **8** stories, toutes `P0`, **sept**
+critères de sortie **dérivés des deux sources, qui concordent**, **quinze** sous-étapes, tag
+`v0.7.0` prévu.
+
+**`T1` EST FAITE** le 25/09/2026, `DEC-599` : les huit tables du lot — `arrival_profile` et les six
+tables d'onboarding, migration `0020`. Schéma **32 → 39 tables**, **34 tests**.
+`photo_authorization` existe depuis le LOT 5 et n'a pas été recréée.
+
+> **`make isolation-check` a trouvé deux classes de défaut que ce lot n'avait jamais rencontrées.**
+> Une clé composite structurellement correcte mais que le contrôle refuse quand même — il exige
+> `entity_id` NOT NULL à la SOURCE sans condition, `T8-1` transposé — et une clé composite dont la
+> table CIBLE a un `entity_id` légitimement nullable, qui aurait silencieusement cassé tout usage
+> GLOBAL. `infra/scripts/verifier-isolation.py` reçoit une **troisième** raison légitime à une clé
+> simple, dérivée du modèle et rapportée. Détail : `compte-rendu-t1-lot-7.md` §2.2.
+
+**`T2` EST FAITE** le 25/09/2026, `DEC-600` : la fiche d'arrivée en lecture,
+`GET …/people/{appartenance}/arrival-profile`. Les données organisationnelles sont réutilisées de
+`lire_la_fiche` (LOT 5) avec une population élargie — future ET active, les trois visibilités.
+`id`/`version` valent `null` tant qu'aucune ligne `arrival_profile` n'existe : la lecture n'écrit
+rien.
+
+> **LE TÉMOIN CENTRAL CONSTRUIT UN DSM RÉELLEMENT RATTACHÉ, ET IL EST REFUSÉ QUAND MÊME.** La
+> matrice §7 met `DSM` à tiret sur la lecture de la fiche, alors qu'il porte « Consultants »
+> ailleurs dans la même annexe (§8.1) — un DSM sans rattachement n'aurait prouvé que le refus d'un
+> inconnu. **ET UN DÉCOR DE TEST A RÉVÉLÉ UNE RÈGLE DU LOT 4 JAMAIS EXERCÉE AINSI** :
+> `resoudre_les_permissions` n'accorde un rôle de responsabilité que dans l'entité PRINCIPALE de
+> l'acteur — un ESM ou un Booster sans sa propre appartenance locale ne reçoit AUCUN rôle, en
+> silence. Détail : `compte-rendu-t2-lot-7.md` §2.3.
+
+**`T3` EST FAITE** le 26/09/2026, `DEC-601` : compléter, valider et publier la fiche —
+`PATCH …/arrival-profile` et `POST …/arrival-profile/validation`. La publication est automatique à
+la validation (matrice §7.1) : un seul appel fait passer `state` de `draft` à `published`,
+`validated_at` et `published_at` portant le même instant. `recent_until` est calculé par
+PostgreSQL (`+ INTERVAL '1 month'`), jamais par Python.
+
+> **CORRECTIF POST-FUSION, `DEC-602` : une quatrième ligne du §7, « Corriger après publication »,
+> avait été manquée.** Trouvée en relisant la matrice juste après la fusion de `T3`, pas par un
+> contrôle : sa grille S'INVERSE sur `NEW` (perd le droit après publication, §6.2) et `DSM` (le
+> retrouve, à tiret sur « Compléter »). Sans elle, `MVP-L07-US002` restait incomplète — son
+> critère « corrections limitées aux rôles autorisés » ne peut pas être satisfait par un blocage
+> total. `PATCH …/arrival-profile` accepte désormais l'écriture sur `published`, gardée par une
+> grille séparée ; `archived` reste le seul état sans aucune ligne d'écriture. Détail :
+> `compte-rendu-t3-lot-7.md` §2.7.
+
+> **`Support` N'EST NULLE PART DANS LA LÉGENDE DU §4** — même piège que `Périmètre` au LOT 6.
+> Cherché dans tout le corpus : il couvre exactement `Entité`/`Cercle`/`Global`, sans règle
+> supplémentaire. **`BOOST` DIVERGE SUR LA SEULE LIGNE « VALIDER ET PUBLIER »** : `Support cercle`
+> pour compléter, tiret pour valider — un témoin prouve d'abord que le Booster PEUT compléter,
+> pour que son refus de valider ne prouve pas seulement une absence générale de droit.
+> **UNE AFFIRMATION FAUSSE CORRIGÉE AVANT COMMIT** : `entity_membership.short_bio`/`fun_fact`
+> n'ont AUCUNE route d'écriture — `T7` du LOT 5 les avait explicitement reportés
+> (`compte-rendu-t7-lot-5.md`), jamais rattrapés depuis. Détail : `compte-rendu-t3-lot-7.md` §2.
+
+**`T4` EST FAITE** le 26/09/2026, `DEC-603` : le catalogue des tâches —
+`GET`/`POST …/onboarding/task-references`. Ferme `ECART-013` structurellement : `onboarding_
+task_reference` porte un `code` fonctionnel unique par périmètre (deux index partiels, un par
+entité, un global), et `onboarding_template_task.task_reference_id` (posée dès `T1`) pointera
+toujours vers la MÊME ligne, quel que soit le modèle qui la réutilise.
+
+> **UNE SEULE GRILLE GOUVERNE CINQ DES SEPT LIGNES DU §9** — « Créer » et « Réutiliser une tâche
+> de référence » : `DSM` Consultants, `ESM` Entité, `BOOST` Cercle, `OFFICE` tiret, `ADM-E`
+> Entité, `SUPER` Global. **`Consultants`/`Cercle` SE RÉDUISENT À L'ENTITÉ POUR CETTE TABLE
+> PRÉCISÉMENT, ET C'EST DOCUMENTÉ, PAS DEVINÉ** : `onboarding_task_reference` ne porte que
+> `entity_id` (nullable pour le global) — aucune colonne cercle ni DSM, à la différence
+> d'`onboarding_template` qui les recevra à `T5`. Seul `SUPER` atteint `Global` — un `ESM` qui le
+> demande obtient `403`, une ASYMÉTRIE mesurée et non une absence générale de droit : il possède
+> le droit `ENTITE`. **UN RÉSIDU DU MODÈLE TROUVÉ EN LISANT `T5` EN AVANCE** :
+> `onboarding_template_version.state` réutilise l'énumération du conteneur
+> (`draft`/`active`/`archived`) alors que le §13.3 exige `draft`/`published`/`retired` pour LA
+> VERSION — deux énumérations distinctes, confondues depuis `T1`. Non bloquant pour `T4` ; nommé
+> pour `T5`, qui devra ajouter une énumération propre et corriger la contrainte par une NOUVELLE
+> migration. Détail : `compte-rendu-t4-lot-7.md` §2.
+
+**`T5` EST FAITE** le 26/09/2026, `DEC-604` : les modèles et leurs versions —
+`POST …/onboarding/templates`, `POST …/templates/{id}/versions`,
+`PUT …/templates/{id}/versions/{id}/tasks`. Le témoin de la sous-étape : une version publiée (ou
+retirée) refuse toute écriture de ses tâches — modèle §13.3, immuabilité. « Ajouter ou réordonner »
+est UNE seule ligne : la liste entière remplace la précédente, `display_order` valant l'index reçu
+— même lecture que `content_block` au LOT 6.
+
+> **RÉSIDU DE `T1` CORRIGÉ EN PRÉALABLE, PAR UNE NOUVELLE MIGRATION (`0021`).**
+> `onboarding_template_version.state` reçoit désormais sa PROPRE énumération —
+> `draft`/`published`/`retired` — au lieu de celle du conteneur : sans cela, le témoin
+> d'immuabilité de cette sous-étape était irréalisable, la contrainte héritée de `0020` refusant
+> `published` elle-même. Zéro ligne existante rejetée. **CONTRAIREMENT AU CATALOGUE DE `T4`,
+> `Consultants`/`Cercle` NE SE RÉDUISENT PAS À L'ENTITÉ ICI** : `onboarding_template` porte de
+> vraies colonnes de portée. Un DSM ne gère que SES propres modèles (§9.1), un Booster que ceux de
+> SON cercle — deux témoins d'asymétrie le prouvent. `ESM`/`ADM-E`/`SUPER` gèrent n'importe quel
+> DSM ou cercle de l'entité, même parti que `ROLES_DE_PORTEE_ENTITE` du LOT 6. **DEUX RÉSIDUS
+> NOMMÉS PAR `T1` INSTRUITS PAR LE SERVICE** — faute de clé composite sûre : la cohérence d'entité
+> modèle↔cercle, et modèle↔tâche de référence réutilisée. Détail : `compte-rendu-t5-lot-7.md`.
+
+**`T6` EST FAITE** le 26/09/2026, `DEC-605` : le cycle de vie d'une version de modèle —
+`POST …/versions/{id}/publication`, `/archivage`, `/restauration`. Aucune nouvelle table ni
+colonne : le modèle §13.3 déclarait déjà tout. Aucun module de contrat, trois écritures pures.
+
+> **`ECART-066` (VOLET « VERSION DE MODÈLE ») EST RÉSOLU AVANT LA ROUTE, PAS APRÈS.** Question
+> posée à Jonathan sous forme fermée, restreinte à la version de modèle : **l'ESM restaure
+> librement dans son entité**, même régime que les cinq ressources d'`ARB-DROIT-003`. **Le volet
+> « parcours archivé » (§8.1) N'A PAS été reposé ici** — présumer la même réponse aurait été
+> l'erreur exacte que l'écart met en garde contre. **Résolu à `T11`, même réponse, `DEC-611`.**
+>
+> **RESTAURER NE ROUVRE PAS L'ÉDITION, ET C'EST LE CHOIX LE PLUS IMPORTANT DE LA SOUS-ÉTAPE.**
+> Contrairement à `restaurer_une_page` (LOT 6, qui rend `draft`), une version restaurée redevient
+> `published`, jamais `draft` : le modèle §13.3 déclare l'immutabilité d'une publication SANS
+> exception, et un retour au brouillon rouvrirait l'écriture des tâches d'une version déjà
+> consommée par de vrais parcours. Témoin direct : après un cycle publier/archiver/restaurer,
+> `PUT .../tasks` refuse TOUJOURS, comme sur une version fraîchement publiée.
+> `published_at`/`published_by_person_id` D'ORIGINE sont conservés, jamais réécrits.
+>
+> **« DUPLICATION » DU LIBELLÉ DE DÉCOUPAGE (`DEC-598`) EST SANS OBJET** : recherchée dans tout le
+> corpus, elle ne désigne rien de plus que la création de version déjà livrée par `T5` — aucune
+> quatrième route. **DSM/BOOSTER SONT EXCLUS EN BLOC SUR LA SEULE LIGNE « RESTAURER »** — jamais un
+> sous-cas de leur propre modèle comme sur les deux autres gestes : deux témoins d'asymétrie le
+> prouvent. Détail : `compte-rendu-t6-lot-7.md`.
+
+**`T7` EST FAITE** le 27/09/2026, `DEC-606` : affecter et consulter un parcours d'onboarding —
+`POST`/`GET …/people/{appartenance}/onboarding-parcours`. Aucune nouvelle table.
+
+> **LA PRIORITÉ DE RÉSOLUTION DU MODÈLE A ÉTÉ ARBITRÉE AVANT TOUT CODE.** Un nouvel arrivant porte
+> un DSM et un cercle verrouillés dès sa fiche, et plusieurs modèles publiés peuvent correspondre à
+> son statut à des niveaux différents — rien dans le corpus ne dit lequel prime. Arbitrage de
+> Jonathan du 27/09/2026 : **`DSM` > `CIRCLE` > `ENTITY` > `GLOBAL`**, le plus spécifique gagne.
+> Quatre témoins postent les quatre modèles EN MÊME TEMPS et retirent le niveau gagnant un par un —
+> jamais un seul modèle à la fois, ce qui ne prouverait qu'une absence de refus, pas un ordre.
+>
+> **`DSM` A ICI « CONSULTANTS » PLEIN, CONTRAIREMENT À LA FICHE D'ARRIVÉE (`T2`, `DSM` à tiret)** :
+> troisième grille du module, matrice §8.1. Deux témoins le prouvent dans les deux sens. **« AFFECTER »
+> N'A PAS DE `Soi`** — seule asymétrie avec la lecture, `NEW` ne peut jamais s'affecter lui-même un
+> parcours. **UNE SEULE INSTANCE ACTIVE PAR APPARTENANCE ÉPROUVÉE AU VOLUME** (§7.26 du LOT 6) :
+> compare-et-pose atomique, 40 affectations distinctes sans collision. **UN DÉFAUT SQL TROUVÉ AVANT
+> COMMIT** : `:parametre::type` n'est pas résolu par SQLAlchemy `text()`, corrigé en
+> `CAST(:parametre AS type)`. Détail : `compte-rendu-t7-lot-7.md`.
+
+**`T8` EST FAITE** le 27/09/2026, `DEC-608` : terminer et annuler une tâche dans les cinq minutes —
+`POST …/onboarding-parcours/taches/{tache}/completion`, `/annulation`. Aucune nouvelle table.
+
+> **LES DEUX LIGNES DU §8.1 SONT `Soi` SEUL, LA GRILLE LA PLUS STRICTE DU MODULE** : contrairement
+> à la lecture du parcours (`T7`), `DSM`/`BOOST` n'ont ICI aucun droit malgré leur rattachement réel
+> — piège n°1 de `fiche-lot-7.md` §2.1. Le témoin qui compte n'est pas un rôle sans rattachement,
+> c'est un `DSM` RATTACHÉ à ce consultant précis, refusé d'agir sur sa tâche alors qu'il lit
+> pleinement son parcours.
+>
+> **`annuler_la_completion` NE PRODUIT JAMAIS L'ÉTAT `cancelled`.** Les quatre états du modèle §13.6
+> laissaient croire à une transition directe `completed` → `cancelled` ; `cancelled` est réservé à
+> `T10` (une tâche rendue obsolète par un changement de statut). Annuler dans les cinq minutes
+> redonne `todo`, un témoin re-termine la même tâche après l'avoir annulée pour le prouver
+> directement.
+>
+> **LA FENÊTRE DE CINQ MINUTES EST ANCRÉE À `completed_at`, JAMAIS À UNE HORLOGE MOCKÉE** — exigence
+> explicite de `fiche-lot-7.md` §3 : la précondition compare l'instant réel de la requête à une
+> valeur déjà stockée en base, et le témoin « hors délai » recule cette valeur par SQL, jamais un
+> `sleep()`. **LA PRÉCONDITION EST DANS LE `WHERE`, LE DIAGNOSTIC DANS UNE LECTURE SÉPARÉE APRÈS
+> L'ÉCHEC** : contrairement à `cycle_de_vie.py` (`T6`, un seul code pour toute cause), `T8`
+> distingue `transition_de_tache_invalide` de `delai_d_annulation_depasse`, parce que la différence
+> oriente vers `T9` (réouverture administrative) dans le second cas seulement.
+>
+> **CORRECTIF `DEC-607`, TROUVÉ EN ÉCRIVANT `T8` : `T7` NE POSAIT AUCUN ÉVÉNEMENT
+> `onboarding_task_event`**, malgré le critère de sortie 4 (« écrit à `T7`-`T10` ») — un résidu non
+> nommé dans son propre compte rendu. `ASSIGNED` est désormais posé par l'affectation elle-même, via
+> une fonction partagée avec `COMPLETED`/`CANCELLED`. **MON PROPRE DÉCOR A REJOUÉ LE DÉFAUT `T7-5`** :
+> un modèle `GLOBAL` créé avec la session de l'ESM, refusé 403 — corrigé en `ENTITY`. Détail :
+> `compte-rendu-t8-lot-7.md`.
+
+**`T9` EST FAITE** le 27/09/2026, `DEC-609` : réouvrir une tâche après le délai de cinq minutes —
+`POST …/onboarding-parcours/taches/{tache}/reouverture`. Aucune nouvelle table.
+
+> **CINQUIÈME GRILLE DU MODULE, INVERSE EXACTE DE LA QUATRIÈME (`T8`)** : `ESM`/`ADM-E`/`SUPER`
+> seulement — `Soi`, `DSM` et `BOOST` EXCLUS EN BLOC, même rattachés. Le §8.3 l'écrit en toutes
+> lettres, pas seulement par absence de la liste : deux témoins le prouvent sur un DSM et un Booster
+> RATTACHÉS à ce consultant/ce cercle précis, qui lisent et affectent pleinement ce parcours (`T7`)
+> et sont pourtant refusés ici. Aucune fonction `peut_...` séparée n'est nécessaire — la garde de
+> rôle coarse EST la vérification complète, même parti que le catalogue des tâches (`T4`).
+>
+> **LA FENÊTRE EST L'INVERSE STRICTE DE CELLE DE `T8`, ANCRÉE À LA MÊME COLONNE `completed_at`** :
+> `annuler_la_completion` exige `completed_at >= instant - 5 min`, `reouvrir_une_tache` exige
+> l'inverse strict — les deux frontières se touchent sans se chevaucher, jamais un second mécanisme
+> de fenêtre ni une horloge mockée.
+>
+> **CORRECTIF À `terminer_une_tache` (`T8`) : LE DIAGRAMME §24.2 DU MODÈLE EXIGE `Reopened ->
+> Completed`**, une transition que `T8` n'avait pas prévue — sans elle, une tâche réouverte restait
+> dans une impasse permanente. Un témoin re-termine directement une tâche après sa réouverture pour
+> le prouver. `completed_at`/`completed_by_person_id` de la complétion ORIGINALE sont CONSERVÉS lors
+> de la réouverture, contrairement à l'annulation de `T8` qui les efface.
+>
+> **LE MOTIF EST OBLIGATOIRE AU CORPS ET À LA BASE** — la PREMIÈRE route du projet à exiger et
+> écrire un motif, là où `archive_reason`/`assignment_reason` restent des colonnes jamais écrites
+> (`ECART-064`). Détail : `compte-rendu-t9-lot-7.md`.
+
+**`T10` EST FAITE** le 28/09/2026, `DEC-610` : le changement automatique de parcours au changement
+de statut, `US007`, ferme `§30.14`. **Aucune nouvelle table, aucune route propre** :
+`remplacer_le_parcours_apres_changement_de_statut` (`app/onboarding/instances.py`) est appelée par
+`_ecrire_le_statut` (LOT 5, `app/people/ecriture.py`) dans la MÊME transaction que l'écriture du
+champ `statut`, après les cinq écritures organisationnelles.
+
+> **AUCUNE GRILLE DE PERMISSION PROPRE, ET C'EST VÉRIFIÉ CONTRE LE CODE, PAS SEULEMENT AFFIRMÉ.**
+> La grille du parcours (`T7`, `_dans_le_perimetre_du_parcours` : ESM/ADM-E/SUPER entité, DSM
+> rattaché, Booster rattaché SANS condition de type d'appartenance — le commentaire du module le
+> dit en toutes lettres) est STRICTEMENT PLUS LARGE que la grille qui autorise déjà l'écriture du
+> champ `statut` (LOT 5 `T7`, `CHAMPS_DU_BOOSTER`, qui exige un Booster PRINCIPAL du cercle cible).
+> Quiconque réussit à écrire `statut` est donc *a fortiori* dans le périmètre du parcours : poser
+> une seconde garde ici aurait été une règle pour un ensemble d'acteurs déjà inclus dans le premier.
+>
+> **`ECART-013` EST MIS À L'ÉPREUVE POUR DE VRAI, ET C'EST LA PREMIÈRE FOIS.** Une tâche `completed`
+> de l'ancienne instance dont le `task_reference_id` (identifiant stable posé par `T4`) existe aussi
+> dans la nouvelle version est RETENUE d'emblée — `completed_at`/`completed_by_person_id` COPIÉS
+> tels quels, `title_snapshot`/`due_at` RECALCULÉS depuis la NOUVELLE version, événement
+> `RETAINED_ON_REPLACEMENT`. Les tâches `todo`/`reopened` de l'ancienne instance deviennent
+> `cancelled`, événement `CANCELLED_ON_REPLACEMENT` — les DEUX dernières transitions du diagramme
+> §24.2, que `T7`/`T8`/`T9` n'exerçaient pas. Un changement de `client` seul, même statut, ne
+> déclenche RIEN : seule la valeur du statut qui change compte, jamais la présence du champ dans la
+> demande. **`reference_date` DE LA NOUVELLE INSTANCE EST L'INSTANT DU CHANGEMENT, JAMAIS
+> `arrival_date`** — un remplacement a lieu des mois après l'arrivée, et ancrer sur l'arrivée
+> daterait les échéances de la nouvelle version dans le passé. L'ancienne instance passe `replaced`
+> AVANT l'insertion de la nouvelle, sans quoi l'index unique partiel de `T1` refuserait une seconde
+> ligne `active`.
+>
+> **DEUX POINTS CONFIRMÉS PAR JONATHAN LE 28/09/2026, PAS PRÉSUMÉS.** `replacement_reason` reste
+> `NULL` : `DemandeDeModification` (LOT 5) ne porte aucun champ motif, et `extra="forbid"` interdit
+> d'en glisser un en silence — le champ attend un écrivain futur (LOT 10, `ECART-064`). Aucun
+> `outbox_message`/`async_job` n'est écrit malgré le diagramme §14.1 du modèle : mesuré avant
+> d'écrire, aucune ligne du dépôt n'écrit encore ces deux tables (`app/auth/idempotence.py`, LOT 3,
+> les nomme déjà réservées au LOT 11), et la progression (critère de sortie n°3) n'est jamais
+> stockée — inventer un mécanisme ici pour un seul consommateur aurait été §6.5. 7 tests
+> d'intégration. Détail : `compte-rendu-t10-lot-7.md`.
+
+**`T11` EST FAITE** le 28/09/2026, `DEC-611` : l'archivage automatique du parcours terminé et la
+révocation au départ, `US007`/`US008`, ferme `§30.13` et `ECART-066` (volet parcours). **Aucune
+nouvelle table, aucune migration** : `EtatInstance` déclarait déjà les quatre valeurs de `state`
+depuis `T1`.
+
+> **DEUX DÉCLENCHEURS AUTOMATIQUES, DEUX GESTES MANUELS — LA MATRICE §8.1 LES DISTINGUE EN TOUTES
+> LETTRES.** « Archiver un parcours terminé » : `NEW` = Automatique, `ESM`/`ADM-E`/`SUPER` = un
+> droit RÉEL (Entité/Entité/Global) en plus. `archiver_le_parcours_si_termine`
+> (`app/onboarding/instances.py`), appelée par `taches.terminer_une_tache` après CHAQUE complétion,
+> transitionne `active -> archived` dès que toutes les tâches obligatoires sont `completed`
+> (`completed_at` posé) — AUCUNE route propre, sous-effet d'une action déjà gardée (`Soi`, `T8`).
+> `archiver_le_parcours_au_depart`, appelée par `app.people.archivage.archiver_un_profil` (LOT 5,
+> `T8`) AU DÉPART — jamais à l'archivage fonctionnel ultérieur de l'appartenance, même transition,
+> `completed_at` JAMAIS posé : un parcours interrompu n'est pas un parcours achevé. Rapporté dans
+> `Archivage.parcours_onboarding_archive`, jamais tu.
+>
+> **LE GESTE MANUEL EXISTE EN PLUS DE L'AUTOMATIQUE, PAS À SA PLACE — CONFIRMÉ PAR JONATHAN.** La
+> matrice accorde à `ESM`/`ADM-E`/`SUPER` un droit réel sur « Archiver un parcours terminé », en
+> plus de la colonne `NEW` = Automatique : Jonathan a confirmé qu'un geste manuel devait exister,
+> comme filet pour le résiduel que l'automatique ne couvrirait pas — en pratique, l'automatique
+> ayant déjà agi, cette route ne trouve normalement rien à faire dans le cas courant. Même grille
+> pour « Restaurer un parcours archivé », `ECART-066` (volet parcours) RÉSOLU : la question a été
+> reposée EXPLICITEMENT à Jonathan pour le parcours, jamais présumée de la réponse donnée pour la
+> version de modèle (`T6`) — même réponse, l'ESM restaure librement dans son entité. Ne rouvre
+> AUCUNE tâche : restaurer un parcours n'est pas restaurer une personne.
+>
+> **UN DÉFAUT TROUVÉ ET CORRIGÉ AVANT LA FUSION, DANS MES PROPRES TESTS.** Une fois l'archivage
+> automatique branché, 13 tests DÉJÀ FUSIONNÉS de `T8`/`T9` sont tombés : compléter la DERNIÈRE
+> tâche obligatoire archivait l'instance dans le MÊME geste, et le résolveur strict
+> (`state='active'`) ne retrouvait alors plus le parcours pour l'annulation dans les cinq minutes ni
+> pour la réouverture administrative — une dégradation d'une exigence déjà livrée (`DEC-608`,
+> `DEC-609`), interdite sans décision explicite (§2, règle n°7). **Corrigé en distinguant DEUX
+> résolutions d'instance** : `lire_l_instance_active` (stricte, réservée à l'affectation et à
+> l'archivage MANUEL) et `lire_l_instance_actionnable` (`active` OU `archived`, JAMAIS `replaced`),
+> employée par les trois routes de tâches — une instance `replaced` (`T10`) reste vraiment
+> supplantée, l'archivage AUTOMATIQUE ne ferme plus les fenêtres déjà livrées.
+>
+> **CONTRAT MIS À JOUR** : `packages/contracts/src/contrat-api.json` déclare les deux nouvelles
+> routes, forme `InstanceDeParcours` déjà validée dans `parcoursOnboarding.ts` (`T7`) — sans cette
+> mise à jour, `test_contrat.py` (LOT 1, `T10`) aurait échoué. 16 tests d'intégration. Détail :
+> `compte-rendu-t11-lot-7.md`.
+
+**`T12` EST FAITE** le 28/09/2026, `DEC-612` : le suivi par périmètre, `US008`, nouveau module
+`app/onboarding/suivi.py`, `GET …/onboarding-suivi/taches-en-retard`. **Aucune nouvelle table,
+aucune migration.**
+
+> **DERNIÈRE LIGNE DE CONSULTATION DU §8.1 SANS CONSOMMATEUR APRÈS `T11`, ET AUCUN RÔLE N'EST
+> REFUSÉ.** « Consulter les tâches en retard » : `NEW` Soi, `DSM` Consultants, `ESM` Entité,
+> `BOOST` Cercle, `OFFICE` —, `ADM-E` Entité, `SUPER` Global — la portée s'ajuste au rôle le plus
+> large détenu, résolue dans une fonction PURE et testable sans base
+> (`resoudre_le_perimetre_du_suivi`, `app/onboarding/perimetre.py`), et dégrade toujours vers `SOI`
+> en dernier recours plutôt que de refuser — `SOI` n'est jamais une conséquence du rôle `OFFICE`,
+> c'est le plancher universel de n'importe quel appelant sur SES PROPRES tâches. Les deux AUTRES
+> lignes de consultation du §8.1 étaient déjà servies (`T7`, `T11`) : `T12` ajoute le REPORTING,
+> littéralement la seule chose que le §8.1 nommait encore sans réponse. **« REPORTING DE BASE »
+> SEULEMENT (cahier, Inclus)** : aucun graphique, aucun export — `V1`, LOT 10.
+>
+> **SEULES LES INSTANCES `active` SONT COMPTÉES, DÉLIBÉRÉMENT.** Une instance `archived` a déjà vu
+> toutes ses tâches obligatoires terminées (`T11`) ; une tâche non obligatoire encore `todo`,
+> laissée en retard sur une instance désormais archivée, n'est signalée par aucun texte du corpus —
+> l'omettre est la lecture qui n'invente rien. Un témoin construit ce cas précis plutôt que de
+> l'affirmer : deux tâches, l'une rendue optionnelle, l'instance archivée par le geste RÉEL de
+> complétion (`T8`/`T11`).
+>
+> **ERREUR DE MÉTHODE TROUVÉE ET CORRIGÉE DANS LA PREUVE DE ZÉRO RÉGRESSION ELLE-MÊME.** `pytest`
+> lancé depuis `apps/api/` ne rend que 1 326 tests contre les 1 393 attendus : `testpaths` du
+> `pyproject.toml` racine couvre aussi `apps/worker/tests` et `packages/observabilite/tests`, et
+> **`make check`/`make test` invoquent `pytest` DEPUIS LA RACINE** — jamais un sous-répertoire.
+> Relancée depuis la racine : 1 393 sur `origin/develop`, 1 404 (+11) sur la branche, 75 échecs
+> environnementaux IDENTIQUES des deux côtés. 11 tests d'intégration. Détail :
+> `compte-rendu-t12-lot-7.md`.
+
+**`T13` EST FAITE** le 28/09/2026, `DEC-613` : les écrans du nouvel arrivant — fiche d'arrivée,
+parcours, tâches — **UNE SEULE** page, `PageMonOnboarding.tsx`, sous la rubrique `mon-onboarding`
+déjà réservée par `T4` du LOT 4. **Aucune route API nouvelle** : `T2`/`T3`/`T7`/`T8` livraient déjà
+tout ce que l'écran consomme.
+
+> **`GET /entities/{code}/permissions` (LOT 4, `T8`) EST ÉTENDU D'UN CHAMP `appartenance`** —
+> l'entity_membership_id occupant de l'appelant dans l'entité consultée, `null` hors de l'entité
+> principale. C'est le SEUL moyen dont dispose le frontend de savoir quelle URL appeler pour SA
+> propre fiche et SON propre parcours : aucune route de l'onboarding n'accepte de cible implicite
+> (matrice §7, §8.1), et cette page ne porte AUCUN `:appartenance` dans son adresse — contrairement
+> à `PageProfil` (LOT 5). Réutiliser une réponse déjà appelée une fois par page évite un
+> aller-retour réseau de plus. `droitsDeNavigation` devient une fonction PURE prenant
+> `aUnParcoursActif` en argument RÉEL, retirant la constante figée à `false` posée au LOT 4 — la
+> rubrique « Mon onboarding » apparaît désormais VRAIMENT quand un parcours actif existe.
+>
+> **DÉFAUT TROUVÉ ET CORRIGÉ, DANS UN CODE ÉCRIT À `T7`, JAMAIS EXERCÉ PAR UN ÉCRAN AVANT `T13`.**
+> `validerLeParcours` (contrat TypeScript) exigeait `instance`, `progression` et `prochaine_tache`
+> nuls ENSEMBLE, ou aucun des trois — faux pour `prochaine_tache`, qui peut être nul même avec une
+> instance `active` (aucune tâche `todo`/`reopened` restante). Une réponse `200` légitime aurait
+> levé côté client, silencieusement. Corrigé pour distinguer les deux invariants réels.
+>
+> **AUCUNE FENÊTRE DE CINQ MINUTES N'EST CALCULÉE CÔTÉ CLIENT** : le bouton « Annuler » est proposé
+> pour toute tâche `completed`, et c'est le `409` de l'API qui referme la fenêtre. **LE FRONTEND NE
+> PROPOSE PAS UN DROIT DÉJÀ REFUSÉ** : « Valider et publier » reste désactivé sans présentation
+> courte ou avec des modifications non enregistrées ; après publication (§6.2), la fiche bascule en
+> lecture seule.
+>
+> **ALLER-RETOUR RÉEL EFFECTUÉ AVANT DE DÉCLARER L'ÉCRAN TERMINÉ (§7.43 du LOT 6)** : décor réel sur
+> la base de dev, connexion par lien magique RÉEL consommé dans le navigateur, puis lecture,
+> complétion, validation/publication, complétion d'une tâche et son annulation — tous les appels
+> réels à `200`, décor nettoyé après coup. **Aucun script `make onboarding-check` dans cette
+> sous-étape**, décision explicite de Jonathan : reporté à `T14`, qui livre aussi des écrans et
+> recevra sa propre preuve outillée, combinée pour les deux plutôt que dupliquée deux fois de suite.
+>
+> 2 tests d'intégration (le champ `appartenance`), 17 tests Vitest (l'écran), 6 tests Vitest de plus
+> (le fil réel `CadreApplicatif`), 2 tests réécrits délibérément (la constante retirée). Détail :
+> `compte-rendu-t13-lot-7.md`.
+
+**`T14` EST FAITE** le 29/09/2026, `DEC-614` : les écrans d'administration — catalogue, modèles,
+suivi par périmètre — **UNE SEULE** page, `PageAdministration.tsx`, sous la rubrique
+`administration` déjà réservée par `T4` du LOT 4.
+
+> **DÉCISION DE JONATHAN : LE MENU S'ÉLARGIT.** `rolesAdministration` (§20, `ESM`/`ADM-E`/`SUPER`)
+> n'ouvrait pas le menu à un `DSM`/`BOOSTER` qui gère pourtant SES modèles et le catalogue (§9).
+> Trois options posées explicitement ; retenu : une nouvelle liste,
+> `rolesAdministrationOnboarding` (`DSM`, `ESM`, `BOOST`, `ADM-E`, `SUPER`), déclarée SÉPARÉMENT de
+> `rolesAdministration` — jamais fusionnée, même discipline que `rolesCycleDeVie` (§7.27) — et
+> `droitsDeNavigation` en prend l'UNION. Un seul chemin d'accès, jamais deux.
+>
+> **ROUTE API NOUVELLE, TROUVÉE EN CONSTRUISANT L'ÉCRAN.** `GET /entities/{code}/onboarding/
+> templates` : ni `T5` ni `T6` n'avaient posé de LECTURE des modèles, seulement leur création et
+> leur cycle de vie — sans elle, « gérer les modèles » n'aurait agi que sur ce qui vient d'être créé
+> DANS LA MÊME SESSION. Chaque modèle avec ses versions imbriquées ; filtrage par rôle appliqué en
+> Python sur la liste brute, jamais une seconde règle SQL. Le droit de lecture d'`OFFICE`
+> (« Consulter les modèles publiés », §9) reste SANS route : aucun critère actuel ne le réclame.
+>
+> **`ECART-066` : LA RESTAURATION RESTE REFUSÉE À DSM/BOOSTER, MÊME SUR LEUR PROPRE MODÈLE.** Une
+> troisième liste, `rolesRestaurationDesModelesOnboarding` (`ESM`, `ADM-E`, `SUPER`), gate le seul
+> bouton « Restaurer » — exclus EN BLOC de cette ligne du §9, jamais un sous-cas de leur propre
+> modèle.
+>
+> **LE SCRIPT DE PILE DIFFÉRÉ PAR `T13` EST CONSTRUIT ICI, COMBINÉ POUR LES DEUX.** `make
+> onboarding-check` (14 contrôles, sur la pile RÉELLE) : le témoin d'asymétrie DSM/ESM (les deux
+> rôles dans la MÊME entité, chacun voit un ensemble de modèles DIFFÉRENT), le cycle de vie complet
+> exercé une fois en vrai, `OFFICE` refusé sur les modèles MAIS reçu sur le suivi, et `ECART-066`
+> éprouvé DANS LE SENS DU REFUS. `make ecrans-check` couvre `PageAdministration.tsx` SANS AUCUNE
+> MODIFICATION DU CONTRÔLE — glob générique, bénéfice direct du §7.27.
+>
+> **ALLER-RETOUR RÉEL EFFECTUÉ (§7.43 du LOT 6)** : décor psql réel, connexion par lien magique
+> réel, cycle complet créer/composer les tâches/publier/archiver/restaurer — tous les appels réels
+> à `200`/`201`, décor nettoyé après coup.
+>
+> 8 tests d'intégration (la liste des modèles, dont le témoin d'asymétrie, et deux confrontations
+> manifeste ↔ service), 28 tests Vitest (les deux nouveaux modules de contrat), 12 tests Vitest de
+> plus (l'écran), 1 test réécrit délibérément (l'ancienne liste restrictive). Détail :
+> `compte-rendu-t14-lot-7.md`.
+
+**`T15` EST TECHNIQUEMENT FAITE** le 29/09/2026, `DEC-615` : recette isolée épinglée sur les images
+de `T14`, parcours HTTPS réel de la fiche d'arrivée jusqu'à l'archivage automatique, reclassement
+du §30 à **16 acquis, 2 partiels, 7 reportés** et [checklist `G7`](operations/checklist-validation-G7.md).
+Le défaut `T15-1`, trouvé dans le nettoyage initial du décor, a été corrigé puis le scénario a été
+rejoué et nettoyé. La porte n'est **pas** déclarée franchie : le corpus demande encore l'accord de
+Tess, Léa, Diane et Jonathan.
+
+**Correctif de CI le 30/09/2026, `DEC-616` :** des avis publiés après `T15`, déjà présents sur
+`develop`, ont rendu l'audit rouge. Le verrou seul est régénéré : `brace-expansion` passe de
+`1.1.18` à `1.1.21` et de `5.0.9` à `5.0.12`, sans manifest ni override. Installation figée,
+audit, lint et `make check` passent ; la PR #200 vise `develop`, jamais `main`.
+
+**2 120 tests** désormais — **1 414 pytest** (dont **1 033** d'intégration), **706 Vitest** (**336**
+`contracts`, **111** `ui` inchangé, **259** `web`).
+
+`ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
+version de modèle (`T6`) et parcours (`T11`) — sont résolus, la même réponse valant pour les deux
+sans jamais avoir été présumée.
+
+**Traçabilité GitHub :** épic `#175` ouvert jusqu'à `G7`, jalon `G7`, les huit stories `#176` à
+`#183` fermées manuellement le 29/09/2026 sur leur preuve propre.
 
 ---
 

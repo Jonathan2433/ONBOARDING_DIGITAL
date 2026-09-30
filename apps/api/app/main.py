@@ -38,6 +38,7 @@ from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
 from app.entities.routes import routeur_entites
 from app.health import routeur as routeur_sante
+from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
 from app.permissions.routes import routeur_permissions
@@ -150,6 +151,9 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  routes d'entite qui distingueraient differemment un code inconnu d'une
     #  entite non active apprendraient, par comparaison, qu'un brouillon existe.
     routeur_v1.include_router(routeur_trombinoscope(config))
+    #  LOT 7, T2 : la fiche d'arrivee en lecture. Monte APRES le trombinoscope,
+    #  dont elle reutilise la resolution d'entite et le gabarit de 404.
+    routeur_v1.include_router(routeur_onboarding(config))
     application.include_router(routeur_v1)
 
     return application

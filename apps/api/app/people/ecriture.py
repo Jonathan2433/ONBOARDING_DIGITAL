@@ -53,6 +53,30 @@ LA CONCURRENCE OPTIMISTE EST ANCREE SUR `entity_membership.version`
   Un consultant en intercontrat n'a PAS de client : `client = null` est une
   valeur legitime, distincte de « je ne touche pas au client ». La demande porte
   donc les champs PRESENTS, et non un objet dont les absents valent `None`.
+
+`T10` : UN CHANGEMENT DE STATUT DECLENCHE LE REMPLACEMENT DU PARCOURS
+
+  Modele §6.5 : « un changement de statut declenche l'evaluation du parcours
+  d'onboarding ». `_ecrire_le_statut` est le SEUL endroit qui connaisse a la
+  fois l'ANCIEN statut (`etat["status"]`, lu avant toute ecriture) et le
+  NOUVEAU (`statut`, calcule ici) — c'est pourquoi le remplacement est
+  declenche ICI, jamais depuis `modifier_les_donnees_organisationnelles`, qui
+  ne verrait plus que l'ensemble des champs ECRITS, pas leurs valeurs.
+
+  **UN CHANGEMENT DE CLIENT SEUL, MEME STATUT, NE DECLENCHE RIEN.** `demandes`
+  contient `STATUT` des que l'un des deux champs est demande — voir plus haut
+  — mais `_EcritureDuStatut.changement` n'est PAS `None` seulement quand
+  `statut` LUI-MEME differe de l'ancien : passer de client A a client B en
+  restant `mission` ne remplace aucun parcours, la grille des modeles ne
+  distingue que `mission`/`intercontract` (modele §13.2), jamais un client.
+
+  **LE REMPLACEMENT EST APPELE APRES L'INSERTION DE LA NOUVELLE LIGNE**, donc
+  dans la MEME transaction, et `app.onboarding.instances.remplacer_le_
+  parcours_apres_changement_de_statut` peut echouer (`422 aucun_modele_
+  publie`) : la transaction entiere echoue alors, y compris le changement de
+  statut lui-meme — cahier ligne 1057, « changement de statut […] atomique ».
+  Voir l'en-tete de cette fonction dans `app/onboarding/instances.py` pour le
+  reste (permission, fenetre de reference, `outbox`).
 """
 
 from __future__ import annotations
@@ -69,6 +93,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection, RowMapping
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.onboarding.instances import remplacer_le_parcours_apres_changement_de_statut
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import SituationProfessionnelle
 from app.permissions.perimetre import ChampOrganisationnel, PerimetreDEcriture
@@ -250,6 +275,7 @@ def modifier_les_donnees_organisationnelles(
         )
 
     ecrits: set[ChampOrganisationnel] = set()
+    resultat_statut: _EcritureDuStatut | None = None
     try:
         ecrits |= _ecrire_la_date(
             connexion, etat, demande, cible=cible, acteur=acteur, instant=instant
@@ -257,9 +283,10 @@ def modifier_les_donnees_organisationnelles(
         ecrits |= _ecrire_le_metier(
             connexion, etat, demande, entite=entite, cible=cible, acteur=acteur, instant=instant
         )
-        ecrits |= _ecrire_le_statut(
+        resultat_statut = _ecrire_le_statut(
             connexion, etat, demande, entite=entite, cible=cible, acteur=acteur, instant=instant
         )
+        ecrits |= resultat_statut.champs
         ecrits |= _ecrire_le_dsm(
             connexion, etat, demande, entite=entite, cible=cible, acteur=acteur, instant=instant
         )
@@ -272,6 +299,25 @@ def modifier_les_donnees_organisationnelles(
         #  surtout pas traduire en refus metier : elle deviendrait un `422`
         #  silencieux au lieu d'une alerte.
         raise traduire_un_refus_de_la_base(erreur) from erreur
+
+    #  `T10`. APRES les cinq ecritures, jamais avant : un changement de DSM ou
+    #  de cercle demande dans la MEME requete qu'un changement de statut doit
+    #  deja etre visible quand le parcours resout sa portee (DSM > CIRCLE >
+    #  ENTITY > GLOBAL, `T7`) -- voir l'en-tete du module. `HORS` du bloc
+    #  `try/except` ci-dessus : une erreur d'ici est une `ErreurApplicative`
+    #  metier (`422 aucun_modele_publie`), jamais un refus de contrainte SQL a
+    #  traduire.
+    if resultat_statut is not None and resultat_statut.changement is not None:
+        ancien, nouveau = resultat_statut.changement
+        remplacer_le_parcours_apres_changement_de_statut(
+            connexion,
+            entite=entite,
+            appartenance=cible,
+            statut_precedent=ancien,
+            nouveau_statut=nouveau,
+            acteur=acteur,
+            instant=instant,
+        )
 
     #  3. LA VERSION DE LA RACINE MONTE DES QU'UN CHAMP A CHANGE, et pas avant :
     #     une demande sans effet ne doit pas faire echouer la prochaine.
@@ -410,6 +456,21 @@ def _ecrire_le_metier(
     return frozenset({champ})
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _EcritureDuStatut:
+    """Ce que `_ecrire_le_statut` a ecrit, ET si la VALEUR du statut a change.
+
+    `champs` peut contenir `STATUT` alors que seul `CLIENT` a change — les
+    deux vivent sur la meme ligne, voir le docstring de la fonction.
+    `changement` porte `(ancien, nouveau)` UNIQUEMENT quand `statut` lui-meme
+    differe de l'ancien : c'est ce couple, et lui seul, qui declenche le
+    remplacement du parcours d'onboarding (`T10`, voir l'en-tete du module).
+    """
+
+    champs: frozenset[ChampOrganisationnel]
+    changement: tuple[str, str] | None
+
+
 def _ecrire_le_statut(
     connexion: Connection,
     etat: RowMapping,
@@ -419,7 +480,7 @@ def _ecrire_le_statut(
     cible: uuid.UUID,
     acteur: uuid.UUID,
     instant: dt.datetime,
-) -> frozenset[ChampOrganisationnel]:
+) -> _EcritureDuStatut:
     """Statut et client : UNE seule periode, donc un seul cloture-ouvre.
 
     **LA VALEUR NON DEMANDEE EST REPORTEE, ET C'EST NECESSAIRE.** Le `CHECK`
@@ -429,7 +490,7 @@ def _ecrire_le_statut(
     """
     demandes = {ChampOrganisationnel.STATUT, ChampOrganisationnel.CLIENT} & frozenset(demande)
     if not demandes:
-        return frozenset()
+        return _EcritureDuStatut(champs=frozenset(), changement=None)
 
     statut = demande.get(ChampOrganisationnel.STATUT, etat["status"])
     client = demande.get(ChampOrganisationnel.CLIENT, etat["client_id"])
@@ -441,7 +502,7 @@ def _ecrire_le_statut(
     if statut == SituationProfessionnelle.INTERCONTRACT.value:
         client = None
     if statut == etat["status"] and client == etat["client_id"]:
-        return frozenset()
+        return _EcritureDuStatut(champs=frozenset(), changement=None)
 
     if etat["statut_id"] is not None:
         _fermer(connexion, "professional_status_assignment", etat["statut_id"], acteur, instant)
@@ -460,7 +521,15 @@ def _ecrire_le_statut(
             "acteur": acteur,
         },
     )
-    return frozenset(demandes)
+    #  `etat["statut_id"] is None` : AUCUNE situation professionnelle n'a
+    #  jamais existe pour cette appartenance — la toute premiere n'est pas un
+    #  CHANGEMENT, rien a remplacer (et `etat["status"]` vaudrait `None`).
+    changement = (
+        None
+        if etat["statut_id"] is None or statut == etat["status"]
+        else (str(etat["status"]), str(statut))
+    )
+    return _EcritureDuStatut(champs=frozenset(demandes), changement=changement)
 
 
 def _ecrire_le_dsm(

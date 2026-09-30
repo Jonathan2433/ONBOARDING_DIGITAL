@@ -2,8 +2,8 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 25 septembre 2026, à la sortie de **`T11` du LOT 6**
-**Destinataire :** l'agent qui réalise le **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux**
+**Mis à jour le :** 30 septembre 2026, après le correctif CI **`DEC-616`** du LOT 7
+**Destinataire :** l'agent qui réalise le **LOT 7 — Fiches d'arrivée et onboarding**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -21,22 +21,22 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, **13/09/2026**, `DEC-574`, **tag `v0.5.0` POSÉ** sur `14b2bd1`) |
-| **Lot en cours** | **LOT 6 — Framework, cercles, bureaux et contenus éditoriaux.** Ouvert par Jonathan le **13/09/2026** (`DEC-575`), découpage validé le même jour : **DOUZE** sous-étapes, `MVP-L06-US004` découpée en **trois** parce qu'elle est la seule `XL` et que trois stories en dépendent. **LES DOUZE SONT FAITES.** La porte `G6` attend la décision de Jonathan — [`checklist-validation-G6.md`](docs/operations/checklist-validation-G6.md). Plan : [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) |
-| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : les DOUZE** — les trois tables éditoriales, la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu des blocs**, l'**écriture d'un contenu**, son **cycle de vie** — brouillon, publication, archivage, restauration — les **liens internes**, avec `QO-120` close, les **trois écrans de lecture** — Framework, cercle, bureau —, les **écrans d'édition** — cercle, bureau, liens internes, présentation de l'entité (`T10`, `DEC-591`) — **le témoin du critère de sortie 2** et **la reprise relue** du texte de présentation d'eXalt Bordeaux (`T11`, `DEC-595`) — puis **la recette, le §30 et la checklist `G6`** (`T12`, `DEC-596`), qui a trouvé et corrigé un reclassement du §30 périmé depuis avant `T1`. Plus **trois** pull requests hors numérotation : le garde-fou du paramètre lié (`DEC-580`), la montée de l'image de base (`DEC-581`) et la bascule de l'image MinIO (`DEC-590`) |
-| **Prochaine action** | **LA DÉCISION DE JONATHAN À LA PORTE `G6`.** Le lot est techniquement complet, aucune sous-étape ne reste. Lis [`checklist-validation-G6.md`](docs/operations/checklist-validation-G6.md) — en particulier son §3, la démonstration guidée en dix gestes, et son §7, ce que le lot n'a pas fait. **Franchir la porte n'est PAS automatique après `T12`** : c'est un geste distinct, la fusion `develop` → `main` et le tag `v0.6.0`, qui n'a **pas** été fait — il attend l'accord explicite de Jonathan, §12. **`QO-121` reste ouverte**, report explicite du 25/09/2026, non bloquante pour la porte. **`ECART-064` avant la production. N'OUVRE AUCUN LOT SANS QUE `G6` NE SOIT FRANCHIE** — règle n°1 du §2 |
-| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 6 sur 8** · **LOT 6 : 5 sur 7** — `US001` à `US005` fermées **à la main** sur leurs critères propres (backlog §11), `#146` trouvée ouverte alors que `T9` la livrait déjà depuis le 23/09/2026 — fermeture manquée à l'époque, corrigée le 25/09/2026 en même temps que `#149`/`#150` (`T10`). **Ceci ne referme PAS la porte `G6`**, qui exige en plus les critères transversaux du §1.2 : ne pas confondre une story fermée et un lot clos. `US006` (`#151`) reste ouverte — « les modifications sont auditées » n'est pas mesuré, `ECART-064` documente que `archive_reason`/`assignment_reason` existent et que rien ne les écrit — et `US007` (`#152`) est `T11`, non faite. **LES DEUX QUI RESTENT OUVERTES AU LOT 5 SONT NOMMÉES, ET ELLES NE SONT PAS UN OUBLI** : `#120` — « **retrait possible** » n'est pas tenu, aucune route ne retire une autorisation de photo, LOT 9 — et `#121` — l'API de modification est complète depuis `T7`, **aucun écran ne l'appelle**. Un critère d'acceptation non tenu ne se referme pas. Mesure, jamais mémoire : `gh issue list --search "MVP-L06 in:title" --state all --json number,title,state` |
+| **Lot en cours** | **LOT 7 — Fiches d'arrivée et onboarding.** Ouvert par Jonathan le **25/09/2026** (`DEC-598`), découpage validé : **quinze** sous-étapes, toutes techniquement faites (`DEC-599` à `DEC-615`, correctifs `DEC-602` et `DEC-607`). `T15` a exécuté la recette sur les images publiées, le parcours HTTPS réel et les 25 contrôles du §30 ; le détail est dans [`compte-rendu-t15-lot-7.md`](docs/operations/compte-rendu-t15-lot-7.md). La porte `G7` reste en attente de l'accord humain requis de Tess, Léa, Diane et Jonathan. |
+| Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : les DOUZE — LOT VERROUILLÉ, porte `G6` FRANCHIE le 25/09/2026 (`DEC-597`), tag `v0.6.0` posé sur `d2d639e`.** **LOT 7 : les QUINZE**, de la structure et des parcours aux deux écrans, puis à la recette complète, au classement du §30 (**16 acquis, 2 partiels, 7 reportés**) et à la checklist `G7` (`DEC-615`). |
+| **Prochaine action** | **Validation explicite de Jonathan pour fusionner `T15` et son correctif CI `DEC-616`, puis organisation des validations humaines `G7` (`DEC-617`).** Ne pas ouvrir le LOT 8 : la porte n'est pas franchie. La recette est techniquement prête ; `ECART-012` (Léa) et `QO-121` restent non bloquants, `ECART-064` reste à traiter avant production. |
+| Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · **LOT 4 : 7 sur 7** · **LOT 5 : 6 sur 8** · **LOT 6 : 5 sur 7** — `US001` à `US005` fermées **à la main** sur leurs critères propres (backlog §11), `#146` trouvée ouverte alors que `T9` la livrait déjà depuis le 23/09/2026 — fermeture manquée à l'époque, corrigée le 25/09/2026 en même temps que `#149`/`#150` (`T10`). **Ceci ne referme PAS la porte `G6`**, qui exige en plus les critères transversaux du §1.2 : ne pas confondre une story fermée et un lot clos. `US006` (`#151`) reste ouverte — « les modifications sont auditées » n'est pas mesuré, `ECART-064` documente que `archive_reason`/`assignment_reason` existent et que rien ne les écrit — et `US007` (`#152`) est `T11`, non faite. **LES DEUX QUI RESTENT OUVERTES AU LOT 5 SONT NOMMÉES, ET ELLES NE SONT PAS UN OUBLI** : `#120` — « **retrait possible** » n'est pas tenu, aucune route ne retire une autorisation de photo, LOT 9 — et `#121` — l'API de modification est complète depuis `T7`, **aucun écran ne l'appelle**. Un critère d'acceptation non tenu ne se referme pas. Mesure, jamais mémoire : `gh issue list --search "MVP-L06 in:title" --state all --json number,title,state`. **LOT 7 : 8 sur 8**, stories `#176` à `#183` fermées manuellement ; l'épic `#175` reste ouvert jusqu'à `G7`. |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branche `demo` | **FUSIONNÉE dans `develop` le 19/09/2026, et elle n'existe plus.** Elle portait une **démonstration client** produite par Codex — quatre cibles `make`, le script `infra/scripts/preparer-demo-client.py`, le guide `docs/demo/` et quatre tests statiques — et elle a vécu trois jours à côté de `develop` sans jamais voir la porte : `ci.yml` filtre `branches: [develop, main]`, et **aucun run n'a jamais tourné sur `demo`** — mesuré, `gh run list --branch demo` rendait zéro. **Elle a décroché DEUX fois en deux jours**, à la fusion en squash de `T6` puis de `T7`, chacune remplaçant le commit sur lequel son histoire était posée. C'est structurel et non accidentel : **toute branche qui vit à côté de `develop` décroche à chaque squash**, et la seule issue durable est de la fusionner ou de la supprimer. Arbitrage de Jonathan du 19/09/2026 : **fusionnée**, et ses quatre fichiers sont désormais éprouvés par la porte comme le reste. |
 | Branches | `main` et `develop`, **les deux protégées**, CI **bloquante** sur les deux. **`main` n'était PAS un ancêtre de `develop`** avant `G3` — le squash de `G2` avait coupé l'histoire, `ECART-026`. Vérifie l'**arbre**, jamais le verdict de `git merge` |
-| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), `v0.4.0` (`G4`), **`v0.5.0` (`G5`)** — ce dernier sur `14b2bd1`, et **les trois contrôles ont été relevés avant ET après la fusion** : `origin/main` et `origin/develop` portent le même arbre `d262e2a4…`, `develop` est un **ancêtre** de `main`, et le commit porte **deux** parents. Le squash de `G2` avait coupé l'histoire, `ECART-026` |
-| **Tests** | **1 767** : **1 181 pytest** — dont **808 d'intégration** — et **586 Vitest** (**250 `contracts`**, **111 `ui`**, inchangé, **225 `web`**). Dérivés le 24/09/2026. **Recompte**, ne recopie pas |
-| Schéma PostgreSQL | **32 tables**, **10 déclencheurs**, **19 migrations**, tête `0019`. **`T8` N'AJOUTE NI TABLE NI COLONNE NI DÉCLENCHEUR** : la migration `0019` pose une seule **contrainte de vérification**, `ck_internal_link_url_https`, qui rend `DEC-587` structurel — `T1` l'avait refusée à juste titre, la liste de protocoles n'étant pas encore tranchée. **Recompte le reste** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
+| Tags | `v0.1.0` (`G1`), `v0.2.0` (`G2`), `v0.3.0` (`G3`), `v0.4.0` (`G4`), `v0.5.0` (`G5`), **`v0.6.0` (`G6`)** — ce dernier sur `d2d639e`, et **les trois contrôles ont été relevés avant ET après la fusion** : `origin/main` et `origin/develop` portent le même arbre `8f80cf19…`, `develop` est un **ancêtre** de `main`, et le commit porte **deux** parents. Le squash de `G2` avait coupé l'histoire, `ECART-026` |
+| **Tests** | **2 120** : **1 414 pytest** — dont **1 033 d'intégration** — et **706 Vitest** (**336 `contracts`**, **111 `ui`**, inchangé, **259 `web`**). Dérivés le 29/09/2026, après `T14` du LOT 7 (`DEC-614`, +8 pytest — la liste des modèles, dont le témoin d'asymétrie DSM/ESM, et deux confrontations manifeste ↔ service pour les nouvelles listes de rôles — +40 Vitest : deuxième écran de l'onboarding, un test réécrit délibérément dans `AffichageConditionnel.test.tsx`). **DÉRIVÉS DEPUIS LA RACINE DU DÉPÔT, PAS DEPUIS `apps/api/`** : `pyproject.toml` déclare `testpaths` sur `apps/api/tests`, `apps/worker/tests` **et** `packages/observabilite/tests`, et c'est depuis la racine que `make check`/`make test` invoquent `pytest` — lancé depuis `apps/api/` seul, le compte diverge, un écart qui n'a rien à voir avec la sous-étape en cours. **Recompte**, ne recopie pas |
+| Schéma PostgreSQL | **39 tables**, **10 déclencheurs**, **21 migrations**, tête `0021`. **`T1` du LOT 7 ajoute HUIT tables** — `arrival_profile` et six tables d'onboarding, migration `0020` — **aucun déclencheur** ; `T5` ajoute `0021` sans modifier `0020` déjà appliquée. **Recompte** : `make migrations-check` compare le schéma obtenu à celui qui tourne |
 | Comptes PostgreSQL | **TROIS** : `onboarding_app` **[superutilisateur]**, `onboarding_migrations`, `onboarding_runtime`. Voir §5.9 |
 | Intégration continue | 3 tâches, les 11 contrôles du cahier §23.1, ~1 min 20 de qualité + ~4 min de stack. **Chaque contrôle de sous-étape y entre** : douze depuis `T1` du LOT 4 |
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
-| Makefile | **93 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T11` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, **68**, **74**, puis **77** contrôles avec `T11` — le témoin du critère de sortie 2, une entité GÉNÉRIQUE — servis par la même cible étendue — bénéfice direct du §7.27, aucune cible nouvelle donc **rien à ajouter dans `ci.yml`**. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
+| Makefile | **94 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T13` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, **68**, **74**, puis **77** contrôles avec `T11` — servis par la même cible étendue, bénéfice direct du §7.27. **`T14` EN AJOUTE UNE, LA PREMIÈRE DEPUIS `T2`** : `onboarding-check`, le script de pile différé par `T13`, nommé dans `ci.yml` (§7.36 : une cible ajoutée à `make check` n'entre pas dans la CI, il faut l'y nommer). **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **179 décisions** `DEC-418+` · **65 écarts** (**13 ouverts**) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
+| Registres | **199 décisions** `DEC-418+` · **66 écarts** (**12 ouverts**, `ECART-013` clos structurellement à `T4` du LOT 7, `ECART-066` intégralement résolu à `T11`) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. **Cette cellule annonçait « 40 questions (33 ouvertes) » et « 33 risques » le 07/09/2026, et les trois nombres étaient faux** — `ECART-053`. Elle affirmait dans la même phrase que `make docs-check` les **dérive** : il ne dérivait que ceux du registre des **décisions**, un sur six. Il les dérive **tous les cinq** depuis `DEC-565`, il **échoue** si l'un diverge, et depuis `DEC-566` il **lit aussi ce document-ci**. **Ne rétablis aucun de ces nombres sans le relancer** |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 26**, dérivés le 24/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -97,12 +97,13 @@ Toute modification passe par une branche et une pull request vers `develop`.
 # 2. Les règles qui ne se négocient pas
 
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
-   `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 6 EST OUVERT** depuis le 13/09/2026 (`DEC-575`), son
-   découpage est validé — **DOUZE** sous-étapes — et **NEUF sont faites**. La prochaine est `T10`.
-   N'écris **rien** qui appartienne au LOT 7 — onboarding — au LOT 9 — import CSV — ni au LOT 11 —
-   génération des miniatures et exports. **Aucun ÉVÉNEMENT non plus** : `ARB-DATA-003` cite la table
-   `event`, mais les événements sont un lot à part entière, et `content_page` ne recevra pas d'`event_id`
-   tant que la table n'existe pas.
+   `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 6 EST VERROUILLÉ** — porte `G6` franchie le 25/09/2026
+   (`DEC-597`), tag `v0.6.0`. **LE LOT 7 EST OUVERT** depuis le 25/09/2026 (`DEC-598`), son
+   découpage est validé — **QUINZE** sous-étapes, toutes techniquement réalisées à `T15`
+   (`DEC-615`). **La porte `G7` n'est pas franchie** : aucune sous-étape d'un lot suivant ne
+   commence avant les validations humaines et la décision de porte.
+   N'écris **rien** qui appartienne au LOT 8 — événements et accueil dynamique — au LOT 9 — import
+   CSV — ni au LOT 11 — génération des miniatures et exports.
    Et **une sous-étape à la fois**, partant toujours de `develop`, **jamais empilée**.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
@@ -138,6 +139,8 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | Comment sont structurées les données ? | `docs/architecture/MODELE_DONNEES_EXALT.md` |
 | Dans quel ordre construit-on ? | `docs/product/ROADMAP_MVP_V1_V2_EXALT.md` |
 | Quelle est l'unité de travail ? | `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` |
+| **Que fait-on au LOT 7 ?** | **`docs/operations/fiche-lot-7.md`** — **8** stories, toutes `P0`, **deux** `XL` (`US003`, `US007`), **7** critères de sortie **dérivés des DEUX sources qui concordent** (roadmap et cahier, texte identique). **QUINZE** sous-étapes validées le 25/09/2026 (`DEC-598`). **Son §2.1 porte deux pièges mesurés** : `DSM`/`BOOST` ont un périmètre de CONSULTATION sur le parcours d'un collaborateur mais sont à **tiret** sur toute ACTION sur une tâche ; `OFFICE` est à tiret partout sur les modèles d'onboarding, troisième occurrence de ce piège en trois lots. **Son §8.3 ouvre `ECART-066`** : la matrice dit `ESM` → « Conditionnel » sur la restauration d'un parcours ou d'une version de modèle, et `ARB-DROIT-003` — qui définit ce mot pour cinq autres ressources — ne nomme ni l'un ni l'autre. **Son §8.1 reconduit `ECART-012`** sans le résoudre — toujours à Léa. **Son §8.4 signale un point non technique** : le critère de sortie 1 (et `docs/README.md` §6) nomme Tess et Diane, deux validatrices dont aucun document ne dit qui elles sont ni comment recueillir leur accord |
+| **Comment a-t-on fait les sous-étapes du LOT 7 ?** | **`docs/operations/compte-rendu-t{1,2,3,4,5,6,7,8,9,10,11,12,13,14}-lot-7.md`** — `T1`, les huit tables. **`make isolation-check` a trouvé deux classes de défaut inédites** : une clé composite structurellement correcte mais refusée quand même (le contrôle exige `entity_id` NOT NULL à la source, sans condition) ; et une clé composite dont la table CIBLE a un `entity_id` légitimement nullable, qui aurait refusé silencieusement tout usage GLOBAL — `verifier-isolation.py` reçoit une troisième raison légitime à une clé simple. **Un témoin a trouvé un défaut NULL classique** dans ma propre contrainte : `length(btrim(NULL)) > 0` est accepté par une `CHECK`, `IS NOT NULL` explicite ajouté. **Cinquième occurrence du paramètre lié partagé** (§7.25), cette fois dans mon propre test. **`T2` : la fiche en lecture** — données organisationnelles réutilisées de `lire_la_fiche` (LOT 5), `DSM` à tiret malgré un rattachement réel prouvé par témoin, `resoudre_les_permissions` exige une appartenance PROPRE pour accorder un rôle de responsabilité (règle du LOT 4 jamais exercée ainsi jusque-là). **`T3` : complétion, validation et publication** — un seul appel valide ET publie (matrice §7.1, pas un second geste), `recent_until` calculé par PostgreSQL (`+ INTERVAL '1 month'`, jamais par Python), `Support` (absent de la légende §4, même piège que §7.45/§7.46) couvre exactement Entité/Cercle/Global, et `BOOST` diverge sur la SEULE ligne « Valider et publier » du §7 (aide à compléter, jamais à valider) — permission écrite en fonction séparée. **Une affirmation fausse corrigée avant commit** : `entity_membership.short_bio`/`fun_fact` ne sont PAS déjà éditables depuis le LOT 5 — `T7` du LOT 5 les avait explicitement reportés, jamais rattrapés ; la passerelle avec `arrival_profile.short_intro`/`fun_fact` reste un résidu du LOT 5. **Correctif post-fusion `DEC-602`** : une quatrième ligne du §7, « Corriger après publication », manquée à la première lecture — sa grille s'inverse sur `NEW` (perd le droit après publication) et `DSM` (le retrouve, à tiret sur « Compléter ») ; sans elle, `US002` restait incomplète. **`T4` : le catalogue des tâches** (`DEC-603`) — ferme `ECART-013` structurellement. Une seule grille gouverne cinq des sept lignes du §9 ; `DSM`/`BOOST` (`Consultants`/`Cercle`) se réduisent à l'`Entité` pour cette table précisément, qui ne porte ni cercle ni DSM — collapsage documenté, pas une lecture large. Seul `SUPER` atteint `Global`. **Un résidu du modèle trouvé en lisant `T5` en avance** : `onboarding_template_version.state` réutilise l'énumération du conteneur au lieu de `draft`/`published`/`retired` (§13.3) — nommé pour `T5`, non bloquant pour `T4`. **`T5` : les modèles et leurs versions** (`DEC-604`) — le résidu nommé par `T4` est corrigé en préalable, migration `0021`, jamais en modifiant `0020` déjà appliquée : sans lui, le témoin d'immuabilité de la sous-étape (une version `published` refuse toute écriture de ses tâches) était irréalisable. **Contrairement au catalogue de `T4`, `Consultants`/`Cercle` ne se réduisent PAS à l'entité ici** : `onboarding_template` porte de vraies colonnes de portée, et un DSM/Booster ne gère que SON propre DSM-ship/cercle — deux témoins d'asymétrie le prouvent — tandis qu'`ESM`/`ADM-E`/`SUPER` gèrent n'importe quel DSM ou cercle de l'entité, même parti que `ROLES_DE_PORTEE_ENTITE` du LOT 6. Deux résidus nommés par `T1` (cohérence d'entité modèle↔cercle, modèle↔tâche de référence) sont instruits par le service, faute de clé composite sûre. **`T6` : le cycle de vie d'une version** (`DEC-605`) — publier, archiver, restaurer, aucune nouvelle table. `ECART-066` (volet version de modèle) résolu AVANT la route : l'ESM restaure librement dans son entité, comme les cinq ressources d'`ARB-DROIT-003` ; son volet « parcours » résolu à `T11`, même régime. **Restaurer ne rouvre PAS l'édition** : contrairement à `restaurer_une_page` (LOT 6, qui rend `draft`), une version restaurée redevient `published` — le modèle §13.3 déclare l'immutabilité d'une publication SANS exception, et un témoin le prouve directement (`PUT .../tasks` refuse toujours après restauration). DSM/Booster sont exclus EN BLOC sur cette seule ligne du §9, jamais un sous-cas de leur propre modèle. **`T7` : affecter et consulter un parcours** (`DEC-606`) — aucune nouvelle table, `onboarding_instance`/`_task` existent depuis `T1`. **La priorité de résolution du modèle n'était tranchée nulle part** : arbitrage de Jonathan, `DSM` > `CIRCLE` > `ENTITY` > `GLOBAL`, le plus spécifique gagne — quatre témoins postent les quatre modèles EN MÊME TEMPS. `DSM` a ici « Consultants » plein (troisième grille du module, contrairement à `T2` où il est à tiret). « Affecter » n'a pas de `Soi`, seule asymétrie avec la lecture. Une seule instance active par appartenance éprouvée au VOLUME (§7.26 du LOT 6), 40 affectations distinctes. **`T8` : terminer/annuler une tâche** (`DEC-608`) — aucune nouvelle table. Les DEUX lignes du §8.1 sont `Soi` SEUL, la grille la plus stricte du module : `DSM`/`BOOST` à tiret malgré un rattachement réel, un témoin le prouve sur un `DSM` rattaché à son consultant. `annuler_la_completion` ne produit JAMAIS l'état `cancelled` (réservé à `T10`) — la tâche redevient `todo`, un témoin re-termine la même tâche après annulation pour le prouver. La fenêtre de cinq minutes est ANCRÉE à `completed_at`, jamais une horloge mockée — le témoin « hors délai » recule cette valeur par SQL. **Correctif `DEC-607`** trouvé en écrivant `T8` : `T7` ne posait aucun événement `onboarding_task_event` malgré le critère de sortie 4 — `ASSIGNED` est désormais posé par l'affectation, `COMPLETED`/`CANCELLED` par `T8`, une seule fonction partagée. **Mon propre décor a reproduit le défaut `T7-5`** : un modèle `GLOBAL` créé avec la session de l'ESM, refusé 403 — seul `SUPER` gère `GLOBAL` — corrigé en `ENTITY`, que l'ESM gère pleinement. **`T9` : réouvrir une tâche après le délai** (`DEC-609`) — aucune nouvelle table. CINQUIÈME grille du module, INVERSE exacte de la quatrième (`T8`) : `ESM`/`ADM-E`/`SUPER` seulement, `Soi`/`DSM`/`BOOST` exclus EN BLOC malgré un rattachement réel — deux témoins le prouvent, un DSM et un Booster rattachés. Aucune fonction `peut_...` séparée : la garde de rôle coarse EST la vérification complète, même parti que le catalogue des tâches (`T4`). La fenêtre est l'INVERSE STRICT de celle de `T8`, ancrée à la MÊME colonne `completed_at`. **Correctif au diagramme §24.2** : `terminer_une_tache` (`T8`) n'acceptait que `todo`, jamais `reopened` — sans lui, une tâche réouverte restait dans une impasse permanente ; un témoin re-termine la tâche après sa réouverture. Motif obligatoire au corps ET à la base (contrainte posée dès `T1`, jamais exercée avant) — la PREMIÈRE route du projet à exiger et écrire un motif. **`T10` : le changement automatique de parcours au changement de statut** (`DEC-610`, `US007`) — aucune nouvelle table, aucune route propre : `remplacer_le_parcours_apres_changement_de_statut` est appelée par `_ecrire_le_statut` (LOT 5, `app/people/ecriture.py`) dans la MÊME transaction, après les cinq écritures organisationnelles. **AUCUNE GRILLE DE PERMISSION PROPRE, ET C'EST VÉRIFIÉ CONTRE LE CODE** : la grille du parcours (`T7`, DSM/BOOSTER rattachés SANS condition de type d'appartenance) est strictement plus large que celle qui autorise déjà l'écriture de `statut` (LOT 5, qui exige un Booster PRINCIPAL) — quiconque écrit `statut` est *a fortiori* dans le périmètre du parcours. `ECART-013` mis à l'épreuve pour de vrai : une tâche `completed` commune aux deux modèles (même `task_reference_id`) est RETENUE dans la nouvelle instance — `completed_at`/`completed_by_person_id` COPIÉS, `title_snapshot`/`due_at` RECALCULÉS depuis la nouvelle version — événement `RETAINED_ON_REPLACEMENT` ; les tâches `todo`/`reopened` de l'ancienne deviennent `cancelled`, événement `CANCELLED_ON_REPLACEMENT` — les deux dernières transitions du diagramme §24.2. Un changement de `client` seul, même statut, ne déclenche rien. `reference_date` de la nouvelle instance est l'INSTANT du changement, jamais `arrival_date`. **Deux points confirmés par Jonathan, pas présumés** : `replacement_reason` reste `NULL` (`DemandeDeModification` ne porte aucun champ motif), et aucun `outbox_message`/`async_job` n'est écrit (mesuré : aucune ligne du dépôt n'écrit encore ces deux tables, réservées au LOT 11). **`T11` : l'archivage automatique du parcours terminé et la révocation au départ** (`DEC-611`, ferme `§30.13` et `ECART-066`) — aucune nouvelle table. DEUX déclencheurs AUTOMATIQUES sans route propre, matrice §8.1/§8.2 : `archiver_le_parcours_si_termine` transitionne `active -> archived` dès que la dernière tâche obligatoire est `completed` (appelée par `terminer_une_tache`, `T8`, `completed_at` posé) ; `archiver_le_parcours_au_depart` fait de même AU DÉPART (appelée par `archiver_un_profil`, LOT 5 `T8`, accrochée SANS dupliquer `enregistrer_un_depart` — `completed_at` jamais posé, un parcours interrompu n'est pas achevé). DEUX gestes MANUELS avec route propre, `ESM`/`ADM-E`/`SUPER` seulement (même grille que la réouverture, `T9`) : archiver un parcours résiduel — un filet pour le cas que l'automatique ne couvrirait pas, ajouté sur confirmation explicite de Jonathan, en plus de l'automatique et non à sa place — et restaurer un parcours archivé, `ECART-066` (volet parcours) RÉSOLU en reposant la question EXPLICITEMENT, jamais en présumant la réponse donnée pour la version de modèle (`T6`) : même réponse, l'ESM restaure librement dans son entité. **Défaut trouvé et corrigé avant la fusion, dans mes propres tests** : brancher l'archivage automatique dans `terminer_une_tache` cassait 13 tests DÉJÀ FUSIONNÉS de `T8`/`T9` — compléter la dernière tâche obligatoire archivait l'instance dans le même geste, fermant sa résolution (`state='active'` strict) pour l'annulation en cinq minutes et la réouverture administrative, une dégradation d'exigences déjà livrées interdite sans décision explicite (§2, règle n°7). Corrigé en distinguant `lire_l_instance_active` (stricte, affectation et archivage manuel) de `lire_l_instance_actionnable` (`active` OU `archived`, JAMAIS `replaced`), employée par les trois routes de tâches. Contrat mis à jour (`contrat-api.json`, forme `InstanceDeParcours` déjà validée en `T7`). 16 tests d'intégration, zéro régression (`pytest` bare, sans filtre, comme `make check` : 75 échecs environnementaux identiques des deux côtés). **`T12` : le suivi par périmètre** (`DEC-612`, `US008`) — nouveau module `app/onboarding/suivi.py`, `GET …/onboarding-suivi/taches-en-retard`, aucune nouvelle table. Dernière ligne de consultation du §8.1 sans consommateur après `T11` : les deux autres — « Consulter le parcours d'un collaborateur » (`T7`) et l'archivage/restauration (`T11`) — étaient déjà servies, `T12` ajoute le REPORTING. AUCUN RÔLE N'EST REFUSÉ : la portée s'ajuste au rôle le plus large détenu — Entité (ESM/ADM-E/SUPER), Consultants (DSM), Cercle (Booster), ou `Soi` en dernier recours, résolu par une fonction PURE et testable sans base (`resoudre_le_perimetre_du_suivi`), disponible à n'importe qui sur SES PROPRES tâches — jamais une conséquence du rôle `OFFICE`, à tiret sur cette ligne comme partout ailleurs sur les modèles d'onboarding. « Reporting de base » SEULEMENT (cahier, Inclus) : aucun graphique, aucun export — LOT 10. « En retard » n'est pas restreint aux tâches obligatoires (`state IN ('todo', 'reopened')` et `due_at < instant`, sur TOUTE tâche), mais SEULES LES INSTANCES `active` SONT COMPTÉES, délibérément : une instance `archived` a déjà vu ses tâches obligatoires terminées (`T11`), et une tâche non obligatoire encore en retard dessus est un résidu que rien dans le corpus ne demande de signaler — un témoin construit ce cas précis plutôt que de l'affirmer. Pagination du cahier §18.2 réutilisée depuis `app/shared/pagination.py`, première consommation par l'onboarding. **Erreur de méthode trouvée et corrigée dans la preuve de zéro régression elle-même, avant toute fusion** : `pytest` lancé depuis `apps/api/` ne rend que 1 326 tests contre les 1 393 attendus — `testpaths` du `pyproject.toml` RACINE couvre aussi `apps/worker/tests` et `packages/observabilite/tests`, et c'est depuis la RACINE que `make check`/`make test` invoquent `pytest`. Relancée depuis la racine : 1 393 sur `origin/develop`, 1 404 (+11) sur la branche, 75 échecs environnementaux IDENTIQUES des deux côtés. **Défaut trouvé dans mes propres tests avant fusion** : les 11 tests manquaient `@pytest.mark.integration`, invisibles à `make test-integration` bien qu'exigeant PostgreSQL. Contrat mis à jour (`suiviDesTachesEnRetard`, forme `PageDeSuiviOnboarding`, aucun module TypeScript propre — même parti que `CatalogueDeTaches`, `T4`). **`T13` : les écrans du nouvel arrivant** (`DEC-613`) — UNE SEULE page, `PageMonOnboarding.tsx`, sous la rubrique `mon-onboarding` réservée par `T4` du LOT 4 ; aucune route API nouvelle, `T2`/`T3`/`T7`/`T8` livraient déjà tout ce que l'écran consomme. `GET …/permissions` (LOT 4, `T8`) ÉTENDU d'un champ `appartenance` — l'entity_membership_id occupant de l'appelant, `null` hors de l'entité principale, nouvelle fonction `_appartenance_occupante` — seul moyen dont dispose le frontend de savoir quelle URL appeler pour SA propre fiche et SON propre parcours, aucune route de l'onboarding n'acceptant de cible implicite ; réutilise une réponse déjà appelée une fois par page plutôt qu'un aller-retour de plus. `droitsDeNavigation` devient une fonction PURE prenant `aUnParcoursActif` en argument RÉEL, retirant la constante figée à `false` posée au LOT 4 — `CadreApplicatif` interroge `GET …/onboarding-parcours`, SÉQUENCÉ après `/permissions` dont il a besoin de `appartenance`. **DÉFAUT TROUVÉ ET CORRIGÉ, DANS UN CODE ÉCRIT À `T7`, JAMAIS EXERCÉ PAR UN ÉCRAN AVANT `T13`** : `validerLeParcours` (contrat TypeScript) exigeait `instance`/`progression`/`prochaine_tache` nuls ENSEMBLE ou aucun des trois — faux pour `prochaine_tache`, qui peut être nul même avec une instance `active` (aucune tâche `todo`/`reopened` restante) ; une réponse `200` légitime aurait levé côté client, silencieusement. **AUCUNE FENÊTRE DE CINQ MINUTES N'EST CALCULÉE CÔTÉ CLIENT** : le bouton « Annuler » est proposé pour toute tâche `completed`, c'est le `409` de l'API qui referme la fenêtre. **LE FRONTEND NE PROPOSE PAS UN DROIT DÉJÀ REFUSÉ** : « Valider et publier » désactivé sans présentation courte ou avec des modifications non enregistrées ; après publication (§6.2), la fiche bascule en lecture seule. **ALLER-RETOUR RÉEL EFFECTUÉ (§7.43 du LOT 6)** : décor psql réel, lien magique réel consommé dans le navigateur, lecture/complétion/validation-publication/complétion de tâche/annulation — tous les appels réels à `200`, décor nettoyé après coup. **Décision explicite de Jonathan : aucun script `make onboarding-check` à `T13`**, reporté à `T14`, combiné pour les deux sous-étapes plutôt que dupliqué deux fois de suite. **`T14` : les écrans d'administration** (`DEC-614`) — UNE SEULE page, `PageAdministration.tsx`, sous la rubrique `administration` réservée par `T4` du LOT 4 ; trois sections (catalogue, modèles, suivi). **Décision de Jonathan : le menu s'élargit** — nouvelle liste `rolesAdministrationOnboarding` (DSM, ESM, BOOST, ADM-E, SUPER), déclarée SÉPARÉMENT de `rolesAdministration` (§20), jamais fusionnée (§7.27) ; `droitsDeNavigation` en prend l'UNION ; le suivi n'y entre PAS, sa grille ne refusant jamais personne. **Route API nouvelle, trouvée en construisant l'écran** : `GET …/onboarding/templates` (`app/onboarding/gabarits.py` : `lister_les_modeles`, `lister_les_versions`) — ni `T5` ni `T6` n'avaient posé de LECTURE des modèles, filtrage par rôle appliqué en Python sur la liste brute, jamais une seconde règle SQL (§7.27) ; chaque modèle avec ses versions imbriquées. Le droit de lecture d'OFFICE (« Consulter les modèles publiés », §9) reste SANS route : aucun critère actuel ne le réclame. Troisième liste, `rolesRestaurationDesModelesOnboarding` (ESM, ADM-E, SUPER), gate le seul bouton « Restaurer » — DSM/BOOSTER exclus EN BLOC de cette ligne du §9, `ECART-066`. **LE SCRIPT DE PILE DIFFÉRÉ PAR `T13` EST CONSTRUIT ICI, COMBINÉ POUR LES DEUX** : `infra/scripts/verifier-administration-onboarding.py` (14 contrôles, pile RÉELLE — Caddy, HTTPS) — témoin d'asymétrie DSM/ESM (les deux rôles dans la MÊME entité, chacun voit un ensemble de modèles DIFFÉRENT), cycle de vie complet exercé une fois en vrai (créer, composer les tâches, publier, archiver, restaurer), OFFICE refusé (403) sur les modèles MAIS reçu (200) sur le suivi, `ECART-066` éprouvé DANS LE SENS DU REFUS. Ajouté à `make check`, nommé dans `ci.yml`. `make ecrans-check` couvre `PageAdministration.tsx` SANS AUCUNE MODIFICATION DU CONTRÔLE — glob générique, 47 modules contre 30 avant `T14`, bénéfice direct du §7.27. **ALLER-RETOUR RÉEL EFFECTUÉ (§7.43 du LOT 6)** : décor psql réel, lien magique réel, cycle complet créer/composer/publier/archiver/restaurer — tous les appels réels à `200`/`201`, décor nettoyé après coup |
 | **Que fait-on au LOT 6 ?** | **`docs/operations/fiche-lot-6.md`** — **7** stories, **7** critères de sortie **dérivés des DEUX sources qui concordent**, **DOUZE** sous-étapes validées le 13/09/2026 (`DEC-575`). **Son §2.1 porte TROIS pièges mesurés**, tous dans le même sens : `ADM-E` est à **tiret** sur l'affectation du Booster et des responsables, et `OFFICE` n'a que le **contenu** d'un bureau, pas sa structure. **Son §8 instruit SEPT écarts** — deux sont clos par `DEC-576`, trois relèvent de **Léa**. **Et son §8.3 a trouvé ce que personne n'avait relevé** : le cahier §10.7 et le modèle §15.2 donnent **deux listes de blocs différentes**, dont l'union vaut **neuf ou dix** selon une lecture qu'aucun document ne tranche — `QO-119` |
 | **Comment a-t-on fait les sous-étapes du LOT 6 ?** | **`docs/operations/compte-rendu-t{1,…}-lot-6.md`** — `T1` les trois tables éditoriales, `T2` la page Framework, `T3` la page détaillée d'un cercle, `T4` celle d'un bureau, `T5` le rendu des blocs, `T6` l'**écriture**, `T7` le **cycle de vie**, `T8` les **liens internes**, `T9` les **trois écrans de lecture**, `T10` les **écrans d'édition**. **LE §3 DE `T10` PORTE LA LEÇON LA PLUS TRANSFÉRABLE DU LOT, ET LE CONTRÔLE DE PILE L'A TROUVÉE AVANT LA FUSION** : la route posée pour retrouver une page ARCHIVÉE exigeait `MODIFIER`, que `_actions_selon_l_etat` ne rend jamais sur une page archivée — seulement `RESTAURER`. Un test unitaire ne l'avait pas vu, parce qu'il testait la fonction et non la garde de la route ; `make framework-check`, étendu de 68 à 74 contrôles, l'a fait tomber au premier aller-retour réel — corrigé en exigeant l'ensemble **non vide** plutôt qu'une action précise. **Son §2.1 porte un second constat, structurel** : `T6` avait exposé au manifeste ses propres grilles de rôles pour ses propres écrans, comme `T7` et `T8` l'avaient fait — sauf que `T6` ne l'avait PAS fait, un oubli de la discipline `DEC-492` que seule l'écriture de `T10` a révélé, faute d'écran consommateur avant elle. **LE §2.2 DE `T8` PORTE LE CONSTAT LE PLUS TRANSFÉRABLE DU LOT APRÈS CELUI DE `T7`, ET IL CONTREDIT LA LECTURE LITTÉRALE D'UNE EXIGENCE ÉCRITE DEUX FOIS** : le corpus demande que les URL soient validées « selon une **liste de protocoles autorisés** », et **une liste de protocoles ne suffit pas** — `https:alert(1)` a pour protocole `https` et n'adresse aucune ressource. L'API exige **aussi un hôte**. **Son §2.5 est un résultat déguisé en absence** : la « présentation de l'entité » du §13 n'a demandé **aucune ligne de code**, sa grille étant identique cellule par cellule à « Créer un contenu général » et `HOME` tombant par soustraction dans le régime des rôles d'entité — deux tests le **mesurent**. **Son §4 porte le seul défaut de la sous-étape**, `T8-1`, et il est **non déterministe** : le décalage de la réécriture d'ordre était dérivé du **nombre** de liens, ce qui ne vaut que si les rangs vivants sont `0..n-1` **sans trou** — ce que l'archivage d'un lien détruit. J'avais **mesuré** `max + 1` dans ma sonde préalable, puis écrit `len(ordre)` « pour faire plus simple ». **Son §3.3 est la deuxième campagne du lot à finir avec ZÉRO filtre muet** : six l'étaient, cinq étaient de vrais trous — et le sixième, `FOR UPDATE`, n'est observable par **aucun** test séquentiel, ce qui est **dit** plutôt que tu. **Le §2.1 de `T7` porte la leçon la plus transférable du lot, et elle a clos un écart** : `Périmètre` est employé dans plus de vingt cellules de la matrice et **ne figure pas dans la légende §4** — mais le **§3 le définit**, dans une colonne intitulée « Périmètre principal », où l'`ESM` a « ensemble de son entité », soit mot pour mot la définition de `Entité`. `ECART-063` annonçait deux grilles divergentes pour l'archivage ; il n'en restait **qu'une cellule**, et elle n'est pas exprimable dans le modèle. **Son §3.4 est la première campagne de témoins du projet à finir avec ZÉRO filtre muet** — cinq l'étaient, et les cinq étaient de vrais trous : tous mes autres cas passaient par le périmètre, si bien que la précondition du **service** n'était exercée par personne. **Son §3.3 dit ce que le déclencheur du §8.4 NE garantit pas** : il garde la **transition**, pas l'état permanent, et un bureau publié peut redevenir non conforme — ce qui **explique** la lecture tolérante de `T4` au lieu de la rendre obsolète. **Le §4 de `T6` porte le défaut le plus transférable du lot** : mon vérificateur de témoins a **menti en silence**, parce que CPython invalide un `.pyc` sur le couple `(mtime TRONQUÉ À LA SECONDE, taille)` et que quatre de mes variantes pesaient **exactement** 13 487 octets. Trois d'entre elles ont exécuté le bytecode d'une variante **précédente**, et le vérificateur annonçait « 0 échec » — la **même observation** que « ce filtre ne travaille pas ». Parade : `PYTHONDONTWRITEBYTECODE=1`, **mesurée avant d'être appliquée**. **Son §3.3 nomme deux filtres REDONDANTS**, troisième occurrence après `T4-2` et `T5-1` — et trois fois sur trois, ce qui protégeait était une **contrainte ailleurs**. **Le §2.2 de `T5` dit ce que le LOT 6 ne validera PAS** : le §15.2 veut « des champs structurés ; un `payload_json` validé par type », et **le corpus n'en nomme aucun** — le contenu est donc servi comme une **donnée opaque**, et `QO-121` porte la question à Léa. **Le §4 de `T4` porte la leçon la plus transférable du lot** : la fiche ET cette passation annonçaient que `T4` poserait le **déclencheur** du comptage borné, et c'était une **prévision** (§7.41) — le critère de la story dit « affichés », et la borne ne mord qu'à la publication, qu'aucune route n'écrit encore. `DEC-583` l'envoie à `T7`. **Le §2.1 de `T3` porte une leçon de structure** : les trois tailles du §18.2 vivaient dans le trombinoscope, et `T3` en étant le second consommateur, un **import circulaire mesuré** a imposé de les déplacer dans `app/shared/pagination.py` — *un fait du CAHIER se déclare dans `shared`, pas dans le premier module qui en a eu besoin*. Même remède que pour `ETAT_LISTE`. **Son §4 porte le défaut le plus utile du lot** : `alembic --autogenerate` a proposé de **supprimer l'index de recherche du LOT 5**, un index sur EXPRESSION qu'il ne sait pas réconcilier. Il n'était déclaré dans **aucun** module et **aucun test** n'exigeait son existence — le piège était debout pour toutes les sous-étapes suivantes. **Lis cette section avant de relancer un `--autogenerate`** |
 | **Que fait-on au LOT 5 ?** | **`docs/operations/fiche-lot-5.md`** — 8 stories, **7** critères de sortie **dérivés**, **ONZE** sous-étapes : validées à douze le 24/08/2026, **révisées le 06/09/2026** quand `T5` et `T6` ont été fusionnées (`DEC-564`). **Son §2.1 porte un piège mesuré**, et son **§8.2 se trompait de lot** — il attribuait à `T5` le choix du format des miniatures, qui appartient à qui les **produit**, donc au LOT 11. `ECART-052`, clos |
@@ -151,9 +154,11 @@ Interdictions propres au LOT 1 : [`fiche-lot-1.md`](docs/operations/fiche-lot-1.
 | **Comment a-t-on fait les DOUZE sous-étapes du LOT 2 ?** | **`docs/operations/compte-rendu-t{1,…,12}-lot-2.md`**. **Ne recopie pas leur nombre** : `grep -ohE '`\`T[0-9]+-[0-9]+\`' docs/operations/compte-rendu-t*-lot-2.md \| sort -u \| wc -l` — **37** au 20/08/2026, et **les dix de `T10` et `T11` sont tous dans mon travail** |
 | Que faisait-on au LOT 1 ? | `docs/operations/fiche-lot-1.md` — 12 sous-étapes, **les 12 barrées** |
 | **Comment a-t-on fait `T1` à `T11` ?** | **`docs/operations/compte-rendu-t{0,…,11}-lot-1.md`** |
+| **Qu'a validé Jonathan à la porte `G6`, FRANCHIE le 25/09/2026 ?** | **`docs/operations/checklist-validation-G6.md`** — les **sept** critères de sortie avec ce qui prouve chacun, **dix** gestes de démonstration, les cinquante-sept contrôles de la recette, le classement du §30, et **son §7 : ce que le lot n'a PAS fait**. C'est ce §7 qu'il faut lire en premier |
 | **Qu'a validé Jonathan à la porte `G5`, FRANCHIE le 13/09/2026 ?** | **`docs/operations/checklist-validation-G5.md`** — les **sept** critères de sortie avec ce qui prouve chacun, **huit** gestes de démonstration, les trente-deux contrôles de la recette, et **son §7 : ce que le lot n'a PAS fait**. C'est ce §7 qu'il faut lire en premier |
 | **Que valide Jonathan à la porte `G4` ?** | **`docs/operations/checklist-validation-G4.md`** — les **six** critères avec le contrôle qui prouve chacun, huit gestes de démonstration, et **ce que le lot n'a PAS fait** |
 | **Que valide Jonathan à la porte `G2` ?** | **`docs/operations/checklist-validation-G2.md`** — les 7 critères, les 25 contrôles du §30 **classés**, et une démonstration guidée |
+| **Qu'a produit `T15` du LOT 7 ?** | **[`docs/operations/compte-rendu-t15-lot-7.md`](docs/operations/compte-rendu-t15-lot-7.md)** et **[`checklist-validation-G7.md`](docs/operations/checklist-validation-G7.md)** — recette isolée sur les images publiées, parcours HTTPS réel, §30 à **16 acquis, 2 partiels, 7 reportés** ; validations humaines `G7` encore attendues |
 | Que validait-il à `G1` ? | `docs/operations/checklist-validation-G1.md` — 33 contrôles |
 | **Comment EXPLOITE-t-on la plateforme ?** | **`docs/operations/exploitation-locale.md`** — toutes ses commandes ont été exécutées |
 | Qu'a-t-on décidé depuis le début ? | `docs/decisions/registre-decisions.md` — **le compte est au §1, et `make docs-check` le dérive**. Ne le recopie pas ici : c'est le seul endroit qu'un contrôle lit |
@@ -493,8 +498,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`596` en usage | **`DEC-597`** |
-| `ECART-nnn` | `001`–`065` | **`ECART-066`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`616` en usage | **`DEC-617`** |
+| `ECART-nnn` | `001`–`066` | **`ECART-067`** |
 | `QO-nnn` | `072`–`124`, **5 trous** | **`QO-125`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -575,6 +580,10 @@ API             migrate migrate-status api-check alembic-check
                 permissions-check                                 ← LOT 4, T8
                 (T9 n'ajoute AUCUNE cible : son garde-fou est prouve par
                  12 tests, pas par un controle de stack. Voir ECART-046)
+                onboarding-check                                  ← LOT 7, T14
+                (differe par T13, construite ici, combinee pour les deux --
+                 14 controles sur la pile REELLE : l'asymetrie DSM/ESM, le
+                 cycle de vie complet, ECART-066 eprouve dans le sens du refus)
                 cadre-check cadre-temoin                          ← LOT 4, T3
                 jeu-de-donnees                                    ← LOT 2, T12
                 (ATTENTION : elle COMMITE 25 entites et 5 000 profils dans la
@@ -2611,7 +2620,7 @@ Un garde-fou à faux positifs apprend à passer outre (§7.25), et il n'aurait r
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — **14 ouverts**, dérivés du registre le 23/09/2026 (le total est au §1)
+## 8.1 Écarts — **14 ouverts**, dérivés du registre le 25/09/2026 (le total est au §1)
 
 > **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
 > par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
@@ -2622,10 +2631,11 @@ Un garde-fou à faux positifs apprend à passer outre (§7.25), et il n'aurait r
 | ID | Objet | Échéance |
 |---|---|---|
 | `ECART-005` | Schéma CSV définitif relève de `QO-096` | LOT 9 |
-| `ECART-012` | `intercontrat` imposé à une direction générale. **Instruit en `T5`** : le coût des deux options est mesuré, **la décision revient à Léa** | LOT 2, avant LOT 5 |
-| `ECART-013` | Les 5 tâches communes du prototype ont des identifiants différents | LOT 7 |
-| `ECART-014` | « Représentant de cercle » contre « Booster » | LOT 6 |
-| `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | LOT 6 |
+| `ECART-012` | `intercontrat` imposé à une direction générale. **Instruit en `T5` du LOT 5**, position de Jonathan reconduite sans trancher à l'ouverture du LOT 7 (§8.1 de `fiche-lot-7.md`) : **la décision revient toujours à Léa** | **Échéance dépassée depuis le LOT 6.** Non bloquant |
+| `ECART-013` | Les 5 tâches communes du prototype ont des identifiants différents | LOT 7, se résout structurellement à `T4` |
+| `ECART-014` | « Représentant de cercle » contre « Booster » | **Échéance dépassée** — n'a pas mordu au LOT 6, à confirmer par Léa si un écran du LOT 7 reprend ce vocabulaire |
+| `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes | **Échéance dépassée** — sans objet direct pour le LOT 7, qui ne touche ni cercle ni lien |
+| `ECART-066` | **NOUVEAU, ouverture du LOT 7.** La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé et d'une version de modèle, et `ARB-DROIT-003` — qui définit « Conditionnel » pour cinq autres ressources — ne nomme ni l'un ni l'autre | LOT 7, à trancher avant `T6`/`T11` |
 | `ECART-031` | Le §8.4 exige « un bureau **publié** avec un à trois responsables actifs », mais le §8.3 ne déclare **aucun état de publication** sur `office` | avant le LOT 6 |
 | `ECART-033` | **CLOS en `T1` du LOT 3.** `make ports` concaténait les deux flux de Compose puis parsait le tout en JSON : un avertissement le cassait, **sans nommer la cause**. Il était juste à sa date — `ECART-024` à l'identique |
 | `ECART-061` | **Un mot de passe provisoire n'est jamais forcé de changer** : `must_change` est servi par l'API sous le nom `changement_exige`, **aucun écran ne le lit**, et la session est ouverte quand même. `DEC-527` affirme le contraire. **Mesuré le 12/09/2026** | avant production, à instruire au LOT 13 |
@@ -2678,7 +2688,7 @@ l'état.**
 
 ---
 
-# 9. Par où commencer : le LOT 6 est OUVERT, et `T7` est la prochaine
+# 9. Par où commencer : le LOT 7 est OUVERT, et `T10` est la prochaine
 
 ## 9.0 Ce que les documents ont démenti, et ce qu'il faut en retenir
 
@@ -2710,62 +2720,203 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 
 ## 9.1 Où en est exactement le projet
 
-**Les LOTS 0 à 5 sont terminés.** `G5` a été franchie le **13/09/2026** (`DEC-574`), tag `v0.5.0` sur
-`14b2bd1`. **Le LOT 6 est ouvert** depuis le même jour (`DEC-575`), son découpage compte **douze**
-sous-étapes, et **dix sont faites**.
+**Les LOTS 0 à 6 sont terminés.** `G6` a été franchie le **25/09/2026** (`DEC-597`), tag `v0.6.0` sur
+`d2d639e`. **Le LOT 7 est techniquement complet** depuis `T15` (`DEC-615`) : ses quinze sous-étapes
+sont réalisées, de la structure au parcours, aux deux écrans puis à la recette HTTPS réelle. Le §30
+est classé à **16 acquis, 2 partiels et 7 reportés** ; la checklist `G7` est prête. **Cela ne franchit
+pas la porte :** Tess, Léa, Diane et Jonathan doivent encore valider les parcours.
 
 | Fait | Ce que ça donne |
 |---|---|
 | LOT 3 | l'authentification complète : magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service, **et les huit écrans** |
 | LOT 4 | le portail national, le cadre applicatif, l'entité consultée, la navigation, la carte, et la résolution des permissions de la matrice §23.1 |
 | LOT 5, les ONZE | les trois tables de média, le trombinoscope paginé, la recherche sans accents, la fiche profil, la miniature et son autorisation, l'écriture dans son périmètre, l'archivage et la restauration, l'historique organisationnel, et les **deux écrans** — le trombinoscope et la page de profil |
-| LOT 6, les DIX | les trois tables éditoriales (migration `0017`), la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu** des blocs, l'**écriture** d'un contenu dans son périmètre, son **cycle de vie** — brouillon, publication, archivage, restauration — les **liens internes**, avec `QO-120` close, les **trois écrans de lecture** — Framework, cercle, bureau — et les **écrans d'édition** — cercle, bureau, liens internes, présentation de l'entité (`T10`, `DEC-591`). **Ni `0018` ni `0019` n'ajoutent de colonne** : la première pose un **déclencheur**, la borne du §8.4 à la publication ; la seconde une **contrainte de vérification**, `ck_internal_link_url_https` |
-| Recette | **réépinglée** sur les images de `3bc68b9`, et son API se connecte avec le rôle d'**exécution** — `DEC-539`, mesuré |
+| LOT 6, les DOUZE — **VERROUILLÉ** | les trois tables éditoriales (migration `0017`), la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu** des blocs, l'**écriture** d'un contenu dans son périmètre, son **cycle de vie** — brouillon, publication, archivage, restauration — les **liens internes**, les **trois écrans de lecture**, les **écrans d'édition**, **le témoin du critère de sortie 2** et **la reprise relue** (`T11`), puis **la recette et le §30** (`T12`, un reclassement trouvé et corrigé). Détail : `fiche-lot-6.md` |
+| LOT 7, `T1`–`T15` | les huit tables, la fiche d'arrivée, les modèles, parcours et tâches, leur cycle de vie, le suivi et les deux écrans ont été construits dans `T1` à `T14`. **`T15`** les a rejoués sur la recette isolée, à travers Caddy/HTTPS, dans un parcours complet `arrival_date` → deux échéances → progression `1/2` puis `2/2` → archivage automatique ; le décor a été nettoyé. Il corrige aussi le classement périmé de `§30.13` à `§30.15` : **16 acquis, 2 partiels, 7 reportés**. La checklist distingue cette complétude technique de `G7`, qui reste humaine. Détail : `compte-rendu-t{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}-lot-7.md` |
+| Recette | **réépinglée** sur les images de `07571f9` (`T11` du LOT 6), rôle d'**exécution** — `DEC-539`, mesuré |
 | Contrôles | les contrôles de stack sont **tous** dans la CI, chacun portant ses témoins. **`make help` et `ci.yml` font foi sur leur nombre**, jamais cette cellule |
 
-**Les quatre points qui bloquaient `T11` sont clos, par arbitrage de Jonathan le 25/09/2026, avant
-`T11` — `DEC-592` à `DEC-594` :** onze types de blocs de contenu (`QO-119`), la référence d'icône
-d'un lien reste facultative et en texte libre (`QO-123`, bibliothèque `lucide-react` déjà tranchée
-par `DEC-591`), et la lecture restrictive du DSM — aucune page à éditer — est **définitive**
-(`QO-124`, `ECART-062` clos avec elle). **Aucune des trois ne change une ligne de code** : les trois
-confirment ce que `T10` servait déjà. **`QO-121` reste ouverte, par report EXPLICITE de Jonathan**,
-non par oubli : les champs de chaque bloc ne sont pas un choix unique mais onze petites décisions à
-écrire type par type. Elle ne bloque `T11` que pour la part qui proposerait la **création** d'un bloc
-ou l'édition de ses champs — pas pour le modèle générique ni l'amorçage.
+**`ECART-066` est CLOS** : ses deux volets — version de modèle (`T6`, `DEC-605`) et parcours (`T11`,
+`DEC-611`) — sont résolus, l'ESM restaurant librement dans son entité dans les deux cas, la seconde
+réponse ayant été reposée EXPLICITEMENT et jamais présumée de la première. **`QO-121` reste
+ouverte**, héritée du LOT 6 (champs de `payload_json`, report explicite de Jonathan, non bloquante).
+`ECART-012` (statut professionnel d'une direction générale, à Léa) reste ouvert et non bloquant.
+**Un résidu du LOT 5, retrouvé en écrivant `T3`, reste sans propriétaire** : `entity_membership.
+short_bio`/`fun_fact` n'ont toujours aucune route d'écriture — reporté à `T7` du LOT 5, jamais
+rattrapé depuis — et rien ne relie `arrival_profile.short_intro` à ce champ.
 
 ---
 
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
-**Le lot est ouvert et son découpage est validé** — douze sous-étapes, `DEC-575`. La prochaine est
-**`T11` : le modèle générique, l'amorçage et la reprise relue** — `MVP-L06-US007` — et le détail est
-dans [`fiche-lot-6.md`](docs/operations/fiche-lot-6.md) §3. Plus aucune question ne la bloque
-entièrement ; `QO-121` la borne partiellement (ci-dessus).
+**Le lot est ouvert et son découpage est validé** — quinze sous-étapes, `DEC-598`. **`T1` à `T15`
+sont techniquement faites** (`DEC-599` à `DEC-615`, correctifs `DEC-602` et `DEC-607`) : la recette
+complète de `T15` a repris les images publiées, les 25 contrôles du §30 et la checklist `G7`, avec
+zéro régression prouvée contre `origin/develop`. **Il ne reste aucune sous-étape de code :** seule
+l'approbation explicite de Jonathan permet la fusion de `T15`, puis les validations humaines
+requises peuvent décider du franchissement de `G7`. Aucun LOT 8 ne commence avant cela.
+**`ECART-066` est CLOS** — les deux
+volets (version de modèle, `T6` ; parcours, `T11`) sont résolus, la seconde réponse ayant été
+reposée explicitement, jamais présumée de la première. `T11` s'est accroché à
+`enregistrer_un_depart` (LOT 3, `T9`) sans dupliquer sa logique de révocation, exactement comme
+prévu. `T12` a fermé la dernière ligne de consultation du §8.1 encore sans consommateur —
+« Consulter les tâches en retard » — sans écrire de route sur les deux autres, déjà servies par
+`T7` et `T11`. `T13` a livré les écrans en réutilisant intégralement les routes de `T2`/`T3`/`T7`/
+`T8` : aucune route API nouvelle, une seule extension d'identité sur `/permissions` — et a trouvé,
+dans un contrat écrit à `T7`, un défaut jamais exercé par un écran avant elle. `T14` a livré les
+écrans d'administration, construit le script de pile que `T13` avait différé, et a dû ajouter UNE
+route API — `GET …/onboarding/templates` — trouvée en construisant l'écran : ni `T5` ni `T6` n'en
+avaient posé la lecture. `T15` a produit la recette complète et la checklist : **la technique est
+prête, la porte `G7` ne l'est pas encore sans les quatre validations nominatives.**
 
-1. **Lire la matrice — l'annexe A du cahier — §10.1, §10.2, §10.3 et §13 DANS LE DOCUMENT**, jamais
-   dans un résumé. Le §2.1 de la fiche porte **trois** pièges mesurés, tous dans le même sens :
-   `ADM-E` est à **tiret** sur « affecter ou remplacer le Booster » **et** sur « affecter les
-   responsables », et `OFFICE` n'a sur « modifier la structure du bureau » que **« contenu
-   uniquement »**. La matrice le redit en prose sous le tableau §10.2. **L'erreur serait d'accorder
-   à l'administrateur d'entité tout ce qui porte « Entité » ailleurs.**
-2. **Distinguer « Entité » de « Périmètre ».** Au §13, l'ESM a « Entité » pour créer et modifier,
-   et **« Périmètre »** pour publier et archiver. Une grille unique par rôle les confondrait.
-3. **Vérifier les points du §8 de la fiche contre le cahier avant d'instruire quoi que ce soit.**
-   Trois fois sur quatre au LOT 3, une fois au LOT 4, une sixième en `T8` et une septième en `T9`
-   du LOT 5 — §7.29, **sept occurrences**. Et le mot « **Conditionnel** » ressemble à une case vide :
-   `ARB-DROIT-003` nomme la condition — l'ESM restaure **fonctionnellement** dans son entité, les
-   restaurations **techniques, massives ou liées aux imports** restant à l'`ADM-E` et au `SUPER`.
-4. **« Archiver un cercle | Entité, si aucun membre actif » n'est PAS une case de rôle.** C'est un
-   état de la **ressource**, donc un `409` et non un `403` — §23.2, exactement comme `T8` du LOT 5.
+1. **Lire la matrice §7, §8 et §9 DANS LE DOCUMENT**, jamais dans un résumé. Le §2.1 de la fiche
+   porte **deux** pièges mesurés : `DSM`/`BOOST` ont un périmètre de **consultation** sur le parcours
+   d'un collaborateur (§8.1) mais sont à **tiret** sur toute **action** de tâche ; `OFFICE` est à
+   tiret partout sur les modèles d'onboarding (§9). **L'erreur serait d'accorder le droit d'agir
+   parce que le droit de consulter existe déjà.**
+2. **`photo_authorization` existe déjà** depuis le LOT 5 (`0014`) — `T1` ne l'a pas recréée,
+   `arrival_profile.photo_media_id` s'y rattache.
+3. **`ECART-013` est résolu STRUCTURELLEMENT depuis `T4`** (`DEC-603`) : un identifiant fonctionnel
+   unique par tâche commune, jamais la numérotation à deux préfixes du prototype. **MIS À
+   L'ÉPREUVE POUR DE VRAI PAR `T10`** (`DEC-610`, `US007`) : un changement de statut effectif
+   retient les tâches `completed` communes par leur `task_reference_id`, `completed_at`/
+   `completed_by_person_id` copiés, `title_snapshot`/`due_at` recalculés depuis la nouvelle
+   version.
+4. ~~La fenêtre de cinq minutes doit être injectable dès `T8`.~~ **FAIT PAR `T8` ET `T9`** : la
+   précondition compare l'`instant` réel de la requête à `completed_at`, une valeur déjà STOCKÉE en
+   base — les témoins « hors délai » reculent cette valeur par SQL, jamais un `sleep()` ni une
+   horloge mockée. **`T9` a réouvert après le MÊME délai**, inversé strictement (`completed_at <
+   instant - 5 min` contre `>=` pour l'annulation) : réutilise la lecture de `completed_at`,
+   n'invente pas un second mécanisme de fenêtre — aucune sous-étape suivante n'a plus besoin de
+   fenêtre temporelle sur cette table.
+5. **Vérifier les points du §8 de la fiche contre le corpus avant d'instruire quoi que ce soit**
+   (§7.29, huitième occurrence : `ECART-066` en est la preuve, trouvé en cherchant « Conditionnel »
+   dans tout le corpus plutôt qu'en le devinant).
+6. **`make isolation-check` connaît désormais TROIS raisons légitimes à une clé simple** entre deux
+   tables locales — cible globale, source `entity_id` nullable (`T8-1`), et depuis `T1` : cible
+   `entity_id` nullable. Si une nouvelle table nullable apparaît, relis
+   `infra/scripts/verifier-isolation.py` §1 avant d'improviser une composite qui casserait le cas
+   global.
+7. **`resoudre_les_permissions` n'accorde un rôle de responsabilité que dans l'entité PRINCIPALE de
+   l'acteur** (LOT 4, `est_principale`). Tout décor de test qui donne une responsabilité ESM/DSM/
+   Booster à un acteur SANS lui donner sa propre appartenance dans l'entité obtient un ensemble de
+   rôles VIDE, en silence — trouvé en `T2` du LOT 7, une règle préexistante que le lot n'avait
+   simplement jamais exercée avec un acteur dépourvu d'appartenance locale.
+8. **`entity_membership.short_bio`/`fun_fact` n'ont AUCUNE route d'écriture**, malgré ce qu'une
+   lecture rapide du §6.1 pourrait laisser croire. `T7` du LOT 5 les a explicitement **reportés**
+   (`compte-rendu-t7-lot-5.md`), et rien depuis ne les a rattrapés — vérifié par `grep` avant
+   d'écrire `T3`, une affirmation contraire avait été rédigée puis corrigée (§2.5 de
+   `compte-rendu-t3-lot-7.md`). Ne suppose jamais qu'un champ du modèle a une route parce qu'il a
+   une lecture : vérifie par `grep`, pas par mémoire.
+9. **`Support` (et `Support cercle`) n'est dans AUCUNE légende du corpus** — §4 de la matrice ne
+   le définit pas, comme `Périmètre` au LOT 6 (§7.45). S'il réapparaît dans une cellule d'un lot
+   futur, cherche-le dans TOUT le corpus avant de lui inventer une règle : au §7, il couvre
+   exactement `Entité`/`Cercle`/`Global`, sans exigence supplémentaire.
+10. **Une table de la matrice peut porter une ligne DE PLUS que celle qu'on vient de coder** —
+    `T3` a fusionné en bloquant toute écriture après publication, avant de trouver « Corriger
+    après publication », une quatrième ligne du §7 juste sous les trois déjà lues (`DEC-602`).
+    Avant de déclarer une grille de permissions complète, relis les lignes VOISINES de celles que
+    tu codes, pas seulement celles que la fiche de lot nomme explicitement.
+11. ~~`onboarding_template_version.state` réutilise la MAUVAISE énumération, posée par `T1`.~~
+    **CORRIGÉ PAR `T5`, MIGRATION `0021`** : `EtatDeLaVersionDuModele` (`draft`/`published`/
+    `retired`) remplace `EtatDuModele` sur `onboarding_template_version.state`, jamais en modifiant
+    `0020` déjà appliquée. Zéro ligne existante rejetée.
+12. ~~`onboarding_template` porte de vraies colonnes de portée, `T6` en héritera pour la
+    restauration.~~ **FAIT PAR `T6`** : `peut_restaurer_une_version_de_modele`
+    (`app/onboarding/perimetre.py`) résout `ECART-066` (volet modèle) — DSM/BOOST exclus EN BLOC,
+    ESM/ADM-E/SUPER autorisés. **FAIT PAR `T11` POUR `onboarding_instance`** : la question a été
+    reposée à Jonathan EXPLICITEMENT pour le parcours, jamais présumée de la réponse donnée pour le
+    modèle — même réponse, `ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS` (alias de la grille de
+    réouverture, `T9`). `ECART-066` est désormais CLOS dans ses deux volets.
+13. **Une ancre de test dérivée d'une date absolue peut être fausse LE JOUR MÊME où elle est
+    écrite**, pas seulement des semaines plus tard comme au §7.47 du LOT 6. `T7` a fixé `ANCRAGE`
+    au lendemain matin, croyant nommer « aujourd'hui » — l'horloge UTC réelle n'avait pas encore
+    atteint minuit, et la session de test semblait donc créée dans le FUTUR : `lire_et_
+    rafraichir` a refusé `last_activity_at > created_at`. Corrigé en dérivant `ANCRAGE` de
+    `now() - buffer`, jamais une date/heure figée. **Toute sous-étape qui ouvre des sessions de
+    test dans son décor doit faire de même** — `T8` en particulier, dont la fenêtre de cinq
+    minutes manipule le temps directement.
+14. **Un critère de sortie du lot peut rester non tenu par une sous-étape qui l'annonçait déjà
+    couverte, sans que personne ne le nomme.** Le critère 4 (§1.2 de la fiche) dit « les
+    événements de tâche sont historisés […] écrit à `T7`-`T10` » — `T7` livrait la table et
+    l'affectation sans y écrire un seul événement, et son propre §2.7 (« ce que `T7` ne fait
+    pas ») ne le mentionnait pas. Trouvé en relisant le critère AVANT d'écrire `T8`, jamais après
+    la fusion. **Vérifié à nouveau avant `T9`** : le critère tient toujours, `T9` n'écrit qu'un
+    événement de plus (`REOPENED`) au même critère. **VÉRIFIÉ UNE TROISIÈME FOIS AVANT `T10`** : le
+    critère tient toujours, `T10` ajoute `RETAINED_ON_REPLACEMENT` et `CANCELLED_ON_REPLACEMENT` —
+    les deux derniers événements du §13.7, tous les six désormais posés. `T11` n'a plus
+    d'événement de tâche à ajouter à ce critère.
+15. **Mon propre décor a rejoué le défaut `T7-5`** : un modèle `ENTITY`/`GLOBAL` créé pour le test
+    doit l'être avec la session du rôle qui le GÈRE réellement (`ENTITY` → ESM/ADM-E, `GLOBAL` →
+    SUPER seul, règle de `T5`), jamais celle de l'acteur dont on teste le GESTE suivant. Un décor
+    de test n'est pas le livrable, mais s'y tromper coûte un cycle de diagnostic à chaque fois.
+16. **LE DIAGRAMME §24.2 DU MODÈLE EST LA SOURCE DE VÉRITÉ DES TRANSITIONS, ET IL PEUT NOMMER UNE
+    TRANSITION QU'UNE SOUS-ÉTAPE ANTÉRIEURE N'AVAIT PAS PRÉVUE.** `T8` avait écrit
+    `terminer_une_tache` pour le seul état `todo` ; le diagramme donne pourtant `Reopened ->
+    Completed` (« le nouvel arrivant termine à nouveau »), une transition que `T9` seule pouvait
+    exercer. Sans le correctif trouvé en écrivant `T9`, une tâche réouverte restait dans une
+    impasse permanente — un défaut qui n'aurait pu être vu qu'à l'usage, jamais par un test de
+    `T8` seul, puisque `T8` ne connaissait pas encore l'état `reopened`. **`T10` A LU LE MÊME
+    DIAGRAMME ET ÉCRIT SES DEUX DERNIÈRES TRANSITIONS** : `Todo -> Cancelled` ET `Reopened ->
+    Cancelled` (le diagramme ne nomme que `Todo`, mais `reopened` est le même état « pas terminé »
+    sous un autre nom — les deux rejoignent `cancelled`, sans quoi une tâche réouverte laissée
+    traînante sur une instance `replaced` serait une troisième forme d'orpheline que rien ne
+    décrit) ; « `Completed -> Preserved` » ne correspond à AUCUN état écrit — le modèle §13.6 ne
+    déclare que quatre états sur `onboarding_instance_task`, pas de cinquième valeur `preserved` :
+    une tâche retenue reste `completed`, dans une instance qui n'est plus `active`, ce qui suffit
+    (aucune route n'agit sur une instance non active depuis `T8`/`T9`). **Aucune fonction
+    existante n'a eu besoin d'un correctif symétrique à celui de `T9`** : `lire_l_instance_active`
+    filtre déjà sur `state='active'`, donc une instance `replaced` cesse d'être vue par
+    `terminer_une_tache`/`annuler_la_completion`/`reouvrir_une_tache` sans qu'aucun des trois n'ait
+    besoin d'être modifié. Le diagramme n'a donc plus rien à donner : les six transitions sur les
+    quatre états sont désormais toutes exercées.
+17. **UN NOUVEAU DÉCLENCHEUR AUTOMATIQUE PEUT FERMER LA RÉSOLUTION D'UNE RESSOURCE QUE DES
+    SOUS-ÉTAPES ANTÉRIEURES, DÉJÀ FUSIONNÉES, SUPPOSAIENT TOUJOURS OUVERTE.** `T11` a branché
+    l'archivage automatique dans `terminer_une_tache` (`T8`) : compléter la DERNIÈRE tâche
+    obligatoire archive l'instance dans le MÊME geste. Or `T8` et `T9` résolvaient « l'instance
+    actionnable » par `lire_l_instance_active` (`state='active'` strict) — 13 de leurs tests,
+    DÉJÀ FUSIONNÉS, sont tombés : la fenêtre de cinq minutes pour annuler, et la réouverture
+    administrative, ne trouvaient plus le parcours une fois archivé. **Corrigé en distinguant DEUX
+    résolutions** plutôt qu'en relâchant la précondition d'archivage : `lire_l_instance_active`
+    (stricte, réservée à l'affectation et à l'archivage manuel) et `lire_l_instance_actionnable`
+    (`active` OU `archived`, JAMAIS `replaced` — une instance supplantée par `T10` reste vraiment
+    frigée). **La leçon, générale** : avant de brancher un déclencheur automatique sur une action
+    déjà livrée, relis TOUS les appelants de la fonction de résolution qu'il pourrait fermer, pas
+    seulement le chemin qu'on ajoute — et fais tourner leurs tests, pas seulement les nouveaux.
+18. **`uv run pytest` NE RECOMPTE PAS LA MÊME CHOSE SELON LE RÉPERTOIRE D'OÙ IL EST LANCÉ, ET
+    `make check`/`make test` LE LANCENT DEPUIS LA RACINE, JAMAIS DEPUIS `apps/api/`.** `T12` a
+    d'abord comparé sa preuve de zéro régression depuis `apps/api/`, et obtenu 1 326 tests contre
+    les 1 393 attendus — `testpaths` du `pyproject.toml` RACINE couvre `apps/api/tests`,
+    `apps/worker/tests` **et** `packages/observabilite/tests`, si bien qu'un `pytest` lancé plus
+    bas dans l'arborescence en oublie deux. C'est le §7.28 (« lis ce que la cible fait, pas ce que
+    son nom suggère ») appliqué au **répertoire de travail** plutôt qu'à la commande elle-même :
+    tout `git worktree` de comparaison doit lancer `pytest` depuis sa **racine**, jamais depuis un
+    sous-répertoire, quelle que soit la sous-étape.
+19. **UN VALIDATEUR DE CONTRAT ÉCRIT LE MÊME JOUR QU'UNE ROUTE PEUT NE JAMAIS ÊTRE EXERCÉ PAR LES
+    VALEURS QUE CETTE ROUTE PRODUIT RÉELLEMENT, TANT QU'AUCUN ÉCRAN NE L'APPELLE.** `validerLeParcours`
+    (`T7`) exigeait `instance`/`progression`/`prochaine_tache` nuls ENSEMBLE ou aucun des trois — un
+    invariant plausible, écrit en lisant le type de la réponse, jamais en énumérant ce que la fonction
+    Python source (`_prochaine_tache`) peut réellement rendre. Elle rend `None` dès qu'aucune tâche
+    n'est `todo`/`reopened`, MÊME avec une instance `active` — un cas que `T7` à `T12` n'avaient aucune
+    raison de produire dans leurs propres tests (bâtis pour éprouver la permission, pas l'épuisement
+    des tâches), et qu'aucun écran n'avait encore appelé en conditions réelles avant `T13`. Le défaut
+    est resté invisible **six sous-étapes**, jusqu'à ce qu'un fixture de test l'exerce enfin. **La
+    règle, transposable** : quand tu écris un validateur de contrat contre le TYPE d'une réponse,
+    relis aussi la fonction qui la PRODUIT côté serveur, et énumère les valeurs qu'elle peut
+    réellement rendre — pas seulement celles que les tests déjà écrits exercent.
 
 **Ce qui est livré et attend, ou n'attend plus :**
 
 | État | Où c'est |
 |---|---|
-| ~~**`exiger_un_role_dans_l_entite`**~~ | **CONSOMMÉE en `T7`**, puis une seconde fois en `T8` — avec une **autre** grille de rôles, parce que le §6.1 en porte deux : `ROLES_D_ECRITURE` (cinq rôles) et `ROLES_DU_CYCLE_DE_VIE` (trois) |
-| ~~la **protection CSRF sur une route métier**~~ | **CONSOMMÉE en `T7` du LOT 5**, la première écriture métier, puis par les deux `POST` de `T8` du LOT 5 et par les **cinq** routes d'écriture du LOT 6. Elle vit dans `app/auth/dependances.py` et ne doit **jamais** être recopiée (`DEC-466`) |
+| ~~**`exiger_un_role_dans_l_entite`**~~ | **CONSOMMÉE au LOT 5 et au LOT 6** — plusieurs grilles de rôles distinctes déjà en usage, `T4` à `T12` du LOT 7 en ajoutent d'autres pour l'onboarding |
+| ~~la **protection CSRF sur une route métier**~~ | **CONSOMMÉE depuis le LOT 5.** Elle vit dans `app/auth/dependances.py` et ne doit **jamais** être recopiée (`DEC-466`) |
 | **`exiger_un_scope`** | `apps/api/app/auth/dependances.py`, LOT 3 `T9`. **Attend toujours** : c'est la dépendance des **comptes de service**, qui liront des profils au **LOT 9** |
+| ~~**`enregistrer_un_depart`**~~ | **CONSOMMÉE par `T11` du LOT 7** — `archiver_le_parcours_au_depart` s'y accroche depuis `app.people.archivage.archiver_un_profil`, sans dupliquer la logique de révocation, LOT 3 `T9` |
 | le **rafraîchissement de session** | `GET …/auth/session` reste la seule écriture n'exigeant pas de jeton — **résiduel nommé depuis le LOT 3, à réexaminer** |
+| ~~**les six routes de la fiche d'arrivée et du parcours (`T2`/`T3`/`T7`/`T8`)**~~ | **CONSOMMÉES PAR LEUR PREMIER ÉCRAN, `T13` du LOT 7** — posées entre le 25 et le 27/09/2026, aucune n'avait de bouton avant `PageMonOnboarding.tsx` |
+| ~~**les cinq routes du catalogue et des modèles (`T4`/`T5`/`T6`), le suivi (`T12`)**~~ | **CONSOMMÉES PAR LEUR PREMIER ÉCRAN, `T14` du LOT 7** — `T14` a dû AJOUTER une sixième route, `GET …/onboarding/templates` (lister), qu'aucune des trois sous-étapes précédentes n'avait posée faute de consommateur |
+| ~~**le script de pile de l'écran du nouvel arrivant**~~ | **CONSTRUIT PAR `T14`, COMBINÉ AVEC LE SIEN, DÉCISION DE JONATHAN TENUE** — `make onboarding-check`, 14 contrôles sur la pile réelle |
 
 ---
 
@@ -2773,28 +2924,27 @@ entièrement ; `QO-121` la borne partiellement (ci-dessus).
 
 | Élément | Ce qu'il faut savoir |
 |---|---|
-| **`ECART-012`** | **Attend Léa, et l'échéance est DÉPASSÉE** : elle était « avant le LOT 5 », lequel est ouvert depuis le 24/08/2026. Jonathan lui en parle directement, sans note. La fiche §8.1 dit où cela devient **visible** : `T4` l'a rendu sans trancher, et `T10` puis `T11` l'afficheront — c'est là que le choix ne pourra plus attendre |
-| **`ECART-031`** | Le §8.4 exige « un bureau **publié** », le §8.3 ne déclare aucun état de publication. **Inapplicable**, non oubliée. Avant le LOT 6 |
+| **`ECART-012`** | **Attend Léa, et l'échéance est DÉPASSÉE depuis le LOT 6.** Position de Jonathan reconduite le 25/09/2026 sans trancher : rien n'est affiché pour une direction générale sans mission — ce n'est **pas** la résolution de l'écart |
+| ~~**`ECART-066`**~~ | **CLOS.** Volet « version de modèle » résolu par `T6` (`DEC-605`) et volet « parcours archivé » résolu par `T11` (`DEC-611`) : l'ESM restaure librement dans son entité dans les deux cas — la seconde réponse a été reposée explicitement, jamais présumée de la première |
+| **`ECART-031`** | Clos par `DEC-576`, à l'ouverture du LOT 6. Conservé ici pour mémoire |
 | **`ECART-032`** | Le backlog interdit plus large que le cahier, la matrice **et** le modèle. Le cahier prévaut |
-| **`ECART-035`** | **Les invitations n'existent pas** dans le modèle. À reprendre au **LOT 9**, où le back-office les créera : la révocation de `T9` devra alors recevoir une ligne de plus |
-| **`ECART-061`** | **`changement_exige` n'a AUCUN consommateur.** `make admin-local` pose un mot de passe provisoire et `must_change = true` ; la connexion ouvre quand même la session, et **toutes** les routes métier répondent 200 — mesuré. Les **huit** écrans du LOT 3 sont ceux que le cahier §17.5 énumère, et le changement de mot de passe **n'y est pas**. La phrase « `T11` doit le consommer » du compte rendu de `T5` du LOT 3 était une **prévision**, §7.41. Ni garde d'API ni écran : les deux se tiennent ensemble, et c'est une décision de Jonathan. **LOT 13** |
+| **`ECART-035`** | **Les invitations n'existent pas** dans le modèle. À reprendre au **LOT 9**, où le back-office les créera : la révocation de `T9` du LOT 3 devra alors recevoir une ligne de plus |
+| **`ECART-061`** | **`changement_exige` n'a AUCUN consommateur.** Ni garde d'API ni écran : décision de Jonathan, **LOT 13** |
+| **`ECART-064`** | Aucune route n'écrit `archive_reason` ni `assignment_reason` — motif d'intervention du super-administrateur, §18.1. **À instruire au LOT 10 avec `audit_event`** ; `T9` du LOT 7 pose son propre `reopen_reason`, **ne pas confondre les deux** |
 | **`QO-113`, `QO-114`** | Conservation calendaire des journaux · droits d'administration pour la production locale. **LOT 13** |
-| **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13.** Mesure du 08/09/2026 sur les images publiées : `api` et `worker` ne portent **qu'un** `CRITICAL`, `CVE-2026-13221` de `perl-base`, **sans correctif** — donc correctement ignoré par la porte, et `ROAD-RSK-033` est **inchangé dans sa nature** |
-| **`images.yml` : la porte est refermée le 14/09/2026, `DEC-581`** | **Elle a été rouge du 05/09 au 14/09**, et **cette cellule a décrit la cause FAUSSEMENT pendant tout ce temps** : elle annonçait `CVE-2026-56854` sur la **seule image `web`**, héritée de `caddy:2.11-alpine`. **La mesure du 13/09/2026 sur le run réel dit autre chose** : `CVE-2026-13221` dans **`perl-base`**, `CRITICAL`, sur **`api` et `worker`**, héritée de `python:3.12-slim`. Ni le même avis, ni la même image, ni la même base. C'est le §9.0 — vérifie ce que la documentation affirme, y compris quand c'est ce document. **Ce qui a toujours été vrai, en revanche** : la construction et les deux lancements d'architecture **passent**, seule Trivy échouait, et la porte d'`images.yml` **n'est pas un contexte requis**, donc les fusions n'ont jamais été bloquées. **Et un résiduel reste nommé** : le **même condensat** de Caddy sert de mandataire dans `docker-compose.base.yml`, or Trivy n'examine que les **trois** images publiées — ce binaire tourne sans être couvert |
-| **10 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé. **Ce nombre annonçait « 11 » jusqu'à `T12`**, et il n'était pas dérivé — la mesure donne 13 acquis, 1 partiel, 1 inapplicable et **10** reportés, qui vont aux LOTS 7, 9, 10, 11 et 12. `ECART-021`, la énième fois |
+| **`ROAD-RSK-033`, `034`** | avis sans correctif dans `python:3.12-slim` · les ports publiés percent l'isolement inter-réseaux. **À réévaluer avant le LOT 13**, inchangés |
+| **7 des 25 contrôles du §30** | reportés, chacun rattaché à son lot par `make recette-modele-check`, qui **échoue** si un contrôle cesse d'être classé. Mesure de `T15` : **16 acquis, 2 partiels, 0 inapplicable, 7 reportés**. `§30.13`, `§30.14`, `§30.15`, restés reportés par erreur de registre, sont reclassés acquis sur les témoins existants de `T7`, `T10`, `T9` |
 | `CONT-001` à `CONT-029` | 29 contenus au statut **`à relire`**. Aucun n'est publiable en l'état |
 
 ---
 
-## 9.4 Ce que le LOT 6 ne doit pas faire
+## 9.4 Ce que le LOT 7 ne doit pas faire
 
-**Au-delà de son périmètre :** aucune table d'un lot postérieur · **aucun onboarding** ni modèle de
-parcours (LOT 7) · **aucun ÉVÉNEMENT** — `ARB-DATA-003` cite la table `event`, mais elle appartient à
-son propre lot, et `content_page` ne recevra **pas** d'`event_id` tant qu'elle n'existe pas · aucun
-import CSV (LOT 9) · **aucune GÉNÉRATION de miniature ni de variante** (LOT 11, `MVP-L11-US005`) —
-le LOT 5 en **sert** une, il n'en fabrique aucune, et le **format** reste non tranché (`ECART-052`) ·
-aucun export (LOT 11) · **aucune médiathèque avancée** : le §12.2 de la matrice est explicitement
-« V1 » · **aucune récurrence d'événement**, **aucun sous-titre** — cahier §10.6 et §13.5, différés en V1.
+**Au-delà de son périmètre :** aucune table d'un lot postérieur · **aucun événement** ni accueil
+dynamique (LOT 8) · aucun import CSV (LOT 9) · **aucun reporting graphique ni export** de suivi —
+LOT 10, et la matrice marque « Exporter le suivi », l'export image 16:9 et le texte Teams `V1` ·
+**aucune médiathèque avancée** (matrice §12.2, `V1`) · **aucun commentaire ni pièce jointe** sur une
+tâche, **aucune validation par un tiers** (matrice §8.2, hors MVP explicitement).
 
 **Les interdits absolus, qui ne dépendent d'aucun lot :** **aucun contournement de
 l'authentification**, à aucun moment, même en développement · **aucun jeton ni mot de passe en clair**
@@ -3261,6 +3411,21 @@ make framework-check      # 77 — la page Framework, les pages de cercle et de 
                           #      sur l'entite du decor dont `city = 'Bordeaux'` (§7.39). Sans
                           #      ce second controle, une recherche cassee et une recherche
                           #      juste rendraient la MEME observation.
+
+# Le controle du LOT 7, differe par T13, construit et combine ici par T14 --
+# 14 controles sur la pile REELLE, Caddy en HTTPS, conteneurs en marche.
+make onboarding-check     # 14 — le TEMOIN D'ASYMETRIE DSM/ESM : les deux roles poses dans
+                          #      la MEME entite, chacun voit un ensemble de modeles
+                          #      DIFFERENT -- un controle a un seul role rendrait la meme
+                          #      observation quel que soit le defaut (§7.0, quatrieme
+                          #      proposition). Le CYCLE DE VIE COMPLET exerce une fois en
+                          #      vrai : creer, composer les taches, publier, archiver,
+                          #      restaurer -- chaque transition change le code HTTP attendu
+                          #      de la suivante. OFFICE refuse (403) sur les modeles MAIS
+                          #      recu (200) sur le suivi, les deux extremes de la meme
+                          #      matrice dans le meme script. `ECART-066` eprouve DANS LE
+                          #      SENS DU REFUS : un DSM proprietaire de sa propre version
+                          #      archivee est refuse (403) en la restaurant.
 
 # Les controles de schema
 make privileges-check && make secrets-check && make isolation-check && make isolation-temoin

@@ -3,6 +3,11 @@
 
 LOT 2, sous-etape `T12`, stories `MVP-L02-US007` et `US008`.
 
+Le classement est un registre VIVANT : `T15` du LOT 7 reclasse les controles
+`§30.13` a `§30.15`, livres respectivement par `T7`, `T10` et `T9` de ce lot.
+Les laisser « reportes » apres leur livraison ferait mentir le controle de
+recette au moment meme ou la porte `G7` s'appuie sur lui.
+
 CE QUE CE CONTROLE PROUVE, ET POURQUOI IL EXISTE
 
   Le §30 du modele enumere 25 controles et pose : « le modele sera accepte si les
@@ -249,9 +254,54 @@ CLASSEMENT: dict[int, Classement] = {
             "test_l_autorisation_FUTURE_devient_servable_le_jour_venu",
         ),
     ),
-    13: Classement(13, REPORTE, lot="LOT 7 — instances d'onboarding"),
-    14: Classement(14, REPORTE, lot="LOT 7 — taches d'onboarding. Voir aussi `ECART-013`"),
-    15: Classement(15, REPORTE, lot="LOT 7 — reouverture d'une tache"),
+    #  **RECLASSES A `T15` DU LOT 7.** Les trois controles etaient
+    #  explicitement reserves a l'onboarding par le classement pose au LOT 2,
+    #  mais les sous-etapes qui les realisent avaient laisse le registre a son
+    #  etat d'avant livraison. La recette finale ne peut pas conclure « reporte »
+    #  pour un invariant deja prouve : elle relie donc chaque affirmation aux
+    #  temoins d'integration qui existent reellement.
+    13: Classement(
+        13,
+        ACQUIS,
+        preuve=(
+            "LOT 7 `T7` — index unique partiel de `onboarding_instance` sur "
+            "l'appartenance active, et la route d'affectation rend un refus "
+            "metier `409` avant toute seconde creation"
+        ),
+        tests=(
+            "test_une_SECONDE_instance_active_pour_la_MEME_appartenance_est_refusee",
+            "test_une_seconde_affectation_est_refusee_409",
+        ),
+    ),
+    14: Classement(
+        14,
+        ACQUIS,
+        preuve=(
+            "LOT 7 `T10` — une tache partageant le meme `task_reference_id` est "
+            "retenue, avec son acteur et sa completion, tandis que ses echeances "
+            "sont recalculees depuis le nouveau modele (`ECART-013` eprouve)"
+        ),
+        tests=(
+            "test_une_tache_commune_terminee_est_retenue_et_ses_echeances_recalculees",
+            "test_la_progression_de_la_nouvelle_instance_reflete_les_taches_retenues",
+        ),
+    ),
+    15: Classement(
+        15,
+        ACQUIS,
+        preuve=(
+            "LOT 7 `T9` — la reouverture est hors de la fenetre de cinq minutes, "
+            "reservee a ESM/ADM-E/SUPER, et exige un motif non vide au corps et "
+            "dans la base"
+        ),
+        tests=(
+            "test_reouvrir_apres_le_delai_par_l_ESM_rend_reopened",
+            "test_un_DSM_RATTACHE_NE_reouvre_PAS_la_tache_de_SON_consultant",
+            "test_reouvrir_dans_la_fenetre_est_refusee_avec_reouverture_prematuree",
+            "test_reouvrir_sans_motif_est_422",
+            "test_le_motif_et_l_acteur_sont_ecrits_en_base",
+        ),
+    ),
     16: Classement(
         16,
         ACQUIS,

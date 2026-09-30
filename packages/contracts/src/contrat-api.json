@@ -115,6 +115,33 @@
     "precisement la source unique lue par TypeScript ET par Python (DEC-492)."
   ],
   "rolesAdministration": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_administration_onboarding": [
+    "LOT 7, T14 -- UNE SECONDE raison d'afficher LA MEME rubrique, PAS UNE",
+    "DERIVATION DE `rolesAdministration`. Question posee explicitement a",
+    "Jonathan avant d'ecrire l'ecran : le 9 de la matrice donne a DSM et",
+    "BOOST de VRAIS droits de gestion sur le catalogue de taches et les",
+    "modeles d'onboarding (dans leur propre perimetre), et `rolesAdministration`",
+    "-- derive du 20, qui ne parle QUE de l'attribution des roles -- ne les",
+    "contient pas. Sans cette seconde liste, un DSM ou un Booster qui a le",
+    "droit de gerer SES modeles ne verrait jamais l'entree de menu pour y",
+    "acceder. Decision de Jonathan : ELARGIR le menu plutot qu'ouvrir un",
+    "second point d'entree -- un seul chemin d'acces, coherent avec",
+    "« Administration, uniquement selon les permissions » (cahier 8.2), lu",
+    "au pluriel et non restreint au 20.",
+    "MEMES CINQ ROLES QUE `ROLES_DE_GESTION_DU_CATALOGUE_DE_TACHES` ET",
+    "`ROLES_DE_GESTION_DES_MODELES` (`app/onboarding/perimetre.py`) -- une",
+    "authentique derivation, cette fois, confrontee par un test Python.",
+    "NE JAMAIS FUSIONNER avec `rolesAdministration` : les deux listes gatent",
+    "la MEME rubrique pour DEUX raisons INDEPENDANTES, et `droitsDeNavigation`",
+    "en prend l'UNION -- les fusionner ferait suivre l'une quand l'autre",
+    "change, en silence (7.27), exactement la mise en garde deja ecrite pour",
+    "`rolesCycleDeVie`/`rolesRestaurationDUnContenu` plus bas dans ce fichier.",
+    "Le suivi par perimetre (T12, `suiviDesTachesEnRetard`) N'EST PAS servi",
+    "par cette liste : sa grille ne refuse JAMAIS personne (degrade jusqu'a",
+    "Soi), et l'inclure rendrait la rubrique visible a TOUT LE MONDE, ce qui",
+    "viderait le refus par defaut du 20.1 de son sens pour cette rubrique."
+  ],
+  "rolesAdministrationOnboarding": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
   "endpoints": [
     {
       "cle": "live",
@@ -1138,6 +1165,404 @@
         "LE RANG N'EST PAS TOUCHE : il appartient a l'ordre de la liste, que",
         "`PUT …/liens/ordre` seule reecrit."
       ]
+    },
+    {
+      "cle": "ficheDArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "FicheDArrivee",
+      "role": [
+        "La fiche d'arrivee en lecture — LOT 7, T2, cahier §9.4, modele §12.1.",
+        "DONNEES ORGANISATIONNELLES REUTILISEES, PAS RECALCULEES : le meme resolveur",
+        "que `ficheDuProfil` (LOT 5), avec une POPULATION plus large — appartenance",
+        "FUTURE ou ACTIVE, les trois visibilites — puisqu'un nouvel arrivant n'est pas",
+        "encore `active`/`published` avant son premier jour.",
+        "`id` ET `version` VALENT `null` TANT QU'AUCUNE LIGNE `arrival_profile`",
+        "N'EXISTE : cette lecture n'en cree aucune. C'est T3 qui la cree, jamais une",
+        "lecture — un effet de bord qu'aucun corpus ne demande.",
+        "AUCUNE PHOTO SERVIE ICI : le resolveur de miniature du LOT 5 est borne a la",
+        "population du trombinoscope (active/published) par une egalite, pas un",
+        "`= ANY(...)`. L'etendre sans besoin ecrit serait une invention, §6.5.",
+        "PERIMETRE DE LECTURE, matrice §7 — NEW=Soi, DSM=tiret, ESM/ADM-E=Entite,",
+        "BOOST=Cercle, SUPER=Global. DSM EST A TIRET ICI bien qu'il porte",
+        "'Consultants' ailleurs dans la meme annexe — deux lignes distinctes,",
+        "deux grilles distinctes.",
+        "404 POUR TROIS CAUSES INDISTINGUABLES : code d'entite inconnu, appartenance",
+        "inexistante ou d'une AUTRE entite, appartenance ni FUTURE ni ACTIVE."
+      ]
+    },
+    {
+      "cle": "completionDeLaFicheArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
+      "methode": "patch",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeCompletion",
+      "role": [
+        "Completer (brouillon) OU corriger (publiee) photo, presentation et fun",
+        "fact — LOT 7, T3, matrice §7, MVP-L07-US001 (2/2) et US002 (corrections).",
+        "DEUX LIGNES DU §7, UNE SEULE ROUTE : le permis depend de l'etat courant,",
+        "jamais l'ecriture elle-meme. CORRECTIF POSE JUSTE APRES LA FUSION DE T3",
+        "(PR #187) : une premiere lecture avait manque la ligne « Corriger apres",
+        "publication », dont la grille S'INVERSE sur NEW (perd le droit, §6.2) et",
+        "DSM (le retrouve, Consultants — a tiret sur la ligne Completer).",
+        "Ecriture pure : aucun module de contrat ne l'accompagne — seule une",
+        "sous-etape qui SERT une lecture en pose un (liens.ts, LOT 6).",
+        "CREE LA FICHE A LA PREMIERE COMPLETION : `version: null` signifie qu'aucune",
+        "ligne n'existe encore, exactement ce que la lecture rend. Une version",
+        "presente exige la ligne et sa version exactes (§18.4).",
+        "BROUILLON (Completer) : Soi, ESM/ADM-E/SUPER dans l'entite, Booster du",
+        "cercle de la cible ; DSM et OFFICE a tiret. PUBLIEE (Corriger apres",
+        "publication) : ESM/ADM-E/SUPER et Booster identiques, DSM Consultants,",
+        "NEW a tiret, OFFICE toujours a tiret.",
+        "ARCHIVEE : AUCUNE ligne du §7 n'accorde de droit d'ecriture, quel que soit",
+        "le role — 409 `fiche_arrivee_etat_incompatible`.",
+        "entity_membership.short_bio/fun_fact restent un champ DISTINCT de",
+        "arrival_profile.short_intro : le §6.1 reporte encore leur ecriture (T7 du",
+        "LOT 5), et cette route ne la comble pas.",
+        "`photo_media_id` N'EST PAS ACCEPTE : aucune route d'upload ou d'autorisation",
+        "de media n'existe encore — residu nomme, §6.5."
+      ]
+    },
+    {
+      "cle": "validationDeLaFicheArrivee",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile/validation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeValidation",
+      "role": [
+        "Valider et publier — LOT 7, T3, matrice §7.1, MVP-L07-US002. Ecriture pure,",
+        "aucun module de contrat propre — meme regle que la completion ci-dessus.",
+        "LA PUBLICATION EST AUTOMATIQUE A LA VALIDATION, PAS UN SECOND GESTE : `state`",
+        "passe de `draft` a `published` en UN SEUL appel, `validated_at` et",
+        "`published_at` portant le MEME instant. `recent_until` est calcule par",
+        "PostgreSQL — modele §12.1, arithmetique de calendrier, pas une duree fixe.",
+        "L'ASYMETRIE DU §7 : `BOOST` est a TIRET ICI, la SEULE des trois lignes de la",
+        "fiche d'arrivee ou il l'est — un Booster aide a completer, jamais a valider",
+        "ni a publier a la place du nouvel arrivant.",
+        "422 `fiche_arrivee_presentation_manquante` : la presentation courte est",
+        "obligatoire avant validation — modele §12.1.",
+        "409 `fiche_arrivee_etat_incompatible` : deja publiee, ou aucune ligne",
+        "n'existe encore — rien a valider."
+      ]
+    },
+    {
+      "cle": "catalogueDesTachesOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/task-references",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "CatalogueDeTaches",
+      "role": [
+        "Le catalogue des taches reutilisables — LOT 7, T4, matrice §9 « Reutiliser",
+        "une tache de reference », ferme ECART-013.",
+        "UNION DE DEUX PERIMETRES : les taches PROPRES a l'entite du chemin ET les",
+        "taches GLOBALES (entity_id NULL, modele §13.1) — un modele de cette entite",
+        "peut reutiliser l'une comme l'autre, T5.",
+        "MEME GRILLE QUE LA CREATION (voir POST ci-dessous) : DSM, ESM, BOOST, ADM-E,",
+        "SUPER — OFFICE a TIRET, troisieme occurrence de ce piege en trois lots."
+      ]
+    },
+    {
+      "cle": "creationDUneTacheDeReference",
+      "chemin": "/api/v1/entities/{code}/onboarding/task-references",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409],
+      "forme": "TacheDeReference",
+      "role": [
+        "Creer une tache de reference — LOT 7, T4, matrice §9, ferme ECART-013.",
+        "Ecriture pure : aucun module de contrat propre — seule la lecture",
+        "ci-dessus en pose un, meme regle que la fiche d'arrivee.",
+        "LE `code` EST L'IDENTIFIANT FONCTIONNEL STABLE que T10 (changement",
+        "automatique mission <-> intercontrat) reutilisera pour conserver une",
+        "tache commune deja terminee — c'est la CLE de ce que T4 ferme.",
+        "`portee: \"ENTITE\"` (par defaut) : DSM, ESM, BOOST, ADM-E ou SUPER, dans",
+        "l'entite du chemin — `Consultants`/`Cercle` s'y reduisent a l'entite,",
+        "cette table ne portant aucune colonne plus fine (voir `perimetre.py`).",
+        "`portee: \"GLOBAL\"` : reservee a SUPER seul — la SEULE colonne du §9 qui",
+        "atteigne `Global` sur cette ligne. Un ESM ou un ADM-E qui la demande",
+        "obtient 403 `acces_refuse` — une ASYMETRIE mesuree, pas une absence",
+        "generale de droit : il possede le droit ENTITE.",
+        "409 `code_de_tache_deja_utilise` : ce code existe deja dans ce perimetre",
+        "(cette entite, ou le catalogue global) — les deux index partiels de T1."
+      ]
+    },
+    {
+      "cle": "consultationDesModelesOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "PageDesModelesOnboarding",
+      "role": [
+        "Consulter les modeles GERES depuis cette entite — LOT 7, T14, l'ecran",
+        "d'administration. TROUVEE EN CONSTRUISANT L'ECRAN, PAS A T5/T6 : sans",
+        "elle, gerer un modele ne pouvait agir que sur ce qui vient d'etre cree",
+        "DANS LA MEME SESSION, jamais revenir sur un modele existant — meme motif",
+        "que l'extension de `/permissions` a T13.",
+        "Rend les modeles ATTEIGNABLES par l'appelant dans SON PROPRE perimetre",
+        "(memes regles que la creation, matrice §9) : un DSM ne voit que les",
+        "siens, un Booster que ceux de SON cercle, un ESM/ADM-E gere N'IMPORTE",
+        "QUEL DSM/cercle de l'entite, SUPER voit aussi les modeles GLOBAUX.",
+        "Chaque modele porte ses VERSIONS, imbriquees — un seul appel plutot",
+        "qu'un aller-retour par modele.",
+        "403 `acces_refuse` : ni DSM, ESM, Booster, ADM-E ni SUPER dans cette",
+        "entite — OFFICE et un employe nu compris, memes le droit de LECTURE",
+        "d'OFFICE sur « Consulter les modeles publies » (§9) reste SANS route :",
+        "aucun critere actuel ne le reclame, T14 ne l'invente pas."
+      ]
+    },
+    {
+      "cle": "creationDUnModeleOnboarding",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeModele",
+      "role": [
+        "Creer un modele d'onboarding — LOT 7, T5, matrice §9 « Creer un modele ».",
+        "Ecriture pure : aucun module de contrat propre, meme regle que le catalogue.",
+        "CONTRAIREMENT AU CATALOGUE DE T4, `Consultants`/`Cercle` NE SE REDUISENT PAS",
+        "A L'ENTITE : `onboarding_template` porte de vraies colonnes de portee. Un",
+        "DSM ne cree que pour LUI-MEME (`scope_person_id`), un Booster que pour SON",
+        "cercle (`scope_circle_id`) — 403 `acces_refuse` sinon, une asymetrie mesuree.",
+        "ESM/ADM-E/SUPER gerent N'IMPORTE QUEL DSM/cercle de l'entite (portee",
+        "d'entite, meme parti que le LOT 6). Seul SUPER atteint `portee: GLOBAL`.",
+        "422 `portee_de_modele_incoherente` : `scope_person_id`/`scope_circle_id`",
+        "ne correspondent pas a la `portee` demandee — modele §13.2."
+      ]
+    },
+    {
+      "cle": "creationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404],
+      "forme": "ReponseDeVersion",
+      "role": [
+        "Creer une nouvelle version brouillon — LOT 7, T5, matrice §9. Ecriture",
+        "pure : aucun module de contrat propre.",
+        "`version_number` est calcule en base — modele §13.3. Le permis se resout",
+        "sur la portee DEJA ECRITE du modele existant, jamais une portee declaree.",
+        "404 `modele_introuvable` : inexistant, ou d'une AUTRE entite — isolement,",
+        "meme discipline que le catalogue de T4. Un modele GLOBAL reste atteignable",
+        "depuis N'IMPORTE QUELLE entite du chemin."
+      ]
+    },
+    {
+      "cle": "definitionDesTachesDUneVersion",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/tasks",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDesTachesDeVersion",
+      "role": [
+        "Poser ou reordonner les taches d'une version — LOT 7, T5, matrice §9",
+        "« Ajouter ou reordonner des taches », UNE seule ligne pour les deux gestes.",
+        "Ecriture pure : aucun module de contrat propre.",
+        "LA LISTE ENTIERE REMPLACE LA PRECEDENTE, `display_order` valant l'INDEX de",
+        "chaque ligne recue — meme lecture que `content_block` au LOT 6.",
+        "409 `version_de_modele_immuable` : cette version est publiee ou retiree —",
+        "modele §13.3, LE TEMOIN DE CETTE SOUS-ETAPE.",
+        "422 `tache_hors_perimetre_du_modele` : une tache de reference qui n'est ni",
+        "globale ni propre a l'entite de ce modele — residuel nomme par T1,",
+        "instruit ici par le service."
+      ]
+    },
+    {
+      "cle": "publicationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/publication",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDePublicationDeVersion",
+      "role": [
+        "Publier une version — LOT 7, T6, matrice §9 « Publier une version ».",
+        "Ecriture pure : aucun module de contrat propre.",
+        "`draft` devient `published`, recoit `published_at`/`published_by_person_id`",
+        "— modele §13.3. Meme grille que la creation (T5) : DSM/Booster bornes a",
+        "leur propre modele, ESM/ADM-E a l'entite, SUPER au global.",
+        "409 `transition_de_version_invalide` : seul un brouillon peut etre publie."
+      ]
+    },
+    {
+      "cle": "archivageDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDeVersion",
+      "role": [
+        "Archiver une version — LOT 7, T6, matrice §9 « Archiver une version ».",
+        "Ecriture pure : aucun module de contrat propre.",
+        "`published` devient `retired`. Aucun motif : le §18.1 n'enumere pas ce",
+        "geste. Meme grille que la creation et la publication (T5/T6).",
+        "409 `transition_de_version_invalide` : seule une version publiee peut",
+        "etre archivee — pas un brouillon, pas une version deja retiree."
+      ]
+    },
+    {
+      "cle": "restaurationDUneVersionDeModele",
+      "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDeVersion",
+      "role": [
+        "Restaurer une version — LOT 7, T6, matrice §9 « Restaurer une version »,",
+        "ECART-066 RESOLU. Ecriture pure : aucun module de contrat propre.",
+        "`retired` redevient `published` — JAMAIS `draft` : la version reste",
+        "immuable, modele §13.3. `published_at`/`published_by_person_id` d'origine",
+        "sont conserves, jamais reecrits.",
+        "GRILLE DIFFERENTE des deux autres gestes : DSM et Booster sont EXCLUS EN",
+        "BLOC, jamais bornes a leur propre modele. ESM restaure desormais comme",
+        "ADM-E, dans son entite — arbitrage de Jonathan du 26/09/2026, ECART-066.",
+        "409 `transition_de_version_invalide` : seule une version retiree peut",
+        "etre restauree."
+      ]
+    },
+    {
+      "cle": "affectationDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDuParcours",
+      "role": [
+        "Affecter un parcours — LOT 7, T7, matrice §8.1 « Affecter un parcours ».",
+        "Ecriture qui RENVOIE la forme de lecture (`parcoursOnboarding.ts`) : un",
+        "seul module de contrat sert les deux verbes, meme reponse des deux cotes.",
+        "Resout le bon modele par la priorite DSM > CIRCLE > ENTITY > GLOBAL — le",
+        "plus specifique gagne, arbitrage de Jonathan du 27/09/2026.",
+        "409 `parcours_deja_actif` : une seule instance active par appartenance,",
+        "modele §13.5, compare-et-pose atomique sur l'index partiel de T1.",
+        "422 `statut_professionnel_introuvable` ou `aucun_modele_publie`."
+      ]
+    },
+    {
+      "cle": "lectureDuParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDuParcours",
+      "role": [
+        "Consulter le parcours — LOT 7, T7, matrice §8.1 « Consulter son",
+        "parcours » (Soi) et « ... d'un collaborateur ». Meme forme que",
+        "l'affectation : `parcoursOnboarding.ts` sert les deux.",
+        "`instance` vaut `null` tant qu'aucun parcours n'a ete affecte — meme",
+        "convention que la fiche d'arrivee (T2).",
+        "La progression est COMPTEE a chaque appel, jamais stockee — critere de",
+        "sortie n°3 du lot (roadmap §LOT 7)."
+      ]
+    },
+    {
+      "cle": "completionDUneTacheDOnboarding",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Marquer une tache comme terminee — LOT 7, T8, matrice §8.1.",
+        "Ecriture pure : aucun module de contrat propre, `ReponseDeTacheDuParcours`",
+        "est deja validee comme partie de `parcoursOnboarding.ts` (T7).",
+        "`Soi` UNIQUEMENT — tiret partout ailleurs, y compris DSM/BOOST qui portent",
+        "pourtant un droit sur la LECTURE du parcours (piege n°1, fiche-lot-7.md).",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `todo`.",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
+    },
+    {
+      "cle": "annulationDeLaCompletionDUneTache",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/annulation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Annuler la completion d'une tache dans les cinq minutes — LOT 7, T8,",
+        "matrice §8.1/§8.3. Ecriture pure : aucun module de contrat propre.",
+        "`Soi` UNIQUEMENT. La tache redevient `todo`, jamais `cancelled`.",
+        "La fenetre de cinq minutes est ancree a `completed_at`, jamais a une",
+        "horloge mockee — voir `app/onboarding/taches.py`.",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `completed`.",
+        "409 `delai_d_annulation_depasse` : plus de cinq minutes — seule une",
+        "reouverture administrative (T9) agit ensuite.",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
+    },
+    {
+      "cle": "reouvertureDUneTache",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/reouverture",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTacheDuParcours",
+      "role": [
+        "Reouvrir une tache apres le delai de cinq minutes — LOT 7, T9,",
+        "matrice §8.1/§8.3. Ecriture pure : aucun module de contrat propre.",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT — DSM",
+        "et Booster EXCLUS EN BLOC, meme rattaches (piege n°1 inverse : ils",
+        "portent un droit sur la LECTURE et l'AFFECTATION du parcours, T7,",
+        "mais pas ici). Motif OBLIGATOIRE dans le corps (`motif`, non vide).",
+        "La tache passe a `reopened`, jamais un retour a `todo`.",
+        "409 `transition_de_tache_invalide` : la tache n'est pas `completed`.",
+        "409 `reouverture_prematuree` : moins de cinq minutes depuis la",
+        "completion — le nouvel arrivant peut encore annuler lui-meme (T8).",
+        "404 `aucun_parcours_actif` ou `tache_introuvable`."
+      ]
+    },
+    {
+      "cle": "archivageManuelDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "InstanceDeParcours",
+      "role": [
+        "Archiver manuellement un parcours termine — LOT 7, T11, matrice §8.1.",
+        "Ecriture pure : aucun module de contrat propre, `InstanceDeParcours`",
+        "est deja validee comme partie de `parcoursOnboarding.ts` (T7).",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT — DSM",
+        "et Booster EXCLUS EN BLOC, meme grille que la reouverture (T9).",
+        "Le MEME geste se produit automatiquement des que la derniere tache",
+        "obligatoire est completee (T8) : cette route sert de filet pour le",
+        "residuel, et ne trouve donc normalement rien a faire dans le cas",
+        "courant.",
+        "409 `parcours_non_termine` : au moins une tache obligatoire n'est",
+        "pas encore `completed`.",
+        "404 `aucun_parcours_actif`."
+      ]
+    },
+    {
+      "cle": "restaurationDUnParcours",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/{instance}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "InstanceDeParcours",
+      "role": [
+        "Restaurer un parcours archive — LOT 7, T11, matrice §8.1,",
+        "ECART-066 (volet parcours) resolu le 28/09/2026 : l'ESM restaure",
+        "librement dans son entite, meme regime que la restauration d'une",
+        "version de modele (T6). Ecriture pure : aucun module de contrat",
+        "propre, `InstanceDeParcours` est deja validee (T7).",
+        "ESM, administrateur d'entite ou super-administrateur SEULEMENT —",
+        "DSM et Booster EXCLUS EN BLOC, meme grille que l'archivage manuel.",
+        "Ne rouvre AUCUNE tache — restaurer un parcours n'est pas restaurer",
+        "une personne.",
+        "409 `parcours_non_archivable` : l'instance n'est pas `archived`,",
+        "ou l'appartenance porte deja une instance active.",
+        "404 `instance_introuvable`."
+      ]
+    },
+    {
+      "cle": "suiviDesTachesEnRetard",
+      "chemin": "/api/v1/entities/{code}/onboarding-suivi/taches-en-retard",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "PageDeSuiviOnboarding",
+      "role": [
+        "Suivre les taches en retard dans son perimetre — LOT 7, T12, US008,",
+        "matrice §8.1 « Consulter les taches en retard ». Derniere ligne de",
+        "consultation du §8.1 sans consommateur apres T11.",
+        "AUCUN ROLE N'EST REFUSE : la portee s'ajuste au role le plus large",
+        "detenu — Entite (ESM/ADM-E/SUPER), Consultants (DSM), Cercle",
+        "(Booster), ou Soi en dernier recours, disponible a n'importe qui sur",
+        "SES PROPRES taches (jamais une consequence du role OFFICE, qui est a",
+        "tiret sur cette ligne comme partout ailleurs sur les modeles",
+        "d'onboarding).",
+        "« Reporting de base » (cahier, Inclus) SEULEMENT : aucun graphique,",
+        "aucun export — matrice §8.1 « Exporter le suivi », V1, LOT 10.",
+        "Pagination du cahier §18.2, memes trois tailles que le trombinoscope",
+        "(LOT 5, T2)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -1180,6 +1605,19 @@
     "l'autre change, EN SILENCE."
   ],
   "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_restauration_modele_onboarding": [
+    "LOT 7, T14 -- MEMES TROIS ROLES QUE `rolesRestaurationDUnContenu` ET",
+    "`rolesCycleDeVie`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE DERIVATION.",
+    "Celle-ci vient de la ligne « Restaurer une version » du 9 : DSM et BOOST y",
+    "sont a TIRET EN BLOC (jamais un sous-cas de LEUR propre modele, a la",
+    "difference des autres gestes de cette meme grille) -- `ECART-066` resolu,",
+    "l'ESM restaure librement dans son entite, meme regime qu'ADM-E/SUPER.",
+    "DECLAREE SEPAREMENT : la fusionner avec `rolesAdministrationOnboarding`",
+    "(qui INCLUT DSM/BOOST) proposerait un bouton « Restaurer » que l'API",
+    "refuserait -- l'avertissement faux du 7.21. Confrontee a",
+    "`ROLES_DE_RESTAURATION_DES_MODELES` (`app/onboarding/perimetre.py`)."
+  ],
+  "rolesRestaurationDesModelesOnboarding": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_liens_internes": [
     "LOT 6, T8, story MVP-L06-US005. QUATRIEME GRILLE VOISINE DU LOT, ET LA",
     "PREMIERE QUI CONCORDE : le §13 « Gerer les cartes Hub/Academy/SharePoint »",

@@ -205,7 +205,11 @@ export const RUBRIQUES: readonly Rubrique[] = [
     suffixe: 'administration',
     titre: 'Administration',
     condition: 'uniquement selon les permissions',
-    lot: 'LOT 9',
+    //  LOT 7, T14 — catalogue, modeles et suivi. Le champ ne designe plus
+    //  qu'un lot FUTUR : un autre pourrait un jour AJOUTER a cette meme
+    //  rubrique (cahier §10.8, sept groupes), sans que ce champ serve encore
+    //  a rien pour CE contenu, deja livre.
+    lot: 'LOT 7',
   },
 ] as const;
 
@@ -323,25 +327,22 @@ export const ECRANS: readonly Ecran[] = [
  */
 export { ROLES_ADMINISTRATION } from '@onboarding/contracts';
 
-//  Le `export {}` ci-dessus REEXPORTE sans mettre le nom dans la portee de ce
-//  module : l'import est donc necessaire en plus, et son absence aurait ete
-//  attrapee par `tsc`.
-import { ROLES_ADMINISTRATION } from '@onboarding/contracts';
-
 /**
- * **AUCUN PARCOURS D'ONBOARDING NE PEUT EXISTER AU LOT 4, ET C'EST MESURÉ.**
+ * UNE SECONDE RAISON D'OUVRIR LA MÊME RUBRIQUE — LOT 7, `T14`.
  *
- * Le §8.2 conditionne « Mon onboarding » à « lorsqu'un parcours actif existe ».
- * Le schéma ne porte **aucune** table de parcours ni de fiche d'arrivée : elles
- * appartiennent aux LOTS 7 et 8. La condition est donc **trivialement fausse**,
- * pour tout le monde.
- *
- * Ce n'est pas une invention, c'est l'évaluation correcte d'une condition sur un
- * domaine vide. Et ce n'est pas non plus un `false` en dur qu'on oublierait : un
- * test l'épingle, si bien que le lot qui créera les parcours devra le changer
- * **délibérément**. §7.32 — un test est un meilleur véhicule qu'un commentaire.
+ * **NE PAS FUSIONNER AVEC `ROLES_ADMINISTRATION`, VOIR LE MANIFESTE.** Le §9 de
+ * la matrice donne à `DSM` et `BOOST` de vrais droits de gestion sur le
+ * catalogue de tâches et les modèles d'onboarding, dans leur propre périmètre —
+ * `ROLES_ADMINISTRATION` (§20, l'attribution des rôles) ne les contient pas.
+ * Décision de Jonathan : élargir le menu plutôt qu'ouvrir un second point
+ * d'entrée. `droitsDeNavigation` en prend l'UNION avec `ROLES_ADMINISTRATION`.
  */
-export const UN_PARCOURS_ACTIF_EST_POSSIBLE = false;
+export { ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
+
+//  Les deux `export {}` ci-dessus REEXPORTENT sans mettre les noms dans la
+//  portee de ce module : les imports sont donc necessaires en plus, et leur
+//  absence aurait ete attrapee par `tsc`.
+import { ROLES_ADMINISTRATION, ROLES_ADMINISTRATION_ONBOARDING } from '@onboarding/contracts';
 
 /** Ce dont la navigation a besoin pour décider ce qu'elle montre. */
 export interface DroitsDeNavigation {
@@ -358,17 +359,36 @@ export interface DroitsDeNavigation {
  * donnerait deux implémentations d'une même règle, qui divergeraient — et la
  * règle 5 du projet dit que l'API est l'autorité finale, pas la copie.
  *
- * **`null` REND TOUT À `false`, ET C'EST LE REFUS PAR DÉFAUT DU §20.1.** Mais la
- * raison mérite d'être dite, parce qu'elle est l'inverse de celle qui gouverne la
- * mention du §5.1 dans l'en-tête : cette mention **affirme** quelque chose à
- * l'utilisateur, et on n'affirme pas sur une ignorance. Un menu, lui, ne fait que
- * **proposer** : ne pas proposer coûte un clic, et l'API reste l'autorité. Les
- * deux choix sont donc opposés pour une raison, pas par inadvertance.
+ * **`null` REND `peutAdministrer` À `false`, ET C'EST LE REFUS PAR DÉFAUT DU
+ * §20.1.** Mais la raison mérite d'être dite, parce qu'elle est l'inverse de
+ * celle qui gouverne la mention du §5.1 dans l'en-tête : cette mention
+ * **affirme** quelque chose à l'utilisateur, et on n'affirme pas sur une
+ * ignorance. Un menu, lui, ne fait que **proposer** : ne pas proposer coûte un
+ * clic, et l'API reste l'autorité. Les deux choix sont donc opposés pour une
+ * raison, pas par inadvertance.
+ *
+ * **`aUnParcoursActif` EST UN ARGUMENT, PAS UNE CONSTANTE — LOT 7, `T13`.**
+ * Avant `T13`, aucune table de parcours n'existait et la valeur était figée à
+ * `false` (`UN_PARCOURS_ACTIF_EST_POSSIBLE`, retirée ici — c'est le changement
+ * DÉLIBÉRÉ que ce test épinglait, §7.32). Cette fonction reste PURE : c'est
+ * `CadreApplicatif` qui interroge `GET …/onboarding-parcours` de l'appelant —
+ * via `appartenance` du §5.1, `T13` — et lui passe le résultat.
+ *
+ * **`peutAdministrer` EST L'UNION DE DEUX GRILLES, DEPUIS `T14`.** Un rôle qui
+ * ouvre la rubrique pour SA raison propre — l'attribution des rôles (§20) ou la
+ * gestion des modèles/catalogue d'onboarding (§9) — suffit ; les deux listes ne
+ * sont jamais fusionnées, voir leur commentaire au manifeste.
  */
-export function droitsDeNavigation(roles: readonly string[] | null): DroitsDeNavigation {
+export function droitsDeNavigation(
+  roles: readonly string[] | null,
+  aUnParcoursActif: boolean,
+): DroitsDeNavigation {
   return {
-    aUnParcoursActif: UN_PARCOURS_ACTIF_EST_POSSIBLE,
-    peutAdministrer: roles !== null && roles.some((role) => ROLES_ADMINISTRATION.includes(role)),
+    aUnParcoursActif,
+    peutAdministrer:
+      roles !== null &&
+      (roles.some((role) => ROLES_ADMINISTRATION.includes(role)) ||
+        roles.some((role) => ROLES_ADMINISTRATION_ONBOARDING.includes(role))),
   };
 }
 

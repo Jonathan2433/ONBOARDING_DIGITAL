@@ -70,6 +70,7 @@ export {
   GABARIT_CHEMIN_ENTITE,
   GABARIT_CHEMIN_PERMISSIONS,
   ROLES_ADMINISTRATION,
+  ROLES_ADMINISTRATION_ONBOARDING,
   validerLesEntites,
   validerLesPermissions,
   validerUneEntite,
@@ -303,3 +304,121 @@ export type {
   ReponseDesPagesDeGestion,
   TransitionDeContenu,
 } from './gestionDuContenu.js';
+
+//  LA FICHE D'ARRIVEE — LECTURE (`T2`) ET ECRITURE (`T3`, consommees par
+//  `T13`, premier ecran). `DemandeDe...` restent en `snake_case`, le format
+//  que l'API attend — seules les REPONSES validees passent en `camelCase`.
+export {
+  cheminFicheArrivee,
+  cheminValidationFicheArrivee,
+  CODES_COMPLETION_FICHE_ARRIVEE,
+  CODES_FICHE_ARRIVEE,
+  CODES_VALIDATION_FICHE_ARRIVEE,
+  GABARIT_CHEMIN_FICHE_ARRIVEE,
+  GABARIT_CHEMIN_VALIDATION_FICHE_ARRIVEE,
+  validerLaCompletion,
+  validerLaFicheArrivee,
+  validerLaValidation,
+} from './ficheArrivee.js';
+export type {
+  CercleDeLaFicheArrivee,
+  CompletionDeFiche,
+  DemandeDeCompletionDeFiche,
+  DemandeDeValidationDeFiche,
+  FicheArrivee,
+  ValidationDeFiche,
+} from './ficheArrivee.js';
+
+//  LE CATALOGUE DES TACHES EN LECTURE — LOT 7, `T4`, ferme `ECART-013`. Meme
+//  partage : la CREATION, qui ECRIT, n'a pas de module de contrat propre.
+export {
+  cheminCatalogueDeTaches,
+  CODES_CATALOGUE_DE_TACHES,
+  GABARIT_CHEMIN_CATALOGUE_DE_TACHES,
+  validerLeCatalogueDeTaches,
+  validerUneTacheDeReference,
+} from './catalogueDesTaches.js';
+export type {
+  CatalogueDeTaches,
+  DemandeDeTacheDeReference,
+  TacheDeReference,
+} from './catalogueDesTaches.js';
+
+//  LE PARCOURS D'ONBOARDING — LOT 7, `T7`. UN SEUL MODULE POUR DEUX VERBES :
+//  affecter (`POST`) et consulter (`GET`) rendent la MEME forme. `T13` y
+//  ajoute les DEUX actions `Soi` du §8.1 — terminer, annuler — qui rendent la
+//  meme forme qu'une ligne de `taches`.
+export {
+  cheminAnnulationDeTache,
+  cheminCompletionDeTache,
+  cheminDuParcours,
+  CODES_AFFECTATION_DU_PARCOURS,
+  CODES_ANNULATION_DE_TACHE,
+  CODES_COMPLETION_DE_TACHE,
+  CODES_LECTURE_DU_PARCOURS,
+  GABARIT_CHEMIN_ANNULATION_DE_TACHE,
+  GABARIT_CHEMIN_COMPLETION_DE_TACHE,
+  GABARIT_CHEMIN_PARCOURS,
+  validerLeParcours,
+  validerUneTacheDuParcours,
+} from './parcoursOnboarding.js';
+export type {
+  InstanceDeParcours,
+  Parcours,
+  ProgressionDuParcours,
+  TacheDuParcours,
+} from './parcoursOnboarding.js';
+
+//  LES MODELES D'ONBOARDING ET LEUR CYCLE DE VIE — LOT 7, `T14`. Cinq routes
+//  d'ECRITURE posees sans module de contrat par `T5`/`T6` ; `T14`, premier
+//  ecran consommateur, pose la LECTURE ET les cinq formes d'ecriture ensemble.
+export {
+  cheminArchivageDeVersion,
+  cheminModelesOnboarding,
+  cheminPublicationDeVersion,
+  cheminRestaurationDeVersion,
+  cheminTachesDeVersion,
+  cheminVersionsDeModele,
+  CODES_ARCHIVAGE_DE_VERSION,
+  CODES_CONSULTATION_DES_MODELES,
+  CODES_CREATION_D_UN_MODELE,
+  CODES_CREATION_D_UNE_VERSION,
+  CODES_DEFINITION_DES_TACHES,
+  CODES_PUBLICATION_DE_VERSION,
+  CODES_RESTAURATION_DE_VERSION,
+  GABARIT_CHEMIN_MODELES_ONBOARDING,
+  ROLES_RESTAURATION_DES_MODELES_ONBOARDING,
+  validerLArchivageDeVersion,
+  validerLaPublicationDeVersion,
+  validerLaRestaurationDeVersion,
+  validerLesModelesOnboarding,
+  validerLesTachesDeVersion,
+  validerUneVersionCreee,
+  validerUnModeleCree,
+} from './modelesOnboarding.js';
+export type {
+  DemandeDeModeleOnboarding,
+  DemandeDesTachesDeVersion,
+  DemandeDeTacheDeVersion,
+  DemandeDeVersionDeModele,
+  ModeleOnboardingAvecVersions,
+  ModeleOnboardingCree,
+  PageDesModelesOnboarding,
+  TacheDeVersion,
+  TachesDeVersion,
+  VersionArchivee,
+  VersionDeModeleOnboarding,
+  VersionPubliee,
+  VersionRestauree,
+} from './modelesOnboarding.js';
+
+//  LE SUIVI DES TACHES EN RETARD PAR PERIMETRE — LOT 7, `T12`/`T14`. La forme
+//  du manifeste attendait son premier ecran depuis `T12` — meme parti que le
+//  catalogue de `T4`.
+export {
+  cheminSuiviOnboarding,
+  CODES_SUIVI_ONBOARDING,
+  GABARIT_CHEMIN_SUIVI_ONBOARDING,
+  validerLeSuiviOnboarding,
+} from './suiviOnboarding.js';
+export type { PageDeSuiviOnboarding, TacheEnRetardDuSuivi } from './suiviOnboarding.js';

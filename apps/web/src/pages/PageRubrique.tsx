@@ -58,9 +58,17 @@ export function PageRubrique({ libelle, lot, cle }: ProprietesRubrique): JSX.Ele
   //  **LE MEME PREDICAT QUE LE MENU, PAS UN SECOND.** Un garde-fou de route qui
   //  raisonnerait autrement que le menu produirait le cas le plus deroutant : une
   //  rubrique visible qu'on ne peut pas ouvrir, ou l'inverse.
+  //
+  //  **`aUnParcoursActif: false` EN DUR, ET C'EST SANS CONSEQUENCE — LOT 7,
+  //  `T13`.** Cette page ne sert plus JAMAIS la rubrique « Mon onboarding »,
+  //  qui a desormais son propre ecran (`PageMonOnboarding`) : la seule
+  //  rubrique conditionnelle qui atterrit encore ici est « Administration »,
+  //  dont `rubriqueEstVisible` ne regarde que `peutAdministrer`. Lire le
+  //  parcours ICI POUR RIEN dupliquerait l'appel que `CadreApplicatif` fait
+  //  deja pour le menu, sans qu'aucun ecran n'en ait besoin.
   const ouverte =
     rubrique === undefined ||
-    rubriqueEstVisible(rubrique, droitsDeNavigation(permissions?.roles ?? null));
+    rubriqueEstVisible(rubrique, droitsDeNavigation(permissions?.roles ?? null, false));
 
   if (!ouverte) {
     return (

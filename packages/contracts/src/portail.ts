@@ -139,6 +139,17 @@ export interface PermissionsDeLEntite {
   readonly code: string;
   readonly estEntitePrincipale: boolean;
   readonly roles: readonly string[];
+  /**
+   * L'appartenance OCCUPANTE de l'appelant DANS cette entite — LOT 7, `T13`.
+   * `null` hors de l'entite principale, ou sans appartenance occupante.
+   *
+   * **C'EST LE SEUL MOYEN DONT DISPOSE L'ECRAN DU NOUVEL ARRIVANT** de savoir
+   * quelle URL appeler pour SA propre fiche d'arrivee et SON propre parcours :
+   * aucune route de l'onboarding n'accepte de cible implicite (matrice §7,
+   * §8.1). Reutiliser cette reponse, deja appelee une fois par page par le
+   * cadre applicatif, evite un aller-retour reseau de plus.
+   */
+  readonly appartenance: string | null;
 }
 
 /**
@@ -155,6 +166,19 @@ export interface PermissionsDeLEntite {
  * reponse `{}` rendrait une liste vide, indistinguable d'un « aucun droit »
  * legitime.
  */
+function appartenanceOuNulle(valeur: Record<string, unknown>): string | null {
+  const brut = valeur['appartenance'];
+  if (brut === null) {
+    return null;
+  }
+  if (typeof brut !== 'string') {
+    //  **L'ABSENCE N'EST PAS `null`.** Meme discipline que `ficheArrivee.ts` et
+    //  `parcoursOnboarding.ts` : un champ manquant est une reponse malformee.
+    throw new TypeError('champ « appartenance » ni chaine ni null');
+  }
+  return brut;
+}
+
 export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
   if (!estObjet(valeur)) {
     throw new TypeError('permissions non objet');
@@ -177,6 +201,7 @@ export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
       }
       return role;
     }),
+    appartenance: appartenanceOuNulle(valeur),
   };
 }
 
@@ -192,3 +217,19 @@ export function validerLesPermissions(valeur: unknown): PermissionsDeLEntite {
  * dans le manifeste lui-même, à côté de la valeur.
  */
 export const ROLES_ADMINISTRATION: readonly string[] = CONTRAT_API.rolesAdministration;
+
+/**
+ * Une SECONDE raison d'ouvrir la même rubrique « Administration » — LOT 7, `T14`.
+ *
+ * **PAS UNE DÉRIVATION DE `ROLES_ADMINISTRATION`, VOIR LE MANIFESTE.** Le §9 de la
+ * matrice donne à `DSM` et `BOOST` de vrais droits de gestion sur le catalogue de
+ * tâches et les modèles d'onboarding, dans leur propre périmètre — `rolesAdministration`
+ * (§20, l'attribution des rôles) ne les contient pas. Décision de Jonathan :
+ * ÉLARGIR le menu, un seul chemin d'accès plutôt que deux.
+ *
+ * `droitsDeNavigation` en prend l'UNION avec `ROLES_ADMINISTRATION` — jamais une
+ * fusion des deux constantes elles-mêmes, qui divergeraient au premier changement
+ * de l'une sans que l'autre suive (§7.27).
+ */
+export const ROLES_ADMINISTRATION_ONBOARDING: readonly string[] =
+  CONTRAT_API.rolesAdministrationOnboarding;

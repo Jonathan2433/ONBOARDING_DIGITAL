@@ -395,6 +395,11 @@ function permissions(code: string, principale: boolean, roles: readonly string[]
     code,
     est_entite_principale: principale,
     roles,
+    //  `null` par defaut — LOT 7, `T13`. Ces temoins n'exercent pas le
+    //  parcours : un `null` evite tout appel supplementaire a
+    //  `GET …/onboarding-parcours` que `CadreApplicatif` ne ferait de toute
+    //  facon jamais pour une appartenance qui n'existe pas.
+    appartenance: null,
   };
 }
 
@@ -538,6 +543,108 @@ describe('les permissions de l entite consultee — T8', () => {
 
     expect(screen.getByRole('banner').textContent).toContain('eXalt Lille');
     expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+  });
+});
+
+describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13', () => {
+  const APPARTENANCE = 'e2f6b1f2-0000-4000-8000-000000000001';
+
+  function permissionsAvecAppartenance(): unknown {
+    return {
+      entite: '0f8fad5b-d9cb-469f-a165-70867728950e',
+      code: 'bordeaux',
+      est_entite_principale: true,
+      roles: ['EMP'],
+      appartenance: APPARTENANCE,
+    };
+  }
+
+  function parcours(etatDeLInstance: string | null): unknown {
+    return {
+      instance:
+        etatDeLInstance === null
+          ? null
+          : {
+              id: 'i1',
+              template_version_id: 'v1',
+              reference_date: '2026-10-01',
+              state: etatDeLInstance,
+              started_at: '2026-10-01T09:00:00Z',
+              completed_at: null,
+            },
+      progression:
+        etatDeLInstance === null
+          ? null
+          : { taches_obligatoires_totales: 1, taches_obligatoires_terminees: 0 },
+      prochaine_tache: null,
+      taches: [],
+    };
+  }
+
+  it('affiche le lien quand `GET …/onboarding-parcours` rend une instance ACTIVE', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissionsAvecAppartenance(), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        'onboarding-parcours': () => Promise.resolve(json(parcours('active'), 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    //  **`getAllByRole`, PAS `getByRole`** : « Mon onboarding » apparait DEUX
+    //  fois — menu principal ET barre mobile, tous deux rendus en meme temps
+    //  en JSDOM — exactement comme « Administration » plus bas dans ce fichier.
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Mon onboarding' }).length).toBe(2),
+    );
+  });
+
+  it('NE l’affiche PAS quand l’instance est ARCHIVEE — le témoin dans l’autre sens', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissionsAvecAppartenance(), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        'onboarding-parcours': () => Promise.resolve(json(parcours('archived'), 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    expect(screen.queryAllByRole('link', { name: 'Mon onboarding' })).toHaveLength(0);
+  });
+
+  it('NE l’affiche PAS quand aucun parcours n’a jamais ete affecte', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissionsAvecAppartenance(), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        'onboarding-parcours': () => Promise.resolve(json(parcours(null), 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    expect(screen.queryAllByRole('link', { name: 'Mon onboarding' })).toHaveLength(0);
+  });
+
+  it('NE fait AUCUN appel au parcours quand l’appelant n’a pas d’appartenance', async () => {
+    const stub = fetchParUrl({
+      '/permissions': () => Promise.resolve(json(permissions('bordeaux', true, ['EMP']), 200)),
+      '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+      bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+    });
+    vi.stubGlobal('fetch', stub);
+    monter('bordeaux');
+
+    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    const vues = (stub as unknown as { urlsVues: string[] }).urlsVues;
+    expect(vues.some((u) => u.includes('onboarding-parcours'))).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 25 septembre 2026, décisions préalables à `T11` du LOT 6 — `ECART-062` clos
+**Dernière mise à jour :** 28 septembre 2026, `T11` du LOT 7 — `ECART-066` (volet parcours) résolu, `DEC-611`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 65 | 13 | 49 | 3 |
+| Total 66 | 12 | 51 | 3 |
 
 ---
 
@@ -30,7 +30,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-010` | Traçabilité GitHub non mise en place | Non pour `G0`, prérequis du LOT 1 | **Clos** |
 | `ECART-011` | Cinq questions absentes de la plage `QO-072` à `QO-105` | Non | **Accepté** |
 | `ECART-012` | La valeur `intercontract` est imposée à une direction générale, faute de troisième valeur. **Instruit en `T5`** : le coût des deux options est mesuré, la décision revient à Léa | Non | **Ouvert, instruit** |
-| `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | Ouvert |
+| `ECART-013` | Les tâches communes aux deux parcours du prototype portent des identifiants différents | Non | **Clos** structurellement le 26/09/2026, `T4` du LOT 7, `DEC-603` |
 | `ECART-014` | Le prototype emploie « Représentant de cercle » là où les documents validés emploient « Booster » | Non | Ouvert |
 | `ECART-015` | Le prototype ne fournit ni descriptions de cercles ni liens internes, contrairement à ce qu'annonce le cahier §2.2 | Non | Ouvert |
 | `ECART-016` | La documentation de clôture du LOT 0 affirme que les commits sont locaux alors qu'ils sont poussés sur GitHub | Non | **Clos** |
@@ -83,6 +83,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
 | `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
 | `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
+| `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | Non — les deux volets sont résolus | **Clos le 28/09/2026** — volet « version de modèle » résolu le 26/09/2026 (`DEC-605`, `T6`), volet « parcours archivé » résolu le 28/09/2026 (`DEC-611`, `T11`) : les deux fois, l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003` |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -211,7 +212,21 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-066`.**
+**Prochain identifiant libre : `ECART-067`.**
+
+---
+
+## `ECART-066` — CLOS — la restauration d'un parcours ou d'une version d'onboarding par l'ESM est « Conditionnelle », sans que rien ne dise à quoi
+
+| Champ | Valeur |
+|---|---|
+| Constaté le | 25 septembre 2026, en préparant le découpage du LOT 7 |
+| Source | Matrice, annexe A **§8.1** (« Restaurer un parcours archivé », `ESM` → `Conditionnel`) et **§9** (« Restaurer une version », `ESM` → `Conditionnel`) · `ARB-DROIT-003` |
+| Constat | La légende §4 définit `Conditionnel` comme « autorisé si une règle métier complémentaire est satisfaite », sans nommer la règle en cellule. `ARB-DROIT-003` — « Restauration fonctionnelle par l'ESM » — la nomme pour **cinq** ressources : « un profil, un contenu, un événement, un cercle ou un bureau ». **Ni « un parcours d'onboarding » ni « une version de modèle d'onboarding » n'y figurent.** Aucune autre section du cahier, de la matrice ou du modèle ne comble ce trou — mesuré par recherche du mot dans les trois documents. |
+| Cause | `ARB-DROIT-003` a été rédigé le 25/07/2026, avant que le LOT 6 n'introduise le mécanisme d'archivage/restauration des contenus et avant que le LOT 7 n'introduise l'onboarding. Les cinq ressources qu'il nomme sont celles qui existaient déjà dans l'intention du corpus à cette date ; les deux lignes `Conditionnel` du §8.1 et du §9 ont été écrites plus tard dans la matrice sans que l'arbitrage ne soit étendu pour les couvrir. |
+| Bloquant | **Non — CLOS.** Les deux volets sont résolus, voir Résolution. |
+| Recommandation | Ne pas inventer la règle par analogie avec `ARB-DROIT-003` (§6.5) : les cinq ressources qu'il couvre sont toutes des ressources **structurantes de l'entité** consultées en continu, quand un parcours d'onboarding est un objet **temporaire et nominatif**, dont la restauration touche un seul collaborateur — l'analogie n'est pas évidente. À poser à Jonathan avant `T6`, sous la forme d'une question fermée : l'ESM restaure-t-il librement dans son entité, comme pour les cinq autres ressources, ou la restauration d'un parcours/modèle d'onboarding reste-t-elle à l'`ADM-E` et au `SUPER` seuls ? |
+| Résolution | **Volet « version de modèle » (§9) RÉSOLU le 26/09/2026, `DEC-605` — `T6`.** Question posée à Jonathan sous la forme fermée recommandée ci-dessus, restreinte au seul cas de la version de modèle : **l'ESM restaure librement dans son entité, même régime que les cinq autres ressources d'`ARB-DROIT-003`.** `DSM`/`BOOST` restent exclus EN BLOC (jamais un sous-cas de leur propre modèle, à la différence des autres gestes du §9) — voir `app/onboarding/perimetre.py`. **Volet « parcours archivé » (§8.1) RÉSOLU le 28/09/2026, `DEC-611` — `T11`.** La question a été reposée EXPLICITEMENT, spécifiquement pour le parcours — jamais présumée de la réponse donnée pour la version de modèle : **même réponse, l'ESM restaure librement dans son entité**, même régime qu'`ARB-DROIT-003`. `DSM`/`BOOST` exclus EN BLOC, même grille que l'archivage manuel — voir `app/onboarding/perimetre.py::ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS`. **Écart CLOS.** |
 
 ---
 
@@ -399,7 +414,7 @@ formulée, et son caractère bloquant est explicité.
 | Impact | Reprendre cette numérotation ferait échouer une exigence centrale du LOT 7 : lors d'un changement mission ↔ intercontrat, les tâches communes déjà terminées doivent être **conservées** grâce à un identifiant fonctionnel immuable. Avec des identifiants distincts, un collaborateur perdrait la complétion de ces cinq tâches. |
 | Bloquant | Non pour `G0`. **Structurant pour le LOT 7.** |
 | Recommandation | Au LOT 7, attribuer à chaque tâche commune **un seul** code de référence partagé dans `onboarding_task_reference`, réutilisé par les deux modèles. Ne pas transposer la numérotation du prototype. |
-| Résolution | Ouvert. Traitement au LOT 7, story `MVP-L07-US003`. |
+| Résolution | **Clos STRUCTURELLEMENT le 26/09/2026, `T4` du LOT 7 (`DEC-603`).** `onboarding_task_reference` porte un `code` fonctionnel unique par périmètre (deux index partiels — entité, ou global), et `onboarding_template_task.task_reference_id` (posée dès `T1`) pointe toujours vers la MÊME ligne, quel que soit le modèle qui la réutilise. **Ce que `T4` ne fait pas** : créer les cinq tâches communes du prototype elles-mêmes, ni prouver leur conservation lors d'un changement RÉEL de parcours — c'est `T10` (`US007`) qui met ce mécanisme à l'épreuve. |
 
 ## `ECART-014` — Divergence de terminologie sur le responsable de cercle
 
