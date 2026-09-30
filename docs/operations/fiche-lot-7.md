@@ -4,7 +4,7 @@
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
 **État :** **VERROUILLÉ** le 30/09/2026 — porte `G7` franchie, `DEC-617`. **`T1` à `T15` FAITES**, `DEC-599` à `DEC-615` (avec correctifs `DEC-602` et `DEC-607`)
-**Dernière mise à jour :** 30 septembre 2026 — validations de Tess, Léa, Diane et Jonathan acquises ; `G7` franchie
+**Dernière mise à jour :** 30 septembre 2026 — `G7` franchie ; verrou Python corrigé par `DEC-618` avant livraison sur `main`
 **Porte de sortie :** `G7` franchie, tag `v0.7.0`
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
