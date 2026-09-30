@@ -3,7 +3,7 @@
 **Lot :** LOT 7 — Fiches d'arrivée et onboarding  
 **Préparée le :** 29 septembre 2026, à la sortie de `T15`  
 **Destinataire :** Jonathan — il coordonne la validation technique et l'exploitation  
-**Décision attendue pour franchir la porte :** `DEC-617`
+**Décision de franchissement :** `DEC-617`, validée le 30 septembre 2026
 
 ---
 
@@ -15,13 +15,13 @@ humains, et ne sont donc jamais présentées comme accomplies par la CI.
 
 | # | Critère | État | Preuve ou geste restant |
 |---|---|---|---|
-| 1 | Les parcours mission et intercontrat sont validés par Tess, Léa, Diane et Jonathan | **Validation humaine requise** | Les deux modèles, leurs versions et leur cycle de vie sont techniquement livrés (`T5`/`T6`) ; recueillir les quatre accords nominatifs avant `G7` |
+| 1 | Les parcours mission et intercontrat sont validés par Tess, Léa, Diane et Jonathan | **Tenu** | Accord collectif des quatre validatrices et valideurs transmis explicitement par Jonathan le 30/09/2026 |
 | 2 | Les règles de périmètre DSM, Booster et ESM sont testées | **Tenu** | Témoins d'intégration de `T4` à `T12` ; `make onboarding-check` prouve sur HTTPS l'asymétrie DSM/ESM |
 | 3 | La progression est calculée, non stockée | **Tenu** | `T7` et recette `T15` : `0/2`, puis `1/2`, puis `2/2`, lus après chaque geste |
 | 4 | Les événements de tâche sont historisés | **Tenu** | `T7`/`T8`/`T9` : `ASSIGNED`, `COMPLETED`, `CANCELLED`, `REOPENED`, chacun avec son témoin |
 | 5 | Le départ archive le parcours et révoque les sessions | **Tenu** | `T11`, tests d'intégration et `make revocation-check` |
 | 6 | Un parcours réel complet est exécuté en recette | **Tenu** | `T15`, base de recette réinitialisée ; voir §4 |
-| 7 | Jonathan valide l'organisation et l'onboarding | **Validation humaine requise** | Décision après la démonstration guidée de cette checklist |
+| 7 | Jonathan valide l'organisation et l'onboarding | **Tenu** | Validation explicite de Jonathan le 30/09/2026 |
 
 ## 2. Contrôles exécutés
 
@@ -90,8 +90,8 @@ uniquement des LOTS 9 à 12, hors périmètre de ce lot.
 - `ECART-012` reste à décider par Léa et ne bloque pas la porte technique.
 - `ECART-064` reste à instruire avec l'audit au LOT 10.
 - `QO-121` reste hors périmètre ; elle ne bloque pas l'onboarding.
-- Les accords nominaux de Tess, Léa et Diane ne peuvent pas être produits par une sous-étape
-  technique. Jonathan doit en définir le recueil avant de déclarer `G7` franchie.
+- Les accords de Tess, Léa, Diane et Jonathan ont été confirmés collectivement par Jonathan le
+  30/09/2026. Cette confirmation humaine reste distincte des preuves produites par la CI.
 
 ## 7. Décision de Jonathan
 
@@ -102,7 +102,7 @@ accords humains requis par le premier critère.
 
 | | |
 |---|---|
-| Date | |
-| Décision | ☐ franchie ☐ à reprendre |
-| Accords de Tess, Léa, Diane et Jonathan | |
-| Réserves | |
+| Date | 30 septembre 2026 |
+| Décision | ☒ franchie ☐ à reprendre — `DEC-617` |
+| Accords de Tess, Léa, Diane et Jonathan | Validés collectivement, confirmation transmise par Jonathan |
+| Réserves | `ECART-012`, `ECART-064` et `QO-121` restent ouvertes, non bloquantes pour `G7` |
