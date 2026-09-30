@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 29 septembre 2026 — décision `DEC-615`, `T15` du LOT 7
+**Dernière mise à jour :** 30 septembre 2026 — décision `DEC-616`, correctif de CI du LOT 7
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -120,6 +120,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 7 `DEC-613`, sous-étape `T13`** | 1 | **Soumise le 28/09/2026** |
 | **Réalisation du LOT 7 `DEC-614`, sous-étape `T14`** | 1 | **Soumise le 29/09/2026** |
 | **Réalisation du LOT 7 `DEC-615`, sous-étape `T15`** | 1 | **Soumise le 29/09/2026** |
+| **Correctif de CI du LOT 7 `DEC-616`** | 1 | **Soumis le 30/09/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -131,7 +132,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **283** | |
+| **Total** | **284** | |
 
 ---
 
@@ -843,7 +844,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-614` | **`T14` livre les écrans d'administration — catalogue, modèles, suivi par périmètre, UNE SEULE page `PageAdministration.tsx` sous la rubrique `administration` déjà réservée par `T4` du LOT 4.** DEUX POINTS TROUVÉS ET TRANCHÉS AVANT D'ÉCRIRE L'ÉCRAN. **(1) Le menu s'élargit, décision de Jonathan** : `ROLES_ADMINISTRATION` (§20, ESM/ADM-E/SUPER) n'ouvrait pas le menu à un DSM/Booster qui gère pourtant SES modèles et le catalogue (§9) — trois options posées explicitement (élargir le menu, ouvrir un second point d'entrée, reporter DSM/Booster), Jonathan retient ÉLARGIR. Nouvelle liste `rolesAdministrationOnboarding` (DSM, ESM, BOOST, ADM-E, SUPER), déclarée SÉPARÉMENT de `rolesAdministration` — jamais fusionnée, même discipline que `rolesCycleDeVie`/`rolesRestaurationDUnContenu` (LOT 5/6, §7.27) — et `droitsDeNavigation` en prend l'UNION. Le suivi (`T12`) n'entre PAS dans ce calcul : sa grille ne refuse jamais personne, l'inclure aurait rendu la rubrique visible à tout le monde. **(2) Route API nouvelle, trouvée en inventoriant l'API** : ni `T5` ni `T6` n'avaient posé de LECTURE des modèles — `GET /entities/{code}/onboarding/templates` (`app/onboarding/gabarits.py` : `lister_les_modeles`, `lister_les_versions` ; `routes.py`), même grille que la création, filtrage par rôle appliqué en Python sur la liste brute (jamais une seconde règle SQL, §7.27), chaque modèle avec ses versions imbriquées. Sans elle, « gérer les modèles » n'aurait agi que sur ce qui vient d'être créé DANS LA MÊME SESSION. Le droit de lecture d'OFFICE (« Consulter les modèles publiés », §9, grille plus large) reste SANS route : aucun critère actuel ne le réclame. Troisième liste, `rolesRestaurationDesModelesOnboarding` (ESM, ADM-E, SUPER), gate le seul bouton « Restaurer » — DSM/BOOSTER exclus EN BLOC de cette ligne du §9, `ECART-066`. 8 tests d'intégration (`test_modeles_onboarding.py` : 6 pour la liste dont le témoin d'asymétrie DSM/ESM, 2 de confrontation manifeste ↔ service), 28 tests Vitest (`modelesOnboarding.test.ts`, `suiviOnboarding.test.ts`), 12 tests Vitest supplémentaires (`PageAdministration.test.tsx`), 1 test réécrit DÉLIBÉRÉMENT (`AffichageConditionnel.test.tsx`, épinglait l'ancienne liste restrictive). Aucune nouvelle table, aucune migration. | **LE SCRIPT DE PILE DIFFÉRÉ PAR `T13` EST CONSTRUIT ICI, COMBINÉ POUR LES DEUX SOUS-ÉTAPES, DÉCISION DE JONATHAN DU 28/09/2026 TENUE.** `infra/scripts/verifier-administration-onboarding.py` (14 contrôles, sur la pile RÉELLE — Caddy, HTTPS, conteneurs en marche) : le TÉMOIN D'ASYMÉTRIE DSM/ESM (les deux rôles posés dans la MÊME entité, chacun voit un ensemble de modèles DIFFÉRENT — un contrôle à un seul rôle rendrait la même observation quel que soit le défaut, §7.0 quatrième proposition) ; le CYCLE DE VIE COMPLET exercé une fois en vrai (créer, composer les tâches, publier, archiver, restaurer — chaque transition change le code HTTP attendu de la suivante) ; OFFICE refusé (403) sur les modèles MAIS reçu (200) sur le suivi, les deux extrêmes de la même matrice ; `ECART-066` éprouvé DANS LE SENS DU REFUS — un DSM propriétaire de sa propre version archivée est refusé (403) en la restaurant, le cas précis qu'une grille trop large aurait laissé passer à tort. Ajouté à `make check`, nommé dans `ci.yml` (§7.36). `make ecrans-check` (glob générique sur `apps/web/src/pages/*.tsx`) couvre `PageAdministration.tsx` SANS AUCUNE MODIFICATION DU CONTRÔLE — 47 modules d'écran servis en JavaScript contre 30 avant `T14`, bénéfice direct du §7.27. **ALLER-RETOUR RÉEL EFFECTUÉ AVANT DE DÉCLARER L'ÉCRAN TERMINÉ (§7.43 du LOT 6)** : décor psql réel (personne, appartenance, responsabilité ESM), connexion par lien magique RÉEL consommé dans le navigateur, puis dans l'ordre sur `/entites/BORDEA00/administration` — chargement de la page (3 lectures réelles à 200), création d'une tâche de référence (201), création d'un modèle (201), création d'une version (201), composition des tâches (`PUT`, 200, `due_offset_days: 5` confirmé dans le corps envoyé), publication (200, bouton « Archiver » apparu), archivage (200, bouton « Restaurer » apparu pour ce rôle ESM), restauration (200) — TOUS les appels réels à `200`/`201`, journal réseau à l'appui ; décor entièrement nettoyé après coup, confirmé par requête de comptage à zéro. **Zéro régression** : comparaison nommée sur la même base (`git worktree` sur `origin/develop`, `2b15653`, tête après fusion de `T13`), `pytest` bare depuis la RACINE des deux côtés — 75 échecs environnementaux IDENTIQUES. `uv run pytest --collect-only` (racine) : 1 414 (+8) ; `-m integration` : 1 033 (+6). 706 Vitest (+40 : 336 `contracts`, 111 `ui` inchangé, 259 `web`). `make migrations-check` : tête `0021` inchangée. | Soumise le 29/09/2026 |
 | `DEC-615` | **`T15` réalise la recette de clôture du LOT 7 et prépare la checklist `G7`, sans déclarer la porte franchie.** La recette est épinglée sur les images publiées de `3db3cab`, son seul volume PostgreSQL est réinitialisé, puis les huit services sont migrés à `0021`. Un parcours réel traverse Caddy/HTTPS : fiche lue, complétée et publiée ; modèle `intercontract` créé/versionné/publié par un ESM ; deux tâches affectées depuis `arrival_date`, échéances `J+1`/`J+5` mesurées ; première complétion `1/2` laisse l'instance active, dernière `2/2` l'archive et pose `completed_at`. Le décor est nettoyé. | **LE §30 EST RENDU CONFORME À L'ÉTAT RÉEL.** `§30.13`, `§30.14`, `§30.15`, restés reportés par oubli de registre, deviennent acquis avec leurs témoins existants : unicité de l'instance active (`T7`), tâches communes retenues au changement de statut (`T10`), réouverture après cinq minutes par acteur autorisé avec motif (`T9`). `make recette-modele-check` rend 16 acquis, 2 partiels, 7 reportés, 0 inapplicable. La checklist `G7` sépare cette complétude technique de l'accord humain que le corpus exige encore de Tess, Léa, Diane et Jonathan ; `DEC-616` est réservé à la porte elle-même. | Soumise le 29/09/2026 |
 
-**Prochain identifiant libre : `DEC-616`.**
+| `DEC-616` | **Les six avis `brace-expansion` publiés après la recette de `T15` sont corrigés par la seule régénération du verrou pnpm.** `pnpm update -r brace-expansion` remplace `1.1.18` par `1.1.21` et `5.0.9` par `5.0.12` ; les deux versions corrigées restent dans les plages déjà déclarées de `minimatch@3` (`^1.1.7`) et `minimatch@10` (`^5.0.5`). Aucun manifeste, override, code produit ni dépendance de production ne change. | **L'ÉCHEC CI N'EST PAS INTRODUIT PAR `T15`.** Le verrou de la branche était identique à `origin/develop` : les six avis, tous `dev`, frappaient déjà les outils ESLint. `pnpm audit --prod` est vert, mais `make audit` bloque volontairement aussi les dépendances de développement. Une montée forcée vers la ligne 5 aurait cassé `minimatch@3` ; la ligne 1 dispose désormais de son propre correctif. Vérifié : installation figée, `pnpm audit`, `make audit`, lint `jsx-a11y`, formatage, typage et `make check` verts. La PR #200 est aussi redirigée de `main` vers `develop`, sa seule base autorisée. La décision de porte G7 prend donc `DEC-617`. | Soumis le 30/09/2026 |
+
+**Prochain identifiant libre : `DEC-617`.**
 
 ---
 
@@ -1105,6 +1108,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-613` — réalisation du LOT 7, `T13` | 1 | 1 |
 | `DEC-614` — réalisation du LOT 7, `T14` | 1 | 1 |
 | `DEC-615` — réalisation du LOT 7, `T15` | 1 | 1 |
+| `DEC-616` — correctif de CI du LOT 7 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1116,7 +1120,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **283** | **283** |
+| **Total** | **284** | **284** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

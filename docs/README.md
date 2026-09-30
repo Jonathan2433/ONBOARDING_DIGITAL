@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `615` en usage | `DEC-616` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `616` en usage | `DEC-617` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -716,6 +716,11 @@ du §30 à **16 acquis, 2 partiels, 7 reportés** et [checklist `G7`](operations
 Le défaut `T15-1`, trouvé dans le nettoyage initial du décor, a été corrigé puis le scénario a été
 rejoué et nettoyé. La porte n'est **pas** déclarée franchie : le corpus demande encore l'accord de
 Tess, Léa, Diane et Jonathan.
+
+**Correctif de CI le 30/09/2026, `DEC-616` :** des avis publiés après `T15`, déjà présents sur
+`develop`, ont rendu l'audit rouge. Le verrou seul est régénéré : `brace-expansion` passe de
+`1.1.18` à `1.1.21` et de `5.0.9` à `5.0.12`, sans manifest ni override. Installation figée,
+audit, lint et `make check` passent ; la PR #200 vise `develop`, jamais `main`.
 
 **2 120 tests** désormais — **1 414 pytest** (dont **1 033** d'intégration), **706 Vitest** (**336**
 `contracts`, **111** `ui` inchangé, **259** `web`).

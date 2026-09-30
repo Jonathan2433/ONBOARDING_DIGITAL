@@ -4,7 +4,7 @@
 **Épic :** `MVP-L07`
 **Ouvert par Jonathan le :** 25 septembre 2026
 **État :** **OUVERT**, découpage **validé** le 25/09/2026 — `DEC-598`. **`T1` à `T15` FAITES**, `DEC-599` à `DEC-615` (avec correctifs `DEC-602` et `DEC-607`)
-**Dernière mise à jour :** 29 septembre 2026 — `T15`, techniquement complète ; validation humaine `G7` attendue
+**Dernière mise à jour :** 30 septembre 2026 — `T15`, techniquement complète ; correctif CI `DEC-616` ; validation humaine `G7` attendue
 **Porte de sortie :** `G7`, tag `v0.7.0` prévu
 
 > **TOUS LES NOMBRES DE CETTE FICHE SONT DÉRIVÉS, PAS RECOPIÉS**, et chacun est accompagné de la
@@ -118,7 +118,7 @@ fusionne. **Une sous-étape à la fois**, et elle part toujours de `develop`.
 | ~~`T12`~~ | ~~Suivi par périmètre — DSM/ESM/Booster/ADM-E/SUPER~~ **FAITE le 28/09/2026**, `DEC-612` | `US008` | « reporting de base » seulement (cahier, Inclus) : aucun graphique, aucun export — LOT 10. Aucun rôle refusé : la portée s'ajuste au rôle le plus large détenu, `Soi` en dernier recours pour n'importe qui. Seules les instances `active` comptées, délibérément — une tâche non obligatoire en retard sur une instance déjà archivée (`T11`) n'est pas signalée |
 | ~~`T13`~~ | ~~Écrans du nouvel arrivant — fiche d'arrivée, parcours, tâches~~ **FAITE le 28/09/2026**, `DEC-613` | — | UNE SEULE page (`PageMonOnboarding.tsx`), sous la rubrique déjà réservée par `T4` du LOT 4 ; `GET …/permissions` étendu d'un champ `appartenance`, seul moyen pour le frontend de connaître SA propre cible ; défaut trouvé et corrigé dans `validerLeParcours`, écrit à `T7` et jamais exercé par un écran avant `T13` ; aller-retour réel effectué (§7.43 du LOT 6) |
 | ~~`T14`~~ | ~~Écrans d'administration — catalogue, modèles, suivi par périmètre~~ **FAITE le 29/09/2026**, `DEC-614` | — | Mêmes grilles de rôles qu'au §2.1, à l'écran cette fois : `OFFICE` ne voit apparaître aucune action de gestion. **Décision de Jonathan : le menu s'élargit** à DSM/BOOST (`rolesAdministrationOnboarding`), un seul chemin d'accès. **Route API nouvelle trouvée en construisant l'écran** : `GET …/onboarding/templates`, ni `T5` ni `T6` n'en avaient posé la lecture. Script de pile différé par `T13` construit et combiné ici, `make onboarding-check`, 14 contrôles réels |
-| ~~`T15`~~ | ~~Recette, §30 et checklist `G7`~~ **FAITE le 29/09/2026**, `DEC-615` | — | recette isolée sur les images publiées ; parcours HTTPS réel `arrival_date` → deux tâches → `1/2` → `2/2` → archivage automatique ; §30 reclasse `§30.13`–`§30.15` : **16 acquis, 2 partiels, 7 reportés**. Checklist `G7` prête, validations humaines encore requises |
+| ~~`T15`~~ | ~~Recette, §30 et checklist `G7`~~ **FAITE le 29/09/2026**, `DEC-615` | — | recette isolée sur les images publiées ; parcours HTTPS réel `arrival_date` → deux tâches → `1/2` → `2/2` → archivage automatique ; §30 reclasse `§30.13`–`§30.15` : **16 acquis, 2 partiels, 7 reportés**. Correctif CI `DEC-616` le 30/09 : seul le verrou passe `brace-expansion` aux deux versions corrigées, sans manifeste ; checklist `G7` prête, validations humaines encore requises |
 
 **`US003` est découpée en deux, `US007` reste seule.** `US003` couvre la création ET le cycle de vie
 d'un modèle — deux familles de contrôles distinctes, comme `T5`/`T6` du LOT 6. `US007` ne dépend

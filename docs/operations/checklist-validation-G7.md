@@ -3,7 +3,7 @@
 **Lot :** LOT 7 — Fiches d'arrivée et onboarding  
 **Préparée le :** 29 septembre 2026, à la sortie de `T15`  
 **Destinataire :** Jonathan — il coordonne la validation technique et l'exploitation  
-**Décision attendue pour franchir la porte :** `DEC-616`
+**Décision attendue pour franchir la porte :** `DEC-617`
 
 ---
 

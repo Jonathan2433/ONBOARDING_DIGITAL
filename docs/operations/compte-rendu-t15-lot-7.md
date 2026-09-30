@@ -65,8 +65,9 @@ de recette ci-dessus.
 # Décisions ajoutées ou modifiées
 
 - `DEC-615` — recette `T15`, reclassement du §30 et préparation de `G7`.
-- `DEC-616` reste réservé à la décision de franchissement de porte, si Jonathan recueille les
-  validations humaines exigées.
+- `DEC-616` — correctif CI après publication de six avis transverses à `T15` : verrou seul,
+  `brace-expansion` `1.1.18` → `1.1.21` et `5.0.9` → `5.0.12`, tous deux dans leurs plages
+  existantes. La décision de porte attend désormais `DEC-617`.
 
 # Risques et écarts
 
@@ -76,6 +77,10 @@ de recette ci-dessus.
   nettoyage borné par `entity_id` et le rejeu positif.
 - Le démarrage de recette a rencontré le conflit de port tiers prévu ; seul son conteneur web a été
   arrêté temporairement. Caddy a été recréé après vérification de ses publications réelles.
+- **`T15-2`, corrigé avant validation :** six avis `brace-expansion` nouvellement publiés ont rendu
+  `make audit` rouge alors que le verrou était identique à `origin/develop`. Les deux résolutions
+  transitives sont mises à jour sans élargir le correctif ; `pnpm audit`, `make audit`, lint et
+  `make check` passent. La PR #200, ouverte à tort vers `main`, vise désormais `develop`.
 - `ECART-012` et `ECART-064` restent ouverts, hors correctif de `T15`.
 
 # Questions ouvertes
