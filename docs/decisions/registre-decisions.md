@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 30 septembre 2026 — décision `DEC-618`, correctif de sécurité `urllib3` préalable à la livraison de `G7`
+**Dernière mise à jour :** 1er octobre 2026 — décision `DEC-619`, ouverture du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -123,6 +123,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Correctif de CI du LOT 7 `DEC-616`** | 1 | **Soumis le 30/09/2026** |
 | **Franchissement de la porte `G7` `DEC-617`** | 1 | **Validée le 30/09/2026** |
 | **Correctif de sécurité post-porte `DEC-618`** | 1 | **Soumis le 30/09/2026** |
+| **Ouverture du LOT 8 `DEC-619`** | 1 | **Validée le 01/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -134,7 +135,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **286** | |
+| **Total** | **287** | |
 
 ---
 
@@ -851,7 +852,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-618` | **Les deux avis `urllib3` apparus pendant la livraison de `G7` sont corrigés par la seule régénération du verrou Python : `urllib3` passe de `2.7.0` à `2.8.0`.** Aucun manifeste, code produit ni autre paquet ne change. La correction entre d'abord dans `develop`, puis la synchronisation de `main` est recréée depuis cet état validé. | **L'ÉCHEC CI N'EST PAS INTRODUIT PAR LA FERMETURE DE `G7`.** La PR de porte vers `develop` et l'audit local étaient verts ; les avis `CVE-2026-97687` et `CVE-2026-97689`, tous deux corrigés en `2.8.0`, ont été publiés entre ce contrôle et la CI de la première PR de synchronisation vers `main`. Cette PR a été fermée sans fusion : contourner la porte ou corriger directement `main` aurait rompu le régime de contribution. La mise à jour est compatible avec les contraintes existantes et reste confinée à `uv.lock`. | Soumis le 30/09/2026 |
 
-**Prochain identifiant libre : `DEC-619`.**
+| `DEC-619` | **Le LOT 8 — Événements et accueil dynamique — est ouvert par Jonathan et son découpage compte QUATORZE sous-étapes.** `T1` pose les quatre tables du modèle · `T2` lit les événements à venir/passés · `T3` crée dans le périmètre autorisé · `T4` modifie, publie et gère les portées multiples · `T5` annule, archive et restaure · `T6` rattache les médias · `T7` sert les arrivées récentes · `T8` agrège l'accueil · `T9`/`T10` livrent les écrans événements · `T11`/`T12` livrent l'accueil desktop/mobile, les carrousels et la vidéo sur action · `T13` prouve la pile réelle · `T14` réalise la recette et prépare `G8`. | **L'instruction explicite de Jonathan du 01/10/2026 — mettre à jour les documents, fusionner et continuer le développement — ouvre la phase suivante après `G7`.** Le découpage suit les dépendances des six stories : structure avant lecture, lecture avant écriture, services avant écrans, puis une recette isolée. Deux écarts sont nommés avant tout code qui pourrait les masquer : `ECART-067`, portée DSM inexprimable dans le modèle validé ; `ECART-068`, audit obligatoire des modifications alors que `audit_event` est séquencé au LOT 10. Ils ne bloquent pas `T1`, qui suit strictement le modèle. Épic `#206`, stories `#207` à `#212`, jalon `G8`. | Validée le 01/10/2026 |
+
+**Prochain identifiant libre : `DEC-620`.**
 
 ---
 
@@ -1116,6 +1119,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-616` — correctif de CI du LOT 7 | 1 | 1 |
 | `DEC-617` — franchissement de la porte `G7` | 1 | 1 |
 | `DEC-618` — correctif de sécurité post-porte | 1 | 1 |
+| `DEC-619` — ouverture du LOT 8 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1127,7 +1131,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **286** | **286** |
+| **Total** | **287** | **287** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
