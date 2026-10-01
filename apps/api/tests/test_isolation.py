@@ -141,6 +141,44 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "test_un_evenement_ne_peut_pas_pointer_une_tache_d_instance_d_une_AUTRE_entite "
         "[test_onboarding.py]"
     ),
+    #  LOT 8, `T1` — les SIX cles composites du domaine evenementiel. Leurs
+    #  temoins vivent avec le schema qu'ils eprouvent, dans `test_evenements.py`.
+    (
+        "event_circle_scope",
+        "event",
+    ): (
+        "test_une_portee_cercle_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite "
+        "[test_evenements.py]"
+    ),
+    (
+        "event_circle_scope",
+        "circle",
+    ): (
+        "test_une_portee_cercle_ne_peut_pas_pointer_un_cercle_d_une_AUTRE_entite "
+        "[test_evenements.py]"
+    ),
+    (
+        "event_office_scope",
+        "event",
+    ): (
+        "test_une_portee_bureau_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite "
+        "[test_evenements.py]"
+    ),
+    (
+        "event_office_scope",
+        "office",
+    ): (
+        "test_une_portee_bureau_ne_peut_pas_pointer_un_bureau_d_une_AUTRE_entite "
+        "[test_evenements.py]"
+    ),
+    (
+        "event_media",
+        "event",
+    ): "test_un_media_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite [test_evenements.py]",
+    (
+        "event_media",
+        "media_asset",
+    ): "test_un_evenement_ne_peut_pas_pointer_un_media_d_une_AUTRE_entite [test_evenements.py]",
 }
 
 
@@ -290,13 +328,14 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     assert not manquants, f"cle(s) composite(s) SANS test de refus : {sorted(manquants)}"
     assert not disparus, f"test(s) portant sur une cle composite disparue : {sorted(disparus)}"
     #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5, DOUZE DEPUIS `T1` DU LOT 6,
-    #  DIX-HUIT DEPUIS `T1` DU LOT 7.** Le nombre est ecrit, et c'est delibere :
+    #  DIX-HUIT DEPUIS `T1` DU LOT 7, VINGT-QUATRE DEPUIS `T1` DU LOT 8.** Le
+    #  nombre est ecrit, et c'est delibere :
     #  sa mise a jour est ce qui force la decision. Une cle composite ajoutee
     #  sans test ferait echouer ce test, et c'est son objet -- il l'a fait le
     #  13/09/2026, sur les trois tables editoriales, et j'avais alors pose
     #  trois chemins pour deux tests -- puis a nouveau le 25/09/2026, sur les
     #  six cles de la fiche d'arrivee et de l'onboarding.
-    assert len(reelles) == len(COUVERTURE) == 18, f"{len(reelles)} chemins, 18 attendus"
+    assert len(reelles) == len(COUVERTURE) == 24, f"{len(reelles)} chemins, 24 attendus"
 
 
 # ---------------------------------------------------------------------------

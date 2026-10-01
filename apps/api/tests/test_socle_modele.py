@@ -536,6 +536,11 @@ TABLES_DECLAREES = {
     "onboarding_instance",
     "onboarding_instance_task",
     "onboarding_task_event",
+    # LOT 8, T1 — modele §17.1 a §17.3, les quatre tables evenementielles
+    "event",
+    "event_circle_scope",
+    "event_office_scope",
+    "event_media",
 }
 
 

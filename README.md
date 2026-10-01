@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
 | Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
 | **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
-| Sous-étape en cours | **`T1` — les quatre tables du domaine événementiel**, migration `0022` |
+| Sous-étape en cours | **`T2` — lecture des événements à venir et passés** ; `T1` livrée par `DEC-620` |
 | Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -30,7 +30,7 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **39 tables** PostgreSQL, **21 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6 et 7 |
+| **43 tables métier** PostgreSQL, **22 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
@@ -54,7 +54,7 @@ make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
 make check      # qualite complete : format, lint, types, tests, sources, documents
 make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
-make migrate    # appliquer les migrations jusqu'a la tete 0021
+make migrate    # appliquer les migrations jusqu'a la tete 0022
 make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```
