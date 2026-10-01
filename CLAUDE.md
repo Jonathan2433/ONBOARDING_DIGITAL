@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 30 septembre 2026, après le correctif CI **`DEC-616`** du LOT 7
+**Mis à jour le :** 30 septembre 2026, après le correctif de sécurité **`DEC-618`** préalable à la livraison de `G7`
 **Destinataire :** l'agent qui réalise le **LOT 7 — Fiches d'arrivée et onboarding**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -23,7 +23,7 @@ d'agir.
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, 13/09, `v0.5.0`) · **LOT 6** (`G6`, 25/09, `v0.6.0`) · **LOT 7** (`G7`, 30/09, `v0.7.0`, `DEC-617`) |
 | **Lot en cours** | **Aucun.** Le LOT 7 — Fiches d'arrivée et onboarding — est verrouillé depuis le 30/09/2026. Le LOT 8 n'est pas ouvert par la décision de porte. |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : les DOUZE — LOT VERROUILLÉ, porte `G6` FRANCHIE le 25/09/2026 (`DEC-597`), tag `v0.6.0` posé sur `d2d639e`.** **LOT 7 : les QUINZE**, de la structure et des parcours aux deux écrans, puis à la recette complète, au classement du §30 (**16 acquis, 2 partiels, 7 reportés**) et à la checklist `G7` (`DEC-615`). |
-| **Prochaine action** | **Attendre l'ouverture explicite du LOT 8 et la validation de son découpage.** Ne rien écrire pour le LOT 8 avant cette décision distincte. `ECART-012`, `QO-121` et `ECART-064` restent ouverts et non bloquants pour `G7`. |
+| **Prochaine action** | **Terminer la livraison de `G7` sur `main` après le correctif `DEC-618`, puis attendre l'ouverture explicite du LOT 8 et la validation de son découpage.** Ne rien écrire pour le LOT 8 avant cette décision distincte. `ECART-012`, `QO-121` et `ECART-064` restent ouverts et non bloquants pour `G7`. |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · LOT 4 : **7 sur 7** · LOT 5 : **6 sur 8** · LOT 6 : **5 sur 7** · LOT 7 : **8 sur 8**. Les stories `#176` à `#183` sont fermées sur leurs preuves propres et l'épic `#175` est clos à `G7`. Les stories encore ouvertes des LOTS 5 et 6 restent nommées dans leurs fiches : un critère non tenu ne se referme pas. |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branche `demo` | **FUSIONNÉE dans `develop` le 19/09/2026, et elle n'existe plus.** Elle portait une **démonstration client** produite par Codex — quatre cibles `make`, le script `infra/scripts/preparer-demo-client.py`, le guide `docs/demo/` et quatre tests statiques — et elle a vécu trois jours à côté de `develop` sans jamais voir la porte : `ci.yml` filtre `branches: [develop, main]`, et **aucun run n'a jamais tourné sur `demo`** — mesuré, `gh run list --branch demo` rendait zéro. **Elle a décroché DEUX fois en deux jours**, à la fusion en squash de `T6` puis de `T7`, chacune remplaçant le commit sur lequel son histoire était posée. C'est structurel et non accidentel : **toute branche qui vit à côté de `develop` décroche à chaque squash**, et la seule issue durable est de la fusionner ou de la supprimer. Arbitrage de Jonathan du 19/09/2026 : **fusionnée**, et ses quatre fichiers sont désormais éprouvés par la porte comme le reste. |
@@ -36,7 +36,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **94 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T13` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, **68**, **74**, puis **77** contrôles avec `T11` — servis par la même cible étendue, bénéfice direct du §7.27. **`T14` EN AJOUTE UNE, LA PREMIÈRE DEPUIS `T2`** : `onboarding-check`, le script de pile différé par `T13`, nommé dans `ci.yml` (§7.36 : une cible ajoutée à `make check` n'entre pas dans la CI, il faut l'y nommer). **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **200 décisions** `DEC-418+` · **66 écarts** (**12 ouverts**, `ECART-013` clos structurellement à `T4` du LOT 7, `ECART-066` intégralement résolu à `T11`) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
+| Registres | **201 décisions** `DEC-418+` · **66 écarts** (**12 ouverts**, `ECART-013` clos structurellement à `T4` du LOT 7, `ECART-066` intégralement résolu à `T11`) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 26**, dérivés le 24/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -497,7 +497,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`617` en usage | **`DEC-618`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`618` en usage | **`DEC-619`** |
 | `ECART-nnn` | `001`–`066` | **`ECART-067`** |
 | `QO-nnn` | `072`–`124`, **5 trous** | **`QO-125`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
