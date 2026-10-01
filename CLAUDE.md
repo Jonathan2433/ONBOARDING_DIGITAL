@@ -2,8 +2,8 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 30 septembre 2026, après le correctif de sécurité **`DEC-618`** préalable à la livraison de `G7`
-**Destinataire :** l'agent qui réalise le **LOT 7 — Fiches d'arrivée et onboarding**
+**Mis à jour le :** 1er octobre 2026, à l'ouverture du LOT 8 (`DEC-619`)
+**Destinataire :** l'agent qui réalise le **LOT 8 — Événements et accueil dynamique**
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
 Ce document dit **où en est le projet**, **ce qui a été fait et comment**, **les constantes à
@@ -21,9 +21,9 @@ d'agir.
 | | |
 |---|---|
 | Lots terminés | **LOT 0** (`G0`, 27/07) · **LOT 1** (`G1`, 12/08, `v0.1.0`) · **LOT 2** (`G2`, 20/08, `v0.2.0`) · **LOT 3** (`G3`, 22/08, `v0.3.0`) · **LOT 4** (`G4`, 24/08, `v0.4.0`) · **LOT 5** (`G5`, 13/09, `v0.5.0`) · **LOT 6** (`G6`, 25/09, `v0.6.0`) · **LOT 7** (`G7`, 30/09, `v0.7.0`, `DEC-617`) |
-| **Lot en cours** | **Aucun.** Le LOT 7 — Fiches d'arrivée et onboarding — est verrouillé depuis le 30/09/2026. Le LOT 8 n'est pas ouvert par la décision de porte. |
+| **Lot en cours** | **LOT 8 — Événements et accueil dynamique.** Ouvert par Jonathan le 01/10/2026 (`DEC-619`), découpage validé en quatorze sous-étapes. `T1` est la suivante. |
 | Sous-étapes faites | **LOT 3 : les DOUZE.** **LOT 4 : les DOUZE.** **LOT 5 : les ONZE.** **LOT 6 : les DOUZE — LOT VERROUILLÉ, porte `G6` FRANCHIE le 25/09/2026 (`DEC-597`), tag `v0.6.0` posé sur `d2d639e`.** **LOT 7 : les QUINZE**, de la structure et des parcours aux deux écrans, puis à la recette complète, au classement du §30 (**16 acquis, 2 partiels, 7 reportés**) et à la checklist `G7` (`DEC-615`). |
-| **Prochaine action** | **Terminer la livraison de `G7` sur `main` après le correctif `DEC-618`, puis attendre l'ouverture explicite du LOT 8 et la validation de son découpage.** Ne rien écrire pour le LOT 8 avant cette décision distincte. `ECART-012`, `QO-121` et `ECART-064` restent ouverts et non bloquants pour `G7`. |
+| **Prochaine action** | **Réaliser `T1` du LOT 8 depuis `develop` : les quatre tables `event`, `event_circle_scope`, `event_office_scope`, `event_media`, migration `0022`.** `ECART-067` et `ECART-068` sont ouverts mais ne bloquent pas ce socle ; ils doivent être instruits avant `T3` et la fermeture de `US004`. |
 | Stories `Done` | LOT 0 : 7 · LOT 1 : 8 · LOT 2 : 8 · LOT 3 : **8** · LOT 4 : **7 sur 7** · LOT 5 : **6 sur 8** · LOT 6 : **5 sur 7** · LOT 7 : **8 sur 8**. Les stories `#176` à `#183` sont fermées sur leurs preuves propres et l'épic `#175` est clos à `G7`. Les stories encore ouvertes des LOTS 5 et 6 restent nommées dans leurs fiches : un critère non tenu ne se referme pas. |
 | Dépôt distant | `Jonathan2433/ONBOARDING_DIGITAL` — **privé**, prouvé par `gh api … --jq .private` |
 | Branche `demo` | **FUSIONNÉE dans `develop` le 19/09/2026, et elle n'existe plus.** Elle portait une **démonstration client** produite par Codex — quatre cibles `make`, le script `infra/scripts/preparer-demo-client.py`, le guide `docs/demo/` et quatre tests statiques — et elle a vécu trois jours à côté de `develop` sans jamais voir la porte : `ci.yml` filtre `branches: [develop, main]`, et **aucun run n'a jamais tourné sur `demo`** — mesuré, `gh run list --branch demo` rendait zéro. **Elle a décroché DEUX fois en deux jours**, à la fusion en squash de `T6` puis de `T7`, chacune remplaçant le commit sur lequel son histoire était posée. C'est structurel et non accidentel : **toute branche qui vit à côté de `develop` décroche à chaque squash**, et la seule issue durable est de la fusionner ou de la supprimer. Arbitrage de Jonathan du 19/09/2026 : **fusionnée**, et ses quatre fichiers sont désormais éprouvés par la porte comme le reste. |
@@ -36,7 +36,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **94 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T13` N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, **68**, **74**, puis **77** contrôles avec `T11` — servis par la même cible étendue, bénéfice direct du §7.27. **`T14` EN AJOUTE UNE, LA PREMIÈRE DEPUIS `T2`** : `onboarding-check`, le script de pile différé par `T13`, nommé dans `ci.yml` (§7.36 : une cible ajoutée à `make check` n'entre pas dans la CI, il faut l'y nommer). **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **201 décisions** `DEC-418+` · **66 écarts** (**12 ouverts**, `ECART-013` clos structurellement à `T4` du LOT 7, `ECART-066` intégralement résolu à `T11`) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
+| Registres | **202 décisions** `DEC-418+` · **68 écarts** (**14 ouverts**, dont `ECART-067` et `ECART-068` ouverts au LOT 8) · **48 questions** (**34 ouvertes**) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 26**, dérivés le 24/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -99,10 +99,10 @@ Toute modification passe par une branche et une pull request vers `develop`.
 1. **Un lot à la fois.** Seul le lot ouvert par Jonathan peut être réalisé (`ROAD-003`,
    `ARB-BACK-003`, `BACKLOG-006`). **LE LOT 6 EST VERROUILLÉ** — porte `G6` franchie le 25/09/2026
    (`DEC-597`), tag `v0.6.0`. **LE LOT 7 EST VERROUILLÉ** depuis le 30/09/2026 : porte `G7`
-   franchie (`DEC-617`), tag `v0.7.0`. **AUCUN LOT N'EST OUVERT** : aucune sous-étape du LOT 8 ne
-   commence avant son ouverture explicite et la validation de son découpage.
-   N'écris **rien** qui appartienne au LOT 8 — événements et accueil dynamique — au LOT 9 — import
-   CSV — ni au LOT 11 — génération des miniatures et exports.
+   franchie (`DEC-617`), tag `v0.7.0`. **LE LOT 8 EST OUVERT** depuis le 01/10/2026 (`DEC-619`) :
+   son découpage compte quatorze sous-étapes et `T1` est la suivante.
+   N'écris **rien** qui appartienne au LOT 9 — import CSV — au LOT 10 — audit et pilotage — ni au
+   LOT 11 — génération des miniatures, worker et exports.
    Et **une sous-étape à la fois**, partant toujours de `develop`, **jamais empilée**.
 
    > **CETTE RÈGLE A NOMMÉ LE MAUVAIS LOT PENDANT DEUX SEMAINES**, du 24/08 au 08/09/2026 : elle
@@ -497,8 +497,8 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`618` en usage | **`DEC-619`** |
-| `ECART-nnn` | `001`–`066` | **`ECART-067`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`619` en usage | **`DEC-620`** |
+| `ECART-nnn` | `001`–`068` | **`ECART-069`** |
 | `QO-nnn` | `072`–`124`, **5 trous** | **`QO-125`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
 | `DEP-nnn` | `001`–`017` | **`DEP-018`** |
@@ -2619,7 +2619,7 @@ Un garde-fou à faux positifs apprend à passer outre (§7.25), et il n'aurait r
 
 # 8. Ce qui reste ouvert
 
-## 8.1 Écarts — **14 ouverts**, dérivés du registre le 25/09/2026 (le total est au §1)
+## 8.1 Écarts — **14 ouverts**, dérivés du registre le 01/10/2026 (le total est au §1)
 
 > **Ce compte était resté en état LOT 1 — « 5 ouverts sur 22 » — jusqu'à `T10`.** Il ne l'a pas été
 > par négligence : les cinq écarts du LOT 1 étaient tous justes, et le LOT 2 en a ouvert deux de plus
@@ -2722,8 +2722,8 @@ prendre.** C'est le sens inverse de l'avertissement habituel, et il s'est produi
 **Les LOTS 0 à 7 sont terminés.** `G7` a été franchie le **30/09/2026** (`DEC-617`), tag `v0.7.0`
 sur `main`. Les quinze sous-étapes du LOT 7 sont réalisées, de la structure au parcours, aux deux
 écrans puis à la recette HTTPS réelle. Le §30 est classé à **16 acquis, 2 partiels et 7 reportés** ;
-Tess, Léa, Diane et Jonathan ont validé les parcours mission et intercontrat. **Aucun LOT 8 n'est
-ouvert par cette décision.**
+Tess, Léa, Diane et Jonathan ont validé les parcours mission et intercontrat. **Le LOT 8 est ouvert
+depuis le 01/10/2026** (`DEC-619`) et `T1` est la sous-étape suivante.
 
 | Fait | Ce que ça donne |
 |---|---|
@@ -2732,6 +2732,7 @@ ouvert par cette décision.**
 | LOT 5, les ONZE | les trois tables de média, le trombinoscope paginé, la recherche sans accents, la fiche profil, la miniature et son autorisation, l'écriture dans son périmètre, l'archivage et la restauration, l'historique organisationnel, et les **deux écrans** — le trombinoscope et la page de profil |
 | LOT 6, les DOUZE — **VERROUILLÉ** | les trois tables éditoriales (migration `0017`), la page Framework, les pages détaillées d'un cercle et d'un bureau, le **rendu** des blocs, l'**écriture** d'un contenu dans son périmètre, son **cycle de vie** — brouillon, publication, archivage, restauration — les **liens internes**, les **trois écrans de lecture**, les **écrans d'édition**, **le témoin du critère de sortie 2** et **la reprise relue** (`T11`), puis **la recette et le §30** (`T12`, un reclassement trouvé et corrigé). Détail : `fiche-lot-6.md` |
 | LOT 7, `T1`–`T15` — **VERROUILLÉ** | les huit tables, la fiche d'arrivée, les modèles, parcours et tâches, leur cycle de vie, le suivi et les deux écrans ont été construits dans `T1` à `T14`. **`T15`** les a rejoués sur la recette isolée, à travers Caddy/HTTPS, dans un parcours complet `arrival_date` → deux échéances → progression `1/2` puis `2/2` → archivage automatique ; le décor a été nettoyé. Il corrige aussi le classement périmé de `§30.13` à `§30.15` : **16 acquis, 2 partiels, 7 reportés**. Les validations humaines sont acquises et `G7` est franchie (`DEC-617`). Détail : `compte-rendu-t{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}-lot-7.md` |
+| LOT 8 — **OUVERT** | six stories, quatre `P0` et deux `P1`, découpées en quatorze sous-étapes. Épic `#206`, stories `#207` à `#212`. `T1` pose les quatre tables du modèle événementiel, migration `0022`. Détail : `fiche-lot-8.md`, `DEC-619` |
 | Recette | **réépinglée** sur les images de `07571f9` (`T11` du LOT 6), rôle d'**exécution** — `DEC-539`, mesuré |
 | Contrôles | les contrôles de stack sont **tous** dans la CI, chacun portant ses témoins. **`make help` et `ci.yml` font foi sur leur nombre**, jamais cette cellule |
 
@@ -2749,10 +2750,10 @@ rattrapé depuis — et rien ne relie `arrival_profile.short_intro` à ce champ.
 ## 9.2 Ce qu'il reste à faire, et dans quel ordre
 
 **Le LOT 7 est verrouillé** — quinze sous-étapes, `DEC-598` à `DEC-615`, porte `G7` franchie par
-`DEC-617`. La recette complète de `T15` a repris les images publiées, les 25 contrôles du §30 et la
-checklist `G7`, avec zéro régression prouvée contre `origin/develop`. **Il ne reste aucune
-sous-étape de code dans ce lot.** Attendre l'ouverture explicite du LOT 8 et la validation de son
-découpage avant d'écrire quoi que ce soit pour lui.
+`DEC-617`. **Le LOT 8 est ouvert** par `DEC-619`, avec quatorze sous-étapes validées. Réaliser `T1`
+depuis `develop` : `event`, `event_circle_scope`, `event_office_scope`, `event_media`, migration
+`0022`. Ne pas anticiper `T2`, et ne pas résoudre par intuition `ECART-067`/`ECART-068` : ils ne
+bloquent pas le schéma, mais bornent les écritures ultérieures.
 **`ECART-066` est CLOS** — les deux
 volets (version de modèle, `T6` ; parcours, `T11`) sont résolus, la seconde réponse ayant été
 reposée explicitement, jamais présumée de la première. `T11` s'est accroché à

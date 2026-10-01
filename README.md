@@ -16,9 +16,9 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 |---|---|
 | Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
 | Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
-| **Lot en cours** | **Aucun.** Le LOT 8 n'est pas ouvert par la clôture de `G7` |
-| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 8 et la validation de son découpage |
-| Lots 8 à 14 | `Planned` — aucun travail anticipé autorisé |
+| **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
+| Sous-étape en cours | **`T1` — les quatre tables du domaine événementiel**, migration `0022` |
+| Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -38,7 +38,7 @@ Au-dessus de ce socle :
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
 
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** les
-événements et l'accueil dynamique du LOT 8, l'import CSV du LOT 9, le pilotage avancé du LOT 10 et
+événements et l'accueil dynamique sont **en construction au LOT 8** ; l'import CSV du LOT 9, le pilotage avancé du LOT 10 et
 les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
 
 > Les huit stories du LOT 7 sont fermées sur leurs critères propres. Les stories encore ouvertes

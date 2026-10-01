@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `618` en usage | `DEC-619` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `619` en usage | `DEC-620` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `066` |  `ECART-067` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `068` |  `ECART-069` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -133,7 +133,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
-| `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
+| `G8` | Fin de l'accueil | Événements et page d'accueil validés | **LOT 8 OUVERT le 01/10/2026** — `DEC-619`, [fiche](operations/fiche-lot-8.md) |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
@@ -731,6 +731,20 @@ sans jamais avoir été présumée.
 
 **Traçabilité GitHub :** épic `#175` clos à `G7`, jalon `G7`, les huit stories `#176` à `#183`
 fermées manuellement le 29/09/2026 sur leur preuve propre.
+
+---
+
+## 15. Avancement du LOT 8 — **lot OUVERT**, porte `G8`
+
+**Ouvert par Jonathan le 1er octobre 2026 (`DEC-619`).** Plan :
+[`operations/fiche-lot-8.md`](operations/fiche-lot-8.md) — **6** stories, dont **4 `P0`** et
+**2 `P1`**, **six** critères de sortie et **quatorze** sous-étapes. Épic `#206`, jalon `G8`,
+stories `#207` à `#212`.
+
+La sous-étape suivante est **`T1`** : les quatre tables `event`, `event_circle_scope`,
+`event_office_scope` et `event_media`, migration `0022`. `ECART-067` (portée DSM inexprimable)
+et `ECART-068` (audit transverse séquencé au LOT 10) sont ouverts ; aucun des deux ne bloque le
+socle strictement décrit par le modèle.
 
 ---
 
