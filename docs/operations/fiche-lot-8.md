@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`  
-**Sous-étape suivante :** `T1`, les quatre tables du domaine événementiel  
+**État :** **OUVERT** — `DEC-619`; `T1` faite par `DEC-620`
+**Sous-étape suivante :** `T2`, lecture des événements à venir et passés
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -86,7 +86,7 @@ ne commence.
 
 | # | Sous-étape | Stories | Témoin principal |
 |---|---|---|---|
-| `T1` | Les quatre tables `event`, `event_circle_scope`, `event_office_scope`, `event_media` — migration `0022` | socle | aucune donnée de participant ; isolation composite cercle/bureau ; `starts_at < ends_at` |
+| `T1` ✅ | Les quatre tables `event`, `event_circle_scope`, `event_office_scope`, `event_media` — migration `0022` | socle | **16 tests**, 24 clés composites au total, migration rejouée à vide — `DEC-620` |
 | `T2` | Lecture des événements à venir et passés | `US003` (1/2) | deux lectures autour de `ends_at`; annulé visible ; archivé absent |
 | `T3` | Création d'un événement et résolution du périmètre d'écriture | `US004` (1/3) | chaque rôle autorisé dans sa portée, refus hors portée ; résolution préalable d'`ECART-067` |
 | `T4` | Modification, publication et rattachements multiples | `US004` (2/3) | publication immédiate ; périmètres multiples sans fuite inter-entités |
@@ -126,4 +126,3 @@ Le LOT 8 ne livre pas :
 - `make migrations-check` dès `T1` ;
 - aucune donnée réelle, aucun média réel, aucun secret ;
 - aucun champ d'inscription ou de participant dans la base, le contrat ou l'UI.
-
