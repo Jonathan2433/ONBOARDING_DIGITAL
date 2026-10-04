@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `624` en usage | `DEC-625` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `625` en usage | `DEC-626` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -786,7 +786,19 @@ préconditions d'état sont posées au service : « Annuler » n'est offert qu'�
 jamais l'état antérieur à l'archivage. Les **17 nouveaux tests**, dont **15 d'intégration**,
 portent le total à **1 506 pytest**, dont **1 109 d'intégration**. `US004` est désormais complète
 sur ses trois tiers ; `ECART-068` reste ouvert, à résoudre avant la fermeture de la story au
-registre. La sous-étape suivante est **`T6`** — rattachement des médias.
+registre.
+
+**`T6` est faite** (`DEC-625`) : `PUT .../events/{evenement}/medias` sert « Ajouter une image ou
+vidéo » du §11. Cette ligne rejoint, pour le DSM, la MÊME cellule « Périmètre » que « Publier »/
+« Annuler »/« Archiver », jamais celle de « Modifier » — sixième mesure de l'asymétrie §7.45. La
+liste REMPLACE la liste complète — `[]` la vide, seule forme du geste — et `display_order` vaut
+l'INDEX du tableau soumis, jamais un décalage calculé sur le nombre de lignes vivantes (piège
+`T8-1` du LOT 6, rejoué en témoin : retirer le premier média d'une liste de trois ne laisse aucun
+trou). Seul un média `ready` est rattachable, par réutilisation de `ETAT_AFFICHABLE`
+(`app/media/photo.py`, LOT 5) plutôt qu'une règle inventée. Aucun téléversement, aucun
+traitement — LOT 11. Les **15 nouveaux tests**, dont **13 d'intégration**, portent le total à
+**1 521 pytest**, dont **1 122 d'intégration**. La sous-étape suivante est **`T7`** — arrivées
+récentes.
 
 ---
 

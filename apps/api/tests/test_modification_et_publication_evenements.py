@@ -308,9 +308,14 @@ def test_un_ESM_modifie_PUIS_publie_un_evenement_de_portee_ENTITE(cx: Connection
     evenement = _creer(cx, entite=entite, acteur=esm, portee=PorteeDeCreation.ENTITE)
 
     #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
-    #  `T5` etend neanmoins la grille a `ARCHIVER`, qui l'est deja a ce stade.
+    #  `ARCHIVER` et `GERER_LES_MEDIAS` (`T6`) n'ont pas cette precondition.
     assert _perimetre(cx, entite=entite, acteur=esm, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
+        {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
+        }
     )
 
     modifie = _modifier(cx, entite=entite, acteur=esm, evenement=evenement, version=1)
@@ -431,7 +436,12 @@ def test_un_BOOSTER_modifie_SON_evenement_mais_n_attache_PAS_le_cercle_d_un_AUTR
 
     #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
     assert _perimetre(cx, entite=entite, acteur=booster, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
+        {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
+        }
     )
 
     #  TEMOIN : il modifie sans toucher aux cercles — reussit.
@@ -551,7 +561,12 @@ def test_un_DSM_MODIFIE_ET_PUBLIE_un_evenement_de_portee_CONSULTANTS(cx: Connect
 
     #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
     assert _perimetre(cx, entite=entite, acteur=dsm, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
+        {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
+        }
     )
 
     _modifier(cx, entite=entite, acteur=dsm, evenement=evenement, version=1)
