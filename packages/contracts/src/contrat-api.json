@@ -1652,6 +1652,60 @@
         "`draft` offre `Publier`, meme discipline que `publier_une_page` au",
         "LOT 6."
       ]
+    },
+    {
+      "cle": "annulationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/annulation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDAnnulationDEvenement",
+      "role": [
+        "Annuler un evenement — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Annuler » : MEME grille que « Publier », y compris pour",
+        "le DSM — seule la portee « Perimetre » (ses consultants nommes dans",
+        "`event_dsm_scope`) ouvre ce droit, jamais « cree par lui » seul.",
+        "N'est offert qu'a un evenement `published` : annuler un brouillon",
+        "que personne n'a jamais vu contournerait la porte de publication.",
+        "L'evenement reste visible avec un badge « Annule » (cahier §10.6) —",
+        "seul l'archivage le retire de la consultation.",
+        "`409 version_obsolete` : l'evenement a change depuis votre lecture,",
+        "ou n'est plus `published`."
+      ]
+    },
+    {
+      "cle": "archivageDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDEvenement",
+      "role": [
+        "Archiver un evenement — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Archiver » et §18 « Archiver un evenement » : MEME",
+        "grille que « Annuler ». Depuis un brouillon, un publie OU un",
+        "annule — aucune precondition d'etat au-dela de « pas deja",
+        "archive », meme parti que l'archivage d'une page (LOT 6, T7).",
+        "`cancelled_at`/`cancellation_reason` survivent a l'archivage : un",
+        "fait, pas un residu. Aucun motif n'est demande — §18.1 ne le nomme",
+        "pas pour cette ressource."
+      ]
+    },
+    {
+      "cle": "restaurationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDEvenement",
+      "role": [
+        "Restaurer un evenement archive — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Restaurer », `ARB-DROIT-003` qui nomme explicitement",
+        "l'evenement parmi les cinq ressources que l'ESM restaure librement",
+        "dans son entite. DSM/BOOST/OFFICE sont a TIRET en bloc, meme s'ils",
+        "portent l'archivage de l'evenement — meme grille que pour une page",
+        "(LOT 6) ou un parcours (LOT 7).",
+        "L'evenement revient TOUJOURS en `draft`, jamais en `published` ni",
+        "`cancelled` : restaurer n'est pas publier, `RIGHTS-001` refuse par",
+        "defaut ce qui n'est pas explicitement redecide."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

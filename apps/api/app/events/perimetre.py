@@ -210,10 +210,27 @@ def verifier_le_rattachement_au_bureau(
 
 
 class ActionEvenement(enum.StrEnum):
-    """Les deux lignes du §11 que `T4` sert — `T5` ajoutera annuler/archiver/restaurer."""
+    """Les cinq lignes du §11 que `T4` et `T5` servent.
+
+    **ANNULER ET ARCHIVER PARTAGENT LA GRILLE « PERIMETRE » DU DSM, PAS CELLE
+    DE MODIFIER.** Le §11 donne, pour `Annuler` et `Archiver`, la MEME cellule
+    DSM que pour `Publier` — « Perimetre », jamais « cree OU rattache ». Un
+    DSM createur seul (non nomme par `event_dsm_scope`) peut donc MODIFIER un
+    evenement de portee Entite qu'il a cree, mais ne peut ni le publier, ni
+    l'annuler, ni l'archiver par cette seule voie.
+
+    **RESTAURER N'A QU'UNE GRILLE, ET ELLE EXCLUT LE DSM EN BLOC** — comme
+    `BOOST` et `OFFICE`. `ARB-DROIT-003` nomme explicitement « un evenement »
+    parmi les cinq ressources que l'ESM restaure librement dans son entite :
+    aucun `ECART-066` a rouvrir ici, la condition du mot « Conditionnel » du
+    §11 est deja nommee.
+    """
 
     MODIFIER = "modifier"
     PUBLIER = "publier"
+    ANNULER = "annuler"
+    ARCHIVER = "archiver"
+    RESTAURER = "restaurer"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -291,21 +308,40 @@ def resoudre_le_perimetre_de_l_evenement(
     """Les actions du §11 que `acteur` peut mener sur `evenement`, dans `entite`.
 
     `roles` vient de `resoudre_les_permissions`, donc le §5.1 est **deja
-    applique**. Un evenement ARCHIVE n'offre plus rien ici : `T5` porte sa
-    propre grille de cycle de vie, et un `UPDATE` sur une ligne qui n'existe
-    plus rendrait un succes vide sans cette garde (§7.0, quatrieme proposition).
+    applique**. Un evenement ARCHIVE n'offre plus que `RESTAURER`, et
+    seulement a `ROLES_DE_PORTEE_ENTITE` — `ARB-DROIT-003` nomme
+    explicitement « un evenement » parmi les cinq ressources que l'ESM
+    restaure librement dans son entite.
     """
     ligne = connexion.execute(
         text(_EVENEMENT_CIBLE), {"evenement": evenement, "entite": entite}
     ).one_or_none()
-    if ligne is None or ligne[2] is not None:
+    if ligne is None:
         return PerimetreEvenement(actions=frozenset())
 
-    createur, etat = ligne[0], str(ligne[1])
+    createur, etat, archive_le = ligne[0], str(ligne[1]), ligne[2]
+
+    if archive_le is not None:
+        #  **SEULE LA RESTAURATION A QUELQUE CHOSE A DIRE D'UN EVENEMENT
+        #  ARCHIVE.** DSM/BOOST/OFFICE sont a TIRET sur cette ligne du §11,
+        #  exactement comme pour la restauration d'une page (LOT 6, `T7`) ou
+        #  d'un parcours (LOT 7, `T11`) — meme parti.
+        if roles & ROLES_DE_PORTEE_ENTITE:
+            return PerimetreEvenement(actions=frozenset({ActionEvenement.RESTAURER}))
+        return PerimetreEvenement(actions=frozenset())
+
     actions: set[ActionEvenement] = set()
 
+    #  Grille large : Modifier, Publier, Annuler, Archiver partagent la MEME
+    #  portee pour ESM/ADM-E/SUPER (Entite/Entite/Global) — le §11 ne les
+    #  distingue que pour le DSM.
     if roles & ROLES_DE_PORTEE_ENTITE:
-        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        actions |= {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ANNULER,
+            ActionEvenement.ARCHIVER,
+        }
 
     if (
         RoleDeLaMatrice.BOOSTER in roles
@@ -320,7 +356,12 @@ def resoudre_le_perimetre_de_l_evenement(
             },
         ).first()
     ):
-        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        actions |= {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ANNULER,
+            ActionEvenement.ARCHIVER,
+        }
 
     if (
         RoleDeLaMatrice.RESPONSABLE_DE_BUREAU in roles
@@ -335,17 +376,28 @@ def resoudre_le_perimetre_de_l_evenement(
             },
         ).first()
     ):
-        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        actions |= {
+            ActionEvenement.MODIFIER,
+            ActionEvenement.PUBLIER,
+            ActionEvenement.ANNULER,
+            ActionEvenement.ARCHIVER,
+        }
 
     if RoleDeLaMatrice.DSM in roles:
-        #  « Perimetre » seul publie ; « cree OU rattache » modifie -- deux
-        #  grilles distinctes pour le MEME role, et c'est le §11 qui les separe.
+        #  « Perimetre » publie, annule ET archive ; « cree OU rattache » ne
+        #  modifie que -- deux grilles distinctes pour le MEME role, et c'est
+        #  le §11 qui les separe (§7.45 de la passation).
         est_le_dsm_nomme = connexion.execute(
             text(_ACTEUR_EST_LE_DSM_DE_LA_PORTEE),
             {"evenement": evenement, "entite": entite, "acteur": acteur},
         ).first()
         if est_le_dsm_nomme:
-            actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+            actions |= {
+                ActionEvenement.MODIFIER,
+                ActionEvenement.PUBLIER,
+                ActionEvenement.ANNULER,
+                ActionEvenement.ARCHIVER,
+            }
         elif createur == acteur:
             actions.add(ActionEvenement.MODIFIER)
 
@@ -354,5 +406,17 @@ def resoudre_le_perimetre_de_l_evenement(
     #  silencieusement une date que rien ne demande de reecrire.
     if etat != EtatEvenement.DRAFT.value:
         actions.discard(ActionEvenement.PUBLIER)
+
+    #  `ANNULER` n'est offert qu'a un PUBLIE : annuler un brouillon que
+    #  personne n'a jamais vu contournerait la porte de publication, et
+    #  annuler un evenement deja annule n'a aucun sens (etat != PUBLISHED
+    #  suffit a le couvrir, l'etat ayant deja quitte PUBLISHED).
+    if etat != EtatEvenement.PUBLISHED.value:
+        actions.discard(ActionEvenement.ANNULER)
+
+    #  `ARCHIVER` n'a pas de precondition d'etat au-dela de « pas deja
+    #  archive » -- deja assure par la branche ci-dessus : draft, published
+    #  et cancelled sont tous les trois archivables, meme parti que
+    #  `archiver_une_page` au LOT 6 (archivable depuis draft OU published).
 
     return PerimetreEvenement(actions=frozenset(actions))
