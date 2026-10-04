@@ -120,6 +120,29 @@ n'a ni `etat`, ni `publiee_le`, ni `cancelled`.
 | collecte depuis la racine | **1 469 pytest**, dont **1 077 d'intégration** (+27, dont +22 d'intégration) |
 | frontend | **706 Vitest** inchangés — aucun écran ne consomme encore la création |
 
+## 4.0 Un vrai défaut trouvé par la CI, pas par moi — et ce que ma propre comparaison avait masqué
+
+La première CI de la PR a échoué sur `test_isolation.py::test_les_cles_composites_sont_toutes_couvertes` :
+ce test dérive du catalogue PostgreSQL la liste des clés étrangères composites réellement posées, et
+la confronte à `COUVERTURE`, un dictionnaire **déclaré** qui rattache chaque chemin à son témoin de
+refus. `event_dsm_scope → event` est une **septième** clé du domaine événementiel (après les six de
+`T1`), et je ne l'avais pas ajoutée à `COUVERTURE` ni mis à jour le compte attendu (`24` → `25`).
+
+**Ma propre preuve de zéro régression ne l'avait pas vu, et la raison est précise.** Le `git worktree`
+posé sur `origin/develop` partage la base PostgreSQL de développement — déjà migrée à la tête `0023`
+par mes soins avant la comparaison. Ce test lit le catalogue PostgreSQL **en direct**, pas les
+métadonnées du code : sur la base déjà migrée, il échoue identiquement que le code qui tourne soit
+celui de `develop` ou celui de la branche, puisque la clé composite existe physiquement dans les deux
+cas. Il est donc apparu, à tort, dans les « 75 échecs environnementaux identiques des deux côtés » —
+masqué par un vrai défaut qui ressemblait exactement à la signature attendue. C'est le piège déjà nommé
+par `CLAUDE.md`, §9 : « le worktree partage la base, donc il subit DÉJÀ tes migrations » — ici il ne
+l'a pas fait échouer à tort, il a fait passer à tort un vrai défaut pour un défaut connu.
+
+Corrigé : l'entrée est ajoutée à `COUVERTURE`, pointant vers le témoin déjà écrit dans
+`test_evenements.py` (`test_une_portee_dsm_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite`), et
+le compte attendu passe de 24 à 25. Vérifié isolément : `test_les_cles_composites_sont_toutes_couvertes`
+passe seul.
+
 ## 4.1 Zéro régression, mesurée dans un `git worktree`
 
 `make residu-check` rend **75 échecs** sur la base de développement, qui porte un jeu de démo
