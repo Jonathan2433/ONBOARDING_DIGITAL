@@ -1,9 +1,9 @@
 """Evenements — modele de donnees §17.
 
-LOT 8, sous-etape `T1`. Quatre tables locales : l'evenement, ses deux types de
-portee facultative et ses medias ordonnes.
+LOT 8. `T1` pose quatre tables locales ; `T2` ajoute leur lecture paginee.
 """
 
+from app.events.lecture import ClassementEvenement, EvenementLu, PageDEvenements
 from app.events.modeles import (
     ETATS_EVENEMENT,
     EtatEvenement,
@@ -15,9 +15,12 @@ from app.events.modeles import (
 
 __all__ = [
     "ETATS_EVENEMENT",
+    "ClassementEvenement",
     "EtatEvenement",
+    "EvenementLu",
     "Event",
     "EventCircleScope",
     "EventMedia",
     "EventOfficeScope",
+    "PageDEvenements",
 ]

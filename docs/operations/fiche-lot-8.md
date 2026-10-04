@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1` faite par `DEC-620`
-**Sous-étape suivante :** `T2`, lecture des événements à venir et passés
+**État :** **OUVERT** — `DEC-619`; `T1` et `T2` faites par `DEC-620` et `DEC-621`
+**Sous-étape suivante :** `T3`, création d'un événement et résolution préalable d'`ECART-067`
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -87,7 +87,7 @@ ne commence.
 | # | Sous-étape | Stories | Témoin principal |
 |---|---|---|---|
 | `T1` ✅ | Les quatre tables `event`, `event_circle_scope`, `event_office_scope`, `event_media` — migration `0022` | socle | **16 tests**, 24 clés composites au total, migration rejouée à vide — `DEC-620` |
-| `T2` | Lecture des événements à venir et passés | `US003` (1/2) | deux lectures autour de `ends_at`; annulé visible ; archivé absent |
+| `T2` ✅ | Lecture des événements à venir et passés | `US003` (1/2) | **12 tests** ; `ends_at <= instant` passé ; annulé visible ; brouillon/archivé absents — `DEC-621` |
 | `T3` | Création d'un événement et résolution du périmètre d'écriture | `US004` (1/3) | chaque rôle autorisé dans sa portée, refus hors portée ; résolution préalable d'`ECART-067` |
 | `T4` | Modification, publication et rattachements multiples | `US004` (2/3) | publication immédiate ; périmètres multiples sans fuite inter-entités |
 | `T5` | Annulation, archivage et restauration | `US004` (3/3) | grilles distinctes ; restauration ESM fonctionnelle ; annulé toujours visible |
