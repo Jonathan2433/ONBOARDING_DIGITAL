@@ -1563,6 +1563,26 @@
         "Pagination du cahier §18.2, memes trois tailles que le trombinoscope",
         "(LOT 5, T2)."
       ]
+    },
+    {
+      "cle": "lectureDesEvenements",
+      "chemin": "/api/v1/entities/{code}/events",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesEvenements",
+      "role": [
+        "Consulter les evenements a venir ou passes — LOT 8, T2, US003 (1/2).",
+        "La matrice §5 et sa section §11 donnent la lecture aux HUIT roles",
+        "authentifies sans distinction, EMP et NEW compris. Aucun role n'est",
+        "donc examine ; hors de son entite principale, l'appelant conserve le",
+        "droit EMP en lecture seule (RIGHTS-003).",
+        "Le parametre `classement` vaut `a_venir` ou `passes`. La frontiere",
+        "est unique : `ends_at > instant` contre `ends_at <= instant`, et le",
+        "meme instant alimente le total et la page.",
+        "Seuls `published` et `cancelled` sont publics. Un annule reste visible",
+        "et porte son etat pour le badge ; un brouillon ou une archive est absent.",
+        "Pagination du cahier §18.2 : 25 par defaut, puis 50 ou 100."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `620` en usage | `DEC-621` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `621` en usage | `DEC-622` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -722,7 +722,7 @@ rejoué et nettoyé. Tess, Léa, Diane et Jonathan ont validé l'ensemble le 30/
 `1.1.18` à `1.1.21` et de `5.0.9` à `5.0.12`, sans manifest ni override. Installation figée,
 audit, lint et `make check` passent ; la PR #200 vise `develop`, jamais `main`.
 
-**2 136 tests** désormais — **1 430 pytest** (dont **1 046** d'intégration), **706 Vitest** (**336**
+**2 148 tests** désormais — **1 442 pytest** (dont **1 055** d'intégration), **706 Vitest** (**336**
 `contracts`, **111** `ui` inchangé, **259** `web`).
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
@@ -744,8 +744,14 @@ stories `#207` à `#212`.
 **`T1` est faite** (`DEC-620`) : les quatre tables `event`, `event_circle_scope`,
 `event_office_scope` et `event_media`, migration `0022`. Le schéma porte désormais **43 tables
 métier**, **22 migrations** et toujours **10 déclencheurs** ; les six nouvelles clés composites
-portent le total à 24. La sous-étape suivante est **`T2`**, la lecture des événements à venir et
-passés. `ECART-067` et `ECART-068` restent ouverts ; aucun des deux ne bloque cette lecture.
+portent le total à 24.
+
+**`T2` est faite** (`DEC-621`) : `GET /api/v1/entities/{code}/events` sert une page `a_venir` ou
+`passes`, avec une seule frontière — `ends_at > instant` contre `ends_at <= instant`. Tous les
+rôles authentifiés lisent, y compris en lecture inter-entités ; `published` et `cancelled` sont
+visibles, `draft` et `archived` absents. Les **12 nouveaux tests**, dont **9 d'intégration**, portent
+le total à **1 442 pytest**, dont **1 055 d'intégration**. La story `US003` reste ouverte jusqu'à
+l'écran de `T9`. La sous-étape suivante est **`T3`** ; `ECART-067` doit être résolu avant son code.
 
 ---
 
