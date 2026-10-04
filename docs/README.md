@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `622` en usage | `DEC-623` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `623` en usage | `DEC-624` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -763,8 +763,18 @@ plutôt qu'une colonne unique sur `event`. Le rattachement exact au cercle ou au
 revalidé au service, jamais à la seule garde de rôle de la route — un Booster du cercle A qui
 nomme le cercle B reçoit le même refus qu'un rôle absent. Les **27 nouveaux tests**, dont **22
 d'intégration**, portent le total à **1 469 pytest**, dont **1 077 d'intégration**. `ECART-068`
-reste ouvert, à résoudre avant la fermeture de `US004`. La sous-étape suivante est **`T4`** —
-modification, publication et rattachements multiples.
+reste ouvert, à résoudre avant la fermeture de `US004`.
+
+**`T4` est faite** (`DEC-623`) : `PUT /entities/{code}/events/{evenement}` et
+`POST .../publication` servent « Modifier » et « Publier » du §11. Les deux lignes portent la
+même portée pour `ESM`/`ADM-E`/`SUPER`/`BOOST`/`OFFICE` ; seul le DSM diverge — « Modifier »
+accepte « créé ou rattaché à son périmètre », « Publier » n'accepte QUE « Périmètre », qui pour
+ce rôle dénote ses consultants nommés (`event_dsm_scope`), jamais son entité. `cercles`/`bureaux`
+remplacent la liste complète des rattachements si fournis — rattachements multiples du modèle
+§17.2 — et chaque code est revalidé indépendamment du périmètre global déjà vérifié par la
+route. Les **20 nouveaux tests**, dont **17 d'intégration**, portent le total à **1 489 pytest**,
+dont **1 094 d'intégration**. La sous-étape suivante est **`T5`** — annulation, archivage et
+restauration.
 
 ---
 

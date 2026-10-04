@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1`, `T2` et `T3` faites par `DEC-620`, `DEC-621` et `DEC-622`
-**Sous-étape suivante :** `T4`, modification, publication et rattachements multiples
+**État :** **OUVERT** — `DEC-619`; `T1` à `T4` faites par `DEC-620` à `DEC-623`
+**Sous-étape suivante :** `T5`, annulation, archivage et restauration
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -93,7 +93,7 @@ ne commence.
 | `T1` ✅ | Les quatre tables `event`, `event_circle_scope`, `event_office_scope`, `event_media` — migration `0022` | socle | **16 tests**, 24 clés composites au total, migration rejouée à vide — `DEC-620` |
 | `T2` ✅ | Lecture des événements à venir et passés | `US003` (1/2) | **12 tests** ; `ends_at <= instant` passé ; annulé visible ; brouillon/archivé absents — `DEC-621` |
 | `T3` ✅ | Création d'un événement et résolution du périmètre d'écriture | `US004` (1/3) | **27 tests** ; chaque rôle autorisé dans sa portée, refus hors portée, asymétrie entre deux porteurs du même rôle ; `ECART-067` clos — `DEC-622` |
-| `T4` | Modification, publication et rattachements multiples | `US004` (2/3) | publication immédiate ; périmètres multiples sans fuite inter-entités |
+| `T4` ✅ | Modification, publication et rattachements multiples | `US004` (2/3) | **20 tests** ; publication immédiate sans republication ; périmètres multiples (plusieurs cercles/bureaux) sans fuite inter-entités ; DSM — deux grilles distinctes pour Modifier et Publier — `DEC-623` |
 | `T5` | Annulation, archivage et restauration | `US004` (3/3) | grilles distinctes ; restauration ESM fonctionnelle ; annulé toujours visible |
 | `T6` | Médias d'événement | `US004` | ordre stable, média de la même entité, aucun téléversement ni traitement du LOT 11 |
 | `T7` | Arrivées récentes | `US002` | publiée visible immédiatement puis absente après `recent_until`, ancre contrôlée |

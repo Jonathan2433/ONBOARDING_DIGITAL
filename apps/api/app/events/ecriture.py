@@ -19,11 +19,30 @@ TROIS PORTEES, TROIS CHEMINS D'ECRITURE, ET UNE SEULE TRANSACTION
   lui-meme : un evenement sans sa ligne de portee, ou l'inverse, serait un etat
   que rien dans ce module ne doit jamais produire.
 
+`T4` AJOUTE MODIFIER, PUBLIER ET LES RATTACHEMENTS MULTIPLES
+
+  `modifier_un_evenement` ecrit les champs ET remplace, si elles sont fournies,
+  les listes de cercles/bureaux de l'evenement — meme motif « la liste remplace
+  la liste » que `remplacer_le_contenu` au LOT 6 : les lignes de portee
+  retirees sont ARCHIVEES, jamais supprimees.
+
+  **CHAQUE CODE AJOUTE EST REVALIDE INDIVIDUELLEMENT, INDEPENDAMMENT DU
+  PERIMETRE GLOBAL DEJA VERIFIE PAR LA ROUTE.** Un acteur peut avoir le droit
+  de MODIFIER cet evenement — par son propre cercle, par exemple — sans avoir
+  le droit d'y ATTACHER le cercle d'un AUTRE Booster : les deux questions sont
+  independantes, et §23.1 ne cumule que ce que chaque role accorde VRAIMENT.
+  Un role de portee ENTITE (ESM/ADM-E/SUPER) n'a besoin d'aucune verification
+  supplementaire : son perimetre couvre deja l'entite entiere.
+
+  `publier_un_evenement` ne fait que la transition `draft -> published`, au
+  meme verrou optimiste (§18.4) que `publier_une_page` du LOT 6 : aucune
+  republication, ce qui ecraserait silencieusement une date que rien ne
+  demande de reecrire.
+
 CE QUE CE MODULE NE FAIT PAS ENCORE
 
-  Il ne modifie, ne publie, n'annule, n'archive et ne rattache pas plusieurs
-  cercles ou bureaux a la fois : la fiche du lot reserve ces gestes a `T4` et
-  `T5`. Un evenement nait donc `draft` et seul, sans aucun media.
+  Il n'annule, n'archive ni ne restaure : `T5`. Il ne rattache aucun media :
+  `T6`.
 """
 
 from __future__ import annotations
@@ -36,8 +55,11 @@ from typing import Final
 from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
+from sqlalchemy.sql.elements import TextClause
 
+from app.events.modeles import EtatEvenement
 from app.events.perimetre import (
+    ROLES_DE_PORTEE_ENTITE,
     PorteeDeCreation,
     peut_creer_un_evenement,
     verifier_le_rattachement_au_bureau,
@@ -71,6 +93,19 @@ MESSAGE_RESSOURCE_INTROUVABLE: Final = (
 CODE_CHRONOLOGIE_INVALIDE: Final = "chronologie_invalide"
 MESSAGE_CHRONOLOGIE_INVALIDE: Final = (
     "`commence_le` doit etre strictement anterieur a `finit_le` (modele §17.1)."
+)
+
+#  Meme gabarit que `CODE_VERSION_OBSOLETE` de `app/content/ecriture.py` —
+#  cahier §18.4, « sans ecrasement silencieux ».
+CODE_VERSION_OBSOLETE: Final = "version_obsolete"
+MESSAGE_VERSION_OBSOLETE: Final = (
+    "L'evenement a change depuis votre lecture, ou n'est plus a l'etat attendu "
+    "(cahier §18.4, « sans ecrasement silencieux »)."
+)
+
+CODE_DOUBLON_DANS_LA_LISTE: Final = "doublon_dans_la_liste"
+MESSAGE_DOUBLON_DANS_LA_LISTE: Final = (
+    "Un meme cercle ou bureau est nomme deux fois dans la meme liste."
 )
 
 
@@ -281,4 +316,345 @@ def creer_un_evenement(
         etat=str(ligne[1]),
         version=int(ligne[2]),
         portee=portee,
+    )
+
+
+# ===========================================================================
+#
+#  MODIFIER ET PUBLIER — matrice §11, LOT 8, `T4`, `MVP-L08-US004` (2 sur 3)
+#
+# ===========================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementModifie:
+    """Ce qu'une modification ou une publication rend."""
+
+    identifiant: uuid.UUID
+    title: str
+    description: str | None
+    starts_at: dt.datetime
+    ends_at: dt.datetime
+    location_text: str | None
+    etat: str
+    version: int
+
+
+#  Le verrou optimiste du §18.4, pose par un `SELECT … FOR UPDATE` : aucune
+#  ligne rendue signifie que l'evenement a quitte l'etat attendu (archive, ou
+#  pas `draft` pour la publication) ; une version differente, qu'il a ete
+#  ecrit entre-temps. Les deux causes rendent le MEME refus (§2.5).
+_EVENEMENT_VERSION_POUR_MISE_A_JOUR: Final = text(
+    "SELECT version FROM event WHERE id = :evenement AND entity_id = :entite "
+    "AND archived_at IS NULL FOR UPDATE"
+)
+_EVENEMENT_VERSION_POUR_PUBLICATION: Final = text(
+    "SELECT version FROM event WHERE id = :evenement AND entity_id = :entite "
+    "AND archived_at IS NULL AND state = :etat_attendu FOR UPDATE"
+)
+
+
+def _exiger_la_version(
+    connexion: Connection,
+    requete: TextClause,
+    parametres: dict[str, object],
+    *,
+    attendue: int,
+) -> None:
+    """Meme discipline que `_exiger_la_version` de `app/content/cycle_de_vie.py`."""
+    ligne = connexion.execute(requete, parametres).one_or_none()
+    if ligne is None:
+        raise ErreurApplicative(
+            code=CODE_VERSION_OBSOLETE,
+            message=MESSAGE_VERSION_OBSOLETE,
+            statut=status.HTTP_409_CONFLICT,
+            champ="version",
+        )
+    if int(ligne[0]) != attendue:
+        raise ErreurApplicative(
+            code=CODE_VERSION_OBSOLETE,
+            message=MESSAGE_VERSION_OBSOLETE,
+            statut=status.HTTP_409_CONFLICT,
+            champ="version",
+            details={"version_actuelle": int(ligne[0])},
+        )
+
+
+_METTRE_A_JOUR_L_EVENEMENT: Final = text(
+    """
+    UPDATE event
+       SET title = :titre, description = :description,
+           starts_at = :commence_le, ends_at = :finit_le, location_text = :lieu,
+           updated_at = :instant, updated_by_person_id = :acteur,
+           version = version + 1
+     WHERE id = :evenement AND entity_id = :entite
+    RETURNING version, state
+    """
+)
+
+_ARCHIVER_LES_PORTEES_CERCLE: Final = text(
+    "UPDATE event_circle_scope SET archived_at = :instant, archived_by_person_id = :acteur "
+    "WHERE event_id = :evenement AND entity_id = :entite AND archived_at IS NULL"
+)
+_ARCHIVER_LES_PORTEES_BUREAU: Final = text(
+    "UPDATE event_office_scope SET archived_at = :instant, archived_by_person_id = :acteur "
+    "WHERE event_id = :evenement AND entity_id = :entite AND archived_at IS NULL"
+)
+
+
+def _verifier_l_absence_de_doublon(codes: list[str], *, champ: str) -> None:
+    if len(set(codes)) != len(codes):
+        raise ErreurApplicative(
+            code=CODE_DOUBLON_DANS_LA_LISTE,
+            message=MESSAGE_DOUBLON_DANS_LA_LISTE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            champ=champ,
+        )
+
+
+def _resoudre_les_cercles(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    codes: list[str],
+    instant: dt.datetime,
+) -> list[uuid.UUID]:
+    """Resoudre chaque code de cercle, et verifier le droit d'y ATTACHER l'evenement.
+
+    **INDEPENDANT DU PERIMETRE GLOBAL DEJA VERIFIE PAR LA ROUTE.** Un role de
+    portee ENTITE (ESM/ADM-E/SUPER) n'a besoin d'aucune verification de plus —
+    son perimetre couvre deja l'entite entiere. Un Booster ne peut attacher QUE
+    son propre cercle, meme s'il a par ailleurs le droit de MODIFIER cet
+    evenement par une autre voie (§23.1 : l'union des droits porte sur les
+    COUPLES role/ressource, pas sur les roles seuls).
+    """
+    _verifier_l_absence_de_doublon(codes, champ="cercles")
+    portee_entite = bool(roles & ROLES_DE_PORTEE_ENTITE)
+    identifiants: list[uuid.UUID] = []
+    for code in codes:
+        identifiant = connexion.execute(
+            _CERCLE_PAR_CODE, {"entite": entite, "code": code}
+        ).scalar_one_or_none()
+        if identifiant is None:
+            raise ErreurApplicative(
+                code=CODE_RESSOURCE_INTROUVABLE,
+                message=MESSAGE_RESSOURCE_INTROUVABLE,
+                statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                champ="cercles",
+            )
+        if not portee_entite and not verifier_le_rattachement_au_cercle(
+            connexion, entite=entite, acteur=acteur, cercle=identifiant, instant=instant
+        ):
+            raise ErreurApplicative(
+                code=CODE_ACCES_REFUSE,
+                message=MESSAGE_ACCES_REFUSE,
+                statut=status.HTTP_403_FORBIDDEN,
+            )
+        identifiants.append(identifiant)
+    return identifiants
+
+
+def _resoudre_les_bureaux(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    codes: list[str],
+    instant: dt.datetime,
+) -> list[uuid.UUID]:
+    """Symetrique de `_resoudre_les_cercles`, pour les bureaux."""
+    _verifier_l_absence_de_doublon(codes, champ="bureaux")
+    portee_entite = bool(roles & ROLES_DE_PORTEE_ENTITE)
+    identifiants: list[uuid.UUID] = []
+    for code in codes:
+        identifiant = connexion.execute(
+            _BUREAU_PAR_CODE, {"entite": entite, "code": code}
+        ).scalar_one_or_none()
+        if identifiant is None:
+            raise ErreurApplicative(
+                code=CODE_RESSOURCE_INTROUVABLE,
+                message=MESSAGE_RESSOURCE_INTROUVABLE,
+                statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                champ="bureaux",
+            )
+        if not portee_entite and not verifier_le_rattachement_au_bureau(
+            connexion, entite=entite, acteur=acteur, bureau=identifiant, instant=instant
+        ):
+            raise ErreurApplicative(
+                code=CODE_ACCES_REFUSE,
+                message=MESSAGE_ACCES_REFUSE,
+                statut=status.HTTP_403_FORBIDDEN,
+            )
+        identifiants.append(identifiant)
+    return identifiants
+
+
+def modifier_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    evenement: uuid.UUID,
+    title: str,
+    description: str | None,
+    starts_at: dt.datetime,
+    ends_at: dt.datetime,
+    location_text: str | None,
+    version_attendue: int,
+    codes_de_cercle: list[str] | None,
+    codes_de_bureau: list[str] | None,
+    instant: dt.datetime,
+) -> EvenementModifie:
+    """Remplacer les champs d'un evenement, et ses rattachements si fournis.
+
+    L'appelant a deja prouve `ActionEvenement.MODIFIER` via
+    `resoudre_le_perimetre_de_l_evenement` : ce module ne rejuge pas ce droit
+    coarse. Il verifie en revanche, pour CHAQUE cercle ou bureau NOMME dans les
+    listes, que l'acteur a le droit de l'y attacher — une question distincte,
+    voir `_resoudre_et_verifier_les_codes`.
+
+    `codes_de_cercle`/`codes_de_bureau` valant `None` signifie « ne pas toucher
+    cette dimension » ; une liste vide la VIDE — meme distinction que
+    `BlocSoumis` au LOT 6, ou la liste remplace la liste.
+    """
+    if not starts_at < ends_at:
+        raise ErreurApplicative(
+            code=CODE_CHRONOLOGIE_INVALIDE,
+            message=MESSAGE_CHRONOLOGIE_INVALIDE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            champ="finit_le",
+        )
+
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_MISE_A_JOUR,
+        {"evenement": evenement, "entite": entite},
+        attendue=version_attendue,
+    )
+
+    cercle_ids: list[uuid.UUID] | None = None
+    if codes_de_cercle is not None:
+        cercle_ids = _resoudre_les_cercles(
+            connexion,
+            entite=entite,
+            acteur=acteur,
+            roles=roles,
+            codes=codes_de_cercle,
+            instant=instant,
+        )
+
+    bureau_ids: list[uuid.UUID] | None = None
+    if codes_de_bureau is not None:
+        bureau_ids = _resoudre_les_bureaux(
+            connexion,
+            entite=entite,
+            acteur=acteur,
+            roles=roles,
+            codes=codes_de_bureau,
+            instant=instant,
+        )
+
+    if cercle_ids is not None:
+        connexion.execute(
+            _ARCHIVER_LES_PORTEES_CERCLE,
+            {"evenement": evenement, "entite": entite, "acteur": acteur, "instant": instant},
+        )
+        for cercle_id in cercle_ids:
+            connexion.execute(
+                _INSERER_LA_PORTEE_CERCLE,
+                {"entite": entite, "evenement": evenement, "cercle": cercle_id, "acteur": acteur},
+            )
+
+    if bureau_ids is not None:
+        connexion.execute(
+            _ARCHIVER_LES_PORTEES_BUREAU,
+            {"evenement": evenement, "entite": entite, "acteur": acteur, "instant": instant},
+        )
+        for bureau_id in bureau_ids:
+            connexion.execute(
+                _INSERER_LA_PORTEE_BUREAU,
+                {"entite": entite, "evenement": evenement, "bureau": bureau_id, "acteur": acteur},
+            )
+
+    ligne = connexion.execute(
+        _METTRE_A_JOUR_L_EVENEMENT,
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "titre": title,
+            "description": description,
+            "commence_le": starts_at,
+            "finit_le": ends_at,
+            "lieu": location_text,
+            "acteur": acteur,
+            "instant": instant,
+        },
+    ).one()
+
+    return EvenementModifie(
+        identifiant=evenement,
+        title=title,
+        description=description,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        location_text=location_text,
+        etat=str(ligne[1]),
+        version=int(ligne[0]),
+    )
+
+
+def publier_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    evenement: uuid.UUID,
+    acteur: uuid.UUID,
+    version_attendue: int,
+    instant: dt.datetime,
+) -> EvenementModifie:
+    """§11 « Publier » — un BROUILLON devient `published`, immediatement.
+
+    L'appelant a deja prouve `ActionEvenement.PUBLIER`, qui n'est jamais offert
+    hors de l'etat `draft` (`resoudre_le_perimetre_de_l_evenement`). Le verrou
+    de version re-exige NEANMOINS l'etat ici : les deux lectures sont deux
+    instants distincts, et un evenement publie entre-temps par un autre
+    porteur du meme droit ne doit pas l'etre une seconde fois.
+    """
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_PUBLICATION,
+        {"evenement": evenement, "entite": entite, "etat_attendu": EtatEvenement.DRAFT.value},
+        attendue=version_attendue,
+    )
+    ligne = connexion.execute(
+        text(
+            """
+            UPDATE event
+               SET state = :etat, updated_at = :instant, updated_by_person_id = :acteur,
+                   version = version + 1
+             WHERE id = :evenement AND entity_id = :entite
+            RETURNING id, title, description, starts_at, ends_at, location_text, version, state
+            """
+        ),
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "etat": EtatEvenement.PUBLISHED.value,
+            "instant": instant,
+            "acteur": acteur,
+        },
+    ).one()
+    return EvenementModifie(
+        identifiant=ligne[0],
+        title=ligne[1],
+        description=ligne[2],
+        starts_at=ligne[3],
+        ends_at=ligne[4],
+        location_text=ligne[5],
+        etat=str(ligne[7]),
+        version=int(ligne[6]),
     )
