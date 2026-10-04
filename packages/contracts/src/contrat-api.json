@@ -1610,6 +1610,48 @@
         "Aucun champ `etat` : publier est une ligne SEPAREE du §11, reservee",
         "a `T4`."
       ]
+    },
+    {
+      "cle": "modificationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDEvenementEcrit",
+      "role": [
+        "Modifier un evenement — LOT 8, T4, US004 (2/3).",
+        "Matrice §11 « Modifier » : memes portees qu'a la creation pour",
+        "ESM/ADM-E/SUPER/BOOST/OFFICE ; le DSM y est plus large — evenements",
+        "crees OU rattaches a son perimetre (`event_dsm_scope`), pas",
+        "seulement `consultants`.",
+        "`cercles`/`bureaux` remplacent la liste complete des rattachements",
+        "de leur dimension si fournis (`None` : dimension non touchee ; `[]`",
+        "la vide) — rattachements multiples, sans fuite inter-entites.",
+        "Chaque code ajoute est revalide INDEPENDAMMENT du perimetre global",
+        "deja verifie : un role de portee locale ne peut attacher QUE sa",
+        "propre ressource, meme s'il a par ailleurs le droit de modifier cet",
+        "evenement (§23.1, l'union des droits porte sur les couples",
+        "role/ressource).",
+        "`409 version_obsolete` : concurrence optimiste du §18.4."
+      ]
+    },
+    {
+      "cle": "publicationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/publication",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDEvenementEcrit",
+      "role": [
+        "Publier un evenement — LOT 8, T4, US004 (2/3).",
+        "Matrice §11 « Publier » : pour le DSM, SEULE la portee « Perimetre »",
+        "ouvre ce droit — ses consultants nommes dans `event_dsm_scope` —,",
+        "jamais « cree par lui » seul : le §3 de la matrice lit « Perimetre »",
+        "comme « ses consultants dans son entite » pour ce role precisement,",
+        "pas comme l'entite (§7.45 de la passation, deja mesure au LOT 6",
+        "pour l'ESM, ou les deux mots coincident).",
+        "Immediate, en un clic, et sans republication possible : seul un",
+        "`draft` offre `Publier`, meme discipline que `publier_une_page` au",
+        "LOT 6."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

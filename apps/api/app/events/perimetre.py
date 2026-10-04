@@ -40,6 +40,7 @@ CE QUE CE MODULE NE FAIT PAS
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import enum
 import uuid
@@ -48,6 +49,7 @@ from typing import Final
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.events.modeles import EtatEvenement
 from app.organization.modeles import TypeResponsabilite
 from app.permissions.services import RoleDeLaMatrice
 
@@ -70,6 +72,18 @@ ROLES_DE_CREATION_EVENEMENT: Final[frozenset[RoleDeLaMatrice]] = frozenset(
         RoleDeLaMatrice.ESM,
         RoleDeLaMatrice.BOOSTER,
         RoleDeLaMatrice.RESPONSABLE_DE_BUREAU,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  Les roles dont la portee est l'ENTITE entiere sur les evenements : le §11
+#  ecrit « Entite » pour `ESM`/`ADM-E`, « Global » pour `SUPER`. La route etant
+#  bornee a une entite par son chemin, les trois se resolvent identiquement --
+#  meme parti que `ROLES_DE_PORTEE_ENTITE` de `app/content/perimetre.py`.
+ROLES_DE_PORTEE_ENTITE: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
         RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
         RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
     }
@@ -167,3 +181,178 @@ def verifier_le_rattachement_au_bureau(
         },
     ).first()
     return ligne is not None
+
+
+# ===========================================================================
+#
+#  MODIFIER ET PUBLIER — matrice §11, LOT 8, `T4`, `MVP-L08-US004` (2 sur 3)
+#
+#    **DEUX LIGNES VOISINES, DEUX GRILLES QUI NE DIFFERENT QUE SUR UNE
+#    CELLULE.** Le §11 donne, pour ESM/ADM-E/SUPER/BOOST/OFFICE, EXACTEMENT la
+#    meme portee a « Modifier » et a « Publier » -- Entite, Entite, Global,
+#    Cercle, Bureau. Seul le DSM diverge :
+#
+#        Modifier   « Evenements crees OU rattaches a son perimetre »
+#        Publier    « Perimetre »
+#
+#    **ET « PERIMETRE », LU PAR LE §3, NE DENOTE PAS LE MEME ENSEMBLE SELON LE
+#    ROLE** -- la lecon du §7.45 de la passation, deja payee au LOT 6. Pour
+#    l'ESM, le §3 donne « Perimetre principal : ensemble de son entite », donc
+#    `Perimetre` et `Entite` coincident. **Pour le DSM, le §3 donne « ses
+#    CONSULTANTS dans son entite »** -- un ensemble de PERSONNES, exactement ce
+#    que `EventDsmScope` porte. Publier un evenement cree par un DSM mais reste
+#    de portee ENTITE ne lui est donc PAS ouvert : seul un evenement OU IL EST
+#    LE DSM NOMME (`event_dsm_scope.dsm_person_id = acteur`) l'est. Modifier,
+#    lui, accepte aussi « cree par lui », quelle que soit la portee choisie a la
+#    creation.
+#
+# ===========================================================================
+
+
+class ActionEvenement(enum.StrEnum):
+    """Les deux lignes du §11 que `T4` sert — `T5` ajoutera annuler/archiver/restaurer."""
+
+    MODIFIER = "modifier"
+    PUBLIER = "publier"
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PerimetreEvenement:
+    """Les actions que l'acteur peut mener SUR CET EVENEMENT.
+
+    **UN ENSEMBLE VIDE EST LE REFUS**, meme discipline que `PerimetreDEcriture`
+    et `PerimetreEditorial` de ce depot : pas de booleen derivable, pas de motif
+    qui sortirait (§2.5, refus par defaut).
+    """
+
+    actions: frozenset[ActionEvenement]
+
+
+#  L'evenement cible : qui l'a cree, dans quel etat, est-il archive ? Le couple
+#  `(id, entity_id)` porte l'isolation (§25.3).
+_EVENEMENT_CIBLE: Final[str] = """
+SELECT created_by_person_id, state, archived_at
+  FROM event
+ WHERE id = :evenement AND entity_id = :entite
+"""
+
+#  `acteur` est-il Booster ACTIF d'au moins UN des cercles auxquels CET
+#  evenement est rattache ? `period @> :instant`, jamais `ends_at IS NULL`
+#  (`ECART-056`). La portee de l'evenement n'est pas relue a part : c'est la
+#  JOINTURE qui la porte, donc aucune liste de cercles ne peut diverger entre
+#  les deux cotes de la verification.
+_ACTEUR_BOOSTER_DE_LA_PORTEE: Final[str] = """
+SELECT 1
+  FROM event_circle_scope ecs
+  JOIN framework_responsibility_assignment fra
+    ON fra.circle_id = ecs.circle_id AND fra.entity_id = ecs.entity_id
+ WHERE ecs.event_id = :evenement AND ecs.entity_id = :entite
+   AND ecs.archived_at IS NULL
+   AND fra.person_id = :acteur
+   AND fra.responsibility_type = :type_booster
+   AND fra.archived_at IS NULL AND fra.period @> :instant
+ LIMIT 1
+"""
+
+#  Symetrique pour un responsable de bureau.
+_ACTEUR_OFFICE_DE_LA_PORTEE: Final[str] = """
+SELECT 1
+  FROM event_office_scope eos
+  JOIN framework_responsibility_assignment fra
+    ON fra.office_id = eos.office_id AND fra.entity_id = eos.entity_id
+ WHERE eos.event_id = :evenement AND eos.entity_id = :entite
+   AND eos.archived_at IS NULL
+   AND fra.person_id = :acteur
+   AND fra.responsibility_type = :type_office
+   AND fra.archived_at IS NULL AND fra.period @> :instant
+ LIMIT 1
+"""
+
+#  `ECART-067` : l'acteur EST-il le DSM nomme par la portee « consultants » de
+#  CET evenement ? Aucune jointure vers `dsm_assignment` -- la table porte
+#  directement le DSM, pas ses consultants.
+_ACTEUR_EST_LE_DSM_DE_LA_PORTEE: Final[str] = """
+SELECT 1 FROM event_dsm_scope
+ WHERE event_id = :evenement AND entity_id = :entite
+   AND archived_at IS NULL AND dsm_person_id = :acteur
+ LIMIT 1
+"""
+
+
+def resoudre_le_perimetre_de_l_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    evenement: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> PerimetreEvenement:
+    """Les actions du §11 que `acteur` peut mener sur `evenement`, dans `entite`.
+
+    `roles` vient de `resoudre_les_permissions`, donc le §5.1 est **deja
+    applique**. Un evenement ARCHIVE n'offre plus rien ici : `T5` porte sa
+    propre grille de cycle de vie, et un `UPDATE` sur une ligne qui n'existe
+    plus rendrait un succes vide sans cette garde (§7.0, quatrieme proposition).
+    """
+    ligne = connexion.execute(
+        text(_EVENEMENT_CIBLE), {"evenement": evenement, "entite": entite}
+    ).one_or_none()
+    if ligne is None or ligne[2] is not None:
+        return PerimetreEvenement(actions=frozenset())
+
+    createur, etat = ligne[0], str(ligne[1])
+    actions: set[ActionEvenement] = set()
+
+    if roles & ROLES_DE_PORTEE_ENTITE:
+        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+
+    if (
+        RoleDeLaMatrice.BOOSTER in roles
+        and connexion.execute(
+            text(_ACTEUR_BOOSTER_DE_LA_PORTEE),
+            {
+                "evenement": evenement,
+                "entite": entite,
+                "acteur": acteur,
+                "type_booster": TypeResponsabilite.BOOSTER.value,
+                "instant": instant,
+            },
+        ).first()
+    ):
+        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+
+    if (
+        RoleDeLaMatrice.RESPONSABLE_DE_BUREAU in roles
+        and connexion.execute(
+            text(_ACTEUR_OFFICE_DE_LA_PORTEE),
+            {
+                "evenement": evenement,
+                "entite": entite,
+                "acteur": acteur,
+                "type_office": TypeResponsabilite.OFFICE_MANAGER.value,
+                "instant": instant,
+            },
+        ).first()
+    ):
+        actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+
+    if RoleDeLaMatrice.DSM in roles:
+        #  « Perimetre » seul publie ; « cree OU rattache » modifie -- deux
+        #  grilles distinctes pour le MEME role, et c'est le §11 qui les separe.
+        est_le_dsm_nomme = connexion.execute(
+            text(_ACTEUR_EST_LE_DSM_DE_LA_PORTEE),
+            {"evenement": evenement, "entite": entite, "acteur": acteur},
+        ).first()
+        if est_le_dsm_nomme:
+            actions |= {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        elif createur == acteur:
+            actions.add(ActionEvenement.MODIFIER)
+
+    #  `PUBLIER` n'est offert qu'a un BROUILLON -- meme discipline que
+    #  `publier_une_page` au LOT 6 : pas de republication, qui ecraserait
+    #  silencieusement une date que rien ne demande de reecrire.
+    if etat != EtatEvenement.DRAFT.value:
+        actions.discard(ActionEvenement.PUBLIER)
+
+    return PerimetreEvenement(actions=frozenset(actions))

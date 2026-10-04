@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 4 octobre 2026 — décision `DEC-622`, réalisation de `T3` du LOT 8
+**Dernière mise à jour :** 4 octobre 2026 — décision `DEC-623`, réalisation de `T4` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -127,6 +127,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-620`, sous-étape `T1`** | 1 | **Soumise le 01/10/2026** |
 | **Réalisation du LOT 8 `DEC-621`, sous-étape `T2`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-622`, sous-étape `T3`** | 1 | **Soumise le 04/10/2026** |
+| **Réalisation du LOT 8 `DEC-623`, sous-étape `T4`** | 1 | **Soumise le 04/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -138,7 +139,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **290** | |
+| **Total** | **291** | |
 
 ---
 
@@ -862,7 +863,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 | `DEC-621` | **`T2` du LOT 8 livre la lecture paginée des événements à venir et passés — `GET /entities/{code}/events`, première moitié de `MVP-L08-US003`.** Le paramètre `classement` vaut `a_venir` ou `passes`; une seule frontière classe `ends_at > instant` à venir et `ends_at <= instant` passé, si bien qu'un événement en cours reste dans l'onglet à venir et qu'une fin exactement égale à l'ancre est déjà passée. Le total et la page reçoivent le même instant. Seuls `published` et `cancelled` sont publics : l'annulé conserve son état et son motif pour le badge ; `draft`, `archived` et toute ligne portant `archived_at` sont absents. | **Aucun rôle n'est refusé en lecture.** Les matrices §5 et §11 accordent la consultation aux huit rôles authentifiés, `EMP` et `NEW` compris ; un témoin emploie donc un appelant sans appartenance ni responsabilité dans l'entité cible et obtient `200`, ce qui prouve aussi RIGHTS-003. L'isolation reste portée par `entity_id`. Pagination du §18.2, ordre total et manifeste API partagé. **12 nouveaux tests**, dont **9 d'intégration** ; 1 442 pytest collectés, dont 1 055 d'intégration. `T2-1` reproduit puis corrige le piège du paramètre lié partagé (§7.25). La première CI révèle aussi `T2-2` : cinq suites du LOT 7 créaient leurs sessions au même instant figé que leurs données métier ; le 04/10, l'inactivité dépassait sept jours et 98 tests rendaient `401`. Les dates métier restent figées, les sessions utilisent désormais l'instant réel. `US003` reste ouverte jusqu'à son écran (`T9`). | Soumise le 04/10/2026 |
 | `DEC-622` | **`T3` du LOT 8 livre `POST /entities/{code}/events`, première moitié de `MVP-L08-US004`, et clôt `ECART-067`.** La matrice §11 donne à chaque rôle EXACTEMENT une portée de création — `ESM`/`ADM-E`/`SUPER` pour « Entité », `BOOST` pour « Cercle », le responsable de bureau pour « Bureau » — sauf au DSM, qui porte « Entité ou consultants ». **Arbitrage explicite de Jonathan, sur recommandation argumentée** (deux options présentées : table dédiée symétrique aux deux portées existantes, ou colonne unique sur `event`) : **table dédiée**, `event_dsm_scope(event_id, entity_id, dsm_person_id)`, migration `0023` — cohérente avec le motif déjà posé par `T1`, un index unique partiel sur `event_id` seul portant l'invariant « Entité OU consultants, jamais les deux » que la matrice écrit en disjonction. `dsm_person_id` référence `person.id` par une clé SIMPLE, exactement comme `dsm_assignment.dsm_person_id` (modèle §8.5) : le DSM est la clé de sa propre portée, jamais une liste de consultants figée à la création. | **La garde de route n'exige qu'un droit de création quelque part ; le service revalide le couple (rôle, portée précise).** `exiger_un_role_dans_l_entite` ne connaît que les six rôles qui portent au moins une ligne du §11 — la portée exacte arrive avec le corps de la requête, donc après la garde, et `creer_un_evenement` la confronte à `peut_creer_un_evenement`. Un Booster hors de son cercle, un ESM qui demande « cercle », un DSM qui demande « bureau » reçoivent le MÊME refus `acces_refuse` (403) qu'un rôle totalement absent — même discipline que le refus par défaut du §2.5. L'ASYMÉTRIE est éprouvée explicitement : un Booster crée dans SON cercle et est refusé sur celui d'un AUTRE Booster, même chose pour un responsable de bureau. La résolution d'un cercle ou d'un bureau par CODE est isolée par entité : un code valide dans une AUTRE entité rend `ressource_introuvable` (422), jamais une fuite inter-entités. La chronologie (`starts_at < ends_at`) est validée en Python avant l'écriture, pas laissée à la contrainte — un 500 sur une faute de l'appelant l'accuserait à tort. **27 nouveaux tests, dont 22 d'intégration** (19 dans `test_creation_evenements.py`, 3 témoins d'isolation et d'unicité de `event_dsm_scope` dans `test_evenements.py`, 5 structurels) ; 1 469 pytest collectés, dont 1 077 d'intégration. Zéro régression : comparaison dans un `git worktree` sur `origin/develop`, même base — 75 échecs environnementaux identiques des deux côtés (jeu de démo, comptes en absolu). `ECART-068` reste ouvert et intact, à résoudre avant la fermeture de `US004` ; aucune anticipation du LOT 10. `make migrations-check` (tête `0023`, schéma identique) et `make isolation-check` (31 tables locales, 25 clés composites) passent. | Soumise le 04/10/2026 |
 
-**Prochain identifiant libre : `DEC-623`.**
+| `DEC-623` | **`T4` du LOT 8 livre `PUT /entities/{code}/events/{evenement}` et `POST .../publication`, deuxième tiers de `MVP-L08-US004`.** La matrice §11 donne EXACTEMENT la même portée à « Modifier » et « Publier » pour `ESM`/`ADM-E`/`SUPER`/`BOOST`/`OFFICE` ; seul le DSM diverge — « Modifier » accepte « événements créés OU rattachés à son périmètre », « Publier » n'accepte QUE « Périmètre ». Le §3 lit « Périmètre » pour le DSM comme « ses consultants dans son entité » (`event_dsm_scope`), jamais comme son entité — contrairement à l'ESM, où les deux mots coïncident (§7.45 de la passation, LOT 6). Un DSM peut donc modifier un événement de portée Entité qu'il a créé sans jamais pouvoir le publier par cette seule voie. `cercles`/`bureaux` remplacent la liste complète des rattachements de leur dimension si fournis (`None` : dimension non touchée ; `[]` : vidée) — rattachements multiples du modèle §17.2, « un ou plusieurs ». | **Chaque code de cercle/bureau soumis est revalidé INDÉPENDAMMENT du périmètre global déjà vérifié par la route** (§23.1, l'union des droits porte sur les couples rôle/ressource) : un Booster autorisé à modifier (par SON cercle) ne peut pas pour autant y attacher le cercle d'un AUTRE Booster — deux témoins d'asymétrie le prouvent, un pour les cercles et un pour les bureaux. Concurrence optimiste du §18.4 revérifiée au moment de l'écriture ; `Publier` n'est jamais offert hors d'un `draft`, aucune republication possible (même discipline que `publier_une_page` au LOT 6). **Défaut trouvé et corrigé dans mes propres tests, avant tout commit** : les deux requêtes d'archivage des portées référençaient `:instant` sans que l'appel ne le fournisse — corrigé avant d'entrer dans l'historique. **20 nouveaux tests, dont 17 d'intégration** ; 1 489 pytest collectés, dont 1 094 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T3`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T4` n'ajoute ni table ni colonne. `ECART-068` reste ouvert et intact. | Soumise le 04/10/2026 |
+
+**Prochain identifiant libre : `DEC-624`.**
 
 ---
 
@@ -1131,6 +1134,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-620` — réalisation du LOT 8, `T1` | 1 | 1 |
 | `DEC-621` — réalisation du LOT 8, `T2` | 1 | 1 |
 | `DEC-622` — réalisation du LOT 8, `T3` | 1 | 1 |
+| `DEC-623` — réalisation du LOT 8, `T4` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1142,7 +1146,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **290** | **290** |
+| **Total** | **291** | **291** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

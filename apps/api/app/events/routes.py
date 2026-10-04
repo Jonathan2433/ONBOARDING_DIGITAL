@@ -13,6 +13,15 @@ quelque part ; la portee precise — et le rattachement exact au cercle ou au
 bureau nomme — est revalidee par `creer_un_evenement`, qui seule connait la
 portee demandee dans le corps de la requete. Meme repartition que
 `creer_une_page_de_contenu` dans `app/content/routes.py`.
+
+LA MODIFICATION ET LA PUBLICATION (`T4`, `MVP-L08-US004`, 2 sur 3) — **LA MEME
+GARDE COARSE SERT AUX TROIS VERBES**, parce que les six roles qui creent sont
+exactement ceux qui portent au moins une ligne « Modifier » ou « Publier » du
+§11. Le couple (role, evenement) precis est resolu par
+`resoudre_le_perimetre_de_l_evenement`, qui rend un refus UNIQUE
+(`acces_refuse`, 403) que l'evenement n'existe pas dans cette entite, que le
+role n'y porte rien, ou qu'il y porte un droit mais pas celui demande — meme
+discipline de refus par defaut que `T3`.
 """
 
 from __future__ import annotations
@@ -31,9 +40,20 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
-from app.events.ecriture import creer_un_evenement
+from app.events.ecriture import (
+    CODE_ACCES_REFUSE,
+    MESSAGE_ACCES_REFUSE,
+    creer_un_evenement,
+    modifier_un_evenement,
+    publier_un_evenement,
+)
 from app.events.lecture import ClassementEvenement, lister_les_evenements
-from app.events.perimetre import ROLES_DE_CREATION_EVENEMENT, PorteeDeCreation
+from app.events.perimetre import (
+    ROLES_DE_CREATION_EVENEMENT,
+    ActionEvenement,
+    PorteeDeCreation,
+    resoudre_le_perimetre_de_l_evenement,
+)
 from app.permissions.dependances import exiger_un_role_dans_l_entite
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
@@ -117,6 +137,57 @@ class ReponseDeCreationDEvenement(BaseModel):
     etat: str
     version: int
     portee: PorteeDeCreation
+
+
+class DemandeDeModificationDEvenement(BaseModel):
+    """Modifier un evenement — matrice §11 « Modifier », modele §17.1.
+
+    **`cercles`/`bureaux` A TROIS ETATS, ET C'EST STRUCTUREL** : absent (`None`)
+    signifie « ne touche pas a cette dimension », une liste VIDE la VIDE — la
+    liste remplace la liste, meme parti que `BlocSoumis` au LOT 6. Aucun champ
+    `etat` : publier est la ligne SEPAREE du §11 servie par
+    `DemandeDePublicationDEvenement`.
+    """
+
+    titre: str = Field(min_length=1, description="Le titre de l'evenement (§17.1)")
+    description: str | None = Field(default=None, description="Facultatif (§17.1)")
+    commence_le: dt.datetime = Field(description="`starts_at` — doit preceder `finit_le`")
+    finit_le: dt.datetime = Field(description="`ends_at` — doit suivre `commence_le`")
+    lieu: str | None = Field(default=None, description="`location_text`, facultatif (§17.1)")
+    version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+    cercles: list[str] | None = Field(
+        default=None,
+        description=(
+            "Remplace la liste des cercles rattaches par leur `code`. `None` : "
+            "ne touche pas cette dimension. `[]` : la vide."
+        ),
+    )
+    bureaux: list[str] | None = Field(
+        default=None,
+        description=(
+            "Remplace la liste des bureaux rattaches par leur `code`. `None` : "
+            "ne touche pas cette dimension. `[]` : la vide."
+        ),
+    )
+
+
+class DemandeDePublicationDEvenement(BaseModel):
+    """Publier un evenement — matrice §11 « Publier ». Immediate, sans second geste."""
+
+    version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+
+
+class ReponseDEvenementEcrit(BaseModel):
+    """Un evenement apres modification ou publication."""
+
+    identifiant: uuid.UUID
+    titre: str
+    description: str | None
+    commence_le: dt.datetime
+    finit_le: dt.datetime
+    lieu: str | None
+    etat: str
+    version: int
 
 
 def routeur_evenements(parametres: Parametres) -> APIRouter:
@@ -303,6 +374,207 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
             etat=cree.etat,
             version=cree.version,
             portee=cree.portee,
+        )
+
+    @routeur.put(
+        "/entities/{code}/events/{evenement}",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDEvenementEcrit,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : un seul gabarit pour trois causes — l'evenement "
+                    "n'existe pas dans cette entite (ou est archive), le role n'y porte "
+                    "rien, ou il y porte un droit mais pas `Modifier` (matrice §11). "
+                    "Le meme code couvre un cercle/bureau NOMME dans `cercles`/`bureaux` "
+                    "que l'acteur n'a pas le droit d'y attacher."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : l'evenement a change depuis votre lecture, ou "
+                    "a ete archive entre-temps — cahier §18.4."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`chronologie_invalide` : `finit_le` n'est pas posterieur a "
+                    "`commence_le`. `ressource_introuvable` : un cercle ou bureau nomme "
+                    "n'est pas dans cette entite. `doublon_dans_la_liste` : un meme code "
+                    "nomme deux fois dans `cercles` ou `bureaux`."
+                )
+            },
+        },
+        summary="Modifier un evenement",
+        description=(
+            "Matrice §11 « Modifier ». `cercles`/`bureaux` remplacent la liste "
+            "complete des rattachements de leur dimension si fournis — `T4`, "
+            "« rattachements multiples »."
+        ),
+    )
+    def modifier_un_evenement_route(
+        demande: DemandeDeModificationDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDEvenementEcrit:
+        """Modifier un evenement — matrice §11, modele §17.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            roles = frozenset(permissions.roles)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=roles,
+                instant=instant,
+            )
+            if ActionEvenement.MODIFIER not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            ecrit = modifier_un_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=roles,
+                evenement=evenement,
+                title=demande.titre,
+                description=demande.description,
+                starts_at=demande.commence_le,
+                ends_at=demande.finit_le,
+                location_text=demande.lieu,
+                version_attendue=demande.version,
+                codes_de_cercle=demande.cercles,
+                codes_de_bureau=demande.bureaux,
+                instant=instant,
+            )
+
+        return ReponseDEvenementEcrit(
+            identifiant=ecrit.identifiant,
+            titre=ecrit.title,
+            description=ecrit.description,
+            commence_le=ecrit.starts_at,
+            finit_le=ecrit.ends_at,
+            lieu=ecrit.location_text,
+            etat=ecrit.etat,
+            version=ecrit.version,
+        )
+
+    @routeur.post(
+        "/entities/{code}/events/{evenement}/publication",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDEvenementEcrit,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : l'evenement n'existe pas dans cette entite, le "
+                    "role n'y porte rien, ou il y porte `Modifier` sans `Publier` — "
+                    "pour le DSM, « Perimetre » seul (ses consultants nommes), jamais "
+                    "« cree par lui » seul (§3 de la matrice, §7.45 de la passation)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : l'evenement a change depuis votre lecture, "
+                    "ou n'est plus `draft` — aucune republication (meme discipline que "
+                    "`publier_une_page` au LOT 6)."
+                )
+            },
+        },
+        summary="Publier un evenement",
+        description="Matrice §11 « Publier ». Immediate, en un clic, sans republication possible.",
+    )
+    def publier_un_evenement_route(
+        demande: DemandeDePublicationDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDEvenementEcrit:
+        """Publier un evenement — matrice §11, modele §17.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.PUBLIER not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            publie = publier_un_evenement(
+                connexion,
+                entite=entite.id,
+                evenement=evenement,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        return ReponseDEvenementEcrit(
+            identifiant=publie.identifiant,
+            titre=publie.title,
+            description=publie.description,
+            commence_le=publie.starts_at,
+            finit_le=publie.ends_at,
+            lieu=publie.location_text,
+            etat=publie.etat,
+            version=publie.version,
         )
 
     return routeur
