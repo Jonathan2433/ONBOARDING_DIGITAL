@@ -39,10 +39,33 @@ TROIS PORTEES, TROIS CHEMINS D'ECRITURE, ET UNE SEULE TRANSACTION
   republication, ce qui ecraserait silencieusement une date que rien ne
   demande de reecrire.
 
+`T5` AJOUTE ANNULER, ARCHIVER ET RESTAURER
+
+  Les trois transitions, et ce qui les borne — meme discipline que
+  `app/content/cycle_de_vie.py` au LOT 6 :
+
+      published  --  annuler    -->  cancelled   cancelled_at, cancellation_reason
+      draft|published|cancelled --  archiver  -->  archived    archived_at, archived_by
+      archived   --  restaurer  -->  draft       archived_at et archived_by effaces
+
+  **IL N'Y A PAS DE `draft --> cancelled`** : annuler un brouillon que
+  personne n'a jamais vu contournerait la porte de publication que `PUBLIER`
+  impose. **LA RESTAURATION REND TOUJOURS `draft`, JAMAIS L'ETAT ANTERIEUR A
+  L'ARCHIVAGE** — meme raisonnement que `restaurer_une_page` : restaurer
+  n'est pas publier, et `RIGHTS-001` refuse par defaut ce qui n'est pas
+  explicitement redecide. `cancelled_at`/`cancellation_reason` ne sont PAS
+  effaces par l'archivage ni par la restauration : l'evenement A ete annule
+  ce jour-la, et c'est un fait, pas un residu — meme parti que `published_at`
+  pour une page.
+
+  **AUCUN MOTIF N'EST DEMANDE POUR ARCHIVER**, et le §18.1 en donne la
+  raison : il enumere cinq cas ou un motif est obligatoire, et archiver un
+  evenement n'y est pas. `archive_reason` existe depuis le LOT 2 et personne
+  ne l'ecrit (`ECART-064`, toujours ouvert).
+
 CE QUE CE MODULE NE FAIT PAS ENCORE
 
-  Il n'annule, n'archive ni ne restaure : `T5`. Il ne rattache aucun media :
-  `T6`.
+  Il ne rattache aucun media : `T6`.
 """
 
 from __future__ import annotations
@@ -658,3 +681,202 @@ def publier_un_evenement(
         etat=str(ligne[7]),
         version=int(ligne[6]),
     )
+
+
+# ===========================================================================
+#
+#  ANNULER, ARCHIVER ET RESTAURER — matrice §11, LOT 8, `T5`,
+#  `MVP-L08-US004` (3 sur 3)
+#
+# ===========================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementAnnule:
+    """Ce que l'annulation a produit — l'evenement reste visible, badge « Annule »."""
+
+    version: int
+    etat: str
+    annule_le: dt.datetime
+    motif_d_annulation: str | None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementArchive:
+    """Ce que l'archivage a produit — l'evenement quitte la consultation publique."""
+
+    version: int
+    etat: str
+    archive_le: dt.datetime
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementRestaure:
+    """Ce que la restauration a produit — l'evenement revient en BROUILLON."""
+
+    version: int
+    etat: str
+
+
+#  `_EVENEMENT_VERSION_POUR_MISE_A_JOUR` sert deja l'archivage : aucune
+#  precondition d'etat au-dela de « pas deja archive ». Annuler et restaurer
+#  exigent chacun un etat precis, donc deux requetes de plus.
+_EVENEMENT_VERSION_POUR_ANNULATION: Final = text(
+    "SELECT version FROM event WHERE id = :evenement AND entity_id = :entite "
+    "AND archived_at IS NULL AND state = :etat_attendu FOR UPDATE"
+)
+_EVENEMENT_VERSION_POUR_RESTAURATION: Final = text(
+    "SELECT version FROM event WHERE id = :evenement AND entity_id = :entite "
+    "AND archived_at IS NOT NULL FOR UPDATE"
+)
+
+_ANNULER: Final = text(
+    """
+    UPDATE event
+       SET state = :etat, cancelled_at = :instant, cancellation_reason = :motif,
+           updated_at = :instant, updated_by_person_id = :acteur,
+           version = version + 1
+     WHERE id = :evenement AND entity_id = :entite
+    RETURNING version, state, cancelled_at, cancellation_reason
+    """
+)
+
+#  `cancelled_at`/`cancellation_reason` ne sont PAS touches : un evenement
+#  archive depuis `cancelled` garde le fait qu'il a ete annule, meme parti
+#  que `published_at` conserve a l'archivage d'une page (LOT 6, `T7`).
+_ARCHIVER: Final = text(
+    """
+    UPDATE event
+       SET state = :etat, archived_at = :instant, archived_by_person_id = :acteur,
+           updated_at = :instant, updated_by_person_id = :acteur,
+           version = version + 1
+     WHERE id = :evenement AND entity_id = :entite
+    RETURNING version, state, archived_at
+    """
+)
+
+#  La restauration rend TOUJOURS `draft`, jamais l'etat anterieur a
+#  l'archivage : voir l'en-tete de ce module.
+_RESTAURER: Final = text(
+    """
+    UPDATE event
+       SET state = :etat, archived_at = NULL, archived_by_person_id = NULL,
+           updated_at = :instant, updated_by_person_id = :acteur,
+           version = version + 1
+     WHERE id = :evenement AND entity_id = :entite
+    RETURNING version, state
+    """
+)
+
+
+def annuler_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    evenement: uuid.UUID,
+    acteur: uuid.UUID,
+    version_attendue: int,
+    motif: str | None,
+    instant: dt.datetime,
+) -> EvenementAnnule:
+    """§11 « Annuler » — un PUBLIE devient `cancelled`, et reste visible (badge).
+
+    L'appelant a deja prouve `ActionEvenement.ANNULER`, qui n'est jamais
+    offert hors de l'etat `published` (`resoudre_le_perimetre_de_l_evenement`).
+    Le verrou de version re-exige NEANMOINS l'etat ici, deux instants
+    distincts — meme discipline que `publier_un_evenement`.
+    """
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_ANNULATION,
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "etat_attendu": EtatEvenement.PUBLISHED.value,
+        },
+        attendue=version_attendue,
+    )
+    ligne = connexion.execute(
+        _ANNULER,
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "etat": EtatEvenement.CANCELLED.value,
+            "motif": motif,
+            "instant": instant,
+            "acteur": acteur,
+        },
+    ).one()
+    return EvenementAnnule(
+        version=int(ligne[0]),
+        etat=str(ligne[1]),
+        annule_le=ligne[2],
+        motif_d_annulation=ligne[3],
+    )
+
+
+def archiver_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    evenement: uuid.UUID,
+    acteur: uuid.UUID,
+    version_attendue: int,
+    instant: dt.datetime,
+) -> EvenementArchive:
+    """§11 « Archiver » — brouillon, publie ou annule devient `archived`.
+
+    L'appelant a deja prouve `ActionEvenement.ARCHIVER`. Aucun motif n'est
+    demande : le §18.1 n'en fait pas un cas obligatoire pour cette ressource.
+    """
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_MISE_A_JOUR,
+        {"evenement": evenement, "entite": entite},
+        attendue=version_attendue,
+    )
+    ligne = connexion.execute(
+        _ARCHIVER,
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "etat": EtatEvenement.ARCHIVED.value,
+            "instant": instant,
+            "acteur": acteur,
+        },
+    ).one()
+    return EvenementArchive(version=int(ligne[0]), etat=str(ligne[1]), archive_le=ligne[2])
+
+
+def restaurer_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    evenement: uuid.UUID,
+    acteur: uuid.UUID,
+    version_attendue: int,
+    instant: dt.datetime,
+) -> EvenementRestaure:
+    """§11 « Restaurer » — un ARCHIVE revient en `draft`, jamais en `published`.
+
+    L'appelant a deja prouve `ActionEvenement.RESTAURER`, offert aux seuls
+    `ROLES_DE_PORTEE_ENTITE` (`ARB-DROIT-003`). DSM/BOOST/OFFICE n'atteignent
+    jamais ce code : leur refus est pose par le perimetre, en 403, avant lui.
+    """
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_RESTAURATION,
+        {"evenement": evenement, "entite": entite},
+        attendue=version_attendue,
+    )
+    ligne = connexion.execute(
+        _RESTAURER,
+        {
+            "evenement": evenement,
+            "entite": entite,
+            "etat": EtatEvenement.DRAFT.value,
+            "instant": instant,
+            "acteur": acteur,
+        },
+    ).one()
+    return EvenementRestaure(version=int(ligne[0]), etat=str(ligne[1]))

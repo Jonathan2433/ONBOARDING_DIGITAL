@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 4 octobre 2026 — décision `DEC-623`, réalisation de `T4` du LOT 8
+**Dernière mise à jour :** 4 octobre 2026 — décision `DEC-624`, réalisation de `T5` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -128,6 +128,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-621`, sous-étape `T2`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-622`, sous-étape `T3`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-623`, sous-étape `T4`** | 1 | **Soumise le 04/10/2026** |
+| **Réalisation du LOT 8 `DEC-624`, sous-étape `T5`** | 1 | **Soumise le 04/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -139,7 +140,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **291** | |
+| **Total** | **292** | |
 
 ---
 
@@ -865,7 +866,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-623` | **`T4` du LOT 8 livre `PUT /entities/{code}/events/{evenement}` et `POST .../publication`, deuxième tiers de `MVP-L08-US004`.** La matrice §11 donne EXACTEMENT la même portée à « Modifier » et « Publier » pour `ESM`/`ADM-E`/`SUPER`/`BOOST`/`OFFICE` ; seul le DSM diverge — « Modifier » accepte « événements créés OU rattachés à son périmètre », « Publier » n'accepte QUE « Périmètre ». Le §3 lit « Périmètre » pour le DSM comme « ses consultants dans son entité » (`event_dsm_scope`), jamais comme son entité — contrairement à l'ESM, où les deux mots coïncident (§7.45 de la passation, LOT 6). Un DSM peut donc modifier un événement de portée Entité qu'il a créé sans jamais pouvoir le publier par cette seule voie. `cercles`/`bureaux` remplacent la liste complète des rattachements de leur dimension si fournis (`None` : dimension non touchée ; `[]` : vidée) — rattachements multiples du modèle §17.2, « un ou plusieurs ». | **Chaque code de cercle/bureau soumis est revalidé INDÉPENDAMMENT du périmètre global déjà vérifié par la route** (§23.1, l'union des droits porte sur les couples rôle/ressource) : un Booster autorisé à modifier (par SON cercle) ne peut pas pour autant y attacher le cercle d'un AUTRE Booster — deux témoins d'asymétrie le prouvent, un pour les cercles et un pour les bureaux. Concurrence optimiste du §18.4 revérifiée au moment de l'écriture ; `Publier` n'est jamais offert hors d'un `draft`, aucune republication possible (même discipline que `publier_une_page` au LOT 6). **Défaut trouvé et corrigé dans mes propres tests, avant tout commit** : les deux requêtes d'archivage des portées référençaient `:instant` sans que l'appel ne le fournisse — corrigé avant d'entrer dans l'historique. **20 nouveaux tests, dont 17 d'intégration** ; 1 489 pytest collectés, dont 1 094 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T3`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T4` n'ajoute ni table ni colonne. `ECART-068` reste ouvert et intact. | Soumise le 04/10/2026 |
 
-**Prochain identifiant libre : `DEC-624`.**
+| `DEC-624` | **`T5` du LOT 8 livre `POST .../annulation`, `POST .../archivage` et `POST .../restauration`, dernier tiers de `MVP-L08-US004`.** La matrice §11 donne à « Annuler » et à « Archiver » EXACTEMENT la même cellule DSM qu'à « Publier » — « Périmètre » (ses consultants nommés), jamais « créé OU rattaché » : un DSM créateur seul modifie un événement de portée Entité qu'il a créé, mais ne peut ni le publier, ni l'annuler, ni l'archiver par cette seule voie. « Restaurer » n'a qu'une grille et exclut DSM/BOOST/OFFICE en bloc ; `ARB-DROIT-003` nomme explicitement « un événement » parmi les cinq ressources que l'ESM restaure librement dans son entité — aucun `ECART-066` à rouvrir ici, la condition du mot « Conditionnel » du §11 était déjà nommée. | **Trois préconditions d'état, posées dans le service et non laissées à la seule grille de rôle.** « Annuler » n'est offert qu'à un `published` : annuler un brouillon que personne n'a jamais vu contournerait la porte de publication. « Archiver » n'a pas de précondition au-delà de « pas déjà archivé » — brouillon, publié et annulé sont tous les trois archivables, même parti que l'archivage d'une page (LOT 6, `T7`). « Restaurer » rend TOUJOURS `draft`, jamais l'état antérieur à l'archivage : restaurer n'est pas publier, `RIGHTS-001` refuse par défaut ce qui n'est pas explicitement redécidé — républier ou annuler est un second geste, qui laisse sa propre trace. `cancelled_at`/`cancellation_reason` survivent à l'archivage ET à la restauration : un fait, pas un résidu, même parti que `published_at` pour une page. Aucun motif n'est demandé pour l'archivage — le §18.1 ne le nomme pas pour cette ressource ; `archive_reason` reste non écrit, `ECART-064` intact. **17 nouveaux tests, dont 15 d'intégration** ; 1 506 pytest collectés, dont 1 109 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T4`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T5` n'ajoute ni table ni colonne. `ECART-068` reste ouvert et intact ; `US004` est désormais complète sur ses trois tiers. | Soumise le 04/10/2026 |
+
+**Prochain identifiant libre : `DEC-625`.**
 
 ---
 
@@ -1135,6 +1138,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-621` — réalisation du LOT 8, `T2` | 1 | 1 |
 | `DEC-622` — réalisation du LOT 8, `T3` | 1 | 1 |
 | `DEC-623` — réalisation du LOT 8, `T4` | 1 | 1 |
+| `DEC-624` — réalisation du LOT 8, `T5` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1146,7 +1150,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **291** | **291** |
+| **Total** | **292** | **292** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

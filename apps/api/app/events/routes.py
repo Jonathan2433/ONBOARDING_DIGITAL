@@ -43,9 +43,12 @@ from app.entities.services import resoudre_une_entite_active
 from app.events.ecriture import (
     CODE_ACCES_REFUSE,
     MESSAGE_ACCES_REFUSE,
+    annuler_un_evenement,
+    archiver_un_evenement,
     creer_un_evenement,
     modifier_un_evenement,
     publier_un_evenement,
+    restaurer_un_evenement,
 )
 from app.events.lecture import ClassementEvenement, lister_les_evenements
 from app.events.perimetre import (
@@ -188,6 +191,45 @@ class ReponseDEvenementEcrit(BaseModel):
     lieu: str | None
     etat: str
     version: int
+
+
+class DemandeDAnnulationDEvenement(BaseModel):
+    """Annuler un evenement — matrice §11 « Annuler ». Reste visible, badge « Annule »."""
+
+    version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+    motif: str | None = Field(
+        default=None, description="`cancellation_reason`, facultatif (modele §17.1)"
+    )
+
+
+class ReponseDAnnulationDEvenement(BaseModel):
+    """Un evenement apres annulation."""
+
+    version: int
+    etat: str
+    annule_le: dt.datetime
+    motif_d_annulation: str | None
+
+
+class DemandeDeTransitionDEvenement(BaseModel):
+    """Archiver ou restaurer un evenement — aucun motif, meme parti que les pages (LOT 6)."""
+
+    version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+
+
+class ReponseDArchivageDEvenement(BaseModel):
+    """Un evenement apres archivage."""
+
+    version: int
+    etat: str
+    archive_le: dt.datetime
+
+
+class ReponseDeRestaurationDEvenement(BaseModel):
+    """Un evenement apres restauration — revient en BROUILLON."""
+
+    version: int
+    etat: str
 
 
 def routeur_evenements(parametres: Parametres) -> APIRouter:
@@ -576,5 +618,261 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
             etat=publie.etat,
             version=publie.version,
         )
+
+    @routeur.post(
+        "/entities/{code}/events/{evenement}/annulation",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDAnnulationDEvenement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : l'evenement n'existe pas dans cette entite, le "
+                    "role n'y porte rien, ou il y porte `Modifier` sans `Annuler` — "
+                    "pour le DSM, « Perimetre » seul (ses consultants nommes), jamais "
+                    "« cree par lui » seul (meme grille que `Publier`, §3 de la matrice)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : l'evenement a change depuis votre lecture, "
+                    "ou n'est plus `published` — seul un evenement publie s'annule."
+                )
+            },
+        },
+        summary="Annuler un evenement",
+        description=(
+            "Matrice §11 « Annuler ». L'evenement reste visible avec un badge « Annule » "
+            "(cahier §10.6) — seule l'archivage le retire de la consultation."
+        ),
+    )
+    def annuler_un_evenement_route(
+        demande: DemandeDAnnulationDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDAnnulationDEvenement:
+        """Annuler un evenement — matrice §11, modele §17.1."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.ANNULER not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            annule = annuler_un_evenement(
+                connexion,
+                entite=entite.id,
+                evenement=evenement,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                motif=demande.motif,
+                instant=instant,
+            )
+
+        return ReponseDAnnulationDEvenement(
+            version=annule.version,
+            etat=annule.etat,
+            annule_le=annule.annule_le,
+            motif_d_annulation=annule.motif_d_annulation,
+        )
+
+    @routeur.post(
+        "/entities/{code}/events/{evenement}/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivageDEvenement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : l'evenement n'existe pas dans cette entite, le "
+                    "role n'y porte rien, il y porte `Modifier` sans `Archiver`, ou il "
+                    "est **deja archive**."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": "`version_obsolete` : l'evenement a change depuis votre lecture."
+            },
+        },
+        summary="Archiver un evenement — brouillon, publie ou annule",
+        description=(
+            "Matrice §11 « Archiver », §18 « Archiver un evenement ». L'evenement quitte "
+            "la consultation publique (`T2`). Aucun motif n'est demande — §18.1 ne le "
+            "nomme pas pour cette ressource."
+        ),
+    )
+    def archiver_un_evenement_route(
+        demande: DemandeDeTransitionDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDArchivageDEvenement:
+        """Archiver un evenement — matrice §11 et §18."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.ARCHIVER not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            archive = archiver_un_evenement(
+                connexion,
+                entite=entite.id,
+                evenement=evenement,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        return ReponseDArchivageDEvenement(
+            version=archive.version, etat=archive.etat, archive_le=archive.archive_le
+        )
+
+    @routeur.post(
+        "/entities/{code}/events/{evenement}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestaurationDEvenement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : l'evenement n'est pas archive, ou l'appelant n'a "
+                    "qu'une portee locale — le §11 met `DSM`, `BOOST` et `OFFICE` a "
+                    "tiret sur la restauration, meme s'ils portent l'archivage de "
+                    "l'evenement. Seuls `ESM`/`ADM-E`/`SUPER` restaurent (`ARB-DROIT-003`)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": "`version_obsolete` : l'evenement a change depuis votre lecture."
+            },
+        },
+        summary="Restaurer un evenement archive — il revient en BROUILLON",
+        description=(
+            "Matrice §11 « Restaurer », `ARB-DROIT-003` qui nomme explicitement "
+            "l'evenement parmi les cinq ressources que l'ESM restaure librement dans "
+            "son entite.<br><br>"
+            "**L'evenement revient en `draft`, jamais en `published` ni `cancelled`** : "
+            "restaurer n'est pas publier, et `RIGHTS-001` refuse par defaut ce qui "
+            "n'est pas explicitement redecide. Republier ou annuler est un second "
+            "geste, qui laisse sa propre trace."
+        ),
+    )
+    def restaurer_un_evenement_route(
+        demande: DemandeDeTransitionDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDeRestaurationDEvenement:
+        """Restaurer un evenement archive — matrice §11, `ARB-DROIT-003`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.RESTAURER not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            restaure = restaurer_un_evenement(
+                connexion,
+                entite=entite.id,
+                evenement=evenement,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+
+        return ReponseDeRestaurationDEvenement(version=restaure.version, etat=restaure.etat)
 
     return routeur

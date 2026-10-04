@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `623` en usage | `DEC-624` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `624` en usage | `DEC-625` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -773,8 +773,20 @@ ce rôle dénote ses consultants nommés (`event_dsm_scope`), jamais son entité
 remplacent la liste complète des rattachements si fournis — rattachements multiples du modèle
 §17.2 — et chaque code est revalidé indépendamment du périmètre global déjà vérifié par la
 route. Les **20 nouveaux tests**, dont **17 d'intégration**, portent le total à **1 489 pytest**,
-dont **1 094 d'intégration**. La sous-étape suivante est **`T5`** — annulation, archivage et
-restauration.
+dont **1 094 d'intégration**.
+
+**`T5` est faite** (`DEC-624`) : `POST .../annulation`, `POST .../archivage` et
+`POST .../restauration` servent « Annuler », « Archiver » et « Restaurer » du §11 — dernier tiers
+de `US004`. « Annuler » et « Archiver » portent, pour le DSM, la MÊME cellule « Périmètre » que
+« Publier » — jamais « créé ou rattaché » — tandis que « Restaurer » n'a qu'une seule grille et
+exclut DSM/BOOST/OFFICE en bloc : `ARB-DROIT-003` nomme explicitement « un événement » parmi les
+cinq ressources que l'ESM restaure librement dans son entité, aucun écart à ouvrir. Trois
+préconditions d'état sont posées au service : « Annuler » n'est offert qu'à un `published` ;
+« Archiver » depuis `draft`, `published` ou `cancelled` ; « Restaurer » rend TOUJOURS `draft`,
+jamais l'état antérieur à l'archivage. Les **17 nouveaux tests**, dont **15 d'intégration**,
+portent le total à **1 506 pytest**, dont **1 109 d'intégration**. `US004` est désormais complète
+sur ses trois tiers ; `ECART-068` reste ouvert, à résoudre avant la fermeture de la story au
+registre. La sous-étape suivante est **`T6`** — rattachement des médias.
 
 ---
 

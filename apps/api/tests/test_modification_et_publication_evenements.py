@@ -307,8 +307,10 @@ def test_un_ESM_modifie_PUIS_publie_un_evenement_de_portee_ENTITE(cx: Connection
     esm = _acteur(cx, entite, "esm", responsabilite=TypeResponsabilite.ESM.value)
     evenement = _creer(cx, entite=entite, acteur=esm, portee=PorteeDeCreation.ENTITE)
 
+    #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
+    #  `T5` etend neanmoins la grille a `ARCHIVER`, qui l'est deja a ce stade.
     assert _perimetre(cx, entite=entite, acteur=esm, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
     )
 
     modifie = _modifier(cx, entite=entite, acteur=esm, evenement=evenement, version=1)
@@ -427,8 +429,9 @@ def test_un_BOOSTER_modifie_SON_evenement_mais_n_attache_PAS_le_cercle_d_un_AUTR
         cx, entite=entite, acteur=booster, portee=PorteeDeCreation.CERCLE, cercle="TECH"
     )
 
+    #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
     assert _perimetre(cx, entite=entite, acteur=booster, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
     )
 
     #  TEMOIN : il modifie sans toucher aux cercles — reussit.
@@ -546,8 +549,9 @@ def test_un_DSM_MODIFIE_ET_PUBLIE_un_evenement_de_portee_CONSULTANTS(cx: Connect
     dsm = _acteur(cx, entite, "dsm-cons", responsabilite=TypeResponsabilite.DSM.value)
     evenement = _creer(cx, entite=entite, acteur=dsm, portee=PorteeDeCreation.CONSULTANTS)
 
+    #  Brouillon : `ANNULER` n'est offert qu'a un PUBLIE, `T5` l'exige.
     assert _perimetre(cx, entite=entite, acteur=dsm, evenement=evenement) == frozenset(
-        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER}
+        {ActionEvenement.MODIFIER, ActionEvenement.PUBLIER, ActionEvenement.ARCHIVER}
     )
 
     _modifier(cx, entite=entite, acteur=dsm, evenement=evenement, version=1)
@@ -660,11 +664,13 @@ def test_un_evenement_INEXISTANT_rend_un_perimetre_VIDE(cx: Connection) -> None:
 
 
 @pytest.mark.integration
-def test_un_evenement_ARCHIVE_n_offre_PLUS_RIEN(cx: Connection) -> None:
-    """Defensif : aucune route de `T4` n'archive, mais `resoudre_le_perimetre`
+def test_un_evenement_ARCHIVE_n_offre_QUE_LA_RESTAURATION(cx: Connection) -> None:
+    """`T4` n'archivait rien encore ; `T5` le fait, et `resoudre_le_perimetre`
 
-    ne doit jamais rouvrir un droit sur une ligne qui ne devrait plus en
-    porter — meme §7.0, quatrieme proposition, que partout ailleurs.
+    n'offre plus, sur un evenement archive, que `RESTAURER` — a
+    `ROLES_DE_PORTEE_ENTITE` seuls (`ARB-DROIT-003`). Jamais `MODIFIER` ni
+    `PUBLIER`, qui rouvriraient un droit sur une ligne qui ne devrait plus
+    en porter — meme §7.0, quatrieme proposition, que partout ailleurs.
     """
     entite = _entite(cx, "ARC1")
     esm = _acteur(cx, entite, "esm-arc", responsabilite=TypeResponsabilite.ESM.value)
@@ -673,4 +679,6 @@ def test_un_evenement_ARCHIVE_n_offre_PLUS_RIEN(cx: Connection) -> None:
         text("UPDATE event SET archived_at = :i, archived_by_person_id = :a WHERE id = :e"),
         {"i": DEMAIN, "a": esm, "e": evenement},
     )
-    assert _perimetre(cx, entite=entite, acteur=esm, evenement=evenement) == frozenset()
+    assert _perimetre(cx, entite=entite, acteur=esm, evenement=evenement) == frozenset(
+        {ActionEvenement.RESTAURER}
+    )
