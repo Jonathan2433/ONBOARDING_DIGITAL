@@ -72,6 +72,13 @@ dans une expression `CASE` comparée à un littéral `text`. PostgreSQL a refus�
 passation. Le décor calcule désormais `annule_le` et `motif_d_annulation` avant la requête et les
 lie par des paramètres distincts. Aucun code produit n'était concerné.
 
+`T2-2` — la première CI de la PR a révélé une bombe temporelle dans cinq suites du LOT 7 : leurs
+dates métier étaient volontairement figées au 25/26 septembre, mais leurs sessions réutilisaient
+la même ancre. Le 4 octobre, elles dépassaient pour la première fois les sept jours d'inactivité et
+**98 tests** rendaient `401`, sans aucun résidu. Les dates métier restent déterministes ; seule la
+création de session prend désormais l'heure réelle d'exécution. La seconde CI prouve la correction
+sur une base reconstruite.
+
 ---
 
 # 4. Contrôles exécutés
