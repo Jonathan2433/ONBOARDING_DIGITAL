@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
 | Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
 | **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
-| Sous-étape en cours | **`T3` — création d'un événement et résolution du périmètre d'écriture** ; `T2` livrée par `DEC-621` |
+| Sous-étape en cours | **`T4` — modification, publication et rattachements multiples** ; `T3` livrée par `DEC-622` (`ECART-067` clos) |
 | Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -30,13 +30,13 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **43 tables métier** PostgreSQL, **22 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
+| **44 tables métier** PostgreSQL, **23 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
 | **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
-| **le socle événementiel et sa lecture paginée** — événements à venir/passés dérivés de `ends_at`, annulés visibles, brouillons et archives absents | LOT 8, `T1`–`T2` |
+| **le socle événementiel, sa lecture paginée et la création d'un événement** — événements à venir/passés dérivés de `ends_at`, annulés visibles, brouillons et archives absents ; chaque rôle crée dans sa portée exacte, `ECART-067` clos | LOT 8, `T1`–`T3` |
 
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 gestion et les écrans des événements ainsi que l'accueil dynamique sont **en construction au LOT 8** ; l'import CSV du LOT 9, le pilotage avancé du LOT 10 et

@@ -541,6 +541,8 @@ TABLES_DECLAREES = {
     "event_circle_scope",
     "event_office_scope",
     "event_media",
+    # LOT 8, T3 — ECART-067, DEC-622 : la cinquieme table, la portee DSM
+    "event_dsm_scope",
 }
 
 

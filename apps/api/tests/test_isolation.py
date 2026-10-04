@@ -179,6 +179,16 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "event_media",
         "media_asset",
     ): "test_un_evenement_ne_peut_pas_pointer_un_media_d_une_AUTRE_entite [test_evenements.py]",
+    #  LOT 8, `T3` — `event_dsm_scope` (`ECART-067`, `DEC-622`), la SEPTIEME cle
+    #  composite du domaine evenementiel. Meme parti que les six de `T1` : son
+    #  temoin vit avec le schema qu'il eprouve.
+    (
+        "event_dsm_scope",
+        "event",
+    ): (
+        "test_une_portee_dsm_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite "
+        "[test_evenements.py]"
+    ),
 }
 
 
@@ -335,7 +345,7 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     #  13/09/2026, sur les trois tables editoriales, et j'avais alors pose
     #  trois chemins pour deux tests -- puis a nouveau le 25/09/2026, sur les
     #  six cles de la fiche d'arrivee et de l'onboarding.
-    assert len(reelles) == len(COUVERTURE) == 24, f"{len(reelles)} chemins, 24 attendus"
+    assert len(reelles) == len(COUVERTURE) == 25, f"{len(reelles)} chemins, 25 attendus"
 
 
 # ---------------------------------------------------------------------------
