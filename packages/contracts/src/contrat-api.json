@@ -1583,6 +1583,33 @@
         "et porte son etat pour le badge ; un brouillon ou une archive est absent.",
         "Pagination du cahier §18.2 : 25 par defaut, puis 50 ou 100."
       ]
+    },
+    {
+      "cle": "creationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCreationDEvenement",
+      "role": [
+        "Creer un evenement, en BROUILLON — LOT 8, T3, US004 (1/3).",
+        "Matrice §11 « Creer » : chaque role porte EXACTEMENT une portee, sauf",
+        "le DSM qui en porte deux (`entite` ou `consultants`). `ECART-067`",
+        "(`DEC-622`) : la portee `consultants` ne reclame aucun rattachement —",
+        "elle designe le DSM auteur lui-meme, dans la cinquieme table",
+        "`event_dsm_scope`.",
+        "`403 acces_refuse` couvre deux causes sous un seul gabarit : aucun",
+        "role de creation dans cette entite, ou un role qui existe mais pas",
+        "pour LA PORTEE demandee — un Booster sur le cercle d'un AUTRE",
+        "Booster recoit le MEME refus qu'un role absent (§2.5, refus par",
+        "defaut).",
+        "`422 rattachement_requis` : `portee=cercle` exige un cercle,",
+        "`portee=bureau` exige un bureau. `422 ressource_introuvable` : le",
+        "cercle ou le bureau nomme n'est pas dans cette entite, ou il est",
+        "archive. `422 chronologie_invalide` : `finit_le` n'est pas posterieur",
+        "a `commence_le`.",
+        "Aucun champ `etat` : publier est une ligne SEPAREE du §11, reservee",
+        "a `T4`."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

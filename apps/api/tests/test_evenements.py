@@ -32,14 +32,22 @@ def test_les_quatre_etats_du_17_1_sont_declares_sans_pseudo_etat_passe() -> None
     assert "past" not in ETATS_EVENEMENT
 
 
-def test_les_quatre_tables_ne_portent_ni_recurrence_ni_participant() -> None:
+def test_les_cinq_tables_ne_portent_ni_recurrence_ni_participant() -> None:
     """Critere de sortie n°1 : l'absence est verifiee sur toute la structure.
 
-    Les contrats HTTP n'existent pas encore en `T1`; `T3` et `T4` prolongeront
-    ce temoin sur les modeles de requete et le manifeste, comme la fiche l'exige.
+    `T3` etend ce temoin a la cinquieme table, `event_dsm_scope` (`ECART-067`,
+    `DEC-622`), et aux modeles de requete — voir
+    `test_creation_evenements.py::test_aucun_champ_de_la_DEMANDE_n_est_de_nature_participant`.
+    Le manifeste est verifie par `test_contrat.py`, generique a toutes les routes.
     """
 
-    noms = {"event", "event_circle_scope", "event_office_scope", "event_media"}
+    noms = {
+        "event",
+        "event_circle_scope",
+        "event_office_scope",
+        "event_dsm_scope",
+        "event_media",
+    }
     interdits = {
         "participant",
         "registration",
@@ -270,6 +278,59 @@ def test_une_portee_bureau_ne_peut_pas_pointer_un_bureau_d_une_AUTRE_entite(
             ),
             {"entite": ici, "evenement": evenement, "bureau": bureau},
         )
+
+
+@pytest.mark.integration
+def test_TEMOIN_une_portee_dsm_est_acceptee(cx: Connection) -> None:
+    """`ECART-067`, `DEC-622` — la cinquieme table, posee par `T3`."""
+    entite = _entite(cx, "DSM")
+    evenement = _evenement(cx, entite)
+    dsm = _personne(cx, "dsm-port")
+    identifiant = cx.execute(
+        text(
+            "INSERT INTO event_dsm_scope (entity_id, event_id, dsm_person_id) "
+            "VALUES (:entite, :evenement, :dsm) RETURNING id"
+        ),
+        {"entite": entite, "evenement": evenement, "dsm": dsm},
+    ).scalar_one()
+    assert identifiant is not None
+
+
+@pytest.mark.integration
+def test_une_portee_dsm_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite(
+    cx: Connection,
+) -> None:
+    ici, ailleurs = _entite(cx, "DE1"), _entite(cx, "DE2")
+    evenement = _evenement(cx, ailleurs)
+    dsm = _personne(cx, "dsm-isol")
+    with pytest.raises(IntegrityError, match="fk_event_dsm_scope_event"):
+        cx.execute(
+            text(
+                "INSERT INTO event_dsm_scope (entity_id, event_id, dsm_person_id) "
+                "VALUES (:entite, :evenement, :dsm)"
+            ),
+            {"entite": ici, "evenement": evenement, "dsm": dsm},
+        )
+
+
+@pytest.mark.integration
+def test_deux_portees_dsm_sur_le_MEME_evenement_sont_refusees(cx: Connection) -> None:
+    """A la difference de cercle/bureau, la matrice §11 ecrit « Entite OU
+    consultants » — une disjonction, jamais une liste : un evenement ne porte
+    donc jamais deux lignes `event_dsm_scope` actives, meme pour DEUX DSM
+    differents. L'index unique porte sur `event_id` SEUL, pas sur le couple
+    `(event_id, dsm_person_id)` comme les deux tables sœurs.
+    """
+    entite = _entite(cx, "DD1")
+    evenement = _evenement(cx, entite)
+    premier, second = _personne(cx, "dsm-un"), _personne(cx, "dsm-deux")
+    requete = text(
+        "INSERT INTO event_dsm_scope (entity_id, event_id, dsm_person_id) "
+        "VALUES (:entite, :evenement, :dsm)"
+    )
+    cx.execute(requete, {"entite": entite, "evenement": evenement, "dsm": premier})
+    with pytest.raises(IntegrityError, match="uq_event_dsm_scope_event_non_archive"):
+        cx.execute(requete, {"entite": entite, "evenement": evenement, "dsm": second})
 
 
 @pytest.mark.integration

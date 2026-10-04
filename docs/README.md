@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `621` en usage | `DEC-622` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `622` en usage | `DEC-623` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -751,7 +751,20 @@ portent le total à 24.
 rôles authentifiés lisent, y compris en lecture inter-entités ; `published` et `cancelled` sont
 visibles, `draft` et `archived` absents. Les **12 nouveaux tests**, dont **9 d'intégration**, portent
 le total à **1 442 pytest**, dont **1 055 d'intégration**. La story `US003` reste ouverte jusqu'à
-l'écran de `T9`. La sous-étape suivante est **`T3`** ; `ECART-067` doit être résolu avant son code.
+l'écran de `T9`.
+
+**`T3` est faite** (`DEC-622`) : `POST /api/v1/entities/{code}/events` crée un événement en
+brouillon. La matrice §11 donne à chaque rôle EXACTEMENT une portée de création — sauf au DSM, qui
+en porte deux, « Entité ou consultants ». **`ECART-067` est clos** : la portée « consultants »,
+inexprimable par les trois portées du modèle validé, est posée par une cinquième table symétrique
+aux deux existantes, `event_dsm_scope` (migration `0023`), portant directement le DSM plutôt
+qu'une liste de consultants figée à la création — arbitrage explicite de Jonathan, table dédiée
+plutôt qu'une colonne unique sur `event`. Le rattachement exact au cercle ou au bureau nommé est
+revalidé au service, jamais à la seule garde de rôle de la route — un Booster du cercle A qui
+nomme le cercle B reçoit le même refus qu'un rôle absent. Les **27 nouveaux tests**, dont **22
+d'intégration**, portent le total à **1 469 pytest**, dont **1 077 d'intégration**. `ECART-068`
+reste ouvert, à résoudre avant la fermeture de `US004`. La sous-étape suivante est **`T4`** —
+modification, publication et rattachements multiples.
 
 ---
 

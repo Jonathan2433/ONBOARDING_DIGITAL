@@ -8,9 +8,9 @@ CE QUE CE MODULE POSE, ET CE QU'IL NE POSE PAS
   ecritures en `T3` a `T6`.
 
   Une absence de ligne dans les deux tables de portee signifie « toute
-  l'entite ». Ajouter `event_dsm_scope` pour combler `ECART-067` inventerait un
-  modele que la source ne contient pas ; l'ecart reste donc volontairement
-  ouvert jusqu'a `T3`.
+  l'entite », SAUF pour un evenement cree par un DSM en portee « consultants » :
+  voir `EventDsmScope` ci-dessous, posee par `T3` apres arbitrage de Jonathan
+  (`DEC-622`, `ECART-067` clos).
 
 CE QUI EST DERIVE, ET CE QUI NE L'EST PAS
 
@@ -147,6 +147,62 @@ class EventOfficeScope(ChampsCommuns, RessourceLocale, Base):
             "uq_event_office_scope_event_office_non_archive",
             "event_id",
             "office_id",
+            unique=True,
+            postgresql_where=text("archived_at IS NULL"),
+        ),
+        UniqueConstraint("id", "entity_id"),
+    )
+
+
+class EventDsmScope(ChampsCommuns, RessourceLocale, Base):
+    """Le DSM dont les consultants sont destinataires — `ECART-067`, `DEC-622`.
+
+    LA MATRICE §11 DONNE AU `DSM` DEUX OPTIONS DE CREATION, « Entite ou
+    consultants », ET LE MODELE VALIDE (§17.2) N'EN CONNAISSAIT QUE TROIS :
+    entite entiere, cercle, bureau. Aucune des trois ne represente « les
+    consultants d'un DSM » -- ce n'est pas une unite organisationnelle stable
+    comme un cercle ou un bureau, auquel un evenement se rattacherait par un id
+    fixe, mais un ensemble de PERSONNES resolu DYNAMIQUEMENT par `dsm_assignment`
+    (modele §8.5, deja reutilise tel quel par `app/permissions/perimetre.py`).
+
+    **CETTE TABLE NE REJOUE PAS `dsm_assignment` LIGNE PAR CONSULTANT.** Elle
+    porte directement le DSM lui-meme, exactement comme `dsm_assignment.
+    dsm_person_id` le fait deja -- un evenement « consultants » designe le DSM
+    dont c'est le perimetre, et la resolution en lecture compare
+    `dsm_person_id = acteur`, jamais une liste de consultants figee a la
+    creation : la matrice n'exige pas de distinguer qui ETAIT consultant de ce
+    DSM au moment de la creation et qui l'est devenu depuis.
+
+    **UNE SEULE LIGNE NON ARCHIVEE PAR EVENEMENT, ET C'EST DELIBERE.** A la
+    difference de `event_circle_scope`/`event_office_scope`, qui portent « un ou
+    plusieurs » au §17.2, la matrice §11 ecrit « Entite OU consultants » --
+    une disjonction, jamais une liste. Un evenement n'a donc jamais deux DSM
+    scopes actifs simultanement : l'index unique porte sur `event_id` seul, pas
+    sur le couple `(event_id, dsm_person_id)` comme les deux tables sœurs.
+
+    `dsm_person_id` reference `person.id` par une cle SIMPLE, jamais composite --
+    exactement le choix deja fait par `dsm_assignment.dsm_person_id` (modele
+    §8.5) : `person` est globale, et la regle « ce DSM est actif DANS cette
+    entite » est une regle INTER-TABLES que le service verifie, pas que le
+    schema peut exprimer par une cle etrangere seule.
+    """
+
+    __tablename__ = "event_dsm_scope"
+
+    event_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+    dsm_person_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint(["entity_id"], ["entity.id"]),
+        ForeignKeyConstraint(
+            ["event_id", "entity_id"],
+            ["event.id", "event.entity_id"],
+            name=nom_cle_composite("event_dsm_scope", "event"),
+        ),
+        ForeignKeyConstraint(["dsm_person_id"], ["person.id"]),
+        Index(
+            "uq_event_dsm_scope_event_non_archive",
+            "event_id",
             unique=True,
             postgresql_where=text("archived_at IS NULL"),
         ),
