@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
 | Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
 | **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
-| Sous-étape en cours | **`T7` — arrivées récentes** ; `T6` livrée par `DEC-625` (rattachement des médias, réutilisation de `ETAT_AFFICHABLE` du LOT 5) |
+| Sous-étape en cours | **`T8` — agrégat API de l'accueil** ; `T7` livrée par `DEC-626` (arrivées récentes, visibles dès la publication jusqu'à `recent_until`, sans information organisationnelle ni photo) |
 | Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -36,7 +36,7 @@ Au-dessus de ce socle :
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
 | **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
-| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias** — événements à venir/passés dérivés de `ends_at`, annulés visibles, brouillons et archives absents ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration | LOT 8, `T1`–`T6` |
+| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, et les **arrivées récentes** de l'accueil — événements à venir/passés dérivés de `ends_at`, annulés visibles, brouillons et archives absents ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo | LOT 8, `T1`–`T7` |
 
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 gestion et les écrans des événements ainsi que l'accueil dynamique sont **en construction au LOT 8** ; l'import CSV du LOT 9, le pilotage avancé du LOT 10 et

@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 4 octobre 2026 — décision `DEC-625`, réalisation de `T6` du LOT 8
+**Dernière mise à jour :** 5 octobre 2026 — décision `DEC-626`, réalisation de `T7` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -130,6 +130,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-623`, sous-étape `T4`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-624`, sous-étape `T5`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-625`, sous-étape `T6`** | 1 | **Soumise le 04/10/2026** |
+| **Réalisation du LOT 8 `DEC-626`, sous-étape `T7`** | 1 | **Soumise le 05/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -141,7 +142,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **293** | |
+| **Total** | **294** | |
 
 ---
 
@@ -871,7 +872,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-625` | **`T6` du LOT 8 livre `PUT /entities/{code}/events/{evenement}/medias`, rattachant des médias existants à un événement — matrice §11 « Ajouter une image ou vidéo ».** Cette ligne partage, pour le DSM, EXACTEMENT la même cellule « Périmètre » que « Publier »/« Annuler »/« Archiver » — jamais « créé OU rattaché » : un DSM créateur seul modifie un événement de portée Entité qu'il a créé, mais ne peut pas y gérer les médias par cette seule voie, sixième mesure de l'asymétrie du §7.45 de la passation. La liste REMPLACE la liste complète, dans l'ordre fourni — `[]` la vide, seule forme du geste puisque cette route n'a qu'une seule dimension (contrairement à `cercles`/`bureaux` de `T4`). `display_order` vaut l'INDEX du tableau soumis, jamais un décalage calculé sur le nombre de lignes vivantes — piège déjà mesuré au LOT 6 (`T8-1`, non déterministe) : archiver TOUTES les lignes avant de réinsérer rend les rangs `0..n-1` contigus par construction, et un témoin le prouve en retirant le PREMIER média d'une liste de trois. | **Aucun téléversement, aucun traitement : ce module ne fait que RATTACHER un `media_asset` qui existe déjà, dans la MÊME entité** — le téléversement et la génération de variantes appartiennent au LOT 11. Seul un média `ready` est rattachable, et ce n'est pas une règle inventée pour cette sous-étape : c'est la réutilisation de `ETAT_AFFICHABLE` (`app/media/photo.py`, LOT 5), la définition DÉJÀ DÉCIDÉE de ce qu'est un média affichable — un média `pending`/`processing`/`rejected`/`archived`/`deleted` est refusé (`422 media_non_pret`), un témoin pose le couple ready/non-ready plutôt que le seul cas heureux (§7.42 de la passation). Un média introuvable, hors de l'entité, ou dont le `archived_at` générique est posé, rend le même `422 ressource_introuvable` qu'un cercle ou un bureau inconnu — même discipline de refus par défaut. Un doublon dans la même liste est refusé (`422 doublon_dans_la_liste`), même garde que les cercles/bureaux. **15 nouveaux tests, dont 13 d'intégration** ; 1 521 pytest collectés, dont 1 122 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T5`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T6` écrit dans `event_media`, posée par `T1`. `ECART-068` reste ouvert et intact. | Soumise le 04/10/2026 |
 
-**Prochain identifiant libre : `DEC-626`.**
+| `DEC-626` | **`T7` du LOT 8 livre `GET /entities/{code}/arrivees-recentes`, matrice §5 « Arrivées récentes », cahier §10.5, `MVP-L08-US002`.** Le cahier dit « La fiche peut être publiée après validation, y compris avant la date d'arrivée » et le backlog « Une fiche validée apparaît IMMÉDIATEMENT » : la fenêtre de visibilité est donc `[published_at, recent_until]`, PAS `[arrival_date, recent_until]` — une fiche publiée par anticipation pour un membre encore `future` doit déjà apparaître. Le service filtre donc sur `ETATS_OCCUPANTS` (future ET active), jamais `ETAT_LISTE` (active seul) du trombinoscope. `recent_until`, colonne DATE écrite une fois à la publication (LOT 7, `T3`), est comparée à `instant.date()` — ancre injectée, jamais un `now()` caché dans le SQL. | **La réponse ne porte ni métier, ni statut, ni cercle, ni photo.** La matrice donne cette ressource en Lecture aux HUIT rôles, y compris DSM — qui est pourtant à TIRET sur « Consulter les informations préremplies » (métier/statut/client/DSM/cercle) ailleurs dans la même matrice ; les exposer ici créerait une porte dérobée vers un droit refusé, l'inverse du §6.5. Un test fige cette absence structurellement. Aucune photo non plus : `arrival_profile.photo_media_id` existe au modèle mais AUCUNE route du dépôt ne l'écrit — résoudre une colonne structurellement `null` aurait été du code mort, à réexaminer quand un écran (`T9` à `T12`) en aura réellement besoin. Un profil `profile_visibility` à `draft`/`hidden` est exclu, même discipline que le trombinoscope. Pagination du cahier §18.2 réutilisée depuis `app.shared.pagination`, même patron que `lister_les_evenements` (`T2`). **20 nouveaux tests, dont 17 d'intégration** ; 1 541 pytest collectés, dont 1 139 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T6`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T7` lit `arrival_profile`, posée par `T1` du LOT 7. | Soumise le 05/10/2026 |
+
+**Prochain identifiant libre : `DEC-627`.**
 
 ---
 
@@ -1143,6 +1146,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-623` — réalisation du LOT 8, `T4` | 1 | 1 |
 | `DEC-624` — réalisation du LOT 8, `T5` | 1 | 1 |
 | `DEC-625` — réalisation du LOT 8, `T6` | 1 | 1 |
+| `DEC-626` — réalisation du LOT 8, `T7` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1154,7 +1158,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **293** | **293** |
+| **Total** | **294** | **294** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `625` en usage | `DEC-626` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `626` en usage | `DEC-627` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -797,8 +797,20 @@ l'INDEX du tableau soumis, jamais un décalage calculé sur le nombre de lignes 
 trou). Seul un média `ready` est rattachable, par réutilisation de `ETAT_AFFICHABLE`
 (`app/media/photo.py`, LOT 5) plutôt qu'une règle inventée. Aucun téléversement, aucun
 traitement — LOT 11. Les **15 nouveaux tests**, dont **13 d'intégration**, portent le total à
-**1 521 pytest**, dont **1 122 d'intégration**. La sous-étape suivante est **`T7`** — arrivées
-récentes.
+**1 521 pytest**, dont **1 122 d'intégration**.
+
+**`T7` est faite** (`DEC-626`) : `GET .../arrivees-recentes` sert « Arrivées récentes » du §5,
+cahier §10.5. La fenêtre de visibilité est `[published_at, recent_until]`, PAS `[arrival_date,
+recent_until]` — une fiche publiée par anticipation (appartenance `future`) apparaît
+IMMÉDIATEMENT, d'où un filtre sur `ETATS_OCCUPANTS` (future et active) plutôt que `ETAT_LISTE`
+(active seul) du trombinoscope. La réponse ne porte NI métier, NI statut, NI cercle, NI photo : la
+matrice ouvre cette ressource aux huit rôles authentifiés, y compris le DSM qui est à TIRET sur
+les informations préremplies ailleurs — les exposer ici créerait une porte dérobée vers un droit
+refusé, fixée structurellement par un test. L'ancre (`recent_until`, colonne `date`) est injectée,
+jamais un `now()` caché dans le SQL. Les **20 nouveaux tests**, dont **17 d'intégration**, portent
+le total à **1 541 pytest**, dont **1 139 d'intégration**. Aucune migration : `T7` lit
+`arrival_profile`, posée par `T1` du LOT 7. La sous-étape suivante est **`T8`** — l'agrégat API de
+l'accueil.
 
 ---
 
