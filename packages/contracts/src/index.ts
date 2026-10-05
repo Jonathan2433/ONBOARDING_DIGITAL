@@ -423,19 +423,67 @@ export {
 } from './suiviOnboarding.js';
 export type { PageDeSuiviOnboarding, TacheEnRetardDuSuivi } from './suiviOnboarding.js';
 
-//  LA LECTURE DES EVENEMENTS — LOT 8, `T2` (API) puis `T9` (premier ecran).
-//  Meme partage que `liens.js` et `catalogueDesTaches.js` : une lecture pose
-//  son module de contrat quand un ecran en a besoin ; les six verbes
-//  d'ecriture de `T3` a `T6` n'en ont pas pose.
+//  LES EVENEMENTS — LOT 8. LA LECTURE (`T2`, `T9`) ET LA GESTION (`T3` A
+//  `T6`, exposee par `T10`). Meme partage que `liens.js` : une sous-etape qui
+//  sert une lecture ou une ecriture pose son module de contrat quand un
+//  ecran en a besoin — `T10` est le premier ecran a consommer les six
+//  verbes d'ecriture et les deux lectures de gestion.
 export {
+  cheminAnnulationDEvenement,
+  cheminArchivageDEvenement,
+  cheminEvenement,
   cheminEvenements,
+  cheminEvenementPourGestion,
+  cheminEvenementsPourGestion,
+  cheminMediasDEvenement,
+  cheminPublicationDEvenement,
+  cheminRestaurationDEvenement,
   CLASSEMENTS_D_EVENEMENTS,
+  CODES_ANNULATION_D_EVENEMENT,
+  CODES_ARCHIVAGE_D_EVENEMENT,
+  CODES_CREATION_D_EVENEMENT,
+  CODES_EVENEMENT_POUR_GESTION,
   CODES_EVENEMENTS,
+  CODES_EVENEMENTS_POUR_GESTION,
+  CODES_MEDIAS_D_EVENEMENT,
+  CODES_MODIFICATION_D_EVENEMENT,
+  CODES_PUBLICATION_D_EVENEMENT,
+  CODES_RESTAURATION_D_EVENEMENT,
   GABARIT_CHEMIN_EVENEMENTS,
+  peutGererLesEvenements,
+  peutRestaurerUnEvenement,
+  ROLES_GESTION_DES_EVENEMENTS,
+  ROLES_RESTAURATION_D_UN_EVENEMENT,
   validerLaPageDesEvenements,
+  validerLesEvenementsPourGestion,
+  validerLesMediasDEvenement,
+  validerLEvenementAnnule,
+  validerLEvenementArchive,
+  validerLEvenementCree,
+  validerLEvenementEcrit,
+  validerLEvenementPourGestion,
+  validerLEvenementRestaure,
 } from './evenements.js';
 export type {
   ClassementEvenement,
+  DemandeDAnnulationDEvenement,
+  DemandeDeCreationDEvenement,
+  DemandeDeGestionDesMediasDEvenement,
+  DemandeDeModificationDEvenement,
+  DemandeDePublicationDEvenement,
+  DemandeDeTransitionDEvenement,
+  EvenementAnnule,
+  EvenementArchive,
+  EvenementCree,
+  EvenementDeGestion,
   EvenementDuClassement,
+  EvenementEcrit,
+  EvenementPourGestion,
+  EvenementRestaure,
+  EvenementsPourGestion,
+  MediaDEvenement,
+  MediasDEvenement,
+  MediaSoumis,
   PageDesEvenements,
+  PorteeDeCreationEvenement,
 } from './evenements.js';

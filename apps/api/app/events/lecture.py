@@ -126,3 +126,183 @@ def _en_evenement(ligne: Any) -> EvenementLu:
         cancelled_at=ligne["cancelled_at"],
         cancellation_reason=ligne["cancellation_reason"],
     )
+
+
+# ============================================================================
+#
+#  LA LECTURE POUR LA GESTION — LOT 8, `T10`
+#
+#    **UN TROU DEPUIS `T2`, MEME MOTIF QUE `/pages/gestion` AU LOT 6 (`T10`).**
+#    `lister_les_evenements`/`_en_evenement` ci-dessus ne servent que
+#    `published`/`cancelled` : un evenement en BROUILLON, ou ARCHIVE, n'a
+#    jamais ete lisible par aucune route avant celle-ci. Un ecran de gestion
+#    doit pourtant retrouver les deux — le premier pour le publier, le second
+#    pour le restaurer — et `version`, dont toute ecriture suivante a besoin
+#    pour la concurrence optimiste du §18.4, qu'aucune des deux reponses
+#    publiques ne porte.
+#
+# ============================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementDeGestion:
+    """Le sommaire d'un evenement, TOUS ETATS confondus — `T10`."""
+
+    identifiant: uuid.UUID
+    titre: str
+    etat: str
+    commence_le: dt.datetime
+    finit_le: dt.datetime
+    version: int
+
+
+_EVENEMENTS_DE_L_ENTITE: Final = text(
+    """
+    SELECT id, title, state, starts_at, ends_at, version
+      FROM event
+     WHERE entity_id = :entite
+     ORDER BY starts_at DESC, id
+    """
+)
+
+
+def lister_les_evenements_pour_gestion(
+    connexion: Connection, *, entite: uuid.UUID
+) -> tuple[EvenementDeGestion, ...]:
+    """Le sommaire de TOUS les evenements de l'entite, tous etats confondus.
+
+    **AUCUNE PORTEE LOCALE N'EST APPLIQUEE ICI**, meme parti que
+    `lister_les_pages_de_l_entite` (LOT 6, `T10`) : un Booster voit donc TOUS
+    les evenements de son entite, mais ne pourra OUVRIR que le sien — refuse
+    en 403 par `lire_un_evenement_pour_gestion`, qui resout le perimetre.
+    """
+    lignes = connexion.execute(_EVENEMENTS_DE_L_ENTITE, {"entite": entite})
+    return tuple(
+        EvenementDeGestion(
+            identifiant=ligne[0],
+            titre=str(ligne[1]),
+            etat=str(ligne[2]),
+            commence_le=ligne[3],
+            finit_le=ligne[4],
+            version=int(ligne[5]),
+        )
+        for ligne in lignes
+    )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class MediaDeGestion:
+    """Un media rattache, tel que lu pour l'ecran de gestion."""
+
+    media: uuid.UUID
+    role: str
+    ordre: int
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementPourGestion:
+    """Un evenement, TOUS ETATS confondus, avec sa `version` et ses rattachements."""
+
+    identifiant: uuid.UUID
+    titre: str
+    description: str | None
+    commence_le: dt.datetime
+    finit_le: dt.datetime
+    lieu: str | None
+    etat: str
+    version: int
+    annule_le: dt.datetime | None
+    motif_d_annulation: str | None
+    archive_le: dt.datetime | None
+    cercles: tuple[str, ...]
+    bureaux: tuple[str, ...]
+    medias: tuple[MediaDeGestion, ...]
+
+
+_EVENEMENT_POUR_GESTION: Final = text(
+    """
+    SELECT title, description, starts_at, ends_at, location_text, state, version,
+           cancelled_at, cancellation_reason, archived_at
+      FROM event
+     WHERE id = :evenement AND entity_id = :entite
+    """
+)
+
+#  Les codes des cercles/bureaux RATTACHES, tries pour un affichage stable.
+#  Le rattachement est ce qui peut etre ARCHIVE (`T4`) ; le cercle/bureau CIBLE
+#  n'est pas refiltre par son propre `archived_at` — une lecture dit ce qui
+#  EST rattache, elle ne presume pas que la cible l'est encore.
+_CERCLES_RATTACHES: Final = text(
+    """
+    SELECT c.code
+      FROM event_circle_scope ecs
+      JOIN circle c ON c.id = ecs.circle_id AND c.entity_id = ecs.entity_id
+     WHERE ecs.event_id = :evenement AND ecs.entity_id = :entite
+       AND ecs.archived_at IS NULL
+     ORDER BY c.code
+    """
+)
+_BUREAUX_RATTACHES: Final = text(
+    """
+    SELECT o.code
+      FROM event_office_scope eos
+      JOIN office o ON o.id = eos.office_id AND o.entity_id = eos.entity_id
+     WHERE eos.event_id = :evenement AND eos.entity_id = :entite
+       AND eos.archived_at IS NULL
+     ORDER BY o.code
+    """
+)
+_MEDIAS_RATTACHES: Final = text(
+    """
+    SELECT media_asset_id, display_role, display_order
+      FROM event_media
+     WHERE event_id = :evenement AND entity_id = :entite
+       AND archived_at IS NULL
+     ORDER BY display_order
+    """
+)
+
+
+def lire_un_evenement_pour_gestion(
+    connexion: Connection, *, entite: uuid.UUID, evenement: uuid.UUID
+) -> EvenementPourGestion | None:
+    """Un evenement et ses rattachements, TOUS ETATS confondus, avec sa `version`.
+
+    `None` couvre deux causes, sans les distinguer : l'evenement n'existe pas,
+    ou il appartient a une AUTRE entite — la cle composite `(id, entity_id)`
+    du §25.3 rend la seconde aussi sure qu'un filtre explicite.
+    """
+    ligne = connexion.execute(
+        _EVENEMENT_POUR_GESTION, {"evenement": evenement, "entite": entite}
+    ).one_or_none()
+    if ligne is None:
+        return None
+
+    parametres = {"evenement": evenement, "entite": entite}
+    cercles = tuple(
+        str(code) for code in connexion.execute(_CERCLES_RATTACHES, parametres).scalars()
+    )
+    bureaux = tuple(
+        str(code) for code in connexion.execute(_BUREAUX_RATTACHES, parametres).scalars()
+    )
+    medias = tuple(
+        MediaDeGestion(media=m[0], role=str(m[1]), ordre=int(m[2]))
+        for m in connexion.execute(_MEDIAS_RATTACHES, parametres)
+    )
+
+    return EvenementPourGestion(
+        identifiant=evenement,
+        titre=str(ligne[0]),
+        description=ligne[1],
+        commence_le=ligne[2],
+        finit_le=ligne[3],
+        lieu=ligne[4],
+        etat=str(ligne[5]),
+        version=int(ligne[6]),
+        annule_le=ligne[7],
+        motif_d_annulation=ligne[8],
+        archive_le=ligne[9],
+        cercles=cercles,
+        bureaux=bureaux,
+        medias=medias,
+    )

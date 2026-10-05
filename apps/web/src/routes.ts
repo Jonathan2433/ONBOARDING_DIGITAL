@@ -89,6 +89,15 @@ export const CHEMINS = {
   //  Les liens internes sont de portee ENTITE, jamais locale a un cercle ou un
   //  bureau (§13, §19) : leur gestion vit donc sous l'entite, pas sous Framework.
   gestionDesLiens: '/entites/:code/liens/gestion',
+  //  **LOT 8, `T10`.** Un evenement n'a pas de page PARENTE naturelle comme un
+  //  contenu (toujours rattache a un cercle, un bureau ou HOME) : sa portee
+  //  peut etre l'entite, un cercle, un bureau OU les consultants d'un DSM.
+  //  Deux ecrans STANDALONE, meme parti que les liens internes : un sommaire
+  //  (creer, retrouver tous les etats) et une edition par identifiant,
+  //  qu'aucun ecran de `T9` n'a cree — « un lien qui aboutit au fourre-tout
+  //  404 est atteignable et INUTILE » (LOT 4, `T4`).
+  gestionDesEvenements: '/entites/:code/evenements/gestion',
+  editionEvenement: '/entites/:code/evenements/:evenement/editer',
 } as const;
 
 /**
@@ -268,6 +277,22 @@ export function cheminGestionDesLiensALEcran(code: string): string {
     throw new TypeError('code d’entite vide');
   }
   return CHEMINS.gestionDesLiens.replace(':code', encodeURIComponent(code));
+}
+
+export function cheminGestionDesEvenementsALEcran(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return CHEMINS.gestionDesEvenements.replace(':code', encodeURIComponent(code));
+}
+
+export function cheminEditionEvenement(code: string, evenement: string): string {
+  if (code === '' || evenement === '') {
+    throw new TypeError('code d’entite ou identifiant d’evenement vide');
+  }
+  return CHEMINS.editionEvenement
+    .replace(':code', encodeURIComponent(code))
+    .replace(':evenement', encodeURIComponent(evenement));
 }
 
 export function cheminDeRubrique(code: string, suffixe: string): string {

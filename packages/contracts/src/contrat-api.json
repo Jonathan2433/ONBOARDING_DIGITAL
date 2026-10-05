@@ -1772,6 +1772,43 @@
         "document ne nomme de borne de carrousel, que T11/T12 decideront a",
         "l'ecran."
       ]
+    },
+    {
+      "cle": "listeDesEvenementsPourGestion",
+      "chemin": "/api/v1/entities/{code}/events/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesEvenementsPourGestion",
+      "role": [
+        "Tous les evenements de l'entite, tous etats confondus — LOT 8, T10.",
+        "UN TROU DEPUIS T2, PAS UN REPORT VOULU : la lecture publique ne sert",
+        "que `published`/`cancelled` — un ecran de gestion doit retrouver",
+        "aussi les brouillons (pour les publier) et les archives (pour les",
+        "restaurer). Meme parti que `/pages/gestion` au LOT 6.",
+        "AUCUNE PORTEE LOCALE N'EST APPLIQUEE ICI : la garde verifie qu'un",
+        "role de creation existe quelque part dans l'entite. Un Booster voit",
+        "donc TOUS les evenements, mais ne pourra OUVRIR que le sien — refuse",
+        "en 403 par `lectureDUnEvenementPourGestion`, qui resout le perimetre."
+      ]
+    },
+    {
+      "cle": "lectureDUnEvenementPourGestion",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeLEvenementPourGestion",
+      "role": [
+        "Un evenement et ses rattachements, tous etats confondus, avec sa",
+        "`version` — LOT 8, T10. Porte aussi `cercles`, `bureaux` et",
+        "`medias` : ce que l'ecran de gestion a besoin de relire pour",
+        "pre-remplir un formulaire de modification.",
+        "MEME GRILLE QUE L'ECRITURE : le role est verifie, puis le perimetre",
+        "sur CET evenement precisement, avec la MEME resolution que",
+        "`PUT …/events/{evenement}`. `403 acces_refuse` : un seul gabarit,",
+        "meme discipline que l'ecriture — l'evenement n'existe pas dans",
+        "cette entite, le role n'y porte rien, ou il y porte un droit mais",
+        "aucune action."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -1878,5 +1915,41 @@
     "ET UNE LISTE DE PROTOCOLES NE SUFFIT PAS : `https:alert(1)` a pour protocole",
     "`https` et n'adresse aucune ressource. L'API exige AUSSI un hote."
   ],
-  "protocolesDeLienAutorises": ["https"]
+  "protocolesDeLienAutorises": ["https"],
+  "_commentaire_gestion_des_evenements": [
+    "LOT 8, T10 -- LA GRILLE COARSE DE L'ECRAN DE GESTION DES EVENEMENTS.",
+    "SIX ROLES, CE N'EST PAS UNE COINCIDENCE -- c'est `ROLES_DE_CREATION_",
+    "EVENEMENT` de `app/events/perimetre.py`, le MEME ensemble qui garde les",
+    "six verbes d'ecriture (creer, modifier, publier, annuler, archiver,",
+    "gerer les medias) : chacun de ces six roles porte AU MOINS un droit",
+    "quelque part dans la matrice §11, jamais tous le MEME droit.",
+    "LE FRONTEND N'EST PAS L'AUTORITE, et ceci vaut plus ici qu'ailleurs :",
+    "un DSM porteur de ce role peut voir un bouton `Publier`/`Annuler`/",
+    "`Archiver`/`Gerer les medias` sur un evenement qu'il a seulement CREE",
+    "(sans en etre le DSM NOMME par `event_dsm_scope`) et recevoir un 403 au",
+    "clic -- exactement l'avertissement deja accepte pour un Booster ou un",
+    "responsable de bureau sur une page de contenu (`PanneauEditionDeContenu",
+    ".tsx`, LOT 6, T10) : seule `resoudre_le_perimetre_de_l_evenement` peut",
+    "distinguer les deux grilles du DSM, et aucune cle de manifeste ne peut",
+    "l'exprimer. Cette liste sert a ne pas proposer un bouton a qui n'a",
+    "AUCUN role sur les evenements -- rien de plus.",
+    "Confrontee a `ROLES_DE_CREATION_EVENEMENT` par un test Python, dans les",
+    "deux sens -- la source unique de `DEC-492`."
+  ],
+  "rolesGestionDesEvenements": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
+  "_commentaire_restauration_evenement": [
+    "LOT 8, T10 -- TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` ET",
+    "`rolesRestaurationDUnContenu`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE",
+    "DERIVATION (§7.40 de la passation). Celle-ci vient de la ligne",
+    "`Restaurer` du §11 : DSM/BOOST/OFFICE y sont EXCLUS EN BLOC, meme s'ils",
+    "portent l'archivage de l'evenement -- `ARB-DROIT-003` nomme",
+    "explicitement un evenement parmi les cinq ressources que l'ESM",
+    "restaure librement dans son entite.",
+    "DECLAREE SEPAREMENT de `rolesGestionDesEvenements` : la fusionner",
+    "proposerait un bouton `Restaurer` que l'API refuserait pour DSM/BOOST/",
+    "OFFICE -- l'avertissement faux du §7.21.",
+    "Confrontee a `ROLES_DE_PORTEE_ENTITE` de `app/events/perimetre.py` par",
+    "un test Python, dans les deux sens."
+  ],
+  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"]
 }

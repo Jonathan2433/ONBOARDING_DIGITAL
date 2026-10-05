@@ -9,10 +9,30 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CLASSEMENTS_D_EVENEMENTS,
+  cheminAnnulationDEvenement,
+  cheminArchivageDEvenement,
+  cheminEvenement,
   cheminEvenements,
+  cheminEvenementPourGestion,
+  cheminEvenementsPourGestion,
+  cheminMediasDEvenement,
+  cheminPublicationDEvenement,
+  cheminRestaurationDEvenement,
+  CLASSEMENTS_D_EVENEMENTS,
   CODES_EVENEMENTS,
+  peutGererLesEvenements,
+  peutRestaurerUnEvenement,
+  ROLES_GESTION_DES_EVENEMENTS,
+  ROLES_RESTAURATION_D_UN_EVENEMENT,
   validerLaPageDesEvenements,
+  validerLesEvenementsPourGestion,
+  validerLesMediasDEvenement,
+  validerLEvenementAnnule,
+  validerLEvenementArchive,
+  validerLEvenementCree,
+  validerLEvenementEcrit,
+  validerLEvenementPourGestion,
+  validerLEvenementRestaure,
 } from './evenements.js';
 
 const UNE_PAGE = {
@@ -131,4 +151,199 @@ describe('le validateur', () => {
       );
     },
   );
+});
+
+// =============================================================================
+//  La gestion — LOT 8, `T10`
+// =============================================================================
+
+describe('les chemins de gestion', () => {
+  it('encodent leurs deux segments, et refusent un code ou un evenement vide', () => {
+    expect(cheminEvenement('BORDEA 00', 'e1')).toContain('BORDEA%2000');
+    expect(cheminPublicationDEvenement('BORDEA00', 'e 1')).toContain('e%201');
+    expect(cheminAnnulationDEvenement('BORDEA00', 'e1')).toContain('/annulation');
+    expect(cheminArchivageDEvenement('BORDEA00', 'e1')).toContain('/archivage');
+    expect(cheminRestaurationDEvenement('BORDEA00', 'e1')).toContain('/restauration');
+    expect(cheminMediasDEvenement('BORDEA00', 'e1')).toContain('/medias');
+    expect(cheminEvenementPourGestion('BORDEA00', 'e1')).toContain('/gestion');
+
+    expect(() => cheminEvenement('', 'e1')).toThrow(TypeError);
+    expect(() => cheminEvenement('BORDEA00', '')).toThrow(TypeError);
+    expect(() => cheminEvenementsPourGestion('')).toThrow(TypeError);
+  });
+
+  it('cheminEvenementsPourGestion encode son seul segment', () => {
+    expect(cheminEvenementsPourGestion('BORDEA 00')).toContain('BORDEA%2000');
+  });
+});
+
+const EVENEMENT_DE_GESTION = {
+  identifiant: 'e1',
+  titre: 'Brouillon',
+  etat: 'draft',
+  commence_le: '2026-10-12T08:00:00+00:00',
+  finit_le: '2026-10-12T09:30:00+00:00',
+  version: 1,
+};
+
+describe('le validateur de la liste de gestion', () => {
+  it('traduit un sommaire, brouillon compris — la lecture publique le refuse', () => {
+    const p = validerLesEvenementsPourGestion({ evenements: [EVENEMENT_DE_GESTION] });
+    expect(p.evenements[0]?.etat).toBe('draft');
+    expect(p.evenements[0]?.version).toBe(1);
+  });
+
+  it('refuse un tableau ABSENT, la ou vide est accepte', () => {
+    expect(validerLesEvenementsPourGestion({ evenements: [] }).evenements).toEqual([]);
+    expect(() => validerLesEvenementsPourGestion({})).toThrow(TypeError);
+  });
+});
+
+const EVENEMENT_POUR_GESTION = {
+  identifiant: 'e1',
+  titre: 'Brouillon',
+  description: null,
+  commence_le: '2026-10-12T08:00:00+00:00',
+  finit_le: '2026-10-12T09:30:00+00:00',
+  lieu: null,
+  etat: 'draft',
+  version: 1,
+  annule_le: null,
+  motif_d_annulation: null,
+  archive_le: null,
+  cercles: ['CERCLE-A'],
+  bureaux: [],
+  medias: [{ media: 'm1', role: 'Affiche', ordre: 0 }],
+};
+
+describe('le validateur de la lecture unique de gestion', () => {
+  it('porte version, cercles, bureaux et medias — ce que T2 ne porte jamais', () => {
+    const e = validerLEvenementPourGestion(EVENEMENT_POUR_GESTION);
+    expect(e.version).toBe(1);
+    expect(e.cercles).toEqual(['CERCLE-A']);
+    expect(e.bureaux).toEqual([]);
+    expect(e.medias).toEqual([{ media: 'm1', role: 'Affiche', ordre: 0 }]);
+  });
+
+  it('rend un evenement ARCHIVE avec sa date', () => {
+    const e = validerLEvenementPourGestion({
+      ...EVENEMENT_POUR_GESTION,
+      etat: 'archived',
+      archive_le: '2026-10-05T10:00:00+00:00',
+    });
+    expect(e.etat).toBe('archived');
+    expect(e.archiveLe).toBe('2026-10-05T10:00:00+00:00');
+  });
+
+  it('refuse « cercles »/« bureaux »/« medias » qui ne sont pas des tableaux', () => {
+    expect(() =>
+      validerLEvenementPourGestion({ ...EVENEMENT_POUR_GESTION, cercles: 'CERCLE-A' }),
+    ).toThrow(TypeError);
+    expect(() => validerLEvenementPourGestion({ ...EVENEMENT_POUR_GESTION, bureaux: [1] })).toThrow(
+      TypeError,
+    );
+    expect(() => validerLEvenementPourGestion({ ...EVENEMENT_POUR_GESTION, medias: {} })).toThrow(
+      TypeError,
+    );
+  });
+});
+
+describe('les validateurs des reponses d’ecriture', () => {
+  it('validerLEvenementCree traduit la portee', () => {
+    const c = validerLEvenementCree({
+      identifiant: 'e1',
+      titre: 'Nouveau',
+      description: null,
+      commence_le: '2026-10-12T08:00:00+00:00',
+      finit_le: '2026-10-12T09:30:00+00:00',
+      lieu: null,
+      etat: 'draft',
+      version: 1,
+      portee: 'consultants',
+    });
+    expect(c.portee).toBe('consultants');
+    expect(() =>
+      validerLEvenementCree({
+        identifiant: 'e1',
+        titre: 'Nouveau',
+        description: null,
+        commence_le: '2026-10-12T08:00:00+00:00',
+        finit_le: '2026-10-12T09:30:00+00:00',
+        lieu: null,
+        etat: 'draft',
+        version: 1,
+        portee: 'inventee',
+      }),
+    ).toThrow(TypeError);
+  });
+
+  it('validerLEvenementEcrit sert modifier ET publier, meme forme', () => {
+    const e = validerLEvenementEcrit({
+      identifiant: 'e1',
+      titre: 'Modifie',
+      description: null,
+      commence_le: '2026-10-12T08:00:00+00:00',
+      finit_le: '2026-10-12T09:30:00+00:00',
+      lieu: null,
+      etat: 'published',
+      version: 2,
+    });
+    expect(e.etat).toBe('published');
+    expect(e.version).toBe(2);
+  });
+
+  it('validerLEvenementAnnule porte le motif, facultatif', () => {
+    const a = validerLEvenementAnnule({
+      version: 3,
+      etat: 'cancelled',
+      annule_le: '2026-10-05T10:00:00+00:00',
+      motif_d_annulation: null,
+    });
+    expect(a.etat).toBe('cancelled');
+    expect(a.motifDAnnulation).toBeNull();
+  });
+
+  it('validerLEvenementArchive porte sa date', () => {
+    const a = validerLEvenementArchive({
+      version: 4,
+      etat: 'archived',
+      archive_le: '2026-10-05T10:00:00+00:00',
+    });
+    expect(a.archiveLe).toBe('2026-10-05T10:00:00+00:00');
+  });
+
+  it('validerLEvenementRestaure ne rend JAMAIS que draft — pas un troisieme champ', () => {
+    const r = validerLEvenementRestaure({ version: 5, etat: 'draft' });
+    expect(r).toEqual({ version: 5, etat: 'draft' });
+  });
+
+  it('validerLesMediasDEvenement traduit la liste ordonnee', () => {
+    const m = validerLesMediasDEvenement({
+      version: 6,
+      medias: [
+        { media: 'm1', role: 'Affiche', ordre: 0 },
+        { media: 'm2', role: 'Video', ordre: 1 },
+      ],
+    });
+    expect(m.medias).toHaveLength(2);
+    expect(m.medias[1]?.role).toBe('Video');
+  });
+});
+
+describe('les roles de gestion, lus du manifeste', () => {
+  it('rolesGestionDesEvenements est plus LARGE que rolesRestaurationDUnEvenement', () => {
+    for (const role of ROLES_RESTAURATION_D_UN_EVENEMENT) {
+      expect(ROLES_GESTION_DES_EVENEMENTS).toContain(role);
+    }
+    expect(ROLES_GESTION_DES_EVENEMENTS.length).toBeGreaterThan(
+      ROLES_RESTAURATION_D_UN_EVENEMENT.length,
+    );
+  });
+
+  it('peutGererLesEvenements/peutRestaurerUnEvenement ne decident rien seuls', () => {
+    expect(peutGererLesEvenements(['DSM'])).toBe(true);
+    expect(peutGererLesEvenements(['EMP'])).toBe(false);
+    expect(peutRestaurerUnEvenement(['DSM'])).toBe(false);
+    expect(peutRestaurerUnEvenement(['ESM'])).toBe(true);
+  });
 });

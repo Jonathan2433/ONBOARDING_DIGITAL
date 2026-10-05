@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `628` en usage | `DEC-629` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `629` en usage | `DEC-630` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -843,8 +843,27 @@ borne fixe. Aucune page de détail n'est créée : chaque carte affiche déjà t
 construire un lien vers une adresse qu'aucune route ne sert aurait reproduit le défaut que
 `PageRubrique` évite depuis le LOT 4. Les **16 nouveaux tests de contrat et 7 nouveaux tests
 d'écran** portent le total Vitest à **729** (352 `contracts`, 111 `ui`, 266 `web`) ; **1 547
-pytest** inchangé, aucune ligne Python touchée. Aucune migration. La sous-étape suivante est
-**`T10`** — l'écran de gestion des événements.
+pytest** inchangé, aucune ligne Python touchée. Aucune migration.
+
+**`T10` est faite** (`DEC-629`) : l'écran de gestion des événements, `MVP-L08-US004` — créer,
+modifier, publier, annuler, archiver, restaurer, rattacher des médias. **Deux routes API
+nouvelles**, non prévues par le découpage mais trouvées en construisant l'écran — `GET
+…/events/gestion` (tous les événements, tous états, garde COARSE seule) et `GET
+…/events/{evenement}/gestion` (un événement avec sa `version` et ses rattachements, périmètre
+complet résolu, 403 `acces_refuse` si aucune action) — même motif exact que `/pages/gestion` au
+LOT 6 (`T10`) : la lecture publique de `T2` ne sert que `published`/`cancelled` et ne porte
+jamais de `version`. Deux grilles de rôles déclarées séparément au manifeste,
+`rolesGestionDesEvenements` (DSM/ESM/BOOST/OFFICE/ADM-E/SUPER) et
+`rolesRestaurationDUnEvenement` (ESM/ADM-E/SUPER) — les fusionner proposerait un bouton
+« Restaurer » que l'API refuserait à trois rôles sur six, `ARB-DROIT-003`. **Première saisie de
+date-heure du dépôt** : `versDatetimeLocal`/`depuisDatetimeLocal` découpent et recomposent le
+préfixe `YYYY-MM-DDTHH:mm` d'une chaîne ISO avec un décalage `+00:00` fixe, sans aucune
+conversion de fuseau, dans aucun des deux sens. `cercles`/`bureaux` sont un champ texte — aucun
+sélecteur n'existe encore dans ce dépôt — et les médias se rattachent par identifiant seul,
+aucun téléversement (LOT 11). Les **17 nouveaux tests pytest (dont 12 d'intégration), 15
+nouveaux tests de contrat et 13 nouveaux tests d'écran** portent le total à **2 321** (1 564
+pytest dont 1 157 d'intégration ; 757 Vitest : 367 `contracts`, 111 `ui`, 279 `web`). Aucune
+migration. La sous-étape suivante est **`T11`** — l'accueil final desktop.
 
 ---
 

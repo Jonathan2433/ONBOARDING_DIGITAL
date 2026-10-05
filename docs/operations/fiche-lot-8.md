@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1` à `T9` faites par `DEC-620` à `DEC-628`
-**Sous-étape suivante :** `T10`, écran de gestion des événements
+**État :** **OUVERT** — `DEC-619`; `T1` à `T10` faites par `DEC-620` à `DEC-629`
+**Sous-étape suivante :** `T11`, accueil final desktop
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -99,7 +99,7 @@ ne commence.
 | `T7` ✅ | Arrivées récentes | `US002` | **20 tests** ; publiée visible immédiatement — y compris avant `arrival_date` —, absente après `recent_until`, ancre contrôlée ; aucune information organisationnelle ni photo exposée — `DEC-626` |
 | `T8` ✅ | Agrégat API de l'accueil | `US001` (1/2), `US006` (1/2) | **6 tests** ; cinq sections dans l'ordre, sans recopier les règles de leurs services sources ; `presentation` nullable, les deux sections paginées à la taille par défaut (25) — `DEC-627` |
 | `T9` ✅ | Écrans de consultation des événements | `US003` (2/2) | onglets à venir/passés (`<button>` natifs, `role="tablist"`), badge « Annulé », aucun lien vers une page de détail qui n'existe pas — `DEC-628` |
-| `T10` | Écran de gestion des événements | `US004` | actions proposées selon les mêmes listes de rôles que l'API |
+| `T10` ✅ | Écran de gestion des événements | `US004` | créer/modifier/publier/annuler/archiver/restaurer/médias ; deux grilles de rôles jamais fusionnées (`rolesGestionDesEvenements`/`rolesRestaurationDUnEvenement`) ; deux routes de lecture nouvelles posées en construisant l'écran (`/events/gestion`, `/events/{evenement}/gestion`) — `DEC-629` |
 | `T11` | Accueil final desktop | `US001` (2/2), `US006` (2/2) | ordre structurel des cinq sections et ouverture externe explicite |
 | `T12` | Accueil mobile, carrousels accessibles et vidéo sur action | `US005` | aucune requête vidéo avant interaction ; commandes natives ; navigation manuelle |
 | `T13` | Contrôle de pile réelle événements + accueil | transversal | parcours HTTPS réel, migrations et permissions sur les huit services |

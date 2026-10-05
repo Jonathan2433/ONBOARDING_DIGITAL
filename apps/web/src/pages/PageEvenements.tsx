@@ -53,14 +53,17 @@
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 
 import { lireLesEvenements } from '../api/evenements';
+import { cheminGestionDesEvenementsALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 import { dateComplete } from './PageProfil';
 
 import {
   CLASSEMENTS_D_EVENEMENTS,
   type ClassementEvenement,
+  peutGererLesEvenements,
   type PageDesEvenements,
   TAILLE_PAR_DEFAUT,
 } from '@onboarding/contracts';
@@ -92,7 +95,12 @@ type Etat =
   | { readonly phase: 'erreur'; readonly statut: number };
 
 export function PageEvenements(): JSX.Element {
-  const { entite } = useEntiteConsultee();
+  const { entite, permissions } = useEntiteConsultee();
+  const roles = permissions?.roles ?? null;
+  //  **REFUS PAR DEFAUT, §20.1** — pas de lien pour une action que l'API
+  //  refuserait. `T10` : la portee LOCALE reste resolue par l'API seule, ce
+  //  predicat ne fait que ne pas PROPOSER un lien inutile.
+  const peutGerer = roles !== null && peutGererLesEvenements(roles);
   const [classement, setClassement] = useState<ClassementEvenement>('a_venir');
   const [page, setPage] = useState(1);
   const [etat, setEtat] = useState<Etat>({ phase: 'chargement' });
@@ -172,6 +180,13 @@ export function PageEvenements(): JSX.Element {
   return (
     <div className="evenements">
       {onglets}
+      {peutGerer ? (
+        <p>
+          <Link className="app-lien" to={cheminGestionDesEvenementsALEcran(entite.code)}>
+            Gerer les evenements
+          </Link>
+        </p>
+      ) : null}
       <div
         role="tabpanel"
         id={idDuPanneau}
