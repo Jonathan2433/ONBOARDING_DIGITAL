@@ -1728,6 +1728,25 @@
         "nomme deux fois.",
         "`409 version_obsolete` : concurrence optimiste du §18.4."
       ]
+    },
+    {
+      "cle": "arriveesRecentes",
+      "chemin": "/api/v1/entities/{code}/arrivees-recentes",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesArriveesRecentes",
+      "role": [
+        "Consulter « Ils nous ont rejoints recemment » — LOT 8, T7, US002.",
+        "Cahier §10.5, matrice §5 : Lecture pour les HUIT roles authentifies,",
+        "sans distinction — comme le trombinoscope et les evenements.",
+        "Une fiche publiee apparait IMMEDIATEMENT, meme avant la date",
+        "d'arrivee (`membership_state = future` compris) ; elle disparait",
+        "apres `recent_until`, un mois apres l'arrivee, ancre controlee.",
+        "NI METIER, NI STATUT, NI CERCLE, NI PHOTO dans la reponse : la",
+        "matrice met DSM a TIRET sur les informations preremplies ailleurs,",
+        "et cette ressource est ouverte a tous — les exposer ici serait une",
+        "porte derobee vers un droit refuse."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
