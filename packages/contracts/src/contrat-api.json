@@ -1706,6 +1706,28 @@
         "`cancelled` : restaurer n'est pas publier, `RIGHTS-001` refuse par",
         "defaut ce qui n'est pas explicitement redecide."
       ]
+    },
+    {
+      "cle": "gestionDesMediasDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/medias",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeGestionDesMediasDEvenement",
+      "role": [
+        "Remplacer la liste des medias d'un evenement — LOT 8, T6.",
+        "Matrice §11 « Ajouter une image ou vidéo » : MEME grille que",
+        "« Annuler »/« Archiver » pour le DSM — « Perimetre » seul (ses",
+        "consultants nommes), jamais « cree par lui » seul.",
+        "La liste REMPLACE la liste complete, dans l'ordre fourni — `[]` la",
+        "vide. `display_order` vaut l'INDEX du tableau soumis, jamais un",
+        "decalage calcule (piege `T8-1`, LOT 6).",
+        "Aucun televersement : le media doit deja exister, `ready`",
+        "(`app/media/photo.py`, ETAT_AFFICHABLE), dans cette MEME entite —",
+        "`422 ressource_introuvable` sinon, `422 media_non_pret` si l'etat",
+        "n'est pas `ready`, `422 doublon_dans_la_liste` si un media est",
+        "nomme deux fois.",
+        "`409 version_obsolete` : concurrence optimiste du §18.4."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

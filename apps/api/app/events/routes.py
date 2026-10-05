@@ -22,6 +22,17 @@ exactement ceux qui portent au moins une ligne « Modifier » ou « Publier » d
 (`acces_refuse`, 403) que l'evenement n'existe pas dans cette entite, que le
 role n'y porte rien, ou qu'il y porte un droit mais pas celui demande — meme
 discipline de refus par defaut que `T3`.
+
+L'ANNULATION, L'ARCHIVAGE ET LA RESTAURATION (`T5`, `MVP-L08-US004`, 3 sur
+3) — **LA MEME GARDE COARSE ENCORE**, et la MEME fonction de perimetre : un
+evenement ARCHIVE n'offre plus que `RESTAURER`, et seulement aux roles de
+portee Entite (`ARB-DROIT-003`).
+
+LE RATTACHEMENT DES MEDIAS (`T6`) — **ENCORE LA MEME GARDE COARSE**, un
+verbe de plus (`GERER_LES_MEDIAS`) qui partage, pour le DSM, la grille
+« Perimetre » de `Publier`/`Annuler`/`Archiver`, jamais celle de `Modifier`.
+Aucun televersement : le media doit deja exister, `ready`, dans cette
+entite.
 """
 
 from __future__ import annotations
@@ -46,6 +57,7 @@ from app.events.ecriture import (
     annuler_un_evenement,
     archiver_un_evenement,
     creer_un_evenement,
+    gerer_les_medias_d_un_evenement,
     modifier_un_evenement,
     publier_un_evenement,
     restaurer_un_evenement,
@@ -230,6 +242,44 @@ class ReponseDeRestaurationDEvenement(BaseModel):
 
     version: int
     etat: str
+
+
+class MediaSoumis(BaseModel):
+    """Un media a rattacher — l'ordre dans la liste EST l'ordre d'affichage."""
+
+    media: uuid.UUID = Field(description="`media_asset_id`, deja televerse dans cette entite")
+    role: str = Field(
+        min_length=1, max_length=32, description="`display_role` — chaine libre non vide (§17.3)"
+    )
+
+
+class DemandeDeGestionDesMediasDEvenement(BaseModel):
+    """Remplacer la liste COMPLETE des medias d'un evenement — matrice §11.
+
+    **UNE SEULE FORME, CONTRAIREMENT A `cercles`/`bureaux` DE `T4`** : cette
+    route n'a qu'une dimension, donc pas de distinction `None`/`[]` — une
+    liste vide VIDE la galerie, et c'est la seule facon de le faire.
+    """
+
+    version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+    medias: list[MediaSoumis] = Field(
+        description="Remplace la liste complete, dans l'ordre fourni."
+    )
+
+
+class MediaDEvenementRendu(BaseModel):
+    """Un media rattache, tel que rendu apres l'ecriture."""
+
+    media: uuid.UUID
+    role: str
+    ordre: int
+
+
+class ReponseDeGestionDesMediasDEvenement(BaseModel):
+    """Un evenement apres remplacement de sa liste de medias."""
+
+    version: int
+    medias: list[MediaDEvenementRendu]
 
 
 def routeur_evenements(parametres: Parametres) -> APIRouter:
@@ -874,5 +924,101 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
             )
 
         return ReponseDeRestaurationDEvenement(version=restaure.version, etat=restaure.etat)
+
+    @routeur.put(
+        "/entities/{code}/events/{evenement}/medias",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeGestionDesMediasDEvenement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : l'evenement n'existe pas dans cette entite (ou est "
+                    "archive), le role n'y porte rien, ou il y porte `Modifier` sans "
+                    "`Ajouter une image ou vidéo` — pour le DSM, « Perimetre » seul (ses "
+                    "consultants nommes), jamais « cree par lui » seul (meme grille que "
+                    "`Publier`/`Annuler`/`Archiver`)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_409_CONFLICT: {
+                "description": "`version_obsolete` : l'evenement a change depuis votre lecture."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`ressource_introuvable` : un media nomme n'est pas dans cette entite, "
+                    "ou il est archive. `media_non_pret` : seul un media `ready` est "
+                    "rattachable. `doublon_dans_la_liste` : un meme media nomme deux fois."
+                )
+            },
+        },
+        summary="Remplacer la liste des medias d'un evenement",
+        description=(
+            "Matrice §11 « Ajouter une image ou vidéo ». La liste REMPLACE la liste "
+            "complete, dans l'ordre fourni — `[]` la vide. Aucun televersement : le "
+            "media doit deja exister, `ready`, dans cette entite (LOT 11)."
+        ),
+    )
+    def gerer_les_medias_d_un_evenement_route(
+        demande: DemandeDeGestionDesMediasDEvenement,
+        requete: Request,
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDeGestionDesMediasDEvenement:
+        """Remplacer la liste des medias d'un evenement — matrice §11, modele §17.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.GERER_LES_MEDIAS not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            resultat = gerer_les_medias_d_un_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                version_attendue=demande.version,
+                medias=[(item.media, item.role) for item in demande.medias],
+                instant=instant,
+            )
+
+        return ReponseDeGestionDesMediasDEvenement(
+            version=resultat.version,
+            medias=[
+                MediaDEvenementRendu(media=m.media_asset_id, role=m.role, ordre=m.ordre)
+                for m in resultat.medias
+            ],
+        )
 
     return routeur

@@ -210,14 +210,15 @@ def verifier_le_rattachement_au_bureau(
 
 
 class ActionEvenement(enum.StrEnum):
-    """Les cinq lignes du §11 que `T4` et `T5` servent.
+    """Les six lignes du §11 que `T4`, `T5` et `T6` servent.
 
-    **ANNULER ET ARCHIVER PARTAGENT LA GRILLE « PERIMETRE » DU DSM, PAS CELLE
-    DE MODIFIER.** Le §11 donne, pour `Annuler` et `Archiver`, la MEME cellule
-    DSM que pour `Publier` — « Perimetre », jamais « cree OU rattache ». Un
-    DSM createur seul (non nomme par `event_dsm_scope`) peut donc MODIFIER un
-    evenement de portee Entite qu'il a cree, mais ne peut ni le publier, ni
-    l'annuler, ni l'archiver par cette seule voie.
+    **ANNULER, ARCHIVER ET GERER LES MEDIAS PARTAGENT LA GRILLE « PERIMETRE »
+    DU DSM, PAS CELLE DE MODIFIER.** Le §11 donne, pour `Annuler`, `Archiver`
+    et `Ajouter une image ou vidéo`, la MEME cellule DSM que pour `Publier` —
+    « Perimetre », jamais « cree OU rattache ». Un DSM createur seul (non
+    nomme par `event_dsm_scope`) peut donc MODIFIER un evenement de portee
+    Entite qu'il a cree, mais ne peut ni le publier, ni l'annuler, ni
+    l'archiver, ni en gerer les medias par cette seule voie.
 
     **RESTAURER N'A QU'UNE GRILLE, ET ELLE EXCLUT LE DSM EN BLOC** — comme
     `BOOST` et `OFFICE`. `ARB-DROIT-003` nomme explicitement « un evenement »
@@ -231,6 +232,7 @@ class ActionEvenement(enum.StrEnum):
     ANNULER = "annuler"
     ARCHIVER = "archiver"
     RESTAURER = "restaurer"
+    GERER_LES_MEDIAS = "gerer_les_medias"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -332,15 +334,16 @@ def resoudre_le_perimetre_de_l_evenement(
 
     actions: set[ActionEvenement] = set()
 
-    #  Grille large : Modifier, Publier, Annuler, Archiver partagent la MEME
-    #  portee pour ESM/ADM-E/SUPER (Entite/Entite/Global) — le §11 ne les
-    #  distingue que pour le DSM.
+    #  Grille large : Modifier, Publier, Annuler, Archiver et Gerer les
+    #  medias partagent la MEME portee pour ESM/ADM-E/SUPER (Entite/Entite/
+    #  Global) — le §11 ne les distingue que pour le DSM.
     if roles & ROLES_DE_PORTEE_ENTITE:
         actions |= {
             ActionEvenement.MODIFIER,
             ActionEvenement.PUBLIER,
             ActionEvenement.ANNULER,
             ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
         }
 
     if (
@@ -361,6 +364,7 @@ def resoudre_le_perimetre_de_l_evenement(
             ActionEvenement.PUBLIER,
             ActionEvenement.ANNULER,
             ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
         }
 
     if (
@@ -381,12 +385,13 @@ def resoudre_le_perimetre_de_l_evenement(
             ActionEvenement.PUBLIER,
             ActionEvenement.ANNULER,
             ActionEvenement.ARCHIVER,
+            ActionEvenement.GERER_LES_MEDIAS,
         }
 
     if RoleDeLaMatrice.DSM in roles:
-        #  « Perimetre » publie, annule ET archive ; « cree OU rattache » ne
-        #  modifie que -- deux grilles distinctes pour le MEME role, et c'est
-        #  le §11 qui les separe (§7.45 de la passation).
+        #  « Perimetre » publie, annule, archive ET gere les medias ; « cree
+        #  OU rattache » ne modifie que -- deux grilles distinctes pour le
+        #  MEME role, et c'est le §11 qui les separe (§7.45 de la passation).
         est_le_dsm_nomme = connexion.execute(
             text(_ACTEUR_EST_LE_DSM_DE_LA_PORTEE),
             {"evenement": evenement, "entite": entite, "acteur": acteur},
@@ -397,6 +402,7 @@ def resoudre_le_perimetre_de_l_evenement(
                 ActionEvenement.PUBLIER,
                 ActionEvenement.ANNULER,
                 ActionEvenement.ARCHIVER,
+                ActionEvenement.GERER_LES_MEDIAS,
             }
         elif createur == acteur:
             actions.add(ActionEvenement.MODIFIER)
@@ -418,5 +424,9 @@ def resoudre_le_perimetre_de_l_evenement(
     #  archive » -- deja assure par la branche ci-dessus : draft, published
     #  et cancelled sont tous les trois archivables, meme parti que
     #  `archiver_une_page` au LOT 6 (archivable depuis draft OU published).
+    #
+    #  `GERER_LES_MEDIAS` n'a non plus aucune precondition d'etat propre --
+    #  meme raisonnement que `MODIFIER`, dont elle partage l'absence de
+    #  contrainte au-dela de « pas archive ».
 
     return PerimetreEvenement(actions=frozenset(actions))

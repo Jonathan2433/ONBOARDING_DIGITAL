@@ -63,9 +63,32 @@ TROIS PORTEES, TROIS CHEMINS D'ECRITURE, ET UNE SEULE TRANSACTION
   evenement n'y est pas. `archive_reason` existe depuis le LOT 2 et personne
   ne l'ecrit (`ECART-064`, toujours ouvert).
 
+`T6` AJOUTE LE RATTACHEMENT DES MEDIAS
+
+  `gerer_les_medias_d_un_evenement` sert « Ajouter une image ou vidéo » du
+  §11 — meme discipline « la liste remplace la liste » que les cercles/
+  bureaux de `T4` et les blocs de contenu du LOT 6 : les lignes de
+  `event_media` retirees sont ARCHIVEES, jamais supprimees, et `display_order`
+  vaut l'INDEX du tableau soumis — jamais un decalage calcule sur le nombre
+  de lignes vivantes, piege deja mesure au LOT 6 (`T8-1`, non deterministe).
+
+  **AUCUN TELEVERSEMENT, AUCUN TRAITEMENT** : ce module ne fait que RATTACHER
+  un `media_asset` qui existe DEJA, dans la MEME entite. Televerser un
+  fichier, generer ses variantes, c'est le LOT 11 — hors de ce depot pour le
+  moment, et ce module ne l'anticipe pas.
+
+  **SEUL UN MEDIA `ready` EST RATTACHABLE**, et ce n'est pas une regle
+  inventee : c'est la reutilisation de `ETAT_AFFICHABLE` (`app/media/
+  photo.py`, LOT 5), la definition DEJA DECIDEE de ce qu'est un media
+  « affichable ». L'accueil (`T11`/`T12`) consommera cette meme liste, et un
+  media encore `pending`/`processing`, ou `rejected`/`archived`/`deleted`,
+  n'a rien a y faire.
+
 CE QUE CE MODULE NE FAIT PAS ENCORE
 
-  Il ne rattache aucun media : `T6`.
+  `T2` (lecture des evenements) ne rend aucun media : ce module n'etend pas
+  sa reponse. Une lecture publique des medias attaches n'a pas encore de
+  consommateur avant les ecrans (`T9` a `T12`).
 """
 
 from __future__ import annotations
@@ -88,6 +111,7 @@ from app.events.perimetre import (
     verifier_le_rattachement_au_bureau,
     verifier_le_rattachement_au_cercle,
 )
+from app.media.photo import ETAT_AFFICHABLE
 from app.permissions.services import RoleDeLaMatrice
 from app.shared.errors import ErreurApplicative
 
@@ -129,6 +153,20 @@ MESSAGE_VERSION_OBSOLETE: Final = (
 CODE_DOUBLON_DANS_LA_LISTE: Final = "doublon_dans_la_liste"
 MESSAGE_DOUBLON_DANS_LA_LISTE: Final = (
     "Un meme cercle ou bureau est nomme deux fois dans la meme liste."
+)
+MESSAGE_DOUBLON_DE_MEDIA: Final = "Un meme media est nomme deux fois dans la meme liste."
+
+#  Le MEME code que ci-dessus, un message different : media_asset n'est ni
+#  un cercle ni un bureau, mais la cause est identique (§2.5, refus par
+#  defaut) — enseigner deux mecanismes qui se comportent identiquement
+#  apprendrait a les distinguer pour rien.
+MESSAGE_MEDIA_INTROUVABLE: Final = (
+    "Le media nomme n'existe pas dans cette entite, ou il est archive."
+)
+
+CODE_MEDIA_NON_PRET: Final = "media_non_pret"
+MESSAGE_MEDIA_NON_PRET: Final = (
+    "Seul un media `ready` peut etre rattache a un evenement (app/media/photo.py, ETAT_AFFICHABLE)."
 )
 
 
@@ -880,3 +918,161 @@ def restaurer_un_evenement(
         },
     ).one()
     return EvenementRestaure(version=int(ligne[0]), etat=str(ligne[1]))
+
+
+# ===========================================================================
+#
+#  GERER LES MEDIAS — matrice §11 « Ajouter une image ou vidéo », LOT 8,
+#  `T6`
+#
+# ===========================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class MediaDEvenement:
+    """Un media rattache, dans l'ordre d'affichage."""
+
+    media_asset_id: uuid.UUID
+    role: str
+    ordre: int
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class EvenementMediasRemplaces:
+    """Ce que le remplacement de la liste a produit."""
+
+    version: int
+    medias: list[MediaDEvenement]
+
+
+#  Le media nomme existe-t-il, NON ARCHIVE, dans CETTE entite, et dans l'etat
+#  `ready` ? Le couple `(id, entity_id)` porte l'isolation (§25.3) — resoudre
+#  par l'identifiant seul rattacherait un media d'une AUTRE entite a cet
+#  evenement, ce que la cle composite de `event_media` refuserait ensuite en
+#  500 (§7.20 : un 422 ici, pas un 500 qui accuserait le service).
+_MEDIA_PAR_ID: Final = text(
+    "SELECT state FROM media_asset "
+    "WHERE id = :media AND entity_id = :entite AND archived_at IS NULL"
+)
+
+_ARCHIVER_LES_MEDIAS: Final = text(
+    "UPDATE event_media SET archived_at = :instant, archived_by_person_id = :acteur "
+    "WHERE event_id = :evenement AND entity_id = :entite AND archived_at IS NULL"
+)
+
+_INSERER_UN_MEDIA: Final = text(
+    "INSERT INTO event_media "
+    "(entity_id, event_id, media_asset_id, display_order, display_role, "
+    " created_by_person_id) "
+    "VALUES (:entite, :evenement, :media, :ordre, :role, :acteur)"
+)
+
+#  Incremente la version de L'EVENEMENT pour un changement qui ne touche
+#  aucun de ses champs propres — meme motif que `publier_un_evenement` : la
+#  concurrence optimiste du §18.4 porte sur la ressource entiere, pas sur un
+#  sous-ensemble de ses colonnes.
+_INCREMENTER_LA_VERSION_DE_L_EVENEMENT: Final = text(
+    "UPDATE event SET version = version + 1, updated_at = :instant, "
+    "updated_by_person_id = :acteur WHERE id = :evenement AND entity_id = :entite "
+    "RETURNING version"
+)
+
+
+def _resoudre_les_medias(
+    connexion: Connection, *, entite: uuid.UUID, medias: list[uuid.UUID]
+) -> None:
+    """Verifier que CHAQUE media existe, est dans CETTE entite et `ready`.
+
+    **AUCUN DOUBLON** : la DB ne l'interdirait pas — l'index unique porte sur
+    `(event_id, display_order)`, jamais sur `media_asset_id` — mais soumettre
+    deux fois le meme media dans la meme liste est une faute de l'appelant,
+    meme discipline que `_verifier_l_absence_de_doublon` pour les cercles et
+    bureaux.
+    """
+    if len({str(m) for m in medias}) != len(medias):
+        raise ErreurApplicative(
+            code=CODE_DOUBLON_DANS_LA_LISTE,
+            message=MESSAGE_DOUBLON_DE_MEDIA,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            champ="medias",
+        )
+    for media_id in medias:
+        ligne = connexion.execute(
+            _MEDIA_PAR_ID, {"media": media_id, "entite": entite}
+        ).one_or_none()
+        if ligne is None:
+            raise ErreurApplicative(
+                code=CODE_RESSOURCE_INTROUVABLE,
+                message=MESSAGE_MEDIA_INTROUVABLE,
+                statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                champ="medias",
+            )
+        if str(ligne[0]) != ETAT_AFFICHABLE:
+            raise ErreurApplicative(
+                code=CODE_MEDIA_NON_PRET,
+                message=MESSAGE_MEDIA_NON_PRET,
+                statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                champ="medias",
+            )
+
+
+def gerer_les_medias_d_un_evenement(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    evenement: uuid.UUID,
+    version_attendue: int,
+    medias: list[tuple[uuid.UUID, str]],
+    instant: dt.datetime,
+) -> EvenementMediasRemplaces:
+    """Remplacer la liste COMPLETE des medias d'un evenement — §11.
+
+    L'appelant a deja prouve `ActionEvenement.GERER_LES_MEDIAS`. `medias` est
+    une liste de couples `(media_asset_id, role)` — jamais `None` pour cette
+    route, qui n'a qu'une seule dimension, contrairement aux cercles/bureaux
+    de `modifier_un_evenement` : une liste VIDE vide la galerie, c'est la
+    seule forme de ce geste.
+
+    `display_order` vaut l'INDEX du couple dans la liste soumise, jamais un
+    decalage calcule sur le nombre de lignes vivantes — meme lecon que
+    `T8-1` au LOT 6 : archiver TOUTES les lignes avant de reinserer rend les
+    rangs `0..n-1` CONTIGUS par construction, sans jamais les calculer.
+    """
+    _exiger_la_version(
+        connexion,
+        _EVENEMENT_VERSION_POUR_MISE_A_JOUR,
+        {"evenement": evenement, "entite": entite},
+        attendue=version_attendue,
+    )
+    _resoudre_les_medias(connexion, entite=entite, medias=[m for m, _ in medias])
+
+    connexion.execute(
+        _ARCHIVER_LES_MEDIAS,
+        {"evenement": evenement, "entite": entite, "acteur": acteur, "instant": instant},
+    )
+    for ordre, (media_id, role) in enumerate(medias):
+        connexion.execute(
+            _INSERER_UN_MEDIA,
+            {
+                "entite": entite,
+                "evenement": evenement,
+                "media": media_id,
+                "ordre": ordre,
+                "role": role,
+                "acteur": acteur,
+            },
+        )
+
+    version = connexion.execute(
+        _INCREMENTER_LA_VERSION_DE_L_EVENEMENT,
+        {"evenement": evenement, "entite": entite, "instant": instant, "acteur": acteur},
+    ).scalar_one()
+
+    return EvenementMediasRemplaces(
+        version=int(version),
+        medias=[
+            MediaDEvenement(media_asset_id=media_id, role=role, ordre=ordre)
+            for ordre, (media_id, role) in enumerate(medias)
+        ],
+    )
