@@ -1747,6 +1747,31 @@
         "et cette ressource est ouverte a tous — les exposer ici serait une",
         "porte derobee vers un droit refuse."
       ]
+    },
+    {
+      "cle": "accueilDUneEntite",
+      "chemin": "/api/v1/entities/{code}/accueil",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDeLAccueil",
+      "role": [
+        "Consulter l'accueil d'une entite — LOT 8, T8, US001 (1/2), US006 (1/2).",
+        "Cahier §8.4 : cinq sections DANS L'ORDRE — presentation, Framework,",
+        "arrivees recentes, evenements a venir, liens internes. Matrice §5 :",
+        "Lecture pour les HUIT roles authentifies sur chacune des six",
+        "ressources composees, sans distinction — aucune garde de role au-dela",
+        "d'une session etablie.",
+        "NE REECRIT AUCUNE regle de ses cinq sources : appelle directement",
+        "lire_la_page_de_contenu, lire_la_page_framework,",
+        "lister_les_arrivees_recentes, lister_les_evenements et",
+        "lister_les_liens, chacun deja construit par sa propre sous-etape.",
+        "`presentation` vaut `null` si aucune page HOME/presentation n'existe",
+        "encore — etat valide, pas une erreur.",
+        "Les deux sections paginees (arrivees, evenements) rendent leur",
+        "premiere page a la taille par defaut du cahier §18.2 (25) : aucun",
+        "document ne nomme de borne de carrousel, que T11/T12 decideront a",
+        "l'ecran."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

@@ -33,6 +33,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
+from app.accueil.routes import routeur_accueil
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
@@ -158,6 +159,10 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 8, T2 : lecture paginee a venir/passee. Tous les roles authentifies
     #  lisent, y compris hors de leur entite principale (matrice §5 et §11).
     routeur_v1.include_router(routeur_evenements(config))
+    #  LOT 8, T8 : l'agregat d'accueil. Monte EN DERNIER : il compose les
+    #  services de presentation, Framework, arrivees recentes et evenements,
+    #  tous deja monte au-dessus.
+    routeur_v1.include_router(routeur_accueil(config))
     application.include_router(routeur_v1)
 
     return application

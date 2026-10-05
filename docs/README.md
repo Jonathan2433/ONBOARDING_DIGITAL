@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `626` en usage | `DEC-627` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `627` en usage | `DEC-628` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -809,8 +809,21 @@ les informations préremplies ailleurs — les exposer ici créerait une porte d
 refusé, fixée structurellement par un test. L'ancre (`recent_until`, colonne `date`) est injectée,
 jamais un `now()` caché dans le SQL. Les **20 nouveaux tests**, dont **17 d'intégration**, portent
 le total à **1 541 pytest**, dont **1 139 d'intégration**. Aucune migration : `T7` lit
-`arrival_profile`, posée par `T1` du LOT 7. La sous-étape suivante est **`T8`** — l'agrégat API de
-l'accueil.
+`arrival_profile`, posée par `T1` du LOT 7.
+
+**`T8` est faite** (`DEC-627`) : `GET .../accueil` compose les CINQ sections du cahier §8.4, dans
+l'ordre — présentation, Framework, arrivées récentes, événements à venir, liens internes — en
+appelant directement les cinq services déjà construits par leurs sous-étapes sources, sans
+recopier aucune de leurs règles. La matrice §5 donne « Lecture » aux huit rôles sur chacune des
+six ressources composées, sans aucune divergence : la garde est une simple session établie.
+`presentation` vaut `null` si aucune page `HOME`/`presentation` n'existe encore — le couple
+`type_de_page`/`slug` qui la retrouve réutilise la convention déjà posée par l'écran
+`PageEntite.tsx` (LOT 6, `T10`), pas une invention. Aucun nombre d'éléments par section n'étant
+décidé par le corpus, les deux sections paginées rendent leur première page à la taille par
+défaut du cahier §18.2 (25) ; le choix du carrousel reste délibérément à `T11`/`T12`. Les **6
+nouveaux tests**, tous d'intégration, portent le total à **1 547 pytest**, dont **1 145
+d'intégration**. Aucune migration : `T8` ne lit que des tables déjà posées. La sous-étape suivante
+est **`T9`** — les écrans de consultation des événements.
 
 ---
 

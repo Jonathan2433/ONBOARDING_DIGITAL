@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1` à `T7` faites par `DEC-620` à `DEC-626`
-**Sous-étape suivante :** `T8`, agrégat API de l'accueil
+**État :** **OUVERT** — `DEC-619`; `T1` à `T8` faites par `DEC-620` à `DEC-627`
+**Sous-étape suivante :** `T9`, écrans de consultation des événements
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -97,7 +97,7 @@ ne commence.
 | `T5` ✅ | Annulation, archivage et restauration | `US004` (3/3) | **17 tests** ; grilles distinctes (DSM « Périmètre » pour Annuler/Archiver, jamais « créé OU rattaché ») ; restauration ESM fonctionnelle (`ARB-DROIT-003`), DSM/BOOST/OFFICE à tiret ; annulé toujours visible, archivé absent — `DEC-624` |
 | `T6` ✅ | Médias d'événement | `US004` | **15 tests** ; ordre stable (index du tableau soumis), média de la même entité et `ready` (réutilisation de `ETAT_AFFICHABLE`, LOT 5), aucun téléversement ni traitement du LOT 11 — `DEC-625` |
 | `T7` ✅ | Arrivées récentes | `US002` | **20 tests** ; publiée visible immédiatement — y compris avant `arrival_date` —, absente après `recent_until`, ancre contrôlée ; aucune information organisationnelle ni photo exposée — `DEC-626` |
-| `T8` | Agrégat API de l'accueil | `US001` (1/2), `US006` (1/2) | cinq sections dans l'ordre, sans recopier les règles de leurs services sources |
+| `T8` ✅ | Agrégat API de l'accueil | `US001` (1/2), `US006` (1/2) | **6 tests** ; cinq sections dans l'ordre, sans recopier les règles de leurs services sources ; `presentation` nullable, les deux sections paginées à la taille par défaut (25) — `DEC-627` |
 | `T9` | Écrans de consultation des événements | `US003` (2/2) | onglets à venir/passés, badge annulé, mobile et clavier |
 | `T10` | Écran de gestion des événements | `US004` | actions proposées selon les mêmes listes de rôles que l'API |
 | `T11` | Accueil final desktop | `US001` (2/2), `US006` (2/2) | ordre structurel des cinq sections et ouverture externe explicite |
