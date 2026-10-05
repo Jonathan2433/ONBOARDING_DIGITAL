@@ -422,3 +422,20 @@ export {
   validerLeSuiviOnboarding,
 } from './suiviOnboarding.js';
 export type { PageDeSuiviOnboarding, TacheEnRetardDuSuivi } from './suiviOnboarding.js';
+
+//  LA LECTURE DES EVENEMENTS — LOT 8, `T2` (API) puis `T9` (premier ecran).
+//  Meme partage que `liens.js` et `catalogueDesTaches.js` : une lecture pose
+//  son module de contrat quand un ecran en a besoin ; les six verbes
+//  d'ecriture de `T3` a `T6` n'en ont pas pose.
+export {
+  cheminEvenements,
+  CLASSEMENTS_D_EVENEMENTS,
+  CODES_EVENEMENTS,
+  GABARIT_CHEMIN_EVENEMENTS,
+  validerLaPageDesEvenements,
+} from './evenements.js';
+export type {
+  ClassementEvenement,
+  EvenementDuClassement,
+  PageDesEvenements,
+} from './evenements.js';
