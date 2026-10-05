@@ -53,6 +53,7 @@ import { PageCercle } from './pages/PageCercle';
 import { PageEditionDeBureau } from './pages/PageEditionDeBureau';
 import { PageEditionDeCercle } from './pages/PageEditionDeCercle';
 import { PageEntite } from './pages/PageEntite';
+import { PageEvenements } from './pages/PageEvenements';
 import { PageFramework } from './pages/PageFramework';
 import { PageGestionDesLiens } from './pages/PageGestionDesLiens';
 import { PageLien } from './pages/PageLien';
@@ -76,6 +77,8 @@ const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
   trombinoscope: <PageTrombinoscope />,
   //  LOT 6, `T9` — la synthese Framework, story `MVP-L06-US001`.
   framework: <PageFramework />,
+  //  LOT 8, `T9` — les evenements a venir et passes, story `MVP-L08-US003` (2/2).
+  evenements: <PageEvenements />,
   //  LOT 7, `T13` — la fiche d'arrivee, le parcours et les taches du nouvel
   //  arrivant, toutes trois composees dans CETTE page (voir son en-tete).
   monOnboarding: <PageMonOnboarding />,

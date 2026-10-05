@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `627` en usage | `DEC-628` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `628` en usage | `DEC-629` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -822,8 +822,29 @@ six ressources composées, sans aucune divergence : la garde est une simple sess
 décidé par le corpus, les deux sections paginées rendent leur première page à la taille par
 défaut du cahier §18.2 (25) ; le choix du carrousel reste délibérément à `T11`/`T12`. Les **6
 nouveaux tests**, tous d'intégration, portent le total à **1 547 pytest**, dont **1 145
-d'intégration**. Aucune migration : `T8` ne lit que des tables déjà posées. La sous-étape suivante
-est **`T9`** — les écrans de consultation des événements.
+d'intégration**. Aucune migration : `T8` ne lit que des tables déjà posées.
+
+**`T9` est faite** (`DEC-628`) : l'écran de consultation des événements, `MVP-L08-US003` (2/2),
+consomme `GET /entities/{code}/events`, posé par `T2` — **aucune route API nouvelle**. La
+rubrique `evenements` et sa route `/entites/:code/evenements` existaient déjà depuis `T4` du
+LOT 4, sans condition (matrice §5, « Lecture » aux huit rôles) : `T9` remplace le stub
+`PageRubrique` par l'écran réel, sans toucher au menu ni au routeur. Les deux onglets — « à
+venir » et « passés » — envoient `classement` à chaque appel et affichent ce que l'API répond,
+sans recalculer la frontière côté client. Aucune primitive d'onglets n'existe dans
+`packages/ui` — en livrer une sans écran qui l'emploie serait du code non éprouvé — les deux
+onglets sont donc deux `<button>` natifs portant le motif WAI-ARIA `tablist`/`tab`/`tabpanel` ;
+la réponse au clavier est STRUCTURELLE, aucun gestionnaire de touche écrit à la main. Un
+événement `cancelled` reste visible avec un `Badge` texte (« Annulé »), jamais une couleur
+seule. Les dates se lisent dans la chaîne ISO, jamais par `Date` — `dateComplete` est REPRISE de
+`PageProfil.tsx` (LOT 5) plutôt que recopiée. **`pages` peut valoir zéro** dans le contrat,
+contrairement à la page de cercle du LOT 6 : une entité peut n'avoir aucun événement d'un
+classement donné, et le validateur confronte `pages` au calcul `total`/`taille` plutôt qu'à une
+borne fixe. Aucune page de détail n'est créée : chaque carte affiche déjà tout ce qu'elle a, et
+construire un lien vers une adresse qu'aucune route ne sert aurait reproduit le défaut que
+`PageRubrique` évite depuis le LOT 4. Les **16 nouveaux tests de contrat et 7 nouveaux tests
+d'écran** portent le total Vitest à **729** (352 `contracts`, 111 `ui`, 266 `web`) ; **1 547
+pytest** inchangé, aucune ligne Python touchée. Aucune migration. La sous-étape suivante est
+**`T10`** — l'écran de gestion des événements.
 
 ---
 

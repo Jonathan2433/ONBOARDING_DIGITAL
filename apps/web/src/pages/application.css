@@ -1428,3 +1428,118 @@
   flex-wrap: wrap;
   gap: var(--espace-s);
 }
+
+/* ==========================================================================
+   Les evenements a venir et passes — LOT 8, `T9`, story `MVP-L08-US003` (2/2)
+   ========================================================================== */
+
+.evenements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.evenements-onglets {
+  display: flex;
+  gap: var(--espace-s);
+  border-bottom: 1px solid var(--trait);
+}
+
+/* Le minimum de 44px est le meme seuil que `.cercle-page`/`.trombi-page`. */
+.evenements-onglet {
+  min-height: 44px;
+  padding: 0 var(--espace-m);
+  font: inherit;
+  font-weight: 600;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+
+.evenements-onglet[data-selectionne='true'] {
+  color: var(--encre);
+  border-bottom-color: var(--marque-bleu);
+}
+
+.evenements-onglet:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.evenements-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.evenements-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.evenements-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.evenements-carte-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.evenements-titre {
+  margin: 0;
+}
+
+.evenements-horaire {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.evenements-lieu,
+.evenements-description {
+  margin: 0;
+}
+
+.evenements-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-m);
+  margin-top: var(--espace-m);
+}
+
+/* Meme recette que `.cercle-page` — deux ecrans qui paginent, deux jeux de
+   classes propres a chacun (§7.27 dans l'autre sens). */
+.evenements-page {
+  min-height: 44px;
+  padding: 0 var(--espace-m);
+  font: inherit;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+  border: 0;
+  border-radius: var(--rayon-m);
+  cursor: pointer;
+}
+
+.evenements-page:disabled {
+  color: var(--encre-douce);
+  background: var(--fond-doux);
+  cursor: not-allowed;
+}
+
+.evenements-page:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
