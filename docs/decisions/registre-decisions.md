@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 5 octobre 2026 — décision `DEC-626`, réalisation de `T7` du LOT 8
+**Dernière mise à jour :** 5 octobre 2026 — décision `DEC-627`, réalisation de `T8` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -131,6 +131,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-624`, sous-étape `T5`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-625`, sous-étape `T6`** | 1 | **Soumise le 04/10/2026** |
 | **Réalisation du LOT 8 `DEC-626`, sous-étape `T7`** | 1 | **Soumise le 05/10/2026** |
+| **Réalisation du LOT 8 `DEC-627`, sous-étape `T8`** | 1 | **Soumise le 05/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -142,7 +143,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **294** | |
+| **Total** | **295** | |
 
 ---
 
@@ -874,7 +875,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-626` | **`T7` du LOT 8 livre `GET /entities/{code}/arrivees-recentes`, matrice §5 « Arrivées récentes », cahier §10.5, `MVP-L08-US002`.** Le cahier dit « La fiche peut être publiée après validation, y compris avant la date d'arrivée » et le backlog « Une fiche validée apparaît IMMÉDIATEMENT » : la fenêtre de visibilité est donc `[published_at, recent_until]`, PAS `[arrival_date, recent_until]` — une fiche publiée par anticipation pour un membre encore `future` doit déjà apparaître. Le service filtre donc sur `ETATS_OCCUPANTS` (future ET active), jamais `ETAT_LISTE` (active seul) du trombinoscope. `recent_until`, colonne DATE écrite une fois à la publication (LOT 7, `T3`), est comparée à `instant.date()` — ancre injectée, jamais un `now()` caché dans le SQL. | **La réponse ne porte ni métier, ni statut, ni cercle, ni photo.** La matrice donne cette ressource en Lecture aux HUIT rôles, y compris DSM — qui est pourtant à TIRET sur « Consulter les informations préremplies » (métier/statut/client/DSM/cercle) ailleurs dans la même matrice ; les exposer ici créerait une porte dérobée vers un droit refusé, l'inverse du §6.5. Un test fige cette absence structurellement. Aucune photo non plus : `arrival_profile.photo_media_id` existe au modèle mais AUCUNE route du dépôt ne l'écrit — résoudre une colonne structurellement `null` aurait été du code mort, à réexaminer quand un écran (`T9` à `T12`) en aura réellement besoin. Un profil `profile_visibility` à `draft`/`hidden` est exclu, même discipline que le trombinoscope. Pagination du cahier §18.2 réutilisée depuis `app.shared.pagination`, même patron que `lister_les_evenements` (`T2`). **20 nouveaux tests, dont 17 d'intégration** ; 1 541 pytest collectés, dont 1 139 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T6`, même base — 74 échecs environnementaux identiques des deux côtés. Aucune migration : `T7` lit `arrival_profile`, posée par `T1` du LOT 7. | Soumise le 05/10/2026 |
 
-**Prochain identifiant libre : `DEC-627`.**
+| `DEC-627` | **`T8` du LOT 8 livre `GET /entities/{code}/accueil`, matrice §5, cahier §8.4, `MVP-L08-US001` (1/2) et `MVP-L08-US006` (1/2) : l'agrégat des cinq sections de l'accueil, dans l'ordre — présentation, Framework, arrivées récentes, événements à venir, liens internes.** Ce module n'écrit AUCUNE règle propre : il appelle directement les cinq services déjà construits par leurs sous-étapes sources (`lire_la_page_de_contenu` et `lister_les_liens` du LOT 6, `lire_la_page_framework` du LOT 6, `lister_les_arrivees_recentes` de `T7`, `lister_les_evenements` de `T2`) — les recopier aurait été la classe `ECART-021`/§7.27, une seconde source qui diverge au premier changement de l'une des cinq. La matrice §5 donne « Lecture » aux huit rôles authentifiés sur chacune des six ressources composées (accueil compris), sans aucune divergence entre elles : la garde de la route est donc une simple session établie, rien à réconcilier. | **`presentation` vaut `null` si aucune page `HOME`/`presentation` n'existe encore — état valide, pas une erreur** (une entité neuve n'a pas encore de texte de présentation). Le couple `(type_de_page="HOME", slug="presentation")` n'est pas une invention de cette sous-étape : c'est la convention déjà posée par l'écran `PageEntite.tsx` (LOT 6, `T10`), qui crée et retrouve toujours la page de présentation d'une entité par ce couple exact — la réutiliser plutôt qu'en inventer un autre est la règle §6.5. **Aucun nombre d'éléments par section n'est décidé par le corpus** (zéro occurrence mesurée pour un « carrousel » borné d'arrivées récentes ou d'événements) : plutôt que d'inventer une borne ou de bloquer la sous-étape sur une question de présentation que le découpage attribue explicitement à `T11`/`T12`, les deux sections paginées (arrivées, événements) rendent leur première page à la taille PAR DÉFAUT du cahier §18.2 (`25`, déjà décidée, pas inventée pour l'occasion) ; `total` reste dans la réponse pour qu'un écran futur sache s'il y a davantage à montrer ailleurs. **6 nouveaux tests, tous d'intégration** ; 1 547 pytest collectés, dont 1 145 d'intégration. Zéro régression : `git worktree` sur `origin/develop` après fusion de `T7`, même base — 74 échecs environnementaux identiques des deux côtés (mesuré en séquence ; une première comparaison concurrente avait produit 5 échecs de plus sur `test_debit.py`/`test_catalogue_des_taches.py`, un artefact de DEUX suites pytest tournant SIMULTANÉMENT sur la même base de développement partagée — pas une régression, confirmé en relançant la branche seule). Aucune migration : `T8` ne lit que des tables déjà posées par les LOTS 6 et 7 et par `T1`/`T2` du LOT 8. | Soumise le 05/10/2026 |
+
+**Prochain identifiant libre : `DEC-628`.**
 
 ---
 
@@ -1147,6 +1150,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-624` — réalisation du LOT 8, `T5` | 1 | 1 |
 | `DEC-625` — réalisation du LOT 8, `T6` | 1 | 1 |
 | `DEC-626` — réalisation du LOT 8, `T7` | 1 | 1 |
+| `DEC-627` — réalisation du LOT 8, `T8` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1158,7 +1162,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **294** | **294** |
+| **Total** | **295** | **295** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
