@@ -29,8 +29,15 @@ engineStrict: true
 
 # GHSA-3wwx-pv8p-q78v : jsdom@30 autorise la ligne corrigee ^8.7.0 ;
 # cette contrainte transitive fixe le minimum corrige sans modifier ses consommateurs.
+#
+# GHSA-68fv-2mgg-jv7q, mesure en T11 du LOT 8 : deni de service par
+# decalages de section indexee dans source-map-js, chemins transitifs via
+# postcss (vite) et css-tree (jsdom). Corrige en 1.2.2 ; le lockfile portait
+# 1.2.1. Meme parti qu'undici ci-dessus : fixer le minimum corrige, sans
+# toucher aucun consommateur direct ni leur plage declaree.
 overrides:
   undici: 8.10.2
+  source-map-js: 1.2.2
 
 # ============================================================================
 #  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
