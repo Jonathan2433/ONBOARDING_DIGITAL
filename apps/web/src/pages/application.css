@@ -1657,9 +1657,10 @@
 }
 
 /* ==========================================================================
-   L'accueil d'une entite — LOT 8, `T11`. Les cinq sections du cahier §8.4,
-   chacune une `<Carte>` du design system : seul le CONTENU de chaque section
-   est propre a ce fichier, la carte elle-meme vient de `@onboarding/ui`.
+   L'accueil d'une entite — LOT 8, `T11`/`T12`. Les cinq sections du cahier
+   §8.4, chacune une `<Carte>` du design system : seul le CONTENU de chaque
+   section est propre a ce fichier, la carte et le carrousel mobile viennent
+   de `@onboarding/ui`.
    ========================================================================== */
 
 .accueil {
@@ -1682,17 +1683,10 @@
   margin: 0 0 var(--espace-s);
 }
 
-.accueil-arrivees-liste,
-.accueil-evenements-liste,
-.accueil-liens-liste {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-s);
-  padding: 0;
-  margin: 0 0 var(--espace-s);
-  list-style: none;
-}
-
+/* Les TROIS listes de l'accueil (arrivees, evenements, liens) sont portees
+   par `<Carrousel>` (`@onboarding/ui`) depuis `T12` : la piste et sa mise en
+   page mobile/desktop viennent de `ui-carrousel__piste`, pas d'ici. Seul le
+   CONTENU de chaque carte reste propre a ce fichier. */
 .accueil-arrivees-carte {
   display: flex;
   flex-wrap: wrap;
