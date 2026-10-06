@@ -487,3 +487,17 @@ export type {
   PageDesEvenements,
   PorteeDeCreationEvenement,
 } from './evenements.js';
+
+//  L'AGREGAT D'ACCUEIL — LOT 8, `T8` (API) puis `T11` (ecran), `MVP-L08-US001`
+//  (2/2) et `MVP-L08-US006` (2/2). Premier module de contrat pour « arrivees
+//  recentes » (`T7` n'en avait pose aucun, faute d'ecran consommateur) ; les
+//  quatre autres sections delegient a `framework.ts`/`evenements.ts`/
+//  `liens.ts`/`contenus.ts`, jamais revalidees une seconde fois ici.
+export {
+  cheminAccueil,
+  CODES_ACCUEIL,
+  GABARIT_CHEMIN_ACCUEIL,
+  validerLaPageDesArriveesRecentes,
+  validerLAccueil,
+} from './accueil.js';
+export type { AccueilDEntite, ArriveeRecente, PageDesArriveesRecentes } from './accueil.js';

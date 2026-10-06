@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `629` en usage | `DEC-630` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `630` en usage | `DEC-631` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -863,7 +863,32 @@ sélecteur n'existe encore dans ce dépôt — et les médias se rattachent par 
 aucun téléversement (LOT 11). Les **17 nouveaux tests pytest (dont 12 d'intégration), 15
 nouveaux tests de contrat et 13 nouveaux tests d'écran** portent le total à **2 321** (1 564
 pytest dont 1 157 d'intégration ; 757 Vitest : 367 `contracts`, 111 `ui`, 279 `web`). Aucune
-migration. La sous-étape suivante est **`T11`** — l'accueil final desktop.
+migration.
+
+**`T11` est faite** (`DEC-630`) : l'accueil final desktop, `MVP-L08-US001` (2/2) et
+`MVP-L08-US006` (2/2). `PageEntite.tsx` compose désormais les CINQ sections de l'agrégat de `T8`
+(`GET …/accueil`), dans l'ordre exact du cahier §8.4, pour les huit rôles authentifiés. **Un trou
+réel, trouvé en construisant l'écran et non anticipé par la fiche** : avant `T11`, la section
+« présentation » n'était rendue qu'en ÉDITION (`PanneauEditionDeContenu`, LOT 6 `T10`), qui rend
+`null` pour tout rôle sans droit d'édition — un `EMP` ou un `NEW` ne voyait donc STRICTEMENT RIEN
+de cette section, alors que la matrice §5 lui donne « Lecture » comme aux sept autres rôles. Les
+deux régimes coexistent désormais sur la même section, sans rien retirer à ce que `T10` du LOT 6
+avait déjà livré : la lecture des blocs (par `texteDuBloc(bloc, 'texte')`, la clef déjà employée
+par toutes les fixtures du dépôt — jamais inventée pour l'occasion, `QO-121` restant ouverte) pour
+les huit rôles, le panneau d'édition sous elle pour les seuls rôles éditoriaux. Framework,
+arrivées récentes et événements à venir sont des résumés compacts, plafonnés à `NOMBRE_MONTRE = 5`
+avec un lien vers l'écran complet — aucune borne n'étant nommée par le corpus, `T8` l'ayant
+délibérément laissée à `T11`/`T12`, aucun carrousel n'étant construit ici. L'ouverture externe des
+liens internes est désormais EXPLICITE : `target="_blank" rel="noopener noreferrer"` plus une
+mention textuelle visible, jamais une icône seule ; un lien refusé par `urlEstServable` (déjà la
+troisième barrière, LOT 6) s'affiche désactivé et visible, jamais silencieusement absent. Premier
+module de contrat pour les arrivées récentes (`accueil.ts`), `T7` n'en ayant posé aucun faute
+d'écran consommateur — même partage que les liens internes et les événements avant leurs propres
+écrans. Les **13 nouveaux tests de contrat et 11 nouveaux tests d'écran** portent le total Vitest
+à **781** (380 `contracts`, 111 `ui`, 290 `web`) ; **1 564 pytest** inchangé, aucune ligne Python
+touchée. Aucune migration, aucune route API nouvelle : `T11` ne consomme que ce que `T8` sert
+déjà. La sous-étape suivante est **`T12`** — l'accueil mobile, les carrousels accessibles et la
+vidéo sur action.
 
 ---
 
