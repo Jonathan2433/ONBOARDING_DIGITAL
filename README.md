@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
 | Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
 | **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
-| Sous-étape en cours | **`T12` — accueil mobile, carrousels accessibles et vidéo sur action** ; `T11` livrée par `DEC-630` (accueil final desktop — les cinq sections du cahier §8.4 composées à l'écran, ouverture externe explicite des liens internes) |
+| Sous-étape en cours | **`T13` — contrôle de pile réelle événements et accueil** ; `T12` livrée par `DEC-631` (accueil mobile, carrousels accessibles pour les trois listes de l'accueil ; vidéo sur action explicitement reportée, `US005`) |
 | Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -36,12 +36,13 @@ Au-dessus de ce socle :
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
 | **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
-| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, les **arrivées récentes**, et les **trois écrans** du lot — consultation (onglets « à venir »/« passés », badge « Annulé »), gestion (créer/modifier/publier/annuler/archiver/restaurer/médias, deux grilles de rôles jamais fusionnées) et l'**accueil final desktop**, qui compose à l'écran les cinq sections du cahier §8.4 (présentation, Framework, arrivées, événements, liens), lecture ouverte aux huit rôles et ouverture externe explicite des liens ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo | LOT 8, `T1`–`T11` |
+| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, les **arrivées récentes**, et les **trois écrans** du lot — consultation (onglets « à venir »/« passés », badge « Annulé »), gestion (créer/modifier/publier/annuler/archiver/restaurer/médias, deux grilles de rôles jamais fusionnées) et l'**accueil final**, qui compose à l'écran les cinq sections du cahier §8.4 (présentation, Framework, arrivées, événements, liens), lecture ouverte aux huit rôles et ouverture externe explicite des liens, **avec ses carrousels accessibles sur mobile** (défilement manuel sous 768 px, liste verticale au-delà) ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo | LOT 8, `T1`–`T12` |
 
-**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** l'accueil
-**mobile**, ses **carrousels accessibles** et la **vidéo chargée sur action** restent **en
-construction au LOT 8** (`T12`) ; l'import CSV du LOT 9, le pilotage avancé du LOT 10 et
-les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
+**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
+**vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
+convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
+vidéo réelle n'existera avant la V1 (`CONT-026`) ; l'import CSV du LOT 9, le pilotage avancé du
+LOT 10 et les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
 
 > Les huit stories du LOT 7 sont fermées sur leurs critères propres. Les stories encore ouvertes
 > des lots antérieurs restent explicitement nommées dans leurs fiches : un critère non tenu ne se

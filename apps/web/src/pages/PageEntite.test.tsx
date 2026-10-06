@@ -17,7 +17,7 @@
  *   soit un lien refuse qui disparaitrait silencieusement au lieu de
  *   s'afficher desactive et visible.
  */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -298,5 +298,153 @@ describe("l'accueil compose les cinq sections, dans l'ordre du cahier §8.4", ()
     await waitFor(() => {
       expect(screen.getByText(/session a expire/)).toBeTruthy();
     });
+  });
+});
+
+describe("`T12` : les trois listes de l'accueil defilent en carrousel", () => {
+  const DEUX_ARRIVEES = {
+    arrivees: [
+      {
+        appartenance: 'm1',
+        person_id: 'pe1',
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        preferred_name: null,
+        arrival_date: '2026-10-01',
+        short_intro: null,
+        fun_fact: null,
+      },
+      {
+        appartenance: 'm2',
+        person_id: 'pe2',
+        first_name: 'Grace',
+        last_name: 'Hopper',
+        preferred_name: null,
+        arrival_date: '2026-10-02',
+        short_intro: null,
+        fun_fact: null,
+      },
+    ],
+    page: 1,
+    taille: 25,
+    total: 2,
+    pages: 1,
+  };
+
+  const DEUX_EVENEMENTS = {
+    classement: 'a_venir',
+    evenements: [
+      {
+        identifiant: 'ev1',
+        titre: 'Pot de rentree',
+        description: null,
+        commence_le: '2026-10-10T08:00:00+00:00',
+        finit_le: '2026-10-10T09:00:00+00:00',
+        lieu: null,
+        etat: 'published',
+        annule_le: null,
+        motif_d_annulation: null,
+      },
+      {
+        identifiant: 'ev2',
+        titre: 'Atelier accueil',
+        description: null,
+        commence_le: '2026-10-12T08:00:00+00:00',
+        finit_le: '2026-10-12T09:00:00+00:00',
+        lieu: null,
+        etat: 'published',
+        annule_le: null,
+        motif_d_annulation: null,
+      },
+    ],
+    page: 1,
+    taille: 25,
+    total: 2,
+    pages: 1,
+  };
+
+  const DEUX_LIENS = {
+    liens: [
+      {
+        identifiant: 'l1',
+        libelle: 'Hub',
+        url: 'https://hub.exemple.test/',
+        type_de_lien: 'HUB',
+        description: null,
+        reference_d_icone: null,
+        rang: 1,
+        actif: true,
+        version: 1,
+      },
+      {
+        identifiant: 'l2',
+        libelle: 'eXalt Academy',
+        url: 'https://academy.exemple.test/',
+        type_de_lien: 'ACADEMY',
+        description: null,
+        reference_d_icone: null,
+        rang: 2,
+        actif: true,
+        version: 1,
+      },
+    ],
+    nombre_de_liens: 2,
+  };
+
+  it('arrivees recentes : une region nommee, deux commandes, et TOUS les elements presents', async () => {
+    rolesActuels = ['EMP'];
+    servir({ ...ACCUEIL_DE_BASE, arrivees_recentes: DEUX_ARRIVEES });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    });
+    const region = screen.getByRole('region', { name: 'Arrivees recentes' });
+    const piste = within(region).getByRole('list', { name: 'Arrivees recentes' });
+    expect(within(piste).getByText('Ada Lovelace')).toBeTruthy();
+    expect(within(piste).getByText('Grace Hopper')).toBeTruthy();
+    expect(
+      within(region).getByRole('button', { name: 'Arrivees recentes : element precedent' }),
+    ).toBeTruthy();
+    expect(
+      within(region).getByRole('button', { name: 'Arrivees recentes : element suivant' }),
+    ).toBeTruthy();
+  });
+
+  it('evenements a venir : la Carte porte un carrousel avec les deux evenements', async () => {
+    rolesActuels = ['EMP'];
+    servir({ ...ACCUEIL_DE_BASE, evenements_a_venir: DEUX_EVENEMENTS });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Pot de rentree')).toBeTruthy();
+    });
+    const piste = screen.getByRole('list', { name: 'Evenements a venir' });
+    expect(within(piste).getByText('Pot de rentree')).toBeTruthy();
+    expect(within(piste).getByText('Atelier accueil')).toBeTruthy();
+  });
+
+  it("liens internes : un carrousel, MEME SANS plafond `NOMBRE_MONTRE` — aucun n'a jamais ete tronque ici", async () => {
+    rolesActuels = ['EMP'];
+    servir({ ...ACCUEIL_DE_BASE, liens_internes: DEUX_LIENS });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Hub')).toBeTruthy();
+    });
+    const piste = screen.getByRole('list', { name: 'Ressources internes' });
+    expect(within(piste).getByText('Hub')).toBeTruthy();
+    expect(within(piste).getByText('eXalt Academy')).toBeTruthy();
+  });
+
+  it('aucun carrousel n’apparait quand la section est vide — pas de commandes inutiles', async () => {
+    rolesActuels = ['EMP'];
+    servir(ACCUEIL_DE_BASE);
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Arrivees recentes' })).toBeTruthy();
+    });
+    //  La `<Carte>` reste une region nommee dans les deux etats (vide ou non) :
+    //  c'est l'absence de LISTE, pas de region, qui distingue le carrousel.
+    expect(screen.queryByRole('list', { name: 'Arrivees recentes' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Evenements a venir' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Ressources internes' })).toBeNull();
   });
 });

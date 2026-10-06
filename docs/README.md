@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `630` en usage | `DEC-631` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `631` en usage | `DEC-632` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -887,8 +887,33 @@ d'écran consommateur — même partage que les liens internes et les événemen
 écrans. Les **13 nouveaux tests de contrat et 11 nouveaux tests d'écran** portent le total Vitest
 à **781** (380 `contracts`, 111 `ui`, 290 `web`) ; **1 564 pytest** inchangé, aucune ligne Python
 touchée. Aucune migration, aucune route API nouvelle : `T11` ne consomme que ce que `T8` sert
-déjà. La sous-étape suivante est **`T12`** — l'accueil mobile, les carrousels accessibles et la
-vidéo sur action.
+déjà.
+
+**`T12` est faite** (`DEC-631`) : l'accueil mobile et les carrousels accessibles,
+`MVP-L08-US005` **reportée** par arbitrage explicite de Jonathan. Trois listes de l'accueil —
+arrivées récentes, événements à venir, liens internes — passent de `<ul>` brutes à un nouveau
+composant partagé du design system, `<Carrousel>` : même contenu, mêmes `<li>`, mais une piste qui
+défile horizontalement sous 768 px (cahier §13.3/§13.4, « carrousels manuels et accessibles ») et
+redevient une liste verticale au-delà — seul le CSS tranche, aucune duplication de marquage. Les
+liens internes n'avaient JAMAIS été bornés par `NOMBRE_MONTRE` (toute la liste s'affichait déjà,
+sans « voir plus ») : c'est, sur mobile, le candidat le plus exposé à un défilement sans fin, et le
+premier bénéficiaire réel du carrousel. **`US005` (« vidéo d'accueil sur action ») est
+explicitement REPORTÉE plutôt que devinée** : aucune fixture du dépôt n'exerce jamais un bloc de
+type `VIDEO`, `QO-121` reste ouverte — Jonathan l'a déjà reportée le 25/09/2026 — et `CONT-026`
+confirme que les onze emplacements vidéo du prototype sont vides, leur production relevant de la
+V1. Inventer maintenant un champ de `payload_json` pour une vidéo aurait tranché une partie de
+`QO-121` par anticipation ; la question a été posée explicitement à Jonathan avant tout code. Le
+carrousel est MANUEL par construction (aucune minuterie n'existe dans le composant) et ne porte
+AUCUN second repère d'accessibilité : `<Carte titre="…">` est déjà une région nommée, et un second
+`role="region"` de même nom aurait produit une collision de requête mesurée directement — `libelle`
+nomme donc la LISTE (`aria-label`, rôle `list`) et les deux boutons, jamais un conteneur de plus.
+Seul le mobile voit les commandes « précédent »/« suivant », masquées au-delà de 768 px — même
+discipline que la barre de navigation inférieure (LOT 4, `T5`). Vérification réelle effectuée
+(§7.43) : décor psql réel, lien magique réel, écran vu en HTTPS à 375 px et en desktop (zéro
+régression visuelle). Les **9 nouveaux tests `ui` et 4 nouveaux tests `web`** portent le total
+Vitest à **794** (380 `contracts`, 120 `ui`, 294 `web`) ; **1 564 pytest** inchangé, aucune ligne
+Python touchée. Aucune migration, aucune route API nouvelle. La sous-étape suivante est **`T13`**
+— le contrôle de pile réelle événements et accueil.
 
 ---
 

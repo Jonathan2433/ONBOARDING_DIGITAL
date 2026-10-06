@@ -1,5 +1,24 @@
 /**
- * L'accueil d'une entite — LOT 4, `T2`/`T3` ; LOT 8, `T11` compose l'agregat.
+ * L'accueil d'une entite — LOT 4, `T2`/`T3` ; LOT 8, `T11` compose l'agregat,
+ * `T12` ajoute les carrousels mobiles.
+ *
+ * `T12` : TROIS LISTES DEVIENNENT DES CARROUSELS — `US005` EST REPORTEE
+ *
+ *   Arrivees recentes, evenements a venir et liens internes passent de `<ul>`
+ *   brutes a `<Carrousel>` (`@onboarding/ui`) : meme contenu, memes `<li>`,
+ *   mais une piste qui defile sur mobile (cahier §13.3/§13.4, « carrousels
+ *   manuels et accessibles ») et redevient une liste verticale a partir de
+ *   768 px — aucune duplication de marquage, seul le CSS tranche.
+ *
+ *   Les liens internes n'avaient JAMAIS ete bornes par `NOMBRE_MONTRE` — la
+ *   liste entiere s'affichait deja, sans "voir plus" — ce qui en fait, sur
+ *   mobile, le candidat le plus sujet a un defilement vertical sans fin.
+ *
+ *   `US005` (« video d'accueil sur action ») est explicitement REPORTEE,
+ *   arbitrage de Jonathan du 06/10/2026 : aucune convention de `payload_json`
+ *   n'existe pour un bloc `VIDEO` — ni dans une seule fixture du depot — et
+ *   `QO-121` reste ouverte. L'inventer maintenant serait §6.5 ; `CONT-026`
+ *   confirme par ailleurs qu'aucune video reelle n'existera avant la V1.
  *
  * `T11` : LES CINQ SECTIONS DU CAHIER §8.4, DANS L'ORDRE, VIA L'AGREGAT DE `T8`
  *
@@ -40,8 +59,9 @@
  *
  *   Ni le cahier, ni la matrice, ni `T8` ne nomment de borne : `T8` le disait
  *   explicitement, « delibere, a T11/T12 ». Chaque section plafonne donc a
- *   `NOMBRE_MONTRE` et propose un lien vers l'ecran complet au-dela — aucun
- *   carrousel, delibere : la fiche l'attribue a `T12` (mobile).
+ *   `NOMBRE_MONTRE` et propose un lien vers l'ecran complet au-dela — la
+ *   piste `T12` reste bornee a ce meme plafond, son carrousel n'etant pas
+ *   un pagineur de plus.
  *
  * L'OUVERTURE EXTERNE EST EXPLICITE — `MVP-L08-US006` (2/2)
  *
@@ -75,7 +95,7 @@ import {
   texteDuBloc,
   urlEstServable,
 } from '@onboarding/contracts';
-import { Alerte, Badge, Carte } from '@onboarding/ui';
+import { Alerte, Badge, Carrousel, Carte } from '@onboarding/ui';
 
 /** Aucune borne n'est nommee par le corpus — voir l'en-tete. */
 const NOMBRE_MONTRE = 5;
@@ -177,9 +197,9 @@ export function PageEntite(): JSX.Element {
         {donnee.arriveesRecentes.arrivees.length === 0 ? (
           <Alerte>Aucune arrivee recente pour le moment.</Alerte>
         ) : (
-          <ul className="accueil-arrivees-liste">
+          <Carrousel libelle="Arrivees recentes">
             {donnee.arriveesRecentes.arrivees.slice(0, NOMBRE_MONTRE).map((arrivee) => (
-              <li key={arrivee.appartenance} className="accueil-arrivees-carte">
+              <li key={arrivee.appartenance} className="ui-carrousel__item accueil-arrivees-carte">
                 <Link
                   className="app-lien"
                   to={cheminDuProfilALEcran(entite.code, arrivee.appartenance)}
@@ -191,7 +211,7 @@ export function PageEntite(): JSX.Element {
                 </span>
               </li>
             ))}
-          </ul>
+          </Carrousel>
         )}
         {donnee.arriveesRecentes.total > NOMBRE_MONTRE ? (
           <Link className="app-lien" to={cheminDeRubrique(entite.code, 'trombinoscope')}>
@@ -205,9 +225,12 @@ export function PageEntite(): JSX.Element {
         {donnee.evenementsAVenir.evenements.length === 0 ? (
           <Alerte>Aucun evenement a venir pour le moment.</Alerte>
         ) : (
-          <ul className="accueil-evenements-liste">
+          <Carrousel libelle="Evenements a venir">
             {donnee.evenementsAVenir.evenements.slice(0, NOMBRE_MONTRE).map((evenement) => (
-              <li key={evenement.identifiant} className="accueil-evenements-carte">
+              <li
+                key={evenement.identifiant}
+                className="ui-carrousel__item accueil-evenements-carte"
+              >
                 <div className="accueil-evenements-entete">
                   <span className="accueil-evenements-titre">{evenement.titre}</span>
                   {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
@@ -217,7 +240,7 @@ export function PageEntite(): JSX.Element {
                 </span>
               </li>
             ))}
-          </ul>
+          </Carrousel>
         )}
         <Link className="app-lien" to={cheminDeRubrique(entite.code, 'evenements')}>
           Voir tous les evenements
@@ -229,11 +252,11 @@ export function PageEntite(): JSX.Element {
         {donnee.liensInternes.liens.length === 0 ? (
           <Alerte>Aucune ressource interne configuree pour le moment.</Alerte>
         ) : (
-          <ul className="accueil-liens-liste">
+          <Carrousel libelle="Ressources internes">
             {donnee.liensInternes.liens.map((lien) => {
               const servable = urlEstServable(lien.url);
               return (
-                <li key={lien.identifiant} className="accueil-liens-carte">
+                <li key={lien.identifiant} className="ui-carrousel__item accueil-liens-carte">
                   {servable ? (
                     <a
                       className="accueil-liens-lien"
@@ -256,7 +279,7 @@ export function PageEntite(): JSX.Element {
                 </li>
               );
             })}
-          </ul>
+          </Carrousel>
         )}
         {peutGererLesLiens ? (
           <Link className="app-lien" to={cheminGestionDesLiensALEcran(entite.code)}>

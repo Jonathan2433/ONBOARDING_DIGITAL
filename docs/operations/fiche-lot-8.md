@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1` à `T11` faites par `DEC-620` à `DEC-630`
-**Sous-étape suivante :** `T12`, accueil mobile, carrousels accessibles et vidéo sur action
+**État :** **OUVERT** — `DEC-619`; `T1` à `T12` faites par `DEC-620` à `DEC-631`
+**Sous-étape suivante :** `T13`, contrôle de pile réelle événements et accueil
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -101,7 +101,7 @@ ne commence.
 | `T9` ✅ | Écrans de consultation des événements | `US003` (2/2) | onglets à venir/passés (`<button>` natifs, `role="tablist"`), badge « Annulé », aucun lien vers une page de détail qui n'existe pas — `DEC-628` |
 | `T10` ✅ | Écran de gestion des événements | `US004` | créer/modifier/publier/annuler/archiver/restaurer/médias ; deux grilles de rôles jamais fusionnées (`rolesGestionDesEvenements`/`rolesRestaurationDUnEvenement`) ; deux routes de lecture nouvelles posées en construisant l'écran (`/events/gestion`, `/events/{evenement}/gestion`) — `DEC-629` |
 | `T11` ✅ | Accueil final desktop | `US001` (2/2), `US006` (2/2) | **5 sections dans l'ordre §8.4** ; un rôle sans droit d'édition voit désormais la présentation (trou comblé) ; ouverture externe explicite des liens — `DEC-630` |
-| `T12` | Accueil mobile, carrousels accessibles et vidéo sur action | `US005` | aucune requête vidéo avant interaction ; commandes natives ; navigation manuelle |
+| `T12` ✅ | Accueil mobile, carrousels accessibles et vidéo sur action | `US005` **reportée** | **Carrousel manuel et accessible** (`<Carrousel>`, `@onboarding/ui`) pour les trois listes de l'accueil, défilement horizontal sous 768 px, liste verticale au-delà ; `US005` (vidéo sur action) explicitement reportée — aucune convention de `payload_json` pour un bloc `VIDEO`, `QO-121` ouverte, `CONT-026` — `DEC-631` |
 | `T13` | Contrôle de pile réelle événements + accueil | transversal | parcours HTTPS réel, migrations et permissions sur les huit services |
 | `T14` | Recette, classement du §30 et checklist `G8` | porte | création par chaque périmètre, refus hors périmètre, bascule temporelle, annulation, desktop/mobile |
 
