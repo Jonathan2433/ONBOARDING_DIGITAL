@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `631` en usage | `DEC-632` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `632` en usage | `DEC-633` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -912,8 +912,31 @@ discipline que la barre de navigation inférieure (LOT 4, `T5`). Vérification r
 (§7.43) : décor psql réel, lien magique réel, écran vu en HTTPS à 375 px et en desktop (zéro
 régression visuelle). Les **9 nouveaux tests `ui` et 4 nouveaux tests `web`** portent le total
 Vitest à **794** (380 `contracts`, 120 `ui`, 294 `web`) ; **1 564 pytest** inchangé, aucune ligne
-Python touchée. Aucune migration, aucune route API nouvelle. La sous-étape suivante est **`T13`**
-— le contrôle de pile réelle événements et accueil.
+Python touchée. Aucune migration, aucune route API nouvelle.
+
+**`T13` est faite** (`DEC-632`) : le contrôle de pile réelle événements et accueil,
+`make accueil-check`, nommé dans `ci.yml`. **Aucune route API nouvelle, aucune migration** — `T13`
+ne prouve que ce que `T1` à `T12` avaient déjà livré, mais à travers Caddy, en HTTPS, sur les
+conteneurs réellement en marche, exactement le motif de `verifier-administration-onboarding.py`
+(LOT 7, `T14`). Son témoin central est **la grille à deux visages du DSM** : « Modifier » accepte
+un évènement créé OU rattaché à son périmètre, mais « Publier »/« Annuler »/« Archiver »/« Gérer
+les médias » n'acceptent QUE « Périmètre » (ses consultants nommés, `event_dsm_scope`,
+`ECART-067`) — deux évènements DSM sont posés pour distinguer les deux grilles plutôt que d'en voir
+une seule (§7.0, quatrième proposition). **L'asymétrie entre deux porteurs du même rôle** (deux
+Boosters, deux cercles distincts) est rejouée à l'écriture, pas seulement à la création — témoin
+nommé dans le compte rendu d'origine de `T3`. **`ARB-DROIT-003` est éprouvé dans le sens du refus
+sur DEUX évènements** (celui du Booster, celui du DSM nommé) : DSM et BOOST sont exclus EN BLOC de
+la restauration, même sur l'évènement dont ils sont respectivement le créateur nommé et le Booster
+rattaché. **Le classement temporel est éprouvé sur l'horloge réelle du conteneur** : un évènement
+passé publié apparaît dans `classement=passes` et jamais `a_venir` (l'inverse pour un évènement à
+venir) ; annuler NE RETIRE PAS de la consultation (badge « Annulé » visible, cahier §10.6),
+archiver RETIRE. **L'accueil compose, et la fenêtre des arrivées récentes est la fenêtre réelle** :
+une appartenance `future` déjà publiée apparaît IMMÉDIATEMENT (cahier §10.5, leçon de `T7`), une
+fiche publiée dont `recent_until` est dépassé en est absente — vérifié à la fois dans l'agrégat
+`/accueil` et dans la route dédiée `/arrivees-recentes`. **29 contrôles, 0 échec**, exécuté deux
+fois de suite ; `1 564` pytest et `197` fichiers mypy inchangés, aucune ligne Python applicative
+touchée. La sous-étape suivante est **`T14`**, la dernière du lot — la recette, le classement du
+§30 et la checklist `G8`.
 
 ---
 

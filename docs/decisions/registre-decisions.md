@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 6 octobre 2026 — décision `DEC-631`, réalisation de `T12` du LOT 8
+**Dernière mise à jour :** 6 octobre 2026 — décision `DEC-632`, réalisation de `T13` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -136,6 +136,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-629`, sous-étape `T10`** | 1 | **Soumise le 05/10/2026** |
 | **Réalisation du LOT 8 `DEC-630`, sous-étape `T11`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-631`, sous-étape `T12`** | 1 | **Soumise le 06/10/2026** |
+| **Réalisation du LOT 8 `DEC-632`, sous-étape `T13`** | 1 | **Soumise le 06/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -147,7 +148,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **299** | |
+| **Total** | **300** | |
 
 ---
 
@@ -887,7 +888,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-631` | **`T12` du LOT 8 livre l'accueil mobile et les carrousels accessibles ; `MVP-L08-US005` (« vidéo d'accueil sur action ») est explicitement REPORTÉE, arbitrage de Jonathan.** Trois listes de l'accueil (arrivées récentes, événements à venir, liens internes) passent de `<ul>` brutes à un nouveau composant partagé, `<Carrousel>` (`@onboarding/ui`) : même contenu, mêmes `<li>`, mais une piste qui défile horizontalement sous 768 px (cahier §13.3/§13.4, « carrousels manuels et accessibles ») et redevient une liste verticale au-delà — seul le CSS tranche, aucune duplication de marquage. Les liens internes n'avaient jamais été bornés par `NOMBRE_MONTRE` (toute la liste s'affichait déjà) : c'est, sur mobile, le candidat le plus exposé à un défilement vertical sans fin, et le premier bénéficiaire réel du carrousel. | **`US005` a été reportée plutôt que devinée.** Aucune fixture du dépôt n'exerce jamais un bloc de type `VIDEO`, `QO-121` (vocabulaire de `payload_json`) reste explicitement ouverte — Jonathan l'a reportée le 25/09/2026 — et `CONT-026` confirme que les onze emplacements vidéo du prototype sont vides, leur production relevant de la V1. Inventer maintenant un champ de `payload_json` pour porter une adresse de vidéo aurait tranché une partie de `QO-121` par anticipation, avant que les dix autres types de blocs ne soient eux-mêmes décidés — exactement ce que le §6.5 interdit. Question posée explicitement à Jonathan avant tout code, qui a confirmé le report. **Le carrousel est MANUEL par construction, pas par choix non exercé** : aucune minuterie n'existe dans le composant, donc aucune ne peut en acquérir une par erreur — un test à minuteur factice le vérifie. **Pas de second repère d'accessibilité** : `<Carte titre="…">` est déjà une région nommée ; envelopper la piste d'un second `role="region"` portant le même nom produirait deux repères identiques et une collision de requête mesurée directement (`getByRole('region', …)` en trouvait alors deux) — `libelle` nomme donc la LISTE (`aria-label` sur le `<ul>`, rôle `list`) et les deux boutons, jamais un conteneur de plus. Seul le mobile voit les commandes « précédent »/« suivant », masquées par `display: none` au-delà de 768 px — même discipline que la barre de navigation inférieure (LOT 4, `T5`) : deux repères de navigation pour le même contenu dupliqueraient l'ordre de tabulation. Les deux boutons s'épuisent aux extrémités (mesuré sur `scrollLeft`/`scrollWidth`/`clientWidth`), et `scrollBy` n'impose jamais `behavior` : c'est `scroll-behavior` en CSS qui décide, neutralisé sous `prefers-reduced-motion`, même discipline que `CarteRetournable` — un second mécanisme en JavaScript aurait été une deuxième règle pour la même chose. **Vérification réelle effectuée (§7.43)** : décor psql réel (entité, deux arrivées, deux événements, deux liens internes, personne `@exalt-company.com`), lien magique réel consommé, écran vu en HTTPS à 375 px (les trois carrousels défilent, les boutons s'activent et se désactivent aux bonnes extrémités) et en desktop (zéro régression visuelle : liste verticale, aucun bouton) ; décor nettoyé après coup, zéro résidu vérifié. **9 nouveaux tests `ui`, 4 nouveaux tests `web`** ; total Vitest 794 (380 `contracts`, 120 `ui`, 294 `web`) ; 1 564 pytest inchangé, aucune ligne Python touchée. Aucune migration, aucune route API nouvelle. | Soumise le 06/10/2026 |
 
-**Prochain identifiant libre : `DEC-632`.**
+| `DEC-632` | **`T13` du LOT 8 construit `make accueil-check`, un contrôle de pile réelle pour les événements et l'accueil, exécuté à travers Caddy en HTTPS sur les conteneurs réellement en marche.** Aucune route API nouvelle, aucune migration : `T13` ne prouve que ce que `T1` à `T12` ont déjà livré, mais sur l'artefact réel plutôt qu'en mémoire via `TestClient` — même motif que `verifier-administration-onboarding.py` (LOT 7, `T14`). | **Le témoin central est la grille à DEUX VISAGES du DSM sur un même évènement** : « Modifier » accepte « créé OU rattaché à son périmètre », mais « Publier »/« Annuler »/« Archiver »/« Gérer les médias » n'acceptent QUE « Périmètre » (nommé par `event_dsm_scope`, `ECART-067`). Deux évènements DSM sont posés pour que le contrôle puisse DISTINGUER les deux grilles plutôt que d'en voir une seule. **L'asymétrie entre deux porteurs du même rôle** (deux Boosters, deux cercles) est rejouée à l'écriture, pas seulement à la création — témoin nommé dans le compte rendu d'origine de `T3`. **`ARB-DROIT-003` est éprouvé dans le sens du refus sur DEUX évènements** (celui du Booster, celui du DSM nommé) : DSM et BOOST sont exclus EN BLOC de la restauration, même sur l'évènement dont ils sont respectivement le créateur nommé et le Booster rattaché — l'exclusion est un fait du rôle, jamais une conséquence de ne pas être « nommé ». **Le classement temporel est éprouvé sur l'horloge réelle du conteneur** : un évènement passé publié apparaît dans `classement=passes` et jamais `a_venir` (l'inverse pour un évènement à venir) ; annuler NE RETIRE PAS de la consultation (badge « Annulé » visible, cahier §10.6), archiver RETIRE — les deux témoins, positif et négatif, sont nécessaires. **L'accueil compose, et la fenêtre des arrivées récentes est la fenêtre réelle** : une appartenance `future` déjà publiée apparaît IMMÉDIATEMENT (cahier §10.5, leçon de `T7`), une fiche publiée dont `recent_until` est dépassé en est absente — vérifié à la fois dans l'agrégat `/accueil` et dans la route dédiée `/arrivees-recentes`, pour prouver qu'elles composent la MÊME population. L'accueil est aussi vérifié pour ce qu'il ne doit PAS composer : ni le brouillon DSM jamais publié, ni l'évènement archivé. **29 contrôles, 0 échec, exécuté deux fois de suite** (stabilité, ménage vérifié). Un défaut trouvé et corrigé avant tout commit : le décor omettait `account_state` sur deux insertions, l'erreur PostgreSQL nommant directement la cause (§7.6). `uv run mypy` (bare, 197 fichiers) et `pytest --collect-only` (1 564) inchangés — `infra/scripts/` est hors de la portée `files` du mypy strict, même régime que tous les scripts de pile réelle existants. | Soumise le 06/10/2026 |
+
+**Prochain identifiant libre : `DEC-633`.**
 
 ---
 
@@ -1165,6 +1168,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-629` — réalisation du LOT 8, `T10` | 1 | 1 |
 | `DEC-630` — réalisation du LOT 8, `T11` | 1 | 1 |
 | `DEC-631` — réalisation du LOT 8, `T12` | 1 | 1 |
+| `DEC-632` — réalisation du LOT 8, `T13` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1176,7 +1180,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **299** | **299** |
+| **Total** | **300** | **300** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
