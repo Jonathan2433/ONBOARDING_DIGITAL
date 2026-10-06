@@ -45,7 +45,7 @@
  */
 
 import { estObjet, exigerChaine } from './formes.js';
-import { endpoint } from './sante.js';
+import { CONTRAT_API, endpoint } from './sante.js';
 import { TAILLES_DE_PAGE } from './trombinoscope.js';
 
 /** Les deux onglets du cahier §10.6 — jamais des etats stockes, voir `lecture.py`. */
@@ -180,4 +180,472 @@ export function validerLaPageDesEvenements(valeur: unknown): PageDesEvenements {
     total,
     pages,
   };
+}
+
+// =============================================================================
+//
+//  LA GESTION DES EVENEMENTS — LOT 8, `T10`
+//
+//    Jusqu'ici, ce module ne portait que la LECTURE (`T2`, consommee par `T9`).
+//    `T10`, l'ecran de gestion, AJOUTE la creation, la modification, la
+//    publication, l'annulation, l'archivage, la restauration et le
+//    rattachement des medias — meme partage que `liens.ts` a son `T10` : la
+//    gestion vit dans le module de la ressource qu'elle gere, pas dans un
+//    second fichier.
+//
+//    DEUX LECTURES DE PLUS, POSEES PAR `T10` COTE API — `GET …/events/gestion`
+//    (tous les evenements, tous etats) et `GET …/events/{evenement}/gestion`
+//    (un evenement et ses rattachements, avec sa `version`) — parce que la
+//    lecture de `T2` ne sert que `published`/`cancelled` et ne porte jamais de
+//    `version` : un ecran de gestion ne peut ni retrouver un brouillon ou un
+//    archive, ni ecrire avec la concurrence optimiste du §18.4, sans elles.
+//
+// =============================================================================
+
+export interface MediaDEvenement {
+  readonly media: string;
+  readonly role: string;
+  readonly ordre: number;
+}
+
+function mediaDEvenement(brut: unknown, rang: number): MediaDEvenement {
+  if (!estObjet(brut)) {
+    throw new TypeError(`evenements : medias[${String(rang)}] non objet`);
+  }
+  return {
+    media: exigerChaine(brut, 'media'),
+    role: exigerChaine(brut, 'role'),
+    ordre: entier(brut, 'ordre', `medias[${String(rang)}] `),
+  };
+}
+
+function tableauDeChaines(source: Record<string, unknown>, champ: string): readonly string[] {
+  const brut = source[champ];
+  if (!Array.isArray(brut) || !brut.every((element) => typeof element === 'string')) {
+    throw new TypeError(`evenements : « ${champ} » n’est pas un tableau de chaines`);
+  }
+  return brut;
+}
+
+// -----------------------------------------------------------------------------
+//  La lecture pour la gestion — tous etats, `version` comprise.
+// -----------------------------------------------------------------------------
+
+export interface EvenementDeGestion {
+  readonly identifiant: string;
+  readonly titre: string;
+  readonly etat: string;
+  readonly commenceLe: string;
+  readonly finitLe: string;
+  readonly version: number;
+}
+
+export interface EvenementsPourGestion {
+  readonly evenements: readonly EvenementDeGestion[];
+}
+
+function evenementDeGestion(brut: unknown, rang: number): EvenementDeGestion {
+  if (!estObjet(brut)) {
+    throw new TypeError(`evenements : evenements[${String(rang)}] non objet`);
+  }
+  return {
+    identifiant: exigerChaine(brut, 'identifiant'),
+    titre: exigerChaine(brut, 'titre'),
+    etat: exigerChaine(brut, 'etat'),
+    commenceLe: exigerChaine(brut, 'commence_le'),
+    finitLe: exigerChaine(brut, 'finit_le'),
+    version: entier(brut, 'version', `evenements[${String(rang)}] `),
+  };
+}
+
+/** Valider ce que `GET …/events/gestion` a rendu — tous etats, aucune pagination. */
+export function validerLesEvenementsPourGestion(valeur: unknown): EvenementsPourGestion {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  const brut = valeur['evenements'];
+  if (!Array.isArray(brut)) {
+    throw new TypeError('evenements : « evenements » n’est pas un tableau');
+  }
+  return { evenements: brut.map((element, rang) => evenementDeGestion(element, rang)) };
+}
+
+export interface EvenementPourGestion {
+  readonly identifiant: string;
+  readonly titre: string;
+  readonly description: string | null;
+  readonly commenceLe: string;
+  readonly finitLe: string;
+  readonly lieu: string | null;
+  readonly etat: string;
+  readonly version: number;
+  readonly annuleLe: string | null;
+  readonly motifDAnnulation: string | null;
+  readonly archiveLe: string | null;
+  readonly cercles: readonly string[];
+  readonly bureaux: readonly string[];
+  readonly medias: readonly MediaDEvenement[];
+}
+
+/**
+ * Valider ce que `GET …/events/{evenement}/gestion` a rendu.
+ *
+ * Porte `version`, `cercles`, `bureaux` et `medias` — ce que la lecture
+ * publique de `T2` ne porte jamais — et peut valoir un BROUILLON ou un
+ * ARCHIVE, ce qu'elle refuse.
+ */
+export function validerLEvenementPourGestion(valeur: unknown): EvenementPourGestion {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  const brutMedias = valeur['medias'];
+  if (!Array.isArray(brutMedias)) {
+    throw new TypeError('evenements : « medias » n’est pas un tableau');
+  }
+  return {
+    identifiant: exigerChaine(valeur, 'identifiant'),
+    titre: exigerChaine(valeur, 'titre'),
+    description: chaineOuNul(valeur, 'description'),
+    commenceLe: exigerChaine(valeur, 'commence_le'),
+    finitLe: exigerChaine(valeur, 'finit_le'),
+    lieu: chaineOuNul(valeur, 'lieu'),
+    etat: exigerChaine(valeur, 'etat'),
+    version: entier(valeur, 'version', ''),
+    annuleLe: chaineOuNul(valeur, 'annule_le'),
+    motifDAnnulation: chaineOuNul(valeur, 'motif_d_annulation'),
+    archiveLe: chaineOuNul(valeur, 'archive_le'),
+    cercles: tableauDeChaines(valeur, 'cercles'),
+    bureaux: tableauDeChaines(valeur, 'bureaux'),
+    medias: brutMedias.map((element, rang) => mediaDEvenement(element, rang)),
+  };
+}
+
+// -----------------------------------------------------------------------------
+//  Ce que chaque ecriture REND — une forme par verbe, comme l'API les distingue.
+// -----------------------------------------------------------------------------
+
+export type PorteeDeCreationEvenement = 'entite' | 'cercle' | 'bureau' | 'consultants';
+
+function porteeDeCreationValide(valeur: unknown): PorteeDeCreationEvenement {
+  if (
+    valeur !== 'entite' &&
+    valeur !== 'cercle' &&
+    valeur !== 'bureau' &&
+    valeur !== 'consultants'
+  ) {
+    throw new TypeError(`evenements : portee « ${String(valeur)} » inconnue`);
+  }
+  return valeur;
+}
+
+export interface EvenementCree {
+  readonly identifiant: string;
+  readonly titre: string;
+  readonly description: string | null;
+  readonly commenceLe: string;
+  readonly finitLe: string;
+  readonly lieu: string | null;
+  readonly etat: string;
+  readonly version: number;
+  readonly portee: PorteeDeCreationEvenement;
+}
+
+export function validerLEvenementCree(valeur: unknown): EvenementCree {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  return {
+    identifiant: exigerChaine(valeur, 'identifiant'),
+    titre: exigerChaine(valeur, 'titre'),
+    description: chaineOuNul(valeur, 'description'),
+    commenceLe: exigerChaine(valeur, 'commence_le'),
+    finitLe: exigerChaine(valeur, 'finit_le'),
+    lieu: chaineOuNul(valeur, 'lieu'),
+    etat: exigerChaine(valeur, 'etat'),
+    version: entier(valeur, 'version', ''),
+    portee: porteeDeCreationValide(valeur['portee']),
+  };
+}
+
+/** Ce que modifier et publier rendent tous deux — meme forme, deux verbes. */
+export interface EvenementEcrit {
+  readonly identifiant: string;
+  readonly titre: string;
+  readonly description: string | null;
+  readonly commenceLe: string;
+  readonly finitLe: string;
+  readonly lieu: string | null;
+  readonly etat: string;
+  readonly version: number;
+}
+
+export function validerLEvenementEcrit(valeur: unknown): EvenementEcrit {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  return {
+    identifiant: exigerChaine(valeur, 'identifiant'),
+    titre: exigerChaine(valeur, 'titre'),
+    description: chaineOuNul(valeur, 'description'),
+    commenceLe: exigerChaine(valeur, 'commence_le'),
+    finitLe: exigerChaine(valeur, 'finit_le'),
+    lieu: chaineOuNul(valeur, 'lieu'),
+    etat: exigerChaine(valeur, 'etat'),
+    version: entier(valeur, 'version', ''),
+  };
+}
+
+export interface EvenementAnnule {
+  readonly version: number;
+  readonly etat: string;
+  readonly annuleLe: string;
+  readonly motifDAnnulation: string | null;
+}
+
+export function validerLEvenementAnnule(valeur: unknown): EvenementAnnule {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  return {
+    version: entier(valeur, 'version', ''),
+    etat: exigerChaine(valeur, 'etat'),
+    annuleLe: exigerChaine(valeur, 'annule_le'),
+    motifDAnnulation: chaineOuNul(valeur, 'motif_d_annulation'),
+  };
+}
+
+export interface EvenementArchive {
+  readonly version: number;
+  readonly etat: string;
+  readonly archiveLe: string;
+}
+
+export function validerLEvenementArchive(valeur: unknown): EvenementArchive {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  return {
+    version: entier(valeur, 'version', ''),
+    etat: exigerChaine(valeur, 'etat'),
+    archiveLe: exigerChaine(valeur, 'archive_le'),
+  };
+}
+
+/** L'evenement revient TOUJOURS en `draft` — restaurer n'est pas publier. */
+export interface EvenementRestaure {
+  readonly version: number;
+  readonly etat: string;
+}
+
+export function validerLEvenementRestaure(valeur: unknown): EvenementRestaure {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  return {
+    version: entier(valeur, 'version', ''),
+    etat: exigerChaine(valeur, 'etat'),
+  };
+}
+
+export interface MediasDEvenement {
+  readonly version: number;
+  readonly medias: readonly MediaDEvenement[];
+}
+
+export function validerLesMediasDEvenement(valeur: unknown): MediasDEvenement {
+  if (!estObjet(valeur)) {
+    throw new TypeError('evenements : charge utile non objet');
+  }
+  const brut = valeur['medias'];
+  if (!Array.isArray(brut)) {
+    throw new TypeError('evenements : « medias » n’est pas un tableau');
+  }
+  return {
+    version: entier(valeur, 'version', ''),
+    medias: brut.map((element, rang) => mediaDEvenement(element, rang)),
+  };
+}
+
+// -----------------------------------------------------------------------------
+//  Ce qu'un ecran ENVOIE — `snake_case` voulu, c'est ce que l'API attend (voir
+//  la note de `gestionDuContenu.ts`). Jamais validees : elles ne reviennent pas
+//  du reseau.
+// -----------------------------------------------------------------------------
+
+export interface DemandeDeCreationDEvenement {
+  readonly titre: string;
+  readonly description?: string;
+  readonly commence_le: string;
+  readonly finit_le: string;
+  readonly lieu?: string;
+  readonly portee: PorteeDeCreationEvenement;
+  readonly cercle?: string;
+  readonly bureau?: string;
+}
+
+/**
+ * `cercles`/`bureaux` ABSENTS (pas envoyes) signifie « ne pas toucher cette
+ * dimension » ; un tableau VIDE la vide — meme distinction qu'a l'API, jamais
+ * recalculee ici.
+ */
+export interface DemandeDeModificationDEvenement {
+  readonly titre: string;
+  readonly description?: string;
+  readonly commence_le: string;
+  readonly finit_le: string;
+  readonly lieu?: string;
+  readonly version: number;
+  readonly cercles?: readonly string[];
+  readonly bureaux?: readonly string[];
+}
+
+export interface DemandeDePublicationDEvenement {
+  readonly version: number;
+}
+
+export interface DemandeDAnnulationDEvenement {
+  readonly version: number;
+  readonly motif?: string;
+}
+
+/** Archiver ou restaurer — aucun motif, meme forme pour les deux verbes. */
+export interface DemandeDeTransitionDEvenement {
+  readonly version: number;
+}
+
+export interface MediaSoumis {
+  readonly media: string;
+  readonly role: string;
+}
+
+/** La liste REMPLACE la liste complete, dans l'ordre fourni — `[]` la vide. */
+export interface DemandeDeGestionDesMediasDEvenement {
+  readonly version: number;
+  readonly medias: readonly MediaSoumis[];
+}
+
+// -----------------------------------------------------------------------------
+//  Chemins et codes de chaque verbe — un gabarit par cle de manifeste,
+//  `DEC-492`.
+// -----------------------------------------------------------------------------
+
+export const GABARIT_CHEMIN_MODIFICATION_D_EVENEMENT: string = endpoint(
+  'modificationDUnEvenement',
+).chemin;
+export const GABARIT_CHEMIN_PUBLICATION_D_EVENEMENT: string =
+  endpoint('publicationDUnEvenement').chemin;
+export const GABARIT_CHEMIN_ANNULATION_D_EVENEMENT: string =
+  endpoint('annulationDUnEvenement').chemin;
+export const GABARIT_CHEMIN_ARCHIVAGE_D_EVENEMENT: string =
+  endpoint('archivageDUnEvenement').chemin;
+export const GABARIT_CHEMIN_RESTAURATION_D_EVENEMENT: string = endpoint(
+  'restaurationDUnEvenement',
+).chemin;
+export const GABARIT_CHEMIN_MEDIAS_D_EVENEMENT: string = endpoint(
+  'gestionDesMediasDUnEvenement',
+).chemin;
+export const GABARIT_CHEMIN_EVENEMENTS_POUR_GESTION: string = endpoint(
+  'listeDesEvenementsPourGestion',
+).chemin;
+export const GABARIT_CHEMIN_EVENEMENT_POUR_GESTION: string = endpoint(
+  'lectureDUnEvenementPourGestion',
+).chemin;
+
+export const CODES_CREATION_D_EVENEMENT: readonly number[] =
+  endpoint('creationDUnEvenement').codesExploitables;
+export const CODES_MODIFICATION_D_EVENEMENT: readonly number[] = endpoint(
+  'modificationDUnEvenement',
+).codesExploitables;
+export const CODES_PUBLICATION_D_EVENEMENT: readonly number[] =
+  endpoint('publicationDUnEvenement').codesExploitables;
+export const CODES_ANNULATION_D_EVENEMENT: readonly number[] =
+  endpoint('annulationDUnEvenement').codesExploitables;
+export const CODES_ARCHIVAGE_D_EVENEMENT: readonly number[] =
+  endpoint('archivageDUnEvenement').codesExploitables;
+export const CODES_RESTAURATION_D_EVENEMENT: readonly number[] = endpoint(
+  'restaurationDUnEvenement',
+).codesExploitables;
+export const CODES_MEDIAS_D_EVENEMENT: readonly number[] = endpoint(
+  'gestionDesMediasDUnEvenement',
+).codesExploitables;
+export const CODES_EVENEMENTS_POUR_GESTION: readonly number[] = endpoint(
+  'listeDesEvenementsPourGestion',
+).codesExploitables;
+export const CODES_EVENEMENT_POUR_GESTION: readonly number[] = endpoint(
+  'lectureDUnEvenementPourGestion',
+).codesExploitables;
+
+function cheminAvecEvenement(gabarit: string, code: string, evenement: string): string {
+  if (code === '' || evenement === '') {
+    throw new TypeError('code d’entite ou identifiant d’evenement vide');
+  }
+  return gabarit
+    .replace('{code}', encodeURIComponent(code))
+    .replace('{evenement}', encodeURIComponent(evenement));
+}
+
+export function cheminEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_MODIFICATION_D_EVENEMENT, code, evenement);
+}
+
+export function cheminPublicationDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_PUBLICATION_D_EVENEMENT, code, evenement);
+}
+
+export function cheminAnnulationDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_ANNULATION_D_EVENEMENT, code, evenement);
+}
+
+export function cheminArchivageDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_ARCHIVAGE_D_EVENEMENT, code, evenement);
+}
+
+export function cheminRestaurationDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_RESTAURATION_D_EVENEMENT, code, evenement);
+}
+
+export function cheminMediasDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_MEDIAS_D_EVENEMENT, code, evenement);
+}
+
+export function cheminEvenementsPourGestion(code: string): string {
+  if (code === '') {
+    throw new TypeError('code d’entite vide');
+  }
+  return GABARIT_CHEMIN_EVENEMENTS_POUR_GESTION.replace('{code}', encodeURIComponent(code));
+}
+
+export function cheminEvenementPourGestion(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_EVENEMENT_POUR_GESTION, code, evenement);
+}
+
+// -----------------------------------------------------------------------------
+//  Les roles — LUS DU MANIFESTE, jamais redeclares. `rolesGestionDesEvenements`
+//  (DSM/ESM/BOOST/OFFICE/ADM-E/SUPER) est plus LARGE que
+//  `rolesRestaurationDUnEvenement` (ESM/ADM-E/SUPER) : DSM/BOOST/OFFICE
+//  creent, modifient, publient, annulent, archivent et gerent des medias,
+//  mais ne RESTAURENT jamais — `ARB-DROIT-003`. Les fusionner proposerait un
+//  bouton « Restaurer » que l'API refuserait (§7.21 de la passation).
+//
+//  **LE FRONTEND N'EST PAS L'AUTORITE.** Un role present dans
+//  `rolesGestionDesEvenements` peut recevoir un 403 malgre un bouton visible
+//  — le DSM createur seul (pas le DSM NOMME par `event_dsm_scope`) en est
+//  l'exemple vivant, et aucune cle de manifeste ne peut l'exprimer. Cette
+//  liste sert a ne pas proposer un bouton a qui n'a AUCUN role sur les
+//  evenements, rien de plus.
+// -----------------------------------------------------------------------------
+
+export const ROLES_GESTION_DES_EVENEMENTS: readonly string[] =
+  CONTRAT_API.rolesGestionDesEvenements;
+export const ROLES_RESTAURATION_D_UN_EVENEMENT: readonly string[] =
+  CONTRAT_API.rolesRestaurationDUnEvenement;
+
+/** L'appelant peut-il se voir PROPOSER de gerer les evenements ? Ne decide rien. */
+export function peutGererLesEvenements(roles: readonly string[]): boolean {
+  return roles.some((role) => ROLES_GESTION_DES_EVENEMENTS.includes(role));
+}
+
+/** L'appelant peut-il se voir PROPOSER de restaurer un evenement archive ? */
+export function peutRestaurerUnEvenement(roles: readonly string[]): boolean {
+  return roles.some((role) => ROLES_RESTAURATION_D_UN_EVENEMENT.includes(role));
 }

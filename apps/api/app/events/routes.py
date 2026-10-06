@@ -33,6 +33,14 @@ verbe de plus (`GERER_LES_MEDIAS`) qui partage, pour le DSM, la grille
 « Perimetre » de `Publier`/`Annuler`/`Archiver`, jamais celle de `Modifier`.
 Aucun televersement : le media doit deja exister, `ready`, dans cette
 entite.
+
+LA LECTURE POUR LA GESTION (`T10`) — `GET …/events/gestion` (tous les
+evenements, tous etats, garde COARSE seule — meme parti que `/pages/gestion`
+au LOT 6) et `GET …/events/{evenement}/gestion` (un evenement et ses
+rattachements, avec sa `version`, perimetre complet resolu — 403
+`acces_refuse` si l'ensemble d'actions est vide). Un trou depuis `T2`, pas un
+report voulu : la lecture publique ne sert que `published`/`cancelled`, et un
+ecran de gestion doit retrouver aussi les brouillons et les archives.
 """
 
 from __future__ import annotations
@@ -62,7 +70,12 @@ from app.events.ecriture import (
     publier_un_evenement,
     restaurer_un_evenement,
 )
-from app.events.lecture import ClassementEvenement, lister_les_evenements
+from app.events.lecture import (
+    ClassementEvenement,
+    lire_un_evenement_pour_gestion,
+    lister_les_evenements,
+    lister_les_evenements_pour_gestion,
+)
 from app.events.perimetre import (
     ROLES_DE_CREATION_EVENEMENT,
     ActionEvenement,
@@ -282,6 +295,62 @@ class ReponseDeGestionDesMediasDEvenement(BaseModel):
     medias: list[MediaDEvenementRendu]
 
 
+# ============================================================================
+#
+#  LA LECTURE POUR LA GESTION — LOT 8, `T10`
+#
+#    **UN TROU DEPUIS `T2`, PAS UN REPORT VOULU — MEME MOTIF QUE `/pages/
+#    gestion` AU LOT 6.** La lecture publique, juste au-dessus, ne sert que
+#    `published`/`cancelled` (`US003`) : un ecran de gestion qui recharge un
+#    brouillon en cours de redaction, ou retrouve un evenement archive pour le
+#    restaurer, n'avait jusqu'ici AUCUNE route — ni `version`, dont toute
+#    ecriture suivante a besoin pour la concurrence optimiste du §18.4.
+#
+# ============================================================================
+
+
+class EvenementDeGestionRendu(BaseModel):
+    """Le sommaire d'un evenement, TOUS ETATS confondus — `T10`."""
+
+    identifiant: uuid.UUID
+    titre: str
+    etat: str
+    commence_le: dt.datetime
+    finit_le: dt.datetime
+    version: int
+
+
+class ReponseDesEvenementsPourGestion(BaseModel):
+    """Tous les evenements de l'entite — `T10`. Meme parti que `/pages/gestion`."""
+
+    evenements: list[EvenementDeGestionRendu]
+
+
+class ReponseDeLEvenementPourGestion(BaseModel):
+    """Un evenement et ses rattachements, TOUS ETATS confondus, avec sa `version` — `T10`.
+
+    **PORTE `version`, `cercles`, `bureaux` ET `medias`, QUE LA LECTURE
+    PUBLIQUE DE `T2` NE PORTE PAS** : c'est precisement ce qui manque pour
+    que l'ecran de gestion puisse relire un evenement — brouillon ou archive
+    compris — et l'ecrire ensuite avec la concurrence optimiste du §18.4.
+    """
+
+    identifiant: uuid.UUID
+    titre: str
+    description: str | None
+    commence_le: dt.datetime
+    finit_le: dt.datetime
+    lieu: str | None
+    etat: str
+    version: int
+    annule_le: dt.datetime | None
+    motif_d_annulation: str | None
+    archive_le: dt.datetime | None
+    cercles: list[str]
+    bureaux: list[str]
+    medias: list[MediaDEvenementRendu]
+
+
 def routeur_evenements(parametres: Parametres) -> APIRouter:
     """Routeur de lecture et d'ecriture des evenements, monte sous le prefixe versionne."""
     routeur = APIRouter(tags=["evenements"])
@@ -369,6 +438,165 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
             taille=int(taille),
             total=resultat.total,
             pages=pages,
+        )
+
+    @routeur.get(
+        "/entities/{code}/events/gestion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesEvenementsPourGestion,
+        dependencies=[Depends(garde_de_creation)],
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : aucun role de creation dans cette entite."
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Tous les evenements de l'entite, tous etats confondus",
+        description=(
+            "`T10`. **AUCUNE PORTEE LOCALE N'EST APPLIQUEE ICI** : la garde verifie "
+            "qu'un role de creation existe quelque part dans l'entite, exactement "
+            "comme `/pages/gestion`. Un Booster voit donc TOUS les evenements de son "
+            "entite, mais ne pourra OUVRIR que le sien — refuse en 403 par "
+            "`/events/{evenement}/gestion`, qui resout le perimetre."
+        ),
+    )
+    def lister_les_evenements_pour_gestion_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le code de l'entite consultee",
+            ),
+        ],
+    ) -> ReponseDesEvenementsPourGestion:
+        """Le sommaire de tous les evenements d'une entite — `T10`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            evenements = lister_les_evenements_pour_gestion(connexion, entite=entite.id)
+
+        return ReponseDesEvenementsPourGestion(
+            evenements=[
+                EvenementDeGestionRendu(
+                    identifiant=e.identifiant,
+                    titre=e.titre,
+                    etat=e.etat,
+                    commence_le=e.commence_le,
+                    finit_le=e.finit_le,
+                    version=e.version,
+                )
+                for e in evenements
+            ]
+        )
+
+    @routeur.get(
+        "/entities/{code}/events/{evenement}/gestion",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLEvenementPourGestion,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : un seul gabarit — l'evenement n'existe pas dans "
+                    "cette entite, le role n'y porte rien, ou il y porte un droit mais "
+                    "aucune action (meme discipline que l'ecriture)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+        },
+        summary="Un evenement et ses rattachements, tous etats confondus, avec sa version",
+        description=(
+            "`T10`. Sert a l'ecran de gestion de charger ou de recharger un "
+            "evenement — BROUILLON ou ARCHIVE compris, ce que la lecture publique de "
+            "`T2` refuse. **Meme grille que l'ecriture** : le role est verifie, puis "
+            "le perimetre sur CET evenement precisement, avec la MEME resolution que "
+            "`PUT …/events/{evenement}`."
+        ),
+    )
+    def lire_un_evenement_pour_gestion_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le code de l'entite consultee",
+            ),
+        ],
+        evenement: Annotated[
+            uuid.UUID, Path(description="L'identifiant de l'evenement, rendu par la creation")
+        ],
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDeLEvenementPourGestion:
+        """Un evenement et ses rattachements, pour l'ecran de gestion — `T10`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if not perimetre.actions:
+                #  **L'ENSEMBLE VIDE, PAS L'ABSENCE D'UNE ACTION PRECISE** — meme
+                #  motif que `lire_une_page_pour_gestion` (LOT 6, `T10`) : un
+                #  evenement archive n'offre plus que `RESTAURER`, et exiger
+                #  `MODIFIER` ici refuserait la SEULE situation qui justifie cette
+                #  route pour un archive. Le meme gabarit couvre les autres causes :
+                #  l'evenement n'existe pas, il est d'une autre entite, ou aucun
+                #  role n'y porte rien.
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            trouve = lire_un_evenement_pour_gestion(
+                connexion, entite=entite.id, evenement=evenement
+            )
+            if trouve is None:
+                #  Le perimetre a resolu des ACTIONS sur cet evenement : si la
+                #  lecture ne le retrouve plus dans la MEME transaction, c'est
+                #  qu'aucune ligne ne correspond — un 404, jamais un 500.
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+
+        return ReponseDeLEvenementPourGestion(
+            identifiant=trouve.identifiant,
+            titre=trouve.titre,
+            description=trouve.description,
+            commence_le=trouve.commence_le,
+            finit_le=trouve.finit_le,
+            lieu=trouve.lieu,
+            etat=trouve.etat,
+            version=trouve.version,
+            annule_le=trouve.annule_le,
+            motif_d_annulation=trouve.motif_d_annulation,
+            archive_le=trouve.archive_le,
+            cercles=list(trouve.cercles),
+            bureaux=list(trouve.bureaux),
+            medias=[
+                MediaDEvenementRendu(media=m.media, role=m.role, ordre=m.ordre)
+                for m in trouve.medias
+            ],
         )
 
     @routeur.post(

@@ -1543,3 +1543,115 @@
   outline: 3px solid var(--encre);
   outline-offset: 2px;
 }
+
+/* ==========================================================================
+   La gestion des evenements — LOT 8, `T10`, `MVP-L08-US004`
+   ========================================================================== */
+
+.evenements-gestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.evenements-gestion-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.evenements-gestion-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.evenements-gestion-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.evenements-gestion-titre {
+  font-weight: 600;
+}
+
+.evenements-gestion-dates {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.evenements-gestion-formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  max-width: 32rem;
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.evenements-gestion-formulaire label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.evenements-gestion-formulaire input,
+.evenements-gestion-formulaire select {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.evenements-gestion-formulaire-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+/* ==========================================================================
+   L'edition d'un evenement — LOT 8, `T10`. Les rattachements et medias
+   reutilisent `.edition-panneau`/`.edition-champ`/`.edition-cycle-de-vie`,
+   generiques depuis le LOT 6 ; seules les listes de medias sont propres.
+   ========================================================================== */
+
+.evenements-edition-medias {
+  width: 100%;
+}
+
+.evenements-edition-liste-medias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: var(--espace-s) 0 0;
+  list-style: none;
+}
+
+.evenements-edition-media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.evenements-edition-media-actions {
+  display: flex;
+  gap: var(--espace-xs);
+}
