@@ -1655,3 +1655,113 @@
   display: flex;
   gap: var(--espace-xs);
 }
+
+/* ==========================================================================
+   L'accueil d'une entite — LOT 8, `T11`. Les cinq sections du cahier §8.4,
+   chacune une `<Carte>` du design system : seul le CONTENU de chaque section
+   est propre a ce fichier, la carte elle-meme vient de `@onboarding/ui`.
+   ========================================================================== */
+
+.accueil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.accueil-presentation-blocs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+}
+
+.accueil-presentation-bloc {
+  margin: 0;
+}
+
+.accueil-framework-resume {
+  margin: 0 0 var(--espace-s);
+}
+
+.accueil-arrivees-liste,
+.accueil-evenements-liste,
+.accueil-liens-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0 0 var(--espace-s);
+  list-style: none;
+}
+
+.accueil-arrivees-carte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.accueil-arrivees-date {
+  color: var(--encre-douce);
+}
+
+.accueil-evenements-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.accueil-evenements-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.accueil-evenements-titre {
+  font-weight: 600;
+}
+
+.accueil-evenements-horaire {
+  color: var(--encre-douce);
+}
+
+.accueil-liens-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+/* Un lien SERVABLE et sa variante DESACTIVEE partagent le meme gabarit : un
+   lien refuse par `urlEstServable` s'affiche visible, jamais absent. */
+.accueil-liens-lien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-xs);
+  color: var(--marque-bleu-texte);
+}
+
+.accueil-liens-lien-desactive {
+  color: var(--encre-douce);
+}
+
+.accueil-liens-libelle {
+  font-weight: 600;
+}
+
+/* La mention de l'ouverture externe — `MVP-L08-US006` (2/2) — est TEXTUELLE,
+   jamais une icone seule (meme discipline que `Badge`, WCAG 1.4.1). */
+.accueil-liens-mention {
+  font-size: 0.875rem;
+  color: var(--encre-douce);
+}
+
+.accueil-liens-description {
+  margin: 0;
+}

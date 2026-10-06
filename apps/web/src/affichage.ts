@@ -21,6 +21,8 @@
  */
 import { STATUTS_PROFESSIONNELS } from '@onboarding/contracts';
 
+import { dateComplete } from './pages/PageProfil';
+
 /**
  * Le libelle francais de chaque valeur du §6.5.
  *
@@ -70,4 +72,24 @@ const COULEURS_DE_CERCLE: Readonly<Record<string, string>> = {
 /** La couleur d'un jeton, ou `undefined` — `null` et jeton inconnu se valent ici. */
 export function couleurDuCercle(jeton: string | null): string | undefined {
   return jeton === null ? undefined : COULEURS_DE_CERCLE[jeton];
+}
+
+/**
+ * « 14:30 », lu a position fixe dans la chaine ISO — jamais par `Date`.
+ *
+ * **DEPLACEE ICI DEPUIS `PageEvenements.tsx` (LOT 8, `T9`) A SON `T11`** : la
+ * section « evenements a venir » de l'accueil (`PageEntite.tsx`) en devient le
+ * second consommateur, et une seconde copie aurait divergee au premier ajout
+ * — §7.27, meme motif que `couleurDuCercle` ci-dessus.
+ */
+export function heureDeLEvenement(iso: string): string {
+  return iso.slice(11, 16);
+}
+
+/** « 12 octobre 2026, 08:00 - 09:30 », ou la forme etendue si les jours different. */
+export function plageDeLEvenement(commenceLe: string, finitLe: string): string {
+  const memeJour = commenceLe.slice(0, 10) === finitLe.slice(0, 10);
+  return memeJour
+    ? `${dateComplete(commenceLe)}, ${heureDeLEvenement(commenceLe)} - ${heureDeLEvenement(finitLe)}`
+    : `Du ${dateComplete(commenceLe)} ${heureDeLEvenement(commenceLe)} au ${dateComplete(finitLe)} ${heureDeLEvenement(finitLe)}`;
 }

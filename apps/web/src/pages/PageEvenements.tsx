@@ -36,10 +36,10 @@
  *
  *   Meme lecon que `PageProfil.tsx` : un accesseur local sur un `Date` construit
  *   depuis une chaine UTC peut rendre une heure ou un jour different de celui
- *   que l'API a servi. `dateComplete` est donc REPRISE d'ici plutot que
- *   recopiee (§7.27, deja le cas pour `PageAdministration.tsx` et
- *   `PageMonOnboarding.tsx`), et `heure` applique la meme methode : un segment
- *   lu a position fixe dans la chaine ISO.
+ *   que l'API a servi. `plageDeLEvenement` applique la meme methode — des
+ *   segments lus a position fixe dans la chaine ISO — et vit desormais dans
+ *   `../affichage` : `T11` du LOT 8 en est le second consommateur (l'accueil),
+ *   et une seconde copie aurait divergee au premier ajout (§7.27).
  *
  * AUCUNE PAGE DE DETAIL N'EST CREEE ICI
  *
@@ -55,10 +55,10 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
+import { plageDeLEvenement } from '../affichage';
 import { lireLesEvenements } from '../api/evenements';
 import { cheminGestionDesEvenementsALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
-import { dateComplete } from './PageProfil';
 
 import {
   CLASSEMENTS_D_EVENEMENTS,
@@ -75,19 +75,6 @@ const LIBELLES_DE_CLASSEMENT: Readonly<Record<ClassementEvenement, string>> = {
   a_venir: 'A venir',
   passes: 'Passes',
 };
-
-/** « 14:30 », lu a position fixe dans la chaine ISO — jamais par `Date`. */
-function heure(iso: string): string {
-  return iso.slice(11, 16);
-}
-
-/** « 12 octobre 2026, 08:00 - 09:30 », ou la forme etendue si les jours different. */
-function plageDeLEvenement(commenceLe: string, finitLe: string): string {
-  const memeJour = commenceLe.slice(0, 10) === finitLe.slice(0, 10);
-  return memeJour
-    ? `${dateComplete(commenceLe)}, ${heure(commenceLe)} - ${heure(finitLe)}`
-    : `Du ${dateComplete(commenceLe)} ${heure(commenceLe)} au ${dateComplete(finitLe)} ${heure(finitLe)}`;
-}
 
 type Etat =
   | { readonly phase: 'chargement' }
