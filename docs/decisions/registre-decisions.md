@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 6 octobre 2026 — décision `DEC-632`, réalisation de `T13` du LOT 8
+**Dernière mise à jour :** 7 octobre 2026 — décision `DEC-633`, réalisation de `T14` du LOT 8
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -137,6 +137,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-630`, sous-étape `T11`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-631`, sous-étape `T12`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-632`, sous-étape `T13`** | 1 | **Soumise le 06/10/2026** |
+| **Réalisation du LOT 8 `DEC-633`, sous-étape `T14`** | 1 | **Soumise le 07/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -148,7 +149,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **300** | |
+| **Total** | **301** | |
 
 ---
 
@@ -890,7 +891,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-632` | **`T13` du LOT 8 construit `make accueil-check`, un contrôle de pile réelle pour les événements et l'accueil, exécuté à travers Caddy en HTTPS sur les conteneurs réellement en marche.** Aucune route API nouvelle, aucune migration : `T13` ne prouve que ce que `T1` à `T12` ont déjà livré, mais sur l'artefact réel plutôt qu'en mémoire via `TestClient` — même motif que `verifier-administration-onboarding.py` (LOT 7, `T14`). | **Le témoin central est la grille à DEUX VISAGES du DSM sur un même évènement** : « Modifier » accepte « créé OU rattaché à son périmètre », mais « Publier »/« Annuler »/« Archiver »/« Gérer les médias » n'acceptent QUE « Périmètre » (nommé par `event_dsm_scope`, `ECART-067`). Deux évènements DSM sont posés pour que le contrôle puisse DISTINGUER les deux grilles plutôt que d'en voir une seule. **L'asymétrie entre deux porteurs du même rôle** (deux Boosters, deux cercles) est rejouée à l'écriture, pas seulement à la création — témoin nommé dans le compte rendu d'origine de `T3`. **`ARB-DROIT-003` est éprouvé dans le sens du refus sur DEUX évènements** (celui du Booster, celui du DSM nommé) : DSM et BOOST sont exclus EN BLOC de la restauration, même sur l'évènement dont ils sont respectivement le créateur nommé et le Booster rattaché — l'exclusion est un fait du rôle, jamais une conséquence de ne pas être « nommé ». **Le classement temporel est éprouvé sur l'horloge réelle du conteneur** : un évènement passé publié apparaît dans `classement=passes` et jamais `a_venir` (l'inverse pour un évènement à venir) ; annuler NE RETIRE PAS de la consultation (badge « Annulé » visible, cahier §10.6), archiver RETIRE — les deux témoins, positif et négatif, sont nécessaires. **L'accueil compose, et la fenêtre des arrivées récentes est la fenêtre réelle** : une appartenance `future` déjà publiée apparaît IMMÉDIATEMENT (cahier §10.5, leçon de `T7`), une fiche publiée dont `recent_until` est dépassé en est absente — vérifié à la fois dans l'agrégat `/accueil` et dans la route dédiée `/arrivees-recentes`, pour prouver qu'elles composent la MÊME population. L'accueil est aussi vérifié pour ce qu'il ne doit PAS composer : ni le brouillon DSM jamais publié, ni l'évènement archivé. **29 contrôles, 0 échec, exécuté deux fois de suite** (stabilité, ménage vérifié). Un défaut trouvé et corrigé avant tout commit : le décor omettait `account_state` sur deux insertions, l'erreur PostgreSQL nommant directement la cause (§7.6). `uv run mypy` (bare, 197 fichiers) et `pytest --collect-only` (1 564) inchangés — `infra/scripts/` est hors de la portée `files` du mypy strict, même régime que tous les scripts de pile réelle existants. | Soumise le 06/10/2026 |
 
-**Prochain identifiant libre : `DEC-633`.**
+| `DEC-633` | **`T14` du LOT 8 réalise la recette de clôture, confirme le classement du §30 et prépare la checklist `G8`, sans déclarer la porte franchie.** La recette est épinglée sur les images publiées de `3f5e542` (fusion de `T13`), son seul volume PostgreSQL réinitialisé, les huit services migrés à la tête `0023`. `make accueil-check` (29 contrôles) et `make onboarding-check` (14 contrôles) sont rejoués à travers Caddy en HTTPS sur l'artefact publié, tournant nativement en `aarch64` — mêmes résultats qu'en développement. | **LE §30 N'AVAIT RIEN À RECLASSER, ET C'EST VÉRIFIÉ, PAS SUPPOSÉ.** `T15` du LOT 7 avait reclassé trois contrôles qu'elle venait de livrer ; relire les 25 libellés du §30 montre qu'aucun ne porte sur les tables événementielles ni sur l'accueil. `make recette-modele-check` rend **16 acquis, 2 partiel, 7 reportés, 0 inapplicable**, identique à l'état validé à `G7`. **LE CRITÈRE DE SORTIE 2 EST CLASSÉ SANS OBJET, PAS TENU PAR DÉFAUT** : « aucune vidéo complète n'est téléchargée avant interaction » est satisfait trivialement par l'absence totale de la fonctionnalité — `US005` reste reportée (`DEC-631`), aucune fixture n'exerce jamais un bloc `VIDEO`. Un critère négatif que rien ne peut faire échouer ne prouve rien (§7.0 quatrième proposition, §7.39) ; le nommer « sans objet » plutôt que « tenu » évite de laisser croire à une preuve qui n'existe pas. Zéro régression : `pytest` racine 1 564 collectés, 74 échecs environnementaux identiques (jeu de démonstration de développement, liste comparée terme à terme) ; 794 Vitest inchangé ; `mypy` 197 fichiers ; `ruff`/`eslint`/`prettier`/`tsc` verts ; `git status` confirme qu'aucun fichier applicatif n'est touché. La checklist `checklist-validation-G8.md` laisse la ligne de décision et la date vides : la porte n'est **pas** franchie par cette décision, qui prépare seulement sa validation. | Soumise le 07/10/2026 |
+
+**Prochain identifiant libre : `DEC-634`.**
 
 ---
 
@@ -1169,6 +1172,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-630` — réalisation du LOT 8, `T11` | 1 | 1 |
 | `DEC-631` — réalisation du LOT 8, `T12` | 1 | 1 |
 | `DEC-632` — réalisation du LOT 8, `T13` | 1 | 1 |
+| `DEC-633` — réalisation du LOT 8, `T14` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1180,7 +1184,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **300** | **300** |
+| **Total** | **301** | **301** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

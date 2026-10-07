@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `632` en usage | `DEC-633` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `633` en usage | `DEC-634` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -935,8 +935,23 @@ une appartenance `future` déjà publiée apparaît IMMÉDIATEMENT (cahier §10.
 fiche publiée dont `recent_until` est dépassé en est absente — vérifié à la fois dans l'agrégat
 `/accueil` et dans la route dédiée `/arrivees-recentes`. **29 contrôles, 0 échec**, exécuté deux
 fois de suite ; `1 564` pytest et `197` fichiers mypy inchangés, aucune ligne Python applicative
-touchée. La sous-étape suivante est **`T14`**, la dernière du lot — la recette, le classement du
-§30 et la checklist `G8`.
+touchée.
+
+**`T14` est faite** (`DEC-633`), et c'est la dernière sous-étape du lot. La recette est épinglée
+sur les images publiées de `3f5e542` (fusion de `T13`), son seul volume PostgreSQL réinitialisé,
+les huit services migrés à la tête `0023`. `make accueil-check` (29 contrôles) et
+`make onboarding-check` (14 contrôles) sont rejoués à travers Caddy en HTTPS sur l'artefact publié,
+tournant nativement en `aarch64` — mêmes résultats qu'en développement. **Le classement du §30 est
+relu, pas supposé reconduit** : aucun de ses 25 libellés ne porte sur les événements ou l'accueil,
+donc rien à reclasser — il reste **16 acquis, 2 partiel, 7 reportés, 0 inapplicable**, identique à
+l'état validé à `G7`. **Le critère de sortie 2 (vidéo) est classé SANS OBJET, pas tenu par défaut**
+: `US005` étant reportée (`DEC-631`), aucune fixture n'exerce jamais un bloc `VIDEO` — un critère
+négatif satisfait par l'absence totale de la fonctionnalité ne prouverait rien s'il était déclaré
+tenu (§7.0 quatrième proposition, §7.39). Zéro régression : `1 564` pytest (74 échecs
+environnementaux identiques, jeu de démonstration de développement), `794` Vitest et `197` fichiers
+mypy inchangés, aucune ligne applicative touchée. `checklist-validation-G8.md` est créée, séparant
+les cinq preuves techniques de la validation explicite que Jonathan doit encore donner pour le
+sixième critère — la porte `G8` n'est **pas** déclarée franchie par cette sous-étape.
 
 ---
 

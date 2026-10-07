@@ -3,8 +3,8 @@
 **Intitulé :** Événements et accueil dynamique  
 **Épic :** `MVP-L08` — issue `#206`  
 **Ouvert par Jonathan le :** 1er octobre 2026  
-**État :** **OUVERT** — `DEC-619`; `T1` à `T13` faites par `DEC-620` à `DEC-632`
-**Sous-étape suivante :** `T14`, recette, classement du §30 et checklist `G8`
+**État :** **OUVERT** — `DEC-619`; `T1` à `T14` faites par `DEC-620` à `DEC-633`
+**Sous-étape suivante :** aucune — porte `G8` en attente de la validation de Jonathan
 **Porte de sortie :** `G8`, tag attendu `v0.8.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -103,7 +103,7 @@ ne commence.
 | `T11` ✅ | Accueil final desktop | `US001` (2/2), `US006` (2/2) | **5 sections dans l'ordre §8.4** ; un rôle sans droit d'édition voit désormais la présentation (trou comblé) ; ouverture externe explicite des liens — `DEC-630` |
 | `T12` ✅ | Accueil mobile, carrousels accessibles et vidéo sur action | `US005` **reportée** | **Carrousel manuel et accessible** (`<Carrousel>`, `@onboarding/ui`) pour les trois listes de l'accueil, défilement horizontal sous 768 px, liste verticale au-delà ; `US005` (vidéo sur action) explicitement reportée — aucune convention de `payload_json` pour un bloc `VIDEO`, `QO-121` ouverte, `CONT-026` — `DEC-631` |
 | `T13` ✅ | Contrôle de pile réelle événements + accueil | transversal | `make accueil-check`, **29 tests** ; la grille à deux visages du DSM, l'asymétrie entre deux porteurs du même rôle, `ARB-DROIT-003` dans le sens du refus sur deux évènements, le classement temporel sur l'horloge réelle, la fenêtre réelle des arrivées récentes — `DEC-632` |
-| `T14` | Recette, classement du §30 et checklist `G8` | porte | création par chaque périmètre, refus hors périmètre, bascule temporelle, annulation, desktop/mobile |
+| `T14` ✅ | Recette, classement du §30 et checklist `G8` | porte | recette sur images publiées (`3f5e542`), 57+29+14 contrôles de pile réelle, 0 échec ; §30 relu, inchangé depuis `G7` (16 acquis, 2 partiel, 7 reportés) ; critère de sortie 2 classé **sans objet** (`US005` reportée) plutôt que tenu par défaut — `DEC-633` |
 
 ---
 
