@@ -33,10 +33,12 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
+from app.accueil.routes import routeur_accueil
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
 from app.entities.routes import routeur_entites
+from app.events.routes import routeur_evenements
 from app.health import routeur as routeur_sante
 from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
@@ -154,6 +156,13 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 7, T2 : la fiche d'arrivee en lecture. Monte APRES le trombinoscope,
     #  dont elle reutilise la resolution d'entite et le gabarit de 404.
     routeur_v1.include_router(routeur_onboarding(config))
+    #  LOT 8, T2 : lecture paginee a venir/passee. Tous les roles authentifies
+    #  lisent, y compris hors de leur entite principale (matrice §5 et §11).
+    routeur_v1.include_router(routeur_evenements(config))
+    #  LOT 8, T8 : l'agregat d'accueil. Monte EN DERNIER : il compose les
+    #  services de presentation, Framework, arrivees recentes et evenements,
+    #  tous deja monte au-dessus.
+    routeur_v1.include_router(routeur_accueil(config))
     application.include_router(routeur_v1)
 
     return application

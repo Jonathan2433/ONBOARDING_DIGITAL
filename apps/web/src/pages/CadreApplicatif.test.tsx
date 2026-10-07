@@ -17,7 +17,7 @@
  *      l'entite precedente ». Le defaut n'apparait que sous latence ;
  *   5. **le code est encode dans le chemin appele.**
  */
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -34,6 +34,28 @@ const BORDEAUX = {
   code: 'bordeaux',
   nom: 'eXalt Bordeaux',
   ville: 'Bordeaux',
+};
+
+/**
+ * Un accueil VIDE mais valide — LOT 8, `T11`. `PageEntite` appelle desormais
+ * `GET …/accueil` ; les cinq clefs sont EXIGEES par `validerLAccueil`, meme
+ * vides (§7.0, quatrieme proposition), et un stub qui n'en servirait qu'une
+ * partie leverait dans le validateur, exactement comme une reponse reelle
+ * malformee.
+ */
+const UN_ACCUEIL_VIDE = {
+  presentation: null,
+  framework: { responsabilites: [], cercles: [], bureaux: [] },
+  arrivees_recentes: { arrivees: [], page: 1, taille: 25, total: 0, pages: 0 },
+  evenements_a_venir: {
+    classement: 'a_venir',
+    evenements: [],
+    page: 1,
+    taille: 25,
+    total: 0,
+    pages: 0,
+  },
+  liens_internes: { liens: [], nombre_de_liens: 0 },
 };
 
 function json(charge: unknown, statut: number): Response {
@@ -99,7 +121,10 @@ describe("l'entite consultee vient de l'adresse", () => {
   it("porte l'entite dans l'EN-TETE, et la page interne est rendue dessous — §23.3", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+      fetchParUrl({
+        '/accueil': () => Promise.resolve(json(UN_ACCUEIL_VIDE, 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
     );
     monter('bordeaux');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
@@ -112,9 +137,10 @@ describe("l'entite consultee vient de l'adresse", () => {
     expect(entete.textContent).toContain('Bordeaux');
     expect(entete.querySelector('[data-code-entite="bordeaux"]')).toBeTruthy();
 
-    //  Et la page interne est bien rendue SOUS le cadre, dans `main`.
+    //  Et la page interne est bien rendue SOUS le cadre, dans `main` — l'accueil,
+    //  LOT 8 `T11`, compose desormais les cinq sections du cahier §8.4.
     const principal = screen.getByRole('main');
-    expect(principal.textContent).toContain('Vous consultez eXalt Bordeaux');
+    await waitFor(() => expect(principal.textContent).toContain('Presentation'));
   });
 
   it("porte un lien d'evitement qui vise le contenu — §14.2", async () => {
@@ -420,7 +446,12 @@ describe('les permissions de l entite consultee — T8', () => {
     );
     //  La formulation vient du §4 de la matrice, « Consultation uniquement, sans
     //  modification ». Ce n'est pas un libelle invente.
-    expect(screen.getByRole('status').textContent).toContain('Consultation uniquement');
+    //  **SCOPE AU `banner`** : depuis `T11` du LOT 8, `PageEntite` porte son
+    //  propre `role="status"` pendant son chargement — un `getByRole('status')`
+    //  non scope trouverait DEUX elements, celui-ci et celui de l'accueil.
+    expect(within(screen.getByRole('banner')).getByRole('status').textContent).toContain(
+      'Consultation uniquement',
+    );
   });
 
   it('ne l affiche PAS dans l entite principale — le temoin dans l autre sens', async () => {

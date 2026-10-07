@@ -1219,6 +1219,13 @@ onboarding-check: ## Prouver l'asymetrie DSM/ESM, le cycle de vie complet et ECA
 	$(UV) run python infra/scripts/verifier-administration-onboarding.py \
 		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
 
+accueil-check: ## Prouver la grille a deux visages du DSM, ARB-DROIT-003 et le classement temporel sur la pile reelle (LOT 8, T13, US002, US003, US004)
+	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
+	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \
+	if [ "$$port" = "443" ]; then origine="https://$$hote"; else origine="https://$$hote:$$port"; fi; \
+	$(UV) run python infra/scripts/verifier-accueil-evenements.py \
+		--env-file "$(ENV_FILE)" --base "$$origine" $(COMPOSE_FILES_NUS)
+
 revocation-check: ## Prouver que le depart revoque immediatement, et que la session ne repond plus (US006)
 	@hote=$$(grep -E '^CADDY_SITE_APP=' "$(ENV_FILE)" | cut -d= -f2); \
 	port=$$(grep -E '^CADDY_HTTPS_HOST_PORT=' "$(ENV_FILE)" | cut -d= -f2); \

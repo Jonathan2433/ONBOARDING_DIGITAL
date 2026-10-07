@@ -14,11 +14,11 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
-| Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
-| **Lot en cours** | **Aucun.** Le LOT 8 n'est pas ouvert par la clôture de `G7` |
-| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 8 et la validation de son découpage |
-| Lots 8 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
+| Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
+| **Lot en cours** | **Aucun.** Le LOT 8 n'est plus ouvert par la clôture de `G8` |
+| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 9 et la validation de son découpage |
+| Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -30,20 +30,29 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **39 tables** PostgreSQL, **21 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6 et 7 |
+| **44 tables métier** PostgreSQL, **23 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
 | **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
+| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, les **arrivées récentes**, et les **trois écrans** du lot — consultation (onglets « à venir »/« passés », badge « Annulé »), gestion (créer/modifier/publier/annuler/archiver/restaurer/médias, deux grilles de rôles jamais fusionnées) et l'**accueil final**, qui compose à l'écran les cinq sections du cahier §8.4 (présentation, Framework, arrivées, événements, liens), lecture ouverte aux huit rôles et ouverture externe explicite des liens, **avec ses carrousels accessibles sur mobile** (défilement manuel sous 768 px, liste verticale au-delà) ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo ; **un contrôle de pile réelle** (`make accueil-check`, 29 contrôles, Caddy en HTTPS) prouve tout cela sur l'artefact réellement servi, **rejoué sur la recette de clôture** épinglée sur les images publiées | LOT 8, `T1`–`T14` |
 
-**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** les
-événements et l'accueil dynamique du LOT 8, l'import CSV du LOT 9, le pilotage avancé du LOT 10 et
-les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
+**Le LOT 8 est verrouillé, porte `G8` franchie le 07/10/2026 (`DEC-634`), tag `v0.8.0`.** Jonathan a
+validé explicitement l'accueil et les événements ; le critère de sortie 2 (vidéo) reste classé
+**sans objet**, `US005` étant reportée. `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non
+bloquants — repris aux lots suivants au besoin.
 
-> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Les stories encore ouvertes
-> des lots antérieurs restent explicitement nommées dans leurs fiches : un critère non tenu ne se
-> referme pas par effet de bord d'une porte ultérieure.
+**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
+**vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
+convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
+vidéo réelle n'existera avant la V1 (`CONT-026`) ; l'import CSV du LOT 9, le pilotage avancé du
+LOT 10 et les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
+
+> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
+> `#209` et `#212` sont fermées de même ; `#210` reste ouverte (bloquée par `ECART-068`) et `#211`
+> reste ouverte (`US005` reportée) — un critère non tenu ne se referme pas par effet de bord d'une
+> porte ultérieure.
 
 Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
 
@@ -54,7 +63,7 @@ make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
 make check      # qualite complete : format, lint, types, tests, sources, documents
 make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
-make migrate    # appliquer les migrations jusqu'a la tete 0021
+make migrate    # appliquer les migrations jusqu'a la tete 0022
 make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```

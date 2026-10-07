@@ -540,6 +540,23 @@ jobs:
         # ligne du §9, a la difference des cinq autres gestes de la meme grille.
         run: make onboarding-check
 
+      - name: 4bis · Evenements et accueil sur la pile reelle
+        # LOT 8, T13 — §7.36 : une cible ajoutee a `make check` n'entre PAS
+        # dans la CI de ce projet tant qu'elle n'est pas nommee ICI.
+        #
+        # LE TEMOIN CENTRAL : la grille a DEUX VISAGES du DSM pour le MEME
+        # role — « Modifier » accepte « cree OU rattache », « Publier »/
+        # « Annuler »/« Archiver »/« Gerer les medias » n'acceptent QUE
+        # « Perimetre » (nomme par `event_dsm_scope`, ECART-067). Deux
+        # evenements DSM sont poses pour que le controle puisse DISTINGUER
+        # les deux grilles, jamais un seul (§7.0, quatrieme proposition).
+        #
+        # ARB-DROIT-003 est eprouve dans le sens du refus sur DEUX evenements
+        # (celui du Booster, celui du DSM nomme) : DSM et BOOST sont exclus
+        # EN BLOC de la restauration, meme sur l'evenement dont ils sont
+        # respectivement le createur nomme et le Booster rattache.
+        run: make accueil-check
+
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
         # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes

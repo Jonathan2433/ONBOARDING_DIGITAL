@@ -73,13 +73,13 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `618` en usage | `DEC-619` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `634` en usage | `DEC-635` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `066` |  `ECART-067` | [écarts](decisions/registre-ecarts.md) |
+| `ECART-nnn` | Écarts |  `001` à `068` |  `ECART-069` | [écarts](decisions/registre-ecarts.md) |
 | `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
@@ -133,7 +133,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
-| `G8` | Fin de l'accueil | Événements et page d'accueil validés | Planifiée |
+| ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
 | `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
@@ -722,7 +722,7 @@ rejoué et nettoyé. Tess, Léa, Diane et Jonathan ont validé l'ensemble le 30/
 `1.1.18` à `1.1.21` et de `5.0.9` à `5.0.12`, sans manifest ni override. Installation figée,
 audit, lint et `make check` passent ; la PR #200 vise `develop`, jamais `main`.
 
-**2 120 tests** désormais — **1 414 pytest** (dont **1 033** d'intégration), **706 Vitest** (**336**
+**2 148 tests** désormais — **1 442 pytest** (dont **1 055** d'intégration), **706 Vitest** (**336**
 `contracts`, **111** `ui` inchangé, **259** `web`).
 
 `ECART-012` (report à Léa) reste ouvert, non bloquant. `ECART-066` est **CLOS** : ses deux volets —
@@ -731,6 +731,238 @@ sans jamais avoir été présumée.
 
 **Traçabilité GitHub :** épic `#175` clos à `G7`, jalon `G7`, les huit stories `#176` à `#183`
 fermées manuellement le 29/09/2026 sur leur preuve propre.
+
+---
+
+## 15. Avancement du LOT 8 — **lot VERROUILLÉ**, porte `G8` franchie
+
+**Ouvert par Jonathan le 1er octobre 2026 (`DEC-619`), découpage validé le même jour.** Plan :
+[`operations/fiche-lot-8.md`](operations/fiche-lot-8.md) — **6** stories, dont **4 `P0`** et
+**2 `P1`**, **six** critères de sortie et **quatorze** sous-étapes. Porte `G8` franchie le
+07/10/2026 (`DEC-634`), tag `v0.8.0` posé sur `main`. Épic `#206`, jalon `G8`, stories `#207` à
+`#212`.
+
+**`T1` est faite** (`DEC-620`) : les quatre tables `event`, `event_circle_scope`,
+`event_office_scope` et `event_media`, migration `0022`. Le schéma porte désormais **43 tables
+métier**, **22 migrations** et toujours **10 déclencheurs** ; les six nouvelles clés composites
+portent le total à 24.
+
+**`T2` est faite** (`DEC-621`) : `GET /api/v1/entities/{code}/events` sert une page `a_venir` ou
+`passes`, avec une seule frontière — `ends_at > instant` contre `ends_at <= instant`. Tous les
+rôles authentifiés lisent, y compris en lecture inter-entités ; `published` et `cancelled` sont
+visibles, `draft` et `archived` absents. Les **12 nouveaux tests**, dont **9 d'intégration**, portent
+le total à **1 442 pytest**, dont **1 055 d'intégration**. La story `US003` reste ouverte jusqu'à
+l'écran de `T9`.
+
+**`T3` est faite** (`DEC-622`) : `POST /api/v1/entities/{code}/events` crée un événement en
+brouillon. La matrice §11 donne à chaque rôle EXACTEMENT une portée de création — sauf au DSM, qui
+en porte deux, « Entité ou consultants ». **`ECART-067` est clos** : la portée « consultants »,
+inexprimable par les trois portées du modèle validé, est posée par une cinquième table symétrique
+aux deux existantes, `event_dsm_scope` (migration `0023`), portant directement le DSM plutôt
+qu'une liste de consultants figée à la création — arbitrage explicite de Jonathan, table dédiée
+plutôt qu'une colonne unique sur `event`. Le rattachement exact au cercle ou au bureau nommé est
+revalidé au service, jamais à la seule garde de rôle de la route — un Booster du cercle A qui
+nomme le cercle B reçoit le même refus qu'un rôle absent. Les **27 nouveaux tests**, dont **22
+d'intégration**, portent le total à **1 469 pytest**, dont **1 077 d'intégration**. `ECART-068`
+reste ouvert, à résoudre avant la fermeture de `US004`.
+
+**`T4` est faite** (`DEC-623`) : `PUT /entities/{code}/events/{evenement}` et
+`POST .../publication` servent « Modifier » et « Publier » du §11. Les deux lignes portent la
+même portée pour `ESM`/`ADM-E`/`SUPER`/`BOOST`/`OFFICE` ; seul le DSM diverge — « Modifier »
+accepte « créé ou rattaché à son périmètre », « Publier » n'accepte QUE « Périmètre », qui pour
+ce rôle dénote ses consultants nommés (`event_dsm_scope`), jamais son entité. `cercles`/`bureaux`
+remplacent la liste complète des rattachements si fournis — rattachements multiples du modèle
+§17.2 — et chaque code est revalidé indépendamment du périmètre global déjà vérifié par la
+route. Les **20 nouveaux tests**, dont **17 d'intégration**, portent le total à **1 489 pytest**,
+dont **1 094 d'intégration**.
+
+**`T5` est faite** (`DEC-624`) : `POST .../annulation`, `POST .../archivage` et
+`POST .../restauration` servent « Annuler », « Archiver » et « Restaurer » du §11 — dernier tiers
+de `US004`. « Annuler » et « Archiver » portent, pour le DSM, la MÊME cellule « Périmètre » que
+« Publier » — jamais « créé ou rattaché » — tandis que « Restaurer » n'a qu'une seule grille et
+exclut DSM/BOOST/OFFICE en bloc : `ARB-DROIT-003` nomme explicitement « un événement » parmi les
+cinq ressources que l'ESM restaure librement dans son entité, aucun écart à ouvrir. Trois
+préconditions d'état sont posées au service : « Annuler » n'est offert qu'à un `published` ;
+« Archiver » depuis `draft`, `published` ou `cancelled` ; « Restaurer » rend TOUJOURS `draft`,
+jamais l'état antérieur à l'archivage. Les **17 nouveaux tests**, dont **15 d'intégration**,
+portent le total à **1 506 pytest**, dont **1 109 d'intégration**. `US004` est désormais complète
+sur ses trois tiers ; `ECART-068` reste ouvert, à résoudre avant la fermeture de la story au
+registre.
+
+**`T6` est faite** (`DEC-625`) : `PUT .../events/{evenement}/medias` sert « Ajouter une image ou
+vidéo » du §11. Cette ligne rejoint, pour le DSM, la MÊME cellule « Périmètre » que « Publier »/
+« Annuler »/« Archiver », jamais celle de « Modifier » — sixième mesure de l'asymétrie §7.45. La
+liste REMPLACE la liste complète — `[]` la vide, seule forme du geste — et `display_order` vaut
+l'INDEX du tableau soumis, jamais un décalage calculé sur le nombre de lignes vivantes (piège
+`T8-1` du LOT 6, rejoué en témoin : retirer le premier média d'une liste de trois ne laisse aucun
+trou). Seul un média `ready` est rattachable, par réutilisation de `ETAT_AFFICHABLE`
+(`app/media/photo.py`, LOT 5) plutôt qu'une règle inventée. Aucun téléversement, aucun
+traitement — LOT 11. Les **15 nouveaux tests**, dont **13 d'intégration**, portent le total à
+**1 521 pytest**, dont **1 122 d'intégration**.
+
+**`T7` est faite** (`DEC-626`) : `GET .../arrivees-recentes` sert « Arrivées récentes » du §5,
+cahier §10.5. La fenêtre de visibilité est `[published_at, recent_until]`, PAS `[arrival_date,
+recent_until]` — une fiche publiée par anticipation (appartenance `future`) apparaît
+IMMÉDIATEMENT, d'où un filtre sur `ETATS_OCCUPANTS` (future et active) plutôt que `ETAT_LISTE`
+(active seul) du trombinoscope. La réponse ne porte NI métier, NI statut, NI cercle, NI photo : la
+matrice ouvre cette ressource aux huit rôles authentifiés, y compris le DSM qui est à TIRET sur
+les informations préremplies ailleurs — les exposer ici créerait une porte dérobée vers un droit
+refusé, fixée structurellement par un test. L'ancre (`recent_until`, colonne `date`) est injectée,
+jamais un `now()` caché dans le SQL. Les **20 nouveaux tests**, dont **17 d'intégration**, portent
+le total à **1 541 pytest**, dont **1 139 d'intégration**. Aucune migration : `T7` lit
+`arrival_profile`, posée par `T1` du LOT 7.
+
+**`T8` est faite** (`DEC-627`) : `GET .../accueil` compose les CINQ sections du cahier §8.4, dans
+l'ordre — présentation, Framework, arrivées récentes, événements à venir, liens internes — en
+appelant directement les cinq services déjà construits par leurs sous-étapes sources, sans
+recopier aucune de leurs règles. La matrice §5 donne « Lecture » aux huit rôles sur chacune des
+six ressources composées, sans aucune divergence : la garde est une simple session établie.
+`presentation` vaut `null` si aucune page `HOME`/`presentation` n'existe encore — le couple
+`type_de_page`/`slug` qui la retrouve réutilise la convention déjà posée par l'écran
+`PageEntite.tsx` (LOT 6, `T10`), pas une invention. Aucun nombre d'éléments par section n'étant
+décidé par le corpus, les deux sections paginées rendent leur première page à la taille par
+défaut du cahier §18.2 (25) ; le choix du carrousel reste délibérément à `T11`/`T12`. Les **6
+nouveaux tests**, tous d'intégration, portent le total à **1 547 pytest**, dont **1 145
+d'intégration**. Aucune migration : `T8` ne lit que des tables déjà posées.
+
+**`T9` est faite** (`DEC-628`) : l'écran de consultation des événements, `MVP-L08-US003` (2/2),
+consomme `GET /entities/{code}/events`, posé par `T2` — **aucune route API nouvelle**. La
+rubrique `evenements` et sa route `/entites/:code/evenements` existaient déjà depuis `T4` du
+LOT 4, sans condition (matrice §5, « Lecture » aux huit rôles) : `T9` remplace le stub
+`PageRubrique` par l'écran réel, sans toucher au menu ni au routeur. Les deux onglets — « à
+venir » et « passés » — envoient `classement` à chaque appel et affichent ce que l'API répond,
+sans recalculer la frontière côté client. Aucune primitive d'onglets n'existe dans
+`packages/ui` — en livrer une sans écran qui l'emploie serait du code non éprouvé — les deux
+onglets sont donc deux `<button>` natifs portant le motif WAI-ARIA `tablist`/`tab`/`tabpanel` ;
+la réponse au clavier est STRUCTURELLE, aucun gestionnaire de touche écrit à la main. Un
+événement `cancelled` reste visible avec un `Badge` texte (« Annulé »), jamais une couleur
+seule. Les dates se lisent dans la chaîne ISO, jamais par `Date` — `dateComplete` est REPRISE de
+`PageProfil.tsx` (LOT 5) plutôt que recopiée. **`pages` peut valoir zéro** dans le contrat,
+contrairement à la page de cercle du LOT 6 : une entité peut n'avoir aucun événement d'un
+classement donné, et le validateur confronte `pages` au calcul `total`/`taille` plutôt qu'à une
+borne fixe. Aucune page de détail n'est créée : chaque carte affiche déjà tout ce qu'elle a, et
+construire un lien vers une adresse qu'aucune route ne sert aurait reproduit le défaut que
+`PageRubrique` évite depuis le LOT 4. Les **16 nouveaux tests de contrat et 7 nouveaux tests
+d'écran** portent le total Vitest à **729** (352 `contracts`, 111 `ui`, 266 `web`) ; **1 547
+pytest** inchangé, aucune ligne Python touchée. Aucune migration.
+
+**`T10` est faite** (`DEC-629`) : l'écran de gestion des événements, `MVP-L08-US004` — créer,
+modifier, publier, annuler, archiver, restaurer, rattacher des médias. **Deux routes API
+nouvelles**, non prévues par le découpage mais trouvées en construisant l'écran — `GET
+…/events/gestion` (tous les événements, tous états, garde COARSE seule) et `GET
+…/events/{evenement}/gestion` (un événement avec sa `version` et ses rattachements, périmètre
+complet résolu, 403 `acces_refuse` si aucune action) — même motif exact que `/pages/gestion` au
+LOT 6 (`T10`) : la lecture publique de `T2` ne sert que `published`/`cancelled` et ne porte
+jamais de `version`. Deux grilles de rôles déclarées séparément au manifeste,
+`rolesGestionDesEvenements` (DSM/ESM/BOOST/OFFICE/ADM-E/SUPER) et
+`rolesRestaurationDUnEvenement` (ESM/ADM-E/SUPER) — les fusionner proposerait un bouton
+« Restaurer » que l'API refuserait à trois rôles sur six, `ARB-DROIT-003`. **Première saisie de
+date-heure du dépôt** : `versDatetimeLocal`/`depuisDatetimeLocal` découpent et recomposent le
+préfixe `YYYY-MM-DDTHH:mm` d'une chaîne ISO avec un décalage `+00:00` fixe, sans aucune
+conversion de fuseau, dans aucun des deux sens. `cercles`/`bureaux` sont un champ texte — aucun
+sélecteur n'existe encore dans ce dépôt — et les médias se rattachent par identifiant seul,
+aucun téléversement (LOT 11). Les **17 nouveaux tests pytest (dont 12 d'intégration), 15
+nouveaux tests de contrat et 13 nouveaux tests d'écran** portent le total à **2 321** (1 564
+pytest dont 1 157 d'intégration ; 757 Vitest : 367 `contracts`, 111 `ui`, 279 `web`). Aucune
+migration.
+
+**`T11` est faite** (`DEC-630`) : l'accueil final desktop, `MVP-L08-US001` (2/2) et
+`MVP-L08-US006` (2/2). `PageEntite.tsx` compose désormais les CINQ sections de l'agrégat de `T8`
+(`GET …/accueil`), dans l'ordre exact du cahier §8.4, pour les huit rôles authentifiés. **Un trou
+réel, trouvé en construisant l'écran et non anticipé par la fiche** : avant `T11`, la section
+« présentation » n'était rendue qu'en ÉDITION (`PanneauEditionDeContenu`, LOT 6 `T10`), qui rend
+`null` pour tout rôle sans droit d'édition — un `EMP` ou un `NEW` ne voyait donc STRICTEMENT RIEN
+de cette section, alors que la matrice §5 lui donne « Lecture » comme aux sept autres rôles. Les
+deux régimes coexistent désormais sur la même section, sans rien retirer à ce que `T10` du LOT 6
+avait déjà livré : la lecture des blocs (par `texteDuBloc(bloc, 'texte')`, la clef déjà employée
+par toutes les fixtures du dépôt — jamais inventée pour l'occasion, `QO-121` restant ouverte) pour
+les huit rôles, le panneau d'édition sous elle pour les seuls rôles éditoriaux. Framework,
+arrivées récentes et événements à venir sont des résumés compacts, plafonnés à `NOMBRE_MONTRE = 5`
+avec un lien vers l'écran complet — aucune borne n'étant nommée par le corpus, `T8` l'ayant
+délibérément laissée à `T11`/`T12`, aucun carrousel n'étant construit ici. L'ouverture externe des
+liens internes est désormais EXPLICITE : `target="_blank" rel="noopener noreferrer"` plus une
+mention textuelle visible, jamais une icône seule ; un lien refusé par `urlEstServable` (déjà la
+troisième barrière, LOT 6) s'affiche désactivé et visible, jamais silencieusement absent. Premier
+module de contrat pour les arrivées récentes (`accueil.ts`), `T7` n'en ayant posé aucun faute
+d'écran consommateur — même partage que les liens internes et les événements avant leurs propres
+écrans. Les **13 nouveaux tests de contrat et 11 nouveaux tests d'écran** portent le total Vitest
+à **781** (380 `contracts`, 111 `ui`, 290 `web`) ; **1 564 pytest** inchangé, aucune ligne Python
+touchée. Aucune migration, aucune route API nouvelle : `T11` ne consomme que ce que `T8` sert
+déjà.
+
+**`T12` est faite** (`DEC-631`) : l'accueil mobile et les carrousels accessibles,
+`MVP-L08-US005` **reportée** par arbitrage explicite de Jonathan. Trois listes de l'accueil —
+arrivées récentes, événements à venir, liens internes — passent de `<ul>` brutes à un nouveau
+composant partagé du design system, `<Carrousel>` : même contenu, mêmes `<li>`, mais une piste qui
+défile horizontalement sous 768 px (cahier §13.3/§13.4, « carrousels manuels et accessibles ») et
+redevient une liste verticale au-delà — seul le CSS tranche, aucune duplication de marquage. Les
+liens internes n'avaient JAMAIS été bornés par `NOMBRE_MONTRE` (toute la liste s'affichait déjà,
+sans « voir plus ») : c'est, sur mobile, le candidat le plus exposé à un défilement sans fin, et le
+premier bénéficiaire réel du carrousel. **`US005` (« vidéo d'accueil sur action ») est
+explicitement REPORTÉE plutôt que devinée** : aucune fixture du dépôt n'exerce jamais un bloc de
+type `VIDEO`, `QO-121` reste ouverte — Jonathan l'a déjà reportée le 25/09/2026 — et `CONT-026`
+confirme que les onze emplacements vidéo du prototype sont vides, leur production relevant de la
+V1. Inventer maintenant un champ de `payload_json` pour une vidéo aurait tranché une partie de
+`QO-121` par anticipation ; la question a été posée explicitement à Jonathan avant tout code. Le
+carrousel est MANUEL par construction (aucune minuterie n'existe dans le composant) et ne porte
+AUCUN second repère d'accessibilité : `<Carte titre="…">` est déjà une région nommée, et un second
+`role="region"` de même nom aurait produit une collision de requête mesurée directement — `libelle`
+nomme donc la LISTE (`aria-label`, rôle `list`) et les deux boutons, jamais un conteneur de plus.
+Seul le mobile voit les commandes « précédent »/« suivant », masquées au-delà de 768 px — même
+discipline que la barre de navigation inférieure (LOT 4, `T5`). Vérification réelle effectuée
+(§7.43) : décor psql réel, lien magique réel, écran vu en HTTPS à 375 px et en desktop (zéro
+régression visuelle). Les **9 nouveaux tests `ui` et 4 nouveaux tests `web`** portent le total
+Vitest à **794** (380 `contracts`, 120 `ui`, 294 `web`) ; **1 564 pytest** inchangé, aucune ligne
+Python touchée. Aucune migration, aucune route API nouvelle.
+
+**`T13` est faite** (`DEC-632`) : le contrôle de pile réelle événements et accueil,
+`make accueil-check`, nommé dans `ci.yml`. **Aucune route API nouvelle, aucune migration** — `T13`
+ne prouve que ce que `T1` à `T12` avaient déjà livré, mais à travers Caddy, en HTTPS, sur les
+conteneurs réellement en marche, exactement le motif de `verifier-administration-onboarding.py`
+(LOT 7, `T14`). Son témoin central est **la grille à deux visages du DSM** : « Modifier » accepte
+un évènement créé OU rattaché à son périmètre, mais « Publier »/« Annuler »/« Archiver »/« Gérer
+les médias » n'acceptent QUE « Périmètre » (ses consultants nommés, `event_dsm_scope`,
+`ECART-067`) — deux évènements DSM sont posés pour distinguer les deux grilles plutôt que d'en voir
+une seule (§7.0, quatrième proposition). **L'asymétrie entre deux porteurs du même rôle** (deux
+Boosters, deux cercles distincts) est rejouée à l'écriture, pas seulement à la création — témoin
+nommé dans le compte rendu d'origine de `T3`. **`ARB-DROIT-003` est éprouvé dans le sens du refus
+sur DEUX évènements** (celui du Booster, celui du DSM nommé) : DSM et BOOST sont exclus EN BLOC de
+la restauration, même sur l'évènement dont ils sont respectivement le créateur nommé et le Booster
+rattaché. **Le classement temporel est éprouvé sur l'horloge réelle du conteneur** : un évènement
+passé publié apparaît dans `classement=passes` et jamais `a_venir` (l'inverse pour un évènement à
+venir) ; annuler NE RETIRE PAS de la consultation (badge « Annulé » visible, cahier §10.6),
+archiver RETIRE. **L'accueil compose, et la fenêtre des arrivées récentes est la fenêtre réelle** :
+une appartenance `future` déjà publiée apparaît IMMÉDIATEMENT (cahier §10.5, leçon de `T7`), une
+fiche publiée dont `recent_until` est dépassé en est absente — vérifié à la fois dans l'agrégat
+`/accueil` et dans la route dédiée `/arrivees-recentes`. **29 contrôles, 0 échec**, exécuté deux
+fois de suite ; `1 564` pytest et `197` fichiers mypy inchangés, aucune ligne Python applicative
+touchée.
+
+**`T14` est faite** (`DEC-633`), et c'est la dernière sous-étape du lot. La recette est épinglée
+sur les images publiées de `3f5e542` (fusion de `T13`), son seul volume PostgreSQL réinitialisé,
+les huit services migrés à la tête `0023`. `make accueil-check` (29 contrôles) et
+`make onboarding-check` (14 contrôles) sont rejoués à travers Caddy en HTTPS sur l'artefact publié,
+tournant nativement en `aarch64` — mêmes résultats qu'en développement. **Le classement du §30 est
+relu, pas supposé reconduit** : aucun de ses 25 libellés ne porte sur les événements ou l'accueil,
+donc rien à reclasser — il reste **16 acquis, 2 partiel, 7 reportés, 0 inapplicable**, identique à
+l'état validé à `G7`. **Le critère de sortie 2 (vidéo) est classé SANS OBJET, pas tenu par défaut**
+: `US005` étant reportée (`DEC-631`), aucune fixture n'exerce jamais un bloc `VIDEO` — un critère
+négatif satisfait par l'absence totale de la fonctionnalité ne prouverait rien s'il était déclaré
+tenu (§7.0 quatrième proposition, §7.39). Zéro régression : `1 564` pytest (74 échecs
+environnementaux identiques, jeu de démonstration de développement), `794` Vitest et `197` fichiers
+mypy inchangés, aucune ligne applicative touchée. `checklist-validation-G8.md` est créée, séparant
+les cinq preuves techniques de la validation explicite que Jonathan doit encore donner pour le
+sixième critère — la porte `G8` n'est **pas** déclarée franchie par cette sous-étape.
+
+**La porte `G8` est franchie le 07/10/2026 (`DEC-634`).** Jonathan a validé explicitement la
+checklist — les six critères de sortie, dont le critère 2 (vidéo) classé sans objet plutôt que
+tenu par défaut. `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non bloquants ; ils seront
+repris aux lots suivants au besoin, sur arbitrage explicite plutôt que par défaut. Le tag `v0.8.0`
+est posé sur `main`, `develop` restant ancêtre et le commit de livraison portant deux parents
+(`ECART-026`). Les stories `#207`, `#208`, `#209` et `#212` sont fermées manuellement sur leurs
+preuves propres ; `#210` reste ouverte, bloquée par `ECART-068` ; `#211` reste ouverte, `US005`
+étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 et n'ouvre pas le
+LOT 9.
 
 ---
 

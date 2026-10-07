@@ -536,6 +536,13 @@ TABLES_DECLAREES = {
     "onboarding_instance",
     "onboarding_instance_task",
     "onboarding_task_event",
+    # LOT 8, T1 — modele §17.1 a §17.3, les quatre tables evenementielles
+    "event",
+    "event_circle_scope",
+    "event_office_scope",
+    "event_media",
+    # LOT 8, T3 — ECART-067, DEC-622 : la cinquieme table, la portee DSM
+    "event_dsm_scope",
 }
 
 
