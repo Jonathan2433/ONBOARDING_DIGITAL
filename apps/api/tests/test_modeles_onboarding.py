@@ -169,7 +169,10 @@ def _tache_de_reference(cx: Connection, entite: uuid.UUID | None, code: str) -> 
 def _session(parametres: Parametres, personne: uuid.UUID) -> str:
     with moteur(parametres).begin() as cx:
         jeton, _ = ouvrir_une_session(
-            cx, personne=personne, instant=ANCRAGE, jours_absolus=parametres.SESSION_ABSOLUTE_DAYS
+            cx,
+            personne=personne,
+            instant=dt.datetime.now(tz=dt.UTC),
+            jours_absolus=parametres.SESSION_ABSOLUTE_DAYS,
         )
     return jeton
 

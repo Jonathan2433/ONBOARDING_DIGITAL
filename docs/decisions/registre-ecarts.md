@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 28 septembre 2026, `T11` du LOT 7 — `ECART-066` (volet parcours) résolu, `DEC-611`
+**Dernière mise à jour :** 4 octobre 2026, `T3` du LOT 8 — `ECART-067` clos (`DEC-622`)
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 66 | 12 | 51 | 3 |
+| Total 68 | 13 | 52 | 3 |
 
 ---
 
@@ -84,6 +84,8 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
 | `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
 | `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | Non — les deux volets sont résolus | **Clos le 28/09/2026** — volet « version de modèle » résolu le 26/09/2026 (`DEC-605`, `T6`), volet « parcours archivé » résolu le 28/09/2026 (`DEC-611`, `T11`) : les deux fois, l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003` |
+| `ECART-067` | **La matrice autorise le DSM à créer un événement pour « Entité ou consultants », mais le modèle ne sait rattacher un événement qu'à l'entité, à des cercles ou à des bureaux.** Il n'existe aucun `event_dsm_scope` ni lien vers un consultant | Oui avant `T3`, pas pour le schéma `T1` | **Clos le 04/10/2026** (`DEC-622`, `T3`) — arbitrage explicite de Jonathan entre deux options présentées (table dédiée ou colonne unique sur `event`) : **table dédiée** `event_dsm_scope(event_id, entity_id, dsm_person_id)`, migration `0023`, symétrique aux deux portées déjà posées par `T1`, index unique partiel sur `event_id` seul (« Entité OU consultants », jamais les deux) |
+| `ECART-068` | **La matrice exige que modification et publication d'un événement soient toujours auditées, alors que `audit_event` appartient au LOT 10 et n'existe pas encore.** Les colonnes d'auteur et de cycle de vie ne forment pas un historique | Oui avant de fermer `US004`, pas pour `T1` | **Ouvert** — instruire une dépendance anticipée ou un mécanisme métier explicitement validé |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -212,7 +214,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-067`.**
+**Prochain identifiant libre : `ECART-069`.**
 
 ---
 

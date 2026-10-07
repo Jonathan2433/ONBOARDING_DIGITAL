@@ -52,8 +52,11 @@ import { PageBureau } from './pages/PageBureau';
 import { PageCercle } from './pages/PageCercle';
 import { PageEditionDeBureau } from './pages/PageEditionDeBureau';
 import { PageEditionDeCercle } from './pages/PageEditionDeCercle';
+import { PageEditionEvenement } from './pages/PageEditionEvenement';
 import { PageEntite } from './pages/PageEntite';
+import { PageEvenements } from './pages/PageEvenements';
 import { PageFramework } from './pages/PageFramework';
+import { PageGestionDesEvenements } from './pages/PageGestionDesEvenements';
 import { PageGestionDesLiens } from './pages/PageGestionDesLiens';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
@@ -76,6 +79,8 @@ const PAGES_LIVREES: Readonly<Record<string, JSX.Element | undefined>> = {
   trombinoscope: <PageTrombinoscope />,
   //  LOT 6, `T9` — la synthese Framework, story `MVP-L06-US001`.
   framework: <PageFramework />,
+  //  LOT 8, `T9` — les evenements a venir et passes, story `MVP-L08-US003` (2/2).
+  evenements: <PageEvenements />,
   //  LOT 7, `T13` — la fiche d'arrivee, le parcours et les taches du nouvel
   //  arrivant, toutes trois composees dans CETTE page (voir son en-tete).
   monOnboarding: <PageMonOnboarding />,
@@ -104,6 +109,13 @@ const SUFFIXE_BUREAU = CHEMINS.frameworkBureau.replace(`${CHEMINS.entite}/`, '')
 const SUFFIXE_EDITION_CERCLE = CHEMINS.editionCercle.replace(`${CHEMINS.entite}/`, '');
 const SUFFIXE_EDITION_BUREAU = CHEMINS.editionBureau.replace(`${CHEMINS.entite}/`, '');
 const SUFFIXE_GESTION_DES_LIENS = CHEMINS.gestionDesLiens.replace(`${CHEMINS.entite}/`, '');
+//  **LOT 8, `T10`.** Memes derivation : le sommaire de gestion et l'edition
+//  d'un evenement, que `T9` n'avait pas besoin de creer.
+const SUFFIXE_GESTION_DES_EVENEMENTS = CHEMINS.gestionDesEvenements.replace(
+  `${CHEMINS.entite}/`,
+  '',
+);
+const SUFFIXE_EDITION_EVENEMENT = CHEMINS.editionEvenement.replace(`${CHEMINS.entite}/`, '');
 import './pages/auth.css';
 
 export function App(): JSX.Element {
@@ -202,6 +214,15 @@ export function App(): JSX.Element {
             <Route path={SUFFIXE_EDITION_CERCLE} element={<PageEditionDeCercle />} />
             <Route path={SUFFIXE_EDITION_BUREAU} element={<PageEditionDeBureau />} />
             <Route path={SUFFIXE_GESTION_DES_LIENS} element={<PageGestionDesLiens />} />
+            {/*
+              **LOT 8, `T10`** — `MVP-L08-US004`. Meme motif : la route existe
+              des que le contenu existe. Un evenement n'a pas de page parente
+              naturelle (sa portee peut etre l'entite, un cercle, un bureau ou
+              les consultants d'un DSM), d'ou deux ecrans STANDALONE plutot
+              qu'un panneau imbrique comme pour le contenu.
+            */}
+            <Route path={SUFFIXE_GESTION_DES_EVENEMENTS} element={<PageGestionDesEvenements />} />
+            <Route path={SUFFIXE_EDITION_EVENEMENT} element={<PageEditionEvenement />} />
           </Route>
           {/*
             **LE FOURRE-TOUT REND LA PAGE 404, ET NON UNE REDIRECTION.**

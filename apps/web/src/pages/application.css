@@ -1428,3 +1428,334 @@
   flex-wrap: wrap;
   gap: var(--espace-s);
 }
+
+/* ==========================================================================
+   Les evenements a venir et passes — LOT 8, `T9`, story `MVP-L08-US003` (2/2)
+   ========================================================================== */
+
+.evenements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.evenements-onglets {
+  display: flex;
+  gap: var(--espace-s);
+  border-bottom: 1px solid var(--trait);
+}
+
+/* Le minimum de 44px est le meme seuil que `.cercle-page`/`.trombi-page`. */
+.evenements-onglet {
+  min-height: 44px;
+  padding: 0 var(--espace-m);
+  font: inherit;
+  font-weight: 600;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+
+.evenements-onglet[data-selectionne='true'] {
+  color: var(--encre);
+  border-bottom-color: var(--marque-bleu);
+}
+
+.evenements-onglet:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.evenements-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.evenements-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.evenements-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.evenements-carte-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.evenements-titre {
+  margin: 0;
+}
+
+.evenements-horaire {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.evenements-lieu,
+.evenements-description {
+  margin: 0;
+}
+
+.evenements-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-m);
+  margin-top: var(--espace-m);
+}
+
+/* Meme recette que `.cercle-page` — deux ecrans qui paginent, deux jeux de
+   classes propres a chacun (§7.27 dans l'autre sens). */
+.evenements-page {
+  min-height: 44px;
+  padding: 0 var(--espace-m);
+  font: inherit;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+  border: 0;
+  border-radius: var(--rayon-m);
+  cursor: pointer;
+}
+
+.evenements-page:disabled {
+  color: var(--encre-douce);
+  background: var(--fond-doux);
+  cursor: not-allowed;
+}
+
+.evenements-page:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   La gestion des evenements — LOT 8, `T10`, `MVP-L08-US004`
+   ========================================================================== */
+
+.evenements-gestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.evenements-gestion-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.evenements-gestion-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.evenements-gestion-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.evenements-gestion-titre {
+  font-weight: 600;
+}
+
+.evenements-gestion-dates {
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.evenements-gestion-formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  max-width: 32rem;
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.evenements-gestion-formulaire label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.evenements-gestion-formulaire input,
+.evenements-gestion-formulaire select {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.evenements-gestion-formulaire-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+/* ==========================================================================
+   L'edition d'un evenement — LOT 8, `T10`. Les rattachements et medias
+   reutilisent `.edition-panneau`/`.edition-champ`/`.edition-cycle-de-vie`,
+   generiques depuis le LOT 6 ; seules les listes de medias sont propres.
+   ========================================================================== */
+
+.evenements-edition-medias {
+  width: 100%;
+}
+
+.evenements-edition-liste-medias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: var(--espace-s) 0 0;
+  list-style: none;
+}
+
+.evenements-edition-media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.evenements-edition-media-actions {
+  display: flex;
+  gap: var(--espace-xs);
+}
+
+/* ==========================================================================
+   L'accueil d'une entite — LOT 8, `T11`/`T12`. Les cinq sections du cahier
+   §8.4, chacune une `<Carte>` du design system : seul le CONTENU de chaque
+   section est propre a ce fichier, la carte et le carrousel mobile viennent
+   de `@onboarding/ui`.
+   ========================================================================== */
+
+.accueil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.accueil-presentation-blocs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+}
+
+.accueil-presentation-bloc {
+  margin: 0;
+}
+
+.accueil-framework-resume {
+  margin: 0 0 var(--espace-s);
+}
+
+/* Les TROIS listes de l'accueil (arrivees, evenements, liens) sont portees
+   par `<Carrousel>` (`@onboarding/ui`) depuis `T12` : la piste et sa mise en
+   page mobile/desktop viennent de `ui-carrousel__piste`, pas d'ici. Seul le
+   CONTENU de chaque carte reste propre a ce fichier. */
+.accueil-arrivees-carte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.accueil-arrivees-date {
+  color: var(--encre-douce);
+}
+
+.accueil-evenements-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.accueil-evenements-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-s);
+}
+
+.accueil-evenements-titre {
+  font-weight: 600;
+}
+
+.accueil-evenements-horaire {
+  color: var(--encre-douce);
+}
+
+.accueil-liens-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+/* Un lien SERVABLE et sa variante DESACTIVEE partagent le meme gabarit : un
+   lien refuse par `urlEstServable` s'affiche visible, jamais absent. */
+.accueil-liens-lien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espace-xs);
+  color: var(--marque-bleu-texte);
+}
+
+.accueil-liens-lien-desactive {
+  color: var(--encre-douce);
+}
+
+.accueil-liens-libelle {
+  font-weight: 600;
+}
+
+/* La mention de l'ouverture externe — `MVP-L08-US006` (2/2) — est TEXTUELLE,
+   jamais une icone seule (meme discipline que `Badge`, WCAG 1.4.1). */
+.accueil-liens-mention {
+  font-size: 0.875rem;
+  color: var(--encre-douce);
+}
+
+.accueil-liens-description {
+  margin: 0;
+}

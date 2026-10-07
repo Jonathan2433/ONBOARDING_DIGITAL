@@ -422,3 +422,82 @@ export {
   validerLeSuiviOnboarding,
 } from './suiviOnboarding.js';
 export type { PageDeSuiviOnboarding, TacheEnRetardDuSuivi } from './suiviOnboarding.js';
+
+//  LES EVENEMENTS — LOT 8. LA LECTURE (`T2`, `T9`) ET LA GESTION (`T3` A
+//  `T6`, exposee par `T10`). Meme partage que `liens.js` : une sous-etape qui
+//  sert une lecture ou une ecriture pose son module de contrat quand un
+//  ecran en a besoin — `T10` est le premier ecran a consommer les six
+//  verbes d'ecriture et les deux lectures de gestion.
+export {
+  cheminAnnulationDEvenement,
+  cheminArchivageDEvenement,
+  cheminEvenement,
+  cheminEvenements,
+  cheminEvenementPourGestion,
+  cheminEvenementsPourGestion,
+  cheminMediasDEvenement,
+  cheminPublicationDEvenement,
+  cheminRestaurationDEvenement,
+  CLASSEMENTS_D_EVENEMENTS,
+  CODES_ANNULATION_D_EVENEMENT,
+  CODES_ARCHIVAGE_D_EVENEMENT,
+  CODES_CREATION_D_EVENEMENT,
+  CODES_EVENEMENT_POUR_GESTION,
+  CODES_EVENEMENTS,
+  CODES_EVENEMENTS_POUR_GESTION,
+  CODES_MEDIAS_D_EVENEMENT,
+  CODES_MODIFICATION_D_EVENEMENT,
+  CODES_PUBLICATION_D_EVENEMENT,
+  CODES_RESTAURATION_D_EVENEMENT,
+  GABARIT_CHEMIN_EVENEMENTS,
+  peutGererLesEvenements,
+  peutRestaurerUnEvenement,
+  ROLES_GESTION_DES_EVENEMENTS,
+  ROLES_RESTAURATION_D_UN_EVENEMENT,
+  validerLaPageDesEvenements,
+  validerLesEvenementsPourGestion,
+  validerLesMediasDEvenement,
+  validerLEvenementAnnule,
+  validerLEvenementArchive,
+  validerLEvenementCree,
+  validerLEvenementEcrit,
+  validerLEvenementPourGestion,
+  validerLEvenementRestaure,
+} from './evenements.js';
+export type {
+  ClassementEvenement,
+  DemandeDAnnulationDEvenement,
+  DemandeDeCreationDEvenement,
+  DemandeDeGestionDesMediasDEvenement,
+  DemandeDeModificationDEvenement,
+  DemandeDePublicationDEvenement,
+  DemandeDeTransitionDEvenement,
+  EvenementAnnule,
+  EvenementArchive,
+  EvenementCree,
+  EvenementDeGestion,
+  EvenementDuClassement,
+  EvenementEcrit,
+  EvenementPourGestion,
+  EvenementRestaure,
+  EvenementsPourGestion,
+  MediaDEvenement,
+  MediasDEvenement,
+  MediaSoumis,
+  PageDesEvenements,
+  PorteeDeCreationEvenement,
+} from './evenements.js';
+
+//  L'AGREGAT D'ACCUEIL — LOT 8, `T8` (API) puis `T11` (ecran), `MVP-L08-US001`
+//  (2/2) et `MVP-L08-US006` (2/2). Premier module de contrat pour « arrivees
+//  recentes » (`T7` n'en avait pose aucun, faute d'ecran consommateur) ; les
+//  quatre autres sections delegient a `framework.ts`/`evenements.ts`/
+//  `liens.ts`/`contenus.ts`, jamais revalidees une seconde fois ici.
+export {
+  cheminAccueil,
+  CODES_ACCUEIL,
+  GABARIT_CHEMIN_ACCUEIL,
+  validerLaPageDesArriveesRecentes,
+  validerLAccueil,
+} from './accueil.js';
+export type { AccueilDEntite, ArriveeRecente, PageDesArriveesRecentes } from './accueil.js';

@@ -302,3 +302,93 @@
     transition: none;
   }
 }
+
+/* ==========================================================================
+   Le carrousel — LOT 8, `T12`, cahier §13.3/§13.4
+   ========================================================================== */
+
+.ui-carrousel {
+  position: relative;
+}
+
+/* Mobile d'abord : la piste defile horizontalement. `scroll-snap-type`
+   arrete le defilement sur un element entier, jamais a mi-chemin. */
+.ui-carrousel__piste {
+  display: flex;
+  flex-direction: row;
+  gap: var(--espace-s);
+  margin: 0 0 var(--espace-s);
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scroll-padding-inline: var(--espace-xs);
+}
+
+.ui-carrousel__item {
+  flex: 0 0 85%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.ui-carrousel__commandes {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--espace-xs);
+}
+
+/* 44 px — WCAG 2.2 AA 2.5.8, meme cible que `.ui-carte-retournable__face`. */
+.ui-carrousel__commande {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: var(--taille-l);
+  color: var(--encre);
+  background: var(--fond-doux);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  cursor: pointer;
+}
+
+.ui-carrousel__commande:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: -3px;
+}
+
+/* Un bouton en butee NE FAIT RIEN : le desactiver le dit, plutot que de
+   laisser une commande actionnable sans effet (§7.21). */
+.ui-carrousel__commande:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* L'alternative du critere : CSS seul decide, `scrollBy` n'impose jamais
+   `behavior`. Meme discipline que `.ui-carte-retournable__faces`. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-carrousel__piste {
+    scroll-behavior: auto;
+  }
+}
+
+/* A partir de 768 px, la piste redevient une liste verticale ordinaire et
+   les commandes disparaissent — meme motif que `.app-barre` (LOT 4, T5) :
+   deux reperes de navigation pour le meme contenu dupliqueraient l'ordre de
+   tabulation. */
+@media (min-width: 768px) {
+  .ui-carrousel__piste {
+    flex-direction: column;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .ui-carrousel__item {
+    flex: 1 1 auto;
+  }
+
+  .ui-carrousel__commandes {
+    display: none;
+  }
+}

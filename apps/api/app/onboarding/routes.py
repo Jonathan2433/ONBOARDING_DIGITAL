@@ -101,6 +101,7 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.onboarding.arrivees_recentes import lister_les_arrivees_recentes
 from app.onboarding.catalogue import (
     TacheDeReference,
     creer_une_tache_de_reference,
@@ -670,6 +671,34 @@ class ReponseDuSuivi(BaseModel):
     entiere de la portee resolue, `pages` est calcule UNE SEULE fois ici."""
 
     taches: list[TacheEnRetardDuSuivi]
+    page: int
+    taille: int
+    total: int
+    pages: int
+
+
+class ArriveeRecenteRendue(BaseModel):
+    """Une ligne de « Ils nous ont rejoints recemment » — cahier §10.5, `T7`.
+
+    **NI METIER, NI STATUT, NI CERCLE, NI PHOTO** : voir l'en-tete de
+    `app/onboarding/arrivees_recentes.py`. La matrice §5 donne cette ressource
+    en Lecture aux huit roles, y compris DSM — qui est a TIRET sur les
+    informations organisationnelles ailleurs dans la meme matrice."""
+
+    appartenance: uuid.UUID
+    person_id: uuid.UUID
+    first_name: str
+    last_name: str
+    preferred_name: str | None
+    arrival_date: dt.date
+    short_intro: str | None
+    fun_fact: str | None
+
+
+class ReponseDesArriveesRecentes(BaseModel):
+    """Une page, meme forme que `ReponseDuSuivi` et `ReponseDesEvenements`."""
+
+    arrivees: list[ArriveeRecenteRendue]
     page: int
     taille: int
     total: int
@@ -2503,6 +2532,82 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     last_name=tache.last_name,
                 )
                 for tache in resultat.taches
+            ],
+            page=page,
+            taille=int(taille),
+            total=resultat.total,
+            pages=pages,
+        )
+
+    @routeur.get(
+        "/entities/{code}/arrivees-recentes",
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesArriveesRecentes,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`taille` hors des trois valeurs du cahier §18.2, ou `page` inferieure a 1."
+                )
+            },
+        },
+        summary="Consulter les arrivees recentes d'une entite",
+        description=(
+            "Cahier §10.5, matrice §5, `T7`, `MVP-L08-US002`. Une fiche publiee "
+            "apparait immediatement — y compris avant sa date d'arrivee — et "
+            "disparait apres `recent_until`, un mois apres l'arrivee. Ouvert aux "
+            "huit roles authentifies, sans distinction, comme le trombinoscope "
+            "et les evenements."
+        ),
+    )
+    def consulter_les_arrivees_recentes(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le code de l'entite consultee",
+            ),
+        ],
+        page: Annotated[int, Query(ge=1, description="Numero de page, 1-indexe")] = 1,
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Elements par page — 25, 50 ou 100, cahier §18.2"),
+        ] = TAILLE_PAR_DEFAUT,
+    ) -> ReponseDesArriveesRecentes:
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            resultat = lister_les_arrivees_recentes(
+                connexion,
+                entite=entite.id,
+                page=page,
+                taille=int(taille),
+                instant=instant,
+            )
+
+        pages = -(-resultat.total // int(taille))
+        return ReponseDesArriveesRecentes(
+            arrivees=[
+                ArriveeRecenteRendue(
+                    appartenance=arrivee.entity_membership_id,
+                    person_id=arrivee.person_id,
+                    first_name=arrivee.first_name,
+                    last_name=arrivee.last_name,
+                    preferred_name=arrivee.preferred_name,
+                    arrival_date=arrivee.arrival_date,
+                    short_intro=arrivee.short_intro,
+                    fun_fact=arrivee.fun_fact,
+                )
+                for arrivee in resultat.arrivees
             ],
             page=page,
             taille=int(taille),

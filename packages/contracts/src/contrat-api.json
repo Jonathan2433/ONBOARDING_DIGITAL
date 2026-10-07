@@ -1563,6 +1563,252 @@
         "Pagination du cahier §18.2, memes trois tailles que le trombinoscope",
         "(LOT 5, T2)."
       ]
+    },
+    {
+      "cle": "lectureDesEvenements",
+      "chemin": "/api/v1/entities/{code}/events",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesEvenements",
+      "role": [
+        "Consulter les evenements a venir ou passes — LOT 8, T2, US003 (1/2).",
+        "La matrice §5 et sa section §11 donnent la lecture aux HUIT roles",
+        "authentifies sans distinction, EMP et NEW compris. Aucun role n'est",
+        "donc examine ; hors de son entite principale, l'appelant conserve le",
+        "droit EMP en lecture seule (RIGHTS-003).",
+        "Le parametre `classement` vaut `a_venir` ou `passes`. La frontiere",
+        "est unique : `ends_at > instant` contre `ends_at <= instant`, et le",
+        "meme instant alimente le total et la page.",
+        "Seuls `published` et `cancelled` sont publics. Un annule reste visible",
+        "et porte son etat pour le badge ; un brouillon ou une archive est absent.",
+        "Pagination du cahier §18.2 : 25 par defaut, puis 50 ou 100."
+      ]
+    },
+    {
+      "cle": "creationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCreationDEvenement",
+      "role": [
+        "Creer un evenement, en BROUILLON — LOT 8, T3, US004 (1/3).",
+        "Matrice §11 « Creer » : chaque role porte EXACTEMENT une portee, sauf",
+        "le DSM qui en porte deux (`entite` ou `consultants`). `ECART-067`",
+        "(`DEC-622`) : la portee `consultants` ne reclame aucun rattachement —",
+        "elle designe le DSM auteur lui-meme, dans la cinquieme table",
+        "`event_dsm_scope`.",
+        "`403 acces_refuse` couvre deux causes sous un seul gabarit : aucun",
+        "role de creation dans cette entite, ou un role qui existe mais pas",
+        "pour LA PORTEE demandee — un Booster sur le cercle d'un AUTRE",
+        "Booster recoit le MEME refus qu'un role absent (§2.5, refus par",
+        "defaut).",
+        "`422 rattachement_requis` : `portee=cercle` exige un cercle,",
+        "`portee=bureau` exige un bureau. `422 ressource_introuvable` : le",
+        "cercle ou le bureau nomme n'est pas dans cette entite, ou il est",
+        "archive. `422 chronologie_invalide` : `finit_le` n'est pas posterieur",
+        "a `commence_le`.",
+        "Aucun champ `etat` : publier est une ligne SEPAREE du §11, reservee",
+        "a `T4`."
+      ]
+    },
+    {
+      "cle": "modificationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDEvenementEcrit",
+      "role": [
+        "Modifier un evenement — LOT 8, T4, US004 (2/3).",
+        "Matrice §11 « Modifier » : memes portees qu'a la creation pour",
+        "ESM/ADM-E/SUPER/BOOST/OFFICE ; le DSM y est plus large — evenements",
+        "crees OU rattaches a son perimetre (`event_dsm_scope`), pas",
+        "seulement `consultants`.",
+        "`cercles`/`bureaux` remplacent la liste complete des rattachements",
+        "de leur dimension si fournis (`None` : dimension non touchee ; `[]`",
+        "la vide) — rattachements multiples, sans fuite inter-entites.",
+        "Chaque code ajoute est revalide INDEPENDAMMENT du perimetre global",
+        "deja verifie : un role de portee locale ne peut attacher QUE sa",
+        "propre ressource, meme s'il a par ailleurs le droit de modifier cet",
+        "evenement (§23.1, l'union des droits porte sur les couples",
+        "role/ressource).",
+        "`409 version_obsolete` : concurrence optimiste du §18.4."
+      ]
+    },
+    {
+      "cle": "publicationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/publication",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDEvenementEcrit",
+      "role": [
+        "Publier un evenement — LOT 8, T4, US004 (2/3).",
+        "Matrice §11 « Publier » : pour le DSM, SEULE la portee « Perimetre »",
+        "ouvre ce droit — ses consultants nommes dans `event_dsm_scope` —,",
+        "jamais « cree par lui » seul : le §3 de la matrice lit « Perimetre »",
+        "comme « ses consultants dans son entite » pour ce role precisement,",
+        "pas comme l'entite (§7.45 de la passation, deja mesure au LOT 6",
+        "pour l'ESM, ou les deux mots coincident).",
+        "Immediate, en un clic, et sans republication possible : seul un",
+        "`draft` offre `Publier`, meme discipline que `publier_une_page` au",
+        "LOT 6."
+      ]
+    },
+    {
+      "cle": "annulationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/annulation",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDAnnulationDEvenement",
+      "role": [
+        "Annuler un evenement — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Annuler » : MEME grille que « Publier », y compris pour",
+        "le DSM — seule la portee « Perimetre » (ses consultants nommes dans",
+        "`event_dsm_scope`) ouvre ce droit, jamais « cree par lui » seul.",
+        "N'est offert qu'a un evenement `published` : annuler un brouillon",
+        "que personne n'a jamais vu contournerait la porte de publication.",
+        "L'evenement reste visible avec un badge « Annule » (cahier §10.6) —",
+        "seul l'archivage le retire de la consultation.",
+        "`409 version_obsolete` : l'evenement a change depuis votre lecture,",
+        "ou n'est plus `published`."
+      ]
+    },
+    {
+      "cle": "archivageDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDEvenement",
+      "role": [
+        "Archiver un evenement — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Archiver » et §18 « Archiver un evenement » : MEME",
+        "grille que « Annuler ». Depuis un brouillon, un publie OU un",
+        "annule — aucune precondition d'etat au-dela de « pas deja",
+        "archive », meme parti que l'archivage d'une page (LOT 6, T7).",
+        "`cancelled_at`/`cancellation_reason` survivent a l'archivage : un",
+        "fait, pas un residu. Aucun motif n'est demande — §18.1 ne le nomme",
+        "pas pour cette ressource."
+      ]
+    },
+    {
+      "cle": "restaurationDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDEvenement",
+      "role": [
+        "Restaurer un evenement archive — LOT 8, T5, US004 (3/3).",
+        "Matrice §11 « Restaurer », `ARB-DROIT-003` qui nomme explicitement",
+        "l'evenement parmi les cinq ressources que l'ESM restaure librement",
+        "dans son entite. DSM/BOOST/OFFICE sont a TIRET en bloc, meme s'ils",
+        "portent l'archivage de l'evenement — meme grille que pour une page",
+        "(LOT 6) ou un parcours (LOT 7).",
+        "L'evenement revient TOUJOURS en `draft`, jamais en `published` ni",
+        "`cancelled` : restaurer n'est pas publier, `RIGHTS-001` refuse par",
+        "defaut ce qui n'est pas explicitement redecide."
+      ]
+    },
+    {
+      "cle": "gestionDesMediasDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/medias",
+      "methode": "put",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeGestionDesMediasDEvenement",
+      "role": [
+        "Remplacer la liste des medias d'un evenement — LOT 8, T6.",
+        "Matrice §11 « Ajouter une image ou vidéo » : MEME grille que",
+        "« Annuler »/« Archiver » pour le DSM — « Perimetre » seul (ses",
+        "consultants nommes), jamais « cree par lui » seul.",
+        "La liste REMPLACE la liste complete, dans l'ordre fourni — `[]` la",
+        "vide. `display_order` vaut l'INDEX du tableau soumis, jamais un",
+        "decalage calcule (piege `T8-1`, LOT 6).",
+        "Aucun televersement : le media doit deja exister, `ready`",
+        "(`app/media/photo.py`, ETAT_AFFICHABLE), dans cette MEME entite —",
+        "`422 ressource_introuvable` sinon, `422 media_non_pret` si l'etat",
+        "n'est pas `ready`, `422 doublon_dans_la_liste` si un media est",
+        "nomme deux fois.",
+        "`409 version_obsolete` : concurrence optimiste du §18.4."
+      ]
+    },
+    {
+      "cle": "arriveesRecentes",
+      "chemin": "/api/v1/entities/{code}/arrivees-recentes",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesArriveesRecentes",
+      "role": [
+        "Consulter « Ils nous ont rejoints recemment » — LOT 8, T7, US002.",
+        "Cahier §10.5, matrice §5 : Lecture pour les HUIT roles authentifies,",
+        "sans distinction — comme le trombinoscope et les evenements.",
+        "Une fiche publiee apparait IMMEDIATEMENT, meme avant la date",
+        "d'arrivee (`membership_state = future` compris) ; elle disparait",
+        "apres `recent_until`, un mois apres l'arrivee, ancre controlee.",
+        "NI METIER, NI STATUT, NI CERCLE, NI PHOTO dans la reponse : la",
+        "matrice met DSM a TIRET sur les informations preremplies ailleurs,",
+        "et cette ressource est ouverte a tous — les exposer ici serait une",
+        "porte derobee vers un droit refuse."
+      ]
+    },
+    {
+      "cle": "accueilDUneEntite",
+      "chemin": "/api/v1/entities/{code}/accueil",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDeLAccueil",
+      "role": [
+        "Consulter l'accueil d'une entite — LOT 8, T8, US001 (1/2), US006 (1/2).",
+        "Cahier §8.4 : cinq sections DANS L'ORDRE — presentation, Framework,",
+        "arrivees recentes, evenements a venir, liens internes. Matrice §5 :",
+        "Lecture pour les HUIT roles authentifies sur chacune des six",
+        "ressources composees, sans distinction — aucune garde de role au-dela",
+        "d'une session etablie.",
+        "NE REECRIT AUCUNE regle de ses cinq sources : appelle directement",
+        "lire_la_page_de_contenu, lire_la_page_framework,",
+        "lister_les_arrivees_recentes, lister_les_evenements et",
+        "lister_les_liens, chacun deja construit par sa propre sous-etape.",
+        "`presentation` vaut `null` si aucune page HOME/presentation n'existe",
+        "encore — etat valide, pas une erreur.",
+        "Les deux sections paginees (arrivees, evenements) rendent leur",
+        "premiere page a la taille par defaut du cahier §18.2 (25) : aucun",
+        "document ne nomme de borne de carrousel, que T11/T12 decideront a",
+        "l'ecran."
+      ]
+    },
+    {
+      "cle": "listeDesEvenementsPourGestion",
+      "chemin": "/api/v1/entities/{code}/events/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesEvenementsPourGestion",
+      "role": [
+        "Tous les evenements de l'entite, tous etats confondus — LOT 8, T10.",
+        "UN TROU DEPUIS T2, PAS UN REPORT VOULU : la lecture publique ne sert",
+        "que `published`/`cancelled` — un ecran de gestion doit retrouver",
+        "aussi les brouillons (pour les publier) et les archives (pour les",
+        "restaurer). Meme parti que `/pages/gestion` au LOT 6.",
+        "AUCUNE PORTEE LOCALE N'EST APPLIQUEE ICI : la garde verifie qu'un",
+        "role de creation existe quelque part dans l'entite. Un Booster voit",
+        "donc TOUS les evenements, mais ne pourra OUVRIR que le sien — refuse",
+        "en 403 par `lectureDUnEvenementPourGestion`, qui resout le perimetre."
+      ]
+    },
+    {
+      "cle": "lectureDUnEvenementPourGestion",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/gestion",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeLEvenementPourGestion",
+      "role": [
+        "Un evenement et ses rattachements, tous etats confondus, avec sa",
+        "`version` — LOT 8, T10. Porte aussi `cercles`, `bureaux` et",
+        "`medias` : ce que l'ecran de gestion a besoin de relire pour",
+        "pre-remplir un formulaire de modification.",
+        "MEME GRILLE QUE L'ECRITURE : le role est verifie, puis le perimetre",
+        "sur CET evenement precisement, avec la MEME resolution que",
+        "`PUT …/events/{evenement}`. `403 acces_refuse` : un seul gabarit,",
+        "meme discipline que l'ecriture — l'evenement n'existe pas dans",
+        "cette entite, le role n'y porte rien, ou il y porte un droit mais",
+        "aucune action."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -1669,5 +1915,41 @@
     "ET UNE LISTE DE PROTOCOLES NE SUFFIT PAS : `https:alert(1)` a pour protocole",
     "`https` et n'adresse aucune ressource. L'API exige AUSSI un hote."
   ],
-  "protocolesDeLienAutorises": ["https"]
+  "protocolesDeLienAutorises": ["https"],
+  "_commentaire_gestion_des_evenements": [
+    "LOT 8, T10 -- LA GRILLE COARSE DE L'ECRAN DE GESTION DES EVENEMENTS.",
+    "SIX ROLES, CE N'EST PAS UNE COINCIDENCE -- c'est `ROLES_DE_CREATION_",
+    "EVENEMENT` de `app/events/perimetre.py`, le MEME ensemble qui garde les",
+    "six verbes d'ecriture (creer, modifier, publier, annuler, archiver,",
+    "gerer les medias) : chacun de ces six roles porte AU MOINS un droit",
+    "quelque part dans la matrice §11, jamais tous le MEME droit.",
+    "LE FRONTEND N'EST PAS L'AUTORITE, et ceci vaut plus ici qu'ailleurs :",
+    "un DSM porteur de ce role peut voir un bouton `Publier`/`Annuler`/",
+    "`Archiver`/`Gerer les medias` sur un evenement qu'il a seulement CREE",
+    "(sans en etre le DSM NOMME par `event_dsm_scope`) et recevoir un 403 au",
+    "clic -- exactement l'avertissement deja accepte pour un Booster ou un",
+    "responsable de bureau sur une page de contenu (`PanneauEditionDeContenu",
+    ".tsx`, LOT 6, T10) : seule `resoudre_le_perimetre_de_l_evenement` peut",
+    "distinguer les deux grilles du DSM, et aucune cle de manifeste ne peut",
+    "l'exprimer. Cette liste sert a ne pas proposer un bouton a qui n'a",
+    "AUCUN role sur les evenements -- rien de plus.",
+    "Confrontee a `ROLES_DE_CREATION_EVENEMENT` par un test Python, dans les",
+    "deux sens -- la source unique de `DEC-492`."
+  ],
+  "rolesGestionDesEvenements": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
+  "_commentaire_restauration_evenement": [
+    "LOT 8, T10 -- TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` ET",
+    "`rolesRestaurationDUnContenu`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE",
+    "DERIVATION (§7.40 de la passation). Celle-ci vient de la ligne",
+    "`Restaurer` du §11 : DSM/BOOST/OFFICE y sont EXCLUS EN BLOC, meme s'ils",
+    "portent l'archivage de l'evenement -- `ARB-DROIT-003` nomme",
+    "explicitement un evenement parmi les cinq ressources que l'ESM",
+    "restaure librement dans son entite.",
+    "DECLAREE SEPAREMENT de `rolesGestionDesEvenements` : la fusionner",
+    "proposerait un bouton `Restaurer` que l'API refuserait pour DSM/BOOST/",
+    "OFFICE -- l'avertissement faux du §7.21.",
+    "Confrontee a `ROLES_DE_PORTEE_ENTITE` de `app/events/perimetre.py` par",
+    "un test Python, dans les deux sens."
+  ],
+  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"]
 }
