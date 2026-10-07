@@ -14,10 +14,10 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOTS 0 à 7** — de `G0` (27/07/2026) à **`G7` (30/09/2026, `DEC-617`, `v0.7.0`)** |
-| Dernière porte franchie | **`G7`** — les sept critères du LOT 7 et les validations de Tess, Léa, Diane et Jonathan sont acquis — [checklist](docs/operations/checklist-validation-G7.md) |
-| **Lot en cours** | **LOT 8 — Événements et accueil dynamique**, ouvert le 01/10/2026 (`DEC-619`) |
-| Sous-étape en cours | **Aucune — les quatorze sous-étapes sont techniquement faites.** `T14` livrée par `DEC-633` : recette sur les images publiées, `make accueil-check` (29) et `make onboarding-check` (14) rejoués à travers Caddy/HTTPS, §30 relu et inchangé depuis `G7` (16 acquis, 2 partiel, 7 reportés), critère de sortie 2 (vidéo) classé sans objet plutôt que tenu par défaut. Seule la validation explicite de Jonathan pour franchir `G8` reste à recueillir |
+| Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
+| Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
+| **Lot en cours** | **Aucun.** Le LOT 8 n'est plus ouvert par la clôture de `G8` |
+| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 9 et la validation de son découpage |
 | Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -38,15 +38,21 @@ Au-dessus de ce socle :
 | **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
 | **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, les **arrivées récentes**, et les **trois écrans** du lot — consultation (onglets « à venir »/« passés », badge « Annulé »), gestion (créer/modifier/publier/annuler/archiver/restaurer/médias, deux grilles de rôles jamais fusionnées) et l'**accueil final**, qui compose à l'écran les cinq sections du cahier §8.4 (présentation, Framework, arrivées, événements, liens), lecture ouverte aux huit rôles et ouverture externe explicite des liens, **avec ses carrousels accessibles sur mobile** (défilement manuel sous 768 px, liste verticale au-delà) ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo ; **un contrôle de pile réelle** (`make accueil-check`, 29 contrôles, Caddy en HTTPS) prouve tout cela sur l'artefact réellement servi, **rejoué sur la recette de clôture** épinglée sur les images publiées | LOT 8, `T1`–`T14` |
 
+**Le LOT 8 est verrouillé, porte `G8` franchie le 07/10/2026 (`DEC-634`), tag `v0.8.0`.** Jonathan a
+validé explicitement l'accueil et les événements ; le critère de sortie 2 (vidéo) reste classé
+**sans objet**, `US005` étant reportée. `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non
+bloquants — repris aux lots suivants au besoin.
+
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 **vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
 convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
 vidéo réelle n'existera avant la V1 (`CONT-026`) ; l'import CSV du LOT 9, le pilotage avancé du
 LOT 10 et les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
 
-> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Les stories encore ouvertes
-> des lots antérieurs restent explicitement nommées dans leurs fiches : un critère non tenu ne se
-> referme pas par effet de bord d'une porte ultérieure.
+> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
+> `#209` et `#212` sont fermées de même ; `#210` reste ouverte (bloquée par `ECART-068`) et `#211`
+> reste ouverte (`US005` reportée) — un critère non tenu ne se referme pas par effet de bord d'une
+> porte ultérieure.
 
 Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
 
