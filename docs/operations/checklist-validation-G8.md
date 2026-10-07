@@ -3,7 +3,7 @@
 **Lot :** LOT 8 — Événements et accueil dynamique
 **Préparée le :** 7 octobre 2026, à la sortie de `T14`
 **Destinataire :** Jonathan — il coordonne la validation technique et l'exploitation
-**Décision de franchissement :** à consigner après ta validation (`DEC-634` probable)
+**Décision de franchissement :** `DEC-634`, validée le 7 octobre 2026
 
 ---
 
@@ -20,7 +20,7 @@ n'est donc jamais présentée comme accomplie par la CI.
 | 3 | Les événements passés sont calculés de manière cohérente | **Tenu** | `T2` : `ends_at <= instant` avec la même ancre des deux côtés ; `T13` le reprouve sur l'horloge réelle du conteneur, à travers Caddy/HTTPS |
 | 4 | Les règles d'archivage et de restauration sont respectées | **Tenu** | `T5` : grilles distinctes (DSM « Périmètre » pour Annuler/Archiver, jamais « créé OU rattaché ») ; `ARB-DROIT-003` exclut DSM/BOOST en bloc de la restauration. `T13` le reprouve sur DEUX évènements, sur la pile réelle |
 | 5 | L'accueil respecte l'ordre et le design validés | **Tenu** | `T11` (desktop, cinq sections dans l'ordre du cahier §8.4) et `T12` (mobile, carrousels accessibles) ; `T13` prouve la composition sur la pile réelle |
-| 6 | Jonathan valide l'accueil et les événements | **à recueillir** | Ta lecture de cette checklist et ta confirmation explicite |
+| 6 | Jonathan valide l'accueil et les événements | **Tenu** | Validation explicite de Jonathan transmise le 07/10/2026 : « Je valide la checklist G8 » |
 
 **Sur le critère 2 :** le marquer « Tenu » masquerait que rien ne l'exerce réellement. Le marquer
 « Non tenu » laisserait croire à un défaut alors qu'il s'agit d'un report délibéré, validé par toi
@@ -110,7 +110,7 @@ sept reports relèvent des LOTS 9 à 12, hors périmètre de ce lot.
 
 | | |
 |---|---|
-| Date | — |
-| Décision | ☐ franchie ☐ à reprendre |
-| Validation de Jonathan | — |
-| Réserves | `ECART-012`, `ECART-068`, `QO-121` restent ouvertes, non bloquantes pour `G8` |
+| Date | 7 octobre 2026 |
+| Décision | ☒ franchie ☐ à reprendre — `DEC-634` |
+| Validation de Jonathan | « Je valide la checklist G8, tu peux franchir la porte, nous reviendrons sur les éléments mis de côté sur les prochains lots au besoin » |
+| Réserves | `ECART-012`, `ECART-068`, `QO-121` restent ouvertes, non bloquantes pour `G8` — à reprendre aux lots suivants au besoin |

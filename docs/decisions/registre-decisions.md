@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 7 octobre 2026 — décision `DEC-633`, réalisation de `T14` du LOT 8
+**Dernière mise à jour :** 7 octobre 2026 — décision `DEC-634`, franchissement de la porte `G8`
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -138,6 +138,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-631`, sous-étape `T12`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-632`, sous-étape `T13`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-633`, sous-étape `T14`** | 1 | **Soumise le 07/10/2026** |
+| **Franchissement de la porte `G8` `DEC-634`** | 1 | **Validée le 07/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -149,7 +150,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **301** | |
+| **Total** | **302** | |
 
 ---
 
@@ -893,7 +894,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-633` | **`T14` du LOT 8 réalise la recette de clôture, confirme le classement du §30 et prépare la checklist `G8`, sans déclarer la porte franchie.** La recette est épinglée sur les images publiées de `3f5e542` (fusion de `T13`), son seul volume PostgreSQL réinitialisé, les huit services migrés à la tête `0023`. `make accueil-check` (29 contrôles) et `make onboarding-check` (14 contrôles) sont rejoués à travers Caddy en HTTPS sur l'artefact publié, tournant nativement en `aarch64` — mêmes résultats qu'en développement. | **LE §30 N'AVAIT RIEN À RECLASSER, ET C'EST VÉRIFIÉ, PAS SUPPOSÉ.** `T15` du LOT 7 avait reclassé trois contrôles qu'elle venait de livrer ; relire les 25 libellés du §30 montre qu'aucun ne porte sur les tables événementielles ni sur l'accueil. `make recette-modele-check` rend **16 acquis, 2 partiel, 7 reportés, 0 inapplicable**, identique à l'état validé à `G7`. **LE CRITÈRE DE SORTIE 2 EST CLASSÉ SANS OBJET, PAS TENU PAR DÉFAUT** : « aucune vidéo complète n'est téléchargée avant interaction » est satisfait trivialement par l'absence totale de la fonctionnalité — `US005` reste reportée (`DEC-631`), aucune fixture n'exerce jamais un bloc `VIDEO`. Un critère négatif que rien ne peut faire échouer ne prouve rien (§7.0 quatrième proposition, §7.39) ; le nommer « sans objet » plutôt que « tenu » évite de laisser croire à une preuve qui n'existe pas. Zéro régression : `pytest` racine 1 564 collectés, 74 échecs environnementaux identiques (jeu de démonstration de développement, liste comparée terme à terme) ; 794 Vitest inchangé ; `mypy` 197 fichiers ; `ruff`/`eslint`/`prettier`/`tsc` verts ; `git status` confirme qu'aucun fichier applicatif n'est touché. La checklist `checklist-validation-G8.md` laisse la ligne de décision et la date vides : la porte n'est **pas** franchie par cette décision, qui prépare seulement sa validation. | Soumise le 07/10/2026 |
 
-**Prochain identifiant libre : `DEC-634`.**
+| `DEC-634` | **La porte `G8` est franchie et le LOT 8 est verrouillé.** Les six critères de sortie sont tenus : quatre par les preuves techniques consolidées dans `checklist-validation-G8.md`, un (critère 2, vidéo) classé **sans objet** plutôt que tenu — `US005` reste reportée, un critère négatif que rien ne peut faire échouer ne prouverait rien s'il était déclaré tenu (§7.0, §7.39) — et la validation explicite de Jonathan sur l'accueil et les événements, donnée le 07/10/2026. Le tag **`v0.8.0`** est posé sur `main`. | **La validation humaine n'est pas déduite de la CI.** Elle est consignée comme le geste explicite qui complète la recette de `T14` : 57/57 contrôles de recette, 29/29 `accueil-check`, 14/14 `onboarding-check`, parcours HTTPS réel sur les images publiées, classement du §30 inchangé depuis `G7` (16 acquis, 2 partiels, 7 reportés). `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non bloquants — ils seront repris aux lots suivants au besoin, sur arbitrage explicite de Jonathan plutôt que par défaut. La fusion vers `main` conserve `develop` comme ancêtre et exige un merge commit ; l'identité des arbres est vérifiée avant et après. Cette décision clôt le LOT 8 mais **n'ouvre pas le LOT 9**. | Validée le 07/10/2026 |
+
+**Prochain identifiant libre : `DEC-635`.**
 
 ---
 
@@ -1173,6 +1176,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-631` — réalisation du LOT 8, `T12` | 1 | 1 |
 | `DEC-632` — réalisation du LOT 8, `T13` | 1 | 1 |
 | `DEC-633` — réalisation du LOT 8, `T14` | 1 | 1 |
+| `DEC-634` — franchissement de la porte `G8` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1184,7 +1188,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **301** | **301** |
+| **Total** | **302** | **302** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
