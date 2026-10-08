@@ -543,6 +543,11 @@ TABLES_DECLAREES = {
     "event_media",
     # LOT 8, T3 — ECART-067, DEC-622 : la cinquieme table, la portee DSM
     "event_dsm_scope",
+    # LOT 9, T1 — modele §19.1 a §19.4, les quatre tables de l'import CSV
+    "import_batch",
+    "import_row",
+    "import_row_issue",
+    "import_decision",
 }
 
 

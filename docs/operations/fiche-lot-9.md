@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; découpage validé en seize sous-étapes
-**Sous-étape suivante :** `T1` — les quatre tables de l'import
+**État :** **OUVERT** — `DEC-635`; `T1` faite par `DEC-636`
+**Sous-étape suivante :** `T2` — création d'un collaborateur depuis le back-office
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -103,7 +103,7 @@ ne commence.
 
 | # | Sous-étape | Story | Note |
 |---|---|---|---|
-| `T1` | Les quatre tables de l'import — `import_batch`, `import_row`, `import_row_issue`, `import_decision`, migration | socle | Modèle §19 ; aucune table `async_job`/`outbox_message` (réservées au LOT 11) |
+| `T1` ✅ | Les quatre tables de l'import — `import_batch`, `import_row`, `import_row_issue`, `import_decision`, migration `0024` | socle | **13 tests**, 29 clés composites au total, migration rejouée à vide ; `approved_by_person_id` corrigé pour porter une clé étrangère (défaut trouvé par `make isolation-check`) — `DEC-636` |
 | `T2` | Création d'un collaborateur et de son appartenance depuis le back-office | `US002` (1/2) | Route inexistante à ce jour — vérifié, seuls `PATCH`/archivage/restauration existent sur `person`/`entity_membership` |
 | `T3` | Modification structurante et transitions (changement d'entité, de statut, de rattachement) | `US002` (2/2) | Même périmètre que `T2` |
 | `T4` | Restauration des ressources archivées autorisées par back-office | `US008` | dépend de `T2`/`T3` ; distinguer restaurations simples (matrice) et techniques/massives (rôles réservés) |

@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-635`, ouverture du LOT 9
+**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-636`, réalisation de `T1` du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -140,6 +140,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-633`, sous-étape `T14`** | 1 | **Soumise le 07/10/2026** |
 | **Franchissement de la porte `G8` `DEC-634`** | 1 | **Validée le 07/10/2026** |
 | **Ouverture du LOT 9 `DEC-635`** | 1 | **Validée le 08/10/2026** |
+| **Réalisation du LOT 9 `DEC-636`, sous-étape `T1`** | 1 | **Soumise le 08/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -151,7 +152,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **303** | |
+| **Total** | **304** | |
 
 ---
 
@@ -899,7 +900,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-635` | **Le LOT 9 — Back-office, administration et import CSV — est ouvert par Jonathan et son découpage compte SEIZE sous-étapes.** `T1` pose les quatre tables de l'import · `T2`/`T3` livrent la création et les transitions structurantes d'un collaborateur par back-office · `T4` restaure les ressources archivées · `T5` agrège le tableau de bord · `T6`/`T7` livrent le dépôt, l'analyse et la prévisualisation du CSV · `T8` valide les rapprochements de clients · `T9`/`T10` importent les lignes valides et produisent le rapport · `T11` livre les opérations de masse · `T12` crée une nouvelle entité depuis des modèles génériques · `T13` ferme `ECART-035` · `T14` livre les écrans back-office · `T15` prouve la pile réelle · `T16` réalise la recette et prépare `G9`. | **L'instruction explicite de Jonathan du 08/10/2026 — après validation du découpage proposé — ouvre la phase suivante après `G8`.** Deux arbitrages ont précédé l'ouverture : l'import reste **synchrone**, `async_job`/`outbox_message` restant réservées au LOT 11 ; le découpage proposé est validé sans modification. Le schéma logique `F01`–`F19` (`DEC-434`) sert de base de travail, le schéma réel des colonnes restant ouvert (`QO-096`/`QO-110`) sans bloquer le socle. `ECART-035` (invitations) et `ECART-060` (filtres métiers/clients/DSM) sont explicitement rattachés à ce lot par le registre ; `ECART-064` (motif d'audit) en est explicitement exclu, réservé au LOT 10. Épic `#234`, stories `#235` à `#242`, jalon `G9`. | Validée le 08/10/2026 |
 
-**Prochain identifiant libre : `DEC-636`.**
+| `DEC-636` | **`T1` du LOT 9 pose les quatre tables de l'import — `import_batch`, `import_row`, `import_row_issue`, `import_decision` — migration `0024`, strictement dérivées du modèle §19.** Trois énumérations reprennent littéralement le modèle (`EtatLotImport`, huit valeurs du §19.1 ; `EtatLigneImport`, six valeurs du §19.2 ; `TypeDeDecisionImport`, cinq catégories fermées du §19.4). `import_row_issue.level` n'est volontairement PAS un enum, le §19.3 n'en donnant pas le vocabulaire — même discipline que `event_media.display_role` (LOT 8). Aucune table `async_job`/`outbox_message` : l'import reste synchrone (`DEC-462`), confirmé par Jonathan le 08/10/2026, fixé par un test structurel. | **DÉFAUT TROUVÉ PAR `make isolation-check`, CORRIGÉ AVANT COMMIT.** `import_batch.approved_by_person_id` avait d'abord été posé sans clé étrangère, par un faux parallèle avec les trois colonnes d'auteur de `ChampsCommuns`. Le contrôle l'a refusé : ces trois colonnes sont la SEULE exception du dépôt, parce qu'elles sont génériques et posées sur toute table ; toute colonne d'acteur NOMMÉE par un module porte une clé étrangère réelle vers `person` (même parti que `media_asset.uploaded_by_person_id`). Corrigé : `fk_import_batch_approved_by_person_id_person`. Zéro régression : `pytest` racine 1 577 collectés (+13), 74 échecs environnementaux identiques à ceux mesurés avant `T1` (jeu de démonstration de développement) ; 794 Vitest inchangé, aucun fichier frontend touché ; `make migrations-check` confronte 754 colonnes, 279 contraintes, 234 index, 199 fonctions, identiques des deux côtés, retour à `base` propre ; `make isolation-check` : 35 locales, 13 globales, 29 composites, 0 référence nue, 0 clé simple injustifiée. `QO-096`, `QO-097`, `QO-099`, `QO-100`, `QO-110` restent ouvertes et non bloquantes pour ce socle ; `ECART-035` et `ECART-060` restent ouverts, à fermer explicitement à `T13` et `T8`. | Soumise le 08/10/2026 |
+
+**Prochain identifiant libre : `DEC-637`.**
 
 ---
 
@@ -1181,6 +1184,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-633` — réalisation du LOT 8, `T14` | 1 | 1 |
 | `DEC-634` — franchissement de la porte `G8` | 1 | 1 |
 | `DEC-635` — ouverture du LOT 9 | 1 | 1 |
+| `DEC-636` — réalisation du LOT 9, `T1` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1192,7 +1196,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **303** | **303** |
+| **Total** | **304** | **304** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

@@ -21,6 +21,7 @@ from app.clients import modeles as clients_modeles
 from app.content import modeles as content_modeles
 from app.entities import modeles as entities_modeles
 from app.events import modeles as events_modeles
+from app.imports import modeles as imports_modeles
 from app.media import modeles as media_modeles
 from app.onboarding import modeles as onboarding_modeles
 from app.organization import modeles as organization_modeles
@@ -43,6 +44,8 @@ MODULES_DE_MODELES = (
     onboarding_modeles,
     #  LOT 8, T1 : les quatre tables evenementielles du §17.
     events_modeles,
+    #  LOT 9, T1 : les quatre tables de l'import CSV du §19.
+    imports_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]
