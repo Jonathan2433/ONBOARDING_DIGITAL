@@ -16,9 +16,9 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 |---|---|
 | Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
 | Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
-| **Lot en cours** | **Aucun.** Le LOT 8 n'est plus ouvert par la clôture de `G8` |
-| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 9 et la validation de son découpage |
-| Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
+| **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
+| Sous-étape en cours | **`T1` — les quatre tables de l'import**, `import_batch`/`import_row`/`import_row_issue`/`import_decision` |
+| Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -46,8 +46,9 @@ bloquants — repris aux lots suivants au besoin.
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 **vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
 convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
-vidéo réelle n'existera avant la V1 (`CONT-026`) ; l'import CSV du LOT 9, le pilotage avancé du
-LOT 10 et les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
+vidéo réelle n'existera avant la V1 (`CONT-026`) ; le back-office et l'import CSV sont **en
+construction au LOT 9** ; le pilotage avancé du LOT 10 et les traitements asynchrones du LOT 11
+restent à venir. Les 29 contenus inventoriés restent à relire.
 
 > Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
 > `#209` et `#212` sont fermées de même ; `#210` reste ouverte (bloquée par `ECART-068`) et `#211`

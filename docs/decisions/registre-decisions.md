@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 7 octobre 2026 — décision `DEC-634`, franchissement de la porte `G8`
+**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-635`, ouverture du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -139,6 +139,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 8 `DEC-632`, sous-étape `T13`** | 1 | **Soumise le 06/10/2026** |
 | **Réalisation du LOT 8 `DEC-633`, sous-étape `T14`** | 1 | **Soumise le 07/10/2026** |
 | **Franchissement de la porte `G8` `DEC-634`** | 1 | **Validée le 07/10/2026** |
+| **Ouverture du LOT 9 `DEC-635`** | 1 | **Validée le 08/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -150,7 +151,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **302** | |
+| **Total** | **303** | |
 
 ---
 
@@ -896,7 +897,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-634` | **La porte `G8` est franchie et le LOT 8 est verrouillé.** Les six critères de sortie sont tenus : quatre par les preuves techniques consolidées dans `checklist-validation-G8.md`, un (critère 2, vidéo) classé **sans objet** plutôt que tenu — `US005` reste reportée, un critère négatif que rien ne peut faire échouer ne prouverait rien s'il était déclaré tenu (§7.0, §7.39) — et la validation explicite de Jonathan sur l'accueil et les événements, donnée le 07/10/2026. Le tag **`v0.8.0`** est posé sur `main`. | **La validation humaine n'est pas déduite de la CI.** Elle est consignée comme le geste explicite qui complète la recette de `T14` : 57/57 contrôles de recette, 29/29 `accueil-check`, 14/14 `onboarding-check`, parcours HTTPS réel sur les images publiées, classement du §30 inchangé depuis `G7` (16 acquis, 2 partiels, 7 reportés). `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non bloquants — ils seront repris aux lots suivants au besoin, sur arbitrage explicite de Jonathan plutôt que par défaut. La fusion vers `main` conserve `develop` comme ancêtre et exige un merge commit ; l'identité des arbres est vérifiée avant et après. Cette décision clôt le LOT 8 mais **n'ouvre pas le LOT 9**. | Validée le 07/10/2026 |
 
-**Prochain identifiant libre : `DEC-635`.**
+| `DEC-635` | **Le LOT 9 — Back-office, administration et import CSV — est ouvert par Jonathan et son découpage compte SEIZE sous-étapes.** `T1` pose les quatre tables de l'import · `T2`/`T3` livrent la création et les transitions structurantes d'un collaborateur par back-office · `T4` restaure les ressources archivées · `T5` agrège le tableau de bord · `T6`/`T7` livrent le dépôt, l'analyse et la prévisualisation du CSV · `T8` valide les rapprochements de clients · `T9`/`T10` importent les lignes valides et produisent le rapport · `T11` livre les opérations de masse · `T12` crée une nouvelle entité depuis des modèles génériques · `T13` ferme `ECART-035` · `T14` livre les écrans back-office · `T15` prouve la pile réelle · `T16` réalise la recette et prépare `G9`. | **L'instruction explicite de Jonathan du 08/10/2026 — après validation du découpage proposé — ouvre la phase suivante après `G8`.** Deux arbitrages ont précédé l'ouverture : l'import reste **synchrone**, `async_job`/`outbox_message` restant réservées au LOT 11 ; le découpage proposé est validé sans modification. Le schéma logique `F01`–`F19` (`DEC-434`) sert de base de travail, le schéma réel des colonnes restant ouvert (`QO-096`/`QO-110`) sans bloquer le socle. `ECART-035` (invitations) et `ECART-060` (filtres métiers/clients/DSM) sont explicitement rattachés à ce lot par le registre ; `ECART-064` (motif d'audit) en est explicitement exclu, réservé au LOT 10. Épic `#234`, stories `#235` à `#242`, jalon `G9`. | Validée le 08/10/2026 |
+
+**Prochain identifiant libre : `DEC-636`.**
 
 ---
 
@@ -1177,6 +1180,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-632` — réalisation du LOT 8, `T13` | 1 | 1 |
 | `DEC-633` — réalisation du LOT 8, `T14` | 1 | 1 |
 | `DEC-634` — franchissement de la porte `G8` | 1 | 1 |
+| `DEC-635` — ouverture du LOT 9 | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1188,7 +1192,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **302** | **302** |
+| **Total** | **303** | **303** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
