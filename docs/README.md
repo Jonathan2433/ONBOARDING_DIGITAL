@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `636` en usage | `DEC-637` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `637` en usage | `DEC-638` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -985,8 +985,16 @@ construction du pipeline (`ECART-005`). `ECART-035` (invitations au départ) et 
 (filtres métiers/clients/DSM) sont explicitement rattachés à ce lot par le registre et doivent y
 être fermés ; `ECART-064` (motif d'intervention) n'en fait pas partie, réservé au LOT 10.
 
-La sous-étape suivante est **`T2`** : création d'un collaborateur et de son appartenance depuis le
-back-office (`US002`, 1/2).
+**`T2` est faite** (`DEC-637`) : `POST /entities/{code}/people` crée un collaborateur et son
+appartenance en une seule transaction — six écritures dans l'ordre que les déclencheurs
+contraignent. `professional_category` reste toujours `consultant` : la catégorie `dg` exige
+`attribuer_la_categorie_dg`, non exposée par aucune route. Le périmètre de création se résout
+SANS cible existante : un DSM ne crée que pour lui-même, un Booster que dans son cercle et sans
+DSM. Le contrat déclare la route dès cette sous-étape, sans module TypeScript propre, aucun écran
+consommateur avant `T14`.
+
+La sous-étape suivante est **`T3`** : modification structurante et transitions (changement
+d'entité, de statut, de rattachement) sur un collaborateur déjà créé.
 
 ---
 

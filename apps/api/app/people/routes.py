@@ -56,6 +56,12 @@ from app.entities.services import resoudre_une_entite_active
 from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
 from app.people.archivage import archiver_un_profil, restaurer_un_profil
+from app.people.creation import (
+    CODE_ACCES_REFUSE,
+    MESSAGE_ACCES_REFUSE,
+    DemandeDeCollaborateur,
+    creer_un_collaborateur,
+)
 from app.people.ecriture import modifier_les_donnees_organisationnelles
 from app.people.historique import HistoriqueOrganisationnel, lire_l_historique
 from app.people.modeles import EtatAppartenance, SituationProfessionnelle
@@ -79,7 +85,9 @@ from app.permissions.perimetre import (
     ActionDeCycleDeVie,
     ChampOrganisationnel,
     PerimetreDuCycleDeVie,
+    PropositionDeCreation,
     resoudre_l_acces_a_l_historique,
+    resoudre_l_autorisation_de_creation,
     resoudre_le_cycle_de_vie,
     resoudre_le_perimetre,
 )
@@ -99,6 +107,14 @@ journal = logging.getLogger("app.people")
 #  dise. Meme motif que `GABARIT_PHOTO`.
 GABARIT_FICHE: Final = "/entities/{code}/people/{appartenance}"
 GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
+
+#  **LE CHEMIN DE COLLECTION DE `T2`, LOT 9.** Pas `/people/creation` — un nom
+#  de verbe, contrairement a la convention des ecritures d'authentification
+#  (§7, "des NOMS, pas des VERBES") qui vaut pour une ACTION sur une ressource
+#  deja identifiee. Ici la ressource n'existe pas encore : `POST` sur la
+#  collection EST le verbe, par la convention REST que ce depot emploie deja
+#  pour `POST /entities/{code}/events` (LOT 8, `T3`).
+GABARIT_COLLECTION: Final = "/entities/{code}/people"
 
 #  Les trois chemins de `T8`. **DES NOMS, PAS DES VERBES** : c'est la convention
 #  des cinq ecritures d'authentification du LOT 3 -- `/connexion`,
@@ -238,6 +254,47 @@ class FicheDuProfil(BaseModel):
     responsabilites: list[ResponsabiliteDeLaFiche]
     #  Meme regle que dans la liste : le chemin de la miniature, ou `None`.
     photo: str | None
+
+
+LONGUEUR_MAXIMALE_ADRESSE: Final = 320
+
+
+class DemandeDeCreationDeCollaborateur(BaseModel):
+    """Creer un collaborateur — matrice §6.1, cahier §10.2. LOT 9 `T2`.
+
+    **AUCUN CHAMP `professional_category`, ET CE N'EST PAS UN OUBLI.** Voir
+    l'en-tete de `app/people/creation.py` : la categorie `dg` exige une action
+    separee, non exposee par ce depot. Toute creation par cette route est un
+    `consultant`.
+
+    **`client` ACCEPTE `null`, SEUL DES SIX CHAMPS** : un statut `intercontract`
+    n'a pas de client, meme regle que `DemandeDeModification`. `dsm` est
+    FACULTATIF, absent par defaut — tous les consultants n'en recoivent pas un
+    a la creation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(max_length=LONGUEUR_MAXIMALE_ADRESSE)
+    prenom: str = Field(min_length=1, description="`first_name`")
+    nom: str = Field(min_length=1, description="`last_name`")
+    nom_prefere: str | None = Field(default=None, description="`preferred_name`, facultatif")
+    date_d_arrivee: dt.date = Field(description="Cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`")
+    statut: SituationProfessionnelle = Field(description="§30.5")
+    client: uuid.UUID | None = Field(
+        default=None,
+        description="`null` est legitime : un intercontrat n'a pas de client.",
+    )
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="§8.2")
+
+
+class ReponseDeCreationDeCollaborateur(BaseModel):
+    """L'appartenance nouvellement creee, et sa version initiale."""
+
+    appartenance: uuid.UUID
+    version: int
 
 
 class DemandeDeModification(BaseModel):
@@ -936,6 +993,105 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
         return ReponseDeModification(
             version=modification.version,
             champs_modifies=sorted(champ.value for champ in modification.champs),
+        )
+
+    @routeur.post(
+        GABARIT_COLLECTION,
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeCreationDeCollaborateur,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role d'ecriture dans cette entite, ou un role "
+                    "d'ecriture dont la proposition sort du perimetre -- un DSM qui designe "
+                    "un AUTRE DSM, un Booster qui vise un cercle qui n'est pas le sien ou qui "
+                    "tente d'assigner un DSM (meme exclusion que la modification)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite inconnue ou non active. Meme forme que la lecture."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`valeur_refusee` : un statut `mission` exige un client, un "
+                    "`intercontract` n'en accepte aucun (§30.5) ; ou le DSM designe n'a "
+                    "pas de responsabilite DSM active dans cette entite."
+                )
+            },
+        },
+        summary="Creer manuellement un collaborateur",
+        description=(
+            "Matrice §6.1 « Creer manuellement un profil », cahier §10.2. Backlog "
+            "`MVP-L09-US002` (1/2).<br><br>"
+            "**Categorie professionnelle toujours `consultant`** : la categorie `dg` exige "
+            "une action separee, non exposee par ce depot — voir l'en-tete de "
+            "`app/people/creation.py`.<br><br>"
+            "**Six champs organisationnels poses a la creation** : date d'arrivee, metier, "
+            "statut, client, DSM (facultatif), cercle principal. Les modifier ensuite est "
+            "`T3`, pas cette route."
+        ),
+    )
+    def creer_le_profil(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeCreationDeCollaborateur,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeCreationDeCollaborateur:
+        """Creer un collaborateur — matrice §6.1, cahier §10.2."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = resoudre_l_autorisation_de_creation(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                proposition=PropositionDeCreation(
+                    circle_id=demande.cercle_principal,
+                    dsm_person_id=demande.dsm,
+                ),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            cree = creer_un_collaborateur(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                demande=DemandeDeCollaborateur(
+                    email=demande.email,
+                    first_name=demande.prenom,
+                    last_name=demande.nom,
+                    preferred_name=demande.nom_prefere,
+                    arrival_date=demande.date_d_arrivee,
+                    job_catalog_id=demande.metier,
+                    status=demande.statut,
+                    client_id=demande.client,
+                    dsm_person_id=demande.dsm,
+                    circle_id=demande.cercle_principal,
+                ),
+                instant=instant,
+            )
+        return ReponseDeCreationDeCollaborateur(
+            appartenance=cree.appartenance, version=cree.version
         )
 
     @routeur.get(

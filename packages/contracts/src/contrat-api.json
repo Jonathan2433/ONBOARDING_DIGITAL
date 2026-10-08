@@ -771,6 +771,29 @@
       ]
     },
     {
+      "cle": "creationDUnCollaborateur",
+      "chemin": "/api/v1/entities/{code}/people",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCreationDeCollaborateur",
+      "role": [
+        "Creer manuellement un collaborateur — LOT 9, T2, MVP-L09-US002 (1/2).",
+        "Matrice 6.1 « Creer manuellement un profil » : DSM Consultants, ESM",
+        "Entite, BOOST Cercle, OFFICE tiret, ADM-E Entite, SUPER Global.",
+        "Categorie professionnelle TOUJOURS `consultant` : la categorie `dg`",
+        "exige une action separee (attribuer_la_categorie_dg), non exposee",
+        "par ce depot -- voir app/people/creation.py.",
+        "Six champs organisationnels poses a la creation : date d'arrivee,",
+        "metier, statut, client (nul si intercontract), DSM (facultatif),",
+        "cercle principal. Les modifier ensuite releve de T3, pas de cette route.",
+        "403 acces_refuse couvre un role absent ET une proposition hors",
+        "perimetre -- un DSM qui designe un AUTRE DSM, un Booster hors de",
+        "son cercle ou qui tente d'assigner un DSM.",
+        "422 valeur_refusee : la biconditionnelle statut/client, ou le DSM",
+        "designe sans responsabilite DSM active dans cette entite."
+      ]
+    },
+    {
       "cle": "modificationDesDonneesOrganisationnelles",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}",
       "methode": "patch",

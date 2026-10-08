@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-636`, réalisation de `T1` du LOT 9
+**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-637`, réalisation de `T2` du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -141,6 +141,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Franchissement de la porte `G8` `DEC-634`** | 1 | **Validée le 07/10/2026** |
 | **Ouverture du LOT 9 `DEC-635`** | 1 | **Validée le 08/10/2026** |
 | **Réalisation du LOT 9 `DEC-636`, sous-étape `T1`** | 1 | **Soumise le 08/10/2026** |
+| **Réalisation du LOT 9 `DEC-637`, sous-étape `T2`** | 1 | **Soumise le 08/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -152,7 +153,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **304** | |
+| **Total** | **305** | |
 
 ---
 
@@ -902,7 +903,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-636` | **`T1` du LOT 9 pose les quatre tables de l'import — `import_batch`, `import_row`, `import_row_issue`, `import_decision` — migration `0024`, strictement dérivées du modèle §19.** Trois énumérations reprennent littéralement le modèle (`EtatLotImport`, huit valeurs du §19.1 ; `EtatLigneImport`, six valeurs du §19.2 ; `TypeDeDecisionImport`, cinq catégories fermées du §19.4). `import_row_issue.level` n'est volontairement PAS un enum, le §19.3 n'en donnant pas le vocabulaire — même discipline que `event_media.display_role` (LOT 8). Aucune table `async_job`/`outbox_message` : l'import reste synchrone (`DEC-462`), confirmé par Jonathan le 08/10/2026, fixé par un test structurel. | **DÉFAUT TROUVÉ PAR `make isolation-check`, CORRIGÉ AVANT COMMIT.** `import_batch.approved_by_person_id` avait d'abord été posé sans clé étrangère, par un faux parallèle avec les trois colonnes d'auteur de `ChampsCommuns`. Le contrôle l'a refusé : ces trois colonnes sont la SEULE exception du dépôt, parce qu'elles sont génériques et posées sur toute table ; toute colonne d'acteur NOMMÉE par un module porte une clé étrangère réelle vers `person` (même parti que `media_asset.uploaded_by_person_id`). Corrigé : `fk_import_batch_approved_by_person_id_person`. Zéro régression : `pytest` racine 1 577 collectés (+13), 74 échecs environnementaux identiques à ceux mesurés avant `T1` (jeu de démonstration de développement) ; 794 Vitest inchangé, aucun fichier frontend touché ; `make migrations-check` confronte 754 colonnes, 279 contraintes, 234 index, 199 fonctions, identiques des deux côtés, retour à `base` propre ; `make isolation-check` : 35 locales, 13 globales, 29 composites, 0 référence nue, 0 clé simple injustifiée. `QO-096`, `QO-097`, `QO-099`, `QO-100`, `QO-110` restent ouvertes et non bloquantes pour ce socle ; `ECART-035` et `ECART-060` restent ouverts, à fermer explicitement à `T13` et `T8`. | Soumise le 08/10/2026 |
 
-**Prochain identifiant libre : `DEC-637`.**
+| `DEC-637` | **`T2` du LOT 9 sert `POST /entities/{code}/people` : créer manuellement un collaborateur — matrice §6.1, cahier §10.2, `MVP-L09-US002` (1/2).** Six écritures dans une transaction, dans l'ordre que les déclencheurs contraignent (`person`, `entity_membership`, `membership_job_assignment`, `circle_membership`, `professional_status_assignment`, `dsm_assignment` si demandé). `professional_category` reste TOUJOURS `consultant` : la catégorie `dg` exige `attribuer_la_categorie_dg`, non exposée par aucune route, et l'exposer ici aurait mélangé deux mécanismes distincts. Nouvelle fonction `resoudre_l_autorisation_de_creation` (`app/permissions/perimetre.py`) : sans cible existante, un DSM ne crée que pour LUI-MÊME, un Booster que dans SON cercle et sans DSM (même exclusion que la modification). | **DÉFAUT TROUVÉ ET CORRIGÉ DANS MES PROPRES TESTS, AVANT COMMIT.** Un premier test supposait `ESM` dérivable de la seule appartenance ; `resoudre_les_permissions` a renvoyé un ensemble vide, le test a échoué en le disant. `ESM` est une responsabilité `framework_responsibility_assignment`, comme `DSM`/`BOOSTER` — corrigé, et les cinq tests de la grille réécrits pour dériver les rôles RÉELLEMENT plutôt que de les injecter à la main. **CONTRAT MIS À JOUR DÈS CETTE SOUS-ÉTAPE** : `creationDUnCollaborateur` déclaré dans `contrat-api.json`, sans module TypeScript propre — même discipline que les arrivées récentes (LOT 8, `T7`), aucun écran consommateur avant `T14`. `test_contrat.py` l'exigeait : un chemin servi et non déclaré fait échouer `test_les_chemins_du_schema_sont_exactement_ceux_du_manifeste`, trouvé à la première exécution complète. Zéro régression : `pytest` racine 1 590 collectés (+13), 74 échecs environnementaux identiques à ceux mesurés avant `T2` ; 794 Vitest inchangé ; `make isolation-check` inchangé (aucune nouvelle table) ; le déclencheur `dsm_responsabilite_active` (`ERRCODE = check_violation`) est traduit par `traduire_un_refus_de_la_base` (LOT 5, `T7`), réutilisé tel quel, `422` et non `500`. | Soumise le 08/10/2026 |
+
+**Prochain identifiant libre : `DEC-638`.**
 
 ---
 
@@ -1185,6 +1188,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-634` — franchissement de la porte `G8` | 1 | 1 |
 | `DEC-635` — ouverture du LOT 9 | 1 | 1 |
 | `DEC-636` — réalisation du LOT 9, `T1` | 1 | 1 |
+| `DEC-637` — réalisation du LOT 9, `T2` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1196,7 +1200,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **304** | **304** |
+| **Total** | **305** | **305** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

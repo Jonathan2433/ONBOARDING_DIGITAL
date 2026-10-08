@@ -563,3 +563,93 @@ def resoudre_l_acces_a_l_historique(
             axes |= AXES_ORGANISATIONNELS
 
     return AccesAlHistorique(axes=frozenset(axes))
+
+
+# ===========================================================================
+#
+#  CREER MANUELLEMENT UN PROFIL — LOT 9, `T2`, story `MVP-L09-US002`
+#
+#    Matrice §6.1 : « Creer manuellement un profil » — `DSM` Consultants,
+#    `ESM` Entite, `BOOST` Cercle, `OFFICE` —, `ADM-E` Entite, `SUPER` Global.
+#    **MEME GRILLE DE ROLES QUE L'ECRITURE** (`ROLES_D_ECRITURE`), mais la
+#    PORTEE ne peut pas se resoudre comme pour une modification : il n'existe
+#    pas encore de `cible` a interroger via `dsm_assignment`/`circle_membership`.
+#
+#    **LA PROPOSITION PORTE DONC CE QUE LA CIBLE AURAIT PORTE.** Un DSM ne cree
+#    que SES PROPRES consultants -- jamais pour un autre DSM, meme regle que
+#    `_RATTACHE_A_CE_DSM` ci-dessus -- donc `dsm_person_id` doit valoir
+#    l'acteur lui-meme. Un Booster ne cree que dans SON cercle -- meme regle que
+#    `_TYPE_DANS_LE_CERCLE_DU_BOOSTER` -- et ne peut PAS assigner de DSM, meme
+#    exclusion que `CHAMPS_DU_BOOSTER` : la DIFFERENCE etant qu'ici l'exclusion
+#    porte sur la proposition entiere (403), pas sur un champ ecrivable en moins.
+#
+# ===========================================================================
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class PropositionDeCreation:
+    """Ce que la nouvelle appartenance porterait, pour juger du perimetre.
+
+    Seuls les deux champs dont la portee DEPEND sont ici -- `cercle_principal`
+    et `dsm` -- jamais le metier, le client ou le statut : aucune ligne du §6.1
+    ne les restreint par role, et les faire porter par cette structure
+    laisserait croire qu'ils comptent pour la decision.
+    """
+
+    circle_id: uuid.UUID
+    dsm_person_id: uuid.UUID | None
+
+
+#  Meme requete que `_TYPE_DANS_LE_CERCLE_DU_BOOSTER`, mais sans `cible` : il
+#  suffit que l'acteur SOIT Booster de ce cercle, le type de la future
+#  appartenance (toujours `principal`, cahier §10.2) n'ayant rien a verifier
+#  ailleurs puisqu'il n'existe pas encore de ligne.
+_EST_BOOSTER_DE_CE_CERCLE: Final[str] = """
+SELECT 1 FROM framework_responsibility_assignment
+WHERE person_id = :acteur AND entity_id = :entite AND circle_id = :cercle
+  AND responsibility_type = :type_booster
+  AND archived_at IS NULL AND period @> :instant
+"""
+
+
+def resoudre_l_autorisation_de_creation(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    proposition: PropositionDeCreation,
+    instant: dt.datetime,
+) -> bool:
+    """`acteur` peut-il creer un collaborateur portant cette `proposition`.
+
+    **UN BOOLEEN, PAS UN ENSEMBLE DE CHAMPS** : contrairement a
+    `resoudre_le_perimetre`, creer n'est pas un geste partiel -- on cree
+    l'appartenance entiere ou on la refuse entierement, et un ensemble de
+    champs partiellement autorises n'aurait aucun sens a appliquer ici.
+    """
+    if roles & {
+        RoleDeLaMatrice.ESM,
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }:
+        return True
+
+    if RoleDeLaMatrice.DSM in roles and proposition.dsm_person_id == acteur:
+        return True
+
+    if RoleDeLaMatrice.BOOSTER in roles and proposition.dsm_person_id is None:
+        ligne = connexion.execute(
+            text(_EST_BOOSTER_DE_CE_CERCLE),
+            {
+                "acteur": acteur,
+                "entite": entite,
+                "cercle": proposition.circle_id,
+                "type_booster": TypeResponsabilite.BOOSTER.value,
+                "instant": instant,
+            },
+        ).first()
+        if ligne is not None:
+            return True
+
+    return False
