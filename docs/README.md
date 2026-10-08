@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `634` en usage | `DEC-635` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `635` en usage | `DEC-636` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -134,7 +134,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
-| `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
+| `G9` | Fin du back-office | Import réel répété et validé | **LOT 9 OUVERT le 08/10/2026** — `DEC-635`, [fiche](operations/fiche-lot-9.md) |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
@@ -961,8 +961,26 @@ repris aux lots suivants au besoin, sur arbitrage explicite plutôt que par déf
 est posé sur `main`, `develop` restant ancêtre et le commit de livraison portant deux parents
 (`ECART-026`). Les stories `#207`, `#208`, `#209` et `#212` sont fermées manuellement sur leurs
 preuves propres ; `#210` reste ouverte, bloquée par `ECART-068` ; `#211` reste ouverte, `US005`
-étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 et n'ouvre pas le
-LOT 9.
+étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 ; elle n'ouvre pas le
+LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le 08/10/2026.
+
+---
+
+## 16. Avancement du LOT 9 — **lot OUVERT**, porte `G9`
+
+**Ouvert par Jonathan le 8 octobre 2026 (`DEC-635`).** Plan :
+[`operations/fiche-lot-9.md`](operations/fiche-lot-9.md) — **8** stories, dont **6 `P0`** et
+**2 `P1`**, **huit** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
+**seize** sous-étapes. Épic `#234`, jalon `G9`, stories `#235` à `#242`.
+
+La sous-étape suivante est **`T1`** : les quatre tables de l'import — `import_batch`,
+`import_row`, `import_row_issue`, `import_decision` (modèle §19) — sans `async_job` ni
+`outbox_message`, réservées au LOT 11 (import **synchrone**, confirmé par Jonathan). Le schéma
+logique `F01`–`F19` (`DEC-434`, v1.0-initiale) sert de base ; le schéma réel des colonnes reste
+ouvert (`QO-096`/`QO-110`) et ne bloque pas la construction du pipeline (`ECART-005`). `ECART-035`
+(invitations au départ) et `ECART-060` (filtres métiers/clients/DSM) sont explicitement rattachés
+à ce lot par le registre et doivent y être fermés ; `ECART-064` (motif d'intervention) n'en fait
+pas partie, réservé au LOT 10.
 
 ---
 
