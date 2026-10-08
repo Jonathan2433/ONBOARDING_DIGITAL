@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 4 octobre 2026, `T3` du LOT 8 — `ECART-067` clos (`DEC-622`)
+**Dernière mise à jour :** 8 octobre 2026 — `ECART-069` clos, ascendance de `main` réparée à la porte `G8`
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 68 | 13 | 52 | 3 |
+| Total 69 | 13 | 53 | 3 |
 
 ---
 
@@ -86,6 +86,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | Non — les deux volets sont résolus | **Clos le 28/09/2026** — volet « version de modèle » résolu le 26/09/2026 (`DEC-605`, `T6`), volet « parcours archivé » résolu le 28/09/2026 (`DEC-611`, `T11`) : les deux fois, l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003` |
 | `ECART-067` | **La matrice autorise le DSM à créer un événement pour « Entité ou consultants », mais le modèle ne sait rattacher un événement qu'à l'entité, à des cercles ou à des bureaux.** Il n'existe aucun `event_dsm_scope` ni lien vers un consultant | Oui avant `T3`, pas pour le schéma `T1` | **Clos le 04/10/2026** (`DEC-622`, `T3`) — arbitrage explicite de Jonathan entre deux options présentées (table dédiée ou colonne unique sur `event`) : **table dédiée** `event_dsm_scope(event_id, entity_id, dsm_person_id)`, migration `0023`, symétrique aux deux portées déjà posées par `T1`, index unique partiel sur `event_id` seul (« Entité OU consultants », jamais les deux) |
 | `ECART-068` | **La matrice exige que modification et publication d'un événement soient toujours auditées, alors que `audit_event` appartient au LOT 10 et n'existe pas encore.** Les colonnes d'auteur et de cycle de vie ne forment pas un historique | Oui avant de fermer `US004`, pas pour `T1` | **Ouvert** — instruire une dépendance anticipée ou un mécanisme métier explicitement validé |
+| `ECART-069` | **Trois fusions consécutives de `develop` vers `main` à la porte `G8` ont été exécutées en squash au lieu du merge commit prescrit (`DEC-495`) — classe `ECART-026`.** `develop` a cessé d'être ancêtre de `main` trois fois de suite (PR `#229`, `#230`, `#231`), bien que le contenu soit resté identique à chaque fois (`main^{tree}` = `develop^{tree}`) | Oui pour toute porte suivante, qui aurait rencontré des conflits insolubles sur des fichiers non divergents | **Clos le 08/10/2026** (PR `#232`) — une quatrième fusion, exécutée en ligne de commande (`gh pr merge --merge`) plutôt que par le bouton par défaut de l'interface GitHub, restaure l'ascendance : 2 parents, arbres identiques, `git merge-base --is-ancestor` sort en 0. Tag `v0.8.0` posé sur le commit réparé |
 
 ## `ECART-045` — Quatre motifs invoquent un rechargement à chaud qui n'existe pas
 
@@ -214,7 +215,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-**Prochain identifiant libre : `ECART-069`.**
+**Prochain identifiant libre : `ECART-070`.**
 
 ---
 
