@@ -1,0 +1,222 @@
+"""Creer manuellement un collaborateur — matrice §6.1, cahier §10.2. LOT 9 `T2`.
+
+**LA PREMIERE ECRITURE DU PROJET QUI CREE UNE PERSONNE.** Mesure avant d'ecrire
+une ligne : `grep -rn "INSERT INTO person"` hors tests et hors
+`app/shared/fabriques.py` (le generateur de donnees fictives, LOT 2 `T12`) ne
+rend **aucune** occurrence. Toutes les routes existantes modifient, archivent
+ou restaurent une personne/appartenance deja presente ; aucune n'en cree.
+
+CE QUE CETTE SOUS-ETAPE CREE, DANS L'ORDRE, ET POURQUOI CET ORDRE
+
+  Le cahier §10.2 nomme six « donnees organisationnelles » preremplies et
+  verrouillees pour un nouvel arrivant : date d'arrivee, metier, statut, DSM,
+  client, cercle principal. Les creer suppose six ecritures, dans un ordre que
+  les declencheurs CONTRAIGNENT (`app/shared/fabriques.py`, meme discipline) :
+
+    1. `person`                       — l'identite globale ;
+    2. `entity_membership`            — l'appartenance, `membership_state`
+                                         calcule depuis `arrival_date` ;
+    3. `membership_job_assignment`    — le metier ;
+    4. `circle_membership`            — le cercle principal ;
+    5. `professional_status_assignment` — statut et client, une seule ligne ;
+    6. `dsm_assignment`, SI DEMANDE   — le declencheur `dsm_responsabilite_
+                                         active` exige que le DSM designe porte
+                                         deja une responsabilite DSM active.
+
+CE QUE CETTE SOUS-ETAPE NE CREE PAS, ET CE N'EST PAS UN OUBLI
+
+  **`professional_category` vaut TOUJOURS `consultant`.** La categorie `dg`
+  exige, par le declencheur `dg_implique_dsm_local`, qu'une responsabilite DSM
+  existe DEJA pour la personne au moment ou `entity_membership.
+  professional_category` devient `dg` — et le service qui satisfait cet
+  invariant, `app.organization.services.attribuer_la_categorie_dg`, n'est
+  expose par AUCUNE route a ce jour. L'exposer ici melangerait deux
+  mecanismes distincts (creer une appartenance ; promouvoir une categorie) et
+  anticiperait une route que personne n'a demandee. `professional_category`
+  n'est donc PAS un champ de la demande : la rendre acceptable pour `dg` sans
+  l'action qui satisfait son invariant produirait un refus de la base que rien
+  n'expliquerait a l'appelant.
+
+  **`profile_visibility` vaut toujours `draft`.** Aucune source ne nomme ce
+  champ parmi les six « preremplis » ; c'est l'etat initial de toute fiche
+  encore a completer, meme discipline que `T8` du LOT 3 pour un nouvel
+  arrivant par magic link.
+
+  **`account_state` vaut toujours `active`.** Un collaborateur cree par le
+  back-office recoit un acces immediat ; `pending` n'a ni route ni ecran qui le
+  consomme ailleurs dans ce depot.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import datetime as dt
+import uuid
+from typing import Final
+
+from fastapi import status as statut_http
+from sqlalchemy import text
+from sqlalchemy.engine import Connection
+from sqlalchemy.exc import DataError, IntegrityError
+
+from app.organization.modeles import TypeAppartenanceCercle
+from app.people.ecriture import traduire_un_refus_de_la_base
+from app.people.modeles import (
+    CategorieProfessionnelle,
+    EtatAppartenance,
+    EtatCompte,
+    SituationProfessionnelle,
+    VisibiliteProfil,
+    normaliser_email,
+)
+from app.shared.depot import DepotLocal
+from app.shared.errors import ErreurApplicative
+
+CODE_CLIENT_INCOHERENT: Final = "valeur_refusee"
+MESSAGE_CLIENT_INCOHERENT: Final = (
+    "Un statut `mission` exige un client, un statut `intercontract` n'en accepte aucun."
+)
+
+#  **LE MEME GABARIT QUE PARTOUT AILLEURS DEPUIS `T9` DU LOT 4**
+#  (`CODE_ROLE_REFUSE` de `app/permissions/dependances.py`) : un role absent et
+#  une proposition hors perimetre rendent le MEME refus, pour que le motif
+#  exact ne sorte jamais (§2.5 du cahier, « refus par defaut »).
+CODE_ACCES_REFUSE: Final = "acces_refuse"
+MESSAGE_ACCES_REFUSE: Final = (
+    "Cet acces a ete refuse. Verifiez le perimetre de creation demande et vos "
+    "responsabilites actives."
+)
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class DemandeDeCollaborateur:
+    """Les champs d'un collaborateur a creer — cahier §10.2.
+
+    `client` est le seul champ parmi les six organisationnels dont l'absence
+    est legitime (`intercontract`), meme regle que `DemandeDeModification`.
+    `dsm` est absent par defaut : tous les consultants n'en ont pas un des la
+    creation (`app/shared/fabriques.py` n'en donne qu'a un sur trois).
+    """
+
+    email: str
+    first_name: str
+    last_name: str
+    preferred_name: str | None
+    arrival_date: dt.date
+    job_catalog_id: uuid.UUID
+    status: SituationProfessionnelle
+    client_id: uuid.UUID | None
+    dsm_person_id: uuid.UUID | None
+    circle_id: uuid.UUID
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class CollaborateurCree:
+    """L'identifiant d'appartenance nouvellement cree, et sa version initiale."""
+
+    appartenance: uuid.UUID
+    version: int
+
+
+def creer_un_collaborateur(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    demande: DemandeDeCollaborateur,
+    instant: dt.datetime,
+) -> CollaborateurCree:
+    """Creer la personne et son appartenance, dans UNE seule transaction.
+
+    **LA BICONDITIONNELLE STATUT/CLIENT EST VERIFIEE ICI, AVANT D'ECRIRE** —
+    contrairement a `_ecrire_le_statut`, qui reporte une valeur courante
+    absente a la demande, il n'existe ici AUCUNE valeur courante a reporter :
+    une demande incoherente doit donc etre refusee en amont plutot que de
+    laisser la contrainte `client_selon_le_statut` produire un refus que rien
+    n'explique a l'appelant, puisque aucune des deux valeurs n'est la sienne.
+    """
+    if (demande.status == SituationProfessionnelle.MISSION) != (demande.client_id is not None):
+        raise ErreurApplicative(
+            code=CODE_CLIENT_INCOHERENT,
+            message=MESSAGE_CLIENT_INCOHERENT,
+            statut=statut_http.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+
+    email_normalise = normaliser_email(demande.email)
+    try:
+        personne = connexion.execute(
+            text(
+                "INSERT INTO person (email, email_normalized, first_name, last_name, "
+                "preferred_name, account_state) "
+                "VALUES (:email, :normalise, :prenom, :nom, :prefere, :etat) RETURNING id"
+            ),
+            {
+                "email": demande.email,
+                "normalise": email_normalise,
+                "prenom": demande.first_name,
+                "nom": demande.last_name,
+                "prefere": demande.preferred_name,
+                "etat": EtatCompte.ACTIVE.value,
+            },
+        ).scalar_one()
+
+        #  §6.2, litteralement : une appartenance dont l'arrivee n'est pas encore
+        #  survenue est `future`, jamais `active` — `ETATS_OCCUPANTS` traite les
+        #  deux de la meme facon en LECTURE, mais la colonne elle-meme doit
+        #  porter la valeur exacte.
+        etat_initial = (
+            EtatAppartenance.ACTIVE.value
+            if demande.arrival_date <= instant.date()
+            else EtatAppartenance.FUTURE.value
+        )
+
+        appartenance = DepotLocal(connexion, "entity_membership", entite).creer(
+            person_id=personne,
+            arrival_date=demande.arrival_date,
+            membership_state=etat_initial,
+            professional_category=CategorieProfessionnelle.CONSULTANT.value,
+            profile_visibility=VisibiliteProfil.DRAFT.value,
+            created_by_person_id=acteur,
+        )
+
+        debut = dt.datetime(
+            demande.arrival_date.year,
+            demande.arrival_date.month,
+            demande.arrival_date.day,
+            tzinfo=dt.UTC,
+        )
+
+        DepotLocal(connexion, "membership_job_assignment", entite).creer(
+            entity_membership_id=appartenance,
+            job_catalog_id=demande.job_catalog_id,
+            starts_at=debut,
+            created_by_person_id=acteur,
+        )
+
+        DepotLocal(connexion, "circle_membership", entite).creer(
+            entity_membership_id=appartenance,
+            circle_id=demande.circle_id,
+            membership_type=TypeAppartenanceCercle.PRINCIPAL.value,
+            starts_at=debut,
+            created_by_person_id=acteur,
+        )
+
+        DepotLocal(connexion, "professional_status_assignment", entite).creer(
+            entity_membership_id=appartenance,
+            status=demande.status.value,
+            client_id=demande.client_id,
+            starts_at=debut,
+            created_by_person_id=acteur,
+        )
+
+        if demande.dsm_person_id is not None:
+            DepotLocal(connexion, "dsm_assignment", entite).creer(
+                consultant_membership_id=appartenance,
+                dsm_person_id=demande.dsm_person_id,
+                starts_at=debut,
+                created_by_person_id=acteur,
+            )
+    except (IntegrityError, DataError) as erreur:
+        raise traduire_un_refus_de_la_base(erreur) from erreur
+
+    return CollaborateurCree(appartenance=appartenance, version=1)
