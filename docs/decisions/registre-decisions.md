@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-637`, réalisation de `T2` du LOT 9
+**Dernière mise à jour :** 8 octobre 2026 — décision `DEC-638`, réalisation de `T3` du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -142,6 +142,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Ouverture du LOT 9 `DEC-635`** | 1 | **Validée le 08/10/2026** |
 | **Réalisation du LOT 9 `DEC-636`, sous-étape `T1`** | 1 | **Soumise le 08/10/2026** |
 | **Réalisation du LOT 9 `DEC-637`, sous-étape `T2`** | 1 | **Soumise le 08/10/2026** |
+| **Réalisation du LOT 9 `DEC-638`, sous-étape `T3`** | 1 | **Soumise le 08/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -153,7 +154,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **305** | |
+| **Total** | **306** | |
 
 ---
 
@@ -905,7 +906,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-637` | **`T2` du LOT 9 sert `POST /entities/{code}/people` : créer manuellement un collaborateur — matrice §6.1, cahier §10.2, `MVP-L09-US002` (1/2).** Six écritures dans une transaction, dans l'ordre que les déclencheurs contraignent (`person`, `entity_membership`, `membership_job_assignment`, `circle_membership`, `professional_status_assignment`, `dsm_assignment` si demandé). `professional_category` reste TOUJOURS `consultant` : la catégorie `dg` exige `attribuer_la_categorie_dg`, non exposée par aucune route, et l'exposer ici aurait mélangé deux mécanismes distincts. Nouvelle fonction `resoudre_l_autorisation_de_creation` (`app/permissions/perimetre.py`) : sans cible existante, un DSM ne crée que pour LUI-MÊME, un Booster que dans SON cercle et sans DSM (même exclusion que la modification). | **DÉFAUT TROUVÉ ET CORRIGÉ DANS MES PROPRES TESTS, AVANT COMMIT.** Un premier test supposait `ESM` dérivable de la seule appartenance ; `resoudre_les_permissions` a renvoyé un ensemble vide, le test a échoué en le disant. `ESM` est une responsabilité `framework_responsibility_assignment`, comme `DSM`/`BOOSTER` — corrigé, et les cinq tests de la grille réécrits pour dériver les rôles RÉELLEMENT plutôt que de les injecter à la main. **CONTRAT MIS À JOUR DÈS CETTE SOUS-ÉTAPE** : `creationDUnCollaborateur` déclaré dans `contrat-api.json`, sans module TypeScript propre — même discipline que les arrivées récentes (LOT 8, `T7`), aucun écran consommateur avant `T14`. `test_contrat.py` l'exigeait : un chemin servi et non déclaré fait échouer `test_les_chemins_du_schema_sont_exactement_ceux_du_manifeste`, trouvé à la première exécution complète. Zéro régression : `pytest` racine 1 590 collectés (+13), 74 échecs environnementaux identiques à ceux mesurés avant `T2` ; 794 Vitest inchangé ; `make isolation-check` inchangé (aucune nouvelle table) ; le déclencheur `dsm_responsabilite_active` (`ERRCODE = check_violation`) est traduit par `traduire_un_refus_de_la_base` (LOT 5, `T7`), réutilisé tel quel, `422` et non `500`. | Soumise le 08/10/2026 |
 
-**Prochain identifiant libre : `DEC-638`.**
+| `DEC-638` | **`T3` du LOT 9 sert `POST .../people/{appartenance}/changement-d-entite` : changer un collaborateur d'entité — cahier §11.1, §16.3, `MVP-L09-US002` (2/2, désormais complète).** Le changement de statut et de rattachement **dans une même entité** était déjà servi par le `PATCH` de LOT 5 `T7` ; seul le changement d'entité manquait. `DemandeDAppartenance` et `creer_l_appartenance` sont extraites de `creation.py` (`T2`) et partagées par le nouveau module `app/people/transfert.py` : l'ancienne appartenance va jusqu'à `archived` (`Active --> Departed --> Archived` si elle était active, `Future --> Archived` seul sinon), la nouvelle existe dans l'entité de destination, en UNE transaction. Le périmètre est évalué sur l'entité de **destination**, même grille que `T2` (`resoudre_l_autorisation_de_creation`) : `archiver_un_profil` (LOT 5 `T8`) n'est pas réutilisé tel quel, son périmètre (`ROLES_DU_CYCLE_DE_VIE`) étant plus étroit que celui donné au transfert. **TROIS POINTS ARBITRÉS PAR JONATHAN AVANT TOUT CODE, LE CORPUS NE DISANT RIEN DE PLUS QUE LA PHRASE DU §11.1.** (1) La révocation : le même moteur que le départ (`enregistrer_un_depart`) est réutilisé, donc TOUTES les sessions et liens magiques de la personne sont révoqués, pas seulement ceux de l'entité quittée — déjà ce que `uq_entity_membership_person_id_occupante` impose structurellement. (2) L'atomicité : fermeture de l'ancienne et création de la nouvelle sont UNE seule transaction, jamais deux gestes séparés. (3) **Trouvé en écrivant les tests, pas anticipé par la fiche** : `ex_entity_membership_sans_chevauchement` (§25.2) ne porte AUCUNE clause `WHERE` — deux périodes d'une même personne ne se chevauchent jamais, même archivées, même entre deux entités différentes. Annuler une arrivée `future` (`archiver_une_appartenance`) NE POSE PAS `departure_date` (« arrivée annulée » n'est pas un départ, LOT 5 `T8`, `test_l_archivage_d_une_arrivee_FUTURE_n_enregistre_AUCUN_depart` intact) : sa période reste `[arrival_date, )`, non bornée, pour toujours — ce qui aurait bloqué TOUT transfert ultérieur de cette personne, quelle que soit la date choisie dans l'entité de destination, deux plages non bornées se recoupant nécessairement. Posé en question avant correction : **une arrivée annulée DANS LE CADRE D'UN TRANSFERT libère sa date** (`departure_date` posé à `arrival_date`, période vidée `[x, x)`, donc inerte pour l'exclusion) — **seulement dans ce cadre** : l'annulation SEULE (`archiver_un_profil`, hors transfert) n'est PAS modifiée, son témoin du LOT 5 restant vert sans aucune modification. | **TROIS DÉFAUTS TROUVÉS ET CORRIGÉS DANS MES PROPRES TESTS, AUCUN DANS LE CODE LIVRÉ.** Une régression introduite par le partage de `DemandeDAppartenance` (la biconditionnelle statut/client vérifiée après la création de la personne au lieu d'avant) a été trouvée par un test de `T2` qui échouait et corrigée en appelant la validation explicitement en tête de `creer_un_collaborateur`, en plus de son appel dans `creer_l_appartenance`. Un bug dans mon propre premier jet de `changer_d_entite` — une `Revocation` réassignée deux fois, perdant silencieusement le décompte du départ — trouvé en relisant mon code avant de le lancer, corrigé en `Transfert.revocations: tuple[Revocation, ...]`, même convention qu'`Archivage` (LOT 5 `T8`). Deux défauts de décor (une date de destination chevauchant une arrivée non encore libérée ; `departure_date` manquant sur un décor `departed`, refusé par `ck_entity_membership_depart_date_si_departed`) et une assertion de test erronée (une `IntegrityError` attendue brute là où `changer_d_entite` la traduit en `422`, exactement comme `T2` le fait déjà et le prouve). Zéro régression : `pytest` racine 1 596 collectés (+6, tous d'intégration), 74 échecs environnementaux identiques à ceux mesurés avant `T3` (jeu de démonstration de développement, liste comparée fichier par fichier) ; 794 Vitest inchangé ; `make isolation-check` inchangé (aucune nouvelle table) ; `test_archivage.py` et `test_creation_collaborateurs.py` intacts, aucune régression sur les chemins partagés. Contrat mis à jour (`changementDEntite`), `test_contrat.py` vert. `US002` est désormais complète dans ses deux volets. | Soumise le 08/10/2026 |
+
+**Prochain identifiant libre : `DEC-639`.**
 
 ---
 
@@ -1189,6 +1192,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-635` — ouverture du LOT 9 | 1 | 1 |
 | `DEC-636` — réalisation du LOT 9, `T1` | 1 | 1 |
 | `DEC-637` — réalisation du LOT 9, `T2` | 1 | 1 |
+| `DEC-638` — réalisation du LOT 9, `T3` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1200,7 +1204,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **305** | **305** |
+| **Total** | **306** | **306** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

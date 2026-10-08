@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
 | Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
 | **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
-| Sous-étape en cours | **`T3` — modification structurante et transitions** sur un collaborateur. `T1`/`T2` livrées : les quatre tables de l'import, puis `POST …/people` (création) |
+| Sous-étape en cours | **`T4` — restauration des ressources archivées** autorisées par back-office. `T1`/`T2`/`T3` livrées : les quatre tables de l'import, `POST …/people` (création), puis le changement d'entité qui referme `US002` |
 | Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 

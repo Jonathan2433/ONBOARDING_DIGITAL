@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `637` en usage | `DEC-638` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `638` en usage | `DEC-639` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -993,8 +993,21 @@ SANS cible existante : un DSM ne crée que pour lui-même, un Booster que dans s
 DSM. Le contrat déclare la route dès cette sous-étape, sans module TypeScript propre, aucun écran
 consommateur avant `T14`.
 
-La sous-étape suivante est **`T3`** : modification structurante et transitions (changement
-d'entité, de statut, de rattachement) sur un collaborateur déjà créé.
+**`T3` est faite** (`DEC-638`) : `POST .../people/{appartenance}/changement-d-entite` referme
+`US002` (2/2) — le changement de statut et de rattachement **dans une même entité** était déjà
+servi par le `PATCH` de LOT 5 `T7` ; seul le changement d'entité manquait. `DemandeDAppartenance`
+et `creer_l_appartenance` sont extraites de `T2` et partagées par le nouveau module
+`app/people/transfert.py` : l'ancienne appartenance va jusqu'à `archived` (`active` passe par
+`departed`, `future` y va directement), la nouvelle existe dans l'entité de destination, en UNE
+transaction. Deux arbitrages de Jonathan posés avant tout code — révocation totale des sessions et
+liens magiques (même moteur que le départ), transaction unique — et un troisième trouvé en
+écrivant les tests : la contrainte d'exclusion des périodes d'une personne ne porte aucune clause
+`WHERE`, donc une arrivée `future` annulée (dont la période reste non bornée, LOT 5 `T8`) aurait
+bloqué tout transfert ultérieur ; libérée (`departure_date = arrival_date`) uniquement dans le
+cadre d'un transfert, l'annulation seule restant inchangée.
+
+La sous-étape suivante est **`T4`** : restauration des ressources archivées autorisées par
+back-office (`US008`), qui dépend de `T2`/`T3`.
 
 ---
 

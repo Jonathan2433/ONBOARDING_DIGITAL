@@ -30,6 +30,7 @@ from sqlalchemy.engine import Connection
 from app.configuration.settings import Parametres
 from app.people.creation import (
     CODE_CLIENT_INCOHERENT,
+    DemandeDAppartenance,
     DemandeDeCollaborateur,
     creer_un_collaborateur,
 )
@@ -193,12 +194,14 @@ def _demande(
         first_name="Nouveau",
         last_name="Collaborateur",
         preferred_name=None,
-        arrival_date=arrivee,
-        job_catalog_id=metier,
-        status=statut,
-        client_id=client,
-        dsm_person_id=dsm,
-        circle_id=cercle,
+        appartenance=DemandeDAppartenance(
+            arrival_date=arrivee,
+            job_catalog_id=metier,
+            status=statut,
+            client_id=client,
+            dsm_person_id=dsm,
+            circle_id=cercle,
+        ),
     )
 
 

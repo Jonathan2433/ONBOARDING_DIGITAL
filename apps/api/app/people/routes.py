@@ -59,6 +59,7 @@ from app.people.archivage import archiver_un_profil, restaurer_un_profil
 from app.people.creation import (
     CODE_ACCES_REFUSE,
     MESSAGE_ACCES_REFUSE,
+    DemandeDAppartenance,
     DemandeDeCollaborateur,
     creer_un_collaborateur,
 )
@@ -72,6 +73,7 @@ from app.people.profil import (
     lire_la_fiche,
     lire_la_fiche_archivee,
 )
+from app.people.transfert import changer_d_entite
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
     Filtres,
@@ -126,6 +128,10 @@ GABARIT_COLLECTION: Final = "/entities/{code}/people"
 GABARIT_ARCHIVAGE: Final = "/entities/{code}/people/{appartenance}/archivage"
 GABARIT_RESTAURATION: Final = "/entities/{code}/people/{appartenance}/restauration"
 GABARIT_FICHE_ARCHIVEE: Final = "/entities/{code}/people/{appartenance}/fiche-archivee"
+
+#  Le chemin de `T3`, LOT 9. `code` est l'entite QUITTEE, meme convention que
+#  les trois precedents ; l'entite d'ARRIVEE vient de la demande.
+GABARIT_CHANGEMENT_D_ENTITE: Final = "/entities/{code}/people/{appartenance}/changement-d-entite"
 
 #  Le chemin de `T9`. Un NOM, comme les autres.
 GABARIT_HISTORIQUE: Final = "/entities/{code}/people/{appartenance}/historique"
@@ -295,6 +301,44 @@ class ReponseDeCreationDeCollaborateur(BaseModel):
 
     appartenance: uuid.UUID
     version: int
+
+
+class DemandeDeChangementDEntite(BaseModel):
+    """Changer un collaborateur d'entite — cahier §11.1, §16.3. LOT 9 `T3`.
+
+    **`version` PORTE SUR L'ANCIENNE APPARTENANCE**, celle du chemin — meme
+    convention que `DemandeDeModification` : la version lue sur la fiche, pas
+    sur une ressource qui n'existe pas encore. Les six champs organisationnels
+    sont ceux de la NOUVELLE appartenance, dans `entite_destination` ; aucune
+    valeur n'y est reportee de l'ancienne, meme discipline que `T2`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=1, description="La version lue sur l'ANCIENNE appartenance")
+    entite_destination: str = Field(
+        min_length=1,
+        max_length=LONGUEUR_MAXIMALE_CODE,
+        description="Le `code` de l'entite d'arrivee",
+    )
+    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    statut: SituationProfessionnelle
+    client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="Dans l'entite d'arrivee")
+
+
+class ReponseDeChangementDEntite(BaseModel):
+    """Ce que le transfert a produit, des deux cotes — meme rapport qu'un archivage."""
+
+    nouvelle_appartenance: uuid.UUID
+    version: int
+    etat_precedent: str = Field(description="`active` ou `future`, sur l'ANCIENNE appartenance")
+    sessions_revoquees: int
+    liens_invalides: int
+    relations_closes: dict[str, int]
+    parcours_onboarding_archive: uuid.UUID | None
 
 
 class DemandeDeModification(BaseModel):
@@ -1081,6 +1125,120 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     first_name=demande.prenom,
                     last_name=demande.nom,
                     preferred_name=demande.nom_prefere,
+                    appartenance=DemandeDAppartenance(
+                        arrival_date=demande.date_d_arrivee,
+                        job_catalog_id=demande.metier,
+                        status=demande.statut,
+                        client_id=demande.client,
+                        dsm_person_id=demande.dsm,
+                        circle_id=demande.cercle_principal,
+                    ),
+                ),
+                instant=instant,
+            )
+        return ReponseDeCreationDeCollaborateur(
+            appartenance=cree.appartenance, version=cree.version
+        )
+
+    @routeur.post(
+        GABARIT_CHANGEMENT_D_ENTITE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeChangementDEntite,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : meme grille que la creation (`T2`), evaluee sur "
+                    "L'ENTITE D'ARRIVEE — un DSM qui designe un AUTRE DSM, un Booster "
+                    "hors de son cercle ou qui tente d'assigner un DSM."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite (depart ou arrivee) inconnue ou non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la fiche a change depuis votre lecture. "
+                    "`etat_incompatible` : l'appartenance n'est ni `active` ni `future` — "
+                    "on ne transfere pas un profil deja parti ou archive."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`valeur_refusee` : la biconditionnelle statut/client dans l'entite "
+                    "d'arrivee, ou le DSM designe sans responsabilite DSM active la-bas."
+                )
+            },
+        },
+        summary="Changer un collaborateur d'entite",
+        description=(
+            "Cahier §11.1, §16.3 : « le changement d'entite cloture l'ancienne "
+            "appartenance et les responsabilites incompatibles », operation ATOMIQUE. "
+            "Backlog `MVP-L09-US002` (2/2).<br><br>"
+            "**MEME PERIMETRE QUE LA CREATION (`T2`)**, evalue sur l'entite d'ARRIVEE : "
+            "un DSM ne transfere que vers SON propre perimetre de consultants, un "
+            "Booster que dans SON cercle et sans DSM.<br><br>"
+            "**L'ANCIENNE APPARTENANCE VA JUSQU'A `archived`** — `Active --> Departed "
+            "--> Archived`, ou `Future --> Archived` seul — et TOUTES les sessions et "
+            "liens magiques de la personne sont revoques, meme moteur que le depart "
+            "(arbitrage de Jonathan du 08/10/2026). Une nouvelle fiche d'arrivee devra "
+            "etre completee dans l'entite d'arrivee."
+        ),
+    )
+    def changer_l_entite(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[
+            uuid.UUID, Path(description="L'identifiant d'appartenance, rendu par la fiche")
+        ],
+        demande: DemandeDeChangementDEntite,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeChangementDEntite:
+        """Changer un collaborateur d'entite — cahier §11.1, §16.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            entite_destination = resoudre_une_entite_active(connexion, demande.entite_destination)
+            if entite_source is None or entite_destination is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(
+                connexion, appelant.personne, entite_destination.id, instant
+            )
+            autorise = resoudre_l_autorisation_de_creation(
+                connexion,
+                entite=entite_destination.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                proposition=PropositionDeCreation(
+                    circle_id=demande.cercle_principal,
+                    dsm_person_id=demande.dsm,
+                ),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            transfert = changer_d_entite(
+                connexion,
+                entite_source=entite_source.id,
+                entite_destination=entite_destination.id,
+                cible=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                demande=DemandeDAppartenance(
                     arrival_date=demande.date_d_arrivee,
                     job_catalog_id=demande.metier,
                     status=demande.statut,
@@ -1090,8 +1248,14 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 ),
                 instant=instant,
             )
-        return ReponseDeCreationDeCollaborateur(
-            appartenance=cree.appartenance, version=cree.version
+        return ReponseDeChangementDEntite(
+            nouvelle_appartenance=transfert.nouvelle_appartenance,
+            version=transfert.version,
+            etat_precedent=transfert.etat_precedent,
+            sessions_revoquees=transfert.sessions_revoquees,
+            liens_invalides=transfert.liens_invalides,
+            relations_closes=transfert.relations_closes,
+            parcours_onboarding_archive=transfert.parcours_onboarding_archive,
         )
 
     @routeur.get(
