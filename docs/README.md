@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `635` en usage | `DEC-636` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `636` en usage | `DEC-637` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -973,14 +973,20 @@ LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le 08/10/2026.
 **2 `P1`**, **huit** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
 **seize** sous-étapes. Épic `#234`, jalon `G9`, stories `#235` à `#242`.
 
-La sous-étape suivante est **`T1`** : les quatre tables de l'import — `import_batch`,
-`import_row`, `import_row_issue`, `import_decision` (modèle §19) — sans `async_job` ni
-`outbox_message`, réservées au LOT 11 (import **synchrone**, confirmé par Jonathan). Le schéma
-logique `F01`–`F19` (`DEC-434`, v1.0-initiale) sert de base ; le schéma réel des colonnes reste
-ouvert (`QO-096`/`QO-110`) et ne bloque pas la construction du pipeline (`ECART-005`). `ECART-035`
-(invitations au départ) et `ECART-060` (filtres métiers/clients/DSM) sont explicitement rattachés
-à ce lot par le registre et doivent y être fermés ; `ECART-064` (motif d'intervention) n'en fait
-pas partie, réservé au LOT 10.
+**`T1` est faite** (`DEC-636`) : les quatre tables de l'import — `import_batch`, `import_row`,
+`import_row_issue`, `import_decision` (modèle §19, migration `0024`) — sans `async_job` ni
+`outbox_message`, réservées au LOT 11 (import **synchrone**, confirmé par Jonathan). Un défaut
+trouvé par `make isolation-check` a été corrigé avant commit : `approved_by_person_id` avait été
+posé sans clé étrangère, par un faux parallèle avec les trois colonnes d'auteur de
+`ChampsCommuns` — ce sont elles l'exception, toute colonne d'acteur **nommée** porte une clé
+étrangère réelle vers `person`. Le schéma logique `F01`–`F19` (`DEC-434`, v1.0-initiale) sert de
+base ; le schéma réel des colonnes reste ouvert (`QO-096`/`QO-110`) et ne bloque pas la
+construction du pipeline (`ECART-005`). `ECART-035` (invitations au départ) et `ECART-060`
+(filtres métiers/clients/DSM) sont explicitement rattachés à ce lot par le registre et doivent y
+être fermés ; `ECART-064` (motif d'intervention) n'en fait pas partie, réservé au LOT 10.
+
+La sous-étape suivante est **`T2`** : création d'un collaborateur et de son appartenance depuis le
+back-office (`US002`, 1/2).
 
 ---
 

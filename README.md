@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
 | Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
 | **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
-| Sous-étape en cours | **`T1` — les quatre tables de l'import**, `import_batch`/`import_row`/`import_row_issue`/`import_decision` |
+| Sous-étape en cours | **`T2` — création d'un collaborateur depuis le back-office** (`US002`, 1/2). `T1` livrée : les quatre tables de l'import, migration `0024` |
 | Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
@@ -30,7 +30,7 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **44 tables métier** PostgreSQL, **23 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
+| **48 tables métier** PostgreSQL, **24 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7, 8 et 9 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
