@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `641` en usage | `DEC-642` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `642` en usage | `DEC-643` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1052,9 +1052,31 @@ l'archivage/restauration d'un cercle ou bureau (`T4`) : `ESM`/`ADM-E` dans
 leur entité, `SUPER` partout, `DSM`/`BOOST`/`OFFICE` à tiret (matrice §14).
 Aucune migration : les deux tables existent depuis `T1`.
 
-La sous-étape suivante est **`T7`** : normalisation des e-mails, détection
-des doublons, blocage des lignes sans e-mail, prévisualisation complète
-(`US004`, 2/2).
+**`T7` est faite** (`DEC-642`) : normalisation des e-mails, détection des
+doublons, blocage des lignes sans e-mail (`US004`, 2/2), dans le MÊME appel
+que `T6` (`deposer_un_csv` appelle désormais `analyser_le_lot`). Posé à
+Jonathan avant tout code : le référentiel du LOT 0 (`codes-erreurs-import.md`)
+nomme 68 codes sur 12 domaines — date, métier, mission/client, cercle, DSM,
+responsabilités — et aucune sous-étape du découpage validé ne les nomme
+tous ; arbitrage explicite, `T7` reste à la taille que son titre annonce
+(e-mail et doublons de personne seulement), les autres règles n'étant
+vérifiées qu'à l'import réel (`T9`), en réutilisant celles déjà posées par
+`T2`. Nouveau module `app/imports/analyse.py` : `E-EMAIL-001` à `004`
+(absent, format implausible, domaine refusé, doublon technique dans le
+fichier — `DEC-435`, la première occurrence est retenue), `D-PERSONNE-001`/
+`002` (profil actif ou archivé déjà existant), `D-PERSONNE-003` (homonymie
+nom/prénom dans le même fichier). Nouveau module
+`app/imports/correspondance.py` : le profil de correspondance provisoire
+(`DEC-434`) est repris du jeu d'exemple fictif du LOT 0, `QO-110` restant
+ouverte. Deux défauts trouvés en construisant `T7`, corrigés avant tout code
+de service : le délimiteur de `T6` suivait `csv.Sniffer` au lieu de la règle
+déjà tranchée par `DEC-432` (point-virgule obligatoire, virgule tolérée
+seulement si non ambiguë) — corrigé ; et `import_batch` ne comptait pas les
+lignes `needs_decision`, colonne ajoutée par la migration `0025`.
+
+La sous-étape suivante est **`T8`** : correspondances de clients proposées
+et validation humaine (fusion/alias), `import_decision` (`US005`) — ferme
+`ECART-060` pour les clients.
 
 ---
 
