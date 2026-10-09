@@ -3,18 +3,28 @@
 CE QUE CETTE SUITE PROUVE, ET DANS QUEL ORDRE
 
   1. le lot est pose avec sa bonne empreinte SHA-256 (sur les OCTETS, jamais le
-     texte decode) et transite `uploaded` -> `analyzing` en un seul appel ;
+     texte decode) ;
   2. chaque ligne du CSV devient `import_row.raw_data`, telle quelle, sans
      AUCUNE validation — colonne manquante, colonne en trop, les deux formes
      sont couvertes separement (§7.42 : un decor qui ne produit jamais
      l'absence ne dit rien d'elle) ;
-  3. le delimiteur est detecte structurellement, virgule ET point-virgule —
-     deux decors distincts, jamais un seul suppose representatif ;
+  3. le delimiteur suit `DEC-432` : point-virgule par defaut, virgule
+     TOLEREE seulement en l'absence de point-virgule — et un point-virgule
+     l'emporte meme quand une virgule vit DANS un champ libre (le cas meme
+     que le schema du LOT 0 cite comme motif du choix) ;
   4. les trois refus structurels (fichier vide, encodage invalide, nom de
      fichier vide une fois nettoye) sont chacun apparies a leur cause exacte ;
   5. le nettoyage du nom de fichier traite les DEUX separateurs de chemin ;
   6. les octets reellement deposes dans MinIO sont ceux recus, a l'octet pres
      — jamais le texte redecode, jamais une transformation.
+
+**DEPUIS `T7`, `deposer_un_csv` APPELLE `analyser_le_lot` DANS LE MEME
+APPEL** (voir l'en-tete de `app.imports.depot`) : le lot rendu est donc
+`preview_ready`, pas `analyzing`, et porte les compteurs de `T7`. Ce fichier
+continue de ne prouver QUE les mecanismes de `T6` (checksum, MinIO, fidelite
+de `raw_data`, delimiteur, refus structurels) ; la logique de `T7` elle-meme
+(normalisation, doublons, blocage) est prouvee par
+`test_analyse_import.py`, jamais ici.
 
 Ce fichier ne reteste PAS `exiger_un_role_dans_l_entite` ni
 `resoudre_les_permissions` : des briques generiques, deja prouvees ailleurs,
@@ -150,12 +160,18 @@ def _nettoyer_le_lot(cx: Connection, parametres: Parametres, lot: uuid.UUID) -> 
 
 
 @pytest.mark.integration
-def test_le_depot_calcule_l_empreinte_et_transite_vers_analyzing(
+def test_le_depot_calcule_l_empreinte_et_le_lot_se_previsualise(
     cx: Connection, parametres_de_la_stack: Parametres
 ) -> None:
+    """Checksum et mecanique de depot — la PREVISUALISATION elle-meme est `T7`.
+
+    L'adresse emploie le domaine seme par `T0` (`exalt-company.com`) pour que
+    cette ligne franchisse aussi `T7` sans y introduire de bruit : ce test ne
+    porte PAS sur la logique de `T7`, qui a son propre fichier.
+    """
     entite = _entite(cx, "T1")
     acteur = _personne(cx, "a1")
-    contenu = b"email,prenom\nsoi@exemple.test,Alix\n"
+    contenu = b"email,prenom\nalix.t1@exalt-company.com,Alix\n"
 
     lot = _deposer_ou_sauter(
         cx,
@@ -167,9 +183,10 @@ def test_le_depot_calcule_l_empreinte_et_transite_vers_analyzing(
     )
 
     assert lot.source_checksum_sha256 == hashlib.sha256(contenu).hexdigest()
-    assert lot.state == EtatLotImport.ANALYZING.value
+    assert lot.state == EtatLotImport.PREVIEW_READY.value
     assert lot.total_rows == 1
-    assert lot.version == 2  # 1 a la creation, +1 au UPDATE qui fixe le resultat
+    assert lot.valid_rows == 1
+    assert lot.version == 3  # 1 a la creation, +1 par T6, +1 par T7
 
     ligne = cx.execute(
         text(
@@ -178,11 +195,9 @@ def test_le_depot_calcule_l_empreinte_et_transite_vers_analyzing(
         ),
         {"lot": lot.identifiant},
     ).one()
-    assert ligne.state == "analyzing"
+    assert ligne.state == "preview_ready"
     assert ligne.total_rows == 1
-    #  AUCUNE validation de contenu en T6 : valid_rows reste au defaut du
-    #  modele, jamais calcule ici — c'est T7.
-    assert ligne.valid_rows == 0
+    assert ligne.valid_rows == 1
     assert ligne.source_object_key == f"imports/{entite}/{lot.identifiant}.csv"
     assert ligne.source_filename == "collaborateurs.csv"
 
@@ -297,6 +312,47 @@ def test_le_delimiteur_est_detecte_quel_que_soit_virgule_ou_point_virgule(
     lignes = _lignes_du_lot(cx, lot.identifiant)
 
     assert lignes == [{"email": "soi@exemple.test", "prenom": "Alix"}]
+    _nettoyer_le_lot(cx, parametres_de_la_stack, lot.identifiant)
+
+
+@pytest.mark.integration
+def test_le_point_virgule_l_emporte_sur_une_virgule_a_l_interieur_d_un_champ(
+    cx: Connection, parametres_de_la_stack: Parametres
+) -> None:
+    """`DEC-432` : le point-virgule est OBLIGATOIRE, la virgule n'est tolérée
+    QUE si elle est détectée de façon non ambiguë. Reproduit le cas cité par
+    `schema-csv-collaborateurs.md` §2 lui-même — une présentation libre
+    contenant une virgule non échappée — exactement la forme de la ligne
+    « Delta » du jeu d'exemple fictif du LOT 0.
+
+    Défaut trouvé en construisant `T7` : la première version de ce module
+    (commit de `T6`) confiait ce choix à `csv.Sniffer`, une heuristique de
+    fréquence plutôt que la règle explicite de `DEC-432` — voir l'en-tête de
+    `app.imports.depot`.
+    """
+    entite = _entite(cx, "T11")
+    acteur = _personne(cx, "a11")
+    contenu_texte = (
+        "email;presentation\n"
+        "soi@exemple.test;Profil cumulant plusieurs responsabilites, sans guillemets.\n"
+    )
+
+    lot = _deposer_ou_sauter(
+        cx,
+        parametres_de_la_stack,
+        entite=entite,
+        acteur=acteur,
+        nom="fichier.csv",
+        contenu=contenu_texte.encode(),
+    )
+    lignes = _lignes_du_lot(cx, lot.identifiant)
+
+    assert lignes == [
+        {
+            "email": "soi@exemple.test",
+            "presentation": "Profil cumulant plusieurs responsabilites, sans guillemets.",
+        }
+    ]
     _nettoyer_le_lot(cx, parametres_de_la_stack, lot.identifiant)
 
 

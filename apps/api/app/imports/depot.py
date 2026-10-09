@@ -13,9 +13,9 @@ CE QUE CETTE SOUS-ETAPE SERT, ET DANS QUEL ORDRE — cahier §9.5, points 1 et 2
      table metier (`person`, `client`, `entity_membership`...) n'est touchee.
 
   La normalisation des e-mails, la detection des doublons, le blocage des
-  lignes sans e-mail et la previsualisation complete sont `T7`, `US004` (2/2) —
-  deborder ici serait empieter sur une sous-etape qui n'est pas encore faite
-  (§2, regle n°1).
+  lignes sans e-mail et la previsualisation complete sont `T7`, `US004` (2/2),
+  et vivent dans `app.imports.analyse` — ce module les APPELLE, dans la MEME
+  transaction, mais n'en porte aucune regle (§7.27).
 
 LA PREMIERE ECRITURE MinIO DU PROJET
 
@@ -25,14 +25,19 @@ LA PREMIERE ECRITURE MinIO DU PROJET
   ajoute donc `app.media.objets.deposer_l_objet`, reutilisant la construction
   du client deja faite pour la lecture (meme raison d'etre que ce module).
 
-L'ETAT DU LOT A LA FIN DE CETTE SOUS-ETAPE, ET POURQUOI
+L'ETAT DU LOT A LA FIN DE CET APPEL, ET CE QUI A CHANGE DEPUIS `T6`
 
-  Le diagramme §24.4 donne `Uploaded --> Analyzing --> PreviewReady`. Cette
-  sous-etape sert les DEUX premieres transitions dans le MEME appel — l'import
-  est SYNCHRONE (`DEC-462`) — et s'arrete a `analyzing` : `PreviewReady`
-  suppose la normalisation et la detection de doublons de `T7`, qui n'existent
-  pas encore. Le nom de la sous-etape, « zone d'analyse sans ecriture
-  metier », EST litteralement l'etat `analyzing`.
+  Le diagramme §24.4 donne `Uploaded --> Analyzing --> PreviewReady`. `T6`
+  servait les deux PREMIERES transitions et s'arretait a `analyzing` — ce
+  module le fait encore, structurellement : il pose le lot, depose le CSV,
+  insere les lignes brutes. **`T7` AJOUTE LA TROISIEME TRANSITION DANS LE
+  MEME APPEL** : `deposer_un_csv` appelle desormais
+  `app.imports.analyse.analyser_le_lot`, qui normalise, detecte les
+  doublons, et fait passer le lot `analyzing -> preview_ready` — toujours
+  dans la MEME transaction (import synchrone, `DEC-462`). Les tests de `T6`
+  qui lisaient `state == "analyzing"` en sortie ont ete mis a jour en
+  consequence : ce n'est pas une sous-etape qui en casse une autre, c'est la
+  MEME fonction qui complete le pipeline qu'elle avait commence.
 
 POURQUOI LE LOT EST CREE AVANT LE DEPOT MinIO, ET NON L'INVERSE
 
@@ -49,15 +54,35 @@ POURQUOI LE LOT EST CREE AVANT LE DEPOT MinIO, ET NON L'INVERSE
   « analyse complete SANS ECRITURE », et un fichier qui ne s'analyse meme pas
   ne justifie aucune des deux.
 
-LE SCHEMA REEL DES COLONNES RESTE OUVERT, ET CE MODULE NE L'INVENTE PAS
+LE SEPARATEUR N'EST PAS DEVINE : `DEC-432` LE TRANCHE DEJA, ET `T6` NE L'AVAIT
+PAS LU
 
-  `QO-096`/`QO-110` (delimiteur, en-tetes, nomenclature) sont ouvertes et NE
-  BLOQUENT PAS la construction du pipeline (fiche §2.1). Le delimiteur est
-  donc DETECTE structurellement (`csv.Sniffer`, parmi virgule/point-virgule/
-  tabulation — les trois formes qu'un tableur produit reellement), jamais
-  suppose fixe : une heuristique MECANIQUE, pas une regle metier. Si la
-  detection echoue (une seule colonne, par exemple), le repli est la virgule
-  — un choix REVERSIBLE qui ne grave rien au schema.
+  `QO-096`/`QO-110` (schema definitif, nomenclature des en-tetes) restent
+  ouvertes et ne bloquent pas la construction du pipeline (fiche §2.1) — mais
+  le SEPARATEUR DE CHAMPS, lui, est deja decide : `DEC-432`
+  (`docs/architecture/donnees/schema-csv-collaborateurs.md` §2) dit
+  « point-virgule OBLIGATOIRE ; la virgule est acceptee SI ELLE EST DETECTEE
+  DE FACON NON AMBIGUE ». Motif explicite du document : « les noms et les
+  presentations courtes contiennent des virgules, pas des points-virgules »
+  — exactement le cas du jeu d'exemple du LOT 0, dont une ligne porte une
+  presentation libre contenant une virgule NON ECHAPPEE.
+
+  **DEFAUT TROUVE EN CONSTRUISANT `T7`, CORRIGE ICI AVANT TOUT CODE DE `T7`** :
+  la premiere version de ce module (commit de `T6`) employait `csv.Sniffer`
+  sur virgule/point-virgule/tabulation avec repli sur la virgule — une
+  heuristique de FREQUENCE, jamais la regle EXPLICITE de `DEC-432`. Elle
+  n'avait encore produit aucun defaut observable (le point-virgule reste
+  largement majoritaire dans tout decor de test ecrit jusqu'ici), mais rien
+  ne le garantissait structurellement. `_detecter_le_delimiteur` applique
+  desormais la regle a la lettre : point-virgule par defaut, virgule
+  SEULEMENT si aucun point-virgule n'apparait dans l'echantillon — et la
+  tabulation, jamais nommee par `DEC-432`, est retiree des candidats.
+
+  Le separateur RETENU n'est, a ce stade, PAS persiste dans `import_batch` —
+  `criteres-qualite-import.md` §4 l'exige « aux cotes de l'empreinte SHA-256 »
+  dans LE RAPPORT D'IMPORT, qui est construit par `T10` : le consigner
+  relevait donc de cette sous-etape-la, nommee explicitement ici pour ne pas
+  perdre le residu.
 
   Chaque ligne devient un dictionnaire {en-tete: valeur}, SANS aucune
   validation de contenu : une valeur manquante vaut `None`, une colonne en
@@ -81,6 +106,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.imports.analyse import analyser_le_lot
 from app.imports.modeles import EtatLotImport
 from app.media.objets import deposer_l_objet
 from app.shared.errors import ErreurApplicative
@@ -102,21 +128,30 @@ MESSAGE_NOM_DE_FICHIER_INVALIDE: Final = "Le nom du fichier depose est vide une 
 #  par defaut pour `restkey`, qui n'est pas une cle JSON valide.
 CLE_COLONNES_EXCEDENTAIRES: Final = "_colonnes_excedentaires"
 
-#  Delimiteurs CANDIDATS pour la detection structurelle — §9.5, "QO-096 ne
-#  bloque pas le pipeline". Trois formes qu'un tableur produit reellement,
-#  jamais une liste complete inventee.
-_DELIMITEURS_CANDIDATS: Final = ",;\t"
+#  `DEC-432` : le separateur OBLIGATOIRE. Voir l'en-tete du module.
+_DELIMITEUR_PAR_DEFAUT: Final = ";"
+#  `DEC-432` : « la virgule est acceptee si elle est detectee de facon non
+#  ambigue » — jamais la tabulation, que la decision ne nomme pas.
+_DELIMITEUR_TOLERE: Final = ","
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class LotDepose:
-    """Ce que le depot d'un CSV a produit — modele §19.1."""
+    """Ce que le depot ET l'analyse d'un CSV ont produit — modele §19.1.
+
+    **`state` VAUT DESORMAIS `preview_ready`**, pas `analyzing` : voir
+    l'en-tete du module, `T7` complete le pipeline dans le MEME appel.
+    """
 
     identifiant: uuid.UUID
     source_filename: str
     source_checksum_sha256: str
     state: str
     total_rows: int
+    valid_rows: int
+    warning_rows: int
+    needs_decision_rows: int
+    rejected_rows: int
     version: int
 
 
@@ -168,16 +203,20 @@ def _nettoyer_le_nom_de_fichier(nom: str) -> str:
     return nom.replace("\\", "/").rsplit("/", maxsplit=1)[-1].strip()
 
 
-def _detecter_le_dialecte(texte: str) -> type[csv.Dialect] | csv.Dialect:
-    """Detecter le delimiteur STRUCTURELLEMENT — jamais une regle metier.
+def _detecter_le_delimiteur(texte: str) -> str:
+    """Le separateur du fichier — `DEC-432`, PAS une heuristique de frequence.
 
-    Le repli est la virgule, un choix REVERSIBLE : `QO-096`/`QO-110` restent
-    ouvertes, et rien ici ne grave un format au schema.
+    Point-virgule par defaut ; virgule UNIQUEMENT si aucun point-virgule
+    n'apparait dans l'echantillon (« detectee de facon non ambigue »). Voir
+    l'en-tete du module : la premiere version de `T6` confiait ce choix a
+    `csv.Sniffer`, qui ne porte pas cette regle.
     """
-    try:
-        return csv.Sniffer().sniff(texte[:8192], delimiters=_DELIMITEURS_CANDIDATS)
-    except csv.Error:
-        return csv.excel
+    echantillon = texte[:8192]
+    if _DELIMITEUR_PAR_DEFAUT in echantillon:
+        return _DELIMITEUR_PAR_DEFAUT
+    if _DELIMITEUR_TOLERE in echantillon:
+        return _DELIMITEUR_TOLERE
+    return _DELIMITEUR_PAR_DEFAUT
 
 
 def _analyser_les_lignes(texte: str) -> list[dict[str, object]]:
@@ -187,10 +226,10 @@ def _analyser_les_lignes(texte: str) -> list[dict[str, object]]:
     produit : `restval=None` pour une valeur manquante, `restkey=` (jamais
     `None`) pour les valeurs excedentaires, en liste.
     """
-    dialecte = _detecter_le_dialecte(texte)
+    delimiteur = _detecter_le_delimiteur(texte)
     lecteur = csv.DictReader(
         io.StringIO(texte),
-        dialect=dialecte,
+        delimiter=delimiteur,
         restkey=CLE_COLONNES_EXCEDENTAIRES,
         restval=None,
     )
@@ -278,7 +317,7 @@ def deposer_un_csv(
             },
         )
 
-    version = connexion.execute(
+    connexion.execute(
         _FIXER_LE_RESULTAT_DE_L_ANALYSE,
         {
             "cle": cle,
@@ -289,13 +328,23 @@ def deposer_un_csv(
             "lot": lot,
             "entite": entite,
         },
-    ).scalar_one()
+    )
+
+    #  **`T7` DANS LA MEME TRANSACTION** : normalisation, doublons,
+    #  `analyzing -> preview_ready` — voir l'en-tete du module.
+    previsualisation = analyser_le_lot(
+        connexion, entite=entite, lot=lot, acteur=acteur, instant=instant
+    )
 
     return LotDepose(
         identifiant=lot,
         source_filename=nom_nettoye,
         source_checksum_sha256=empreinte,
-        state=EtatLotImport.ANALYZING.value,
-        total_rows=len(lignes),
-        version=version,
+        state=previsualisation.state,
+        total_rows=previsualisation.total_rows,
+        valid_rows=previsualisation.valid_rows,
+        warning_rows=previsualisation.warning_rows,
+        needs_decision_rows=previsualisation.needs_decision_rows,
+        rejected_rows=previsualisation.rejected_rows,
+        version=previsualisation.version,
     )

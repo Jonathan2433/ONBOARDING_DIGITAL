@@ -1,4 +1,4 @@
-"""`POST /entities/{code}/imports` — LOT 9, sous-etape `T6`, `MVP-L09-US004` (1/2).
+"""`POST /entities/{code}/imports` — LOT 9, sous-etapes `T6`/`T7`, `MVP-L09-US004`.
 
 QUI DEPOSE, ET POURQUOI LA GARDE EST VERIFIEE DEUX FOIS
 
@@ -63,11 +63,16 @@ DESCRIPTION_401: Final = (
 
 
 class ReponseDeDepotDImport(BaseModel):
-    """Ce que le depot d'un CSV a produit — modele §19.1, cahier §9.5 (1 et 2).
+    """Ce que le depot ET la previsualisation d'un CSV ont produit — modele §19.1.
 
-    `etat` vaut `analyzing` : cette route sert les DEUX premieres transitions
-    du diagramme §24.4 dans le MEME appel (import synchrone, `DEC-462`), et
-    s'arrete la — `preview_ready` suppose la normalisation de `T7`.
+    `etat` vaut `preview_ready` : cette route sert les TROIS premieres
+    transitions du diagramme §24.4 dans le MEME appel (import synchrone,
+    `DEC-462`) — depot (`T6`), puis normalisation des e-mails et detection
+    des doublons (`T7`). Les quatre compteurs se reconcilient avec
+    `total_lignes` (`criteres-qualite-import.md` §4), MAIS seulement pour ce
+    que `T7` verifie effectivement : `lignes_valides` ne garantit pas qu'une
+    ligne franchira les regles non encore previsualisees (date, metier,
+    cercle, DSM...), verifiees seulement a l'import reel (`T9`).
     """
 
     identifiant: uuid.UUID
@@ -75,6 +80,10 @@ class ReponseDeDepotDImport(BaseModel):
     empreinte_sha256: str
     etat: str
     total_lignes: int
+    lignes_valides: int
+    lignes_avec_avertissement: int
+    lignes_a_confirmer: int
+    lignes_rejetees: int
     version: int
 
 
@@ -85,6 +94,10 @@ def _lot_rendu(lot: LotDepose) -> ReponseDeDepotDImport:
         empreinte_sha256=lot.source_checksum_sha256,
         etat=lot.state,
         total_lignes=lot.total_rows,
+        lignes_valides=lot.valid_rows,
+        lignes_avec_avertissement=lot.warning_rows,
+        lignes_a_confirmer=lot.needs_decision_rows,
+        lignes_rejetees=lot.rejected_rows,
         version=lot.version,
     )
 
@@ -142,15 +155,19 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 )
             },
         },
-        summary="Deposer un CSV et l'analyser structurellement",
+        summary="Deposer un CSV et produire sa previsualisation",
         description=(
             "Matrice §14 « Charger un CSV | ESM Entite | ADM-E Entite | SUPER Global » — "
-            "`DSM`, `BOOST` et `OFFICE` a tiret. Backlog `MVP-L09-US004` (1/2).<br><br>"
+            "`DSM`, `BOOST` et `OFFICE` a tiret. Backlog `MVP-L09-US004`.<br><br>"
             "Depose le CSV dans MinIO (cle jamais fournie par le client), calcule son "
-            "empreinte SHA-256, pose un `import_batch` puis analyse CHAQUE ligne "
-            "STRUCTURELLEMENT dans `import_row.raw_data` — aucune ecriture metier, aucune "
-            "validation de contenu : c'est `T7` qui normalise, detecte les doublons et "
-            "bloque les lignes sans e-mail."
+            "empreinte SHA-256, pose un `import_batch`, analyse CHAQUE ligne "
+            "STRUCTURELLEMENT dans `import_row.raw_data` (`T6`), PUIS normalise l'e-mail "
+            "(champ logique `F01`), detecte les doublons (technique dans le fichier, "
+            "profil actif ou archive existant, homonymie) et bloque les lignes sans "
+            "e-mail (`T7`). Aucune ecriture metier : ni `person`, ni `client`, ni "
+            "`entity_membership`. Les autres regles du schema (date, metier, cercle, "
+            "DSM...) ne sont PAS previsualisees ici — verifiees seulement a l'import "
+            "reel, non encore construit."
         ),
     )
     def deposer_un_import(

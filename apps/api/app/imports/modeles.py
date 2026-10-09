@@ -126,6 +126,13 @@ class ImportBatch(ChampsCommuns, RessourceLocale, Base):
     total_rows: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     valid_rows: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     warning_rows: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    #  Ajoutee par `T7` (LOT 9) : la PREMIERE sous-etape a produire des lignes
+    #  `needs_decision` (modele §19.2). Sans cette colonne, `total_rows`
+    #  depasserait la somme des trois autres compteurs sans qu'aucune colonne
+    #  n'explique l'ecart — voir l'en-tete de la migration `0025`.
+    needs_decision_rows: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     rejected_rows: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     approved_by_person_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
 
@@ -134,7 +141,8 @@ class ImportBatch(ChampsCommuns, RessourceLocale, Base):
         ForeignKeyConstraint(["approved_by_person_id"], ["person.id"]),
         contrainte_enumeration("state", EtatLotImport, "state_valide"),
         CheckConstraint(
-            "total_rows >= 0 AND valid_rows >= 0 AND warning_rows >= 0 AND rejected_rows >= 0",
+            "total_rows >= 0 AND valid_rows >= 0 AND warning_rows >= 0 "
+            "AND needs_decision_rows >= 0 AND rejected_rows >= 0",
             name="comptes_non_negatifs",
         ),
         Index("ix_import_batch_entity_state", "entity_id", "state"),
