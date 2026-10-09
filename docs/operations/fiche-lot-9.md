@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`
-**Sous-étape suivante :** `T6` — dépôt sécurisé du CSV, empreinte SHA-256, zone d'analyse
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`
+**Sous-étape suivante :** `T7` — normalisation des e-mails, détection des doublons, prévisualisation complète
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -108,7 +108,7 @@ ne commence.
 | `T3` ✅ | Modification structurante et transitions (changement d'entité, de statut, de rattachement) | `US002` (2/2) | **6 tests** ; `POST .../people/{appartenance}/changement-d-entite` ; le statut/rattachement DANS une entité était déjà servi par le `PATCH` de LOT 5 `T7` — seul le changement d'entité manquait ; révocation totale et transaction unique arbitrées par Jonathan, période d'une arrivée annulée libérée au transfert — `DEC-638` |
 | `T4` ✅ | Restauration des ressources archivées autorisées par back-office | `US008` | **7 tests** ; `restaurer_un_profil` (LOT 5 `T8`) couvrait déjà le collaborateur — `ARB-DROIT-003` nomme aussi cercle et bureau, qui n'avaient AUCUN mécanisme d'archivage/restauration ; quatre routes nouvelles (`.../circles/{id}/{archivage,restauration}`, `.../offices/{id}/{archivage,restauration}`), arbitrées par Jonathan — `DEC-639` |
 | `T5` ✅ | Tableau de bord administratif — agrégat en lecture | `US001` | **10 tests** ; `GET .../administration/tableau-de-bord` ; cahier §10.8 nomme SIX grandeurs (pas cinq) ; aucune grille « tableau de bord » dans la matrice — réutilise le §15.1 ; « profil incomplet » arbitré par Jonathan (= `relations_a_redonner` du LOT 5) — `DEC-640` |
-| `T6` | Dépôt sécurisé du CSV, empreinte SHA-256, `import_batch`, zone d'analyse sans écriture métier | `US004` (1/2) | |
+| `T6` ✅ | Dépôt sécurisé du CSV, empreinte SHA-256, `import_batch`, zone d'analyse sans écriture métier | `US004` (1/2) | **20 tests** (15 d'intégration, 5 unitaires purs) ; `POST /entities/{code}/imports`, grille identique à `T4` (`ESM`/`ADM-E` Entité, `SUPER` Global) ; première écriture MinIO du projet ; délimiteur détecté structurellement, aucune validation de contenu — `DEC-641` |
 | `T7` | Normalisation des e-mails, détection des doublons, blocage des lignes sans e-mail, prévisualisation complète | `US004` (2/2) | |
 | `T8` | Correspondances de clients proposées et validation humaine (fusion/alias), `import_decision` | `US005` | ferme `ECART-060` pour les clients |
 | `T9` | Import transactionnel des lignes valides, mises à jour par e-mail, confirmation explicite pour réactiver un profil archivé | `US006` (1/2) | |

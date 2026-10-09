@@ -41,6 +41,7 @@ from app.content.routes import routeur_contenus
 from app.entities.routes import routeur_entites
 from app.events.routes import routeur_evenements
 from app.health import routeur as routeur_sante
+from app.imports.routes import routeur_imports
 from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
@@ -167,6 +168,10 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 9, T5 : le tableau de bord administratif. Monté après l'accueil,
     #  dont il réutilise la résolution d'entité et le gabarit de 404.
     routeur_v1.include_router(routeur_administration(config))
+    #  LOT 9, T6 : le dépôt sécurisé d'un CSV et sa zone d'analyse sans
+    #  écriture métier. Monté après les entités, dont il réutilise la
+    #  résolution et le gabarit de 404.
+    routeur_v1.include_router(routeur_imports(config))
     application.include_router(routeur_v1)
 
     return application

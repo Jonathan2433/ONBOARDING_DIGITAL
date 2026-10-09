@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `640` en usage | `DEC-641` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `641` en usage | `DEC-642` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1035,8 +1035,26 @@ lignes rejetées), lu contre deux citations concordantes du cahier plutôt que
 contre l'abrégé de la fiche, limité à cinq (`DSM`/`BOOST` : liste vide,
 visible seulement d'`ESM`/`ADM-E`/`SUPER`). Aucune migration.
 
-La sous-étape suivante est **`T6`** : dépôt sécurisé du CSV, empreinte
-SHA-256, `import_batch`, zone d'analyse sans écriture métier (`US004`, 1/2).
+**`T6` est faite** (`DEC-641`) : dépôt sécurisé du CSV et zone d'analyse sans
+écriture métier (`US004`, 1/2). Cahier §9.5 : « chargement du fichier » puis
+« analyse complète sans écriture » sont servis dans le MÊME appel synchrone
+(`DEC-462`), et s'arrêtent à l'état `analyzing` du diagramme §24.4 —
+`preview_ready` suppose la normalisation de `T7`. Première écriture MinIO du
+projet (`app.media.objets.deposer_l_objet`, réutilisant la construction du
+client déjà posée pour la lecture, LOT 5 `T5`) : le CSV est déposé sous une
+clé jamais fournie par le client, son empreinte SHA-256 calculée sur les
+octets reçus, un `import_batch` posé puis chaque ligne versée telle quelle
+dans `import_row.raw_data` — aucune validation de contenu, aucune table
+métier touchée. Le délimiteur (virgule/point-virgule/tabulation) est détecté
+structurellement (`csv.Sniffer`), jamais supposé : `QO-096`/`QO-110` restent
+ouvertes et ne bloquent pas le pipeline. Grille de rôles identique à celle de
+l'archivage/restauration d'un cercle ou bureau (`T4`) : `ESM`/`ADM-E` dans
+leur entité, `SUPER` partout, `DSM`/`BOOST`/`OFFICE` à tiret (matrice §14).
+Aucune migration : les deux tables existent depuis `T1`.
+
+La sous-étape suivante est **`T7`** : normalisation des e-mails, détection
+des doublons, blocage des lignes sans e-mail, prévisualisation complète
+(`US004`, 2/2).
 
 ---
 

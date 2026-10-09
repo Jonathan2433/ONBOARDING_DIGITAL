@@ -1907,6 +1907,35 @@
       ]
     },
     {
+      "cle": "depotDUnImport",
+      "chemin": "/api/v1/entities/{code}/imports",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeDepotDImport",
+      "role": [
+        "Deposer un CSV et l'analyser structurellement -- LOT 9, T6,",
+        "MVP-L09-US004 (1/2).",
+        "Matrice 14 'Charger un CSV' : ESM Entite, ADM-E Entite, SUPER",
+        "Global -- DSM, BOOST et OFFICE a tiret, meme grille que",
+        "l'archivage/restauration d'un cercle ou d'un bureau (T4).",
+        "Cahier 9.5, points 1 et 2 : chargement du fichier PUIS analyse",
+        "complete SANS ecriture metier, dans le MEME appel (import",
+        "synchrone, DEC-462). Depot dans MinIO sous une cle jamais fournie",
+        "par le client (meme discipline que les medias, 16.1), empreinte",
+        "SHA-256 calculee sur les octets recus, import_batch pose a l'etat",
+        "'uploaded' puis 'analyzing' -- 'preview_ready' est T7.",
+        "Chaque ligne du CSV devient un dictionnaire {en-tete: valeur}",
+        "dans import_row.raw_data, SANS AUCUNE validation de contenu : ni",
+        "normalisation d'e-mail, ni detection de doublon, ni blocage des",
+        "lignes sans e-mail (T7). Le delimiteur (virgule/point-virgule/",
+        "tabulation) est DETECTE structurellement (csv.Sniffer), jamais",
+        "suppose -- QO-096/QO-110 restent ouvertes et ne bloquent pas le",
+        "pipeline.",
+        "422 pour un fichier vide, un encodage non UTF-8, ou un nom de",
+        "fichier vide une fois nettoye de tout chemin."
+      ]
+    },
+    {
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",
