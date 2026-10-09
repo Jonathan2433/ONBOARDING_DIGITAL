@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`
-**Sous-étape suivante :** `T8` — correspondances de clients proposées et validation humaine
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`
+**Sous-étape suivante :** `T9` — import transactionnel des lignes valides, mises à jour par e-mail
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -110,7 +110,7 @@ ne commence.
 | `T5` ✅ | Tableau de bord administratif — agrégat en lecture | `US001` | **10 tests** ; `GET .../administration/tableau-de-bord` ; cahier §10.8 nomme SIX grandeurs (pas cinq) ; aucune grille « tableau de bord » dans la matrice — réutilise le §15.1 ; « profil incomplet » arbitré par Jonathan (= `relations_a_redonner` du LOT 5) — `DEC-640` |
 | `T6` ✅ | Dépôt sécurisé du CSV, empreinte SHA-256, `import_batch`, zone d'analyse sans écriture métier | `US004` (1/2) | **20 tests** (15 d'intégration, 5 unitaires purs) ; `POST /entities/{code}/imports`, grille identique à `T4` (`ESM`/`ADM-E` Entité, `SUPER` Global) ; première écriture MinIO du projet ; délimiteur détecté structurellement, aucune validation de contenu — `DEC-641` |
 | `T7` ✅ | Normalisation des e-mails, détection des doublons, blocage des lignes sans e-mail | `US004` (2/2) | **14 tests** (12 d'intégration, 2 unitaires purs) ; `app/imports/analyse.py` + `app/imports/correspondance.py` ; arbitrage de Jonathan — périmètre borné à l'e-mail et aux doublons de personne, les autres règles (date, métier, cercle, DSM...) vérifiées seulement à l'import réel (`T9`) ; deux défauts corrigés (délimiteur `DEC-432`, compteur `needs_decision_rows`, migration `0025`) — `DEC-642` |
-| `T8` | Correspondances de clients proposées et validation humaine (fusion/alias), `import_decision` | `US005` | ferme `ECART-060` pour les clients |
+| `T8` ✅ | Correspondances de clients proposées et validation humaine (fusion/alias), `import_decision` | `US005` | **14 tests**, tous d'intégration ; `app/imports/clients.py` + `app/imports/decisions.py` ; arbitrage de Jonathan — aucune détection automatique de ressemblance (`D-CLIENT-001` jamais produit), `GET .../clients` ferme `ECART-060` pour les clients — `DEC-643` |
 | `T9` | Import transactionnel des lignes valides, mises à jour par e-mail, confirmation explicite pour réactiver un profil archivé | `US006` (1/2) | |
 | `T10` | Rapport (créations/mises à jour/avertissements/rejets), rejeu des lignes rejetées, conservation temporaire maîtrisée | `US006` (2/2) | `QO-100` posée mais non bloquante ici |
 | `T11` | Opérations de masse contrôlées (prévisualisation d'impact, idempotence, erreurs partielles explicites) | `US003` | `P1`, dépend de `T2`/`T3` |
