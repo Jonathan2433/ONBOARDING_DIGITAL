@@ -32,10 +32,11 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, Query, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Path, Query, Request, status
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.engine import Connection
 
-from app.auth.dependances import exiger_une_session
+from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
     LONGUEUR_MAXIMALE_CODE,
@@ -44,6 +45,12 @@ from app.entities.routes import (
 from app.entities.services import resoudre_une_entite_active
 from app.organization.bureaux import BureauDetaille, lire_le_bureau
 from app.organization.cercles import CercleDetaille, MembreDuCercle, lire_le_cercle
+from app.organization.cycle_de_vie import (
+    archiver_un_bureau,
+    archiver_un_cercle,
+    restaurer_un_bureau,
+    restaurer_un_cercle,
+)
 from app.organization.framework import (
     CarteDeBureau,
     CarteDeCercle,
@@ -51,6 +58,13 @@ from app.organization.framework import (
     TitulaireFramework,
     lire_la_page_framework,
 )
+from app.organization.perimetre import ROLES_DE_CYCLE_DE_VIE_FRAMEWORK
+from app.permissions.dependances import (
+    CODE_ROLE_REFUSE,
+    MESSAGE_ROLE_REFUSE,
+    exiger_un_role_dans_l_entite,
+)
+from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
@@ -221,6 +235,52 @@ class ReponseDuBureau(BaseModel):
     nombre_de_responsables: int
     publie: bool
     chemin_detaille: str
+
+
+class DemandeDeTransitionOrganisation(BaseModel):
+    """Archiver ou restaurer un cercle/bureau — la version, et rien d'autre.
+
+    **AUCUN MOTIF**, et le §18.1 en donne la raison : il enumere cinq cas ou un
+    motif est obligatoire, et ni l'archivage ni la restauration d'un cercle ou
+    d'un bureau n'y figurent — meme lecture que `T7` du LOT 6 pour le contenu
+    editorial (`ECART-064`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(
+        ge=1,
+        description=(
+            "La version lue sur la synthese Framework ou la page detaillee. Cahier "
+            "§18.4 : une version obsolete rend 409 sans ecrasement silencieux."
+        ),
+    )
+
+
+class ReponseDArchivageDUnCercle(BaseModel):
+    """Ce que l'archivage d'un cercle a produit — matrice §10.2, §18."""
+
+    version: int
+    archive_le: dt.datetime
+
+
+class ReponseDeRestaurationDUnCercle(BaseModel):
+    """Ce que la restauration d'un cercle a produit — `archived_at` redevient NULL."""
+
+    version: int
+
+
+class ReponseDArchivageDUnBureau(BaseModel):
+    """Ce que l'archivage d'un bureau a produit — matrice §10.3, §18."""
+
+    version: int
+    archive_le: dt.datetime
+
+
+class ReponseDeRestaurationDUnBureau(BaseModel):
+    """Ce que la restauration d'un bureau a produit — `archived_at` redevient NULL."""
+
+    version: int
 
 
 def _membre(membre: MembreDuCercle) -> MembreRendu:
@@ -557,5 +617,295 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 )
 
         return _bureau_detaille(bureau)
+
+    # ========================================================================
+    #
+    #  ARCHIVAGE ET RESTAURATION D'UN CERCLE OU D'UN BUREAU — LOT 9, `T4`,
+    #  `MVP-L09-US008`. Voir l'en-tete de `app.organization.cycle_de_vie` : ce
+    #  que ces quatre routes ferment, et depuis quand `T3` du LOT 6 l'annonçait.
+    #
+    # ========================================================================
+    garde_du_cycle_de_vie_framework = exiger_un_role_dans_l_entite(
+        parametres, ROLES_DE_CYCLE_DE_VIE_FRAMEWORK
+    )
+
+    def _resoudre_l_entite_et_verifier_le_role(
+        connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
+    ) -> uuid.UUID:
+        """L'entite active, ET les roles reverifies DANS cette transaction.
+
+        **LA GARDE A RESOLU LES SIENS DANS SA PROPRE CONNEXION, A SON PROPRE
+        INSTANT** : s'y fier ferait agir sur ce qui a ete autorise ailleurs,
+        exactement le motif de `_resoudre_le_cycle` (`app.people.routes`) et de
+        `_agir` (`app.content.routes`).
+        """
+        entite = resoudre_une_entite_active(connexion, code)
+        if entite is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+        if not ROLES_DE_CYCLE_DE_VIE_FRAMEWORK & set(permissions.roles):
+            raise ErreurApplicative(
+                code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
+            )
+        return entite.id
+
+    @routeur.post(
+        "/entities/{code}/circles/{circle_id}/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivageDUnCercle,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §10.2 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : version perimee, cercle inconnu, d'une autre "
+                    "entite, ou deja archive — une seule forme pour les quatre, §2.5. "
+                    "`membres_actifs` : au moins un membre, principal ou secondaire, est "
+                    "encore actif — §10.2, « si aucun membre actif »."
+                )
+            },
+        },
+        summary="Archiver un cercle",
+        description=(
+            "Matrice §10.2 « Archiver un cercle | Entite, si aucun membre actif » et "
+            "§18. Backlog `MVP-L09-US008`.<br><br>"
+            "**ESM, administrateur d'entite et super-administrateur seulement** — "
+            "`DSM`, `BOOST` et `OFFICE` sont a tiret sur cette ligne, qui porte sur la "
+            "STRUCTURE du cercle et non sur son contenu.<br><br>"
+            "**LA CONDITION « AUCUN MEMBRE ACTIF » NE DEPEND D'AUCUN ROLE** : elle "
+            "refuse meme le super-administrateur, exactement comme la borne des "
+            "responsables d'un bureau publie (`DEC-583`)."
+        ),
+    )
+    def archiver_un_cercle_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        circle_id: Annotated[uuid.UUID, Path(description="L'identifiant du cercle")],
+        demande: DemandeDeTransitionOrganisation,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDArchivageDUnCercle:
+        """Archiver un cercle — matrice §10.2 et §18."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            archive = archiver_un_cercle(
+                connexion,
+                entite=entite,
+                cercle=circle_id,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+        return ReponseDArchivageDUnCercle(version=archive.version, archive_le=archive.archive_le)
+
+    @routeur.post(
+        "/entities/{code}/circles/{circle_id}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestaurationDUnCercle,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §18 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : version perimee, cercle inconnu, d'une autre "
+                    "entite, ou pas archive — une seule forme pour les quatre, §2.5. "
+                    "`code_deja_pris` : un autre cercle de cette entite a repris ce code "
+                    "pendant l'archivage — le restaurer le mettrait en double, §25.1."
+                )
+            },
+        },
+        summary="Restaurer un cercle archive",
+        description=(
+            "Matrice §18 « Restaurer un cercle ou bureau | Entite, restauration "
+            "fonctionnelle ». Backlog `MVP-L09-US008`, `ARB-DROIT-003` qui nomme la "
+            "condition du mot « Conditionnel » du §10.2 pour l'ESM : un cercle a "
+            "l'unite, par cette route, EST une restauration fonctionnelle."
+        ),
+    )
+    def restaurer_un_cercle_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        circle_id: Annotated[uuid.UUID, Path(description="L'identifiant du cercle")],
+        demande: DemandeDeTransitionOrganisation,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDeRestaurationDUnCercle:
+        """Restaurer un cercle archive — matrice §18, `ARB-DROIT-003`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            restaure = restaurer_un_cercle(
+                connexion,
+                entite=entite,
+                cercle=circle_id,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+        return ReponseDeRestaurationDUnCercle(version=restaure.version)
+
+    @routeur.post(
+        "/entities/{code}/offices/{office_id}/archivage",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDArchivageDUnBureau,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §10.3 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : version perimee, bureau inconnu, d'une autre "
+                    "entite, ou deja archive — une seule forme pour les quatre, §2.5."
+                )
+            },
+        },
+        summary="Archiver un bureau",
+        description=(
+            "Matrice §10.3 « Archiver un bureau | Entite » et §18. Backlog "
+            "`MVP-L09-US008`.<br><br>"
+            "**ESM, administrateur d'entite et super-administrateur seulement.**<br><br>"
+            "**AUCUNE CONDITION DE RESSOURCE**, a la difference d'un cercle : le §10.3 "
+            "ne porte aucune ligne « si aucun responsable actif »."
+        ),
+    )
+    def archiver_un_bureau_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        office_id: Annotated[uuid.UUID, Path(description="L'identifiant du bureau")],
+        demande: DemandeDeTransitionOrganisation,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDArchivageDUnBureau:
+        """Archiver un bureau — matrice §10.3 et §18."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            archive = archiver_un_bureau(
+                connexion,
+                entite=entite,
+                bureau=office_id,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+        return ReponseDArchivageDUnBureau(version=archive.version, archive_le=archive.archive_le)
+
+    @routeur.post(
+        "/entities/{code}/offices/{office_id}/restauration",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRestaurationDUnBureau,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §18 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : version perimee, bureau inconnu, d'une autre "
+                    "entite, ou pas archive — une seule forme pour les quatre, §2.5. "
+                    "`code_deja_pris` : un autre bureau de cette entite a repris ce code "
+                    "pendant l'archivage — le restaurer le mettrait en double, §25.1."
+                )
+            },
+        },
+        summary="Restaurer un bureau archive",
+        description=(
+            "Matrice §18 « Restaurer un cercle ou bureau | Entite, restauration "
+            "fonctionnelle ». Backlog `MVP-L09-US008`, `ARB-DROIT-003` qui nomme la "
+            "condition du mot « Conditionnel » du §10.3 pour l'ESM : un bureau a "
+            "l'unite, par cette route, EST une restauration fonctionnelle."
+        ),
+    )
+    def restaurer_un_bureau_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        office_id: Annotated[uuid.UUID, Path(description="L'identifiant du bureau")],
+        demande: DemandeDeTransitionOrganisation,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDeRestaurationDUnBureau:
+        """Restaurer un bureau archive — matrice §18, `ARB-DROIT-003`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            restaure = restaurer_un_bureau(
+                connexion,
+                entite=entite,
+                bureau=office_id,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                instant=instant,
+            )
+        return ReponseDeRestaurationDUnBureau(version=restaure.version)
 
     return routeur

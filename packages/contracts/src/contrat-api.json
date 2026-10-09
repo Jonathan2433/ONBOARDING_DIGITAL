@@ -525,6 +525,65 @@
       ]
     },
     {
+      "cle": "archivageDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDUnCercle",
+      "role": [
+        "Archiver un cercle -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 10.2 'Archiver un cercle | Entite, si aucun membre actif' et 18.",
+        "ESM, administrateur d'entite et super-administrateur seulement.",
+        "LA CONDITION 'AUCUN MEMBRE ACTIF' NE DEPEND D'AUCUN ROLE : elle refuse",
+        "meme le super-administrateur -- une interdiction liee a la ressource",
+        "prevaut sur le cumul des roles (23.2)."
+      ]
+    },
+    {
+      "cle": "restaurationDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDUnCercle",
+      "role": [
+        "Restaurer un cercle archive -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 18 'Restaurer un cercle ou bureau | Entite, restauration",
+        "fonctionnelle'. ARB-DROIT-003 nomme la condition du mot 'Conditionnel'",
+        "du 10.2 pour l'ESM : un cercle a l'unite, par cette route, EST une",
+        "restauration fonctionnelle.",
+        "FERME UN TROU OUVERT DEPUIS T3 DU LOT 6 : circle/office portent",
+        "archived_at depuis le LOT 2 sans aucun ecrivain avant T4."
+      ]
+    },
+    {
+      "cle": "archivageDUnBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDUnBureau",
+      "role": [
+        "Archiver un bureau -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 10.3 'Archiver un bureau | Entite' et 18.",
+        "ESM, administrateur d'entite et super-administrateur seulement.",
+        "AUCUNE CONDITION DE RESSOURCE, a la difference d'un cercle : le 10.3",
+        "ne porte aucune ligne 'si aucun responsable actif'."
+      ]
+    },
+    {
+      "cle": "restaurationDUnBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDUnBureau",
+      "role": [
+        "Restaurer un bureau archive -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 18 'Restaurer un cercle ou bureau | Entite, restauration",
+        "fonctionnelle'. ARB-DROIT-003 nomme la condition du mot 'Conditionnel'",
+        "du 10.3 pour l'ESM : un bureau a l'unite, par cette route, EST une",
+        "restauration fonctionnelle."
+      ]
+    },
+    {
       "cle": "pageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{type_de_page}/{slug}",
       "methode": "get",
