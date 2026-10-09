@@ -1878,6 +1878,35 @@
       ]
     },
     {
+      "cle": "tableauDeBordAdministratif",
+      "chemin": "/api/v1/entities/{code}/administration/tableau-de-bord",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDuTableauDeBord",
+      "role": [
+        "Consulter le tableau de bord administratif -- LOT 9, T5, MVP-L09-US001.",
+        "Cahier 10.8 : six grandeurs -- profils actifs, arrivees futures,",
+        "onboardings actifs, taches en retard, profils incomplets, derniers",
+        "imports en echec. Matrice 15.1 : DSM Consultants, ESM Entite, BOOST",
+        "Cercle, OFFICE --, ADM-E Entite, SUPER Global -- meme grille que",
+        "'Consulter les compteurs'/'profils incomplets'/'arrivees a 30 jours'.",
+        "REUTILISE lister_les_taches_en_retard (LOT 7, T12) pour le compte de",
+        "retard, dans SA PROPRE portee (pas de Soi ici, la vue est",
+        "administrative, jamais personnelle).",
+        "'Profil incomplet' -- arbitrage de Jonathan du 09/10/2026 : un profil",
+        "ACTIF auquel il manque au moins une de ses quatre relations",
+        "courantes (metier, cercle principal, DSM, statut) -- la meme notion",
+        "que relations_a_redonner apres une restauration (LOT 5, T8), jamais",
+        "inventee. Le client n'entre pas dans le calcul, conditionnel au statut.",
+        "'Derniers imports' montre les lots RECENTS AVEC UN PROBLEME",
+        "(failed, ou au moins une ligne rejetee) -- le cahier le dit deux fois",
+        "('derniers problemes d'import CSV', 'dernieres erreurs d'import'),",
+        "jamais la liste complete des imports reussis. Visible seulement",
+        "d'ESM/ADM-E/SUPER (fiche LOT 9 'Permissions CSV') -- liste vide pour",
+        "DSM/BOOST, jamais un 403 partiel sur un agregat qui rend 200."
+      ]
+    },
+    {
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",
