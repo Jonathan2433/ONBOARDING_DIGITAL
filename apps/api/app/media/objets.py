@@ -1,4 +1,4 @@
-"""Lire un objet MinIO — LOT 5, sous-etape `T5`.
+"""Lire ET deposer un objet MinIO — LOT 5 `T5` pour la lecture, LOT 9 `T6` pour le depot.
 
 CE MODULE EXISTE POUR NE PAS DUPLIQUER LA CONSTRUCTION DU CLIENT
 
@@ -57,6 +57,14 @@ class ObjetIntrouvable(RuntimeError):
     """
 
 
+class ObjetNonDepose(RuntimeError):
+    """Le depot a echoue — MinIO ne repond pas, ou refuse l'ecriture.
+
+    **MEME DISCIPLINE QUE `ObjetIntrouvable`** : une seule exception pour les
+    deux causes, le journal portant la vraie cause pour l'exploitant.
+    """
+
+
 def client_s3(parametres: Parametres) -> object:
     """Le client S3 de lecture, construit avec les reglages du depot."""
     return boto3.client(
@@ -88,3 +96,27 @@ def lire_l_objet(parametres: Parametres, cle: str) -> bytes:
         message = f"objet illisible : {type(erreur).__name__}"
         raise ObjetIntrouvable(message) from erreur
     return corps
+
+
+def deposer_l_objet(parametres: Parametres, cle: str, contenu: bytes) -> None:
+    """Deposer des octets dans le bucket — LA PREMIERE ECRITURE MinIO DU PROJET.
+
+    **CE MODULE N'AVAIT JAMAIS ECRIT, SEULEMENT LU, JUSQU'AU LOT 9 `T6`.**
+    Mesure avant d'ecrire une ligne : zero occurrence de `put_object` hors des
+    tests, dans tout le depot — chaque media du jeu de donnees ou des decors
+    de test est pose directement par `boto3`, jamais par l'API elle-meme.
+    `T6` sert le depot securise d'un CSV (cahier §19.1) et en a besoin pour de
+    vrai, la premiere fois qu'une route ecrit dans le bucket.
+
+    **LE CLIENT EST RECONSTRUIT PAR `client_s3`, JAMAIS UN SECOND**, pour la
+    meme raison que la lecture : une seconde construction divergerait au
+    premier reglage change, silencieusement.
+    """
+    client = client_s3(parametres)
+    try:
+        client.put_object(  # type: ignore[attr-defined]
+            Bucket=parametres.MINIO_BUCKET, Key=cle, Body=contenu
+        )
+    except (ClientError, BotoCoreError) as erreur:
+        message = f"depot impossible : {type(erreur).__name__}"
+        raise ObjetNonDepose(message) from erreur

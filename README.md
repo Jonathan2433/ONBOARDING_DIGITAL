@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
 | Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
 | **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
-| Sous-étape en cours | **`T6` — dépôt sécurisé du CSV**, empreinte SHA-256, zone d'analyse. `T1`/`T2`/`T3`/`T4`/`T5` livrées : les quatre tables de l'import, `POST …/people` (création), le changement d'entité qui referme `US002`, l'archivage et la restauration d'un cercle ou d'un bureau, puis le tableau de bord administratif |
+| Sous-étape en cours | **`T7` — normalisation des e-mails, détection des doublons, blocage des lignes sans e-mail, prévisualisation complète**. `T1`/`T2`/`T3`/`T4`/`T5`/`T6` livrées : les quatre tables de l'import, `POST …/people` (création), le changement d'entité qui referme `US002`, l'archivage et la restauration d'un cercle ou d'un bureau, le tableau de bord administratif, puis le dépôt sécurisé d'un CSV et sa zone d'analyse sans écriture métier |
 | Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
