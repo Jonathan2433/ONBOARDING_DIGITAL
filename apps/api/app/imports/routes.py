@@ -23,10 +23,10 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Final, Literal
 
 from fastapi import APIRouter, Depends, File, Path, Request, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
 from app.auth.dependances import SessionEtablie, proteger_du_csrf
@@ -36,6 +36,16 @@ from app.entities.routes import (
     MESSAGE_ENTITE_INTROUVABLE,
 )
 from app.entities.services import resoudre_une_entite_active
+from app.imports.clients import lister_les_clients
+from app.imports.decisions import (
+    CODE_CIBLE_INCONNUE,
+    CODE_CIBLE_MANQUANTE,
+    CODE_LIGNE_INTROUVABLE,
+    CODE_PORTEE_DSM_REFUSEE,
+    CODE_TYPE_INCOHERENT,
+    ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS,
+    enregistrer_une_decision,
+)
 from app.imports.depot import (
     CODE_ENCODAGE_INVALIDE,
     CODE_FICHIER_VIDE,
@@ -49,7 +59,7 @@ from app.permissions.dependances import (
     MESSAGE_ROLE_REFUSE,
     exiger_un_role_dans_l_entite,
 )
-from app.permissions.services import resoudre_les_permissions
+from app.permissions.services import RoleDeLaMatrice, resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 
@@ -102,11 +112,63 @@ def _lot_rendu(lot: LotDepose) -> ReponseDeDepotDImport:
     )
 
 
+class ClientRendu(BaseModel):
+    """Un client du référentiel global, vu depuis une entité — ferme `ECART-060`."""
+
+    identifiant: uuid.UUID
+    nom_canonique: str
+    nom_affiche: str
+    actif_localement: bool
+
+
+class ReponseDesClients(BaseModel):
+    """Le référentiel global des clients actifs — `GET .../clients`."""
+
+    clients: list[ClientRendu]
+
+
+#  Les CINQ categories, LITTERALEMENT — modele §19.4, `TypeDeDecisionImport`.
+#  Jamais `TYPES_DE_DECISION_IMPORT` directement : `Literal` exige des
+#  valeurs STATIQUES, un tuple de module n'en est pas une pour le typeur.
+TypeDeDecisionLitteral = Literal[
+    "person_merge",
+    "profile_reactivation",
+    "client_alias_creation",
+    "canonical_client_selection",
+    "voluntary_rejection",
+]
+
+
+class DemandeDeDecision(BaseModel):
+    """Enregistrer une décision humaine — modèle §19.4.
+
+    **SEULS `client_alias_creation` ET `canonical_client_selection` SONT
+    EXERCÉS PAR `T8`** : voir l'en-tête de `app.imports.decisions`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision_type: TypeDeDecisionLitteral
+    target_person_id: uuid.UUID | None = None
+    target_client_id: uuid.UUID | None = None
+    reason: str | None = Field(default=None, max_length=2000)
+
+
+class ReponseDeDecision(BaseModel):
+    """Ce que l'enregistrement d'une décision a produit."""
+
+    identifiant: uuid.UUID
+    decision_type: str
+
+
 def routeur_imports(parametres: Parametres) -> APIRouter:
     """Routeur du depot d'import CSV, monte sous le prefixe versionne."""
     routeur = APIRouter(tags=["imports"])
 
     garde_du_depot_d_import = exiger_un_role_dans_l_entite(parametres, ROLES_DE_DEPOT_DE_L_IMPORT)
+    garde_de_validation_des_rapprochements = exiger_un_role_dans_l_entite(
+        parametres, ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS
+    )
 
     def _resoudre_l_entite_et_verifier_le_role(
         connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
@@ -130,6 +192,29 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
             )
         return entite.id
+
+    def _resoudre_l_entite_et_les_roles_de_validation(
+        connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
+    ) -> tuple[uuid.UUID, frozenset[RoleDeLaMatrice]]:
+        """L'entite active ET les roles de VALIDATION, reverifies ici — meme motif.
+
+        Rend les roles (pas seulement un booleen) : `enregistrer_une_decision`
+        resserre ENCORE pour le DSM seul, selon la ligne visee — §14.
+        """
+        entite = resoudre_une_entite_active(connexion, code)
+        if entite is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+        roles = ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS & set(permissions.roles)
+        if not roles:
+            raise ErreurApplicative(
+                code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
+            )
+        return entite.id, frozenset(roles)
 
     @routeur.post(
         "/entities/{code}/imports",
@@ -204,5 +289,141 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 instant=instant,
             )
         return _lot_rendu(lot)
+
+    @routeur.get(
+        "/entities/{code}/clients",
+        dependencies=[Depends(garde_de_validation_des_rapprochements)],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesClients,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : aucun des quatre roles du §14 dans cette entite."
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+        },
+        summary="Le référentiel global des clients, vu depuis une entité",
+        description=(
+            "Ferme `ECART-060` pour les clients : le trombinoscope (LOT 5, `T3`) "
+            "accepte déjà un filtre `client` sans qu'aucune route n'en serve la "
+            "liste. `actif_localement` dit si une affectation à cette entité peut "
+            "s'y rattacher directement, ou si elle exigerait une activation "
+            "locale (`W-CLIENT-001`). Matrice §14 « Valider les rapprochements "
+            "clients » : `DSM`/`ESM`/`ADM-E`/`SUPER`, `BOOST`/`OFFICE` à tiret."
+        ),
+    )
+    def lister_les_clients_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+    ) -> ReponseDesClients:
+        """Le référentiel global des clients actifs — ferme `ECART-060`."""
+        with moteur(parametres).connect() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            clients = lister_les_clients(connexion, entite=entite.id)
+        return ReponseDesClients(
+            clients=[
+                ClientRendu(
+                    identifiant=c.identifiant,
+                    nom_canonique=c.nom_canonique,
+                    nom_affiche=c.nom_affiche,
+                    actif_localement=c.actif_localement,
+                )
+                for c in clients
+            ]
+        )
+
+    @routeur.post(
+        "/entities/{code}/imports/{lot}/rows/{ligne}/decisions",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeDecision,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    f"`{CODE_ROLE_REFUSE}` : aucun des quatre roles du §14 dans cette entite. "
+                    f"`{CODE_PORTEE_DSM_REFUSEE}` : un DSM sans role plus large dont le `F16` "
+                    "de la ligne ne le designe pas — hors de son perimetre."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Code d'entite inconnu, entite non active, lot ou ligne inconnus. "
+                    f"`{CODE_LIGNE_INTROUVABLE}` : la ligne n'attend aucune decision. "
+                    f"`{CODE_CIBLE_INCONNUE}` : la personne ou le client cible n'existe pas."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    f"`{CODE_TYPE_INCOHERENT}` : ce type de décision ne correspond à aucun "
+                    "problème actuellement signalé sur cette ligne."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": f"`{CODE_CIBLE_MANQUANTE}` : ce type de décision exige une cible."
+            },
+        },
+        summary="Enregistrer une décision humaine sur une ligne à confirmer",
+        description=(
+            "Matrice §14 « Valider les rapprochements clients » et modèle §19.4. "
+            "Backlog `MVP-L09-US005`.<br><br>"
+            "**N'IMPORTE RIEN** : `import_row.state` reste `needs_decision` — "
+            "l'import réel (`T9`) relira cette décision. Seule exception : "
+            "`client_alias_creation` crée immédiatement la ligne `client_alias` "
+            "correspondante (modèle §7.3, `validated_by_person_id` déjà requis).<br><br>"
+            "**Seuls `client_alias_creation` et `canonical_client_selection` sont "
+            "exercés par `T8`** — les trois autres types existent structurellement "
+            "pour `T7` (`D-PERSONNE-001`/`002`) et un usage futur."
+        ),
+    )
+    def enregistrer_une_decision_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
+        ligne: Annotated[uuid.UUID, Path(description="L'identifiant de la ligne")],
+        demande: DemandeDeDecision,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_de_validation_des_rapprochements),  # noqa: B008
+    ) -> ReponseDeDecision:
+        """Enregistrer une décision humaine — matrice §14, modèle §19.4."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_les_roles_de_validation(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            decision = enregistrer_une_decision(
+                connexion,
+                entite=entite,
+                lot=lot,
+                ligne=ligne,
+                acteur=appelant.personne,
+                roles=roles,
+                type_de_decision=demande.decision_type,
+                personne_cible=demande.target_person_id,
+                client_cible=demande.target_client_id,
+                motif=demande.reason,
+                instant=instant,
+            )
+        return ReponseDeDecision(
+            identifiant=decision.identifiant, decision_type=decision.decision_type
+        )
 
     return routeur

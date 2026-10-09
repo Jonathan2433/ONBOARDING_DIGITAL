@@ -1,6 +1,16 @@
 """Normaliser les e-mails, detecter les doublons, bloquer les lignes sans e-mail.
 
-LOT 9, sous-etape `T7`, story `MVP-L09-US004` (2/2).
+LOT 9, sous-etapes `T7` (`MVP-L09-US004`, 2/2) et `T8` (`MVP-L09-US005`).
+
+`T8` AJOUTE LE CHAMP `F13` (CLIENT), DANS LA MEME FONCTION
+
+  `W-CLIENT-001` (client global pas encore active localement) et
+  `D-CLIENT-002` (client inconnu du referentiel) rejoignent les problemes
+  deja detectes par `T7`, selon la MEME priorite stricte. La logique de
+  rapprochement elle-meme vit dans `app.imports.clients` — ce module
+  l'appelle, il ne la duplique pas (§7.27). Voir son en-tete : AUCUNE
+  ressemblance n'est detectee automatiquement (arbitrage de Jonathan),
+  `D-CLIENT-001` n'est donc jamais produit ici.
 
 LE PERIMETRE DE CETTE SOUS-ETAPE, ARBITRE PAR JONATHAN AVANT TOUT CODE
 
@@ -76,6 +86,16 @@ from typing import Final
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.clients import normaliser_nom_client
+from app.imports.clients import (
+    CODE_CLIENT_INCONNU,
+    CODE_CLIENT_NON_ACTIVE_LOCALEMENT,
+    MESSAGE_CLIENT_INCONNU,
+    MESSAGE_CLIENT_NON_ACTIVE_LOCALEMENT,
+    RESOLUTION_CLIENT_INCONNU,
+    RESOLUTION_CLIENT_NON_ACTIVE_LOCALEMENT,
+    resoudre_les_clients,
+)
 from app.imports.correspondance import valeur_logique
 from app.imports.modeles import EtatLigneImport, EtatLotImport
 from app.people.modeles import normaliser_email
@@ -93,6 +113,9 @@ CODE_EMAIL_DOUBLON_FICHIER: Final = "E-EMAIL-004"
 CODE_PERSONNE_PROFIL_ACTIF: Final = "D-PERSONNE-001"
 CODE_PERSONNE_PROFIL_ARCHIVE: Final = "D-PERSONNE-002"
 CODE_PERSONNE_HOMONYME: Final = "D-PERSONNE-003"
+#  `CODE_CLIENT_NON_ACTIVE_LOCALEMENT`/`CODE_CLIENT_INCONNU` viennent de
+#  `app.imports.clients` — ce module n'y ajoute QUE leur niveau et leurs
+#  textes, jamais une seconde definition (§7.27).
 
 #  Messages et resolutions REPRIS TELS QUELS de `codes-erreurs-import.md`,
 #  §3.1 et §5 — jamais reformules, pour que le document et le code ne
@@ -129,6 +152,14 @@ _TEXTES: Final[dict[str, tuple[str, str]]] = {
         "Une autre personne porte les mêmes nom et prénom, avec une adresse différente.",
         "Confirmer qu'il s'agit de deux personnes distinctes, ou corriger.",
     ),
+    CODE_CLIENT_NON_ACTIVE_LOCALEMENT: (
+        MESSAGE_CLIENT_NON_ACTIVE_LOCALEMENT,
+        RESOLUTION_CLIENT_NON_ACTIVE_LOCALEMENT,
+    ),
+    CODE_CLIENT_INCONNU: (
+        MESSAGE_CLIENT_INCONNU,
+        RESOLUTION_CLIENT_INCONNU,
+    ),
 }
 
 _NIVEAU_DU_CODE: Final[dict[str, str]] = {
@@ -139,6 +170,8 @@ _NIVEAU_DU_CODE: Final[dict[str, str]] = {
     CODE_PERSONNE_PROFIL_ACTIF: NIVEAU_DECISION,
     CODE_PERSONNE_PROFIL_ARCHIVE: NIVEAU_DECISION,
     CODE_PERSONNE_HOMONYME: NIVEAU_DECISION,
+    CODE_CLIENT_NON_ACTIVE_LOCALEMENT: NIVEAU_AVERTISSEMENT,
+    CODE_CLIENT_INCONNU: NIVEAU_DECISION,
 }
 
 #  Priorite STRICTE d'un niveau vers l'etat de ligne du modele §19.2 — la
@@ -411,7 +444,36 @@ def analyser_le_lot(
             for identifiant in valides:
                 problemes[identifiant].append(Probleme(CODE_PERSONNE_HOMONYME, None))
 
-    #  5. Ecriture — une ligne a la fois (meme idiome que
+    #  5. W-CLIENT-001/D-CLIENT-002 (`T8`, `app.imports.clients`) — UNE SEULE
+    #     paire de requetes pour tout le lot. Aucune ressemblance detectee
+    #     (arbitrage de Jonathan) : tout ce qui n'est ni un nom canonique ni
+    #     un alias deja valide devient `D-CLIENT-002`.
+    noms_clients: dict[uuid.UUID, str | None] = {}
+    for ligne in lignes:
+        brut_client = valeur_logique(ligne.raw_data, "F13")
+        noms_clients[ligne.identifiant] = (
+            normaliser_nom_client(brut_client) if brut_client is not None else None
+        )
+    candidats_clients = sorted({n for n in noms_clients.values() if n is not None})
+    clients_resolus = resoudre_les_clients(
+        connexion, entite=entite, noms_normalises=candidats_clients
+    )
+    clients_retenus: dict[uuid.UUID, uuid.UUID] = {}
+    for ligne in lignes:
+        nom_normalise = noms_clients.get(ligne.identifiant)
+        if nom_normalise is None:
+            continue
+        resolu = clients_resolus.get(nom_normalise)
+        if resolu is None or resolu.client_id is None:
+            problemes[ligne.identifiant].append(Probleme(CODE_CLIENT_INCONNU, "F13"))
+            continue
+        clients_retenus[ligne.identifiant] = resolu.client_id
+        if not resolu.actif_localement:
+            problemes[ligne.identifiant].append(
+                Probleme(CODE_CLIENT_NON_ACTIVE_LOCALEMENT, "F13", str(resolu.client_id))
+            )
+
+    #  6. Ecriture — une ligne a la fois (meme idiome que
     #     `app.content.ecriture`), l'etat derive des problemes collectes.
     comptes = {
         EtatLigneImport.VALID.value: 0,
@@ -438,15 +500,21 @@ def analyser_le_lot(
                     "resolution": resolution,
                 },
             )
-        donnees_normalisees = (
-            {"F01": emails[ligne.identifiant]} if emails.get(ligne.identifiant) else None
-        )
+        champs_normalises: dict[str, str] = {}
+        email_normalise = emails.get(ligne.identifiant)
+        if email_normalise:
+            champs_normalises["F01"] = email_normalise
+        if ligne.identifiant in clients_retenus:
+            champs_normalises["F13"] = str(clients_retenus[ligne.identifiant])
+        #  Le dictionnaire VIDE devient `None` — meme contrat que `T7` : une
+        #  ligne sans rien a normaliser rend `null`, jamais `{}` (§7.0,
+        #  quatrieme proposition : les deux ne disent pas la meme chose).
         connexion.execute(
             _FIXER_LA_LIGNE,
             {
                 "ligne": ligne.identifiant,
                 "etat": etat,
-                "donnees_normalisees": json.dumps(donnees_normalisees),
+                "donnees_normalisees": json.dumps(champs_normalises or None),
                 "codes": json.dumps([p.code for p in liste]),
                 "instant": instant,
             },

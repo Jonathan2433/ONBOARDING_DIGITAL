@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `642` en usage | `DEC-643` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `643` en usage | `DEC-644` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1074,9 +1074,35 @@ déjà tranchée par `DEC-432` (point-virgule obligatoire, virgule tolérée
 seulement si non ambiguë) — corrigé ; et `import_batch` ne comptait pas les
 lignes `needs_decision`, colonne ajoutée par la migration `0025`.
 
-La sous-étape suivante est **`T8`** : correspondances de clients proposées
-et validation humaine (fusion/alias), `import_decision` (`US005`) — ferme
-`ECART-060` pour les clients.
+**`T8` est faite** (`DEC-643`) : rapprochement du client (`F13`) et
+enregistrement d'une décision humaine, dans le même appel que `T6`/`T7`
+(`US005`), ferme `ECART-060` pour les clients. Posé à Jonathan avant tout
+code : le référentiel nomme une « ressemblance sans correspondance exacte »
+(`D-CLIENT-001`), mais aucun document ne dit comment la reconnaître et
+aucun outil de recherche approximative n'est installé (`pg_trgm`/
+`unaccent`, prévus pour le LOT 5, jamais posés) — aucune détection
+automatique n'est construite : tout ce qui n'est pas une correspondance
+exacte (directe, ou via un alias déjà validé par un humain, `client_alias`
+du LOT 2, jamais consommé avant `T8`) devient « client inconnu »
+(`D-CLIENT-002`), et `D-CLIENT-001` reste un code déclaré mais jamais
+produit — un humain le recherche et le choisit via
+`GET /entities/{code}/clients`, qui ferme `ECART-060` en listant aussi les
+clients pas encore activés localement. Nouveau module
+`app/imports/clients.py` : priorité stricte alias local à l'entité, puis
+alias global, puis nom canonique, une seule paire de requêtes pour tout le
+lot. Nouveau module `app/imports/decisions.py` :
+`POST .../imports/{lot}/rows/{ligne}/decisions` enregistre une décision
+(`import_decision`), générique sur les cinq catégories du modèle §19.4
+(réutilisable pour les codes `D-PERSONNE-*` de `T7`, sans mécanisme de
+résolution jusqu'ici), mais seuls les deux types « client » sont exercés et
+testés par `T8`. N'importe rien sur `import_row.state`, laissé à `T9` —
+seule exception, `client_alias_creation` crée immédiatement la ligne
+`client_alias`. Matrice §14 : `DSM`/`ESM`/`ADM-E`/`SUPER`, un DSM sans rôle
+plus large limité aux lignes où `F16` le désigne lui-même.
+
+La sous-étape suivante est **`T9`** : import transactionnel des lignes
+valides, mises à jour par e-mail, confirmation explicite pour réactiver un
+profil archivé (`US006`, 1/2).
 
 ---
 

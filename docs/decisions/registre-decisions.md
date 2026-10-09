@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 9 octobre 2026 — décision `DEC-642`, réalisation de `T7` du LOT 9
+**Dernière mise à jour :** 9 octobre 2026 — décision `DEC-643`, réalisation de `T8` du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -147,6 +147,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 9 `DEC-640`, sous-étape `T5`** | 1 | **Soumise le 09/10/2026** |
 | **Réalisation du LOT 9 `DEC-641`, sous-étape `T6`** | 1 | **Soumise le 09/10/2026** |
 | **Réalisation du LOT 9 `DEC-642`, sous-étape `T7`** | 1 | **Soumise le 09/10/2026** |
+| **Réalisation du LOT 9 `DEC-643`, sous-étape `T8`** | 1 | **Soumise le 09/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -158,7 +159,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **310** | |
+| **Total** | **311** | |
 
 ---
 
@@ -919,7 +920,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-642` | **`T7` du LOT 9 complète `POST .../imports` dans le MÊME appel : normalisation de l'e-mail, détection des doublons, blocage des lignes sans e-mail — cahier §9.5 (point 3), `codes-erreurs-import.md`, `MVP-L09-US004` (2/2).** Posé à Jonathan AVANT tout code : le référentiel du LOT 0 nomme 68 codes sur 12 domaines (date, métier, mission/client, cercle, DSM, responsabilités…), et rien dans le découpage validé du lot ne nomme de sous-étape pour ces AUTRES domaines — arbitrage explicite : `T7` reste à la taille que son titre annonce, les autres règles n'étant vérifiées qu'à l'import réel (`T9`), en réutilisant celles déjà posées par `T2` (`app.people.creation`). Nouveau module `app/imports/analyse.py` : `E-EMAIL-001` (absent, bloquant), `E-EMAIL-002` (format implausible — MÊME règle que la contrainte `email_normalise_plausible` déjà posée en base, jamais une regex plus stricte qui rejetterait en prévisualisation ce que l'écriture accepterait, §7.37), `E-EMAIL-003` (domaine refusé — copie PROPRE de la requête `allowed_email_domain` déjà posée par `app.auth.services`, jamais importée, §7.27), `E-EMAIL-004` (doublon technique DANS LE FICHIER, `DEC-435` : la PREMIÈRE occurrence est retenue), `D-PERSONNE-001`/`D-PERSONNE-002` (profil actif ou archivé déjà existant, UNE SEULE requête `= ANY(:emails)` pour tout le lot, jamais une par ligne), `D-PERSONNE-003` (homonymie EXACTE nom/prénom entre deux lignes du MÊME fichier, e-mails distincts — vérifiée uniquement dans le fichier, jamais contre la base entière, résidu nommé). Nouveau module `app/imports/correspondance.py` : le « profil de correspondance provisoire » du schéma CSV (`DEC-434`) est repris TEL QUEL depuis le jeu d'exemple fictif du LOT 0 — la seule nomenclature non normative mais déjà officiellement produite, `QO-110` restant ouverte. **DÉFAUT TROUVÉ EN CONSTRUISANT `T7`, CORRIGÉ AVANT TOUT CODE DE SERVICE** : `T6` confiait la détection du délimiteur à `csv.Sniffer` (virgule/point-virgule/tabulation, repli virgule), une heuristique de fréquence jamais lue contre `DEC-432` — qui tranche déjà : point-virgule obligatoire, virgule tolérée SEULEMENT si détectée sans ambiguïté, aucune tabulation. `_detecter_le_delimiteur` applique désormais la règle à la lettre. Une MIGRATION corrige un second défaut trouvé au même moment : `import_batch` portait quatre compteurs calqués sur la réconciliation POST-import (`total/valid/warning/rejected_rows`), mais `import_row.state` compte SIX valeurs et `T7` est la PREMIÈRE sous-étape à produire des lignes `needs_decision` — `needs_decision_rows` est ajoutée (migration `0025`), dans la MÊME contrainte `comptes_non_negatifs`. L'état d'une ligne suit une priorité stricte E > D > W > valide sur les SEULS problèmes que `T7` détecte effectivement — une ligne `valid` ici ne garantit pas qu'elle franchira les règles non construites de `T9`. | Zéro régression : `pytest` racine 1 647 collectés (+14, dont 12 d'intégration et 2 unitaires purs), 74 échecs environnementaux identiques (liste de fichiers comparée, inchangée) ; 794 Vitest inchangé ; `make isolation-check` inchangé — 35 tables locales, 29 clés composites ; `make migrations-check` vert (tête `0025`, colonnes/contraintes identiques des deux côtés) ; `uv run mypy` racine vert, 221 fichiers ; `make lint`, `make format-check`, `make docs-check`, `make sources-check`, `make audit` tous verts. Contrat inchangé (même route que `T6`, réponse étendue de quatre compteurs). Aucun défaut dans le code livré après correction des deux points trouvés avant tout commit. | Soumise le 09/10/2026 |
 
-**Prochain identifiant libre : `DEC-643`.**
+| `DEC-643` | **`T8` du LOT 9 rapproche le client du CSV (`F13`) et sert l'enregistrement d'une décision humaine — cahier §12.3, `codes-erreurs-import.md` §1.2/§5, modèle §19.4, `MVP-L09-US005`, ferme `ECART-060` pour les clients.** Nouveau module `app/imports/clients.py` : `W-CLIENT-001` (client global pas encore activé localement) et `D-CLIENT-002` (client inconnu) rejoignent les problèmes de `T7` ; priorité STRICTE alias LOCAL à l'entité, puis alias GLOBAL, puis nom canonique — une seule paire de requêtes pour tout le lot, jamais une par ligne. **ARBITRAGE EXPLICITE DE JONATHAN AVANT TOUT CODE : AUCUNE DÉTECTION AUTOMATIQUE DE RESSEMBLANCE.** Le référentiel nomme quatre situations dont une « ressemblance sans correspondance exacte » (`D-CLIENT-001`), mais aucun document ne dit comment la reconnaître (algorithme, seuil), et aucun outil de recherche approximative n'est installé (`pg_trgm`/`unaccent` prévus pour le LOT 5, jamais posés, mesuré). Inventer un seuil ou une extension PostgreSQL pour cette seule sous-étape aurait été exactement ce que le §6.5 interdit : tout ce qui n'est pas une correspondance exacte — directe ou via un alias déjà validé par un humain (`client_alias`, LOT 2, jamais consommé avant `T8`) — devient `D-CLIENT-002`, et c'est un humain qui recherche et choisit via `GET .../clients`, qui ferme `ECART-060` en listant AUSSI les clients pas encore activés localement (sans quoi ils resteraient introuvables). `D-CLIENT-001` reste donc un code DÉCLARÉ mais JAMAIS PRODUIT, plutôt que simulé par une heuristique inventée. Nouveau module `app/imports/decisions.py` : `POST .../imports/{lot}/rows/{ligne}/decisions` enregistre une décision humaine (`import_decision`), GÉNÉRIQUE sur les cinq catégories du modèle §19.4 — `T7` avait produit `D-PERSONNE-001`/`002` sans aucun mécanisme pour les résoudre, et une route limitée aux seuls types « client » aurait dupliqué la même mécanique pour un gain nul — mais SEULS `client_alias_creation` et `canonical_client_selection` sont exercés et testés par `T8`, les trois autres existant structurellement pour un usage futur. **N'IMPORTE RIEN** : `import_row.state` reste `needs_decision` après l'appel — l'import réel (`T9`) relira les décisions enregistrées. Seule exception, structurelle : `client_alias_creation` crée IMMÉDIATEMENT la ligne `client_alias` (`validated_by_person_id`/`validated_at` déjà `NOT NULL` depuis le LOT 2 — une ligne n'y vit QUE validée), et `normalized_data['F13']` est mis à jour dans les deux cas « client » pour refléter la décision prise. Matrice §14 « Valider les rapprochements clients » : `DSM` Consultants, `ESM`/`ADM-E` Entité, `SUPER` Global — `BOOST`/`OFFICE` à tiret, À LA DIFFÉRENCE de la ligne voisine « Prévisualiser et corriger les correspondances » qui admet `BOOST`. La garde de route admet les quatre rôles ; le SERVICE resserre pour le DSM seul : sans rôle plus large, un DSM ne décide que sur une ligne dont le `F16` (e-mail du DSM, lu DIRECTEMENT dans le fichier — aucun profil n'existe encore pour la relier autrement) le désigne lui-même. | Zéro régression : `pytest` racine 1 661 collectés (+14, tous d'intégration), 74 échecs environnementaux identiques (liste de fichiers comparée, inchangée) ; 794 Vitest inchangé ; `make isolation-check` inchangé — 35 tables locales, 29 clés composites, aucune table nouvelle ; `make migrations-check` vert, aucune migration (`client`/`entity_client`/`client_alias`/`import_decision` existent depuis les LOTS 2 et 9 `T1`) ; `uv run mypy` racine vert, 224 fichiers ; `make lint`, `make format-check`, `make docs-check`, `make sources-check`, `make audit` tous verts. Contrat mis à jour (`listeDesClients`, `enregistrerUneDecisionDImport`, `depotDUnImport` étendu). **Un défaut trouvé et corrigé avant tout commit** : `to_jsonb(:client_cible::text)` — le double deux-points immédiatement après un paramètre lié produit une erreur de syntaxe PostgreSQL, la chaîne `:client_cible` n'étant pas reconnue comme un paramètre par le pilote ; corrigé en `to_jsonb(CAST(:client_cible AS text))`, l'idiome déjà établi par `app.content.ecriture`. Aucun autre défaut dans le code livré. | Soumise le 09/10/2026 |
+
+**Prochain identifiant libre : `DEC-644`.**
 
 ---
 
@@ -1208,6 +1211,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-640` — réalisation du LOT 9, `T5` | 1 | 1 |
 | `DEC-641` — réalisation du LOT 9, `T6` | 1 | 1 |
 | `DEC-642` — réalisation du LOT 9, `T7` | 1 | 1 |
+| `DEC-643` — réalisation du LOT 9, `T8` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1219,7 +1223,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **310** | **310** |
+| **Total** | **311** | **311** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
