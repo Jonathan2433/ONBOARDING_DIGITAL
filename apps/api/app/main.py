@@ -34,6 +34,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
 from app.accueil.routes import routeur_accueil
+from app.administration.routes import routeur_administration
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
@@ -163,6 +164,9 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  services de presentation, Framework, arrivees recentes et evenements,
     #  tous deja monte au-dessus.
     routeur_v1.include_router(routeur_accueil(config))
+    #  LOT 9, T5 : le tableau de bord administratif. Monté après l'accueil,
+    #  dont il réutilise la résolution d'entité et le gabarit de 404.
+    routeur_v1.include_router(routeur_administration(config))
     application.include_router(routeur_v1)
 
     return application

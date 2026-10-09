@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `639` en usage | `DEC-640` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `640` en usage | `DEC-641` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1018,7 +1018,25 @@ cercle refuse « si aucun membre actif », quel que soit le rôle — une interd
 ressource, vérifiée par le service. Aucune migration : `circle`/`office` portent `archived_at`
 depuis le LOT 2, sans écrivain jusqu'ici.
 
-La sous-étape suivante est **`T5`** : tableau de bord administratif, agrégat en lecture (`US001`).
+**`T5` est faite** (`DEC-640`) : le tableau de bord administratif (`US001`). Le
+cahier §10.8 nomme SIX grandeurs (pas les cinq de l'abrégé de la fiche) :
+profils actifs, arrivées futures, onboardings actifs, tâches en retard,
+profils incomplets, derniers imports en échec. Aucune ligne de la matrice ne
+s'appelle « tableau de bord » : les comptes réutilisent la grille du §15.1
+« Reporting et exports » (`DSM` Consultants, `ESM`/`ADM-E` Entité, `BOOST`
+Cercle, `SUPER` Global, `OFFICE` refusé), et les tâches en retard appellent
+directement `lister_les_taches_en_retard` (LOT 7, `T12`) dans sa propre
+portée, jamais recopiée. « Profil incomplet » — jamais défini par le cahier
+malgré cinq occurrences — est arbitré par Jonathan avant tout code : un
+profil actif à qui il manque métier, cercle principal, DSM ou statut, la
+même notion que `relations_a_redonner` après une restauration (LOT 5, `T8`).
+« Derniers imports » montre les lots récents AVEC UN PROBLÈME (`failed` ou
+lignes rejetées), lu contre deux citations concordantes du cahier plutôt que
+contre l'abrégé de la fiche, limité à cinq (`DSM`/`BOOST` : liste vide,
+visible seulement d'`ESM`/`ADM-E`/`SUPER`). Aucune migration.
+
+La sous-étape suivante est **`T6`** : dépôt sécurisé du CSV, empreinte
+SHA-256, `import_batch`, zone d'analyse sans écriture métier (`US004`, 1/2).
 
 ---
 
