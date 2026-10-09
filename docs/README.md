@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `638` en usage | `DEC-639` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `639` en usage | `DEC-640` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1006,8 +1006,19 @@ liens magiques (même moteur que le départ), transaction unique — et un trois
 bloqué tout transfert ultérieur ; libérée (`departure_date = arrival_date`) uniquement dans le
 cadre d'un transfert, l'annulation seule restant inchangée.
 
-La sous-étape suivante est **`T4`** : restauration des ressources archivées autorisées par
-back-office (`US008`), qui dépend de `T2`/`T3`.
+**`T4` est faite** (`DEC-639`) : archivage et restauration d'un cercle ou d'un bureau (`US008`).
+Mesuré avant d'écrire une ligne : la restauration d'un collaborateur était déjà entièrement servie
+depuis le LOT 5 `T8` (`restaurer_un_profil`), et `ARB-DROIT-003` nomme CINQ ressources — profil,
+contenu, événement, cercle, bureau — dont les deux dernières n'avaient aucun mécanisme d'archivage
+ni de restauration dans tout le dépôt, un trou que `T3` du LOT 6 annonçait déjà sans que personne ne
+le comble depuis. Reposé à Jonathan avant tout code : construire les deux. Nouveau module
+`app/organization/cycle_de_vie.py`, une seule grille de rôles (ESM, ADM-E, SUPER) pour les deux
+ressources et les deux actions. Le §10.2 porte une condition que le §10.3 ne porte pas : archiver un
+cercle refuse « si aucun membre actif », quel que soit le rôle — une interdiction liée à la
+ressource, vérifiée par le service. Aucune migration : `circle`/`office` portent `archived_at`
+depuis le LOT 2, sans écrivain jusqu'ici.
+
+La sous-étape suivante est **`T5`** : tableau de bord administratif, agrégat en lecture (`US001`).
 
 ---
 

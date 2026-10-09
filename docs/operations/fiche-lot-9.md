@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3` faites par `DEC-636`/`DEC-637`/`DEC-638`
-**Sous-étape suivante :** `T4` — restauration des ressources archivées autorisées par back-office
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`
+**Sous-étape suivante :** `T5` — tableau de bord administratif, agrégat en lecture
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -106,7 +106,7 @@ ne commence.
 | `T1` ✅ | Les quatre tables de l'import — `import_batch`, `import_row`, `import_row_issue`, `import_decision`, migration `0024` | socle | **13 tests**, 29 clés composites au total, migration rejouée à vide ; `approved_by_person_id` corrigé pour porter une clé étrangère (défaut trouvé par `make isolation-check`) — `DEC-636` |
 | `T2` ✅ | Création d'un collaborateur et de son appartenance depuis le back-office | `US002` (1/2) | **13 tests** ; `POST /entities/{code}/people` ; grille du §6.1 sans cible existante (DSM pour lui-même, Booster dans son cercle sans DSM) — `DEC-637` |
 | `T3` ✅ | Modification structurante et transitions (changement d'entité, de statut, de rattachement) | `US002` (2/2) | **6 tests** ; `POST .../people/{appartenance}/changement-d-entite` ; le statut/rattachement DANS une entité était déjà servi par le `PATCH` de LOT 5 `T7` — seul le changement d'entité manquait ; révocation totale et transaction unique arbitrées par Jonathan, période d'une arrivée annulée libérée au transfert — `DEC-638` |
-| `T4` | Restauration des ressources archivées autorisées par back-office | `US008` | dépend de `T2`/`T3` ; distinguer restaurations simples (matrice) et techniques/massives (rôles réservés) |
+| `T4` ✅ | Restauration des ressources archivées autorisées par back-office | `US008` | **7 tests** ; `restaurer_un_profil` (LOT 5 `T8`) couvrait déjà le collaborateur — `ARB-DROIT-003` nomme aussi cercle et bureau, qui n'avaient AUCUN mécanisme d'archivage/restauration ; quatre routes nouvelles (`.../circles/{id}/{archivage,restauration}`, `.../offices/{id}/{archivage,restauration}`), arbitrées par Jonathan — `DEC-639` |
 | `T5` | Tableau de bord administratif — agrégat en lecture | `US001` | Profils actifs, arrivées futures, onboardings en retard, profils incomplets, derniers imports ; pattern `T8` du LOT 8 |
 | `T6` | Dépôt sécurisé du CSV, empreinte SHA-256, `import_batch`, zone d'analyse sans écriture métier | `US004` (1/2) | |
 | `T7` | Normalisation des e-mails, détection des doublons, blocage des lignes sans e-mail, prévisualisation complète | `US004` (2/2) | |
