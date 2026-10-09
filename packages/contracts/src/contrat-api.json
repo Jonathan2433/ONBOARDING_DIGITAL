@@ -794,6 +794,28 @@
       ]
     },
     {
+      "cle": "changementDEntite",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/changement-d-entite",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeChangementDEntite",
+      "role": [
+        "Changer un collaborateur d'entite -- LOT 9, T3, MVP-L09-US002 (2/2).",
+        "Cahier 11.1, 16.3 : operation ATOMIQUE, l'ancienne appartenance est",
+        "cloturee et les responsabilites incompatibles avec elle.",
+        "MEME PERIMETRE QUE LA CREATION (T2), evalue sur l'entite d'ARRIVEE :",
+        "un DSM ne transfere que vers son propre perimetre, un Booster que",
+        "dans son cercle et sans DSM.",
+        "L'ancienne appartenance va JUSQU'A archived (Active -> Departed ->",
+        "Archived, ou Future -> Archived seul) et TOUTES les sessions et",
+        "liens magiques de la personne sont revoques -- meme moteur que le",
+        "depart, arbitrage de Jonathan du 08/10/2026.",
+        "409 etat_incompatible : la cible n'est ni active ni future.",
+        "422 valeur_refusee : biconditionnelle statut/client dans l'entite",
+        "d'arrivee, ou DSM designe sans responsabilite active la-bas."
+      ]
+    },
+    {
       "cle": "modificationDesDonneesOrganisationnelles",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}",
       "methode": "patch",

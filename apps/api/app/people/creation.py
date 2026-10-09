@@ -89,25 +89,38 @@ MESSAGE_ACCES_REFUSE: Final = (
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class DemandeDeCollaborateur:
-    """Les champs d'un collaborateur a creer — cahier §10.2.
+class DemandeDAppartenance:
+    """Les SIX champs organisationnels du §10.2, pour une appartenance a poser.
 
-    `client` est le seul champ parmi les six organisationnels dont l'absence
-    est legitime (`intercontract`), meme regle que `DemandeDeModification`.
-    `dsm` est absent par defaut : tous les consultants n'en ont pas un des la
-    creation (`app/shared/fabriques.py` n'en donne qu'a un sur trois).
+    Partagee entre `creer_un_collaborateur` (`T2`, une personne neuve) et
+    `app.people.transfert.changer_d_entite` (`T3`, une personne EXISTANTE) :
+    les deux posent la MEME appartenance, seule la provenance de `person_id`
+    differe. Extraire ce sous-ensemble evite d'exiger email/nom/prenom d'un
+    transfert, qui n'en a rien a faire.
+
+    `client` est le seul champ parmi les six dont l'absence est legitime
+    (`intercontract`), meme regle que `DemandeDeModification`. `dsm` est
+    absent par defaut : tous les consultants n'en ont pas un
+    (`app/shared/fabriques.py` n'en donne qu'a un sur trois).
     """
 
-    email: str
-    first_name: str
-    last_name: str
-    preferred_name: str | None
     arrival_date: dt.date
     job_catalog_id: uuid.UUID
     status: SituationProfessionnelle
     client_id: uuid.UUID | None
     dsm_person_id: uuid.UUID | None
     circle_id: uuid.UUID
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class DemandeDeCollaborateur:
+    """Une personne neuve et son appartenance — cahier §10.2. `T2`."""
+
+    email: str
+    first_name: str
+    last_name: str
+    preferred_name: str | None
+    appartenance: DemandeDAppartenance
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -118,22 +131,13 @@ class CollaborateurCree:
     version: int
 
 
-def creer_un_collaborateur(
-    connexion: Connection,
-    *,
-    entite: uuid.UUID,
-    acteur: uuid.UUID,
-    demande: DemandeDeCollaborateur,
-    instant: dt.datetime,
-) -> CollaborateurCree:
-    """Creer la personne et son appartenance, dans UNE seule transaction.
+def valider_la_biconditionnelle_statut_client(demande: DemandeDAppartenance) -> None:
+    """Refuser une demande incoherente, SANS connexion, avant tout ecrit.
 
-    **LA BICONDITIONNELLE STATUT/CLIENT EST VERIFIEE ICI, AVANT D'ECRIRE** —
-    contrairement a `_ecrire_le_statut`, qui reporte une valeur courante
-    absente a la demande, il n'existe ici AUCUNE valeur courante a reporter :
-    une demande incoherente doit donc etre refusee en amont plutot que de
-    laisser la contrainte `client_selon_le_statut` produire un refus que rien
-    n'explique a l'appelant, puisque aucune des deux valeurs n'est la sienne.
+    Pure et sans acces base : appelable AVANT de creer quoi que ce soit — en
+    tete de `creer_un_collaborateur` (avant la personne) et en tete de
+    `creer_l_appartenance` (avant l'appartenance), pour que ni l'un ni
+    l'autre appelant ne laisse une ligne orpheline sur une demande refusee.
     """
     if (demande.status == SituationProfessionnelle.MISSION) != (demande.client_id is not None):
         raise ErreurApplicative(
@@ -142,24 +146,25 @@ def creer_un_collaborateur(
             statut=statut_http.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
-    email_normalise = normaliser_email(demande.email)
-    try:
-        personne = connexion.execute(
-            text(
-                "INSERT INTO person (email, email_normalized, first_name, last_name, "
-                "preferred_name, account_state) "
-                "VALUES (:email, :normalise, :prenom, :nom, :prefere, :etat) RETURNING id"
-            ),
-            {
-                "email": demande.email,
-                "normalise": email_normalise,
-                "prenom": demande.first_name,
-                "nom": demande.last_name,
-                "prefere": demande.preferred_name,
-                "etat": EtatCompte.ACTIVE.value,
-            },
-        ).scalar_one()
 
+def creer_l_appartenance(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    person_id: uuid.UUID,
+    demande: DemandeDAppartenance,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+) -> CollaborateurCree:
+    """Poser l'appartenance et ses cinq relations, pour une personne EXISTANTE.
+
+    Appelee par `creer_un_collaborateur` (`T2`) et par
+    `app.people.transfert.changer_d_entite` (`T3`) — c'est la MEME ecriture
+    dans les deux cas, seule la provenance de `person_id` differe.
+    """
+    valider_la_biconditionnelle_statut_client(demande)
+
+    try:
         #  §6.2, litteralement : une appartenance dont l'arrivee n'est pas encore
         #  survenue est `future`, jamais `active` — `ETATS_OCCUPANTS` traite les
         #  deux de la meme facon en LECTURE, mais la colonne elle-meme doit
@@ -171,7 +176,7 @@ def creer_un_collaborateur(
         )
 
         appartenance = DepotLocal(connexion, "entity_membership", entite).creer(
-            person_id=personne,
+            person_id=person_id,
             arrival_date=demande.arrival_date,
             membership_state=etat_initial,
             professional_category=CategorieProfessionnelle.CONSULTANT.value,
@@ -220,3 +225,48 @@ def creer_un_collaborateur(
         raise traduire_un_refus_de_la_base(erreur) from erreur
 
     return CollaborateurCree(appartenance=appartenance, version=1)
+
+
+def creer_un_collaborateur(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    demande: DemandeDeCollaborateur,
+    instant: dt.datetime,
+) -> CollaborateurCree:
+    """Creer la personne, puis son appartenance, dans UNE seule transaction.
+
+    La biconditionnelle est validee ICI, AVANT la personne : sans cela, une
+    demande incoherente laisserait une ligne `person` orpheline derriere un
+    `422`, puisque `creer_l_appartenance` ne la revalide qu'ensuite.
+    """
+    valider_la_biconditionnelle_statut_client(demande.appartenance)
+    email_normalise = normaliser_email(demande.email)
+    try:
+        personne = connexion.execute(
+            text(
+                "INSERT INTO person (email, email_normalized, first_name, last_name, "
+                "preferred_name, account_state) "
+                "VALUES (:email, :normalise, :prenom, :nom, :prefere, :etat) RETURNING id"
+            ),
+            {
+                "email": demande.email,
+                "normalise": email_normalise,
+                "prenom": demande.first_name,
+                "nom": demande.last_name,
+                "prefere": demande.preferred_name,
+                "etat": EtatCompte.ACTIVE.value,
+            },
+        ).scalar_one()
+    except (IntegrityError, DataError) as erreur:
+        raise traduire_un_refus_de_la_base(erreur) from erreur
+
+    return creer_l_appartenance(
+        connexion,
+        entite=entite,
+        person_id=personne,
+        demande=demande.appartenance,
+        acteur=acteur,
+        instant=instant,
+    )
