@@ -59,12 +59,36 @@ def _exiger_postgresql(parametres: Parametres) -> None:
         pytest.skip("PostgreSQL absent — lancer `make up`, puis `make migrate`.")
 
 
+def _domaine_exalt_company_toujours_autorise(connexion: Connection) -> None:
+    """Une seconde ligne GLOBALE, bornee dans le passe — §7.47, troisieme theatre.
+
+    `make domaines-provision` seme deja `exalt-company.com` au demarrage de la
+    stack, avec `starts_at = now()`. `INSTANT` de ce fichier est une date FIXE
+    (2026-10-10) : le jour ou le calendrier reel la depasse, la ligne semee a
+    un `starts_at` POSTERIEUR a `INSTANT`, sa periode ne le couvre plus, et
+    CHAQUE ligne de ce domaine est refusee en silence (`E-EMAIL-003`) — mesure
+    le 12/10/2026 en integration continue, sur une suite qui passait la veille.
+
+    Une seconde ligne globale, bornee dans le passe et sans fin, ferme la
+    question sans dependre du moment ou la stack a demarre. Elle vit dans la
+    transaction du test (voir `cx` ci-dessous), donc elle s'annule avec elle —
+    aucun residu, meme discipline que `_domaine_local`.
+    """
+    connexion.execute(
+        text(
+            "INSERT INTO allowed_email_domain (domain, entity_id, starts_at) "
+            "VALUES ('exalt-company.com', NULL, '2020-01-01T00:00:00+00:00')"
+        )
+    )
+
+
 @pytest.fixture
 def cx(parametres_de_la_stack: Parametres) -> Iterator[Connection]:
     _exiger_postgresql(parametres_de_la_stack)
     with moteur(parametres_de_la_stack).connect() as connexion:
         transaction = connexion.begin()
         try:
+            _domaine_exalt_company_toujours_autorise(connexion)
             yield connexion
         finally:
             transaction.rollback()
@@ -83,10 +107,16 @@ def _entite(cx: Connection, suffixe: str) -> uuid.UUID:
 
 
 def _domaine_local(cx: Connection, *, entite: uuid.UUID, domaine: str) -> None:
+    """Autoriser `domaine` pour `entite` — borne dans le PASSE, jamais `now()`.
+
+    Meme defaut, meme correction que `_domaine_exalt_company_toujours_autorise`
+    ci-dessus : une periode qui commence a `now()` cesse de couvrir `INSTANT`
+    des que le calendrier reel depasse 2026-10-10.
+    """
     cx.execute(
         text(
             "INSERT INTO allowed_email_domain (domain, entity_id, starts_at) "
-            "VALUES (:domaine, :entite, now())"
+            "VALUES (:domaine, :entite, '2020-01-01T00:00:00+00:00')"
         ),
         {"domaine": domaine, "entite": entite},
     )

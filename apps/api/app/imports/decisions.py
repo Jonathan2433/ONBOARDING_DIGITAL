@@ -251,6 +251,32 @@ def enregistrer_une_decision(
             statut=status.HTTP_403_FORBIDDEN,
         )
 
+    #  **DEFAUT TROUVE EN CONSTRUISANT `T9`, CORRIGE AVANT COMMIT.** Le refus
+    #  ci-dessus admet un DSM dans SON perimetre pour LES CINQ types — correct
+    #  pour `client_alias_creation`/`canonical_client_selection`
+    #  (« Valider les rapprochements clients », matrice §14, DSM Consultants),
+    #  mais `person_merge`/`profile_reactivation` relevent d'une AUTRE ligne de
+    #  la matrice (« Reactiver un profil archive » : DSM a TIRET, ESM/ADM-E
+    #  « Confirmation explicite », SUPER Global — exactement
+    #  `app.permissions.perimetre.ROLES_DU_CYCLE_DE_VIE`). `codes-erreurs-
+    #  import.md` §5 le confirme : `D-PERSONNE-001` et `002` ne nomment NI
+    #  BOOST ni DSM parmi « qui decide ». Un DSM, meme dans son perimetre, ne
+    #  peut donc PAS fusionner ni reactiver un profil — seul `T9` (qui AGIT
+    #  sur ces deux types) exerce enfin cette branche, jamais testee par `T8`.
+    if (
+        type_de_decision
+        in (
+            TypeDeDecisionImport.PERSON_MERGE.value,
+            TypeDeDecisionImport.PROFILE_REACTIVATION.value,
+        )
+        and not roles & _ROLES_A_PORTEE_LARGE
+    ):
+        raise ErreurApplicative(
+            code=CODE_PORTEE_DSM_REFUSEE,
+            message=MESSAGE_PORTEE_DSM_REFUSEE,
+            statut=status.HTTP_403_FORBIDDEN,
+        )
+
     codes_requis = _CODES_REQUIS[type_de_decision]
     codes_de_la_ligne = set(ligne_actuelle.error_codes or [])
     if codes_requis is not None and not (codes_requis & codes_de_la_ligne):

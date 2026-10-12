@@ -1986,6 +1986,37 @@
       ]
     },
     {
+      "cle": "lancerLImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/lancement",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeLancement",
+      "role": [
+        "Lancer l'import transactionnel des lignes previsualisees -- LOT 9,",
+        "T9, MVP-L09-US006 (1/2), modele 19.5, diagramme 24.4.",
+        "Matrice 14 'Lancer l'import' : ESM Entite, ADM-E Entite, SUPER",
+        "Global -- DSM, BOOST et OFFICE a tiret, MEME grille que 'Charger",
+        "un CSV' (reutilisee, pas redeclaree).",
+        "preview_ready -> importing -> completed, dans le MEME appel",
+        "synchrone (DEC-462). Les champs non encore verifies par T7/T8",
+        "(dates, identite, entite, metier, situation, cercles, DSM,",
+        "responsabilites Framework, roles techniques, autorisation photo)",
+        "sont valides A CET INSTANT par app.imports.organisation, jamais en",
+        "cache depuis la previsualisation -- un metier ou un cercle cree",
+        "entre les deux appels change le verdict.",
+        "Chaque ligne eligible (valid/warning, ou needs_decision resolue",
+        "par une decision enregistree) est creee, mise a jour par e-mail",
+        "(person_merge) ou reactivee (profile_reactivation, confirmation",
+        "explicite -- matrice 14, DSM a TIRET sur cette ligne precise,",
+        "contrairement a 'Valider les rapprochements clients') dans son",
+        "PROPRE savepoint : un refus de la base sur une ligne n'affecte",
+        "aucune autre (modele 19.5, 'aucune ligne rejetee n'empeche les",
+        "lignes valides d'etre importees').",
+        "409 si le lot n'est pas en previsualisation (deja lance, ou",
+        "annule)."
+      ]
+    },
+    {
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",

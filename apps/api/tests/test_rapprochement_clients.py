@@ -72,12 +72,33 @@ def _exiger_postgresql(parametres: Parametres) -> None:
         pytest.skip("PostgreSQL absent — lancer `make up`, puis `make migrate`.")
 
 
+def _domaine_exalt_company_toujours_autorise(connexion: Connection) -> None:
+    """Une seconde ligne GLOBALE, bornee dans le passe — §7.47, troisieme theatre.
+
+    Ce fichier compte sur le domaine semé par `make domaines-provision`
+    (`starts_at = now()` au demarrage de la stack). `INSTANT` ci-dessus est une
+    date FIXE (2026-10-10) : le jour ou le calendrier reel la depasse, la
+    ligne semee commence APRES `INSTANT`, et l'adresse `...@exalt-company.com`
+    du decor est refusee (`E-EMAIL-003`) — mesure le 12/10/2026 en integration
+    continue, sur une suite qui passait la veille. Une seconde ligne globale,
+    bornee dans le passe et sans fin, ferme la question pour de bon. Elle vit
+    dans la transaction du test, donc elle s'annule avec elle.
+    """
+    connexion.execute(
+        text(
+            "INSERT INTO allowed_email_domain (domain, entity_id, starts_at) "
+            "VALUES ('exalt-company.com', NULL, '2020-01-01T00:00:00+00:00')"
+        )
+    )
+
+
 @pytest.fixture
 def cx(parametres_de_la_stack: Parametres) -> Iterator[Connection]:
     _exiger_postgresql(parametres_de_la_stack)
     with moteur(parametres_de_la_stack).connect() as connexion:
         transaction = connexion.begin()
         try:
+            _domaine_exalt_company_toujours_autorise(connexion)
             yield connexion
         finally:
             transaction.rollback()

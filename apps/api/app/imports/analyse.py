@@ -98,13 +98,14 @@ from app.imports.clients import (
 )
 from app.imports.correspondance import valeur_logique
 from app.imports.modeles import EtatLigneImport, EtatLotImport
+from app.imports.organisation import NIVEAU_DU_CODE_ORGANISATION, TEXTES_ORGANISATION
+from app.imports.structures import (
+    NIVEAU_AVERTISSEMENT,
+    NIVEAU_DECISION,
+    NIVEAU_ERREUR,
+    Probleme,
+)
 from app.people.modeles import normaliser_email
-
-#  Les trois niveaux de `codes-erreurs-import.md` §1.1 — jamais une
-#  enumeration inventee, ce sont les lettres litterales du document.
-NIVEAU_ERREUR: Final = "E"
-NIVEAU_DECISION: Final = "D"
-NIVEAU_AVERTISSEMENT: Final = "W"
 
 CODE_EMAIL_ABSENT: Final = "E-EMAIL-001"
 CODE_EMAIL_FORMAT_INVALIDE: Final = "E-EMAIL-002"
@@ -160,6 +161,13 @@ _TEXTES: Final[dict[str, tuple[str, str]]] = {
         MESSAGE_CLIENT_INCONNU,
         RESOLUTION_CLIENT_INCONNU,
     ),
+    #  `T9` (`app.imports.organisation`) fusionne ICI ses propres codes, mais
+    #  ne les PRODUIT JAMAIS pendant la previsualisation : ce module reste a
+    #  la taille que `T7` lui avait donnee. La fusion sert uniquement
+    #  `etat_depuis_les_problemes`, reutilisee par `app.imports.execution` au
+    #  moment de l'import reel — les DEUX modules partagent une seule
+    #  priorite E > D > W, jamais deux copies qui divergeraient (§7.27).
+    **TEXTES_ORGANISATION,
 }
 
 _NIVEAU_DU_CODE: Final[dict[str, str]] = {
@@ -172,6 +180,7 @@ _NIVEAU_DU_CODE: Final[dict[str, str]] = {
     CODE_PERSONNE_HOMONYME: NIVEAU_DECISION,
     CODE_CLIENT_NON_ACTIVE_LOCALEMENT: NIVEAU_AVERTISSEMENT,
     CODE_CLIENT_INCONNU: NIVEAU_DECISION,
+    **NIVEAU_DU_CODE_ORGANISATION,
 }
 
 #  Priorite STRICTE d'un niveau vers l'etat de ligne du modele §19.2 — la
@@ -181,15 +190,6 @@ _PRIORITE_DES_NIVEAUX: Final[tuple[tuple[str, str], ...]] = (
     (NIVEAU_DECISION, EtatLigneImport.NEEDS_DECISION.value),
     (NIVEAU_AVERTISSEMENT, EtatLigneImport.WARNING.value),
 )
-
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class Probleme:
-    """Un probleme detecte sur une ligne — `import_row_issue`, modele §19.3."""
-
-    code: str
-    champ: str | None
-    valeur_normalisee_sure: str | None = None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -339,7 +339,13 @@ _FIXER_LE_RESULTAT_DE_LA_PREVISUALISATION: Final = text(
 )
 
 
-def _etat_depuis_les_problemes(problemes: list[Probleme]) -> str:
+def etat_depuis_les_problemes(problemes: list[Probleme]) -> str:
+    """L'etat de ligne (§19.2) derive de la priorite stricte E > D > W > rien.
+
+    Non prefixee : `app.imports.execution` (`T9`) la reutilise pour deriver
+    l'etat d'une revalidation FRAICHE au moment de l'import reel, plutot que
+    de reecrire la meme priorite une seconde fois (§7.27).
+    """
     niveaux = {_NIVEAU_DU_CODE[p.code] for p in problemes}
     for niveau, etat in _PRIORITE_DES_NIVEAUX:
         if niveau in niveaux:
@@ -473,6 +479,21 @@ def analyser_le_lot(
                 Probleme(CODE_CLIENT_NON_ACTIVE_LOCALEMENT, "F13", str(resolu.client_id))
             )
 
+    #  **`T9` N'AJOUTE AUCUNE ETAPE ICI, ET C'EST DELIBERE.** Dates, identite,
+    #  entite, metier, situation, cercles, DSM, responsabilites Framework,
+    #  roles techniques, autorisation photo (`app.imports.organisation`) ne
+    #  sont PAS previsualises — exactement ce que l'en-tete de ce module
+    #  annoncait depuis `T7` : « verifiees seulement au moment de l'import
+    #  reel ». `app.imports.execution.lancer_l_import` appelle
+    #  `valider_les_champs_organisationnels` lui-meme, une fois par appel,
+    #  jamais ici — sans quoi CHAQUE previsualisation deja ecrite par `T7`/
+    #  `T8` (et chacun de leurs tests) se serait mise a produire des dizaines
+    #  de codes nouveaux (metier, cercle, date, DSM absents) sur des CSV qui ne
+    #  les avaient jamais renseignes, pour une regle que le decoupage attribue
+    #  explicitement a `T9` SEUL. `etat_depuis_les_problemes` reste partagee
+    #  (voir `_NIVEAU_DU_CODE` plus haut) : seule la PRODUCTION des problemes
+    #  change de moment, jamais leur VOCABULAIRE.
+
     #  6. Ecriture — une ligne a la fois (meme idiome que
     #     `app.content.ecriture`), l'etat derive des problemes collectes.
     comptes = {
@@ -483,7 +504,7 @@ def analyser_le_lot(
     }
     for ligne in lignes:
         liste = problemes[ligne.identifiant]
-        etat = _etat_depuis_les_problemes(liste)
+        etat = etat_depuis_les_problemes(liste)
         comptes[etat] += 1
         for probleme in liste:
             message, resolution = _TEXTES[probleme.code]
