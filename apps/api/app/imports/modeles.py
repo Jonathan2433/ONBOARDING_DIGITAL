@@ -135,6 +135,10 @@ class ImportBatch(ChampsCommuns, RessourceLocale, Base):
     )
     rejected_rows: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     approved_by_person_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
+    #  Ajoutee par `T10` (LOT 9) — residu nomme par `T6` : le separateur
+    #  detecte (`DEC-432`) n'etait jamais consigne. NULLABLE : les lots
+    #  anterieurs a cette migration (aucun hors des tests) ne l'ont jamais eu.
+    delimiter: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
         ForeignKeyConstraint(["entity_id"], ["entity.id"]),
@@ -144,6 +148,12 @@ class ImportBatch(ChampsCommuns, RessourceLocale, Base):
             "total_rows >= 0 AND valid_rows >= 0 AND warning_rows >= 0 "
             "AND needs_decision_rows >= 0 AND rejected_rows >= 0",
             name="comptes_non_negatifs",
+        ),
+        #  Les DEUX SEULES valeurs que `_detecter_le_delimiteur` peut jamais
+        #  rendre (`app.imports.depot`, `DEC-432`) — pas une regle de plus.
+        CheckConstraint(
+            "delimiter IS NULL OR delimiter IN (';', ',')",
+            name="delimiter_connu",
         ),
         Index("ix_import_batch_entity_state", "entity_id", "state"),
         UniqueConstraint("id", "entity_id"),

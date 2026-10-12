@@ -2017,6 +2017,50 @@
       ]
     },
     {
+      "cle": "rejouerUneLigneDImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/rows/{ligne}/rejeu",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRejeu",
+      "role": [
+        "Rejouer UNE ligne rejetee -- LOT 9, T10, MVP-L09-US006 (2/2).",
+        "Matrice 14 'Rejouer les lignes rejetees' : MEME grille que 'Lancer",
+        "l'import' (ESM/ADM-E Entite, SUPER Global).",
+        "Arbitrage de Jonathan : AUCUNE correction n'est saisie ici -- le",
+        "modele ne porte aucun champ pour elle. La ligne est revalidee",
+        "TELLE QUELLE, a l'instant present (un metier ou un cercle cree",
+        "entre-temps, une decision desormais enregistree). Seule",
+        "app.imports.organisation est rejouee -- jamais les codes",
+        "E-EMAIL-*, qui dependent du fichier entier ou ne changent pas",
+        "avec le temps ; un CSV corrige a la source reste le chemin normal.",
+        "409 si le lot n'a pas encore ete importe, si la ligne n'est pas",
+        "rejetee, ou si elle porte un code hors de la portee du rejeu."
+      ]
+    },
+    {
+      "cle": "consulterLeRapportDImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/rapport",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeRapport",
+      "role": [
+        "Le rapport d'un lot d'import -- LOT 9, T10, MVP-L09-US006 (2/2),",
+        "criteres-qualite-import.md 4.",
+        "Matrice 14 'Consulter le rapport' : CE MODULE NE SERT QUE ESM",
+        "Entite / ADM-E Entite / SUPER Global -- meme grille que 'Charger",
+        "un CSV'. DSM (Consultants) et Booster (Cercle limite) ne sont PAS",
+        "encore servis : aucun document ne dit comment filtrer un rapport",
+        "d'import par DSM ou par cercle -- question ouverte plutot",
+        "qu'invention (6.5).",
+        "La reconciliation (creations/mises_a_jour/rejets/",
+        "en_attente_de_decision) est une lecture FRAICHE de",
+        "import_row.state, jamais un cache : elle reste exacte apres un",
+        "rejeu. Aucune ligne rejetee n'est masquee -- chaque ligne de la",
+        "page porte son etat et ses problemes.",
+        "Pagine selon le cahier 18.2 (25/50/100)."
+      ]
+    },
+    {
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",

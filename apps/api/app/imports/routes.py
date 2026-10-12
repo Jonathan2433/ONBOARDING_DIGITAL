@@ -25,7 +25,7 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final, Literal
 
-from fastapi import APIRouter, Depends, File, Path, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Path, Query, Request, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
@@ -55,11 +55,16 @@ from app.imports.depot import (
 )
 from app.imports.execution import (
     CODE_ETAT_NON_LANCABLE,
+    CODE_LIGNE_NON_REJETEE,
     CODE_LOT_INTROUVABLE,
+    CODE_LOT_NON_COMPLETE,
+    CODE_REJEU_HORS_PORTEE,
     RapportDeLancement,
     lancer_l_import,
+    rejouer_une_ligne,
 )
 from app.imports.perimetre import ROLES_DE_DEPOT_DE_L_IMPORT
+from app.imports.rapport import RapportDImport, consulter_le_rapport
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
     MESSAGE_ROLE_REFUSE,
@@ -68,6 +73,7 @@ from app.permissions.dependances import (
 from app.permissions.services import RoleDeLaMatrice, resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Parametres
@@ -186,6 +192,98 @@ def _lancement_rendu(rapport: RapportDeLancement) -> ReponseDeLancement:
         lignes_mises_a_jour=rapport.lignes_mises_a_jour,
         lignes_rejetees_a_l_import=rapport.lignes_rejetees_a_l_import,
         lignes_en_attente_de_decision=rapport.lignes_en_attente_de_decision,
+    )
+
+
+class ReponseDeRejeu(BaseModel):
+    """Ce que `rejouer_une_ligne` a produit pour LA ligne rejouee."""
+
+    etat: str
+    codes_derreur: tuple[str, ...]
+
+
+class ProblemeDeLigneRendu(BaseModel):
+    code: str
+    champ: str | None
+    message: str
+    niveau: str
+
+
+class LigneDuRapportRendue(BaseModel):
+    identifiant: uuid.UUID
+    numero: int
+    etat: str
+    codes_derreur: tuple[str, ...]
+    problemes: tuple[ProblemeDeLigneRendu, ...]
+
+
+class ReconciliationRendue(BaseModel):
+    """`criteres-qualite-import.md` §4 — les quatre termes du critere 8, plus `en_cours`."""
+
+    total_lignes: int
+    creations: int
+    mises_a_jour: int
+    rejets: int
+    en_attente_de_decision: int
+    en_cours: int
+
+
+class ReponseDeRapport(BaseModel):
+    etat_du_lot: str
+    nom_de_fichier: str
+    empreinte_sha256: str
+    delimiteur: str | None
+    encodage: str
+    profil_de_correspondance: str
+    depose_par: uuid.UUID
+    approuve_par: uuid.UUID | None
+    compteurs_de_previsualisation: dict[str, int]
+    reconciliation: ReconciliationRendue
+    lignes: tuple[LigneDuRapportRendue, ...]
+    total_des_lignes: int
+    page: int
+    taille: int
+    pages: int
+
+
+def _rapport_rendu(rapport: RapportDImport) -> ReponseDeRapport:
+    return ReponseDeRapport(
+        etat_du_lot=rapport.etat_du_lot,
+        nom_de_fichier=rapport.nom_de_fichier,
+        empreinte_sha256=rapport.empreinte_sha256,
+        delimiteur=rapport.delimiteur,
+        encodage=rapport.encodage,
+        profil_de_correspondance=rapport.profil_de_correspondance,
+        depose_par=rapport.depose_par,
+        approuve_par=rapport.approuve_par,
+        compteurs_de_previsualisation=rapport.compteurs_de_previsualisation,
+        reconciliation=ReconciliationRendue(
+            total_lignes=rapport.reconciliation.total_lignes,
+            creations=rapport.reconciliation.creations,
+            mises_a_jour=rapport.reconciliation.mises_a_jour,
+            rejets=rapport.reconciliation.rejets,
+            en_attente_de_decision=rapport.reconciliation.en_attente_de_decision,
+            en_cours=rapport.reconciliation.en_cours,
+        ),
+        lignes=tuple(
+            LigneDuRapportRendue(
+                identifiant=ligne.identifiant,
+                numero=ligne.numero,
+                etat=ligne.etat,
+                codes_derreur=ligne.codes_derreur,
+                problemes=tuple(
+                    ProblemeDeLigneRendu(
+                        code=p.code, champ=p.champ, message=p.message, niveau=p.niveau
+                    )
+                    for p in ligne.problemes
+                ),
+            )
+            for ligne in rapport.lignes
+        ),
+        total_des_lignes=rapport.total_des_lignes,
+        page=rapport.page,
+        taille=rapport.taille,
+        pages=rapport.pages,
     )
 
 
@@ -527,5 +625,140 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 instant=instant,
             )
         return _lancement_rendu(rapport)
+
+    @routeur.post(
+        "/entities/{code}/imports/{lot}/rows/{ligne}/rejeu",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRejeu,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §14 « Rejouer les lignes "
+                    "rejetees » dans cette entite — meme grille que « Lancer l'import »."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Code d'entite inconnu, entite non active, "
+                    f"`{CODE_LOT_INTROUVABLE}` : ce lot n'existe pas dans cette entite, ou "
+                    f"`{CODE_LIGNE_INTROUVABLE}` : cette ligne n'existe pas dans ce lot."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    f"`{CODE_LOT_NON_COMPLETE}` : ce lot n'a pas encore ete importe. "
+                    f"`{CODE_LIGNE_NON_REJETEE}` : cette ligne n'est pas rejetee. "
+                    f"`{CODE_REJEU_HORS_PORTEE}` : rejetee par une anomalie d'e-mail ou de "
+                    "doublon — seul un nouveau depot du fichier corrige peut la faire "
+                    "progresser."
+                )
+            },
+        },
+        summary="Rejouer une ligne rejetee, telle quelle, a l'instant present",
+        description=(
+            "Matrice §14 « Rejouer les lignes rejetees | ESM Entite | ADM-E Entite | "
+            "SUPER Global » — meme grille que « Lancer l'import ». "
+            "Backlog `MVP-L09-US006` (2/2).<br><br>"
+            "Arbitrage de Jonathan : AUCUNE correction n'est saisie ici — le modele ne "
+            "porte aucun champ pour elle. La ligne est revalidee TELLE QUELLE, a "
+            "l'instant present : utile quand le blocage venait d'ailleurs qu'elle-meme "
+            "(un metier ou un cercle cree entre-temps, une decision desormais "
+            "enregistree). Seule `app.imports.organisation` est rejouee — jamais les "
+            "codes `E-EMAIL-*`, qui dependent du fichier entier ou ne changent pas avec "
+            "le temps ; un CSV corrige a la source reste le chemin normal."
+        ),
+    )
+    def rejouer_une_ligne_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
+        ligne: Annotated[uuid.UUID, Path(description="L'identifiant de la ligne")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
+    ) -> ReponseDeRejeu:
+        """Rejouer une ligne rejetee — matrice §14, modele §19.5."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            resultat = rejouer_une_ligne(
+                connexion,
+                entite=entite,
+                lot=lot,
+                ligne_id=ligne,
+                acteur=appelant.personne,
+                roles=roles,
+                instant=instant,
+            )
+        return ReponseDeRejeu(etat=resultat.etat, codes_derreur=resultat.codes_derreur)
+
+    @routeur.get(
+        "/entities/{code}/imports/{lot}/rapport",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRapport,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §14 « Consulter le "
+                    "rapport » dans cette entite — DSM et Booster ne sont pas encore "
+                    "servis, voir l'en-tete d'`app.imports.rapport`."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Code d'entite inconnu, entite non active, ou "
+                    f"`{CODE_LOT_INTROUVABLE}` : ce lot n'existe pas dans cette entite."
+                )
+            },
+        },
+        summary="Le rapport d'un lot d'import — reconciliation et lignes",
+        description=(
+            "Matrice §14 « Consulter le rapport », `criteres-qualite-import.md` §4. "
+            "Backlog `MVP-L09-US006` (2/2).<br><br>"
+            "La reconciliation (`creations`/`mises_a_jour`/`rejets`/"
+            "`en_attente_de_decision`) est une lecture FRAICHE de `import_row.state`, "
+            "jamais un cache : elle reste exacte apres un `rejeu`. Aucune ligne "
+            "rejetee n'est masquee — chaque ligne de la page porte son etat et ses "
+            "problemes. **DSM et Booster, a qui la matrice donne aussi un acces "
+            "scope (`Consultants`/`Cercle limite`), ne sont PAS encore servis** : "
+            "aucun document ne dit comment filtrer un rapport d'import par DSM ou "
+            "par cercle — question ouverte plutot qu'invention (§6.5)."
+        ),
+    )
+    def consulter_le_rapport_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
+        page: int = Query(1, ge=1, description="Numero de page, 1-indexee"),
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Elements par page — les trois valeurs du cahier §18.2, seules"),
+        ] = TAILLE_PAR_DEFAUT,
+        appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
+    ) -> ReponseDeRapport:
+        """Le rapport d'un lot — matrice §14, `criteres-qualite-import.md` §4."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).connect() as connexion:
+            entite, _roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            rapport = consulter_le_rapport(
+                connexion, entite=entite, lot=lot, page=page, taille=int(taille)
+            )
+        return _rapport_rendu(rapport)
 
     return routeur
