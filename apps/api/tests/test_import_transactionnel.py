@@ -109,10 +109,20 @@ def _entite(cx: Connection, suffixe: str) -> _Entite:
 
 
 def _domaine_local(cx: Connection, *, entite: uuid.UUID, domaine: str = EMAIL_DOMAINE) -> None:
+    """Autoriser `domaine` pour `entite` — borne dans le PASSE, jamais `now()`.
+
+    §7.47 : `INSTANT` ci-dessus est une date FIXE (2026-10-10). `starts_at =
+    now()` etait juste tant que le calendrier reel n'avait pas depasse cette
+    date ; une fois que si, la periode de la ligne commence APRES `INSTANT` et
+    `period @> :instant` devient faux — chaque ligne de ce domaine est
+    refusee (`E-EMAIL-003`), mesure le 12/10/2026 en integration continue. Une
+    borne fixe et ANTERIEURE a tout `INSTANT` du fichier ferme la question
+    sans dependre du jour ou le test s'execute.
+    """
     cx.execute(
         text(
             "INSERT INTO allowed_email_domain (domain, entity_id, starts_at) "
-            "VALUES (:domaine, :entite, now()) ON CONFLICT DO NOTHING"
+            "VALUES (:domaine, :entite, '2020-01-01T00:00:00+00:00') ON CONFLICT DO NOTHING"
         ),
         {"domaine": domaine, "entite": entite},
     )
