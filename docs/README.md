@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `645` en usage | `DEC-646` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `646` en usage | `DEC-647` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1161,9 +1161,26 @@ de `T6` corrigé : `import_batch.delimiter` (migration `0026`) consigne
 enfin le séparateur détecté par `DEC-432`, que `T6` avait nommé sans le
 persister.
 
-La sous-étape suivante est **`T11`** : les opérations de masse contrôlées
-— prévisualisation d'impact, idempotence, erreurs partielles explicites
-(`US003`, `P1`, dépend de `T2`/`T3`).
+**`T11` est faite** (`DEC-646`) : le transfert en masse de collaborateurs,
+`US003`. Arbitrage explicite de Jonathan posé avant tout code
+(`AskUserQuestion`, reformulé sans jargon) : ni le cahier ni la matrice ne
+nomment QUELLE action doit exister « en masse » — la création en masse
+étant déjà servie par l'import CSV, seul le changement d'entité (`T3`)
+reçoit une variante en masse, les autres options (statut, cercle,
+archivage groupé) ayant été explicitement déclinées. Nouveau module
+`app/people/transfert_masse.py` : une boucle autour de `changer_d_entite`
+(`T3`), chaque élément dans son propre savepoint — aucune règle de
+permission ou de transition n'est réécrite. L'aperçu exécute exactement
+le même chemin que l'exécution réelle, dans un savepoint toujours annulé,
+succès ou échec : l'impact rendu est donc réel, jamais une estimation.
+L'idempotence du cahier §18.6 est satisfaite sans mécanisme nouveau :
+`changer_d_entite` refuse déjà, en 409, toute cible déjà transférée —
+rejouer le même lot est sans danger. Chaque échec est rapporté sur son
+élément, jamais propagé : un refus n'affecte aucun autre élément du lot.
+Aucune écriture d'audit (`ECART-064`, LOT 10, hors de ce lot). Deux
+routes nouvelles, aucune migration.
+
+La sous-étape suivante est **`T12`**.
 
 ---
 
