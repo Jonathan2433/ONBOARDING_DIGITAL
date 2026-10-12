@@ -102,14 +102,25 @@ class DemandeDAppartenance:
     (`intercontract`), meme regle que `DemandeDeModification`. `dsm` est
     absent par defaut : tous les consultants n'en ont pas un
     (`app/shared/fabriques.py` n'en donne qu'a un sur trois).
+
+    `job_catalog_id` ET `circle_id` sont devenus NULLABLES en `T9` (LOT 9) :
+    l'import CSV peut legitimement produire une appartenance SANS metier (un
+    profil `future`, pas encore actif — `membership_job_assignment.
+    job_catalog_id` reste NOT NULL en base, donc la ligne n'est simplement PAS
+    posee) et SANS cercle principal (une personne portant la responsabilite
+    DSM, schema-csv-collaborateurs.md §5.5 : « un DSM peut ne pas avoir de
+    cercle principal »). Le formulaire de `T2` continue d'exiger les deux a
+    son propre niveau (son schema Pydantic les declare obligatoires) : cette
+    largeur ne change rien a son comportement, elle sert UNIQUEMENT le second
+    appelant.
     """
 
     arrival_date: dt.date
-    job_catalog_id: uuid.UUID
+    job_catalog_id: uuid.UUID | None
     status: SituationProfessionnelle
     client_id: uuid.UUID | None
     dsm_person_id: uuid.UUID | None
-    circle_id: uuid.UUID
+    circle_id: uuid.UUID | None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -191,20 +202,22 @@ def creer_l_appartenance(
             tzinfo=dt.UTC,
         )
 
-        DepotLocal(connexion, "membership_job_assignment", entite).creer(
-            entity_membership_id=appartenance,
-            job_catalog_id=demande.job_catalog_id,
-            starts_at=debut,
-            created_by_person_id=acteur,
-        )
+        if demande.job_catalog_id is not None:
+            DepotLocal(connexion, "membership_job_assignment", entite).creer(
+                entity_membership_id=appartenance,
+                job_catalog_id=demande.job_catalog_id,
+                starts_at=debut,
+                created_by_person_id=acteur,
+            )
 
-        DepotLocal(connexion, "circle_membership", entite).creer(
-            entity_membership_id=appartenance,
-            circle_id=demande.circle_id,
-            membership_type=TypeAppartenanceCercle.PRINCIPAL.value,
-            starts_at=debut,
-            created_by_person_id=acteur,
-        )
+        if demande.circle_id is not None:
+            DepotLocal(connexion, "circle_membership", entite).creer(
+                entity_membership_id=appartenance,
+                circle_id=demande.circle_id,
+                membership_type=TypeAppartenanceCercle.PRINCIPAL.value,
+                starts_at=debut,
+                created_by_person_id=acteur,
+            )
 
         DepotLocal(connexion, "professional_status_assignment", entite).creer(
             entity_membership_id=appartenance,

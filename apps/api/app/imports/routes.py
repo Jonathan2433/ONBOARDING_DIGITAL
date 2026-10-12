@@ -53,6 +53,12 @@ from app.imports.depot import (
     LotDepose,
     deposer_un_csv,
 )
+from app.imports.execution import (
+    CODE_ETAT_NON_LANCABLE,
+    CODE_LOT_INTROUVABLE,
+    RapportDeLancement,
+    lancer_l_import,
+)
 from app.imports.perimetre import ROLES_DE_DEPOT_DE_L_IMPORT
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
@@ -161,6 +167,28 @@ class ReponseDeDecision(BaseModel):
     decision_type: str
 
 
+class ReponseDeLancement(BaseModel):
+    """Ce que `lancer_l_import` a produit — `preview_ready -> completed`."""
+
+    version: int
+    etat: str
+    lignes_importees: int
+    lignes_mises_a_jour: int
+    lignes_rejetees_a_l_import: int
+    lignes_en_attente_de_decision: int
+
+
+def _lancement_rendu(rapport: RapportDeLancement) -> ReponseDeLancement:
+    return ReponseDeLancement(
+        version=rapport.version,
+        etat=rapport.etat,
+        lignes_importees=rapport.lignes_importees,
+        lignes_mises_a_jour=rapport.lignes_mises_a_jour,
+        lignes_rejetees_a_l_import=rapport.lignes_rejetees_a_l_import,
+        lignes_en_attente_de_decision=rapport.lignes_en_attente_de_decision,
+    )
+
+
 def routeur_imports(parametres: Parametres) -> APIRouter:
     """Routeur du depot d'import CSV, monte sous le prefixe versionne."""
     routeur = APIRouter(tags=["imports"])
@@ -172,12 +200,17 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
 
     def _resoudre_l_entite_et_verifier_le_role(
         connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
-    ) -> uuid.UUID:
+    ) -> tuple[uuid.UUID, frozenset[RoleDeLaMatrice]]:
         """L'entite active, ET les roles reverifies DANS cette transaction.
 
         **LA GARDE A RESOLU LES SIENS DANS SA PROPRE CONNEXION, A SON PROPRE
         INSTANT** : s'y fier ferait agir sur ce qui a ete autorise ailleurs —
         voir l'en-tete du module.
+
+        Rend aussi les roles (pas seulement l'entite) depuis `T9` :
+        `lancer_l_import` en a besoin pour resoudre le perimetre de cycle de
+        vie d'une reactivation — meme motif que `_resoudre_l_entite_et_les_
+        roles_de_validation` ci-dessous.
         """
         entite = resoudre_une_entite_active(connexion, code)
         if entite is None:
@@ -187,11 +220,12 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 statut=status.HTTP_404_NOT_FOUND,
             )
         permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
-        if not ROLES_DE_DEPOT_DE_L_IMPORT & set(permissions.roles):
+        roles = ROLES_DE_DEPOT_DE_L_IMPORT & set(permissions.roles)
+        if not roles:
             raise ErreurApplicative(
                 code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
             )
-        return entite.id
+        return entite.id, frozenset(roles)
 
     def _resoudre_l_entite_et_les_roles_de_validation(
         connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
@@ -276,7 +310,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite = _resoudre_l_entite_et_verifier_le_role(
+            entite, _roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
             lot = deposer_un_csv(
@@ -425,5 +459,73 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
         return ReponseDeDecision(
             identifiant=decision.identifiant, decision_type=decision.decision_type
         )
+
+    @routeur.post(
+        "/entities/{code}/imports/{lot}/lancement",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLancement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §14 « Lancer l'import » "
+                    "dans cette entite — DSM, Booster et bureau exclus, meme grille que "
+                    "« Charger un CSV »."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "Code d'entite inconnu, entite non active, ou "
+                    f"`{CODE_LOT_INTROUVABLE}` : ce lot n'existe pas dans cette entite."
+                )
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": f"`{CODE_ETAT_NON_LANCABLE}` : le lot n'est pas en previsualisation."
+            },
+        },
+        summary="Lancer l'import transactionnel des lignes previsualisees",
+        description=(
+            "Matrice §14 « Lancer l'import | ESM Entite | ADM-E Entite | SUPER Global » — "
+            "meme grille que « Charger un CSV » (`DSM`/`BOOST`/`OFFICE` a tiret). "
+            "Backlog `MVP-L09-US006` (1/2).<br><br>"
+            "`preview_ready -> importing -> completed`, diagramme §24.4, dans le MEME "
+            "appel synchrone (`DEC-462`). Chaque ligne `valid`/`warning`, ou "
+            "`needs_decision` dont une decision enregistree resout le code, est creee "
+            "ou mise a jour (fusion par e-mail, reactivation d'un profil archive avec "
+            "confirmation explicite) dans son PROPRE savepoint — un refus de la base "
+            "sur une ligne n'affecte aucune autre. Les champs non encore verifies par "
+            "`T7`/`T8` (dates, metier, cercles, DSM, responsabilites Framework, roles "
+            "techniques, autorisation photo) sont valides A CET INSTANT, pas en cache."
+        ),
+    )
+    def lancer_l_import_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
+    ) -> ReponseDeLancement:
+        """Lancer l'import — matrice §14, diagramme §24.4."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            rapport = lancer_l_import(
+                connexion,
+                entite=entite,
+                lot=lot,
+                acteur=appelant.personne,
+                roles=roles,
+                instant=instant,
+            )
+        return _lancement_rendu(rapport)
 
     return routeur

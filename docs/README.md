@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `643` en usage | `DEC-644` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `644` en usage | `DEC-645` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1100,9 +1100,40 @@ seule exception, `client_alias_creation` crée immédiatement la ligne
 `client_alias`. Matrice §14 : `DSM`/`ESM`/`ADM-E`/`SUPER`, un DSM sans rôle
 plus large limité aux lignes où `F16` le désigne lui-même.
 
-La sous-étape suivante est **`T9`** : import transactionnel des lignes
-valides, mises à jour par e-mail, confirmation explicite pour réactiver un
-profil archivé (`US006`, 1/2).
+**`T9` est faite** (`DEC-644`) : `POST .../imports/{lot}/lancement`, l'import
+transactionnel réel (`US006`, 1/2), matrice §14 « Lancer l'import » — même
+grille que « Charger un CSV » (`ROLES_DE_DEPOT_DE_L_IMPORT`, réutilisée).
+Arbitrage explicite de Jonathan posé avant tout code : `T7` avait renvoyé
+~40 codes du référentiel (dates, identité, entité, métier, situation,
+cercles, DSM, responsabilités Framework, rôles techniques, autorisation
+photo) à « l'import réel » — construire TOUT maintenant plutôt que d'ouvrir
+un écart, sous-étape nettement plus grosse que les précédentes, risque
+assumé. Nouveau module `app/imports/organisation.py` : résout et valide ces
+domaines, appelé UNIQUEMENT par le lancement réel — jamais par la
+prévisualisation de `T6`/`T7`/`T8`, délibérément tenue à l'écart après
+qu'un premier essai de l'y intégrer a cassé 24 tests existants et
+contredit le texte littéral de `T7`. `D-METIER-001`/`D-CERCLE-001`/
+`D-BUREAU-001` ne passent jamais par `import_decision` : le modèle ferme
+ses cinq catégories sans en nommer une pour une création de catalogue — à
+la différence du rapprochement client, dont l'ambiguïté réelle justifiait
+deux catégories dédiées ; la ligne reste `needs_decision`, ce que la
+formule de réconciliation du rapport prévoit explicitement. Nouveau module
+`app/imports/execution.py` : chaque ligne dans son propre savepoint
+(`connexion.begin_nested()`, premier usage du projet) — un refus de la
+base sur une ligne n'affecte aucune autre. Deux passes : la première crée
+ou met à jour chaque ligne éligible (dont `dg` → DSM automatique, départ
+déjà passé → archivage immédiat), la seconde résout le DSM (`F16`) une
+fois que toutes les responsabilités du lot existent réellement. Réutilise
+`creer_un_collaborateur` (`T2`), `modifier_les_donnees_organisationnelles`
+(LOT 5 `T7`), `restaurer_un_profil`/`archiver_un_profil` (LOT 5 `T8`) tels
+quels. Défaut trouvé et corrigé dans `T8` : la décision générique
+autorisait un DSM à réactiver ou fusionner un profil, que la matrice
+refuse sur cette ligne précise.
+
+La sous-étape suivante est **`T10`** : le rapport d'import
+(créations/mises à jour/avertissements/rejets), le rejeu des lignes
+rejetées, la conservation temporaire maîtrisée du CSV source (`US006`,
+2/2).
 
 ---
 
