@@ -78,11 +78,10 @@ PAS LU
   SEULEMENT si aucun point-virgule n'apparait dans l'echantillon — et la
   tabulation, jamais nommee par `DEC-432`, est retiree des candidats.
 
-  Le separateur RETENU n'est, a ce stade, PAS persiste dans `import_batch` —
-  `criteres-qualite-import.md` §4 l'exige « aux cotes de l'empreinte SHA-256 »
-  dans LE RAPPORT D'IMPORT, qui est construit par `T10` : le consigner
-  relevait donc de cette sous-etape-la, nommee explicitement ici pour ne pas
-  perdre le residu.
+  Le separateur RETENU est desormais persiste dans `import_batch.delimiter`
+  (migration `0026`, `T10`) — `criteres-qualite-import.md` §4 l'exige « aux
+  cotes de l'empreinte SHA-256 » dans LE RAPPORT D'IMPORT. Ce module le
+  consigne a l'instant du depot ; `app.imports.rapport` le relit tel quel.
 
   Chaque ligne devient un dictionnaire {en-tete: valeur}, SANS aucune
   validation de contenu : une valeur manquante vaut `None`, une colonne en
@@ -158,10 +157,10 @@ class LotDepose:
 _INSERER_LE_LOT: Final = text(
     """
     INSERT INTO import_batch
-      (entity_id, source_filename, source_checksum_sha256, state,
+      (entity_id, source_filename, source_checksum_sha256, delimiter, state,
        created_by_person_id, updated_by_person_id, created_at, updated_at)
     VALUES
-      (:entite, :nom_de_fichier, :empreinte, :etat_initial,
+      (:entite, :nom_de_fichier, :empreinte, :delimiteur, :etat_initial,
        :acteur, :acteur, :instant, :instant)
     RETURNING id
     """
@@ -219,12 +218,15 @@ def _detecter_le_delimiteur(texte: str) -> str:
     return _DELIMITEUR_PAR_DEFAUT
 
 
-def _analyser_les_lignes(texte: str) -> list[dict[str, object]]:
+def _analyser_les_lignes(texte: str) -> tuple[list[dict[str, object]], str]:
     """Les lignes du CSV, SANS AUCUNE validation de contenu — §9.5 point 2.
 
     `csv.DictReader` gere deja la variete que la colonne a trop ou en moins
     produit : `restval=None` pour une valeur manquante, `restkey=` (jamais
     `None`) pour les valeurs excedentaires, en liste.
+
+    Rend aussi le delimiteur RETENU — `T10` le consigne desormais dans
+    `import_batch.delimiter`, residu nomme par `T6` (voir l'en-tete du module).
     """
     delimiteur = _detecter_le_delimiteur(texte)
     lecteur = csv.DictReader(
@@ -233,7 +235,7 @@ def _analyser_les_lignes(texte: str) -> list[dict[str, object]]:
         restkey=CLE_COLONNES_EXCEDENTAIRES,
         restval=None,
     )
-    return [dict(ligne) for ligne in lecteur]
+    return [dict(ligne) for ligne in lecteur], delimiteur
 
 
 def deposer_un_csv(
@@ -285,7 +287,7 @@ def deposer_un_csv(
             statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
-    lignes = _analyser_les_lignes(texte)
+    lignes, delimiteur = _analyser_les_lignes(texte)
     empreinte = hashlib.sha256(contenu).hexdigest()
 
     lot = connexion.execute(
@@ -294,6 +296,7 @@ def deposer_un_csv(
             "entite": entite,
             "nom_de_fichier": nom_nettoye,
             "empreinte": empreinte,
+            "delimiteur": delimiteur,
             "etat_initial": EtatLotImport.UPLOADED.value,
             "acteur": acteur,
             "instant": instant,

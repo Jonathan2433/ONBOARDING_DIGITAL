@@ -96,12 +96,17 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
 from app.imports.analyse import (
+    CODE_EMAIL_ABSENT,
+    CODE_EMAIL_DOMAINE_REFUSE,
+    CODE_EMAIL_DOUBLON_FICHIER,
+    CODE_EMAIL_FORMAT_INVALIDE,
     CODE_PERSONNE_PROFIL_ACTIF,
     CODE_PERSONNE_PROFIL_ARCHIVE,
     etat_depuis_les_problemes,
 )
 from app.imports.clients import CODE_CLIENT_INCONNU
 from app.imports.correspondance import valeur_logique
+from app.imports.decisions import CODE_LIGNE_INTROUVABLE, MESSAGE_LIGNE_INTROUVABLE
 from app.imports.modeles import EtatLigneImport, EtatLotImport, TypeDeDecisionImport
 from app.imports.organisation import (
     NIVEAU_DU_CODE_ORGANISATION,
@@ -146,6 +151,42 @@ MESSAGE_ETAT_NON_LANCABLE: Final = (
 CODE_LIGNE_REJETEE_PAR_LA_BASE: Final = "refus_de_la_base"
 MESSAGE_LIGNE_REJETEE_PAR_LA_BASE: Final = (
     "Cette ligne a ete rejetee par une contrainte d'integrite au moment de l'import."
+)
+
+#  `T10`, `rejouer_une_ligne` — matrice §14 « Rejouer les lignes rejetees »,
+#  MEME grille que « Lancer l'import » (`ROLES_DE_DEPOT_DE_L_IMPORT`, §7.27).
+CODE_LOT_NON_COMPLETE: Final = "lot_non_complete"
+MESSAGE_LOT_NON_COMPLETE: Final = (
+    "Ce lot n'a pas encore ete importe : rien a rejouer avant un premier lancement."
+)
+
+CODE_LIGNE_NON_REJETEE: Final = "ligne_non_rejetee"
+MESSAGE_LIGNE_NON_REJETEE: Final = "Cette ligne n'est pas actuellement rejetee."
+
+#  **CE QUE LE REJEU NE COUVRE JAMAIS, ET POURQUOI** — voir l'en-tete du
+#  module, §"CE QUE T7/T8 AVAIENT DEJA JUGE N'EST PAS REJOUE" : seule
+#  `app.imports.organisation` est revalidee FRAICHE ici, jamais les codes
+#  E-EMAIL-* d'`app.imports.analyse`, qui dependent du FICHIER ENTIER (doublon
+#  technique) ou d'une normalisation qui ne change pas avec le temps (format).
+#  Rejouer une ligne qui porte encore un de ces codes la relancerait dans le
+#  pipeline ORGANISATION SEUL, qui ne sait meme pas LIRE l'e-mail — elle
+#  serait acceptee a tort. `E-EMAIL-003` (domaine refuse) EST sensible au
+#  temps (un domaine peut etre autorise apres coup), mais le reproduire ici
+#  dupliquerait la requete `allowed_email_domain` pour un seul code — un
+#  nouveau depot du fichier reste la voie, documentee plutot que construite
+#  (§6.5).
+CODE_REJEU_HORS_PORTEE: Final = "rejeu_hors_portee"
+MESSAGE_REJEU_HORS_PORTEE: Final = (
+    "Cette ligne porte une anomalie d'e-mail ou de doublon detectee a l'analyse : "
+    "seul un nouveau depot du fichier corrige peut la faire progresser."
+)
+_CODES_HORS_PORTEE_DU_REJEU: Final = frozenset(
+    {
+        CODE_EMAIL_ABSENT,
+        CODE_EMAIL_FORMAT_INVALIDE,
+        CODE_EMAIL_DOMAINE_REFUSE,
+        CODE_EMAIL_DOUBLON_FICHIER,
+    }
 )
 
 
@@ -195,6 +236,19 @@ _DECISIONS_DU_LOT: Final = text(
       JOIN import_row r ON r.id = d.import_row_id
      WHERE r.import_batch_id = :lot
     """
+)
+
+_LIGNE_REJETEE_SOUS_VERROU: Final = text(
+    """
+    SELECT id, row_number, raw_data, state, error_codes
+      FROM import_row
+     WHERE id = :ligne AND import_batch_id = :lot AND entity_id = :entite
+       FOR UPDATE
+    """
+)
+
+_DECISIONS_DE_LA_LIGNE: Final = text(
+    "SELECT decision_type, target_person_id FROM import_decision WHERE import_row_id = :ligne"
 )
 
 _FIXER_LA_LIGNE_IMPORTEE: Final = text(
@@ -693,6 +747,190 @@ def _mettre_a_jour(
     return appartenance
 
 
+def _traiter_une_ligne(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    ligne: _LigneAImporter,
+    decisions_de_la_ligne: dict[str, uuid.UUID | None],
+    resolution: ResolutionOrganisationnelle,
+    instant: dt.datetime,
+) -> str:
+    """Le corps PAR LIGNE de `lancer_l_import` — partage avec `rejouer_une_ligne`.
+
+    Extrait de `T9` par `T10` (§7.27) : `rejouer_une_ligne` a besoin EXACTEMENT
+    de la meme logique, pour UNE SEULE ligne plutot que pour tout le lot. La
+    dupliquer aurait reproduit la classe de defaut que ce depot a deja payee
+    (une regle a deux endroits qui divergent au premier correctif).
+
+    Rend l'un de `"importee"`, `"mise_a_jour"`, `"rejetee"`, `"en_attente"` —
+    au seul appelant de compter dans la categorie qui le concerne.
+    """
+    if TypeDeDecisionImport.VOLUNTARY_REJECTION.value in decisions_de_la_ligne:
+        connexion.execute(
+            _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
+            {
+                "etat": EtatLigneImport.REJECTED.value,
+                "codes": json.dumps(ligne.error_codes),
+                "instant": instant,
+                "ligne": ligne.identifiant,
+            },
+        )
+        return "rejetee"
+
+    niveau_frais = etat_depuis_les_problemes(list(resolution.problemes))
+
+    resolu_par_decision = True
+    if ligne.state == EtatLigneImport.NEEDS_DECISION.value:
+        resolu_par_decision = _decisions_couvrent_les_codes(
+            ligne.error_codes, decisions_de_la_ligne
+        )
+
+    if niveau_frais == EtatLigneImport.REJECTED.value:
+        _ecrire_les_problemes(
+            connexion, entite=entite, ligne=ligne.identifiant, problemes=resolution.problemes
+        )
+        connexion.execute(
+            _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
+            {
+                "etat": EtatLigneImport.REJECTED.value,
+                "codes": json.dumps(
+                    sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
+                ),
+                "instant": instant,
+                "ligne": ligne.identifiant,
+            },
+        )
+        return "rejetee"
+
+    if niveau_frais == EtatLigneImport.NEEDS_DECISION.value or not resolu_par_decision:
+        if resolution.problemes:
+            _ecrire_les_problemes(
+                connexion, entite=entite, ligne=ligne.identifiant, problemes=resolution.problemes
+            )
+        connexion.execute(
+            _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
+            {
+                "etat": EtatLigneImport.NEEDS_DECISION.value,
+                "codes": json.dumps(
+                    sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
+                ),
+                "instant": instant,
+                "ligne": ligne.identifiant,
+            },
+        )
+        return "en_attente"
+
+    #  --- Eligible : CREATION, MISE A JOUR, ou REACTIVATION ---
+    #  `niveau_frais` n'est ici ni `rejected` ni `needs_decision` : les
+    #  seuls problemes qui subsistent sont de niveau `W` (avertissement).
+    #  codes-erreurs-import.md §4 : « une ligne en avertissement EST
+    #  importable […] L'avertissement est CONSERVE au rapport ». Ecrits
+    #  AVANT l'ecriture metier, jamais apres un refus de savepoint —
+    #  perdre les avertissements serait aussi faux que perdre les rejets.
+    if resolution.problemes:
+        _ecrire_les_problemes(
+            connexion, entite=entite, ligne=ligne.identifiant, problemes=resolution.problemes
+        )
+    codes_finaux = sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
+
+    client_id = _client_resolu(decisions_de_la_ligne, ligne.identifiant)
+    reactiver = TypeDeDecisionImport.PROFILE_REACTIVATION.value in decisions_de_la_ligne
+    fusionner = TypeDeDecisionImport.PERSON_MERGE.value in decisions_de_la_ligne
+    personne_cible = (
+        decisions_de_la_ligne.get(TypeDeDecisionImport.PROFILE_REACTIVATION.value)
+        if reactiver
+        else decisions_de_la_ligne.get(TypeDeDecisionImport.PERSON_MERGE.value)
+        if fusionner
+        else None
+    )
+
+    try:
+        with connexion.begin_nested():
+            if personne_cible is not None:
+                appartenance = _mettre_a_jour(
+                    connexion,
+                    entite=entite,
+                    acteur=acteur,
+                    roles=roles,
+                    personne=personne_cible,
+                    reactiver=reactiver,
+                    resolution=resolution,
+                    client_id=client_id,
+                    instant=instant,
+                )
+                personne = personne_cible
+            else:
+                personne, appartenance = _creer(
+                    connexion,
+                    entite=entite,
+                    acteur=acteur,
+                    roles=roles,
+                    raw_data=ligne.raw_data,
+                    resolution=resolution,
+                    client_id=client_id,
+                    instant=instant,
+                )
+    except (IntegrityError, DataError) as erreur:
+        #  `traduire_un_refus_de_la_base` RE-LEVE l'erreur TELLE QUELLE
+        #  (jamais un message invente) pour les causes qu'elle ne reconnait
+        #  pas (ex. une `ForeignKeyViolation`, qu'aucune des quatre ecritures
+        #  de `T7` du LOT 5 n'avait encore rencontree). Un refus generique,
+        #  nomme comme tel, couvre ce residu plutot que de laisser
+        #  remonter une exception non geree.
+        try:
+            refus = traduire_un_refus_de_la_base(erreur)
+            code_refus, message_refus = refus.code, refus.message
+        except (IntegrityError, DataError):
+            code_refus, message_refus = (
+                CODE_LIGNE_REJETEE_PAR_LA_BASE,
+                MESSAGE_LIGNE_REJETEE_PAR_LA_BASE,
+            )
+        connexion.execute(
+            _INSERER_UN_PROBLEME,
+            {
+                "entite": entite,
+                "ligne": ligne.identifiant,
+                "code": code_refus,
+                "champ": None,
+                "message": message_refus,
+                "niveau": "E",
+                "valeur_normalisee_sure": None,
+                "resolution": None,
+            },
+        )
+        connexion.execute(
+            _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
+            {
+                "etat": EtatLigneImport.REJECTED.value,
+                "codes": json.dumps([*ligne.error_codes, code_refus]),
+                "instant": instant,
+                "ligne": ligne.identifiant,
+            },
+        )
+        return "rejetee"
+
+    etat_final = (
+        EtatLigneImport.UPDATED.value
+        if personne_cible is not None
+        else EtatLigneImport.IMPORTED.value
+    )
+    connexion.execute(
+        _FIXER_LA_LIGNE_IMPORTEE,
+        {
+            "etat": etat_final,
+            "personne": personne,
+            "appartenance": appartenance,
+            "codes": json.dumps(codes_finaux),
+            "instant": instant,
+            "ligne": ligne.identifiant,
+        },
+    )
+    return "mise_a_jour" if etat_final == EtatLigneImport.UPDATED.value else "importee"
+
+
 def lancer_l_import(
     connexion: Connection,
     *,
@@ -749,179 +987,24 @@ def lancer_l_import(
         if ligne.state == EtatLigneImport.REJECTED.value:
             continue
 
-        decisions_de_la_ligne = decisions.get(ligne.identifiant, {})
-        if TypeDeDecisionImport.VOLUNTARY_REJECTION.value in decisions_de_la_ligne:
-            connexion.execute(
-                _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
-                {
-                    "etat": EtatLigneImport.REJECTED.value,
-                    "codes": json.dumps(ligne.error_codes),
-                    "instant": instant,
-                    "ligne": ligne.identifiant,
-                },
-            )
-            rejetees += 1
-            continue
-
-        resolution = resolutions[ligne.identifiant]
-        niveau_frais = etat_depuis_les_problemes(list(resolution.problemes))
-
-        resolu_par_decision = True
-        if ligne.state == EtatLigneImport.NEEDS_DECISION.value:
-            resolu_par_decision = _decisions_couvrent_les_codes(
-                ligne.error_codes, decisions_de_la_ligne
-            )
-
-        if niveau_frais == EtatLigneImport.REJECTED.value:
-            _ecrire_les_problemes(
-                connexion, entite=entite, ligne=ligne.identifiant, problemes=resolution.problemes
-            )
-            connexion.execute(
-                _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
-                {
-                    "etat": EtatLigneImport.REJECTED.value,
-                    "codes": json.dumps(
-                        sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
-                    ),
-                    "instant": instant,
-                    "ligne": ligne.identifiant,
-                },
-            )
-            rejetees += 1
-            continue
-
-        if niveau_frais == EtatLigneImport.NEEDS_DECISION.value or not resolu_par_decision:
-            if resolution.problemes:
-                _ecrire_les_problemes(
-                    connexion,
-                    entite=entite,
-                    ligne=ligne.identifiant,
-                    problemes=resolution.problemes,
-                )
-            connexion.execute(
-                _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
-                {
-                    "etat": EtatLigneImport.NEEDS_DECISION.value,
-                    "codes": json.dumps(
-                        sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
-                    ),
-                    "instant": instant,
-                    "ligne": ligne.identifiant,
-                },
-            )
-            en_attente += 1
-            continue
-
-        #  --- Eligible : CREATION, MISE A JOUR, ou REACTIVATION ---
-        #  `niveau_frais` n'est ici ni `rejected` ni `needs_decision` : les
-        #  seuls problemes qui subsistent sont de niveau `W` (avertissement).
-        #  codes-erreurs-import.md §4 : « une ligne en avertissement EST
-        #  importable […] L'avertissement est CONSERVE au rapport ». Ecrits
-        #  AVANT l'ecriture metier, jamais apres un refus de savepoint —
-        #  perdre les avertissements serait aussi faux que perdre les rejets.
-        if resolution.problemes:
-            _ecrire_les_problemes(
-                connexion, entite=entite, ligne=ligne.identifiant, problemes=resolution.problemes
-            )
-        codes_finaux = sorted(set(ligne.error_codes) | {p.code for p in resolution.problemes})
-
-        client_id = _client_resolu(decisions_de_la_ligne, ligne.identifiant)
-        reactiver = TypeDeDecisionImport.PROFILE_REACTIVATION.value in decisions_de_la_ligne
-        fusionner = TypeDeDecisionImport.PERSON_MERGE.value in decisions_de_la_ligne
-        personne_cible = (
-            decisions_de_la_ligne.get(TypeDeDecisionImport.PROFILE_REACTIVATION.value)
-            if reactiver
-            else decisions_de_la_ligne.get(TypeDeDecisionImport.PERSON_MERGE.value)
-            if fusionner
-            else None
+        resultat = _traiter_une_ligne(
+            connexion,
+            entite=entite,
+            acteur=acteur,
+            roles=roles,
+            ligne=ligne,
+            decisions_de_la_ligne=decisions.get(ligne.identifiant, {}),
+            resolution=resolutions[ligne.identifiant],
+            instant=instant,
         )
-
-        try:
-            with connexion.begin_nested():
-                if personne_cible is not None:
-                    appartenance = _mettre_a_jour(
-                        connexion,
-                        entite=entite,
-                        acteur=acteur,
-                        roles=roles,
-                        personne=personne_cible,
-                        reactiver=reactiver,
-                        resolution=resolution,
-                        client_id=client_id,
-                        instant=instant,
-                    )
-                    personne = personne_cible
-                else:
-                    personne, appartenance = _creer(
-                        connexion,
-                        entite=entite,
-                        acteur=acteur,
-                        roles=roles,
-                        raw_data=ligne.raw_data,
-                        resolution=resolution,
-                        client_id=client_id,
-                        instant=instant,
-                    )
-        except (IntegrityError, DataError) as erreur:
-            #  `traduire_un_refus_de_la_base` RE-LEVE l'erreur TELLE QUELLE
-            #  (jamais un message invente) pour les causes qu'elle ne reconnait
-            #  pas (ex. une `ForeignKeyViolation`, qu'aucune des quatre ecritures
-            #  de `T7` du LOT 5 n'avait encore rencontree). Un refus generique,
-            #  nomme comme tel, couvre ce residu plutot que de laisser
-            #  remonter une exception non geree.
-            try:
-                refus = traduire_un_refus_de_la_base(erreur)
-                code_refus, message_refus = refus.code, refus.message
-            except (IntegrityError, DataError):
-                code_refus, message_refus = (
-                    CODE_LIGNE_REJETEE_PAR_LA_BASE,
-                    MESSAGE_LIGNE_REJETEE_PAR_LA_BASE,
-                )
-            connexion.execute(
-                _INSERER_UN_PROBLEME,
-                {
-                    "entite": entite,
-                    "ligne": ligne.identifiant,
-                    "code": code_refus,
-                    "champ": None,
-                    "message": message_refus,
-                    "niveau": "E",
-                    "valeur_normalisee_sure": None,
-                    "resolution": None,
-                },
-            )
-            connexion.execute(
-                _FIXER_LA_LIGNE_REJETEE_OU_EN_ATTENTE,
-                {
-                    "etat": EtatLigneImport.REJECTED.value,
-                    "codes": json.dumps([*ligne.error_codes, code_refus]),
-                    "instant": instant,
-                    "ligne": ligne.identifiant,
-                },
-            )
-            rejetees += 1
-            continue
-
-        etat_final = (
-            EtatLigneImport.UPDATED.value
-            if personne_cible is not None
-            else EtatLigneImport.IMPORTED.value
-        )
-        connexion.execute(
-            _FIXER_LA_LIGNE_IMPORTEE,
-            {
-                "etat": etat_final,
-                "personne": personne,
-                "appartenance": appartenance,
-                "codes": json.dumps(codes_finaux),
-                "instant": instant,
-                "ligne": ligne.identifiant,
-            },
-        )
-        if etat_final == EtatLigneImport.IMPORTED.value:
+        if resultat == "importee":
             importees += 1
-        else:
+        elif resultat == "mise_a_jour":
             mises_a_jour += 1
+        elif resultat == "rejetee":
+            rejetees += 1
+        else:
+            en_attente += 1
 
     #  --- Passe 2 : le DSM, maintenant que TOUTES les responsabilites de ce
     #      lot existent reellement en base, qu'elles viennent de ce lot ou
@@ -954,6 +1037,131 @@ def lancer_l_import(
         lignes_rejetees_a_l_import=rejetees,
         lignes_en_attente_de_decision=en_attente,
     )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ResultatDuRejeu:
+    """Ce que `rejouer_une_ligne` a produit pour LA ligne rejouee."""
+
+    etat: str
+    codes_derreur: tuple[str, ...]
+
+
+def rejouer_une_ligne(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    lot: uuid.UUID,
+    ligne_id: uuid.UUID,
+    acteur: uuid.UUID,
+    roles: frozenset[RoleDeLaMatrice],
+    instant: dt.datetime,
+) -> ResultatDuRejeu:
+    """Rejouer UNE ligne rejetee — matrice §14, `MVP-L09-US006` (2/2), `T10`.
+
+    Arbitrage de Jonathan, posé avant tout code : la correction n'est PAS
+    saisie dans l'application — aucun champ du modele ne la porte
+    (`import_row` n'a que `raw_data`, immuable, et `normalized_data`, calcule).
+    « Rejouer » revalide la MEME ligne, telle quelle, A L'INSTANT PRESENT :
+    utile quand le blocage venait d'ailleurs que de la ligne — un metier ou un
+    cercle manquant a ete cree entre-temps, une decision en attente a ete
+    enregistree. Le CSV corrige a la source reste le chemin normal : un
+    NOUVEAU depot (`T6`/`T7`).
+
+    Seule `app.imports.organisation` est revalidee ici — jamais les codes
+    `E-EMAIL-*` d'`app.imports.analyse`, voir `_CODES_HORS_PORTEE_DU_REJEU`.
+    """
+    ligne_lot = connexion.execute(_LOT_SOUS_VERROU, {"lot": lot, "entite": entite}).one_or_none()
+    if ligne_lot is None:
+        raise ErreurApplicative(
+            code=CODE_LOT_INTROUVABLE,
+            message=MESSAGE_LOT_INTROUVABLE,
+            statut=status.HTTP_404_NOT_FOUND,
+        )
+    if ligne_lot.state != EtatLotImport.COMPLETED.value:
+        raise ErreurApplicative(
+            code=CODE_LOT_NON_COMPLETE,
+            message=MESSAGE_LOT_NON_COMPLETE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+
+    ligne_row = connexion.execute(
+        _LIGNE_REJETEE_SOUS_VERROU, {"ligne": ligne_id, "lot": lot, "entite": entite}
+    ).one_or_none()
+    if ligne_row is None:
+        raise ErreurApplicative(
+            code=CODE_LIGNE_INTROUVABLE,
+            message=MESSAGE_LIGNE_INTROUVABLE,
+            statut=status.HTTP_404_NOT_FOUND,
+        )
+    if ligne_row.state != EtatLigneImport.REJECTED.value:
+        raise ErreurApplicative(
+            code=CODE_LIGNE_NON_REJETEE,
+            message=MESSAGE_LIGNE_NON_REJETEE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+
+    error_codes = list(ligne_row.error_codes or [])
+    if _CODES_HORS_PORTEE_DU_REJEU & set(error_codes):
+        raise ErreurApplicative(
+            code=CODE_REJEU_HORS_PORTEE,
+            message=MESSAGE_REJEU_HORS_PORTEE,
+            statut=status.HTTP_409_CONFLICT,
+        )
+
+    #  **LES CODES PORTES PAR UNE LIGNE `rejected` SONT TOUJOURS CEUX
+    #  D'`app.imports.organisation`** — le garde-fou ci-dessus l'assure
+    #  (`analyse.py` ne produit aucun code `W-*`, et ses seuls codes `E-*`
+    #  viennent d'etre exclus). `_traiter_une_ligne` les RECALCULE depuis zero
+    #  via `resolution.problemes` fraiche : partir d'une liste VIDE, plutot
+    #  que de l'ancienne, evite qu'un code resolu (le cercle vient d'etre
+    #  cree, par exemple) ne survive dans `codes_finaux` par la seule union
+    #  avec l'historique — ce qui ferait rester une ligne REUSSIE visiblement
+    #  en echec dans le rapport.
+    ligne = _LigneAImporter(
+        identifiant=ligne_row.id,
+        row_number=ligne_row.row_number,
+        raw_data=ligne_row.raw_data,
+        state=ligne_row.state,
+        error_codes=[],
+    )
+
+    decisions_de_la_ligne: dict[str, uuid.UUID | None] = {}
+    for d in connexion.execute(_DECISIONS_DE_LA_LIGNE, {"ligne": ligne_id}):
+        decisions_de_la_ligne[d.decision_type] = d.target_person_id
+
+    resolutions = valider_les_champs_organisationnels(
+        connexion, entite=entite, lignes=[(ligne.identifiant, ligne.raw_data)], instant=instant
+    )
+
+    _traiter_une_ligne(
+        connexion,
+        entite=entite,
+        acteur=acteur,
+        roles=roles,
+        ligne=ligne,
+        decisions_de_la_ligne=decisions_de_la_ligne,
+        resolution=resolutions[ligne.identifiant],
+        instant=instant,
+    )
+
+    #  **RELU APRES ECRITURE, JAMAIS DEDUIT DU RESULTAT DE `_traiter_une_ligne`**
+    #  : `_resoudre_les_dsm` (passe 2) peut encore agir sur CETTE ligne si elle
+    #  vient d'etre creee/mise a jour et que son F16 designe un DSM qui
+    #  n'existait pas avant ce rejeu — meme discipline en deux passes que
+    #  `lancer_l_import`.
+    _resoudre_les_dsm(
+        connexion,
+        entite=entite,
+        lignes=[ligne],
+        resolutions=resolutions,
+        acteur=acteur,
+        instant=instant,
+    )
+    relue = connexion.execute(
+        text("SELECT state, error_codes FROM import_row WHERE id = :ligne"), {"ligne": ligne_id}
+    ).one()
+    return ResultatDuRejeu(etat=relue.state, codes_derreur=tuple(relue.error_codes or []))
 
 
 def _client_resolu(

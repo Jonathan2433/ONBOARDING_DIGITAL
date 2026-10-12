@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`
-**Sous-étape suivante :** `T10` — le rapport d'import, le rejeu des lignes rejetées
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`
+**Sous-étape suivante :** `T11` — les opérations de masse contrôlées
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -112,7 +112,7 @@ ne commence.
 | `T7` ✅ | Normalisation des e-mails, détection des doublons, blocage des lignes sans e-mail | `US004` (2/2) | **14 tests** (12 d'intégration, 2 unitaires purs) ; `app/imports/analyse.py` + `app/imports/correspondance.py` ; arbitrage de Jonathan — périmètre borné à l'e-mail et aux doublons de personne, les autres règles (date, métier, cercle, DSM...) vérifiées seulement à l'import réel (`T9`) ; deux défauts corrigés (délimiteur `DEC-432`, compteur `needs_decision_rows`, migration `0025`) — `DEC-642` |
 | `T8` ✅ | Correspondances de clients proposées et validation humaine (fusion/alias), `import_decision` | `US005` | **14 tests**, tous d'intégration ; `app/imports/clients.py` + `app/imports/decisions.py` ; arbitrage de Jonathan — aucune détection automatique de ressemblance (`D-CLIENT-001` jamais produit), `GET .../clients` ferme `ECART-060` pour les clients — `DEC-643` |
 | `T9` ✅ | Import transactionnel des lignes valides, mises à jour par e-mail, confirmation explicite pour réactiver un profil archivé | `US006` (1/2) | **17 tests**, tous d'intégration ; `app/imports/organisation.py` (~40 codes restants du référentiel, validés UNIQUEMENT à l'import réel) + `app/imports/execution.py` (`POST .../imports/{lot}/lancement`, chaque ligne dans son propre savepoint) ; arbitrage de Jonathan — tout le référentiel construit maintenant plutôt qu'un écart ; défaut corrigé dans `T8` (un DSM ne peut plus réactiver/fusionner un profil) — `DEC-644` |
-| `T10` | Rapport (créations/mises à jour/avertissements/rejets), rejeu des lignes rejetées, conservation temporaire maîtrisée | `US006` (2/2) | `QO-100` posée mais non bloquante ici |
+| `T10` ✅ | Rapport (créations/mises à jour/avertissements/rejets), rejeu des lignes rejetées, conservation temporaire maîtrisée | `US006` (2/2) | **9 tests**, tous d'intégration ; `app/imports/rapport.py` (`GET .../imports/{lot}/rapport`, réconciliation fraîche) + `rejouer_une_ligne` (`POST .../imports/{lot}/rows/{ligne}/rejeu`) ; arbitrage de Jonathan — aucune correction saisie dans l'application, la ligne est rejouée telle quelle ; `QO-125` ouverte pour le volet DSM/Booster du rapport ; résidu de `T6` corrigé, `import_batch.delimiter` (migration `0026`) — `DEC-645` |
 | `T11` | Opérations de masse contrôlées (prévisualisation d'impact, idempotence, erreurs partielles explicites) | `US003` | `P1`, dépend de `T2`/`T3` |
 | `T12` | Création d'une nouvelle entité depuis des modèles génériques | `US007` | dépend des LOTS 2/6/7 ; ferme `ECART-035` pour la part « invitations » si l'objet est posé ici, sinon nommé explicitement non résolu |
 | `T13` | Fermeture explicite de `ECART-035` (invitations au départ) | correctif | revue de la révocation `T9` du LOT 3 |

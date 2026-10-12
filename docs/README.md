@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `644` en usage | `DEC-645` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `645` en usage | `DEC-646` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
 | `ECART-nnn` | Écarts |  `001` à `069` |  `ECART-070` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `125` | `QO-126` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -1130,10 +1130,40 @@ quels. Défaut trouvé et corrigé dans `T8` : la décision générique
 autorisait un DSM à réactiver ou fusionner un profil, que la matrice
 refuse sur cette ligne précise.
 
-La sous-étape suivante est **`T10`** : le rapport d'import
-(créations/mises à jour/avertissements/rejets), le rejeu des lignes
-rejetées, la conservation temporaire maîtrisée du CSV source (`US006`,
-2/2).
+**`T10` est faite** (`DEC-645`) : le rapport d'un lot d'import et le rejeu
+d'une ligne rejetée, `US006` (2/2) — **fermée**. Arbitrage explicite de
+Jonathan posé avant tout code : aucune correction n'est saisie dans
+l'application pour le rejeu — le modèle ne porte aucun champ pour elle
+(`import_row.raw_data` est immuable, `normalized_data` est calculé) — une
+ligne rejetée est rejouée TELLE QUELLE, à l'instant présent, utile quand le
+blocage venait d'ailleurs qu'elle-même (un métier ou un cercle créé
+entre-temps, une décision désormais enregistrée) ; le CSV corrigé à la
+source reste le chemin normal. Second arbitrage : la matrice §14 donne
+aussi au DSM (« Consultants ») et au Booster (« Cercle limité ») un accès
+en lecture au rapport, mais aucun document ne dit comment filtrer un
+rapport d'import par DSM ou par cercle, et une ligne rejetée n'a souvent
+aucun collaborateur rattaché pour résoudre ce périmètre — construire
+seulement `ESM`/`ADM-E`/`SUPER` maintenant (`ROLES_DE_DEPOT_DE_L_IMPORT`,
+réutilisée), ouvrir `QO-125` pour le volet DSM/Booster plutôt que
+d'inventer un filtrage. Le corps par ligne de `lancer_l_import` (`T9`) est
+extrait en `_traiter_une_ligne`, partagé avec le nouveau
+`rejouer_une_ligne` (`POST .../imports/{lot}/rows/{ligne}/rejeu`), qui
+exige un lot `completed` et une ligne `rejected`, revalide uniquement
+`app.imports.organisation` — jamais les codes `E-EMAIL-*`, qui dépendent
+du fichier entier ou ne changent pas avec le temps — et repart d'une
+liste de codes vide plutôt que de l'ancienne, pour qu'un code résolu ne
+survive pas dans le rapport par la seule union avec l'historique (défaut
+trouvé et corrigé avant tout commit, dans mes propres tests). Nouveau
+module `app/imports/rapport.py` (`GET .../imports/{lot}/rapport`) : la
+réconciliation est une lecture fraîche de `import_row.state`, jamais un
+cache, pagination du cahier §18.2, aucune ligne rejetée masquée. Résidu
+de `T6` corrigé : `import_batch.delimiter` (migration `0026`) consigne
+enfin le séparateur détecté par `DEC-432`, que `T6` avait nommé sans le
+persister.
+
+La sous-étape suivante est **`T11`** : les opérations de masse contrôlées
+— prévisualisation d'impact, idempotence, erreurs partielles explicites
+(`US003`, `P1`, dépend de `T2`/`T3`).
 
 ---
 
