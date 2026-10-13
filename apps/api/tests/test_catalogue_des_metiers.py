@@ -82,6 +82,7 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             ),
             {"code": f"{marqueur}-autre", "nom": f"{marqueur}-autre"},
         ).scalar_one()
+        r["autre_entite"] = autre_entite
 
         #  Le metier ACTIF de cette entite — le seul attendu dans la reponse.
         r["metier_actif"] = cx.execute(
@@ -137,6 +138,39 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
         )
 
     yield r
+
+    #  **LE NETTOYAGE N'EST PAS OPTIONNEL** (§7.30) : `moteur(parametres).begin()`
+    #  COMMIT, et `_session()` (appelée par les tests) en commit une seconde,
+    #  distincte. Sans ce menage, les lignes survivent et font echouer tout
+    #  test ABSOLU execute apres celui-ci dans la MEME suite — exactement la
+    #  classe de defaut que `make residu-check` existe pour attraper. Meme
+    #  motif que `decor` dans `test_catalogue_des_taches.py` (LOT 7, `T4`).
+    with moteur(parametres).begin() as menage:
+        menage.execute(
+            text(
+                "DELETE FROM user_session WHERE person_id IN "
+                "(SELECT id FROM person WHERE email LIKE :motif)"
+            ),
+            {"motif": f"{marqueur}%"},
+        )
+        menage.execute(
+            text(
+                "DELETE FROM entity_membership WHERE entity_id IN "
+                "(SELECT id FROM entity WHERE code LIKE :motif)"
+            ),
+            {"motif": f"{marqueur}%"},
+        )
+        menage.execute(
+            text(
+                "DELETE FROM job_catalog WHERE entity_id IN "
+                "(SELECT id FROM entity WHERE code LIKE :motif)"
+            ),
+            {"motif": f"{marqueur}%"},
+        )
+        menage.execute(
+            text("DELETE FROM person WHERE email LIKE :motif"), {"motif": f"{marqueur}%"}
+        )
+        menage.execute(text("DELETE FROM entity WHERE code LIKE :motif"), {"motif": f"{marqueur}%"})
 
 
 @pytest.mark.integration
