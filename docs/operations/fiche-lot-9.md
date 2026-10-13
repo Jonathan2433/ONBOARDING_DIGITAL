@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`
-**Sous-étape suivante :** `T12`
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`
+**Sous-étape suivante :** `T13`
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -114,7 +114,7 @@ ne commence.
 | `T9` ✅ | Import transactionnel des lignes valides, mises à jour par e-mail, confirmation explicite pour réactiver un profil archivé | `US006` (1/2) | **17 tests**, tous d'intégration ; `app/imports/organisation.py` (~40 codes restants du référentiel, validés UNIQUEMENT à l'import réel) + `app/imports/execution.py` (`POST .../imports/{lot}/lancement`, chaque ligne dans son propre savepoint) ; arbitrage de Jonathan — tout le référentiel construit maintenant plutôt qu'un écart ; défaut corrigé dans `T8` (un DSM ne peut plus réactiver/fusionner un profil) — `DEC-644` |
 | `T10` ✅ | Rapport (créations/mises à jour/avertissements/rejets), rejeu des lignes rejetées, conservation temporaire maîtrisée | `US006` (2/2) | **9 tests**, tous d'intégration ; `app/imports/rapport.py` (`GET .../imports/{lot}/rapport`, réconciliation fraîche) + `rejouer_une_ligne` (`POST .../imports/{lot}/rows/{ligne}/rejeu`) ; arbitrage de Jonathan — aucune correction saisie dans l'application, la ligne est rejouée telle quelle ; `QO-125` ouverte pour le volet DSM/Booster du rapport ; résidu de `T6` corrigé, `import_batch.delimiter` (migration `0026`) — `DEC-645` |
 | `T11` ✅ | Opérations de masse contrôlées (prévisualisation d'impact, idempotence, erreurs partielles explicites) | `US003` | **6 tests**, tous d'intégration ; `app/people/transfert_masse.py` (`POST .../people/transferts-en-masse{,/apercu}`) ; arbitrage de Jonathan — seul le changement d'entité (`T3`) reçoit une variante en masse, la création en masse étant déjà l'import CSV ; chaque élément dans son propre savepoint, aucune logique métier dupliquée ; idempotence satisfaite par le refus 409 déjà porté par `changer_d_entite` — `DEC-646` |
-| `T12` | Création d'une nouvelle entité depuis des modèles génériques | `US007` | dépend des LOTS 2/6/7 ; ferme `ECART-035` pour la part « invitations » si l'objet est posé ici, sinon nommé explicitement non résolu |
+| `T12` ✅ | Création d'une nouvelle entité depuis des modèles génériques | `US007` | **5 tests**, tous d'intégration ; `POST /entities`, `app/entities/creation.py` ; double arbitrage de Jonathan (entité vierge, premier administrateur nommé dans le même appel) ; `ECART-035` **reste ouvert** — aucun objet « invitation » n'a été posé ici, le geste étant une simple affectation de rôle technique (`technical_role_assignment`), pas une invitation au sens du critère — `DEC-647` |
 | `T13` | Fermeture explicite de `ECART-035` (invitations au départ) | correctif | revue de la révocation `T9` du LOT 3 |
 | `T14` | Écrans back-office — navigation Organisation/Onboarding/Contenu/Données/Pilotage/Configuration/Super-administration, tableau de bord, écrans CRUD, import | transversal | premier et seul écran du lot |
 | `T15` | Contrôle de pile réelle (nom à définir, ex. `make back-office-check`), asymétrie de rôles, isolation multi-entités pendant l'import | transversal | pattern `T13`/`T14` des LOTS 7/8 |

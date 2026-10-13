@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `646` en usage | `DEC-647` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `647` en usage | `DEC-648` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1180,7 +1180,25 @@ rejouer le même lot est sans danger. Chaque échec est rapporté sur son
 Aucune écriture d'audit (`ECART-064`, LOT 10, hors de ce lot). Deux
 routes nouvelles, aucune migration.
 
-La sous-étape suivante est **`T12`**.
+**`T12` est faite** (`DEC-647`) : la création d'une nouvelle entité depuis
+des modèles génériques, `US007`. Double arbitrage explicite de Jonathan
+posé avant tout code (`AskUserQuestion`, reformulé sans jargon) : (1)
+l'entité naît VIERGE — aucun contenu, aucune responsabilité Framework,
+aucun modèle d'onboarding n'est semé. Rien n'existe à copier depuis
+Bordeaux : la résolution `DSM > CIRCLE > ENTITY > GLOBAL` (LOT 7) retombe
+déjà sur le modèle d'onboarding GLOBAL générique dès qu'aucun modèle
+propre à l'entité n'existe — rien de nouveau à construire ; (2) le
+premier administrateur de l'entité est nommé dans le même appel que la
+création, sans quoi l'entité resterait injoignable localement jusqu'à un
+second geste manuel. L'entité est créée directement `active`, aucun état
+`draft` intermédiaire (simplification documentée). Nouveau module
+`app/entities/creation.py`. La garde « super-administrateur global »
+(`est_super_administrateur`, extraite de `resoudre_les_permissions`) est
+définie localement dans `app/entities/routes.py` pour éviter un cycle
+d'imports mesuré directement avec `app.permissions.dependances`. Aucune
+migration.
+
+La sous-étape suivante est **`T13`**.
 
 ---
 

@@ -245,6 +245,39 @@ def _appartenance_occupante(connexion: Connection, personne: uuid.UUID) -> uuid.
     ).scalar_one_or_none()
 
 
+def est_super_administrateur(
+    connexion: Connection, personne: uuid.UUID, instant: dt.datetime
+) -> bool:
+    """`personne` tient-elle le role technique GLOBAL `SUPER_ADMIN`, a `instant`.
+
+    Extraite de la branche 1 de `resoudre_les_permissions` (LOT 9, `T12`) :
+    cette branche ne depend d'AUCUNE entite — `entity_id IS NULL` est exige
+    par le §8.6 pour ce role precisement — et une garde qui n'a encore aucune
+    entite a consulter (« creer une entite ») en a besoin seule, sans les deux
+    autres branches qui, elles, exigent une entite deja existante.
+    """
+    return bool(
+        connexion.execute(
+            text(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM technical_role_assignment "
+                "  WHERE person_id = :personne_super AND role_type = :type_super "
+                "    AND entity_id IS NULL AND archived_at IS NULL "
+                "    AND period @> :instant_super"
+                ")"
+            ),
+            #  Des noms DISTINCTS par emploi : un meme parametre lie a deux
+            #  colonnes rend « inconsistent types deduced for parameter », et
+            #  le message ne nomme ni la table ni la colonne. §7.25.
+            {
+                "personne_super": personne,
+                "type_super": TypeRoleTechnique.SUPER_ADMIN.value,
+                "instant_super": instant,
+            },
+        ).scalar_one()
+    )
+
+
 def resoudre_les_permissions(
     connexion: Connection,
     personne: uuid.UUID,
@@ -281,27 +314,10 @@ def resoudre_les_permissions(
     if principale is not None:
         roles.add(RoleDeLaMatrice.EMPLOYE)
 
-    #  Branche 1 -- l'exception globale. `entity_id IS NULL` est exige : sans
-    #  cette clause, un `ENTITY_ADMIN` d'une autre entite dont le `role_type`
-    #  serait un jour mal ecrit passerait pour un super-administrateur.
-    if connexion.execute(
-        text(
-            "SELECT EXISTS ("
-            "  SELECT 1 FROM technical_role_assignment "
-            "  WHERE person_id = :personne_super AND role_type = :type_super "
-            "    AND entity_id IS NULL AND archived_at IS NULL "
-            "    AND period @> :instant_super"
-            ")"
-        ),
-        #  Des noms DISTINCTS par emploi : un meme parametre lie a deux colonnes
-        #  rend « inconsistent types deduced for parameter », et le message ne
-        #  nomme ni la table ni la colonne. §7.25.
-        {
-            "personne_super": personne,
-            "type_super": TypeRoleTechnique.SUPER_ADMIN.value,
-            "instant_super": instant,
-        },
-    ).scalar_one():
+    #  Branche 1 -- l'exception globale, EXTRAITE en `est_super_administrateur`
+    #  (LOT 9, `T12`) pour etre reutilisee par la garde GLOBALE de creation
+    #  d'entite, qui n'a encore aucune entite a consulter (§7.27).
+    if est_super_administrateur(connexion, personne, instant):
         roles.add(RoleDeLaMatrice.SUPER_ADMINISTRATEUR)
 
     if est_principale:
