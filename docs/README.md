@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `648` en usage | `DEC-649` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `649` en usage | `DEC-650` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1215,7 +1215,32 @@ nom contient « invitation » — prouvé dans les deux sens (une table
 témoin créée manuellement le fait échouer, supprimée il repasse au
 vert). Aucune migration, aucune route.
 
-La sous-étape suivante est **`T14`**.
+**`T14` est faite** (`DEC-649`) : les écrans back-office, les sept
+groupes du cahier §8.1/§10.8 (Organisation, Onboarding, Contenu,
+Données, Pilotage, Configuration, Super-administration) — transversal,
+premier et seul écran du lot. Une seule page à onglets sous la rubrique
+`administration` déjà réservée (LOT 4 `T4`) ; aucune primitive d'onglets
+n'existe dans `packages/ui`, motif WAI-ARIA `tablist`/`tab`/`tabpanel`
+fabriqué à la main, comme au LOT 8 `T9`. L'ancienne page du LOT 7 `T14`
+(catalogue des tâches, modèles d'onboarding) devient l'onglet
+« Onboarding » sans aucune règle changée ; le suivi des tâches en
+retard (LOT 7 `T12`) rejoint « Pilotage », aux côtés du nouveau tableau
+de bord (`T5`). Arbitrage explicite de Jonathan posé avant tout code
+(`AskUserQuestion`) : « Contenu » et « Configuration » n'ont aucune
+route à consommer dans ce lot ni ailleurs — ils restent affichés,
+marqués « à venir », plutôt qu'omis. Quatre sections nouvelles
+consomment les routes posées sans écran par `T2` à `T12` : Organisation
+(création d'un collaborateur, changement d'entité, transfert en masse,
+archivage/restauration cercle et bureau), Données (l'assistant d'import
+complet, dépôt à rapport), Pilotage (tableau de bord), Super-
+administration (création d'entité, `SUPER` seul). Une route nouvelle,
+trouvée en construisant l'écran — même motif que `GET .../templates` au
+LOT 7 `T14` : `GET .../job-catalog` sert le catalogue des métiers d'une
+entité, qu'aucune route ne listait jusqu'ici. Cinq nouvelles grilles de
+rôles ajoutées au manifeste, chacune confrontée à sa constante Python
+par un nouveau fichier de test. Aucune migration.
+
+La sous-étape suivante est **`T15`**.
 
 ---
 
