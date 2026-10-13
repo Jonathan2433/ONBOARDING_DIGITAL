@@ -23,17 +23,29 @@
  *   page qui se demonte ne doivent pas ecrire un etat apres coup.
  */
 import {
+  cheminArchivageDUnBureau,
+  cheminArchivageDUnCercle,
   cheminBureau,
   cheminCercle,
   cheminFramework,
+  cheminRestaurationDUnBureau,
+  cheminRestaurationDUnCercle,
+  EN_TETE_CLE_IDEMPOTENCE,
   EN_TETE_CORRELATION,
+  EN_TETE_JETON_CSRF,
   type PageDuBureau,
   type PageDuCercle,
   type PageFramework,
+  type ResultatDArchivageDeStructure,
+  type ResultatDeRestaurationDeStructure,
+  validerLArchivageDeStructure,
   validerLaPageDuBureau,
   validerLaPageDuCercle,
   validerLaPageFramework,
+  validerLaRestaurationDeStructure,
 } from '@onboarding/contracts';
+
+import { lireLaSession } from './auth';
 
 /** Ce qu'un appel rend, une fois lu — la meme forme pour les trois ressources. */
 export interface ReponseLue<T> {
@@ -103,4 +115,94 @@ export async function lireLeBureau(
   signal?: AbortSignal,
 ): Promise<ReponseLue<PageDuBureau>> {
   return appeler(cheminBureau(code, codeBureau), validerLaPageDuBureau, signal);
+}
+
+/**
+ * Archiver ou restaurer un cercle ou un bureau — LOT 9, `T4`/`T14`.
+ *
+ * **MEME MONTAGE QUE `administration.ts`** : jeton anti-CSRF lu au dernier
+ * instant via `GET /auth/session`, cle d'idempotence PAR TENTATIVE — rejouer
+ * la meme apres un echec ferait croire au serveur qu'il s'agit du meme geste.
+ *
+ * **LE CORPS NE PORTE QU'UNE `version`** (§18.1 : aucun motif pour ces deux
+ * ressources). L'identifiant de la cible (`circle_id`/`office_id`) est deja
+ * expose par `GET …/framework` (`carte.identifiant`), donc jamais redemande.
+ */
+async function ecrireUneTransitionDeStructure<T>(
+  chemin: string,
+  version: number,
+  valider: (valeur: unknown) => T,
+): Promise<ReponseLue<T>> {
+  const session = await lireLaSession();
+  if (session.statut !== 200 || session.corps === null) {
+    return { statut: session.statut, corps: null, correlation: null };
+  }
+
+  const reponse = await fetch(chemin, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      [EN_TETE_JETON_CSRF]: session.corps.jeton_csrf,
+      [EN_TETE_CLE_IDEMPOTENCE]: globalThis.crypto.randomUUID(),
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ version }),
+  });
+  const correlation = reponse.headers.get(EN_TETE_CORRELATION);
+
+  let corps: T | null;
+  try {
+    corps = valider(await reponse.json());
+  } catch {
+    corps = null;
+  }
+  return { statut: reponse.status, corps, correlation };
+}
+
+export function archiverUnCercle(
+  code: string,
+  circleId: string,
+  version: number,
+): Promise<ReponseLue<ResultatDArchivageDeStructure>> {
+  return ecrireUneTransitionDeStructure(
+    cheminArchivageDUnCercle(code, circleId),
+    version,
+    validerLArchivageDeStructure,
+  );
+}
+
+export function restaurerUnCercle(
+  code: string,
+  circleId: string,
+  version: number,
+): Promise<ReponseLue<ResultatDeRestaurationDeStructure>> {
+  return ecrireUneTransitionDeStructure(
+    cheminRestaurationDUnCercle(code, circleId),
+    version,
+    validerLaRestaurationDeStructure,
+  );
+}
+
+export function archiverUnBureau(
+  code: string,
+  officeId: string,
+  version: number,
+): Promise<ReponseLue<ResultatDArchivageDeStructure>> {
+  return ecrireUneTransitionDeStructure(
+    cheminArchivageDUnBureau(code, officeId),
+    version,
+    validerLArchivageDeStructure,
+  );
+}
+
+export function restaurerUnBureau(
+  code: string,
+  officeId: string,
+  version: number,
+): Promise<ReponseLue<ResultatDeRestaurationDeStructure>> {
+  return ecrireUneTransitionDeStructure(
+    cheminRestaurationDUnBureau(code, officeId),
+    version,
+    validerLaRestaurationDeStructure,
+  );
 }

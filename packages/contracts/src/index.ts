@@ -501,3 +501,137 @@ export {
   validerLAccueil,
 } from './accueil.js';
 export type { AccueilDEntite, ArriveeRecente, PageDesArriveesRecentes } from './accueil.js';
+
+//  LE CATALOGUE DES METIERS — LOT 9, `T14`, pose en construisant l'ecran :
+//  aucune sous-etape anterieure ne servait cette liste.
+export {
+  cheminCatalogueDesMetiers,
+  CODES_CATALOGUE_DES_METIERS,
+  GABARIT_CHEMIN_CATALOGUE_DES_METIERS,
+  validerLeCatalogueDesMetiers,
+} from './catalogueDesMetiers.js';
+export type { CatalogueDesMetiers, MetierDuCatalogue } from './catalogueDesMetiers.js';
+
+//  LES ECRANS BACK-OFFICE — LOT 9, `T14`. Six modules, un par domaine deja
+//  construit par `T2` a `T12` sans aucun ecran consommateur jusqu'ici — meme
+//  partage que le catalogue de taches (LOT 7, `T4`/`T14`) et le suivi
+//  d'onboarding : la ROUTE existe depuis sa sous-etape, le MODULE DE CONTRAT
+//  depuis le premier ecran qui en a besoin.
+export {
+  cheminApercuDuTransfertEnMasse,
+  cheminChangementDEntite,
+  cheminCreationDeCollaborateur,
+  cheminTransfertEnMasse,
+  CODES_APERCU_DU_TRANSFERT,
+  CODES_CHANGEMENT_D_ENTITE,
+  CODES_CREATION_DE_COLLABORATEUR,
+  CODES_TRANSFERT_EN_MASSE,
+  GABARIT_CHEMIN_APERCU_DU_TRANSFERT,
+  GABARIT_CHEMIN_CHANGEMENT_D_ENTITE,
+  GABARIT_CHEMIN_CREATION_DE_COLLABORATEUR,
+  GABARIT_CHEMIN_TRANSFERT_EN_MASSE,
+  peutEcrireSurUnCollaborateur,
+  ROLES_ECRITURE,
+  validerLeChangementDEntite,
+  validerLeCollaborateurCree,
+  validerLeTransfertEnMasse,
+} from './collaborateurs.js';
+export type {
+  ChangementDEntite,
+  CollaborateurCree,
+  DemandeDeChangementDEntite,
+  DemandeDeCreationDeCollaborateur,
+  DemandeDeTransfertEnMasse,
+  ElementDeTransfertEnMasse,
+  ReponseDeTransfertEnMasse,
+  ResultatDeTransfert,
+} from './collaborateurs.js';
+
+export {
+  cheminArchivageDUnBureau,
+  cheminArchivageDUnCercle,
+  cheminRestaurationDUnBureau,
+  cheminRestaurationDUnCercle,
+  CODES_ARCHIVAGE_DU_BUREAU,
+  CODES_ARCHIVAGE_DU_CERCLE,
+  CODES_RESTAURATION_DU_BUREAU,
+  CODES_RESTAURATION_DU_CERCLE,
+  GABARIT_CHEMIN_ARCHIVAGE_DU_BUREAU,
+  GABARIT_CHEMIN_ARCHIVAGE_DU_CERCLE,
+  GABARIT_CHEMIN_RESTAURATION_DU_BUREAU,
+  GABARIT_CHEMIN_RESTAURATION_DU_CERCLE,
+  peutGererLeCycleDeVieDeLaStructure,
+  ROLES_CYCLE_DE_VIE_FRAMEWORK,
+  validerLArchivageDeStructure,
+  validerLaRestaurationDeStructure,
+} from './organisationCycleDeVie.js';
+export type {
+  DemandeDeTransitionDeStructure,
+  ResultatDArchivageDeStructure,
+  ResultatDeRestaurationDeStructure,
+} from './organisationCycleDeVie.js';
+
+export {
+  cheminTableauDeBord,
+  CODES_TABLEAU_DE_BORD,
+  GABARIT_CHEMIN_TABLEAU_DE_BORD,
+  peutConsulterLeTableauDeBord,
+  ROLES_TABLEAU_DE_BORD,
+  validerLeTableauDeBord,
+} from './tableauDeBord.js';
+export type { ImportEnEchec, TableauDeBord } from './tableauDeBord.js';
+
+export {
+  CHEMIN_CREATION_D_ENTITE,
+  CODES_CREATION_D_ENTITE,
+  peutCreerUneEntite,
+  ROLE_SUPER_ADMINISTRATEUR,
+  validerLEntiteCreee,
+} from './creationDEntite.js';
+export type { DemandeDeCreationDEntite, EntiteCreee } from './creationDEntite.js';
+
+export {
+  cheminDecision,
+  cheminDepotDImport,
+  cheminLancement,
+  cheminListeDesClients,
+  cheminRapport,
+  cheminRejeu,
+  CODES_CLIENTS,
+  CODES_DECISION,
+  CODES_DEPOT_D_IMPORT,
+  CODES_LANCEMENT,
+  CODES_RAPPORT,
+  CODES_REJEU,
+  GABARIT_CHEMIN_CLIENTS,
+  GABARIT_CHEMIN_DECISION,
+  GABARIT_CHEMIN_DEPOT_D_IMPORT,
+  GABARIT_CHEMIN_LANCEMENT,
+  GABARIT_CHEMIN_RAPPORT,
+  GABARIT_CHEMIN_REJEU,
+  peutDeposerUnImport,
+  peutValiderLesRapprochements,
+  ROLES_DEPOT_DE_L_IMPORT,
+  ROLES_VALIDATION_DES_RAPPROCHEMENTS,
+  TYPES_DE_DECISION,
+  validerLaDecision,
+  validerLeLancement,
+  validerLeLotDepose,
+  validerLeRapport,
+  validerLeRejeu,
+  validerLesClients,
+} from './imports.js';
+export type {
+  ClientDuCatalogue,
+  DecisionEnregistree,
+  DemandeDeDecision,
+  LigneDuRapport,
+  LotDepose,
+  ProblemeDeLigne,
+  Reconciliation,
+  RapportDImport,
+  ReponseDeLancement,
+  ReponseDeRejeu,
+  ReponseDesClients,
+  TypeDeDecision,
+} from './imports.js';

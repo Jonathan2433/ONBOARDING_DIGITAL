@@ -56,6 +56,7 @@ from app.entities.services import resoudre_une_entite_active
 from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
 from app.people.archivage import archiver_un_profil, restaurer_un_profil
+from app.people.catalogues import lister_le_catalogue_des_metiers
 from app.people.creation import (
     CODE_ACCES_REFUSE,
     MESSAGE_ACCES_REFUSE,
@@ -316,6 +317,27 @@ class ReponseDeCreationDeCollaborateur(BaseModel):
 
     appartenance: uuid.UUID
     version: int
+
+
+class MetierRendu(BaseModel):
+    """Un metier du catalogue — modele §6.3. LOT 9 `T14`."""
+
+    identifiant: uuid.UUID
+    code: str
+    label: str
+
+
+class ReponseDuCatalogueDesMetiers(BaseModel):
+    """Les metiers ACTIFS et non archives d'une entite — LOT 9 `T14`.
+
+    Pose en construisant l'ecran back-office : `job_catalog_id` est un champ
+    obligatoire de la creation (`T2`) et du changement d'entite (`T3`) depuis
+    l'ouverture du lot, et aucune route n'en servait la liste jusqu'ici — un
+    formulaire ne peut pas proposer un choix dont il ne connait pas les
+    options. Meme motif que `GET .../templates`, pose par `T14` du LOT 7.
+    """
+
+    metiers: list[MetierRendu]
 
 
 class DemandeDeChangementDEntite(BaseModel):
@@ -1960,6 +1982,62 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 statut=status.HTTP_404_NOT_FOUND,
             )
         return _historique_en_reponse(historique)
+
+    @routeur.get(
+        "/entities/{code}/job-catalog",
+        #  **`dependencies=` et non `Annotated[...]`** : meme piege mesure dans
+        #  `app/organization/routes.py` (le Framework). Aucun role n'est
+        #  distingue : une session etablie suffit, meme regime que les autres
+        #  lectures de reference (Framework, cercle, bureau).
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuCatalogueDesMetiers,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": (
+                    "Aucune session valide. UNE SEULE forme pour cinq causes : cookie "
+                    "absent, jeton inconnu, session revoquee, duree absolue depassee, "
+                    "inactivite depassee."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour DEUX causes : le code est inconnu, ou "
+                    "l'entite existe sans etre active."
+                )
+            },
+        },
+        summary="Le catalogue des metiers configurables de l'entite",
+        description=(
+            "Les metiers ACTIFS et non archives — modele §6.3. Pose en "
+            "construisant l'ecran back-office (`T14`) : `job_catalog_id` est "
+            "obligatoire a la creation d'un collaborateur et au changement "
+            "d'entite depuis l'ouverture du lot, et aucune route n'en servait "
+            "la liste jusque-la."
+        ),
+    )
+    def lire_le_catalogue_des_metiers(
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite consultee, tel qu'il vit dans l'adresse",
+        ),
+    ) -> ReponseDuCatalogueDesMetiers:
+        """Le catalogue des metiers d'une entite, en lecture — LOT 9 `T14`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            metiers = lister_le_catalogue_des_metiers(connexion, entite=entite.id)
+        return ReponseDuCatalogueDesMetiers(
+            metiers=[
+                MetierRendu(identifiant=m.identifiant, code=m.code, label=m.label) for m in metiers
+            ]
+        )
 
     return routeur
 

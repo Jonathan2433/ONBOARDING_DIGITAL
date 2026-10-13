@@ -858,6 +858,23 @@
       ]
     },
     {
+      "cle": "catalogueDesMetiers",
+      "chemin": "/api/v1/entities/{code}/job-catalog",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDuCatalogueDesMetiers",
+      "role": [
+        "Le catalogue des metiers d'une entite — LOT 9, T14.",
+        "Posee en construisant l'ecran back-office : job_catalog_id est",
+        "obligatoire a la creation d'un collaborateur (T2) et au changement",
+        "d'entite (T3) depuis l'ouverture du lot, et aucune route n'en servait",
+        "la liste jusqu'ici -- meme motif que GET .../templates, pose par T14",
+        "du LOT 7. Aucun role distingue : une session etablie suffit, meme",
+        "regime que les autres lectures de reference (Framework, cercle,",
+        "bureau). Seuls les metiers ACTIFS et non archives sont rendus."
+      ]
+    },
+    {
       "cle": "creationDUnCollaborateur",
       "chemin": "/api/v1/entities/{code}/people",
       "methode": "post",
@@ -2312,5 +2329,74 @@
     "Confrontee a `ROLES_DE_PORTEE_ENTITE` de `app/events/perimetre.py` par",
     "un test Python, dans les deux sens."
   ],
-  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"]
+  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_ecriture": [
+    "LOT 9, T14 -- LA GARDE D'ECRITURE GENERALE SUR UN COLLABORATEUR.",
+    "CINQ ROLES : c'est `ROLES_D_ECRITURE` de `app/permissions/perimetre.py`,",
+    "reutilisee TELLE QUELLE par la creation d'un collaborateur (T2), le",
+    "changement d'entite (T3) et le transfert en masse (T11) -- les trois",
+    "ecrivent la meme ressource, entity_membership, par des chemins differents.",
+    "LE FRONTEND N'EST PAS L'AUTORITE : un DSM ou un Booster porteurs de ce",
+    "role peuvent voir le formulaire et recevoir un 403 au clic si la cible",
+    "precise (dsm_person_id, cercle) ne les designe pas -- c'est",
+    "`resoudre_l_autorisation_de_creation` qui tranche, jamais cette liste.",
+    "Confrontee a `ROLES_D_ECRITURE` par un test Python, dans les deux sens."
+  ],
+  "rolesEcriture": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
+  "_commentaire_cycle_de_vie_framework": [
+    "LOT 9, T14 -- L'ARCHIVAGE ET LA RESTAURATION D'UN CERCLE OU D'UN BUREAU.",
+    "TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` (profil) ET",
+    "`rolesRestaurationDUnEvenement`, ET C'EST ENCORE UNE COINCIDENCE, PAS",
+    "UNE DERIVATION (§7.40 de la passation). Celle-ci vient de",
+    "`ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` de `app/organization/perimetre.py`,",
+    "posee par T4 du LOT 9 -- DSM et BOOST en sont exclus EN BLOC meme s'ils",
+    "portent une responsabilite reelle sur le cercle ou le bureau concerne.",
+    "DECLAREE SEPAREMENT de `rolesCycleDeVie` : les fusionner ferait suivre",
+    "l'une quand la matrice change l'autre, en silence (§7.27).",
+    "Confrontee a `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` par un test Python, dans",
+    "les deux sens."
+  ],
+  "rolesCycleDeVieFramework": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_tableau_de_bord": [
+    "LOT 9, T14 -- LA GARDE DU TABLEAU DE BORD ADMINISTRATIF (US001, T5).",
+    "CINQ ROLES, OFFICE A TIRET : c'est `ROLES_DU_TABLEAU_DE_BORD` de",
+    "`app/administration/perimetre.py`, qui reutilise la grille du 15.1",
+    "« Reporting et exports » plutot que d'en ecrire une nouvelle -- aucune",
+    "ligne de la matrice ne s'appelle « tableau de bord ».",
+    "NE GOUVERNE PAS la visibilite des « derniers imports en echec » : cette",
+    "sous-section est filtree PAR L'API SEULE (`ROLES_DE_LECTURE_DES_",
+    "IMPORTS`, DSM/BOOST y recoivent une liste VIDE, jamais un 403 partiel",
+    "sur un agregat qui rend 200) -- le frontend affiche ce qu'il recoit,",
+    "sans deviner un second role.",
+    "Confrontee a `ROLES_DU_TABLEAU_DE_BORD` par un test Python, dans les",
+    "deux sens."
+  ],
+  "rolesTableauDeBord": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
+  "_commentaire_depot_de_l_import": [
+    "LOT 9, T14 -- CHARGER, LANCER ET REJOUER UN IMPORT CSV (matrice 14,",
+    "« Charger un CSV » / « Lancer l'import »).",
+    "TROIS ROLES : c'est `ROLES_DE_DEPOT_DE_L_IMPORT` de",
+    "`app/imports/perimetre.py`, reutilisee TELLE QUELLE (meme objet) par le",
+    "depot (T6), le lancement (T9) et le rejeu (T10) -- jamais trois copies.",
+    "DSM/BOOST valident un rapprochement dans leur perimetre SANS pouvoir",
+    "lancer -- voir `rolesValidationDesRapprochements`, une grille distincte.",
+    "Confrontee a `ROLES_DE_DEPOT_DE_L_IMPORT` par un test Python, dans les",
+    "deux sens."
+  ],
+  "rolesDepotDeLImport": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_validation_des_rapprochements": [
+    "LOT 9, T14 -- VALIDER UN RAPPROCHEMENT DE CLIENT ET ENREGISTRER UNE",
+    "DECISION D'IMPORT (US005, T8).",
+    "QUATRE ROLES, DIFFERENT DE `rolesDepotDeLImport` : c'est",
+    "`ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` de `app/imports/decisions.py`,",
+    "qui ajoute DSM a la grille de depot -- un DSM decide dans son propre",
+    "perimetre (F16) sans pouvoir deposer ni lancer un import. Le SERVICE",
+    "resserre encore pour deux types precis (`person_merge`,",
+    "`profile_reactivation`), refuses a tout DSM meme dans son perimetre --",
+    "cette liste ne le distingue pas, jamais une autorite de plus que",
+    "proposer le formulaire.",
+    "Confrontee a `ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` par un test",
+    "Python, dans les deux sens."
+  ],
+  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"]
 }
