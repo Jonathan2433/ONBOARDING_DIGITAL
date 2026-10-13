@@ -6,7 +6,9 @@ LOT 2, sous-etape `T12`, stories `MVP-L02-US007` et `US008`.
 Le classement est un registre VIVANT : `T15` du LOT 7 reclasse les controles
 `§30.13` a `§30.15`, livres respectivement par `T7`, `T10` et `T9` de ce lot.
 Les laisser « reportes » apres leur livraison ferait mentir le controle de
-recette au moment meme ou la porte `G7` s'appuie sur lui.
+recette au moment meme ou la porte `G7` s'appuie sur lui. `T16` du LOT 9
+reclasse de meme `§30.17` et `§30.18`, livres respectivement par `T6`-`T9` et
+`T9` de ce lot.
 
 CE QUE CE CONTROLE PROUVE, ET POURQUOI IL EXISTE
 
@@ -314,8 +316,30 @@ CLASSEMENT: dict[int, Classement] = {
             "test_un_cercle_d_une_autre_entite_est_refuse",
         ),
     ),
-    17: Classement(17, REPORTE, lot="LOT 9 — imports CSV"),
-    18: Classement(18, REPORTE, lot="LOT 9 — imports CSV, lignes partiellement valides"),
+    17: Classement(
+        17,
+        ACQUIS,
+        preuve=(
+            "LOT 9 `T6`-`T9` — le depot (`T6`) et l'analyse (`T7`/`T8`) n'appellent "
+            "JAMAIS `app.imports.organisation` ni aucune ecriture de `person`/"
+            "`entity_membership` ; seul `lancer_l_import` (`T9`, l'APPROBATION du "
+            "cahier §9.5) ecrit. `import_row.target_person_id` reste NULL jusque-la, "
+            "et un temoin positif dans le MEME test prouve que ce n'est pas un "
+            "pipeline casse qui n'ecrirait jamais (§7.39)"
+        ),
+        tests=("test_aucune_ecriture_metier_avant_le_lancement_de_l_import",),
+    ),
+    18: Classement(
+        18,
+        ACQUIS,
+        preuve=(
+            "LOT 9 `T9` — chaque ligne s'execute dans son PROPRE savepoint "
+            "(`connexion.begin_nested()`), si bien qu'une ligne dont le cercle est "
+            "archive ENTRE la previsualisation et le lancement echoue seule : la "
+            "ligne suivante du MEME lot s'importe normalement"
+        ),
+        tests=("test_une_ligne_en_echec_n_empeche_pas_les_autres_d_etre_importees",),
+    ),
     19: Classement(19, REPORTE, lot="LOT 10 — jobs et idempotence"),
     20: Classement(20, REPORTE, lot="LOT 12 — `audit_event` et atomicite"),
     21: Classement(21, REPORTE, lot="LOT 12 — purge RGPD"),

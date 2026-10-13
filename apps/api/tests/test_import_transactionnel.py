@@ -1195,3 +1195,76 @@ def test_lancer_un_lot_inconnu_est_refuse(cx: Connection) -> None:
             instant=INSTANT,
         )
     assert excinfo.value.code == CODE_LOT_INTROUVABLE
+
+
+# ---------------------------------------------------------------------------
+#  10. §30.17 du modele : « un import n'ecrit aucune ligne avant approbation »
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_aucune_ecriture_metier_avant_le_lancement_de_l_import(
+    cx: Connection, parametres_de_la_stack: Parametres
+) -> None:
+    """Le depot (`T6`) et l'analyse (`T7`/`T8`) ne creent AUCUNE personne.
+
+    Preuve du critere de recette §30.17 du modele : une ligne entierement
+    valide, deposee et previsualisee, ne laisse ni `target_person_id` ni
+    `target_membership_id` renseignes sur `import_row`, et AUCUNE ligne
+    `person` ne porte encore son e-mail — seul `lancer_l_import` (l'APPROBATION
+    du cahier §9.5) ecrit. Le temoin negatif est apparie a un temoin POSITIF
+    dans le MEME test (§7.39 de la passation) : sans lui, un pipeline qui
+    n'ecrirait JAMAIS rendrait la meme observation qu'un pipeline conforme.
+    """
+    entite = _entite(cx, "T17")
+    _domaine_local(cx, entite=entite.identifiant)
+    acteur = _personne(cx, "a17")
+    _metier(cx, entite=entite.identifiant, code="DEV17")
+    _cercle(cx, entite=entite.identifiant, code="DATA17")
+    email_dsm = _dsm_existant(cx, entite=entite.identifiant, suffixe="t17")
+    email = f"attend17@{EMAIL_DOMAINE}"
+    contenu = (
+        ENTETE_COMPLET
+        + "\n"
+        + _ligne_complete(
+            email=email,
+            entite=entite.code,
+            metier="DEV17",
+            cercle_principal="DATA17",
+            email_dsm=email_dsm,
+        )
+        + "\n"
+    )
+
+    lot = _deposer_ou_sauter(
+        cx, parametres_de_la_stack, entite=entite.identifiant, acteur=acteur, contenu=contenu
+    )
+    ligne = _ligne(cx, lot.identifiant, 1)
+
+    #  TEMOIN NEGATIF : rien n'est ecrit avant l'approbation.
+    assert ligne.state == EtatLigneImport.VALID.value
+    assert ligne.target_person_id is None
+    assert ligne.target_membership_id is None
+    assert (
+        cx.execute(text("SELECT 1 FROM person WHERE email_normalized = :e"), {"e": email}).first()
+        is None
+    )
+
+    lancer_l_import(
+        cx,
+        entite=entite.identifiant,
+        lot=lot.identifiant,
+        acteur=acteur,
+        roles=ROLES_ESM,
+        instant=INSTANT,
+    )
+    apres = _ligne(cx, lot.identifiant, 1)
+
+    #  TEMOIN POSITIF : la MEME ligne, apres l'APPROBATION, est ecrite.
+    assert apres.state == EtatLigneImport.IMPORTED.value
+    assert apres.target_person_id is not None
+    assert (
+        cx.execute(text("SELECT 1 FROM person WHERE email_normalized = :e"), {"e": email}).first()
+        is not None
+    )
+    _nettoyer_le_lot(parametres_de_la_stack, entite=entite.identifiant, lot=lot.identifiant)

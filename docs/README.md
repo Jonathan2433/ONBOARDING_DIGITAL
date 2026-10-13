@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `650` en usage | `DEC-651` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `651` en usage | `DEC-652` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -134,7 +134,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
-| `G9` | Fin du back-office | Import réel répété et validé | **LOT 9 OUVERT le 08/10/2026** — `DEC-635`, [fiche](operations/fiche-lot-9.md) |
+| `G9` | Fin du back-office | Import réel répété et validé | **LES SEIZE SOUS-ÉTAPES SONT FAITES, EN ATTENTE DE VALIDATION** — `DEC-635` à `DEC-651`, [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md) |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
@@ -1269,7 +1269,31 @@ anomalie d'e-mail hors de portée du rejeu) et depuis B rend 404 — la
 preuve, sur des identifiants identiques, que seule l'entité discrimine,
 jamais l'état ni le rôle. 16 contrôles, 0 échec, décor nettoyé.
 
-La sous-étape suivante est **`T16`**.
+**`T16` est faite** (`DEC-651`) : la recette de clôture — dernière sous-étape
+du lot, pattern `T14`/`T15` des LOTS 7/8. Aucune route nouvelle, aucune
+migration : un seul test ajouté. **Reclassement du §30 du modèle** :
+`§30.17` (« un import n'écrit aucune ligne avant approbation ») était
+reporté au LOT 9 depuis `T12` du LOT 2 — le code le respectait déjà (le
+dépôt et l'analyse, `T6`-`T8`, n'écrivent jamais `person`/
+`entity_membership`), mais aucun témoin ne le prouvait. Nouveau test
+`test_aucune_ecriture_metier_avant_le_lancement_de_l_import` : il dépose
+une ligne entièrement valide, vérifie que `target_person_id` reste `NULL`
+et qu'aucune ligne `person` n'existe encore APRÈS l'analyse, puis lance
+l'import et vérifie le contraire dans le MÊME test — témoin négatif
+apparié à un témoin positif (§7.39). `§30.18` (« une ligne invalide
+n'empêche pas les lignes valides d'être importées ») était déjà prouvé
+par `T9` (savepoint par ligne), reclassé sans test nouveau. Classement :
+**18 acquis, 2 partiel, 5 reportés, 0 inapplicable** (était 16/2/7/0).
+**Recette sur les images publiées** de `5f30443` (fusion de `T15`) : la
+base de recette était restée à la migration `0023` (état du LOT 8),
+migrée à `0026` avant que `back-office-check`/`onboarding-check`/
+`accueil-check` ne soient rejoués `ENVIRONNEMENT=recette` (16+14+29
+contrôles, 0 échec), artefact tournant nativement en `aarch64`. Zéro
+régression mesurée par comparaison de worktree avec `origin/develop` (74
+échecs environnementaux identiques, liste comparée). `checklist-
+validation-G9.md` préparée, séparant les preuves techniques des
+validations humaines encore à recueillir. **Le LOT 9 est techniquement
+complet** : la porte `G9` attend la validation explicite de Jonathan.
 
 ---
 
