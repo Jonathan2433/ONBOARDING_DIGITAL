@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 12 octobre 2026 — décision `DEC-646`, réalisation de `T11` du LOT 9
+**Dernière mise à jour :** 13 octobre 2026 — décision `DEC-647`, réalisation de `T12` du LOT 9
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -151,6 +151,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 9 `DEC-644`, sous-étape `T9`** | 1 | **Soumise le 12/10/2026** |
 | **Réalisation du LOT 9 `DEC-645`, sous-étape `T10`** | 1 | **Soumise le 12/10/2026** |
 | **Réalisation du LOT 9 `DEC-646`, sous-étape `T11`** | 1 | **Soumise le 12/10/2026** |
+| **Réalisation du LOT 9 `DEC-647`, sous-étape `T12`** | 1 | **Soumise le 13/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -162,7 +163,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **314** | |
+| **Total** | **315** | |
 
 ---
 
@@ -931,7 +932,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-646` | **`T11` du LOT 9 sert le transfert en masse de collaborateurs — cahier §10.8 (« changements unitaires et en masse »), §18.6 (idempotence exigée pour les « opérations en masse »), `MVP-L09-US003`.** **ARBITRAGE EXPLICITE DE JONATHAN POSÉ AVANT TOUT CODE (`AskUserQuestion`, reformulé sans jargon)** : ni le cahier ni la matrice ni le backlog ne nomment QUELLE action doit recevoir une variante « plusieurs à la fois » — seulement qu'il en existe une. La création en masse est déjà servie par l'import CSV (`T6` à `T10`) ; **seul le changement d'entité (`T3`) reçoit une forme en masse** — la seule action structurante que `T2`/`T3` ont construite et qui n'avait pas déjà de forme groupée. Les autres options (changement de statut/cercle, archivage groupé) ont été explicitement déclinées plutôt qu'ajoutées par défaut. Nouveau module `app/people/transfert_masse.py` : `executer_le_transfert_en_masse` est une BOUCLE autour de `changer_d_entite` (`T3`), chaque élément dans son PROPRE savepoint (`connexion.begin_nested()`, même motif que `app.imports.execution`, `T9`) — aucune règle de permission, de biconditionnelle ou de transition n'est réécrite (§7.27), seules la boucle et l'isolation par élément sont neuves. **« LA PRÉVISUALISATION INDIQUE L'IMPACT » EST SERVIE SANS AUCUNE ESTIMATION SÉPARÉE** : le mode `apercu` exécute EXACTEMENT le même chemin que le mode `execution` — même permission par élément, même appel à `changer_d_entite` — à l'intérieur d'un savepoint TOUJOURS annulé, succès ou échec ; l'impact rendu (sessions révoquées, liens invalidés, relations closes) est donc le résultat RÉEL de l'exécution, jamais une estimation qui pourrait diverger du chemin réellement emprunté. **« LES OPÉRATIONS SONT IDEMPOTENTES » (§18.6) EST SATISFAIT SANS MÉCANISME NOUVEAU** : `changer_d_entite` refuse déjà, en `409` (`etat_incompatible`), toute cible qui n'est plus `active` ni `future` — précisément l'état d'une appartenance déjà transférée par un appel précédent. Rejouer le MÊME lot de transferts est donc sans danger : chaque élément déjà traité est refusé explicitement, aucun jeton d'idempotence n'étant introduit — l'état de la cible EST le jeton, déjà verrouillé (`FOR UPDATE`). **« LES ERREURS PARTIELLES SONT EXPLICITES »** : toute `ErreurApplicative` — permission refusée sur LA destination de CET élément, destination introuvable, version obsolète, état incompatible, biconditionnelle refusée — est RAPPORTÉE sur l'élément (`succes=False`, `code_erreur`, `message_erreur`), jamais propagée ; un refus n'affecte aucun autre élément du lot. La PERMISSION est résolue PAR ÉLÉMENT, jamais une fois pour tout le lot : deux éléments du même lot peuvent viser des destinations différentes, avec des grilles différentes selon le rôle de l'acteur dans CHACUNE. **CE QUE CE MODULE NE FAIT JAMAIS** : le critère d'acceptation du backlog nomme aussi « auditées », mais le découpage validé de la fiche (`fiche-lot-9.md`) avait déjà réduit l'énoncé de `T11` à « prévisualisation d'impact, idempotence, erreurs partielles explicites » — sans le mot « auditées » — et c'est cette portée, déjà arrêtée avant cette sous-étape, qui est suivie : aucune écriture d'audit, `archive_reason`/`assignment_reason` et `audit_event` restant hors de ce lot (`ECART-064`, LOT 10). Deux routes nouvelles : `POST .../people/transferts-en-masse/apercu` et `POST .../people/transferts-en-masse`, un à cent éléments par appel (`TAILLE_MAXIMALE_DU_LOT`, borne TECHNIQUE et non une règle métier, documentée comme telle). Aucune migration : `T11` ne consomme que ce que `T3` sert déjà. | Zéro régression : `pytest` racine 1 693 collectés (+6, tous d'intégration), 74 échecs environnementaux — la base documentée, inchangée (liste de fichiers comparée, identique). 794 Vitest inchangé (aucun fichier frontend touché). `make migrations-check` vert, tête `0026` inchangée, aucune migration. `make isolation-check` inchangé — 35 tables locales, 29 clés composites. `uv run mypy` racine vert, 233 fichiers (+2 : `transfert_masse.py`, le test). `make lint`, `make format-check`, `make sources-check`, `make docs-check` tous verts. Contrat mis à jour (`previsualisationDuTransfertEnMasse`, `transfertEnMasse`), `test_contrat.py` vert. Aucun défaut dans le code livré. | Soumise le 12/10/2026 |
 
-**Prochain identifiant libre : `DEC-647`.**
+| `DEC-647` | **`T12` du LOT 9 sert `POST .../entities` : la création d'une nouvelle entité depuis des modèles génériques — cahier §4.1, §21, backlog `MVP-L09-US007`.** **DOUBLE ARBITRAGE EXPLICITE DE JONATHAN POSÉ AVANT TOUT CODE** (`AskUserQuestion`, reformulé sans jargon) : (1) ni le cahier ni la matrice ne nomment de contenu générique précis à poser (aucune page, aucun modèle d'onboarding « par défaut » n'est décrit nulle part dans le corpus) — l'entité naît VIERGE, rien n'est copié ni semé automatiquement. Les rôles Framework et les contenus (`content_page`/`content_block`, ressources locales du LOT 6) démarrent VIDES, exactement l'état d'une entité quelconque avant qu'un humain n'y intervienne ; l'onboarding « générique eXalt » du cahier §9.1 existe DÉJÀ structurellement — `onboarding_template.entity_id` est nullable pour la portée `GLOBAL` (LOT 7, `T5`), et la résolution `DSM > CIRCLE > ENTITY > GLOBAL` (LOT 7, `T7`) retombe déjà sur un modèle `GLOBAL` dès qu'aucun modèle `ENTITY` n'existe — rien de nouveau à construire. « Aucune donnée Bordeaux n'est copiée » est donc vrai PAR CONSTRUCTION : aucun mécanisme de copie entre entités n'existe dans ce dépôt, et en ajouter un pour l'exclure ensuite aurait été une invention dans les deux sens. (2) le premier administrateur de l'entité (cahier §21, « nommer le premier administrateur ») est nommé dans la MÊME transaction que la création — sans quoi l'entité resterait injoignable localement jusqu'à un second geste manuel en base ; `technical_role_assignment.person_id` ne référence que `person` (§8.6), pas `entity_membership`, la personne désignée n'ayant pas besoin d'une appartenance préalable dans une entité qui vient de naître. **SIMPLIFICATION DOCUMENTÉE, PAS UNE DÉCISION MÉTIER** : l'entité est créée DIRECTEMENT `active` (`activated_at` posé), aucun état `draft` intermédiaire — le découpage de cette sous-étape ne nomme aucun geste « activer une entité » distinct de la création, bien que le cahier §21 les liste côte à côte sans les ordonner. **REFACTOR PARTAGÉ (§7.27)** : `est_super_administrateur` est extrait de la branche 1 de `resoudre_les_permissions` (`app/permissions/services.py`) — la même requête SUPER globale (`entity_id IS NULL`), réutilisée par une nouvelle garde `_exiger_le_super_administrateur` (`app/entities/routes.py`, définie LOCALEMENT pour éviter un cycle d'imports mesuré directement avec `app.permissions.dependances`, qui importe déjà des constantes depuis `app.entities.routes`). Nouveau module `app/entities/creation.py` : `creer_une_entite` vérifie l'existence de la personne désignée AVANT toute écriture (422 `personne_introuvable`), traduit une violation d'unicité du code en 409 `code_deja_utilise`, et nomme l'administrateur dans la même transaction. Deux refus distincts, aucune invention de règle supplémentaire. | Zéro régression : `pytest` racine 1 698 collectés (+5, tous d'intégration), 74 échecs environnementaux — la base documentée, inchangée (liste de fichiers comparée, identique, aucun nouveau). 794 Vitest inchangé. `make isolation-check`/`make migrations-check` : inchangés, aucune migration (`entity`/`technical_role_assignment` existent depuis le LOT 2, `T2`/`T8`). `uv run mypy` racine vert, 235 fichiers (+2). `make lint`, `make format-check`, `make sources-check`, `make docs-check` tous verts. Contrat mis à jour (`creationDUneEntite`), `test_contrat.py` vert (5/5). Un cycle d'imports trouvé et corrigé avant commit : placer la nouvelle garde dans `app.permissions.dependances` créait `entities.routes -> permissions.dependances -> entities.routes`, mesuré par une `ImportError` explicite — corrigé en définissant la garde localement dans `app/entities/routes.py`. | Soumise le 13/10/2026 |
+
+**Prochain identifiant libre : `DEC-648`.**
 
 ---
 
@@ -1224,6 +1227,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-644` — réalisation du LOT 9, `T9` | 1 | 1 |
 | `DEC-645` — réalisation du LOT 9, `T10` | 1 | 1 |
 | `DEC-646` — réalisation du LOT 9, `T11` | 1 | 1 |
+| `DEC-647` — réalisation du LOT 9, `T12` | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1235,7 +1239,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **314** | **314** |
+| **Total** | **315** | **315** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

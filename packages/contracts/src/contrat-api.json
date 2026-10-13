@@ -339,6 +339,34 @@
       ]
     },
     {
+      "cle": "creationDUneEntite",
+      "chemin": "/api/v1/entities",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 409, 422],
+      "forme": "ReponseDeCreationDEntite",
+      "role": [
+        "Creer une nouvelle entite depuis des modeles generiques -- LOT 9, T12,",
+        "story MVP-L09-US007. Cahier 4.1 et 21 : seul le role technique GLOBAL",
+        "SUPER_ADMIN peut creer une entite.",
+        "ARBITRAGE EXPLICITE DE JONATHAN (AskUserQuestion, pose avant tout code) :",
+        "l'entite nait VIERGE -- aucun contenu, aucune responsabilite Framework,",
+        "aucun modele d'onboarding n'est seme. Rien n'existe a copier depuis",
+        "Bordeaux : la resolution DSM > CIRCLE > ENTITY > GLOBAL (LOT 7) retombe",
+        "deja sur le modele d'onboarding GLOBAL generique des qu'aucun modele",
+        "ENTITY n'existe pour la nouvelle entite -- c'est le mecanisme deja pose",
+        "trois sous-etapes plus tot, pas un nouveau a construire.",
+        "CREEE DIRECTEMENT active (activated_at pose) : aucun etat draft",
+        "intermediaire dans cette sous-etape, simplification documentee.",
+        "LE PREMIER ADMINISTRATEUR EST NOMME DANS LE MEME APPEL (second arbitrage",
+        "de Jonathan) -- technical_role_assignment, role ENTITY_ADMIN -- sans quoi",
+        "l'entite resterait injoignable localement jusqu'a un second geste manuel.",
+        "403 acces_refuse : role global SUPER_ADMIN absent.",
+        "409 code_deja_utilise : ce code appartient deja a une autre entite.",
+        "422 personne_introuvable : la personne designee comme premier",
+        "administrateur n'existe pas."
+      ]
+    },
+    {
       "cle": "entiteConsultee",
       "chemin": "/api/v1/entities/{code}",
       "methode": "get",
