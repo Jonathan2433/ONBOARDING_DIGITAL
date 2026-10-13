@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `649` en usage | `DEC-650` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `650` en usage | `DEC-651` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1240,7 +1240,36 @@ entité, qu'aucune route ne listait jusqu'ici. Cinq nouvelles grilles de
 rôles ajoutées au manifeste, chacune confrontée à sa constante Python
 par un nouveau fichier de test. Aucune migration.
 
-La sous-étape suivante est **`T15`**.
+**`T15` est faite** (`DEC-650`) : le contrôle de pile réelle du
+back-office, `make back-office-check` — pattern `T13`/`T14` des LOTS 7/8,
+aucune route nouvelle, aucune migration. Deux volets, l'un et l'autre
+nommés par le découpage validé de la fiche. **L'asymétrie de rôles** :
+témoin central, le tableau de bord (`T5`) vu par un DSM (portée
+Consultants) et par l'ESM (portée Entité) dans la MÊME entité, sur les
+MÊMES données — `profils_actifs` vaut 1 pour le DSM (son seul consultant,
+lié par `dsm_assignment`) et 5 pour l'ESM (toute l'entité), sans quoi la
+portée serait décorative (§7.0 de la passation, quatrième proposition).
+Trois paires supplémentaires, chacune un rôle refusé à côté d'un rôle
+accepté sur la MÊME action : le dépôt d'import (ESM 201, DSM et OFFICE
+403), la création d'entité (SUPER 201, ESM 403 — SUPER seul, jamais une
+grille de plus), et le catalogue des métiers (`T14`, 200 pour OFFICE —
+aucun rôle n'y est distingué). **L'isolation multi-entités pendant
+l'import**, critère de sortie 6 de la fiche (§1.2), resté sans témoin
+dédié depuis `T6`-`T10` : toutes les requêtes SQL d'`app.imports.rapport`/
+`execution` filtrent déjà par `entity_id = :entité` avant de regarder le
+lot ou la ligne, mais rien ne le prouvait sur la pile réelle. Le lot
+déposé par l'ESM de l'entité A est visé par l'ESM de l'entité B sur les
+trois routes scopées par lot (rapport, lancement, rejeu) : chacune rend
+404 (`lot_introuvable`) depuis B, quel que soit l'état du lot — y compris
+après que le lot soit devenu `completed` dans A, où la même requête
+rendrait un refus d'état (409) si l'isolation ne portait pas sur
+l'entité. Le témoin le plus discriminant : la MÊME ligne du MÊME lot,
+rejouée depuis A, rend 409 `rejeu_hors_portee` (lot et ligne trouvés,
+anomalie d'e-mail hors de portée du rejeu) et depuis B rend 404 — la
+preuve, sur des identifiants identiques, que seule l'entité discrimine,
+jamais l'état ni le rôle. 16 contrôles, 0 échec, décor nettoyé.
+
+La sous-étape suivante est **`T16`**.
 
 ---
 
