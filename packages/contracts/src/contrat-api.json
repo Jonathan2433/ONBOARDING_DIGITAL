@@ -875,6 +875,52 @@
       ]
     },
     {
+      "cle": "previsualisationDuTransfertEnMasse",
+      "chemin": "/api/v1/entities/{code}/people/transferts-en-masse/apercu",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeTransfertEnMasse",
+      "role": [
+        "Previsualiser un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
+        "Cahier 10.8 (changements en masse), 18.6 (idempotence exigee).",
+        "Arbitrage du 12/10/2026 : seul le changement d'entite (T3) recoit",
+        "une forme en masse -- la creation en masse est deja l'import CSV.",
+        "Un a cent elements, chacun comme l'unitaire de T3 plus sa propre",
+        "cible (`appartenance`) ; l'entite source vient du chemin, commune",
+        "a tous les elements, la destination varie par element.",
+        "EXECUTE LE MEME CHEMIN QUE L'EXECUTION REELLE, DANS UN SAVEPOINT",
+        "TOUJOURS ANNULE par element -- meme permission (T2/T3, evaluee",
+        "PAR element sur SA destination), meme appel a changer_d_entite.",
+        "L'impact rendu est donc REEL, jamais une estimation separee.",
+        "AUCUNE ECRITURE DURABLE, succes ou echec : la reponse 200 porte le",
+        "sort de CHAQUE element, 403/404 PAR element s'ils different.",
+        "403/404 au niveau de la reponse elle-meme ne couvrent que l'entite",
+        "SOURCE (chemin) : aucun role d'ecriture, ou entite introuvable."
+      ]
+    },
+    {
+      "cle": "transfertEnMasse",
+      "chemin": "/api/v1/entities/{code}/people/transferts-en-masse",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeTransfertEnMasse",
+      "role": [
+        "Executer un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
+        "MEME CORPS QUE LA PREVISUALISATION. Chaque element dans son PROPRE",
+        "savepoint (app.imports.execution, T9) : un refus n'affecte aucun",
+        "autre element, la reponse rapporte CHAQUE sort individuellement --",
+        "`erreurs partielles explicites`, le critere du backlog.",
+        "IDEMPOTENT SANS MECANISME NOUVEAU (cahier 18.6) : rejouer le MEME",
+        "lot refuse chaque element deja transfere en 409 (etat_incompatible,",
+        "deja porte par changer_d_entite), jamais rejoue ni ecrase (18.4).",
+        "Toujours 200 si l'entite source existe et l'appelant y ecrit --",
+        "les echecs individuels sont dans le corps, jamais l'enveloppe HTTP,",
+        "meme parti que le rapport d'import (T10) et le lancement (T9).",
+        "AUCUNE ECRITURE D'AUDIT : archive_reason/assignment_reason et",
+        "audit_event restent hors de ce lot (ECART-064, LOT 10)."
+      ]
+    },
+    {
       "cle": "modificationDesDonneesOrganisationnelles",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}",
       "methode": "patch",

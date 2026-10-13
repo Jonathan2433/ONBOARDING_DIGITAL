@@ -41,7 +41,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import uuid
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -74,6 +74,12 @@ from app.people.profil import (
     lire_la_fiche_archivee,
 )
 from app.people.transfert import changer_d_entite
+from app.people.transfert_masse import (
+    TAILLE_MAXIMALE_DU_LOT,
+    ElementDuTransfertEnMasse,
+    ResultatDUnTransfert,
+    executer_le_transfert_en_masse,
+)
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
     Filtres,
@@ -135,6 +141,15 @@ GABARIT_CHANGEMENT_D_ENTITE: Final = "/entities/{code}/people/{appartenance}/cha
 
 #  Le chemin de `T9`. Un NOM, comme les autres.
 GABARIT_HISTORIQUE: Final = "/entities/{code}/people/{appartenance}/historique"
+
+#  Les deux chemins de `T11`, LOT 9. `code` est l'entite SOURCE de tous les
+#  elements du lot, meme convention que `GABARIT_CHANGEMENT_D_ENTITE` — la
+#  destination, elle, varie par element et vient du corps. `/apercu` est un
+#  SEGMENT DE PLUS sur la MEME collection, jamais une seconde ressource : les
+#  deux executent exactement le meme chemin, seule la finalite (ecrire ou
+#  non) differe (voir `app.people.transfert_masse`).
+GABARIT_TRANSFERT_EN_MASSE: Final = "/entities/{code}/people/transferts-en-masse"
+GABARIT_TRANSFERT_EN_MASSE_APERCU: Final = f"{GABARIT_TRANSFERT_EN_MASSE}/apercu"
 
 
 def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
@@ -339,6 +354,78 @@ class ReponseDeChangementDEntite(BaseModel):
     liens_invalides: int
     relations_closes: dict[str, int]
     parcours_onboarding_archive: uuid.UUID | None
+
+
+class ElementDeTransfertEnMasseRequete(BaseModel):
+    """Un transfert demande, dans le lot — MEMES CHAMPS que l'unitaire (`T3`).
+
+    `appartenance` remplace le parametre de chemin : chaque element du lot
+    nomme sa PROPRE cible, l'entite source etant commune (celle du chemin).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    appartenance: uuid.UUID = Field(description="L'identifiant d'appartenance, dans l'entite")
+    version: int = Field(ge=1, description="La version lue sur l'ANCIENNE appartenance")
+    entite_destination: str = Field(
+        min_length=1,
+        max_length=LONGUEUR_MAXIMALE_CODE,
+        description="Le `code` de l'entite d'arrivee",
+    )
+    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    statut: SituationProfessionnelle
+    client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="Dans l'entite d'arrivee")
+
+
+class DemandeDeTransfertEnMasse(BaseModel):
+    """Le lot complet — borne par `TAILLE_MAXIMALE_DU_LOT`, une sauvegarde
+    d'ingenierie et non une regle metier (voir `app.people.transfert_masse`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    elements: list[ElementDeTransfertEnMasseRequete] = Field(
+        min_length=1,
+        max_length=TAILLE_MAXIMALE_DU_LOT,
+        description="Un a cent elements — chacun traite dans son propre savepoint",
+    )
+
+
+class ResultatDeTransfertRendu(BaseModel):
+    """Le sort d'UN element — jamais une exception qui emporterait les autres.
+
+    Les six champs de succes et les deux champs d'echec sont tous facultatifs
+    et MUTUELLEMENT exclusifs selon `succes` — meme discipline rendue que
+    pour un refus individuel (§18.3), seulement porte PAR element plutot que
+    par la reponse entiere.
+    """
+
+    appartenance: uuid.UUID
+    succes: bool
+    nouvelle_appartenance: uuid.UUID | None = None
+    version: int | None = None
+    etat_precedent: str | None = None
+    sessions_revoquees: int | None = None
+    liens_invalides: int | None = None
+    relations_closes: dict[str, int] | None = None
+    parcours_onboarding_archive: uuid.UUID | None = None
+    code_erreur: str | None = None
+    message_erreur: str | None = None
+
+
+class ReponseDeTransfertEnMasse(BaseModel):
+    """`total`/`reussites`/`echecs` sont DERIVES de `resultats`, jamais une
+    seconde source qui pourrait diverger — meme principe que la reconciliation
+    du rapport d'import (`T10`), une lecture fraiche plutot qu'un compteur.
+    """
+
+    resultats: list[ResultatDeTransfertRendu]
+    total: int
+    reussites: int
+    echecs: int
 
 
 class DemandeDeModification(BaseModel):
@@ -1257,6 +1344,168 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             relations_closes=transfert.relations_closes,
             parcours_onboarding_archive=transfert.parcours_onboarding_archive,
         )
+
+    def _elements_du_lot(
+        demande: DemandeDeTransfertEnMasse,
+    ) -> tuple[ElementDuTransfertEnMasse, ...]:
+        return tuple(
+            ElementDuTransfertEnMasse(
+                appartenance=element.appartenance,
+                entite_destination_code=element.entite_destination,
+                version_attendue=element.version,
+                circle_id=element.cercle_principal,
+                dsm_person_id=element.dsm,
+                demande=DemandeDAppartenance(
+                    arrival_date=element.date_d_arrivee,
+                    job_catalog_id=element.metier,
+                    status=element.statut,
+                    client_id=element.client,
+                    dsm_person_id=element.dsm,
+                    circle_id=element.cercle_principal,
+                ),
+            )
+            for element in demande.elements
+        )
+
+    def _resultat_rendu(resultat: ResultatDUnTransfert) -> ResultatDeTransfertRendu:
+        transfert = resultat.transfert
+        return ResultatDeTransfertRendu(
+            appartenance=resultat.appartenance,
+            succes=resultat.succes,
+            nouvelle_appartenance=transfert.nouvelle_appartenance if transfert else None,
+            version=transfert.version if transfert else None,
+            etat_precedent=transfert.etat_precedent if transfert else None,
+            sessions_revoquees=transfert.sessions_revoquees if transfert else None,
+            liens_invalides=transfert.liens_invalides if transfert else None,
+            relations_closes=transfert.relations_closes if transfert else None,
+            parcours_onboarding_archive=transfert.parcours_onboarding_archive
+            if transfert
+            else None,
+            code_erreur=resultat.code_erreur,
+            message_erreur=resultat.message_erreur,
+        )
+
+    def _reponse_du_lot(
+        resultats: tuple[ResultatDUnTransfert, ...],
+    ) -> ReponseDeTransfertEnMasse:
+        rendus = [_resultat_rendu(resultat) for resultat in resultats]
+        reussites = sum(1 for rendu in rendus if rendu.succes)
+        return ReponseDeTransfertEnMasse(
+            resultats=rendus,
+            total=len(rendus),
+            reussites=reussites,
+            echecs=len(rendus) - reussites,
+        )
+
+    _REPONSES_DU_TRANSFERT_EN_MASSE: dict[int | str, dict[str, Any]] = {
+        status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+        status.HTTP_403_FORBIDDEN: {
+            "description": (
+                "`acces_refuse` : aucun role d'ecriture dans l'entite SOURCE (chemin). "
+                "Un refus par ELEMENT (destination hors perimetre) est RAPPORTE dans le "
+                "corps, jamais leve ici."
+            )
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Entite source inconnue ou non active."},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Lot vide ou de plus de cent elements, ou un element mal forme."
+        },
+    }
+
+    @routeur.post(
+        GABARIT_TRANSFERT_EN_MASSE_APERCU,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransfertEnMasse,
+        responses=_REPONSES_DU_TRANSFERT_EN_MASSE,
+        summary="Previsualiser un transfert en masse",
+        description=(
+            "Backlog `MVP-L09-US003` : « la previsualisation indique l'impact ». "
+            "Execute EXACTEMENT le meme chemin que l'execution reelle — meme "
+            "permission par element, meme appel a `changer_d_entite` — dans un "
+            "savepoint TOUJOURS annule : rien n'est jamais ecrit par cet appel, "
+            "succes ou echec. L'impact rendu (sessions revoquees, liens invalides, "
+            "relations closes) est donc le resultat REEL, jamais une estimation."
+        ),
+    )
+    def previsualiser_le_transfert_en_masse(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeTransfertEnMasse,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeTransfertEnMasse:
+        """Previsualiser un transfert en masse — `US003`, aucune ecriture durable."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            if entite_source is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            resultats = executer_le_transfert_en_masse(
+                connexion,
+                entite_source=entite_source.id,
+                acteur=appelant.personne,
+                elements=_elements_du_lot(demande),
+                instant=instant,
+                mode="apercu",
+            )
+        return _reponse_du_lot(resultats)
+
+    @routeur.post(
+        GABARIT_TRANSFERT_EN_MASSE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransfertEnMasse,
+        responses=_REPONSES_DU_TRANSFERT_EN_MASSE,
+        summary="Executer un transfert en masse",
+        description=(
+            "Backlog `MVP-L09-US003` : « les operations sont idempotentes […] les "
+            "erreurs partielles sont explicites ». Chaque element dans son PROPRE "
+            "savepoint (`app.imports.execution`, `T9`) : un refus n'affecte aucun "
+            "autre element, et la reponse rapporte CHAQUE sort individuellement.<br>"
+            "<br>**IDEMPOTENT SANS MECANISME NOUVEAU** (cahier §18.6) : rejouer le "
+            "MEME lot refuse chaque element deja transfere en `409` "
+            "(`etat_incompatible`), explicite, jamais rejoue ni ecrase."
+        ),
+    )
+    def executer_le_transfert_en_masse_route(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeTransfertEnMasse,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeTransfertEnMasse:
+        """Executer un transfert en masse — `US003`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            if entite_source is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            resultats = executer_le_transfert_en_masse(
+                connexion,
+                entite_source=entite_source.id,
+                acteur=appelant.personne,
+                elements=_elements_du_lot(demande),
+                instant=instant,
+                mode="execution",
+            )
+        return _reponse_du_lot(resultats)
 
     @routeur.get(
         GABARIT_PHOTO,
