@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `647` en usage | `DEC-648` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `648` en usage | `DEC-649` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -981,9 +981,9 @@ posé sans clé étrangère, par un faux parallèle avec les trois colonnes d'au
 `ChampsCommuns` — ce sont elles l'exception, toute colonne d'acteur **nommée** porte une clé
 étrangère réelle vers `person`. Le schéma logique `F01`–`F19` (`DEC-434`, v1.0-initiale) sert de
 base ; le schéma réel des colonnes reste ouvert (`QO-096`/`QO-110`) et ne bloque pas la
-construction du pipeline (`ECART-005`). `ECART-035` (invitations au départ) et `ECART-060`
-(filtres métiers/clients/DSM) sont explicitement rattachés à ce lot par le registre et doivent y
-être fermés ; `ECART-064` (motif d'intervention) n'en fait pas partie, réservé au LOT 10.
+construction du pipeline (`ECART-005`). `ECART-035` (invitations au départ, **clos par `T13`**,
+`DEC-648`) et `ECART-060` (filtres métiers/clients/DSM, partiel) sont explicitement rattachés à ce
+lot par le registre ; `ECART-064` (motif d'intervention) n'en fait pas partie, réservé au LOT 10.
 
 **`T2` est faite** (`DEC-637`) : `POST /entities/{code}/people` crée un collaborateur et son
 appartenance en une seule transaction — six écritures dans l'ordre que les déclencheurs
@@ -1198,7 +1198,24 @@ définie localement dans `app/entities/routes.py` pour éviter un cycle
 d'imports mesuré directement avec `app.permissions.dependances`. Aucune
 migration.
 
-La sous-étape suivante est **`T13`**.
+**`T13` est faite** (`DEC-648`) : fermeture explicite de `ECART-035`
+(invitations au départ), un correctif qui relit la révocation `T9` du
+LOT 3. Relue contre les seize sous-étapes validées du LOT 9, aucune ne
+pose d'objet « invitation » — `T12` nomme un premier administrateur par
+une simple affectation de rôle technique, et `T14` à `T16` sont des
+écrans et des contrôles, pas un nouveau modèle de données. Posé à
+Jonathan avant toute action (`AskUserQuestion`) : construire un
+mécanisme minimal d'invitation inventerait une règle métier non décidée
+(§6.5) ; fermeture retenue par constat, zéro code nouveau. La fermeture
+est rendue falsifiable : nouveau test
+`test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER`
+(`apps/api/tests/test_revocation.py`) interroge
+`information_schema.tables` et exige l'absence de toute table dont le
+nom contient « invitation » — prouvé dans les deux sens (une table
+témoin créée manuellement le fait échouer, supprimée il repasse au
+vert). Aucune migration, aucune route.
+
+La sous-étape suivante est **`T14`**.
 
 ---
 
