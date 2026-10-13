@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 8 octobre 2026 — `ECART-069` clos, ascendance de `main` réparée à la porte `G8`
+**Dernière mise à jour :** 13 octobre 2026 — `ECART-035` clos (`T13` du LOT 9, `DEC-648`)
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 69 | 13 | 53 | 3 |
+| Total 69 | 12 | 54 | 3 |
 
 ---
 
@@ -52,7 +52,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-032` | Le backlog interdit « aucune **responsabilité métier** active dans plusieurs entités », là où le cahier, la matrice **et** le modèle restreignent tous les trois au seul **Booster** | Non — le cahier prévaut, le livrable est conforme | **Ouvert** |
 | `ECART-033` | `make ports` concaténait les deux flux de sortie de Compose puis parsait le tout en **JSON** : le moindre avertissement le cassait, et la trace ne disait pas que la cause était un avertissement | Non — détecté avant toute conséquence | **Clos** |
 | `ECART-034` | La fiche du lot annonçait « le cahier exige une limitation, **sans donner de seuil** » : le §20.2 en énumère **six**. Et les cinq variables de seuil de `.env.example` ne sont **consommées par personne** depuis le LOT 0 | Non — détecté avant d'inventer une valeur | **Clos** pour la fiche, **signalé** pour les variables |
-| `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Ouvert**, à reprendre au LOT 9 |
+| `ECART-035` | Le critère de `MVP-L03-US006` exige d'invalider les **invitations** au départ : `invitation` a **0 occurrence** dans le modèle de données et dans la matrice. Le cahier ne le nomme que comme objet audité, opération idempotente (LOT 11) et tâche d'expiration | Non — les deux autres objets du critère existent et sont traités | **Clos le 13/10/2026** (`DEC-648`, `T13` du LOT 9) — relu contre les seize sous-étapes validées du lot : aucune ne pose d'objet « invitation », `T12` n'ayant nommé qu'une affectation de rôle technique. Rien à invalider, par constat falsifiable (`test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER`) |
 | `ECART-036` | Le §8 de la fiche du LOT 3 annonçait « **Liste des scopes** — aucun document n'en énumère » : le cahier §22 en donne **cinq**. Mais les mots « **par exemple** » disent que la liste n'est **pas fermée**, et la fermer bloquerait les LOTS 9 et 11 | Non — détecté avant d'inventer, et avant de fermer à tort | **Clos** |
 | `ECART-037` | `auth_event` ne portait aucun lien vers `service_account`, alors que le diagramme du modèle §11 déclare `SERVICE_ACCOUNT ||--o{ AUTH_EVENT : produces`. Sans lui, « chaque appel est audité » exigeait un **huitième** type d'événement, que le §10.6 interdit | Non | **Clos** — migration `0013` |
 | `ECART-038` | **Les deux motifs de copie de conflit iCloud étaient aveugles aux FICHIERS.** `* [0-9]` a été écrit en `T1` contre un **répertoire** — `node_modules 2`, sans extension : une copie de fichier s'appelle `modeles 2.py`, le chiffre y est suivi de l'extension, et le motif ne correspond à rien. **115 fichiers sont entrés dans un commit par `git add -A`**, dont une migration `0013` en double. Et le `find` d'`icloud-verify` s'arrêtait à `-maxdepth 3` | Non — **l'historique poussé de `develop` et de `main` n'a jamais été touché, mesuré à 0** | **Clos** — `DEC-542` |
@@ -697,7 +697,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-## `ECART-035` — Le critère de `US006` nomme un objet que le modèle ne déclare pas
+## `ECART-035` — CLOS — Le critère de `US006` nomme un objet que le modèle ne déclare pas
 
 | Champ | Valeur |
 |---|---|
@@ -708,7 +708,7 @@ formulée, et son caractère bloquant est explicité.
 | Cause | **Un critère écrit avant le modèle, et jamais reconfronté à lui.** `US006` énumère trois objets ; le modèle §10 n'en déclare que deux. Même famille que `ECART-032` — le backlog interdit plus large que ses trois sources — et que `ECART-034`, où une fiche annonçait une décision déjà prise. **Un document dérivé peut prescrire autre chose que sa source dès sa rédaction.**<br>**Et le critère de `US006` diverge d'une seconde façon**, qui n'est pas cet écart mais l'éclaire : il attache la révocation à l'**archivage**, quand le §30.22 l'attache au **départ** et que le §7.4 écrit « immédiatement ». Le §24.1 tranche — il n'existe aucune transition `Active --> Archived` — et `DEC-535` applique les deux. |
 | Bloquant | Non. Le livrable traite tout ce qui existe, et le §30.22 devient acquis |
 | Recommandation | **Ne pas créer de table `invitation`**, et le dire à l'endroit où quelqu'un cherchera : le module de service le porte en tête, et ce registre le trace. **À reprendre au LOT 9**, où le back-office créera les invitations : c'est là que « l'archivage invalide les invitations » deviendra applicable, et la révocation de `T9` devra alors recevoir une ligne de plus. Le rappel est écrit au §9 du compte rendu de `T9`.<br>**À annoncer à la porte `G3`**, pour qu'un relecteur de `US006` ne conclue pas à un critère manquant. |
-| Résolution | **Ouvert.** Aucune correction du backlog : il est **immuable** (§3). Le compte rendu de `T9` §1 dit explicitement lequel des trois objets n'existe pas et pourquoi il n'est pas inventé. |
+| Résolution | **CLOS le 13/10/2026, `T13` du LOT 9 (`DEC-648`).** Le découpage validé du LOT 9 (`DEC-635`, seize sous-étapes) réservait ce point à `T13` : « fermeture explicite de `ECART-035`, un correctif qui relit la révocation `T9` du LOT 3 ». La relecture, faite une fois les seize sous-étapes connues, constate qu'**aucune n'a posé d'objet « invitation »** — `T12` (création d'entité) nomme un premier administrateur par une simple affectation de rôle technique (`technical_role_assignment`), jamais un objet de ce nom ; `T14` à `T16` sont des écrans et des contrôles de pile, pas un nouveau modèle de données. Posé à Jonathan avant toute action (`AskUserQuestion`, §6.3) : construire un mécanisme minimal d'invitation inventerait une règle métier non décidée (§6.5) ; fermer l'écart par constat, sans code nouveau, correspond exactement au texte conditionnel de la recommandation (« le jour où l'objet existera »), qui n'est jamais arrivé dans ce lot. **Réponse de Jonathan : fermeture par constat.**<br>La fermeture n'est pas une simple affirmation : `apps/api/tests/test_revocation.py::test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER` interroge `information_schema.tables` et exige qu'aucune table ne porte ce nom — **falsifiable**, prouvé dans les deux sens (créée manuellement, le test échoue ; supprimée, il repasse au vert, §7.25). Le jour où un lot futur pose réellement un objet « invitation », ce test échouera et nommera où ajouter la ligne de révocation que cet écart promettait, dans `app.people.services._appliquer`. Le module porte cette même explication en tête (`apps/api/app/people/services.py`). |
 
 ---
 

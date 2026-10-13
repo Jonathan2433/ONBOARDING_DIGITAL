@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`
-**Sous-étape suivante :** `T13`
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`/`DEC-648`
+**Sous-étape suivante :** `T14`
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -74,10 +74,12 @@ ils sont démontrés en recette (`T16`), jamais exercés avec un vrai CSV pendan
 
 ## 2.1 Écarts et questions à ne pas combler par intuition
 
-`ECART-035` — **à fermer dans ce lot.** Le critère de `MVP-L03-US006` nomme des « invitations »
-qu'aucune table ne porte. Le registre l'a explicitement renvoyé ici : « à reprendre au LOT 9, où le
-back-office créera les invitations ». La révocation posée par `T9` du LOT 3 devra recevoir une
-ligne de plus le jour où l'objet existera.
+`ECART-035` — **CLOS par `T13` (`DEC-648`).** Le critère de `MVP-L03-US006` nomme des
+« invitations » qu'aucune table ne porte. Le registre l'avait explicitement renvoyé ici : « à
+reprendre au LOT 9, où le back-office créera les invitations ». Relu une fois les seize sous-étapes
+connues : aucune n'a posé d'objet « invitation » — `T12` nomme un administrateur par une simple
+affectation de rôle technique. Fermé par constat (arbitrage de Jonathan), avec un test falsifiable
+qui exige l'absence de toute table `%invitation%` et échouera si un lot futur en pose une.
 
 `ECART-060` — **à fermer dans ce lot, au moins pour sa part « métiers, clients, DSM ».** Des
 filtres que l'API accepte déjà sans qu'aucun écran ne puisse les proposer ; le registre nomme
@@ -115,7 +117,7 @@ ne commence.
 | `T10` ✅ | Rapport (créations/mises à jour/avertissements/rejets), rejeu des lignes rejetées, conservation temporaire maîtrisée | `US006` (2/2) | **9 tests**, tous d'intégration ; `app/imports/rapport.py` (`GET .../imports/{lot}/rapport`, réconciliation fraîche) + `rejouer_une_ligne` (`POST .../imports/{lot}/rows/{ligne}/rejeu`) ; arbitrage de Jonathan — aucune correction saisie dans l'application, la ligne est rejouée telle quelle ; `QO-125` ouverte pour le volet DSM/Booster du rapport ; résidu de `T6` corrigé, `import_batch.delimiter` (migration `0026`) — `DEC-645` |
 | `T11` ✅ | Opérations de masse contrôlées (prévisualisation d'impact, idempotence, erreurs partielles explicites) | `US003` | **6 tests**, tous d'intégration ; `app/people/transfert_masse.py` (`POST .../people/transferts-en-masse{,/apercu}`) ; arbitrage de Jonathan — seul le changement d'entité (`T3`) reçoit une variante en masse, la création en masse étant déjà l'import CSV ; chaque élément dans son propre savepoint, aucune logique métier dupliquée ; idempotence satisfaite par le refus 409 déjà porté par `changer_d_entite` — `DEC-646` |
 | `T12` ✅ | Création d'une nouvelle entité depuis des modèles génériques | `US007` | **5 tests**, tous d'intégration ; `POST /entities`, `app/entities/creation.py` ; double arbitrage de Jonathan (entité vierge, premier administrateur nommé dans le même appel) ; `ECART-035` **reste ouvert** — aucun objet « invitation » n'a été posé ici, le geste étant une simple affectation de rôle technique (`technical_role_assignment`), pas une invitation au sens du critère — `DEC-647` |
-| `T13` | Fermeture explicite de `ECART-035` (invitations au départ) | correctif | revue de la révocation `T9` du LOT 3 |
+| `T13` | ✅ Fermeture explicite de `ECART-035` (invitations au départ) | correctif | revue de la révocation `T9` du LOT 3 — fermée par constat (`DEC-648`), aucune des 16 sous-étapes ne pose d'objet « invitation », 1 test structurel falsifiable |
 | `T14` | Écrans back-office — navigation Organisation/Onboarding/Contenu/Données/Pilotage/Configuration/Super-administration, tableau de bord, écrans CRUD, import | transversal | premier et seul écran du lot |
 | `T15` | Contrôle de pile réelle (nom à définir, ex. `make back-office-check`), asymétrie de rôles, isolation multi-entités pendant l'import | transversal | pattern `T13`/`T14` des LOTS 7/8 |
 | `T16` | Recette de clôture, classement du §30 (règles 17/18 à vérifier), checklist `G9` | porte | pattern `T14`/`T15` des LOTS 7/8 |
