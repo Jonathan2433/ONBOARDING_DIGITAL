@@ -557,6 +557,28 @@ jobs:
         # respectivement le createur nomme et le Booster rattache.
         run: make accueil-check
 
+      - name: 4ter · Back-office — asymetrie de roles et isolation multi-entites
+        # LOT 9, T15 — §7.36 : une cible ajoutee a `make check` n'entre PAS
+        # dans la CI de ce projet tant qu'elle n'est pas nommee ICI.
+        #
+        # PARTIE A, LE TEMOIN CENTRAL : le tableau de bord (T5) vu par un DSM
+        # (portee Consultants) et par l'ESM (portee Entite), DANS LA MEME
+        # ENTITE, sur les MEMES donnees — `profils_actifs` DIFFERE (1 contre
+        # 5), sans quoi la portee serait decorative (§7.0, quatrieme
+        # proposition). Trois autres paires role-refuse / role-accepte sur la
+        # MEME action : le depot d'import, la creation d'entite (SUPER seul),
+        # le catalogue des metiers (T14, aucun role distingue).
+        #
+        # PARTIE B, CRITERE DE SORTIE 6 DE LA FICHE LOT 9 : l'isolation multi-
+        # entites pendant l'import. Le lot depose par l'ESM de l'entite A est
+        # vise par l'ESM de l'entite B sur les trois routes scopees par lot
+        # (rapport, lancement, rejeu) — chacune refuse (404) depuis B, quel
+        # que soit l'etat du lot. Le temoin le plus discriminant : la MEME
+        # ligne, le MEME lot, rejoues depuis A rendent 409 (anomalie d'e-mail,
+        # hors de portee du rejeu) et depuis B rendent 404 (lot introuvable)
+        # — la preuve que seule l'entite, jamais l'etat ni le role, discrimine.
+        run: make back-office-check
+
       - name: 5 · Tests d'integration, ET la preuve qu ils ne laissent rien
         # LOT 3, T12 — `make residu-check` REMPLACE `make test-integration`, il ne
         # s'y ajoute pas : lancer la suite deux fois doublerait cinquante secondes

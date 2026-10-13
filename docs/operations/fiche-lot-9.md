@@ -3,8 +3,8 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`/`DEC-648`/`DEC-649`
-**Sous-étape suivante :** `T15`
+**État :** **OUVERT** — `DEC-635`; `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14`/`T15` faites par `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`/`DEC-648`/`DEC-649`/`DEC-650`
+**Sous-étape suivante :** `T16`
 **Porte de sortie :** `G9`, tag attendu `v0.9.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -47,7 +47,7 @@ invention.
 | 3 | le rapport correspond à l'empreinte du fichier | `import_batch.source_checksum_sha256` confronté au rapport, à `T10` |
 | 4 | les règles d'intégrité de la reprise réussissent | critères de qualité du cahier §12.6, témoins à `T9`/`T10` |
 | 5 | aucune ligne rejetée n'est masquée | rapport exhaustif (créations/mises à jour/avertissements/rejets), total réconcilié, à `T10` |
-| 6 | l'isolation multi-entités est testée pendant l'import | témoin d'isolation dédié, à `T15` |
+| 6 | l'isolation multi-entités est testée pendant l'import | témoin d'isolation dédié, `make back-office-check` (`T15` ✅) |
 | 7 | Léa et Jonathan valident le rapport de répétition en recette | démonstration guidée, à `T16` |
 | 8 | Jonathan valide le lot | checklist `G9`, à `T16` |
 
@@ -119,7 +119,7 @@ ne commence.
 | `T12` ✅ | Création d'une nouvelle entité depuis des modèles génériques | `US007` | **5 tests**, tous d'intégration ; `POST /entities`, `app/entities/creation.py` ; double arbitrage de Jonathan (entité vierge, premier administrateur nommé dans le même appel) ; `ECART-035` **reste ouvert** — aucun objet « invitation » n'a été posé ici, le geste étant une simple affectation de rôle technique (`technical_role_assignment`), pas une invitation au sens du critère — `DEC-647` |
 | `T13` | ✅ Fermeture explicite de `ECART-035` (invitations au départ) | correctif | revue de la révocation `T9` du LOT 3 — fermée par constat (`DEC-648`), aucune des 16 sous-étapes ne pose d'objet « invitation », 1 test structurel falsifiable |
 | `T14` | ✅ Écrans back-office — navigation Organisation/Onboarding/Contenu/Données/Pilotage/Configuration/Super-administration, tableau de bord, écrans CRUD, import | transversal | premier et seul écran du lot (`DEC-649`) — une page à onglets, cinq groupes avec un contenu réel, deux marqués « à venir » (arbitrage de Jonathan) |
-| `T15` | Contrôle de pile réelle (nom à définir, ex. `make back-office-check`), asymétrie de rôles, isolation multi-entités pendant l'import | transversal | pattern `T13`/`T14` des LOTS 7/8 |
+| `T15` ✅ | Contrôle de pile réelle (`make back-office-check`), asymétrie de rôles, isolation multi-entités pendant l'import | transversal | pattern `T13`/`T14` des LOTS 7/8 — `DEC-650`, **16 contrôles, 0 échec** |
 | `T16` | Recette de clôture, classement du §30 (règles 17/18 à vérifier), checklist `G9` | porte | pattern `T14`/`T15` des LOTS 7/8 |
 
 ---
