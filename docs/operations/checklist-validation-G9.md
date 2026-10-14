@@ -3,7 +3,7 @@
 **Lot :** LOT 9 — Back-office, administration et import CSV
 **Préparée le :** 13 octobre 2026, à la sortie de `T16`
 **Destinataire :** Jonathan — il coordonne la validation technique et l'exploitation
-**Décision de franchissement :** en attente (`DEC-652` probable)
+**Décision de franchissement :** **franchie, `DEC-652`, validée le 14/10/2026**
 
 ---
 
@@ -132,7 +132,7 @@ propre confirmation requise par le huitième.
 
 | | |
 |---|---|
-| Date | *(à compléter par Jonathan)* |
-| Décision | ☐ franchie ☐ à reprendre |
-| Validation de Jonathan | *(en attente)* |
+| Date | 14/10/2026 |
+| Décision | ☒ franchie ☐ à reprendre |
+| Validation de Jonathan | Confirmée explicitement (`AskUserQuestion`, reformulée sans jargon) : « Oui, G9 est franchie » — les critères 2 et 7 restent des gestes à organiser, pas des blocages techniques, et les réserves ci-dessous restent ouvertes sans bloquer le lot. Consignée `DEC-652` |
 | Réserves | `ECART-012`, `ECART-060` (métier/DSM), `ECART-064`, `ECART-068`, `QO-096`/`QO-097`/`QO-099`/`QO-100`/`QO-110`/`QO-121`/`QO-125` restent ouvertes, non bloquantes pour `G9` — à reprendre aux lots suivants au besoin |

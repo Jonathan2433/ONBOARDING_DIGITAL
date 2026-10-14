@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `651` en usage | `DEC-652` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `652` en usage | `DEC-653` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -134,7 +134,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
-| `G9` | Fin du back-office | Import réel répété et validé | **LES SEIZE SOUS-ÉTAPES SONT FAITES, EN ATTENTE DE VALIDATION** — `DEC-635` à `DEC-651`, [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md) |
+| ~~`G9`~~ | Fin du back-office | Import réel répété et validé | **FRANCHIE le 14/10/2026** — `DEC-652`, les **huit** critères classés (cinq tenus, deux gestes procéduraux à organiser, la validation de Jonathan), [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md), tag `v0.9.0` posé sur `main` |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
@@ -966,12 +966,13 @@ LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le 08/10/2026.
 
 ---
 
-## 16. Avancement du LOT 9 — **lot OUVERT**, porte `G9`
+## 16. Avancement du LOT 9 — **lot VERROUILLÉ**, porte `G9` FRANCHIE
 
-**Ouvert par Jonathan le 8 octobre 2026 (`DEC-635`).** Plan :
-[`operations/fiche-lot-9.md`](operations/fiche-lot-9.md) — **8** stories, dont **6 `P0`** et
-**2 `P1`**, **huit** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
-**seize** sous-étapes. Épic `#234`, jalon `G9`, stories `#235` à `#242`.
+**Ouvert par Jonathan le 8 octobre 2026 (`DEC-635`), verrouillé le 14 octobre 2026 (`DEC-652`,
+tag `v0.9.0`).** Plan : [`operations/fiche-lot-9.md`](operations/fiche-lot-9.md) — **8** stories,
+dont **6 `P0`** et **2 `P1`**, **huit** critères de sortie concordants entre la roadmap et le
+cahier (Annexe C), et **seize** sous-étapes, **toutes faites**. Épic `#234`, jalon `G9`
+**franchi**, stories `#235` à `#242`.
 
 **`T1` est faite** (`DEC-636`) : les quatre tables de l'import — `import_batch`, `import_row`,
 `import_row_issue`, `import_decision` (modèle §19, migration `0024`) — sans `async_job` ni
@@ -1292,8 +1293,10 @@ contrôles, 0 échec), artefact tournant nativement en `aarch64`. Zéro
 régression mesurée par comparaison de worktree avec `origin/develop` (74
 échecs environnementaux identiques, liste comparée). `checklist-
 validation-G9.md` préparée, séparant les preuves techniques des
-validations humaines encore à recueillir. **Le LOT 9 est techniquement
-complet** : la porte `G9` attend la validation explicite de Jonathan.
+validations humaines encore à recueillir. **Jonathan a validé
+explicitement la checklist le 14/10/2026** (`DEC-652`) : la porte `G9`
+est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
+**VERROUILLÉ**.
 
 ---
 
