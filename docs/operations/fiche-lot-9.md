@@ -3,13 +3,13 @@
 **Intitulé :** Back-office, administration et import CSV
 **Épic :** `MVP-L09` — issue `#234`
 **Ouvert par Jonathan le :** 8 octobre 2026
-**État :** **TECHNIQUEMENT COMPLET** — `DEC-635`; les SEIZE sous-étapes sont faites,
+**État :** **VERROUILLÉ** — `DEC-635`; les SEIZE sous-étapes sont faites,
 `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14`/`T15`/`T16` par
 `DEC-636`/`DEC-637`/`DEC-638`/`DEC-639`/`DEC-640`/`DEC-641`/`DEC-642`/`DEC-643`/`DEC-644`/`DEC-645`/`DEC-646`/`DEC-647`/`DEC-648`/`DEC-649`/`DEC-650`/`DEC-651`.
-**La porte `G9` n'est PAS encore franchie** : elle attend la validation explicite de Jonathan
-(critère de sortie 8, `checklist-validation-G9.md`)
-**Sous-étape suivante :** aucune — le lot attend la décision de porte `G9`
-**Porte de sortie :** `G9`, tag attendu `v0.9.0`
+**La porte `G9` est FRANCHIE le 14/10/2026** (`DEC-652`) : validation explicite de Jonathan
+donnée sur `checklist-validation-G9.md` (critère de sortie 8).
+**Sous-étape suivante :** aucune — le lot est verrouillé, et aucun lot nouveau n'est ouvert
+**Porte de sortie :** `G9`, **FRANCHIE**, tag `v0.9.0` posé sur `main`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
 > réutiliser : une copie manuelle devient fausse dès la première évolution (`ECART-021`).
@@ -53,7 +53,7 @@ invention.
 | 5 | aucune ligne rejetée n'est masquée | rapport exhaustif (créations/mises à jour/avertissements/rejets), total réconcilié, à `T10` |
 | 6 | l'isolation multi-entités est testée pendant l'import | témoin d'isolation dédié, `make back-office-check` (`T15` ✅) |
 | 7 | Léa et Jonathan valident le rapport de répétition en recette | **démonstration à organiser** — aucun canal de recueil nommé par le corpus pour Léa, même résidu que `G7`/`G8` ; checklist `G9` le signale à Jonathan sans inventer de procédure |
-| 8 | Jonathan valide le lot | checklist `G9`, en attente (`T16` la prépare) |
+| 8 | Jonathan valide le lot | **✅** — checklist `G9` validée explicitement le 14/10/2026 (`DEC-652`) |
 
 Les critères 1, 2 et 7 portent sur des **données réelles** et l'exploitation, pas sur le code :
 ils sont démontrés en recette (`T16`), jamais exercés avec un vrai CSV pendant le développement
