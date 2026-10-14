@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `653` en usage | `DEC-654` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `654` en usage | `DEC-655` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -135,7 +135,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
 | ~~`G9`~~ | Fin du back-office | Import réel répété et validé | **FRANCHIE le 14/10/2026** — `DEC-652`, les **huit** critères classés (cinq tenus, deux gestes procéduraux à organiser, la validation de Jonathan), [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md), tag `v0.9.0` posé sur `main` |
-| `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
+| `G10` | Fin du pilotage | Audit, reporting et support validés | **LOT 10 OUVERT le 14/10/2026** — `DEC-654`, [fiche](operations/fiche-lot-10.md) |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
 | `G13` | Production temporaire | Déploiement, sauvegarde et restauration validés | Planifiée |
@@ -1297,6 +1297,23 @@ validations humaines encore à recueillir. **Jonathan a validé
 explicitement la checklist le 14/10/2026** (`DEC-652`) : la porte `G9`
 est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
 **VERROUILLÉ**.
+
+---
+
+## 17. Avancement du LOT 10 — **lot OUVERT**, porte `G10`
+
+**Ouvert par Jonathan le 14 octobre 2026 (`DEC-654`).** Plan :
+[`operations/fiche-lot-10.md`](operations/fiche-lot-10.md) — **8** stories, dont **5 `P0`** et
+**3 `P1`**, **six** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
+**seize** sous-étapes. Épic `#267`, jalon `G10`, stories `#268` à `#275`.
+
+La sous-étape suivante est **`T1`** : les six tables — `audit_event`, `operational_alert`,
+`alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle
+§22.3) — aucune route. L'écriture d'audit sera **synchrone**, dans la MÊME transaction que
+l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la file `security` de
+Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du super-administrateur) est
+explicitement rattaché à ce lot et doit y être fermé ; `QO-092` (destination des signalements de
+bugs) reste ouverte, à trancher avant ou pendant `T12`.
 
 ---
 

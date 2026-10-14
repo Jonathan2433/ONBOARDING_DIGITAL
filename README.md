@@ -14,11 +14,11 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
-| Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
-| **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
-| Sous-étape en cours | **Aucune — le LOT 9 est VERROUILLÉ, porte `G9` FRANCHIE le 14/10/2026 (`DEC-652`), tag `v0.9.0`. Aucun lot n'est ouvert.** Ses seize sous-étapes (`T1` à `T16`) ont livré : les quatre tables de l'import, `POST …/people` (création), le changement d'entité qui referme `US002`, l'archivage et la restauration d'un cercle ou d'un bureau, le tableau de bord administratif, le dépôt sécurisé d'un CSV, la normalisation des e-mails et la détection des doublons qui referment `US004`, le rapprochement des clients qui ferme `ECART-060` pour les clients, l'import transactionnel réel qui construit tout le référentiel restant, le rapport d'un lot d'import et le rejeu d'une ligne rejetée qui ferment `US006`, le transfert en masse de collaborateurs qui ferme `US003`, la création d'une nouvelle entité depuis des modèles génériques qui ferme `US007`, la fermeture explicite de `ECART-035` par constat, les écrans back-office (`T14`) — les sept groupes du cahier en une seule page à onglets, cinq avec un contenu réel, deux marqués « à venir » (arbitrage de Jonathan) — puis le contrôle de pile réelle (`T15`, `make back-office-check`, 16 contrôles) : l'asymétrie de rôles entre les sept groupes et l'isolation multi-entités pendant l'import, critère de sortie 6 de la fiche, et **`T16` (`DEC-651`) la recette de clôture** : reclassement du §30 du modèle (`§30.17`/`§30.18` reportés → acquis, un seul test ajouté, 18 acquis/2 partiel/5 reportés), recette rejouée sur les images publiées (`5f30443`, `back-office-check`/`onboarding-check`/`accueil-check` — 16+14+29 contrôles, 0 échec, `aarch64` natif), zéro régression mesurée par comparaison de worktree (74 échecs environnementaux identiques). **Jonathan a validé explicitement la checklist `G9` le 14/10/2026** (`DEC-652`) |
-| Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
+| Lots verrouillés | **LOTS 0 à 9** — de `G0` (27/07/2026) à **`G9` (14/10/2026, `DEC-652`, `v0.9.0`)** |
+| Dernière porte franchie | **`G9`** — les huit critères du LOT 9 sont acquis (cinq techniques, deux gestes procéduraux à organiser), et Jonathan a validé explicitement le lot — [checklist](docs/operations/checklist-validation-G9.md) |
+| **Lot en cours** | **LOT 10 — Audit, reporting, supervision fonctionnelle et support**, ouvert le 14/10/2026 (`DEC-654`) |
+| Sous-étape en cours | **`T1` — les six tables** — `audit_event`, `operational_alert`, `alert_comment`, `bug_report`, `export_request` (modèle §21), `data_subject_request` (modèle §22.3) |
+| Lots 11 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -46,8 +46,9 @@ bloquants — repris aux lots suivants au besoin.
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 **vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
 convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
-vidéo réelle n'existera avant la V1 (`CONT-026`) ; le back-office et l'import CSV sont **en
-construction au LOT 9** ; le pilotage avancé du LOT 10 et les traitements asynchrones du LOT 11
+vidéo réelle n'existera avant la V1 (`CONT-026`) ; le back-office et l'import CSV sont **livrés
+depuis le LOT 9** ; l'audit, le reporting et le support sont **en construction au LOT 10** ; les
+traitements asynchrones du LOT 11
 restent à venir. Les 29 contenus inventoriés restent à relire.
 
 > Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
