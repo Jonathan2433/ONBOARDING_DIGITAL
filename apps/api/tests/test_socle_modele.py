@@ -548,6 +548,14 @@ TABLES_DECLAREES = {
     "import_row",
     "import_row_issue",
     "import_decision",
+    # LOT 10, T1 — modele §21.1 a §21.5 et §22.3, les six tables de l'audit,
+    # des alertes, du support et du RGPD
+    "audit_event",
+    "operational_alert",
+    "alert_comment",
+    "bug_report",
+    "export_request",
+    "data_subject_request",
 }
 
 

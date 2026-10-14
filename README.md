@@ -17,7 +17,7 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 | Lots verrouillés | **LOTS 0 à 9** — de `G0` (27/07/2026) à **`G9` (14/10/2026, `DEC-652`, `v0.9.0`)** |
 | Dernière porte franchie | **`G9`** — les huit critères du LOT 9 sont acquis (cinq techniques, deux gestes procéduraux à organiser), et Jonathan a validé explicitement le lot — [checklist](docs/operations/checklist-validation-G9.md) |
 | **Lot en cours** | **LOT 10 — Audit, reporting, supervision fonctionnelle et support**, ouvert le 14/10/2026 (`DEC-654`) |
-| Sous-étape en cours | **`T1` — les six tables** — `audit_event`, `operational_alert`, `alert_comment`, `bug_report`, `export_request` (modèle §21), `data_subject_request` (modèle §22.3) |
+| Sous-étape en cours | **`T2` — le service d'écriture d'audit générique**, câblé sur l'authentification et les sessions (LOT 3). `T1` (`DEC-655`) a posé les six tables — `audit_event`, `operational_alert`, `alert_comment`, `bug_report`, `export_request` (modèle §21), `data_subject_request` (modèle §22.3) |
 | Lots 11 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
