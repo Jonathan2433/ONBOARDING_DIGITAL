@@ -397,11 +397,18 @@ def main() -> int:
             "auth_event WHERE service_account_id IN "
             "(SELECT id FROM service_account WHERE name LIKE {motif})",
             "auth_event WHERE person_id IN (SELECT id FROM person WHERE {ou})",
+            #  LOT 10, `T2` : `audit_event.actor_service_account_id`/
+            #  `actor_person_id` referencent aussi ces deux tables.
+            "audit_event WHERE actor_service_account_id IN "
+            "(SELECT id FROM service_account WHERE name LIKE {motif})",
+            "audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE {ou})",
             "service_token WHERE service_account_id IN "
             "(SELECT id FROM service_account WHERE name LIKE {motif})",
             "service_account WHERE name LIKE {motif}",
             "person WHERE {ou}",
             "auth_event WHERE person_id IS NULL AND service_account_id IS NULL "
+            "  AND created_at >= {depuis}",
+            "audit_event WHERE actor_person_id IS NULL AND actor_service_account_id IS NULL "
             "  AND created_at >= {depuis}",
         ):
             litteraux = {

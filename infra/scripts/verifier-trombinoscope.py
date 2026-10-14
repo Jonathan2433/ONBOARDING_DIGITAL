@@ -303,6 +303,9 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
     for requete in (
         "DELETE FROM auth_event WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{marqueur}%')",
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        "DELETE FROM audit_event WHERE actor_person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized LIKE '{marqueur}%')",
         "DELETE FROM user_session WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{marqueur}%')",
         "DELETE FROM admin_password_credential WHERE user_account_id IN "  # noqa: S608
@@ -319,6 +322,8 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
         #  borne temporelle l'attrape. §7.30.
         "DELETE FROM auth_event WHERE person_id IS NULL AND service_account_id IS NULL "  # noqa: S608
         f"AND created_at >= '{debut}'",
+        "DELETE FROM audit_event WHERE actor_person_id IS NULL "  # noqa: S608
+        f"AND actor_service_account_id IS NULL AND created_at >= '{debut}'",
     ):
         psql(compose, env, requete)
 

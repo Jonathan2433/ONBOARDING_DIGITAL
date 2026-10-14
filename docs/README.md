@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `655` en usage | `DEC-656` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `656` en usage | `DEC-657` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1311,12 +1311,22 @@ est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
 `alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle
 §22.3) — aucune route. Trois références nues renommées (`resource_reference`,
 `correlation_token` ×2), `export_request.job_id` retiré (`async_job` n'existe pas, LOT 11) —
-défauts trouvés par `make isolation-check` sur la base réellement migrée. Zéro régression : 1 714
-pytest collectés (+6), 74 échecs environnementaux identiques à `origin/develop` par comparaison de
-worktree. La sous-étape suivante est **`T2`** : le service d'écriture d'audit générique, câblé sur
-l'authentification et les sessions (LOT 3). L'écriture d'audit est **synchrone**, dans la MÊME
-transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la file
-`security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
+défauts trouvés par `make isolation-check` sur la base réellement migrée.
+
+**`T2` est faite** (`DEC-656`) : le service générique `app.audit.services.enregistrer_un_evenement`,
+câblé sur les quatre sites qui écrivaient déjà `auth_event` depuis le LOT 3 — demande et
+consommation de magic link, connexion administrateur et changement de mot de passe, révocation de
+session (une ou en masse), authentification d'un jeton de compte de service. `action_code`
+réutilise `TypeEvenementAuth`, aucun second vocabulaire pour la même notion (§7.27) ;
+`correlation_token` reprend `correlation_courante()` ; `retention_until` est calculé explicitement
+(`occurred_at + 365 jours`). Aucune migration, aucune route. Neuf fichiers de test existants ont dû
+étendre leur nettoyage de décor à `audit_event` — même classe de défaut que `user_session` au
+LOT 3 `T6`. Zéro régression : 1 725 pytest collectés (+11), 71 échecs environnementaux identiques à
+`origin/develop` par comparaison de worktree (en baisse de 74 à 71, un résidu de développement
+retiré des deux côtés, pas une régression corrigée). La sous-étape suivante est **`T3`** : le
+câblage sur les personnes et l'organisation (LOT 2, 4, 5, 9). L'écriture d'audit est **synchrone**,
+dans la MÊME transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la
+file `security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
 super-administrateur) est explicitement rattaché à ce lot et doit y être fermé ; `QO-092`
 (destination des signalements de bugs) reste ouverte, à trancher avant ou pendant `T12`.
 

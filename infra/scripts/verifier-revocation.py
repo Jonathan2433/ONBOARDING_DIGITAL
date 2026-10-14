@@ -329,6 +329,8 @@ def main() -> int:
     finally:
         for gabarit in (
             "auth_event WHERE person_id IN (SELECT id FROM person WHERE {ou})",
+            #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+            "audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE {ou})",
             "user_session WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "magic_link_request WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "admin_password_credential WHERE user_account_id IN "
@@ -340,6 +342,7 @@ def main() -> int:
             "person WHERE {ou}",
             "entity WHERE code = {code}",
             "auth_event WHERE person_id IS NULL AND created_at >= {depuis}",
+            "audit_event WHERE actor_person_id IS NULL AND created_at >= {depuis}",
         ):
             litteraux = {
                 "ou": f"email_normalized LIKE '{MARQUEUR}%'",
