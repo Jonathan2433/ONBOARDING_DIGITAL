@@ -291,6 +291,13 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[tuple[Parametres, str,
                 "(SELECT id FROM service_account WHERE name LIKE :motif)",
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  LOT 10, `T2` : `audit_event.actor_service_account_id` et
+                #  `actor_person_id` referencent aussi ces deux tables, meme
+                #  motif que les deux lignes `auth_event` au-dessus.
+                "DELETE FROM audit_event WHERE actor_service_account_id IN "
+                "(SELECT id FROM service_account WHERE name LIKE :motif)",
+                "DELETE FROM audit_event WHERE actor_person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM service_token WHERE service_account_id IN "
                 "(SELECT id FROM service_account WHERE name LIKE :motif)",
                 "DELETE FROM service_account WHERE name LIKE :motif",
@@ -302,6 +309,8 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[tuple[Parametres, str,
                 #  Aucun type d'evenement n'est nomme ici -- lecon `T5-6`.
                 "DELETE FROM auth_event WHERE person_id IS NULL "
                 "  AND service_account_id IS NULL AND created_at >= :debut",
+                "DELETE FROM audit_event WHERE actor_person_id IS NULL "
+                "  AND actor_service_account_id IS NULL AND created_at >= :debut",
             ):
                 menage.execute(text(requete), {"motif": f"{marqueur}%", "debut": debut})
 

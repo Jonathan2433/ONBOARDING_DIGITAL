@@ -507,10 +507,15 @@ def test_le_rafraichissement_est_ATOMIQUE_sous_CONCURRENCE(
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+                #  `person`, meme motif que la ligne `auth_event` au-dessus.
+                "DELETE FROM audit_event WHERE actor_person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM user_session WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM person WHERE email_normalized LIKE :motif",
                 "DELETE FROM auth_event WHERE person_id IS NULL AND created_at >= :debut",
+                "DELETE FROM audit_event WHERE actor_person_id IS NULL AND created_at >= :debut",
             ):
                 menage.execute(text(requete), {"motif": f"{marqueur}%", "debut": debut})
 
@@ -569,6 +574,10 @@ def stack_avec_admin(parametres_de_la_stack: Parametres) -> Iterator[tuple[Param
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+                #  `person`, meme motif que la ligne `auth_event` au-dessus.
+                "DELETE FROM audit_event WHERE actor_person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM user_session WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM admin_password_credential WHERE user_account_id IN "
@@ -578,6 +587,7 @@ def stack_avec_admin(parametres_de_la_stack: Parametres) -> Iterator[tuple[Param
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM person WHERE email_normalized LIKE :motif",
                 "DELETE FROM auth_event WHERE person_id IS NULL AND created_at >= :debut",
+                "DELETE FROM audit_event WHERE actor_person_id IS NULL AND created_at >= :debut",
             ):
                 menage.execute(text(requete), {"motif": f"{marqueur}%", "debut": debut})
 

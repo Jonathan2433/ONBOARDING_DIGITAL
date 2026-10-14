@@ -653,6 +653,8 @@ def _nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str
     #  Ici le gabarit est litteral, et la substitution a lieu en un endroit.
     par_identite = (
         "auth_event WHERE person_id IN (SELECT id FROM person WHERE {ou})",
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        "audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE {ou})",
         "user_session WHERE person_id IN (SELECT id FROM person WHERE {ou})",
         "magic_link_request WHERE person_id IN (SELECT id FROM person WHERE {ou})",
         "admin_password_credential WHERE user_account_id IN "
@@ -665,6 +667,7 @@ def _nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str
         #  La trace d'un refus SANS personne n'a pas d'identite : seule la borne
         #  temporelle l'attrape.
         "auth_event WHERE person_id IS NULL AND occurred_at >= {depuis}",
+        "audit_event WHERE actor_person_id IS NULL AND occurred_at >= {depuis}",
     )
     litteraux = {
         "ou": f"email_normalized LIKE '{marqueur}%'",

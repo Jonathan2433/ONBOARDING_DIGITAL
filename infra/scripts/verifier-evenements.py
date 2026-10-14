@@ -511,6 +511,12 @@ def main() -> int:
             "auth_event WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "auth_event WHERE service_account_id IN "
             "(SELECT id FROM service_account WHERE name LIKE {motif})",
+            #  LOT 10, `T2` : `audit_event.actor_person_id`/`actor_service_
+            #  account_id` referencent aussi `person`/`service_account`, meme
+            #  motif que les deux lignes `auth_event` au-dessus.
+            "audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE {ou})",
+            "audit_event WHERE actor_service_account_id IN "
+            "(SELECT id FROM service_account WHERE name LIKE {motif})",
             "user_session WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "magic_link_request WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "service_token WHERE service_account_id IN "
@@ -526,6 +532,8 @@ def main() -> int:
             #  La trace SANS ACTEUR : septieme occurrence de cette lecon dans le
             #  lot, et seule la borne temporelle l'attrape.
             "auth_event WHERE person_id IS NULL AND service_account_id IS NULL "
+            "  AND created_at >= {depuis}",
+            "audit_event WHERE actor_person_id IS NULL AND actor_service_account_id IS NULL "
             "  AND created_at >= {depuis}",
         ):
             litteraux = {

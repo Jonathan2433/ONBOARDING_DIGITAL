@@ -478,6 +478,9 @@ def main() -> int:
     finally:
         for gabarit in (
             "auth_event WHERE person_id IN (SELECT id FROM person WHERE {ou})",
+            #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+            #  `person`, meme motif que la ligne `auth_event` au-dessus.
+            "audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE {ou})",
             "user_session WHERE person_id IN (SELECT id FROM person WHERE {ou})",
             "admin_password_credential WHERE user_account_id IN "
             "(SELECT id FROM user_account WHERE person_id IN (SELECT id FROM person WHERE {ou}))",
@@ -493,6 +496,8 @@ def main() -> int:
             #  Le refus SANS ACTEUR — un appel sans cookie — n'a ni personne ni
             #  compte de service : aucun filtre par identite ne l'attrape. §7.30.
             "auth_event WHERE person_id IS NULL AND service_account_id IS NULL "
+            "  AND created_at >= {depuis}",
+            "audit_event WHERE actor_person_id IS NULL AND actor_service_account_id IS NULL "
             "  AND created_at >= {depuis}",
         ):
             litteraux = {

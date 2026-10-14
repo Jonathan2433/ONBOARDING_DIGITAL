@@ -54,6 +54,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
+from app.audit.services import enregistrer_un_evenement
 from app.auth.modeles import TypeEvenementAuth
 from observabilite.masquage import PREFIXE_SESSION
 
@@ -205,7 +206,7 @@ def revoquer_toutes_les_sessions(
         {"instant": instant, "raison": raison, "personne": personne},
     ).fetchall()
 
-    for _ in revoquees:
+    for ligne in revoquees:
         connexion.execute(
             text(
                 "INSERT INTO auth_event "
@@ -222,6 +223,20 @@ def revoquer_toutes_les_sessions(
                 #  besoin pour dire ce qui s'est passe.
                 "detail": raison,
             },
+        )
+        #  LOT 10, `T2` : une ligne `audit_event` PAR SESSION, meme motif que
+        #  `auth_event` ci-dessus — `reason` porte `raison`, DEJA obligatoire
+        #  dans la signature de cette fonction (§21.1 : « obligatoire pour
+        #  actions sensibles »).
+        enregistrer_un_evenement(
+            connexion,
+            instant=instant,
+            action_code=TypeEvenementAuth.SESSION_REVOKED.value,
+            resource_type="user_session",
+            resource_reference=uuid.UUID(str(ligne[0])),
+            summary=f"Revocation de session : {raison}",
+            actor_person_id=personne,
+            reason=raison,
         )
     return len(revoquees)
 
@@ -315,7 +330,7 @@ def revoquer(
             "UPDATE user_session SET revoked_at = :instant_revocation, "
             "  revoke_reason = :raison "
             "WHERE session_token_hash = :empreinte AND revoked_at IS NULL "
-            "RETURNING person_id"
+            "RETURNING person_id, id"
         ),
         {
             "instant_revocation": instant,
@@ -342,5 +357,18 @@ def revoquer(
             #  donnees sensibles, et une empreinte n'apporterait rien a un audit.
             "detail": raison,
         },
+    )
+    #  LOT 10, `T2` : une ligne `audit_event`, meme transaction, `resource_
+    #  reference` porte l'identifiant de LA session — la meme requete l'a deja
+    #  rendu, jamais une seconde lecture.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementAuth.SESSION_REVOKED.value,
+        resource_type="user_session",
+        resource_reference=uuid.UUID(str(ligne[1])),
+        summary=f"Revocation de session : {raison}",
+        actor_person_id=uuid.UUID(str(ligne[0])),
+        reason=raison,
     )
     return True

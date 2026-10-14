@@ -570,6 +570,7 @@ def main() -> int:
               DELETE FROM admin_password_credential WHERE user_account_id IN (
                 SELECT id FROM user_account WHERE person_id = ANY(ids));
               DELETE FROM auth_event WHERE person_id = ANY(ids);
+              DELETE FROM audit_event WHERE actor_person_id = ANY(ids);
               DELETE FROM user_session WHERE person_id = ANY(ids);
               DELETE FROM user_account WHERE person_id = ANY(ids);
               DELETE FROM entity_membership WHERE person_id = ANY(ids);

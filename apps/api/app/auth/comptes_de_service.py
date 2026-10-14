@@ -61,6 +61,7 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy import text
 
+from app.audit.services import enregistrer_un_evenement
 from app.auth.jetons import OCTETS_D_ALEA, empreinte_de_jeton
 from app.auth.modeles import EtatCompteDeService, TypeEvenementAuth
 from app.auth.scopes import controler_les_scopes, couvre
@@ -348,6 +349,11 @@ def _tracer(
 
     `detail` porte le motif, **jamais le jeton ni son empreinte** : le §28.2 ne veut
     aucun jeton dans un journal, et une empreinte de jeton en est un identifiant.
+
+    **LOT 10, `T2` : ecrit AUSSI une ligne `audit_event`**, `resource_type=
+    "service_account"` — meme compte que `service_account_id` ci-dessus, `None`
+    quand le jeton est INCONNU (meme cas qu'une adresse inconnue en magic link :
+    `actor_person_id` et `actor_service_account_id` sont tous deux nullables).
     """
     connexion.execute(
         text(
@@ -362,4 +368,13 @@ def _tracer(
             "origine": empreinte_origine,
             "detail": motif,
         },
+    )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=type_evenement.value,
+        resource_type="service_account",
+        resource_reference=compte,
+        summary=f"Authentification de compte de service : {motif}",
+        actor_service_account_id=compte,
     )
