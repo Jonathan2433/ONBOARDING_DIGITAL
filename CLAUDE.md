@@ -2,7 +2,7 @@
 
 **Projet :** eXalt Onboarding Digital
 **Rédigé le :** 28 juillet 2026, à la sortie de `T4` du LOT 1
-**Mis à jour le :** 14 octobre 2026, après le franchissement de la porte `G9` (`DEC-652`)
+**Mis à jour le :** 14 octobre 2026, après le correctif post-`G9` de l'ascendance `main` (`DEC-653`)
 **Destinataire :** l'agent qui réalisera le **LOT 10**, une fois ouvert explicitement par Jonathan
 **Interlocuteur unique :** Jonathan — technique et exploitation. Léa décide du produit.
 
@@ -36,7 +36,7 @@ d'agir.
 | Images | 3 images multiarchitecture dans GHCR privé, étiquettes `0.2.0`, `develop`, `sha-*`. **Aucun `latest`** |
 | Makefile | **96 cibles** documentées — **89 avant la fusion de `demo`**, qui en apporte quatre : `demo-init`, `demo-check`, `demo-info`, `demo-reset`. **`T3` À `T13` du LOT 7 N'EN ONT AJOUTÉ AUCUNE** : `framework-check` est passé de 13 à **21**, puis **29**, **35**, **49**, **61**, **68**, **74**, puis **77** contrôles avec `T11` — servis par la même cible étendue, bénéfice direct du §7.27. **`T14` DU LOT 7 EN AJOUTE UNE, LA PREMIÈRE DEPUIS `T2`** : `onboarding-check`, le script de pile différé par `T13`, nommé dans `ci.yml` (§7.36 : une cible ajoutée à `make check` n'entre pas dans la CI, il faut l'y nommer). **`T13` DU LOT 8 EN AJOUTE UNE DE PLUS** : `accueil-check`, le contrôle de pile réelle événements et accueil, nommé dans `ci.yml` au même titre. **`T15` DU LOT 9 EN AJOUTE UNE DE PLUS** : `back-office-check`, l'asymétrie de rôles et l'isolation multi-entités pendant l'import, nommée dans `ci.yml` au même titre. **`ECART-049` : des cibles ne sont PAS dans `.PHONY`** — le compte de l'écart datait de 86 documentées et n'est plus dérivé ; **`make help` fait foi**, et c'est la seule formulation qui ne vieillit pas |
 | `.env.example` | **v1.6**, **84 variables**. **Cinq d'entre elles ne sont consommées par personne** — les seuils du §20.2, `ECART-034` — et elles portent l'annotation qui le dit |
-| Registres | **235 décisions** `DEC-418+` · **69 écarts** (**12 ouverts**, dont `ECART-068` ouvert au LOT 8 et `ECART-060` partiellement clos par `T8` du LOT 9 — `ECART-067` et `ECART-069` sont clos ; `ECART-035` est CLOS par `T13` du LOT 9, `DEC-648`, par constat, aucune des seize sous-étapes ne posant d'objet « invitation ») · **49 questions** (**35 ouvertes**, dont `QO-125` ouverte par `T10` du LOT 9) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
+| Registres | **236 décisions** `DEC-418+` · **69 écarts** (**12 ouverts**, dont `ECART-068` ouvert au LOT 8 et `ECART-060` partiellement clos par `T8` du LOT 9 — `ECART-067` et `ECART-069` sont clos ; `ECART-035` est CLOS par `T13` du LOT 9, `DEC-648`, par constat, aucune des seize sous-étapes ne posant d'objet « invitation ») · **49 questions** (**35 ouvertes**, dont `QO-125` ouverte par `T10` du LOT 9) · **34 risques** `ROAD-RSK` · **17 dépendances** `DEP` · **29 contenus** `CONT`. `make docs-check` dérive ces nombres depuis les registres et lit aussi ce document ; ne les modifie jamais sans le relancer |
 | Défauts consignés | LOT 1 : **71** · LOT 2 : **44** · LOT 3 : **57** · LOT 4 : **19** · LOT 5 : **62** · **LOT 6 : 26**, dérivés le 24/09/2026 par la règle exacte ci-dessous. **Et ce nombre a changé SEPT fois en six sous-étapes** : consigner un défaut change le compte, ce qui est précisément pourquoi il est **dérivé** et jamais recopié — la liste est dans les comptes rendus, pas ici. **ET LA COMMANDE DU §7 SUR-COMPTE, MESURÉ LE 13/09/2026** : elle relève tout marqueur `Tn-m` d'un compte rendu, **y compris ceux d'un autre lot cités comme précédents**. Le compte rendu de `T1` du LOT 6 cite `T4-2` et `T8-3` — deux défauts du **LOT 2** — et la commande rend **4** là où il y en a **2**. La règle exacte : un défaut appartient à la **sous-étape dont le compte rendu le déclare**, donc un marqueur `Tn-m` dans `compte-rendu-tN-lot-L.md` ne compte que si `n == N`. **Les nombres des LOTS 3 et 4 sont affectés de 2 et de 1, et ils ne sont PAS corrigés ici** : la méthode exacte ne distingue pas une citation d'un défaut déclaré tardivement, et réécrire un compte historique sans pouvoir trancher serait pire que de le nommer |
 
 **Les commandes qui produisent ces nombres :**
@@ -506,7 +506,7 @@ comblé.
 
 | Séquence | Étendue | Prochain libre |
 |---|---|---|
-| `DEC-nnn` | `001`–`417` **réservés**, `418`–`652` en usage | **`DEC-653`** |
+| `DEC-nnn` | `001`–`417` **réservés**, `418`–`653` en usage | **`DEC-654`** |
 | `ECART-nnn` | `001`–`069` | **`ECART-070`** |
 | `QO-nnn` | `072`–`125`, **5 trous** | **`QO-126`** |
 | `ROAD-RSK-nnn` | `001`–`034` | **`ROAD-RSK-035`** |
@@ -2631,6 +2631,42 @@ Un garde-fou à faux positifs apprend à passer outre (§7.25), et il n'aurait r
 > **Si `develop` rougit un matin sans qu'aucun commit ne l'explique, commence ici.** Lis la
 > date des valeurs en cause avant de chercher une régression : le `git worktree` sur
 > `origin/develop` **sur la même base** donne le verdict en deux minutes (§7.22).
+
+---
+
+## 7.48 Une instruction écrite dans une PR n'est pas un verrou — un humain qui clique vite la bat
+
+**Apport du correctif post-`G9`, et il complète `ECART-069` plutôt que de le réécrire.** `ECART-069`
+avait établi la parade à la fusion squashée de `develop` vers `main` : fusionner **en ligne de
+commande** (`gh pr merge --merge`) plutôt que par le bouton par défaut de l'interface, qui squash
+systématiquement sur ce dépôt. **Cette parade a échoué QUATRE FOIS DE SUITE à `G9`** — PR `#261`,
+`#262`, `#263`, `#264` — alors que chacune portait, écrite en toutes lettres dans son corps, la
+commande exacte à lancer et l'avertissement de ne pas utiliser l'interface.
+
+**Ce n'est pas que la parade était fausse : elle supposait un lecteur qui la lit avant d'agir.**
+Un humain qui surveille la CI et clique « Merge pull request » dès qu'elle passe au vert ne relit
+pas le corps de la PR — il répète le geste qui a fonctionné aux dix-neuf fusions précédentes de ce
+même lot, où fusionner vite via l'interface était exactement le bon geste (chaque sous-étape se
+fusionne en squash dans `develop`). **La même vitesse, appliquée à la fusion `develop` → `main`,
+reproduit le défaut à chaque fois** — et une instruction écrite ne peut pas gagner une course
+qu'elle ne sait pas qu'elle court.
+
+**Le correctif qui a fonctionné, à la cinquième tentative (PR `#265`)** : appeler
+`gh pr merge <n> --merge --auto` **immédiatement après `gh pr create`**, avant qu'aucun clic humain
+ne soit possible. La fusion automatique de GitHub se déclenche dès que `required_status_checks` est
+satisfait — sans attendre, sans demander, sans laisser de fenêtre où un second acteur pourrait
+intervenir le premier.
+
+> **La règle, sans jargon :** quand une action DOIT être faite d'une façon précise (ici, un merge
+> commit) mais qu'un geste habituel et plus rapide (ici, le clic « Merge » par défaut) produit une
+> autre façon, **n'écris pas l'instruction quelque part en espérant qu'elle soit lue à temps** —
+> **élimine la fenêtre de course**. `--auto` posé au moment de la création de la PR est au
+> processus de fusion ce que `PYTHONDONTWRITEBYTECODE=1` est à la campagne de témoins du §7.44 :
+> un mécanisme qui rend l'erreur impossible, pas une vigilance qui promet de l'éviter.
+
+**Pour toute porte future (`G10` et suivantes) : appeler `gh pr merge <n> --merge --auto` dans le
+même geste que `gh pr create` pour la fusion `develop` → `main`, jamais après coup, jamais en
+l'écrivant seulement dans le corps de la PR.**
 
 ---
 
