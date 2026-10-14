@@ -41,7 +41,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import uuid
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -56,6 +56,14 @@ from app.entities.services import resoudre_une_entite_active
 from app.media.objets import ObjetIntrouvable, lire_l_objet
 from app.media.photo import resoudre_la_miniature
 from app.people.archivage import archiver_un_profil, restaurer_un_profil
+from app.people.catalogues import lister_le_catalogue_des_metiers
+from app.people.creation import (
+    CODE_ACCES_REFUSE,
+    MESSAGE_ACCES_REFUSE,
+    DemandeDAppartenance,
+    DemandeDeCollaborateur,
+    creer_un_collaborateur,
+)
 from app.people.ecriture import modifier_les_donnees_organisationnelles
 from app.people.historique import HistoriqueOrganisationnel, lire_l_historique
 from app.people.modeles import EtatAppartenance, SituationProfessionnelle
@@ -65,6 +73,13 @@ from app.people.profil import (
     ResponsabiliteDuProfil,
     lire_la_fiche,
     lire_la_fiche_archivee,
+)
+from app.people.transfert import changer_d_entite
+from app.people.transfert_masse import (
+    TAILLE_MAXIMALE_DU_LOT,
+    ElementDuTransfertEnMasse,
+    ResultatDUnTransfert,
+    executer_le_transfert_en_masse,
 )
 from app.people.trombinoscope import (
     LONGUEUR_MAXIMALE_RECHERCHE,
@@ -79,7 +94,9 @@ from app.permissions.perimetre import (
     ActionDeCycleDeVie,
     ChampOrganisationnel,
     PerimetreDuCycleDeVie,
+    PropositionDeCreation,
     resoudre_l_acces_a_l_historique,
+    resoudre_l_autorisation_de_creation,
     resoudre_le_cycle_de_vie,
     resoudre_le_perimetre,
 )
@@ -100,6 +117,14 @@ journal = logging.getLogger("app.people")
 GABARIT_FICHE: Final = "/entities/{code}/people/{appartenance}"
 GABARIT_PHOTO: Final = "/entities/{code}/people/{appartenance}/photo"
 
+#  **LE CHEMIN DE COLLECTION DE `T2`, LOT 9.** Pas `/people/creation` — un nom
+#  de verbe, contrairement a la convention des ecritures d'authentification
+#  (§7, "des NOMS, pas des VERBES") qui vaut pour une ACTION sur une ressource
+#  deja identifiee. Ici la ressource n'existe pas encore : `POST` sur la
+#  collection EST le verbe, par la convention REST que ce depot emploie deja
+#  pour `POST /entities/{code}/events` (LOT 8, `T3`).
+GABARIT_COLLECTION: Final = "/entities/{code}/people"
+
 #  Les trois chemins de `T8`. **DES NOMS, PAS DES VERBES** : c'est la convention
 #  des cinq ecritures d'authentification du LOT 3 -- `/connexion`,
 #  `/deconnexion`, `/magic-link/consommation`.
@@ -111,8 +136,21 @@ GABARIT_ARCHIVAGE: Final = "/entities/{code}/people/{appartenance}/archivage"
 GABARIT_RESTAURATION: Final = "/entities/{code}/people/{appartenance}/restauration"
 GABARIT_FICHE_ARCHIVEE: Final = "/entities/{code}/people/{appartenance}/fiche-archivee"
 
+#  Le chemin de `T3`, LOT 9. `code` est l'entite QUITTEE, meme convention que
+#  les trois precedents ; l'entite d'ARRIVEE vient de la demande.
+GABARIT_CHANGEMENT_D_ENTITE: Final = "/entities/{code}/people/{appartenance}/changement-d-entite"
+
 #  Le chemin de `T9`. Un NOM, comme les autres.
 GABARIT_HISTORIQUE: Final = "/entities/{code}/people/{appartenance}/historique"
+
+#  Les deux chemins de `T11`, LOT 9. `code` est l'entite SOURCE de tous les
+#  elements du lot, meme convention que `GABARIT_CHANGEMENT_D_ENTITE` — la
+#  destination, elle, varie par element et vient du corps. `/apercu` est un
+#  SEGMENT DE PLUS sur la MEME collection, jamais une seconde ressource : les
+#  deux executent exactement le meme chemin, seule la finalite (ecrire ou
+#  non) differe (voir `app.people.transfert_masse`).
+GABARIT_TRANSFERT_EN_MASSE: Final = "/entities/{code}/people/transferts-en-masse"
+GABARIT_TRANSFERT_EN_MASSE_APERCU: Final = f"{GABARIT_TRANSFERT_EN_MASSE}/apercu"
 
 
 def chemin_de_la_photo(prefixe: str, code: str, appartenance: uuid.UUID) -> str:
@@ -238,6 +276,178 @@ class FicheDuProfil(BaseModel):
     responsabilites: list[ResponsabiliteDeLaFiche]
     #  Meme regle que dans la liste : le chemin de la miniature, ou `None`.
     photo: str | None
+
+
+LONGUEUR_MAXIMALE_ADRESSE: Final = 320
+
+
+class DemandeDeCreationDeCollaborateur(BaseModel):
+    """Creer un collaborateur — matrice §6.1, cahier §10.2. LOT 9 `T2`.
+
+    **AUCUN CHAMP `professional_category`, ET CE N'EST PAS UN OUBLI.** Voir
+    l'en-tete de `app/people/creation.py` : la categorie `dg` exige une action
+    separee, non exposee par ce depot. Toute creation par cette route est un
+    `consultant`.
+
+    **`client` ACCEPTE `null`, SEUL DES SIX CHAMPS** : un statut `intercontract`
+    n'a pas de client, meme regle que `DemandeDeModification`. `dsm` est
+    FACULTATIF, absent par defaut — tous les consultants n'en recoivent pas un
+    a la creation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(max_length=LONGUEUR_MAXIMALE_ADRESSE)
+    prenom: str = Field(min_length=1, description="`first_name`")
+    nom: str = Field(min_length=1, description="`last_name`")
+    nom_prefere: str | None = Field(default=None, description="`preferred_name`, facultatif")
+    date_d_arrivee: dt.date = Field(description="Cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`")
+    statut: SituationProfessionnelle = Field(description="§30.5")
+    client: uuid.UUID | None = Field(
+        default=None,
+        description="`null` est legitime : un intercontrat n'a pas de client.",
+    )
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="§8.2")
+
+
+class ReponseDeCreationDeCollaborateur(BaseModel):
+    """L'appartenance nouvellement creee, et sa version initiale."""
+
+    appartenance: uuid.UUID
+    version: int
+
+
+class MetierRendu(BaseModel):
+    """Un metier du catalogue — modele §6.3. LOT 9 `T14`."""
+
+    identifiant: uuid.UUID
+    code: str
+    label: str
+
+
+class ReponseDuCatalogueDesMetiers(BaseModel):
+    """Les metiers ACTIFS et non archives d'une entite — LOT 9 `T14`.
+
+    Pose en construisant l'ecran back-office : `job_catalog_id` est un champ
+    obligatoire de la creation (`T2`) et du changement d'entite (`T3`) depuis
+    l'ouverture du lot, et aucune route n'en servait la liste jusqu'ici — un
+    formulaire ne peut pas proposer un choix dont il ne connait pas les
+    options. Meme motif que `GET .../templates`, pose par `T14` du LOT 7.
+    """
+
+    metiers: list[MetierRendu]
+
+
+class DemandeDeChangementDEntite(BaseModel):
+    """Changer un collaborateur d'entite — cahier §11.1, §16.3. LOT 9 `T3`.
+
+    **`version` PORTE SUR L'ANCIENNE APPARTENANCE**, celle du chemin — meme
+    convention que `DemandeDeModification` : la version lue sur la fiche, pas
+    sur une ressource qui n'existe pas encore. Les six champs organisationnels
+    sont ceux de la NOUVELLE appartenance, dans `entite_destination` ; aucune
+    valeur n'y est reportee de l'ancienne, meme discipline que `T2`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=1, description="La version lue sur l'ANCIENNE appartenance")
+    entite_destination: str = Field(
+        min_length=1,
+        max_length=LONGUEUR_MAXIMALE_CODE,
+        description="Le `code` de l'entite d'arrivee",
+    )
+    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    statut: SituationProfessionnelle
+    client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="Dans l'entite d'arrivee")
+
+
+class ReponseDeChangementDEntite(BaseModel):
+    """Ce que le transfert a produit, des deux cotes — meme rapport qu'un archivage."""
+
+    nouvelle_appartenance: uuid.UUID
+    version: int
+    etat_precedent: str = Field(description="`active` ou `future`, sur l'ANCIENNE appartenance")
+    sessions_revoquees: int
+    liens_invalides: int
+    relations_closes: dict[str, int]
+    parcours_onboarding_archive: uuid.UUID | None
+
+
+class ElementDeTransfertEnMasseRequete(BaseModel):
+    """Un transfert demande, dans le lot — MEMES CHAMPS que l'unitaire (`T3`).
+
+    `appartenance` remplace le parametre de chemin : chaque element du lot
+    nomme sa PROPRE cible, l'entite source etant commune (celle du chemin).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    appartenance: uuid.UUID = Field(description="L'identifiant d'appartenance, dans l'entite")
+    version: int = Field(ge=1, description="La version lue sur l'ANCIENNE appartenance")
+    entite_destination: str = Field(
+        min_length=1,
+        max_length=LONGUEUR_MAXIMALE_CODE,
+        description="Le `code` de l'entite d'arrivee",
+    )
+    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    statut: SituationProfessionnelle
+    client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
+    dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
+    cercle_principal: uuid.UUID = Field(description="Dans l'entite d'arrivee")
+
+
+class DemandeDeTransfertEnMasse(BaseModel):
+    """Le lot complet — borne par `TAILLE_MAXIMALE_DU_LOT`, une sauvegarde
+    d'ingenierie et non une regle metier (voir `app.people.transfert_masse`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    elements: list[ElementDeTransfertEnMasseRequete] = Field(
+        min_length=1,
+        max_length=TAILLE_MAXIMALE_DU_LOT,
+        description="Un a cent elements — chacun traite dans son propre savepoint",
+    )
+
+
+class ResultatDeTransfertRendu(BaseModel):
+    """Le sort d'UN element — jamais une exception qui emporterait les autres.
+
+    Les six champs de succes et les deux champs d'echec sont tous facultatifs
+    et MUTUELLEMENT exclusifs selon `succes` — meme discipline rendue que
+    pour un refus individuel (§18.3), seulement porte PAR element plutot que
+    par la reponse entiere.
+    """
+
+    appartenance: uuid.UUID
+    succes: bool
+    nouvelle_appartenance: uuid.UUID | None = None
+    version: int | None = None
+    etat_precedent: str | None = None
+    sessions_revoquees: int | None = None
+    liens_invalides: int | None = None
+    relations_closes: dict[str, int] | None = None
+    parcours_onboarding_archive: uuid.UUID | None = None
+    code_erreur: str | None = None
+    message_erreur: str | None = None
+
+
+class ReponseDeTransfertEnMasse(BaseModel):
+    """`total`/`reussites`/`echecs` sont DERIVES de `resultats`, jamais une
+    seconde source qui pourrait diverger — meme principe que la reconciliation
+    du rapport d'import (`T10`), une lecture fraiche plutot qu'un compteur.
+    """
+
+    resultats: list[ResultatDeTransfertRendu]
+    total: int
+    reussites: int
+    echecs: int
 
 
 class DemandeDeModification(BaseModel):
@@ -938,6 +1148,387 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
             champs_modifies=sorted(champ.value for champ in modification.champs),
         )
 
+    @routeur.post(
+        GABARIT_COLLECTION,
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeCreationDeCollaborateur,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun role d'ecriture dans cette entite, ou un role "
+                    "d'ecriture dont la proposition sort du perimetre -- un DSM qui designe "
+                    "un AUTRE DSM, un Booster qui vise un cercle qui n'est pas le sien ou qui "
+                    "tente d'assigner un DSM (meme exclusion que la modification)."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite inconnue ou non active. Meme forme que la lecture."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`valeur_refusee` : un statut `mission` exige un client, un "
+                    "`intercontract` n'en accepte aucun (§30.5) ; ou le DSM designe n'a "
+                    "pas de responsabilite DSM active dans cette entite."
+                )
+            },
+        },
+        summary="Creer manuellement un collaborateur",
+        description=(
+            "Matrice §6.1 « Creer manuellement un profil », cahier §10.2. Backlog "
+            "`MVP-L09-US002` (1/2).<br><br>"
+            "**Categorie professionnelle toujours `consultant`** : la categorie `dg` exige "
+            "une action separee, non exposee par ce depot — voir l'en-tete de "
+            "`app/people/creation.py`.<br><br>"
+            "**Six champs organisationnels poses a la creation** : date d'arrivee, metier, "
+            "statut, client, DSM (facultatif), cercle principal. Les modifier ensuite est "
+            "`T3`, pas cette route."
+        ),
+    )
+    def creer_le_profil(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeCreationDeCollaborateur,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeCreationDeCollaborateur:
+        """Creer un collaborateur — matrice §6.1, cahier §10.2."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            autorise = resoudre_l_autorisation_de_creation(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                proposition=PropositionDeCreation(
+                    circle_id=demande.cercle_principal,
+                    dsm_person_id=demande.dsm,
+                ),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            cree = creer_un_collaborateur(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                demande=DemandeDeCollaborateur(
+                    email=demande.email,
+                    first_name=demande.prenom,
+                    last_name=demande.nom,
+                    preferred_name=demande.nom_prefere,
+                    appartenance=DemandeDAppartenance(
+                        arrival_date=demande.date_d_arrivee,
+                        job_catalog_id=demande.metier,
+                        status=demande.statut,
+                        client_id=demande.client,
+                        dsm_person_id=demande.dsm,
+                        circle_id=demande.cercle_principal,
+                    ),
+                ),
+                instant=instant,
+            )
+        return ReponseDeCreationDeCollaborateur(
+            appartenance=cree.appartenance, version=cree.version
+        )
+
+    @routeur.post(
+        GABARIT_CHANGEMENT_D_ENTITE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeChangementDEntite,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : meme grille que la creation (`T2`), evaluee sur "
+                    "L'ENTITE D'ARRIVEE — un DSM qui designe un AUTRE DSM, un Booster "
+                    "hors de son cercle ou qui tente d'assigner un DSM."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite (depart ou arrivee) inconnue ou non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` : la fiche a change depuis votre lecture. "
+                    "`etat_incompatible` : l'appartenance n'est ni `active` ni `future` — "
+                    "on ne transfere pas un profil deja parti ou archive."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`valeur_refusee` : la biconditionnelle statut/client dans l'entite "
+                    "d'arrivee, ou le DSM designe sans responsabilite DSM active la-bas."
+                )
+            },
+        },
+        summary="Changer un collaborateur d'entite",
+        description=(
+            "Cahier §11.1, §16.3 : « le changement d'entite cloture l'ancienne "
+            "appartenance et les responsabilites incompatibles », operation ATOMIQUE. "
+            "Backlog `MVP-L09-US002` (2/2).<br><br>"
+            "**MEME PERIMETRE QUE LA CREATION (`T2`)**, evalue sur l'entite d'ARRIVEE : "
+            "un DSM ne transfere que vers SON propre perimetre de consultants, un "
+            "Booster que dans SON cercle et sans DSM.<br><br>"
+            "**L'ANCIENNE APPARTENANCE VA JUSQU'A `archived`** — `Active --> Departed "
+            "--> Archived`, ou `Future --> Archived` seul — et TOUTES les sessions et "
+            "liens magiques de la personne sont revoques, meme moteur que le depart "
+            "(arbitrage de Jonathan du 08/10/2026). Une nouvelle fiche d'arrivee devra "
+            "etre completee dans l'entite d'arrivee."
+        ),
+    )
+    def changer_l_entite(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        appartenance: Annotated[
+            uuid.UUID, Path(description="L'identifiant d'appartenance, rendu par la fiche")
+        ],
+        demande: DemandeDeChangementDEntite,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeChangementDEntite:
+        """Changer un collaborateur d'entite — cahier §11.1, §16.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            entite_destination = resoudre_une_entite_active(connexion, demande.entite_destination)
+            if entite_source is None or entite_destination is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(
+                connexion, appelant.personne, entite_destination.id, instant
+            )
+            autorise = resoudre_l_autorisation_de_creation(
+                connexion,
+                entite=entite_destination.id,
+                acteur=appelant.personne,
+                roles=frozenset(permissions.roles),
+                proposition=PropositionDeCreation(
+                    circle_id=demande.cercle_principal,
+                    dsm_person_id=demande.dsm,
+                ),
+                instant=instant,
+            )
+            if not autorise:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            transfert = changer_d_entite(
+                connexion,
+                entite_source=entite_source.id,
+                entite_destination=entite_destination.id,
+                cible=appartenance,
+                acteur=appelant.personne,
+                version_attendue=demande.version,
+                demande=DemandeDAppartenance(
+                    arrival_date=demande.date_d_arrivee,
+                    job_catalog_id=demande.metier,
+                    status=demande.statut,
+                    client_id=demande.client,
+                    dsm_person_id=demande.dsm,
+                    circle_id=demande.cercle_principal,
+                ),
+                instant=instant,
+            )
+        return ReponseDeChangementDEntite(
+            nouvelle_appartenance=transfert.nouvelle_appartenance,
+            version=transfert.version,
+            etat_precedent=transfert.etat_precedent,
+            sessions_revoquees=transfert.sessions_revoquees,
+            liens_invalides=transfert.liens_invalides,
+            relations_closes=transfert.relations_closes,
+            parcours_onboarding_archive=transfert.parcours_onboarding_archive,
+        )
+
+    def _elements_du_lot(
+        demande: DemandeDeTransfertEnMasse,
+    ) -> tuple[ElementDuTransfertEnMasse, ...]:
+        return tuple(
+            ElementDuTransfertEnMasse(
+                appartenance=element.appartenance,
+                entite_destination_code=element.entite_destination,
+                version_attendue=element.version,
+                circle_id=element.cercle_principal,
+                dsm_person_id=element.dsm,
+                demande=DemandeDAppartenance(
+                    arrival_date=element.date_d_arrivee,
+                    job_catalog_id=element.metier,
+                    status=element.statut,
+                    client_id=element.client,
+                    dsm_person_id=element.dsm,
+                    circle_id=element.cercle_principal,
+                ),
+            )
+            for element in demande.elements
+        )
+
+    def _resultat_rendu(resultat: ResultatDUnTransfert) -> ResultatDeTransfertRendu:
+        transfert = resultat.transfert
+        return ResultatDeTransfertRendu(
+            appartenance=resultat.appartenance,
+            succes=resultat.succes,
+            nouvelle_appartenance=transfert.nouvelle_appartenance if transfert else None,
+            version=transfert.version if transfert else None,
+            etat_precedent=transfert.etat_precedent if transfert else None,
+            sessions_revoquees=transfert.sessions_revoquees if transfert else None,
+            liens_invalides=transfert.liens_invalides if transfert else None,
+            relations_closes=transfert.relations_closes if transfert else None,
+            parcours_onboarding_archive=transfert.parcours_onboarding_archive
+            if transfert
+            else None,
+            code_erreur=resultat.code_erreur,
+            message_erreur=resultat.message_erreur,
+        )
+
+    def _reponse_du_lot(
+        resultats: tuple[ResultatDUnTransfert, ...],
+    ) -> ReponseDeTransfertEnMasse:
+        rendus = [_resultat_rendu(resultat) for resultat in resultats]
+        reussites = sum(1 for rendu in rendus if rendu.succes)
+        return ReponseDeTransfertEnMasse(
+            resultats=rendus,
+            total=len(rendus),
+            reussites=reussites,
+            echecs=len(rendus) - reussites,
+        )
+
+    _REPONSES_DU_TRANSFERT_EN_MASSE: dict[int | str, dict[str, Any]] = {
+        status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+        status.HTTP_403_FORBIDDEN: {
+            "description": (
+                "`acces_refuse` : aucun role d'ecriture dans l'entite SOURCE (chemin). "
+                "Un refus par ELEMENT (destination hors perimetre) est RAPPORTE dans le "
+                "corps, jamais leve ici."
+            )
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Entite source inconnue ou non active."},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Lot vide ou de plus de cent elements, ou un element mal forme."
+        },
+    }
+
+    @routeur.post(
+        GABARIT_TRANSFERT_EN_MASSE_APERCU,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransfertEnMasse,
+        responses=_REPONSES_DU_TRANSFERT_EN_MASSE,
+        summary="Previsualiser un transfert en masse",
+        description=(
+            "Backlog `MVP-L09-US003` : « la previsualisation indique l'impact ». "
+            "Execute EXACTEMENT le meme chemin que l'execution reelle — meme "
+            "permission par element, meme appel a `changer_d_entite` — dans un "
+            "savepoint TOUJOURS annule : rien n'est jamais ecrit par cet appel, "
+            "succes ou echec. L'impact rendu (sessions revoquees, liens invalides, "
+            "relations closes) est donc le resultat REEL, jamais une estimation."
+        ),
+    )
+    def previsualiser_le_transfert_en_masse(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeTransfertEnMasse,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeTransfertEnMasse:
+        """Previsualiser un transfert en masse — `US003`, aucune ecriture durable."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            if entite_source is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            resultats = executer_le_transfert_en_masse(
+                connexion,
+                entite_source=entite_source.id,
+                acteur=appelant.personne,
+                elements=_elements_du_lot(demande),
+                instant=instant,
+                mode="apercu",
+            )
+        return _reponse_du_lot(resultats)
+
+    @routeur.post(
+        GABARIT_TRANSFERT_EN_MASSE,
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransfertEnMasse,
+        responses=_REPONSES_DU_TRANSFERT_EN_MASSE,
+        summary="Executer un transfert en masse",
+        description=(
+            "Backlog `MVP-L09-US003` : « les operations sont idempotentes […] les "
+            "erreurs partielles sont explicites ». Chaque element dans son PROPRE "
+            "savepoint (`app.imports.execution`, `T9`) : un refus n'affecte aucun "
+            "autre element, et la reponse rapporte CHAQUE sort individuellement.<br>"
+            "<br>**IDEMPOTENT SANS MECANISME NOUVEAU** (cahier §18.6) : rejouer le "
+            "MEME lot refuse chaque element deja transfere en `409` "
+            "(`etat_incompatible`), explicite, jamais rejoue ni ecrase."
+        ),
+    )
+    def executer_le_transfert_en_masse_route(
+        code: Annotated[
+            str,
+            Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code`"),
+        ],
+        demande: DemandeDeTransfertEnMasse,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_ecriture),  # noqa: B008
+    ) -> ReponseDeTransfertEnMasse:
+        """Executer un transfert en masse — `US003`."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_source = resoudre_une_entite_active(connexion, code)
+            if entite_source is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            resultats = executer_le_transfert_en_masse(
+                connexion,
+                entite_source=entite_source.id,
+                acteur=appelant.personne,
+                elements=_elements_du_lot(demande),
+                instant=instant,
+                mode="execution",
+            )
+        return _reponse_du_lot(resultats)
+
     @routeur.get(
         GABARIT_PHOTO,
         dependencies=[Depends(exiger_une_session(parametres))],
@@ -1391,6 +1982,62 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 statut=status.HTTP_404_NOT_FOUND,
             )
         return _historique_en_reponse(historique)
+
+    @routeur.get(
+        "/entities/{code}/job-catalog",
+        #  **`dependencies=` et non `Annotated[...]`** : meme piege mesure dans
+        #  `app/organization/routes.py` (le Framework). Aucun role n'est
+        #  distingue : une session etablie suffit, meme regime que les autres
+        #  lectures de reference (Framework, cercle, bureau).
+        dependencies=[Depends(exiger_une_session(parametres))],
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDuCatalogueDesMetiers,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": (
+                    "Aucune session valide. UNE SEULE forme pour cinq causes : cookie "
+                    "absent, jeton inconnu, session revoquee, duree absolue depassee, "
+                    "inactivite depassee."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": (
+                    "UNE SEULE forme pour DEUX causes : le code est inconnu, ou "
+                    "l'entite existe sans etre active."
+                )
+            },
+        },
+        summary="Le catalogue des metiers configurables de l'entite",
+        description=(
+            "Les metiers ACTIFS et non archives — modele §6.3. Pose en "
+            "construisant l'ecran back-office (`T14`) : `job_catalog_id` est "
+            "obligatoire a la creation d'un collaborateur et au changement "
+            "d'entite depuis l'ouverture du lot, et aucune route n'en servait "
+            "la liste jusque-la."
+        ),
+    )
+    def lire_le_catalogue_des_metiers(
+        code: str = Path(
+            min_length=1,
+            max_length=LONGUEUR_MAXIMALE_CODE,
+            description="Le `code` de l'entite consultee, tel qu'il vit dans l'adresse",
+        ),
+    ) -> ReponseDuCatalogueDesMetiers:
+        """Le catalogue des metiers d'une entite, en lecture — LOT 9 `T14`."""
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            metiers = lister_le_catalogue_des_metiers(connexion, entite=entite.id)
+        return ReponseDuCatalogueDesMetiers(
+            metiers=[
+                MetierRendu(identifiant=m.identifiant, code=m.code, label=m.label) for m in metiers
+            ]
+        )
 
     return routeur
 

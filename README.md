@@ -16,9 +16,9 @@ arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 |---|---|
 | Lots verrouillés | **LOTS 0 à 8** — de `G0` (27/07/2026) à **`G8` (07/10/2026, `DEC-634`, `v0.8.0`)** |
 | Dernière porte franchie | **`G8`** — les six critères du LOT 8 sont acquis, dont un (vidéo) classé sans objet, et Jonathan a validé l'accueil et les événements — [checklist](docs/operations/checklist-validation-G8.md) |
-| **Lot en cours** | **Aucun.** Le LOT 8 n'est plus ouvert par la clôture de `G8` |
-| Sous-étape en cours | Aucune — attendre l'ouverture explicite du LOT 9 et la validation de son découpage |
-| Lots 9 à 14 | `Planned` — aucun travail anticipé autorisé |
+| **Lot en cours** | **LOT 9 — Back-office, administration et import CSV**, ouvert le 08/10/2026 (`DEC-635`) |
+| Sous-étape en cours | **Aucune — le LOT 9 est VERROUILLÉ, porte `G9` FRANCHIE le 14/10/2026 (`DEC-652`), tag `v0.9.0`. Aucun lot n'est ouvert.** Ses seize sous-étapes (`T1` à `T16`) ont livré : les quatre tables de l'import, `POST …/people` (création), le changement d'entité qui referme `US002`, l'archivage et la restauration d'un cercle ou d'un bureau, le tableau de bord administratif, le dépôt sécurisé d'un CSV, la normalisation des e-mails et la détection des doublons qui referment `US004`, le rapprochement des clients qui ferme `ECART-060` pour les clients, l'import transactionnel réel qui construit tout le référentiel restant, le rapport d'un lot d'import et le rejeu d'une ligne rejetée qui ferment `US006`, le transfert en masse de collaborateurs qui ferme `US003`, la création d'une nouvelle entité depuis des modèles génériques qui ferme `US007`, la fermeture explicite de `ECART-035` par constat, les écrans back-office (`T14`) — les sept groupes du cahier en une seule page à onglets, cinq avec un contenu réel, deux marqués « à venir » (arbitrage de Jonathan) — puis le contrôle de pile réelle (`T15`, `make back-office-check`, 16 contrôles) : l'asymétrie de rôles entre les sept groupes et l'isolation multi-entités pendant l'import, critère de sortie 6 de la fiche, et **`T16` (`DEC-651`) la recette de clôture** : reclassement du §30 du modèle (`§30.17`/`§30.18` reportés → acquis, un seul test ajouté, 18 acquis/2 partiel/5 reportés), recette rejouée sur les images publiées (`5f30443`, `back-office-check`/`onboarding-check`/`accueil-check` — 16+14+29 contrôles, 0 échec, `aarch64` natif), zéro régression mesurée par comparaison de worktree (74 échecs environnementaux identiques). **Jonathan a validé explicitement la checklist `G9` le 14/10/2026** (`DEC-652`) |
+| Lots 10 à 14 | `Planned` — aucun travail anticipé autorisé |
 | Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
 
 **Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
@@ -30,7 +30,7 @@ Au-dessus de ce socle :
 
 | Livré | Depuis |
 |---|---|
-| **44 tables métier** PostgreSQL, **23 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7 et 8 |
+| **48 tables métier** PostgreSQL, **24 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7, 8 et 9 |
 | **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
 | **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
 | **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
@@ -46,8 +46,9 @@ bloquants — repris aux lots suivants au besoin.
 **Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
 **vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
 convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
-vidéo réelle n'existera avant la V1 (`CONT-026`) ; l'import CSV du LOT 9, le pilotage avancé du
-LOT 10 et les traitements asynchrones du LOT 11. Les 29 contenus inventoriés restent à relire.
+vidéo réelle n'existera avant la V1 (`CONT-026`) ; le back-office et l'import CSV sont **en
+construction au LOT 9** ; le pilotage avancé du LOT 10 et les traitements asynchrones du LOT 11
+restent à venir. Les 29 contenus inventoriés restent à relire.
 
 > Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
 > `#209` et `#212` sont fermées de même ; `#210` reste ouverte (bloquée par `ECART-068`) et `#211`

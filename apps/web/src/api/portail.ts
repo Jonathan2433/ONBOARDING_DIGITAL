@@ -20,17 +20,25 @@
  *   ailleurs n'est pas eprouve.
  */
 import {
+  CHEMIN_CREATION_D_ENTITE,
   CHEMIN_ENTITES,
+  EN_TETE_CLE_IDEMPOTENCE,
   EN_TETE_CORRELATION,
+  EN_TETE_JETON_CSRF,
   cheminEntite,
   cheminPermissions,
+  type DemandeDeCreationDEntite,
+  type EntiteCreee,
   type EntiteDuPortail,
   type PermissionsDeLEntite,
   type ReponseDesEntites,
+  validerLEntiteCreee,
   validerLesEntites,
   validerLesPermissions,
   validerUneEntite,
 } from '@onboarding/contracts';
+
+import { lireLaSession } from './auth';
 
 /** Ce qu'un appel du portail rend, une fois lu. */
 export interface ReponseDuPortail<T> {
@@ -115,4 +123,40 @@ export function lireLesPermissions(
   signal?: AbortSignal,
 ): Promise<ReponseDuPortail<PermissionsDeLEntite>> {
   return appeler(cheminPermissions(code), validerLesPermissions, signal);
+}
+
+/**
+ * Créer une entité depuis des modèles génériques — LOT 9, `T12`/`T14`, `SUPER` seul.
+ *
+ * **MEME MONTAGE QUE `administration.ts`** : jeton anti-CSRF lu au dernier
+ * instant, clé d'idempotence PAR TENTATIVE. `premier_administrateur` désigne
+ * une personne DÉJÀ CONNUE (son identifiant) — ce client n'en crée aucune.
+ */
+export async function creerUneEntite(
+  demande: DemandeDeCreationDEntite,
+): Promise<ReponseDuPortail<EntiteCreee>> {
+  const session = await lireLaSession();
+  if (session.statut !== 200 || session.corps === null) {
+    return { statut: session.statut, corps: null, correlation: null };
+  }
+
+  const reponse = await fetch(CHEMIN_CREATION_D_ENTITE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      [EN_TETE_JETON_CSRF]: session.corps.jeton_csrf,
+      [EN_TETE_CLE_IDEMPOTENCE]: globalThis.crypto.randomUUID(),
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(demande),
+  });
+  const correlation = reponse.headers.get(EN_TETE_CORRELATION);
+
+  let corps: EntiteCreee | null;
+  try {
+    corps = validerLEntiteCreee(await reponse.json());
+  } catch {
+    corps = null;
+  }
+  return { statut: reponse.status, corps, correlation };
 }

@@ -189,6 +189,24 @@ COUVERTURE: dict[tuple[str, str], str] = {
         "test_une_portee_dsm_ne_peut_pas_pointer_un_evenement_d_une_AUTRE_entite "
         "[test_evenements.py]"
     ),
+    #  LOT 9, `T1` — les QUATRE cles composites de l'import CSV. Leurs
+    #  temoins vivent avec le schema qu'ils eprouvent, dans `test_imports.py`.
+    (
+        "import_row",
+        "import_batch",
+    ): ("test_une_ligne_ne_peut_pas_pointer_un_lot_d_une_AUTRE_entite [test_imports.py]"),
+    (
+        "import_row",
+        "entity_membership",
+    ): ("test_une_ligne_ne_peut_pas_pointer_une_appartenance_d_une_AUTRE_entite [test_imports.py]"),
+    (
+        "import_row_issue",
+        "import_row",
+    ): ("test_un_probleme_ne_peut_pas_pointer_une_ligne_d_une_AUTRE_entite [test_imports.py]"),
+    (
+        "import_decision",
+        "import_row",
+    ): ("test_une_decision_ne_peut_pas_pointer_une_ligne_d_une_AUTRE_entite [test_imports.py]"),
 }
 
 
@@ -338,14 +356,15 @@ def test_les_cles_composites_sont_toutes_couvertes(cx: Connection) -> None:
     assert not manquants, f"cle(s) composite(s) SANS test de refus : {sorted(manquants)}"
     assert not disparus, f"test(s) portant sur une cle composite disparue : {sorted(disparus)}"
     #  **HUIT AU LOT 2, NEUF DEPUIS `T1` DU LOT 5, DOUZE DEPUIS `T1` DU LOT 6,
-    #  DIX-HUIT DEPUIS `T1` DU LOT 7, VINGT-QUATRE DEPUIS `T1` DU LOT 8.** Le
+    #  DIX-HUIT DEPUIS `T1` DU LOT 7, VINGT-QUATRE DEPUIS `T1` DU LOT 8, VINGT-
+    #  CINQ DEPUIS `T3` DU LOT 8, VINGT-NEUF DEPUIS `T1` DU LOT 9.** Le
     #  nombre est ecrit, et c'est delibere :
     #  sa mise a jour est ce qui force la decision. Une cle composite ajoutee
     #  sans test ferait echouer ce test, et c'est son objet -- il l'a fait le
     #  13/09/2026, sur les trois tables editoriales, et j'avais alors pose
     #  trois chemins pour deux tests -- puis a nouveau le 25/09/2026, sur les
     #  six cles de la fiche d'arrivee et de l'onboarding.
-    assert len(reelles) == len(COUVERTURE) == 25, f"{len(reelles)} chemins, 25 attendus"
+    assert len(reelles) == len(COUVERTURE) == 29, f"{len(reelles)} chemins, 29 attendus"
 
 
 # ---------------------------------------------------------------------------

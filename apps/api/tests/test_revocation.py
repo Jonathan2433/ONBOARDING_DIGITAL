@@ -603,6 +603,42 @@ def test_UN_EVENEMENT_PAR_SESSION_avec_le_motif_du_depart(
 
 
 @pytest.mark.integration
+def test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER(
+    parametres_de_la_stack: Parametres,
+) -> None:
+    """**FERME `ECART-035`, LOT 9 `T13` — PAR CONSTAT, PAS PAR CODE.**
+
+    Le backlog `US006` nomme trois objets a invalider au depart : sessions,
+    invitations, futurs magic links. `invitation` n'a jamais existe comme objet
+    de donnees -- 0 occurrence dans le modele et la matrice -- et l'ecart
+    recommandait de reprendre la question au LOT 9, « ou le back-office creera
+    les invitations ». Les seize sous-etapes validees du LOT 9 ne creent AUCUN
+    objet de ce nom : `T12` nomme un administrateur par une simple affectation
+    de role technique, et `T14` a `T16` sont des ecrans et des controles, pas un
+    nouveau modele de donnees.
+
+    **Ce test rend la fermeture FALSIFIABLE plutot qu'affirmee en prose** (§7.32) :
+    il interroge le catalogue reel, jamais une liste ecrite a la main qui
+    vieillirait au premier ajout (§7.27). Si un lot futur pose une table dont le
+    nom contient « invitation », CE TEST ECHOUE -- et celui qui l'a posee saura
+    qu'il doit relire `app.people.services._appliquer` pour y ajouter la ligne de
+    revocation que cet ecart promettait.
+    """
+    _exiger_postgresql(parametres_de_la_stack)
+    with moteur(parametres_de_la_stack).connect() as cx:
+        tables = [
+            str(ligne[0])
+            for ligne in cx.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = 'public' AND table_name ILIKE '%invitation%'"
+                )
+            )
+        ]
+    assert tables == []
+
+
+@pytest.mark.integration
 def test_UNE_SECONDE_APPARTENANCE_OCCUPANTE_est_REFUSEE_par_la_base(
     decor: tuple[Parametres, str],
 ) -> None:

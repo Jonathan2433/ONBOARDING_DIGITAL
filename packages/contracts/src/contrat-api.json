@@ -339,6 +339,34 @@
       ]
     },
     {
+      "cle": "creationDUneEntite",
+      "chemin": "/api/v1/entities",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 409, 422],
+      "forme": "ReponseDeCreationDEntite",
+      "role": [
+        "Creer une nouvelle entite depuis des modeles generiques -- LOT 9, T12,",
+        "story MVP-L09-US007. Cahier 4.1 et 21 : seul le role technique GLOBAL",
+        "SUPER_ADMIN peut creer une entite.",
+        "ARBITRAGE EXPLICITE DE JONATHAN (AskUserQuestion, pose avant tout code) :",
+        "l'entite nait VIERGE -- aucun contenu, aucune responsabilite Framework,",
+        "aucun modele d'onboarding n'est seme. Rien n'existe a copier depuis",
+        "Bordeaux : la resolution DSM > CIRCLE > ENTITY > GLOBAL (LOT 7) retombe",
+        "deja sur le modele d'onboarding GLOBAL generique des qu'aucun modele",
+        "ENTITY n'existe pour la nouvelle entite -- c'est le mecanisme deja pose",
+        "trois sous-etapes plus tot, pas un nouveau a construire.",
+        "CREEE DIRECTEMENT active (activated_at pose) : aucun etat draft",
+        "intermediaire dans cette sous-etape, simplification documentee.",
+        "LE PREMIER ADMINISTRATEUR EST NOMME DANS LE MEME APPEL (second arbitrage",
+        "de Jonathan) -- technical_role_assignment, role ENTITY_ADMIN -- sans quoi",
+        "l'entite resterait injoignable localement jusqu'a un second geste manuel.",
+        "403 acces_refuse : role global SUPER_ADMIN absent.",
+        "409 code_deja_utilise : ce code appartient deja a une autre entite.",
+        "422 personne_introuvable : la personne designee comme premier",
+        "administrateur n'existe pas."
+      ]
+    },
+    {
       "cle": "entiteConsultee",
       "chemin": "/api/v1/entities/{code}",
       "methode": "get",
@@ -522,6 +550,65 @@
         "colonnes : les lire seuls aurait exclu l'Employe que la story nomme.",
         "UN BUREAU ARCHIVE REND 404, indistinguable d'un code inconnu, d'une autre",
         "entite ou d'une entite non active. Sa lecture aura sa propre route."
+      ]
+    },
+    {
+      "cle": "archivageDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDUnCercle",
+      "role": [
+        "Archiver un cercle -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 10.2 'Archiver un cercle | Entite, si aucun membre actif' et 18.",
+        "ESM, administrateur d'entite et super-administrateur seulement.",
+        "LA CONDITION 'AUCUN MEMBRE ACTIF' NE DEPEND D'AUCUN ROLE : elle refuse",
+        "meme le super-administrateur -- une interdiction liee a la ressource",
+        "prevaut sur le cumul des roles (23.2)."
+      ]
+    },
+    {
+      "cle": "restaurationDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDUnCercle",
+      "role": [
+        "Restaurer un cercle archive -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 18 'Restaurer un cercle ou bureau | Entite, restauration",
+        "fonctionnelle'. ARB-DROIT-003 nomme la condition du mot 'Conditionnel'",
+        "du 10.2 pour l'ESM : un cercle a l'unite, par cette route, EST une",
+        "restauration fonctionnelle.",
+        "FERME UN TROU OUVERT DEPUIS T3 DU LOT 6 : circle/office portent",
+        "archived_at depuis le LOT 2 sans aucun ecrivain avant T4."
+      ]
+    },
+    {
+      "cle": "archivageDUnBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/archivage",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDArchivageDUnBureau",
+      "role": [
+        "Archiver un bureau -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 10.3 'Archiver un bureau | Entite' et 18.",
+        "ESM, administrateur d'entite et super-administrateur seulement.",
+        "AUCUNE CONDITION DE RESSOURCE, a la difference d'un cercle : le 10.3",
+        "ne porte aucune ligne 'si aucun responsable actif'."
+      ]
+    },
+    {
+      "cle": "restaurationDUnBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/restauration",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRestaurationDUnBureau",
+      "role": [
+        "Restaurer un bureau archive -- LOT 9, T4, MVP-L09-US008.",
+        "Matrice 18 'Restaurer un cercle ou bureau | Entite, restauration",
+        "fonctionnelle'. ARB-DROIT-003 nomme la condition du mot 'Conditionnel'",
+        "du 10.3 pour l'ESM : un bureau a l'unite, par cette route, EST une",
+        "restauration fonctionnelle."
       ]
     },
     {
@@ -768,6 +855,114 @@
         "page -- jamais ligne par ligne, ce qui serait le N+1 que le critere de T3",
         "interdit. La liste et la route de photo partagent leurs conditions, en une seule",
         "source : deux copies feraient annoncer un chemin que la route refuse."
+      ]
+    },
+    {
+      "cle": "catalogueDesMetiers",
+      "chemin": "/api/v1/entities/{code}/job-catalog",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDuCatalogueDesMetiers",
+      "role": [
+        "Le catalogue des metiers d'une entite — LOT 9, T14.",
+        "Posee en construisant l'ecran back-office : job_catalog_id est",
+        "obligatoire a la creation d'un collaborateur (T2) et au changement",
+        "d'entite (T3) depuis l'ouverture du lot, et aucune route n'en servait",
+        "la liste jusqu'ici -- meme motif que GET .../templates, pose par T14",
+        "du LOT 7. Aucun role distingue : une session etablie suffit, meme",
+        "regime que les autres lectures de reference (Framework, cercle,",
+        "bureau). Seuls les metiers ACTIFS et non archives sont rendus."
+      ]
+    },
+    {
+      "cle": "creationDUnCollaborateur",
+      "chemin": "/api/v1/entities/{code}/people",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCreationDeCollaborateur",
+      "role": [
+        "Creer manuellement un collaborateur — LOT 9, T2, MVP-L09-US002 (1/2).",
+        "Matrice 6.1 « Creer manuellement un profil » : DSM Consultants, ESM",
+        "Entite, BOOST Cercle, OFFICE tiret, ADM-E Entite, SUPER Global.",
+        "Categorie professionnelle TOUJOURS `consultant` : la categorie `dg`",
+        "exige une action separee (attribuer_la_categorie_dg), non exposee",
+        "par ce depot -- voir app/people/creation.py.",
+        "Six champs organisationnels poses a la creation : date d'arrivee,",
+        "metier, statut, client (nul si intercontract), DSM (facultatif),",
+        "cercle principal. Les modifier ensuite releve de T3, pas de cette route.",
+        "403 acces_refuse couvre un role absent ET une proposition hors",
+        "perimetre -- un DSM qui designe un AUTRE DSM, un Booster hors de",
+        "son cercle ou qui tente d'assigner un DSM.",
+        "422 valeur_refusee : la biconditionnelle statut/client, ou le DSM",
+        "designe sans responsabilite DSM active dans cette entite."
+      ]
+    },
+    {
+      "cle": "changementDEntite",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/changement-d-entite",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeChangementDEntite",
+      "role": [
+        "Changer un collaborateur d'entite -- LOT 9, T3, MVP-L09-US002 (2/2).",
+        "Cahier 11.1, 16.3 : operation ATOMIQUE, l'ancienne appartenance est",
+        "cloturee et les responsabilites incompatibles avec elle.",
+        "MEME PERIMETRE QUE LA CREATION (T2), evalue sur l'entite d'ARRIVEE :",
+        "un DSM ne transfere que vers son propre perimetre, un Booster que",
+        "dans son cercle et sans DSM.",
+        "L'ancienne appartenance va JUSQU'A archived (Active -> Departed ->",
+        "Archived, ou Future -> Archived seul) et TOUTES les sessions et",
+        "liens magiques de la personne sont revoques -- meme moteur que le",
+        "depart, arbitrage de Jonathan du 08/10/2026.",
+        "409 etat_incompatible : la cible n'est ni active ni future.",
+        "422 valeur_refusee : biconditionnelle statut/client dans l'entite",
+        "d'arrivee, ou DSM designe sans responsabilite active la-bas."
+      ]
+    },
+    {
+      "cle": "previsualisationDuTransfertEnMasse",
+      "chemin": "/api/v1/entities/{code}/people/transferts-en-masse/apercu",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeTransfertEnMasse",
+      "role": [
+        "Previsualiser un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
+        "Cahier 10.8 (changements en masse), 18.6 (idempotence exigee).",
+        "Arbitrage du 12/10/2026 : seul le changement d'entite (T3) recoit",
+        "une forme en masse -- la creation en masse est deja l'import CSV.",
+        "Un a cent elements, chacun comme l'unitaire de T3 plus sa propre",
+        "cible (`appartenance`) ; l'entite source vient du chemin, commune",
+        "a tous les elements, la destination varie par element.",
+        "EXECUTE LE MEME CHEMIN QUE L'EXECUTION REELLE, DANS UN SAVEPOINT",
+        "TOUJOURS ANNULE par element -- meme permission (T2/T3, evaluee",
+        "PAR element sur SA destination), meme appel a changer_d_entite.",
+        "L'impact rendu est donc REEL, jamais une estimation separee.",
+        "AUCUNE ECRITURE DURABLE, succes ou echec : la reponse 200 porte le",
+        "sort de CHAQUE element, 403/404 PAR element s'ils different.",
+        "403/404 au niveau de la reponse elle-meme ne couvrent que l'entite",
+        "SOURCE (chemin) : aucun role d'ecriture, ou entite introuvable."
+      ]
+    },
+    {
+      "cle": "transfertEnMasse",
+      "chemin": "/api/v1/entities/{code}/people/transferts-en-masse",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeTransfertEnMasse",
+      "role": [
+        "Executer un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
+        "MEME CORPS QUE LA PREVISUALISATION. Chaque element dans son PROPRE",
+        "savepoint (app.imports.execution, T9) : un refus n'affecte aucun",
+        "autre element, la reponse rapporte CHAQUE sort individuellement --",
+        "`erreurs partielles explicites`, le critere du backlog.",
+        "IDEMPOTENT SANS MECANISME NOUVEAU (cahier 18.6) : rejouer le MEME",
+        "lot refuse chaque element deja transfere en 409 (etat_incompatible,",
+        "deja porte par changer_d_entite), jamais rejoue ni ecrase (18.4).",
+        "Toujours 200 si l'entite source existe et l'appelant y ecrit --",
+        "les echecs individuels sont dans le corps, jamais l'enveloppe HTTP,",
+        "meme parti que le rapport d'import (T10) et le lancement (T9).",
+        "AUCUNE ECRITURE D'AUDIT : archive_reason/assignment_reason et",
+        "audit_event restent hors de ce lot (ECART-064, LOT 10)."
       ]
     },
     {
@@ -1774,6 +1969,189 @@
       ]
     },
     {
+      "cle": "tableauDeBordAdministratif",
+      "chemin": "/api/v1/entities/{code}/administration/tableau-de-bord",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDuTableauDeBord",
+      "role": [
+        "Consulter le tableau de bord administratif -- LOT 9, T5, MVP-L09-US001.",
+        "Cahier 10.8 : six grandeurs -- profils actifs, arrivees futures,",
+        "onboardings actifs, taches en retard, profils incomplets, derniers",
+        "imports en echec. Matrice 15.1 : DSM Consultants, ESM Entite, BOOST",
+        "Cercle, OFFICE --, ADM-E Entite, SUPER Global -- meme grille que",
+        "'Consulter les compteurs'/'profils incomplets'/'arrivees a 30 jours'.",
+        "REUTILISE lister_les_taches_en_retard (LOT 7, T12) pour le compte de",
+        "retard, dans SA PROPRE portee (pas de Soi ici, la vue est",
+        "administrative, jamais personnelle).",
+        "'Profil incomplet' -- arbitrage de Jonathan du 09/10/2026 : un profil",
+        "ACTIF auquel il manque au moins une de ses quatre relations",
+        "courantes (metier, cercle principal, DSM, statut) -- la meme notion",
+        "que relations_a_redonner apres une restauration (LOT 5, T8), jamais",
+        "inventee. Le client n'entre pas dans le calcul, conditionnel au statut.",
+        "'Derniers imports' montre les lots RECENTS AVEC UN PROBLEME",
+        "(failed, ou au moins une ligne rejetee) -- le cahier le dit deux fois",
+        "('derniers problemes d'import CSV', 'dernieres erreurs d'import'),",
+        "jamais la liste complete des imports reussis. Visible seulement",
+        "d'ESM/ADM-E/SUPER (fiche LOT 9 'Permissions CSV') -- liste vide pour",
+        "DSM/BOOST, jamais un 403 partiel sur un agregat qui rend 200."
+      ]
+    },
+    {
+      "cle": "depotDUnImport",
+      "chemin": "/api/v1/entities/{code}/imports",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeDepotDImport",
+      "role": [
+        "Deposer un CSV et produire sa previsualisation -- LOT 9, T6/T7/T8,",
+        "MVP-L09-US004, MVP-L09-US005.",
+        "Matrice 14 'Charger un CSV' : ESM Entite, ADM-E Entite, SUPER",
+        "Global -- DSM, BOOST et OFFICE a tiret, meme grille que",
+        "l'archivage/restauration d'un cercle ou d'un bureau (T4).",
+        "Cahier 9.5 : chargement du fichier (T6), PUIS normalisation de",
+        "l'e-mail, detection des doublons de personne, blocage des lignes",
+        "sans e-mail (T7), PUIS rapprochement du client F13 -- W-CLIENT-001",
+        "si connu mais pas encore active localement, D-CLIENT-002 si",
+        "inconnu, AUCUNE ressemblance detectee automatiquement, arbitrage",
+        "explicite de Jonathan (T8) -- toutes dans le MEME appel (import",
+        "synchrone, DEC-462). import_batch ressort 'preview_ready' avec ses",
+        "quatre compteurs (lignes_valides/avec_avertissement/a_confirmer/",
+        "rejetees), reconcilies avec total_lignes MAIS seulement pour ce",
+        "qui est effectivement verifie -- date, metier, cercle, DSM... ne",
+        "sont PAS previsualises, verifies seulement a l'import reel (T9).",
+        "Depot dans MinIO sous une cle jamais fournie par le client (meme",
+        "discipline que les medias, 16.1), empreinte SHA-256 sur les",
+        "octets recus. Delimiteur selon DEC-432 : point-virgule",
+        "obligatoire, virgule toleree SEULEMENT si non ambigue.",
+        "422 pour un fichier vide, un encodage non UTF-8, ou un nom de",
+        "fichier vide une fois nettoye de tout chemin."
+      ]
+    },
+    {
+      "cle": "listeDesClients",
+      "chemin": "/api/v1/entities/{code}/clients",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesClients",
+      "role": [
+        "Le referentiel global des clients actifs, vu depuis une entite --",
+        "LOT 9, T8. Ferme ECART-060 pour les clients : le trombinoscope",
+        "(LOT 5, T3) accepte deja un filtre 'client' sans qu'aucune route",
+        "n'en serve la liste.",
+        "Matrice 14 'Valider les rapprochements clients' : DSM Consultants,",
+        "ESM Entite, ADM-E Entite, SUPER Global -- BOOST et OFFICE a tiret.",
+        "actif_localement dit si une affectation a cette entite peut s'y",
+        "rattacher directement, ou si elle exigerait une activation locale",
+        "(W-CLIENT-001). Aucun filtre sur entity_client : un client non",
+        "encore active localement reste visible, sans quoi un humain ne",
+        "pourrait jamais choisir le client qui lui manque."
+      ]
+    },
+    {
+      "cle": "enregistrerUneDecisionDImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/rows/{ligne}/decisions",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeDecision",
+      "role": [
+        "Enregistrer une decision humaine sur une ligne 'needs_decision' --",
+        "LOT 9, T8, MVP-L09-US005, modele 19.4.",
+        "Matrice 14 'Valider les rapprochements clients' : DSM Consultants,",
+        "ESM Entite, ADM-E Entite, SUPER Global -- BOOST et OFFICE a tiret,",
+        "a la difference de 'Previsualiser et corriger les correspondances'",
+        "(ligne voisine, qui admet BOOST). Un DSM sans role plus large ne",
+        "decide que sur une ligne dont le F16 (e-mail du DSM) le designe",
+        "LUI-MEME -- lu directement dans le fichier, aucun profil n'existe",
+        "encore pour le relier autrement.",
+        "N'IMPORTE RIEN : import_row.state reste 'needs_decision', l'import",
+        "reel (T9) relira cette decision. Seule exception :",
+        "client_alias_creation cree IMMEDIATEMENT la ligne client_alias",
+        "correspondante (modele 7.3, validated_by_person_id deja requis",
+        "par LOT 2), et normalized_data['F13'] est mis a jour.",
+        "Cinq types structurellement acceptes (modele 19.4), mais SEULS",
+        "client_alias_creation et canonical_client_selection sont exerces",
+        "et testes par T8 -- les trois autres (person_merge,",
+        "profile_reactivation, voluntary_rejection) existent pour T7",
+        "(D-PERSONNE-001/002) et un usage futur, non duplique."
+      ]
+    },
+    {
+      "cle": "lancerLImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/lancement",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeLancement",
+      "role": [
+        "Lancer l'import transactionnel des lignes previsualisees -- LOT 9,",
+        "T9, MVP-L09-US006 (1/2), modele 19.5, diagramme 24.4.",
+        "Matrice 14 'Lancer l'import' : ESM Entite, ADM-E Entite, SUPER",
+        "Global -- DSM, BOOST et OFFICE a tiret, MEME grille que 'Charger",
+        "un CSV' (reutilisee, pas redeclaree).",
+        "preview_ready -> importing -> completed, dans le MEME appel",
+        "synchrone (DEC-462). Les champs non encore verifies par T7/T8",
+        "(dates, identite, entite, metier, situation, cercles, DSM,",
+        "responsabilites Framework, roles techniques, autorisation photo)",
+        "sont valides A CET INSTANT par app.imports.organisation, jamais en",
+        "cache depuis la previsualisation -- un metier ou un cercle cree",
+        "entre les deux appels change le verdict.",
+        "Chaque ligne eligible (valid/warning, ou needs_decision resolue",
+        "par une decision enregistree) est creee, mise a jour par e-mail",
+        "(person_merge) ou reactivee (profile_reactivation, confirmation",
+        "explicite -- matrice 14, DSM a TIRET sur cette ligne precise,",
+        "contrairement a 'Valider les rapprochements clients') dans son",
+        "PROPRE savepoint : un refus de la base sur une ligne n'affecte",
+        "aucune autre (modele 19.5, 'aucune ligne rejetee n'empeche les",
+        "lignes valides d'etre importees').",
+        "409 si le lot n'est pas en previsualisation (deja lance, ou",
+        "annule)."
+      ]
+    },
+    {
+      "cle": "rejouerUneLigneDImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/rows/{ligne}/rejeu",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409],
+      "forme": "ReponseDeRejeu",
+      "role": [
+        "Rejouer UNE ligne rejetee -- LOT 9, T10, MVP-L09-US006 (2/2).",
+        "Matrice 14 'Rejouer les lignes rejetees' : MEME grille que 'Lancer",
+        "l'import' (ESM/ADM-E Entite, SUPER Global).",
+        "Arbitrage de Jonathan : AUCUNE correction n'est saisie ici -- le",
+        "modele ne porte aucun champ pour elle. La ligne est revalidee",
+        "TELLE QUELLE, a l'instant present (un metier ou un cercle cree",
+        "entre-temps, une decision desormais enregistree). Seule",
+        "app.imports.organisation est rejouee -- jamais les codes",
+        "E-EMAIL-*, qui dependent du fichier entier ou ne changent pas",
+        "avec le temps ; un CSV corrige a la source reste le chemin normal.",
+        "409 si le lot n'a pas encore ete importe, si la ligne n'est pas",
+        "rejetee, ou si elle porte un code hors de la portee du rejeu."
+      ]
+    },
+    {
+      "cle": "consulterLeRapportDImport",
+      "chemin": "/api/v1/entities/{code}/imports/{lot}/rapport",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeRapport",
+      "role": [
+        "Le rapport d'un lot d'import -- LOT 9, T10, MVP-L09-US006 (2/2),",
+        "criteres-qualite-import.md 4.",
+        "Matrice 14 'Consulter le rapport' : CE MODULE NE SERT QUE ESM",
+        "Entite / ADM-E Entite / SUPER Global -- meme grille que 'Charger",
+        "un CSV'. DSM (Consultants) et Booster (Cercle limite) ne sont PAS",
+        "encore servis : aucun document ne dit comment filtrer un rapport",
+        "d'import par DSM ou par cercle -- question ouverte plutot",
+        "qu'invention (6.5).",
+        "La reconciliation (creations/mises_a_jour/rejets/",
+        "en_attente_de_decision) est une lecture FRAICHE de",
+        "import_row.state, jamais un cache : elle reste exacte apres un",
+        "rejeu. Aucune ligne rejetee n'est masquee -- chaque ligne de la",
+        "page porte son etat et ses problemes.",
+        "Pagine selon le cahier 18.2 (25/50/100)."
+      ]
+    },
+    {
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",
@@ -1951,5 +2329,74 @@
     "Confrontee a `ROLES_DE_PORTEE_ENTITE` de `app/events/perimetre.py` par",
     "un test Python, dans les deux sens."
   ],
-  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"]
+  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_ecriture": [
+    "LOT 9, T14 -- LA GARDE D'ECRITURE GENERALE SUR UN COLLABORATEUR.",
+    "CINQ ROLES : c'est `ROLES_D_ECRITURE` de `app/permissions/perimetre.py`,",
+    "reutilisee TELLE QUELLE par la creation d'un collaborateur (T2), le",
+    "changement d'entite (T3) et le transfert en masse (T11) -- les trois",
+    "ecrivent la meme ressource, entity_membership, par des chemins differents.",
+    "LE FRONTEND N'EST PAS L'AUTORITE : un DSM ou un Booster porteurs de ce",
+    "role peuvent voir le formulaire et recevoir un 403 au clic si la cible",
+    "precise (dsm_person_id, cercle) ne les designe pas -- c'est",
+    "`resoudre_l_autorisation_de_creation` qui tranche, jamais cette liste.",
+    "Confrontee a `ROLES_D_ECRITURE` par un test Python, dans les deux sens."
+  ],
+  "rolesEcriture": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
+  "_commentaire_cycle_de_vie_framework": [
+    "LOT 9, T14 -- L'ARCHIVAGE ET LA RESTAURATION D'UN CERCLE OU D'UN BUREAU.",
+    "TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` (profil) ET",
+    "`rolesRestaurationDUnEvenement`, ET C'EST ENCORE UNE COINCIDENCE, PAS",
+    "UNE DERIVATION (§7.40 de la passation). Celle-ci vient de",
+    "`ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` de `app/organization/perimetre.py`,",
+    "posee par T4 du LOT 9 -- DSM et BOOST en sont exclus EN BLOC meme s'ils",
+    "portent une responsabilite reelle sur le cercle ou le bureau concerne.",
+    "DECLAREE SEPAREMENT de `rolesCycleDeVie` : les fusionner ferait suivre",
+    "l'une quand la matrice change l'autre, en silence (§7.27).",
+    "Confrontee a `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` par un test Python, dans",
+    "les deux sens."
+  ],
+  "rolesCycleDeVieFramework": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_tableau_de_bord": [
+    "LOT 9, T14 -- LA GARDE DU TABLEAU DE BORD ADMINISTRATIF (US001, T5).",
+    "CINQ ROLES, OFFICE A TIRET : c'est `ROLES_DU_TABLEAU_DE_BORD` de",
+    "`app/administration/perimetre.py`, qui reutilise la grille du 15.1",
+    "« Reporting et exports » plutot que d'en ecrire une nouvelle -- aucune",
+    "ligne de la matrice ne s'appelle « tableau de bord ».",
+    "NE GOUVERNE PAS la visibilite des « derniers imports en echec » : cette",
+    "sous-section est filtree PAR L'API SEULE (`ROLES_DE_LECTURE_DES_",
+    "IMPORTS`, DSM/BOOST y recoivent une liste VIDE, jamais un 403 partiel",
+    "sur un agregat qui rend 200) -- le frontend affiche ce qu'il recoit,",
+    "sans deviner un second role.",
+    "Confrontee a `ROLES_DU_TABLEAU_DE_BORD` par un test Python, dans les",
+    "deux sens."
+  ],
+  "rolesTableauDeBord": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
+  "_commentaire_depot_de_l_import": [
+    "LOT 9, T14 -- CHARGER, LANCER ET REJOUER UN IMPORT CSV (matrice 14,",
+    "« Charger un CSV » / « Lancer l'import »).",
+    "TROIS ROLES : c'est `ROLES_DE_DEPOT_DE_L_IMPORT` de",
+    "`app/imports/perimetre.py`, reutilisee TELLE QUELLE (meme objet) par le",
+    "depot (T6), le lancement (T9) et le rejeu (T10) -- jamais trois copies.",
+    "DSM/BOOST valident un rapprochement dans leur perimetre SANS pouvoir",
+    "lancer -- voir `rolesValidationDesRapprochements`, une grille distincte.",
+    "Confrontee a `ROLES_DE_DEPOT_DE_L_IMPORT` par un test Python, dans les",
+    "deux sens."
+  ],
+  "rolesDepotDeLImport": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_validation_des_rapprochements": [
+    "LOT 9, T14 -- VALIDER UN RAPPROCHEMENT DE CLIENT ET ENREGISTRER UNE",
+    "DECISION D'IMPORT (US005, T8).",
+    "QUATRE ROLES, DIFFERENT DE `rolesDepotDeLImport` : c'est",
+    "`ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` de `app/imports/decisions.py`,",
+    "qui ajoute DSM a la grille de depot -- un DSM decide dans son propre",
+    "perimetre (F16) sans pouvoir deposer ni lancer un import. Le SERVICE",
+    "resserre encore pour deux types precis (`person_merge`,",
+    "`profile_reactivation`), refuses a tout DSM meme dans son perimetre --",
+    "cette liste ne le distingue pas, jamais une autorite de plus que",
+    "proposer le formulaire.",
+    "Confrontee a `ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` par un test",
+    "Python, dans les deux sens."
+  ],
+  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"]
 }

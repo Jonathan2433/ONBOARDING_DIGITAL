@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `634` en usage | `DEC-635` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `652` en usage | `DEC-653` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
-| `ECART-nnn` | Écarts |  `001` à `068` |  `ECART-069` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `124` | `QO-125` | [questions](operations/registre-questions-ouvertes.md) |
+| `ECART-nnn` | Écarts |  `001` à `069` |  `ECART-070` | [écarts](decisions/registre-ecarts.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `125` | `QO-126` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -134,7 +134,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
-| `G9` | Fin du back-office | Import réel répété et validé | Planifiée |
+| ~~`G9`~~ | Fin du back-office | Import réel répété et validé | **FRANCHIE le 14/10/2026** — `DEC-652`, les **huit** critères classés (cinq tenus, deux gestes procéduraux à organiser, la validation de Jonathan), [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md), tag `v0.9.0` posé sur `main` |
 | `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
@@ -961,8 +961,342 @@ repris aux lots suivants au besoin, sur arbitrage explicite plutôt que par déf
 est posé sur `main`, `develop` restant ancêtre et le commit de livraison portant deux parents
 (`ECART-026`). Les stories `#207`, `#208`, `#209` et `#212` sont fermées manuellement sur leurs
 preuves propres ; `#210` reste ouverte, bloquée par `ECART-068` ; `#211` reste ouverte, `US005`
-étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 et n'ouvre pas le
-LOT 9.
+étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 ; elle n'ouvre pas le
+LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le 08/10/2026.
+
+---
+
+## 16. Avancement du LOT 9 — **lot VERROUILLÉ**, porte `G9` FRANCHIE
+
+**Ouvert par Jonathan le 8 octobre 2026 (`DEC-635`), verrouillé le 14 octobre 2026 (`DEC-652`,
+tag `v0.9.0`).** Plan : [`operations/fiche-lot-9.md`](operations/fiche-lot-9.md) — **8** stories,
+dont **6 `P0`** et **2 `P1`**, **huit** critères de sortie concordants entre la roadmap et le
+cahier (Annexe C), et **seize** sous-étapes, **toutes faites**. Épic `#234`, jalon `G9`
+**franchi**, stories `#235` à `#242`.
+
+**`T1` est faite** (`DEC-636`) : les quatre tables de l'import — `import_batch`, `import_row`,
+`import_row_issue`, `import_decision` (modèle §19, migration `0024`) — sans `async_job` ni
+`outbox_message`, réservées au LOT 11 (import **synchrone**, confirmé par Jonathan). Un défaut
+trouvé par `make isolation-check` a été corrigé avant commit : `approved_by_person_id` avait été
+posé sans clé étrangère, par un faux parallèle avec les trois colonnes d'auteur de
+`ChampsCommuns` — ce sont elles l'exception, toute colonne d'acteur **nommée** porte une clé
+étrangère réelle vers `person`. Le schéma logique `F01`–`F19` (`DEC-434`, v1.0-initiale) sert de
+base ; le schéma réel des colonnes reste ouvert (`QO-096`/`QO-110`) et ne bloque pas la
+construction du pipeline (`ECART-005`). `ECART-035` (invitations au départ, **clos par `T13`**,
+`DEC-648`) et `ECART-060` (filtres métiers/clients/DSM, partiel) sont explicitement rattachés à ce
+lot par le registre ; `ECART-064` (motif d'intervention) n'en fait pas partie, réservé au LOT 10.
+
+**`T2` est faite** (`DEC-637`) : `POST /entities/{code}/people` crée un collaborateur et son
+appartenance en une seule transaction — six écritures dans l'ordre que les déclencheurs
+contraignent. `professional_category` reste toujours `consultant` : la catégorie `dg` exige
+`attribuer_la_categorie_dg`, non exposée par aucune route. Le périmètre de création se résout
+SANS cible existante : un DSM ne crée que pour lui-même, un Booster que dans son cercle et sans
+DSM. Le contrat déclare la route dès cette sous-étape, sans module TypeScript propre, aucun écran
+consommateur avant `T14`.
+
+**`T3` est faite** (`DEC-638`) : `POST .../people/{appartenance}/changement-d-entite` referme
+`US002` (2/2) — le changement de statut et de rattachement **dans une même entité** était déjà
+servi par le `PATCH` de LOT 5 `T7` ; seul le changement d'entité manquait. `DemandeDAppartenance`
+et `creer_l_appartenance` sont extraites de `T2` et partagées par le nouveau module
+`app/people/transfert.py` : l'ancienne appartenance va jusqu'à `archived` (`active` passe par
+`departed`, `future` y va directement), la nouvelle existe dans l'entité de destination, en UNE
+transaction. Deux arbitrages de Jonathan posés avant tout code — révocation totale des sessions et
+liens magiques (même moteur que le départ), transaction unique — et un troisième trouvé en
+écrivant les tests : la contrainte d'exclusion des périodes d'une personne ne porte aucune clause
+`WHERE`, donc une arrivée `future` annulée (dont la période reste non bornée, LOT 5 `T8`) aurait
+bloqué tout transfert ultérieur ; libérée (`departure_date = arrival_date`) uniquement dans le
+cadre d'un transfert, l'annulation seule restant inchangée.
+
+**`T4` est faite** (`DEC-639`) : archivage et restauration d'un cercle ou d'un bureau (`US008`).
+Mesuré avant d'écrire une ligne : la restauration d'un collaborateur était déjà entièrement servie
+depuis le LOT 5 `T8` (`restaurer_un_profil`), et `ARB-DROIT-003` nomme CINQ ressources — profil,
+contenu, événement, cercle, bureau — dont les deux dernières n'avaient aucun mécanisme d'archivage
+ni de restauration dans tout le dépôt, un trou que `T3` du LOT 6 annonçait déjà sans que personne ne
+le comble depuis. Reposé à Jonathan avant tout code : construire les deux. Nouveau module
+`app/organization/cycle_de_vie.py`, une seule grille de rôles (ESM, ADM-E, SUPER) pour les deux
+ressources et les deux actions. Le §10.2 porte une condition que le §10.3 ne porte pas : archiver un
+cercle refuse « si aucun membre actif », quel que soit le rôle — une interdiction liée à la
+ressource, vérifiée par le service. Aucune migration : `circle`/`office` portent `archived_at`
+depuis le LOT 2, sans écrivain jusqu'ici.
+
+**`T5` est faite** (`DEC-640`) : le tableau de bord administratif (`US001`). Le
+cahier §10.8 nomme SIX grandeurs (pas les cinq de l'abrégé de la fiche) :
+profils actifs, arrivées futures, onboardings actifs, tâches en retard,
+profils incomplets, derniers imports en échec. Aucune ligne de la matrice ne
+s'appelle « tableau de bord » : les comptes réutilisent la grille du §15.1
+« Reporting et exports » (`DSM` Consultants, `ESM`/`ADM-E` Entité, `BOOST`
+Cercle, `SUPER` Global, `OFFICE` refusé), et les tâches en retard appellent
+directement `lister_les_taches_en_retard` (LOT 7, `T12`) dans sa propre
+portée, jamais recopiée. « Profil incomplet » — jamais défini par le cahier
+malgré cinq occurrences — est arbitré par Jonathan avant tout code : un
+profil actif à qui il manque métier, cercle principal, DSM ou statut, la
+même notion que `relations_a_redonner` après une restauration (LOT 5, `T8`).
+« Derniers imports » montre les lots récents AVEC UN PROBLÈME (`failed` ou
+lignes rejetées), lu contre deux citations concordantes du cahier plutôt que
+contre l'abrégé de la fiche, limité à cinq (`DSM`/`BOOST` : liste vide,
+visible seulement d'`ESM`/`ADM-E`/`SUPER`). Aucune migration.
+
+**`T6` est faite** (`DEC-641`) : dépôt sécurisé du CSV et zone d'analyse sans
+écriture métier (`US004`, 1/2). Cahier §9.5 : « chargement du fichier » puis
+« analyse complète sans écriture » sont servis dans le MÊME appel synchrone
+(`DEC-462`), et s'arrêtent à l'état `analyzing` du diagramme §24.4 —
+`preview_ready` suppose la normalisation de `T7`. Première écriture MinIO du
+projet (`app.media.objets.deposer_l_objet`, réutilisant la construction du
+client déjà posée pour la lecture, LOT 5 `T5`) : le CSV est déposé sous une
+clé jamais fournie par le client, son empreinte SHA-256 calculée sur les
+octets reçus, un `import_batch` posé puis chaque ligne versée telle quelle
+dans `import_row.raw_data` — aucune validation de contenu, aucune table
+métier touchée. Le délimiteur (virgule/point-virgule/tabulation) est détecté
+structurellement (`csv.Sniffer`), jamais supposé : `QO-096`/`QO-110` restent
+ouvertes et ne bloquent pas le pipeline. Grille de rôles identique à celle de
+l'archivage/restauration d'un cercle ou bureau (`T4`) : `ESM`/`ADM-E` dans
+leur entité, `SUPER` partout, `DSM`/`BOOST`/`OFFICE` à tiret (matrice §14).
+Aucune migration : les deux tables existent depuis `T1`.
+
+**`T7` est faite** (`DEC-642`) : normalisation des e-mails, détection des
+doublons, blocage des lignes sans e-mail (`US004`, 2/2), dans le MÊME appel
+que `T6` (`deposer_un_csv` appelle désormais `analyser_le_lot`). Posé à
+Jonathan avant tout code : le référentiel du LOT 0 (`codes-erreurs-import.md`)
+nomme 68 codes sur 12 domaines — date, métier, mission/client, cercle, DSM,
+responsabilités — et aucune sous-étape du découpage validé ne les nomme
+tous ; arbitrage explicite, `T7` reste à la taille que son titre annonce
+(e-mail et doublons de personne seulement), les autres règles n'étant
+vérifiées qu'à l'import réel (`T9`), en réutilisant celles déjà posées par
+`T2`. Nouveau module `app/imports/analyse.py` : `E-EMAIL-001` à `004`
+(absent, format implausible, domaine refusé, doublon technique dans le
+fichier — `DEC-435`, la première occurrence est retenue), `D-PERSONNE-001`/
+`002` (profil actif ou archivé déjà existant), `D-PERSONNE-003` (homonymie
+nom/prénom dans le même fichier). Nouveau module
+`app/imports/correspondance.py` : le profil de correspondance provisoire
+(`DEC-434`) est repris du jeu d'exemple fictif du LOT 0, `QO-110` restant
+ouverte. Deux défauts trouvés en construisant `T7`, corrigés avant tout code
+de service : le délimiteur de `T6` suivait `csv.Sniffer` au lieu de la règle
+déjà tranchée par `DEC-432` (point-virgule obligatoire, virgule tolérée
+seulement si non ambiguë) — corrigé ; et `import_batch` ne comptait pas les
+lignes `needs_decision`, colonne ajoutée par la migration `0025`.
+
+**`T8` est faite** (`DEC-643`) : rapprochement du client (`F13`) et
+enregistrement d'une décision humaine, dans le même appel que `T6`/`T7`
+(`US005`), ferme `ECART-060` pour les clients. Posé à Jonathan avant tout
+code : le référentiel nomme une « ressemblance sans correspondance exacte »
+(`D-CLIENT-001`), mais aucun document ne dit comment la reconnaître et
+aucun outil de recherche approximative n'est installé (`pg_trgm`/
+`unaccent`, prévus pour le LOT 5, jamais posés) — aucune détection
+automatique n'est construite : tout ce qui n'est pas une correspondance
+exacte (directe, ou via un alias déjà validé par un humain, `client_alias`
+du LOT 2, jamais consommé avant `T8`) devient « client inconnu »
+(`D-CLIENT-002`), et `D-CLIENT-001` reste un code déclaré mais jamais
+produit — un humain le recherche et le choisit via
+`GET /entities/{code}/clients`, qui ferme `ECART-060` en listant aussi les
+clients pas encore activés localement. Nouveau module
+`app/imports/clients.py` : priorité stricte alias local à l'entité, puis
+alias global, puis nom canonique, une seule paire de requêtes pour tout le
+lot. Nouveau module `app/imports/decisions.py` :
+`POST .../imports/{lot}/rows/{ligne}/decisions` enregistre une décision
+(`import_decision`), générique sur les cinq catégories du modèle §19.4
+(réutilisable pour les codes `D-PERSONNE-*` de `T7`, sans mécanisme de
+résolution jusqu'ici), mais seuls les deux types « client » sont exercés et
+testés par `T8`. N'importe rien sur `import_row.state`, laissé à `T9` —
+seule exception, `client_alias_creation` crée immédiatement la ligne
+`client_alias`. Matrice §14 : `DSM`/`ESM`/`ADM-E`/`SUPER`, un DSM sans rôle
+plus large limité aux lignes où `F16` le désigne lui-même.
+
+**`T9` est faite** (`DEC-644`) : `POST .../imports/{lot}/lancement`, l'import
+transactionnel réel (`US006`, 1/2), matrice §14 « Lancer l'import » — même
+grille que « Charger un CSV » (`ROLES_DE_DEPOT_DE_L_IMPORT`, réutilisée).
+Arbitrage explicite de Jonathan posé avant tout code : `T7` avait renvoyé
+~40 codes du référentiel (dates, identité, entité, métier, situation,
+cercles, DSM, responsabilités Framework, rôles techniques, autorisation
+photo) à « l'import réel » — construire TOUT maintenant plutôt que d'ouvrir
+un écart, sous-étape nettement plus grosse que les précédentes, risque
+assumé. Nouveau module `app/imports/organisation.py` : résout et valide ces
+domaines, appelé UNIQUEMENT par le lancement réel — jamais par la
+prévisualisation de `T6`/`T7`/`T8`, délibérément tenue à l'écart après
+qu'un premier essai de l'y intégrer a cassé 24 tests existants et
+contredit le texte littéral de `T7`. `D-METIER-001`/`D-CERCLE-001`/
+`D-BUREAU-001` ne passent jamais par `import_decision` : le modèle ferme
+ses cinq catégories sans en nommer une pour une création de catalogue — à
+la différence du rapprochement client, dont l'ambiguïté réelle justifiait
+deux catégories dédiées ; la ligne reste `needs_decision`, ce que la
+formule de réconciliation du rapport prévoit explicitement. Nouveau module
+`app/imports/execution.py` : chaque ligne dans son propre savepoint
+(`connexion.begin_nested()`, premier usage du projet) — un refus de la
+base sur une ligne n'affecte aucune autre. Deux passes : la première crée
+ou met à jour chaque ligne éligible (dont `dg` → DSM automatique, départ
+déjà passé → archivage immédiat), la seconde résout le DSM (`F16`) une
+fois que toutes les responsabilités du lot existent réellement. Réutilise
+`creer_un_collaborateur` (`T2`), `modifier_les_donnees_organisationnelles`
+(LOT 5 `T7`), `restaurer_un_profil`/`archiver_un_profil` (LOT 5 `T8`) tels
+quels. Défaut trouvé et corrigé dans `T8` : la décision générique
+autorisait un DSM à réactiver ou fusionner un profil, que la matrice
+refuse sur cette ligne précise.
+
+**`T10` est faite** (`DEC-645`) : le rapport d'un lot d'import et le rejeu
+d'une ligne rejetée, `US006` (2/2) — **fermée**. Arbitrage explicite de
+Jonathan posé avant tout code : aucune correction n'est saisie dans
+l'application pour le rejeu — le modèle ne porte aucun champ pour elle
+(`import_row.raw_data` est immuable, `normalized_data` est calculé) — une
+ligne rejetée est rejouée TELLE QUELLE, à l'instant présent, utile quand le
+blocage venait d'ailleurs qu'elle-même (un métier ou un cercle créé
+entre-temps, une décision désormais enregistrée) ; le CSV corrigé à la
+source reste le chemin normal. Second arbitrage : la matrice §14 donne
+aussi au DSM (« Consultants ») et au Booster (« Cercle limité ») un accès
+en lecture au rapport, mais aucun document ne dit comment filtrer un
+rapport d'import par DSM ou par cercle, et une ligne rejetée n'a souvent
+aucun collaborateur rattaché pour résoudre ce périmètre — construire
+seulement `ESM`/`ADM-E`/`SUPER` maintenant (`ROLES_DE_DEPOT_DE_L_IMPORT`,
+réutilisée), ouvrir `QO-125` pour le volet DSM/Booster plutôt que
+d'inventer un filtrage. Le corps par ligne de `lancer_l_import` (`T9`) est
+extrait en `_traiter_une_ligne`, partagé avec le nouveau
+`rejouer_une_ligne` (`POST .../imports/{lot}/rows/{ligne}/rejeu`), qui
+exige un lot `completed` et une ligne `rejected`, revalide uniquement
+`app.imports.organisation` — jamais les codes `E-EMAIL-*`, qui dépendent
+du fichier entier ou ne changent pas avec le temps — et repart d'une
+liste de codes vide plutôt que de l'ancienne, pour qu'un code résolu ne
+survive pas dans le rapport par la seule union avec l'historique (défaut
+trouvé et corrigé avant tout commit, dans mes propres tests). Nouveau
+module `app/imports/rapport.py` (`GET .../imports/{lot}/rapport`) : la
+réconciliation est une lecture fraîche de `import_row.state`, jamais un
+cache, pagination du cahier §18.2, aucune ligne rejetée masquée. Résidu
+de `T6` corrigé : `import_batch.delimiter` (migration `0026`) consigne
+enfin le séparateur détecté par `DEC-432`, que `T6` avait nommé sans le
+persister.
+
+**`T11` est faite** (`DEC-646`) : le transfert en masse de collaborateurs,
+`US003`. Arbitrage explicite de Jonathan posé avant tout code
+(`AskUserQuestion`, reformulé sans jargon) : ni le cahier ni la matrice ne
+nomment QUELLE action doit exister « en masse » — la création en masse
+étant déjà servie par l'import CSV, seul le changement d'entité (`T3`)
+reçoit une variante en masse, les autres options (statut, cercle,
+archivage groupé) ayant été explicitement déclinées. Nouveau module
+`app/people/transfert_masse.py` : une boucle autour de `changer_d_entite`
+(`T3`), chaque élément dans son propre savepoint — aucune règle de
+permission ou de transition n'est réécrite. L'aperçu exécute exactement
+le même chemin que l'exécution réelle, dans un savepoint toujours annulé,
+succès ou échec : l'impact rendu est donc réel, jamais une estimation.
+L'idempotence du cahier §18.6 est satisfaite sans mécanisme nouveau :
+`changer_d_entite` refuse déjà, en 409, toute cible déjà transférée —
+rejouer le même lot est sans danger. Chaque échec est rapporté sur son
+élément, jamais propagé : un refus n'affecte aucun autre élément du lot.
+Aucune écriture d'audit (`ECART-064`, LOT 10, hors de ce lot). Deux
+routes nouvelles, aucune migration.
+
+**`T12` est faite** (`DEC-647`) : la création d'une nouvelle entité depuis
+des modèles génériques, `US007`. Double arbitrage explicite de Jonathan
+posé avant tout code (`AskUserQuestion`, reformulé sans jargon) : (1)
+l'entité naît VIERGE — aucun contenu, aucune responsabilité Framework,
+aucun modèle d'onboarding n'est semé. Rien n'existe à copier depuis
+Bordeaux : la résolution `DSM > CIRCLE > ENTITY > GLOBAL` (LOT 7) retombe
+déjà sur le modèle d'onboarding GLOBAL générique dès qu'aucun modèle
+propre à l'entité n'existe — rien de nouveau à construire ; (2) le
+premier administrateur de l'entité est nommé dans le même appel que la
+création, sans quoi l'entité resterait injoignable localement jusqu'à un
+second geste manuel. L'entité est créée directement `active`, aucun état
+`draft` intermédiaire (simplification documentée). Nouveau module
+`app/entities/creation.py`. La garde « super-administrateur global »
+(`est_super_administrateur`, extraite de `resoudre_les_permissions`) est
+définie localement dans `app/entities/routes.py` pour éviter un cycle
+d'imports mesuré directement avec `app.permissions.dependances`. Aucune
+migration.
+
+**`T13` est faite** (`DEC-648`) : fermeture explicite de `ECART-035`
+(invitations au départ), un correctif qui relit la révocation `T9` du
+LOT 3. Relue contre les seize sous-étapes validées du LOT 9, aucune ne
+pose d'objet « invitation » — `T12` nomme un premier administrateur par
+une simple affectation de rôle technique, et `T14` à `T16` sont des
+écrans et des contrôles, pas un nouveau modèle de données. Posé à
+Jonathan avant toute action (`AskUserQuestion`) : construire un
+mécanisme minimal d'invitation inventerait une règle métier non décidée
+(§6.5) ; fermeture retenue par constat, zéro code nouveau. La fermeture
+est rendue falsifiable : nouveau test
+`test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER`
+(`apps/api/tests/test_revocation.py`) interroge
+`information_schema.tables` et exige l'absence de toute table dont le
+nom contient « invitation » — prouvé dans les deux sens (une table
+témoin créée manuellement le fait échouer, supprimée il repasse au
+vert). Aucune migration, aucune route.
+
+**`T14` est faite** (`DEC-649`) : les écrans back-office, les sept
+groupes du cahier §8.1/§10.8 (Organisation, Onboarding, Contenu,
+Données, Pilotage, Configuration, Super-administration) — transversal,
+premier et seul écran du lot. Une seule page à onglets sous la rubrique
+`administration` déjà réservée (LOT 4 `T4`) ; aucune primitive d'onglets
+n'existe dans `packages/ui`, motif WAI-ARIA `tablist`/`tab`/`tabpanel`
+fabriqué à la main, comme au LOT 8 `T9`. L'ancienne page du LOT 7 `T14`
+(catalogue des tâches, modèles d'onboarding) devient l'onglet
+« Onboarding » sans aucune règle changée ; le suivi des tâches en
+retard (LOT 7 `T12`) rejoint « Pilotage », aux côtés du nouveau tableau
+de bord (`T5`). Arbitrage explicite de Jonathan posé avant tout code
+(`AskUserQuestion`) : « Contenu » et « Configuration » n'ont aucune
+route à consommer dans ce lot ni ailleurs — ils restent affichés,
+marqués « à venir », plutôt qu'omis. Quatre sections nouvelles
+consomment les routes posées sans écran par `T2` à `T12` : Organisation
+(création d'un collaborateur, changement d'entité, transfert en masse,
+archivage/restauration cercle et bureau), Données (l'assistant d'import
+complet, dépôt à rapport), Pilotage (tableau de bord), Super-
+administration (création d'entité, `SUPER` seul). Une route nouvelle,
+trouvée en construisant l'écran — même motif que `GET .../templates` au
+LOT 7 `T14` : `GET .../job-catalog` sert le catalogue des métiers d'une
+entité, qu'aucune route ne listait jusqu'ici. Cinq nouvelles grilles de
+rôles ajoutées au manifeste, chacune confrontée à sa constante Python
+par un nouveau fichier de test. Aucune migration.
+
+**`T15` est faite** (`DEC-650`) : le contrôle de pile réelle du
+back-office, `make back-office-check` — pattern `T13`/`T14` des LOTS 7/8,
+aucune route nouvelle, aucune migration. Deux volets, l'un et l'autre
+nommés par le découpage validé de la fiche. **L'asymétrie de rôles** :
+témoin central, le tableau de bord (`T5`) vu par un DSM (portée
+Consultants) et par l'ESM (portée Entité) dans la MÊME entité, sur les
+MÊMES données — `profils_actifs` vaut 1 pour le DSM (son seul consultant,
+lié par `dsm_assignment`) et 5 pour l'ESM (toute l'entité), sans quoi la
+portée serait décorative (§7.0 de la passation, quatrième proposition).
+Trois paires supplémentaires, chacune un rôle refusé à côté d'un rôle
+accepté sur la MÊME action : le dépôt d'import (ESM 201, DSM et OFFICE
+403), la création d'entité (SUPER 201, ESM 403 — SUPER seul, jamais une
+grille de plus), et le catalogue des métiers (`T14`, 200 pour OFFICE —
+aucun rôle n'y est distingué). **L'isolation multi-entités pendant
+l'import**, critère de sortie 6 de la fiche (§1.2), resté sans témoin
+dédié depuis `T6`-`T10` : toutes les requêtes SQL d'`app.imports.rapport`/
+`execution` filtrent déjà par `entity_id = :entité` avant de regarder le
+lot ou la ligne, mais rien ne le prouvait sur la pile réelle. Le lot
+déposé par l'ESM de l'entité A est visé par l'ESM de l'entité B sur les
+trois routes scopées par lot (rapport, lancement, rejeu) : chacune rend
+404 (`lot_introuvable`) depuis B, quel que soit l'état du lot — y compris
+après que le lot soit devenu `completed` dans A, où la même requête
+rendrait un refus d'état (409) si l'isolation ne portait pas sur
+l'entité. Le témoin le plus discriminant : la MÊME ligne du MÊME lot,
+rejouée depuis A, rend 409 `rejeu_hors_portee` (lot et ligne trouvés,
+anomalie d'e-mail hors de portée du rejeu) et depuis B rend 404 — la
+preuve, sur des identifiants identiques, que seule l'entité discrimine,
+jamais l'état ni le rôle. 16 contrôles, 0 échec, décor nettoyé.
+
+**`T16` est faite** (`DEC-651`) : la recette de clôture — dernière sous-étape
+du lot, pattern `T14`/`T15` des LOTS 7/8. Aucune route nouvelle, aucune
+migration : un seul test ajouté. **Reclassement du §30 du modèle** :
+`§30.17` (« un import n'écrit aucune ligne avant approbation ») était
+reporté au LOT 9 depuis `T12` du LOT 2 — le code le respectait déjà (le
+dépôt et l'analyse, `T6`-`T8`, n'écrivent jamais `person`/
+`entity_membership`), mais aucun témoin ne le prouvait. Nouveau test
+`test_aucune_ecriture_metier_avant_le_lancement_de_l_import` : il dépose
+une ligne entièrement valide, vérifie que `target_person_id` reste `NULL`
+et qu'aucune ligne `person` n'existe encore APRÈS l'analyse, puis lance
+l'import et vérifie le contraire dans le MÊME test — témoin négatif
+apparié à un témoin positif (§7.39). `§30.18` (« une ligne invalide
+n'empêche pas les lignes valides d'être importées ») était déjà prouvé
+par `T9` (savepoint par ligne), reclassé sans test nouveau. Classement :
+**18 acquis, 2 partiel, 5 reportés, 0 inapplicable** (était 16/2/7/0).
+**Recette sur les images publiées** de `5f30443` (fusion de `T15`) : la
+base de recette était restée à la migration `0023` (état du LOT 8),
+migrée à `0026` avant que `back-office-check`/`onboarding-check`/
+`accueil-check` ne soient rejoués `ENVIRONNEMENT=recette` (16+14+29
+contrôles, 0 échec), artefact tournant nativement en `aarch64`. Zéro
+régression mesurée par comparaison de worktree avec `origin/develop` (74
+échecs environnementaux identiques, liste comparée). `checklist-
+validation-G9.md` préparée, séparant les preuves techniques des
+validations humaines encore à recueillir. **Jonathan a validé
+explicitement la checklist le 14/10/2026** (`DEC-652`) : la porte `G9`
+est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
+**VERROUILLÉ**.
 
 ---
 

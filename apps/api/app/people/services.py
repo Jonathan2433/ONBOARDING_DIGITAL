@@ -20,7 +20,13 @@ TROIS SOURCES, TROIS LISTES DIFFERENTES — ET C'EST LE PREMIER TRAVAIL
   dans la matrice. Le cahier ne le nomme que comme objet audite (§10.11),
   operation idempotente (§18.6, donc LOT 11 -- `DEC-532`) et tache planifiee
   d'expiration. Il n'y a rien a invalider, et en inventer une table serait §6.5.
-  C'est `ECART-035`.
+  C'etait `ECART-035`, **CLOS par `T13` du LOT 9** (`DEC-648`) : relu contre les
+  seize sous-etapes validees du lot, aucune ne pose d'objet « invitation » --
+  `T12` nomme un administrateur par une simple affectation de role technique,
+  jamais un objet de ce nom. `test_AUCUNE_TABLE_INVITATION_N_EXISTE_A_INVALIDER`
+  (`tests/test_revocation.py`) rend la fermeture falsifiable : elle echouera le
+  jour ou une table de ce nom existera, et c'est alors qu'il faudra ajouter ici
+  la ligne de revocation que l'ecart promettait.
 
 LA REVOCATION TIENT AU **DEPART**, ET NON AU SEUL ARCHIVAGE
 
