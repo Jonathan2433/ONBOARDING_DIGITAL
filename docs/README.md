@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `654` en usage | `DEC-655` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `655` en usage | `DEC-656` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1307,13 +1307,18 @@ est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
 **3 `P1`**, **six** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
 **seize** sous-étapes. Épic `#267`, jalon `G10`, stories `#268` à `#275`.
 
-La sous-étape suivante est **`T1`** : les six tables — `audit_event`, `operational_alert`,
+**`T1` est faite** (`DEC-655`) : les six tables — `audit_event`, `operational_alert`,
 `alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle
-§22.3) — aucune route. L'écriture d'audit sera **synchrone**, dans la MÊME transaction que
-l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la file `security` de
-Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du super-administrateur) est
-explicitement rattaché à ce lot et doit y être fermé ; `QO-092` (destination des signalements de
-bugs) reste ouverte, à trancher avant ou pendant `T12`.
+§22.3) — aucune route. Trois références nues renommées (`resource_reference`,
+`correlation_token` ×2), `export_request.job_id` retiré (`async_job` n'existe pas, LOT 11) —
+défauts trouvés par `make isolation-check` sur la base réellement migrée. Zéro régression : 1 714
+pytest collectés (+6), 74 échecs environnementaux identiques à `origin/develop` par comparaison de
+worktree. La sous-étape suivante est **`T2`** : le service d'écriture d'audit générique, câblé sur
+l'authentification et les sessions (LOT 3). L'écriture d'audit est **synchrone**, dans la MÊME
+transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la file
+`security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
+super-administrateur) est explicitement rattaché à ce lot et doit y être fermé ; `QO-092`
+(destination des signalements de bugs) reste ouverte, à trancher avant ou pendant `T12`.
 
 ---
 

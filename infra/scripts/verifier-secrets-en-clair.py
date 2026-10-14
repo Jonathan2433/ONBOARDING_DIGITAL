@@ -90,6 +90,17 @@ EXCEPTIONS: dict[tuple[str, str], str] = {
     ("service_token", "revoked_at"): "horodatage",
     ("service_token", "scopes"): "liste de portees, exigee par le §10.5",
     ("service_token", "last_used_at"): "horodatage",
+    #  LOT 10, T1 (DEC-655) : jeton de CORRELATION technique (packages/observabilite),
+    #  jamais un secret -- meme motif que `circle.color_token` ci-dessus, le mot
+    #  « token » declenche l'heuristique sans qu'il y ait de credential.
+    (
+        "audit_event",
+        "correlation_token",
+    ): "jeton de correlation technique (observabilite), pas un secret",
+    (
+        "bug_report",
+        "correlation_token",
+    ): "jeton de correlation technique (observabilite), pas un secret",
 }
 
 

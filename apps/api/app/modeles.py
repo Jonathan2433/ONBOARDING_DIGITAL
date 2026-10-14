@@ -16,6 +16,7 @@ les modules presents sur le disque a ceux que ce fichier importe.
 
 from __future__ import annotations
 
+from app.audit import modeles as audit_modeles
 from app.auth import modeles as auth_modeles
 from app.clients import modeles as clients_modeles
 from app.content import modeles as content_modeles
@@ -46,6 +47,8 @@ MODULES_DE_MODELES = (
     events_modeles,
     #  LOT 9, T1 : les quatre tables de l'import CSV du §19.
     imports_modeles,
+    #  LOT 10, T1 : les six tables de l'audit, des alertes, du support et du RGPD.
+    audit_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]
