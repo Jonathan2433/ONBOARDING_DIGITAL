@@ -36,6 +36,8 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
+from app.audit.services import enregistrer_un_evenement
+
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection
 
@@ -192,6 +194,14 @@ def attribuer_la_categorie_dg(
         ErreurDeService: si l'attributeur n'a pas le droit, ou si l'appartenance
             est inconnue de cette entite.
     """
+    #  LOT 10, `T3` : L'INSTANT EST RESOLU UNE SEULE FOIS, ICI — defaut trouve
+    #  en cablant l'audit. `debut or dt.datetime.now(tz=dt.UTC)` etait appele
+    #  SEULEMENT dans l'`INSERT` ci-dessous ; l'audit a besoin du MEME instant
+    #  pour `occurred_at` (§7.0 sixieme proposition, §7.47 : deux grandeurs
+    #  comparees doivent venir de la meme source), donc il est calcule UNE
+    #  fois et reutilise par les deux.
+    instant = debut or dt.datetime.now(tz=dt.UTC)
+
     #  LE DROIT EST VERIFIE AVANT TOUT, ET AVANT MEME DE LIRE L'APPARTENANCE.
     #
     #  L'ordre n'est pas cosmetique : lire la ressource d'abord permettrait de
@@ -222,6 +232,7 @@ def attribuer_la_categorie_dg(
     personne = ligne[0]
 
     existante = responsabilite_dsm_active(connexion, entite=entite, personne=personne)
+    responsabilite_creee = existante is None
     if existante is None:
         #  L'ORDRE EST IMPOSE PAR LE DECLENCHEUR : la responsabilite d'abord.
         existante = connexion.execute(
@@ -237,7 +248,7 @@ def attribuer_la_categorie_dg(
                 "entite": entite,
                 "type_responsabilite": RESPONSABILITE_DSM,
                 "auteur": attribue_par,
-                "debut": debut or dt.datetime.now(tz=dt.UTC),
+                "debut": instant,
                 "motif": motif,
             },
         ).scalar_one()
@@ -254,5 +265,23 @@ def attribuer_la_categorie_dg(
             "appartenance": appartenance,
             "entite": entite,
         },
+    )
+    #  LOT 10, `T3` : une seule action metier — « attribuer la categorie dg » —
+    #  meme si elle cree aussi, parfois, la responsabilite DSM que le
+    #  declencheur `dg_implique_dsm_local` exige (voir l'en-tete du module).
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="categorie_dg_attribuee",
+        resource_type="entity_membership",
+        resource_reference=appartenance,
+        entity_id=entite,
+        actor_person_id=attribue_par,
+        summary=(
+            "Attribution de la categorie dg, avec creation de la responsabilite DSM"
+            if responsabilite_creee
+            else "Attribution de la categorie dg"
+        ),
+        reason=motif,
     )
     return existante

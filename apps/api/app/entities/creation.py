@@ -79,6 +79,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.entities.modeles import StatutEntite
 from app.organization.modeles import TypeRoleTechnique
 from app.shared.errors import ErreurApplicative
@@ -194,4 +195,17 @@ def creer_une_entite(
         },
     )
 
+    #  LOT 10, `T3` : une seule action metier — « creer une entite », meme si
+    #  elle pose aussi le premier administrateur dans le MEME appel (voir
+    #  l'en-tete du module). `entity_id` est l'entite qui vient de naitre.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="entite_creee",
+        resource_type="entity",
+        resource_reference=entite_id,
+        entity_id=entite_id,
+        actor_person_id=acteur,
+        summary=f"Creation de l'entite {demande.code}",
+    )
     return EntiteCreee(id=entite_id, code=demande.code, version=version)

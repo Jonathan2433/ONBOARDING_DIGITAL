@@ -106,6 +106,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.instances import archiver_le_parcours_au_depart
 from app.people.ecriture import (
     CODE_VERSION_OBSOLETE,
@@ -405,6 +406,18 @@ def archiver_un_profil(
             {"cible": cible, "entite": entite, "acteur": acteur, "instant": instant},
         ).scalar_one()
     )
+    #  LOT 10, `T3` : `ActionDeCycleDeVie.ARCHIVER` est deja le vocabulaire du
+    #  perimetre (§7.27), reutilise tel quel comme `action_code`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionDeCycleDeVie.ARCHIVER.value,
+        resource_type="entity_membership",
+        resource_reference=cible,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Archivage du profil, depuis l'etat « {depuis} »",
+    )
     return Archivage(
         version=version,
         etat_precedent=depuis,
@@ -480,6 +493,19 @@ def restaurer_un_profil(
             },
         )
         raise refus from erreur
+
+    #  LOT 10, `T3` : meme reutilisation de `ActionDeCycleDeVie`, pour l'action
+    #  symetrique.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionDeCycleDeVie.RESTAURER.value,
+        resource_type="entity_membership",
+        resource_reference=cible,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Restauration du profil, depuis l'etat « {depuis} »",
+    )
 
     #  **LES SIX RELATIONS DU §25.2 AUTRES QUE L'APPARTENANCE, ET NON QUATRE.**
     #

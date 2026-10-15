@@ -701,6 +701,8 @@ def main() -> int:
             DELETE FROM person WHERE id = ANY(ids);
           END IF;
           DELETE FROM office WHERE code LIKE '{MARQUEUR}%';
+          DELETE FROM audit_event WHERE entity_id IN (
+            SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
           DELETE FROM entity WHERE code LIKE '{MARQUEUR}%';
         END $$;
         """  # noqa: S608 — seul `MARQUEUR` est interpole
