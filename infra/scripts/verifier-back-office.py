@@ -690,6 +690,8 @@ def main() -> int:
               DELETE FROM person WHERE id = ANY(ids);
               DELETE FROM office WHERE entity_id IN (
                 SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
+              DELETE FROM audit_event WHERE entity_id IN (
+                SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
               DELETE FROM entity WHERE code LIKE '{MARQUEUR}%';
             END $$;
             """,  # noqa: S608

@@ -317,6 +317,9 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
         "DELETE FROM entity_membership WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{marqueur}%')",
         f"DELETE FROM person WHERE email_normalized LIKE '{marqueur}%'",  # noqa: S608
+        #  LOT 10, `T3` : `audit_event.entity_id` reference aussi `entity`.
+        "DELETE FROM audit_event WHERE entity_id IN "  # noqa: S608
+        f"(SELECT id FROM entity WHERE code LIKE '{marqueur}%')",
         f"DELETE FROM entity WHERE code LIKE '{marqueur}%'",  # noqa: S608
         #  Le refus sans acteur n'a ni personne ni compte de service : seule la
         #  borne temporelle l'attrape. §7.30.

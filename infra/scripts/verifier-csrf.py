@@ -587,6 +587,11 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
         "DELETE FROM entity_membership WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         f"DELETE FROM person WHERE email_normalized = '{adresse}'",  # noqa: S608
+        #  LOT 10, `T3` : `audit_event.entity_id` reference aussi `entity` --
+        #  les ecritures sur les personnes/l'organisation portent desormais
+        #  l'entite, jamais seulement l'acteur.
+        f"DELETE FROM audit_event WHERE entity_id IN "  # noqa: S608
+        f"(SELECT id FROM entity WHERE code = '{MARQUEUR}')",
         f"DELETE FROM entity WHERE code = '{MARQUEUR}'",  # noqa: S608
         f"DELETE FROM auth_event WHERE person_id IS NULL AND created_at >= '{debut}'",  # noqa: S608
         f"DELETE FROM audit_event WHERE actor_person_id IS NULL AND created_at >= '{debut}'",  # noqa: S608

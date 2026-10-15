@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `656` en usage | `DEC-657` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `657` en usage | `DEC-658` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1323,8 +1323,23 @@ réutilise `TypeEvenementAuth`, aucun second vocabulaire pour la même notion (�
 étendre leur nettoyage de décor à `audit_event` — même classe de défaut que `user_session` au
 LOT 3 `T6`. Zéro régression : 1 725 pytest collectés (+11), 71 échecs environnementaux identiques à
 `origin/develop` par comparaison de worktree (en baisse de 74 à 71, un résidu de développement
-retiré des deux côtés, pas une régression corrigée). La sous-étape suivante est **`T3`** : le
-câblage sur les personnes et l'organisation (LOT 2, 4, 5, 9). L'écriture d'audit est **synchrone**,
+retiré des deux côtés, pas une régression corrigée).
+
+**`T3` est faite** (`DEC-657`) : le même service câblé sur les personnes et l'organisation
+(LOT 2/4/5/9) — `creer_un_collaborateur`, `modifier_les_donnees_organisationnelles` (UN
+`audit_event` **par champ** réellement écrit, `action_code` réutilisant `ChampOrganisationnel`),
+`changer_d_entite`, l'archivage/la restauration d'un profil (`action_code` réutilisant
+`ActionDeCycleDeVie`), d'un cercle, d'un bureau, `creer_une_entite`, `attribuer_la_categorie_dg` —
+sept fonctions PARTAGÉES câblées une seule fois chacune, dont héritent sans câblage séparé l'import
+CSV et le transfert en masse (LOT 9), ce qui acquitte `ECART-064` pour `US003`. Deux défauts
+trouvés en câblant, corrigés avant commit : `attribuer_la_categorie_dg` calculait l'instant deux
+fois indépendamment (même classe que `creer_un_jeton`, §7.47) ; huit scripts `infra/scripts/
+verifier-*.py` n'étaient pas préparés à la clé étrangère `audit_event.entity_id`, jamais exercée
+par `T2`. Un troisième, trouvé par la suite elle-même (`test_archivage_onboarding.py`, nettoyage
+manuel incomplet sur une route HTTP réelle). Zéro régression : 1 738 pytest collectés (+13, tous
+d'intégration), 73 échecs environnementaux identiques à `origin/develop` par comparaison de
+worktree, listes identiques terme à terme. La sous-étape suivante est **`T4`** : le câblage sur les
+contenus et le Framework (LOT 6). L'écriture d'audit est **synchrone**,
 dans la MÊME transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la
 file `security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
 super-administrateur) est explicitement rattaché à ce lot et doit y être fermé ; `QO-092`

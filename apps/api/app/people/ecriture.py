@@ -93,6 +93,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection, RowMapping
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.instances import remplacer_le_parcours_apres_changement_de_statut
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import SituationProfessionnelle
@@ -123,6 +124,19 @@ MESSAGE_VALEUR_REFUSEE: Final = (
     "La combinaison demandee est refusee : un statut `mission` exige un client, "
     "un statut `intercontract` n'en accepte aucun."
 )
+
+#  LOT 10, `T3` : la colonne de `_ETAT_COURANT` qui porte la valeur AVANT
+#  ecriture, pour chaque champ du §10.2 — un `audit_event` par champ
+#  REELLEMENT ecrit, `action_code = champ.value` : `ChampOrganisationnel` est
+#  deja le vocabulaire du domaine (§7.27), aucun second n'est invente.
+_ANCIENNE_VALEUR_COLONNE: Final[dict[ChampOrganisationnel, str]] = {
+    ChampOrganisationnel.DATE_D_ARRIVEE: "arrival_date",
+    ChampOrganisationnel.METIER: "job_catalog_id",
+    ChampOrganisationnel.STATUT: "status",
+    ChampOrganisationnel.CLIENT: "client_id",
+    ChampOrganisationnel.DSM: "dsm_person_id",
+    ChampOrganisationnel.CERCLE_PRINCIPAL: "circle_id",
+}
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -333,6 +347,28 @@ def modifier_les_donnees_organisationnelles(
                 ),
                 {"cible": cible, "entite": entite, "acteur": acteur, "instant": instant},
             ).scalar_one()
+        )
+
+    #  LOT 10, `T3` : UN `audit_event` PAR CHAMP REELLEMENT ECRIT, jamais un
+    #  seul pour l'appel entier — `Modification.champs` est deja la
+    #  granularite que cette fonction rapporte a SON appelant (§18.3), la
+    #  reprendre pour l'audit evite une seconde notion de "ce qui a change".
+    #  Ordre trie : deterministe pour les tests, jamais l'ordre d'insertion.
+    for champ in sorted(ecrits, key=lambda c: c.value):
+        colonne = _ANCIENNE_VALEUR_COLONNE[champ]
+        ancienne = etat[colonne]
+        nouvelle = demande[champ]
+        enregistrer_un_evenement(
+            connexion,
+            instant=instant,
+            action_code=champ.value,
+            resource_type="entity_membership",
+            resource_reference=cible,
+            entity_id=entite,
+            actor_person_id=acteur,
+            summary=f"Modification du champ organisationnel « {champ.value} »",
+            old_values={"valeur": None if ancienne is None else str(ancienne)},
+            new_values={"valeur": None if nouvelle is None else str(nouvelle)},
         )
     return Modification(version=version, champs=frozenset(ecrits))
 

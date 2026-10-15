@@ -76,6 +76,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.sql.elements import TextClause
 
+from app.audit.services import enregistrer_un_evenement
 from app.shared.errors import ErreurApplicative
 
 CODE_VERSION_OBSOLETE: Final = "version_obsolete"
@@ -297,6 +298,19 @@ def archiver_un_cercle(
         _ARCHIVER_CERCLE,
         {"cercle": cercle, "entite": entite, "instant": instant, "acteur": acteur},
     ).one()
+    #  LOT 10, `T3` : aucune enum Python ne nomme cette transition (`circle`
+    #  n'a pas de machine a etats, juste `archived_at`/`archived_by_person_id`
+    #  — voir l'en-tete du module) — `action_code` est donc un litteral.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="cercle_archive",
+        resource_type="circle",
+        resource_reference=cercle,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Archivage d'un cercle",
+    )
     return CercleArchive(version=resultat[0], archive_le=resultat[1])
 
 
@@ -322,6 +336,16 @@ def restaurer_un_cercle(
         raise _traduire_un_refus_de_la_base(
             erreur, contrainte_code="uq_circle_entity_id_code_non_archive"
         ) from erreur
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="cercle_restaure",
+        resource_type="circle",
+        resource_reference=cercle,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Restauration d'un cercle",
+    )
     return CercleRestaure(version=resultat[0])
 
 
@@ -349,6 +373,16 @@ def archiver_un_bureau(
         _ARCHIVER_BUREAU,
         {"bureau": bureau, "entite": entite, "instant": instant, "acteur": acteur},
     ).one()
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="bureau_archive",
+        resource_type="office",
+        resource_reference=bureau,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Archivage d'un bureau",
+    )
     return BureauArchive(version=resultat[0], archive_le=resultat[1])
 
 
@@ -374,6 +408,16 @@ def restaurer_un_bureau(
         raise _traduire_un_refus_de_la_base(
             erreur, contrainte_code="uq_office_entity_id_code_non_archive"
         ) from erreur
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="bureau_restaure",
+        resource_type="office",
+        resource_reference=bureau,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Restauration d'un bureau",
+    )
     return BureauRestaure(version=resultat[0])
 
 
