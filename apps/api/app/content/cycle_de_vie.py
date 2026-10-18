@@ -98,6 +98,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.sql.elements import TextClause
 
+from app.audit.services import enregistrer_un_evenement
 from app.content.ecriture import (
     CODE_SLUG_DEJA_PRIS,
     CODE_VERSION_OBSOLETE,
@@ -105,6 +106,7 @@ from app.content.ecriture import (
     MESSAGE_VERSION_OBSOLETE,
 )
 from app.content.modeles import EtatDePage
+from app.content.perimetre import ActionEditoriale
 from app.shared.errors import ErreurApplicative
 
 CODE_BORNE_DES_RESPONSABLES: Final = "borne_des_responsables"
@@ -314,6 +316,20 @@ def publier_une_page(
         ).one()
     except (IntegrityError, DataError) as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
+
+    #  LOT 10, `T4` : `ActionEditoriale.PUBLIER` est deja le vocabulaire du
+    #  perimetre (§7.27), reutilise tel quel comme `action_code`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEditoriale.PUBLIER.value,
+        resource_type="content_page",
+        resource_reference=page,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Publication de la page",
+    )
+
     return PagePubliee(version=ligne[0], etat=str(ligne[1]), publiee_le=ligne[2])
 
 
@@ -353,6 +369,19 @@ def archiver_une_page(
             "acteur": acteur,
         },
     ).one()
+
+    #  LOT 10, `T4` : meme reutilisation de `ActionEditoriale`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEditoriale.ARCHIVER.value,
+        resource_type="content_page",
+        resource_reference=page,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Archivage de la page",
+    )
+
     return PageArchivee(
         version=ligne[0], etat=str(ligne[1]), archivee_le=ligne[2], publiee_le=ligne[3]
     )
@@ -394,6 +423,20 @@ def restaurer_une_page(
         ).one()
     except (IntegrityError, DataError) as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
+
+    #  LOT 10, `T4` : meme reutilisation de `ActionEditoriale`, pour l'action
+    #  symetrique.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEditoriale.RESTAURER.value,
+        resource_type="content_page",
+        resource_reference=page,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Restauration de la page",
+    )
+
     return PageRestauree(version=ligne[0], etat=str(ligne[1]), publiee_le=ligne[2])
 
 

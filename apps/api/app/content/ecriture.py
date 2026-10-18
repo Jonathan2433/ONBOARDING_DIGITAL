@@ -97,7 +97,9 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.content.modeles import TYPES_DE_BLOC, TYPES_DE_PAGE, EtatDePage, TypeDePage
+from app.content.perimetre import ActionEditoriale
 from app.shared.errors import ErreurApplicative
 
 CODE_TYPE_DE_BLOC_REFUSE: Final = "type_de_bloc_refuse"
@@ -450,6 +452,19 @@ def creer_une_page(
     except IntegrityError as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
 
+    #  LOT 10, `T4` : `ActionEditoriale.CREER` est deja le vocabulaire du
+    #  perimetre (§7.27), reutilise tel quel comme `action_code`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEditoriale.CREER.value,
+        resource_type="content_page",
+        resource_reference=ligne[0],
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation de la page « {titre} » ({type_de_page})",
+    )
+
     return PageCreee(
         identifiant=ligne[0],
         type_de_page=type_de_page,
@@ -540,6 +555,7 @@ def remplacer_le_contenu(
     except (IntegrityError, DataError) as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
 
+    ancien_titre = str(etat[1])
     version = int(
         connexion.execute(
             _METTRE_A_JOUR_LA_PAGE,
@@ -551,6 +567,27 @@ def remplacer_le_contenu(
                 "instant": instant,
             },
         ).scalar_one()
+    )
+
+    #  LOT 10, `T4` : UN SEUL `audit_event` pour l'appel entier -- « remplacer
+    #  le titre et les blocs d'une page » est UNE action metier, meme si elle
+    #  ecrit trois choses en SQL (archivage des anciens blocs, insertion des
+    #  nouveaux, mise a jour du titre). Aucune enum ne nomme cette action a la
+    #  granularite du champ (a la difference de `T3`, LOT 2) : `MODIFIER` du
+    #  perimetre editorial est deja le bon niveau.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEditoriale.MODIFIER.value,
+        resource_type="content_page",
+        resource_reference=page,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=(
+            f"Remplacement du contenu de la page ({len(ecrits)} bloc(s), {archives} archive(s))"
+        ),
+        old_values={"titre": ancien_titre},
+        new_values={"titre": titre},
     )
 
     return ContenuEcrit(

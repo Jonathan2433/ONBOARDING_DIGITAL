@@ -3,8 +3,8 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3` faites
-**Sous-étape suivante :** `T4` — câblage sur les contenus et le Framework (LOT 6)
+**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4` faites
+**Sous-étape suivante :** `T5` — câblage sur les événements (LOT 8)
 **Porte de sortie :** `G10`, tag attendu `v0.10.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -99,7 +99,7 @@ suivante ne commence.
 | `T1` ✅ | Les six tables — `audit_event`, `operational_alert`, `alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle §22.3), migration | socle | `DEC-655`. Trois références nues renommées (`resource_reference`, `correlation_token` ×2), `export_request.job_id` retiré (`async_job` n'existe pas), `retention_action`/`privacy_notice_*` du §22 hors périmètre |
 | `T2` ✅ | Le service d'écriture d'audit générique, câblé sur l'authentification et les sessions (LOT 3) | `US001`/`US002` | `DEC-656`. `enregistrer_un_evenement` câblé sur les quatre sites `auth_event` du LOT 3 (magic link, connexion admin, révocation de session, compte de service) ; `action_code` réutilise `TypeEvenementAuth` |
 | `T3` ✅ | Câblage sur les personnes et l'organisation (LOT 2, 4, 5, 9) | `US001`/`US002` | `DEC-657`. Sept sites câblés — `creer_un_collaborateur`, `modifier_les_donnees_organisationnelles` (un `audit_event` par champ), `changer_d_entite`, `archiver_un_profil`/`restaurer_un_profil`, les quatre cercle/bureau, `creer_une_entite`, `attribuer_la_categorie_dg` — l'import CSV et le transfert en masse héritent sans câblage séparé |
-| `T4` | Câblage sur les contenus et le Framework (LOT 6) | `US001`/`US002` | créations, modifications, publications, cycle de vie des pages et blocs |
+| `T4` ✅ | Câblage sur les contenus et le Framework (LOT 6) | `US001`/`US002` | `DEC-658`. Huit sites câblés — `creer_une_page`, `remplacer_le_contenu` (un seul `audit_event` pour l'appel entier), les trois du cycle de vie (`ActionEditoriale`), `creer_un_lien`/`modifier_un_lien`/`reordonner_les_liens` (un seul `audit_event` pour tout l'ensemble réordonné) |
 | `T5` | Câblage sur les événements (LOT 8) | `US001`/`US002` | créations, modifications, publications, cycle de vie |
 | `T6` | Câblage sur l'onboarding (LOT 7) | `US001`/`US002` | modèles, versions, parcours, tâches |
 | `T7` | Câblage sur l'import CSV et le back-office (LOT 9), et le motif obligatoire des interventions du super-administrateur | `US001`/`US002`, ferme `ECART-064` | dépôt, décisions, lancement, rejeu, transfert en masse, création d'entité, archivage/restauration |

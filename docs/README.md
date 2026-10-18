@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `657` en usage | `DEC-658` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `658` en usage | `DEC-659` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1338,8 +1338,23 @@ verifier-*.py` n'étaient pas préparés à la clé étrangère `audit_event.ent
 par `T2`. Un troisième, trouvé par la suite elle-même (`test_archivage_onboarding.py`, nettoyage
 manuel incomplet sur une route HTTP réelle). Zéro régression : 1 738 pytest collectés (+13, tous
 d'intégration), 73 échecs environnementaux identiques à `origin/develop` par comparaison de
-worktree, listes identiques terme à terme. La sous-étape suivante est **`T4`** : le câblage sur les
-contenus et le Framework (LOT 6). L'écriture d'audit est **synchrone**,
+worktree, listes identiques terme à terme.
+
+**`T4` est faite** (`DEC-658`) : le même service câblé sur les contenus et le Framework (LOT 6) —
+`creer_une_page`, `remplacer_le_contenu` (UN SEUL `audit_event` pour l'appel entier — pas une
+fonction de diff par champ, elle archive et recrée les blocs à chaque appel), `publier_une_page`/
+`archiver_une_page`/`restaurer_une_page` (`action_code` réutilisant `ActionEditoriale`, déjà posé
+par le LOT 6 `T7`), `creer_un_lien`/`modifier_un_lien`/`reordonner_les_liens` (`internal_link`,
+trois littéraux nouveaux faute d'enum existant, UN SEUL `audit_event` pour tout l'ensemble
+réordonné, aucun quand la liste est vide). Huit fonctions, chacune à appelant HTTP unique — aucune
+n'a l'ambiguïté multi-appelants de `creer_l_appartenance` (LOT 2), donc aucune n'a été laissée au
+niveau de ses appelants. Aucun défaut trouvé en câblant, mesuré et non simplement constaté :
+`make framework-check` (77 contrôles sur la pile réelle) rejoué après le câblage ne rapporte aucun
+échec de nettoyage — le nettoyage par `actor_person_id`, hérité du correctif `T2`, couvre déjà les
+nouvelles lignes `audit_event`. Zéro régression : 1 749 pytest collectés (+11, tous d'intégration),
+73 échecs environnementaux identiques à `origin/develop` par comparaison de worktree, listes
+identiques terme à terme. La sous-étape suivante est **`T5`** : le câblage sur les événements
+(LOT 8). L'écriture d'audit est **synchrone**,
 dans la MÊME transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la
 file `security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
 super-administrateur) est explicitement rattaché à ce lot et doit y être fermé ; `QO-092`
