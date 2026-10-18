@@ -212,6 +212,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.content.modeles import TYPES_DE_LIEN
 from app.shared.errors import ErreurApplicative
 
@@ -646,6 +647,21 @@ def creer_un_lien(
     except (IntegrityError, DataError) as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
 
+    #  LOT 10, `T4` : aucune enum Python ne nomme les actions sur un lien
+    #  interne (a la difference des pages, §7.27 n'a rien a reutiliser ici) --
+    #  `action_code` est donc un litteral, meme discipline que `T3` pour les
+    #  actions sans vocabulaire existant.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="lien_cree",
+        resource_type="internal_link",
+        resource_reference=identifiant,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation du lien interne « {libelle} »",
+    )
+
     return _relire(connexion, entite=entite, lien=identifiant)
 
 
@@ -716,6 +732,22 @@ def modifier_un_lien(
     except (IntegrityError, DataError) as erreur:
         raise _traduire_un_refus_de_la_base(erreur) from erreur
 
+    #  LOT 10, `T4` : meme litteral que `creer_un_lien`, action symetrique.
+    #  `actif` est porte dans `new_values` : c'est le SEUL moyen de retirer un
+    #  lien (§19), donc la seule trace qui distingue une modification ordinaire
+    #  d'un retrait.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="lien_modifie",
+        resource_type="internal_link",
+        resource_reference=lien,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Modification du lien interne « {libelle} »",
+        new_values={"libelle": libelle, "url": url_validee, "actif": actif},
+    )
+
     return _relire(connexion, entite=entite, lien=lien)
 
 
@@ -779,6 +811,22 @@ def reordonner_les_liens(
                 "instant": instant,
             },
         )
+
+    #  LOT 10, `T4` : UN SEUL `audit_event` pour l'appel entier -- « reordonner
+    #  les liens » est UNE action metier sur l'ensemble des liens vivants de
+    #  l'entite, jamais un evenement par lien deplace. `resource_reference`
+    #  reste absent : aucun lien unique ne porte cette action, qui touche
+    #  l'entite entiere.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="liens_reordonnes",
+        resource_type="internal_link",
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Reordonnancement de {len(ordre)} lien(s) interne(s)",
+        new_values={"ordre": [str(identifiant) for identifiant in ordre]},
+    )
 
     return lister_les_liens(connexion, entite=entite, inclure_les_inactifs=True)
 
