@@ -191,6 +191,7 @@ def publier_une_version(
     entite_du_modele: uuid.UUID | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> VersionPubliee:
     """Matrice §9 « Publier une version » — `draft` devient `published`.
 
@@ -234,6 +235,7 @@ def publier_une_version(
         entity_id=entite_du_modele,
         actor_person_id=acteur,
         summary=f"Publication de la version {publiee.version_number} du modele",
+        reason=motif,
     )
     return publiee
 
@@ -245,6 +247,7 @@ def archiver_une_version(
     entite_du_modele: uuid.UUID | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> VersionArchivee:
     """Matrice §9 « Archiver une version » — `published` devient `retired`.
 
@@ -276,6 +279,7 @@ def archiver_une_version(
         entity_id=entite_du_modele,
         actor_person_id=acteur,
         summary=f"Archivage de la version {archivee.version_number} du modele",
+        reason=motif,
     )
     return archivee
 
@@ -287,6 +291,7 @@ def restaurer_une_version(
     entite_du_modele: uuid.UUID | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> VersionRestauree:
     """Matrice §9 « Restaurer une version » — `retired` redevient `published`.
 
@@ -327,5 +332,6 @@ def restaurer_une_version(
         entity_id=entite_du_modele,
         actor_person_id=acteur,
         summary=f"Restauration de la version {restauree.version_number} du modele",
+        reason=motif,
     )
     return restauree

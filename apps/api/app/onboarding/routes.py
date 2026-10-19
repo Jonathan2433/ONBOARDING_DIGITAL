@@ -93,6 +93,7 @@ from fastapi import APIRouter, Depends, Path, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
+from app.audit.motif import DemandeDeMotif, exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.configuration.settings import Parametres
 from app.entities.routes import (
@@ -352,6 +353,11 @@ class DemandeDeTacheDeReference(BaseModel):
             "(`entity_id` NULL, modele §13.1) — reservee a SUPER, matrice §9."
         ),
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeTacheDeReference(BaseModel):
@@ -407,6 +413,11 @@ class DemandeDeModele(BaseModel):
     scope_circle_id: uuid.UUID | None = Field(
         default=None, description="Le cercle concerne — requis SEULEMENT si `portee: CIRCLE`"
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeModele(BaseModel):
@@ -428,6 +439,11 @@ class DemandeDeVersion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     change_summary: str | None = Field(default=None, description="Resume du changement, facultatif")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeVersion(BaseModel):
@@ -465,6 +481,11 @@ class DemandeDesTachesDeVersion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     taches: list[DemandeDeTacheDeVersion]
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeTacheDeVersion(BaseModel):
@@ -1196,10 +1217,10 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             #  La garde a deja verifie l'appartenance a l'un des CINQ roles —
             #  suffisant pour `ENTITE`. `GLOBAL` exige STRICTEMENT SUPER, une
             #  distinction que la garde generique ne porte pas : resolue ICI.
+            #  **TOUJOURS resolue depuis LOT 10 `T7`** : le motif du §18.1
+            #  exige de connaitre les roles meme quand `portee=ENTITE`.
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
             if demande.portee == "GLOBAL":
-                permissions = resoudre_les_permissions(
-                    connexion, appelant.personne, entite.id, instant
-                )
                 if not peut_creer_une_tache_de_reference_globale(
                     roles=frozenset(permissions.roles)
                 ):
@@ -1211,6 +1232,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 entite_de_la_tache = None
             else:
                 entite_de_la_tache = entite.id
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             creee = creer_une_tache_de_reference(
                 connexion,
                 entite=entite_de_la_tache,
@@ -1220,6 +1242,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 category=demande.category,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=demande.motif,
             )
         return _tache_en_reponse(creee)
 
@@ -1384,6 +1407,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             entite_du_modele = None if demande.portee == "GLOBAL" else entite.id
             cree = creer_un_modele(
                 connexion,
@@ -1395,6 +1419,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 scope_circle_id=demande.scope_circle_id,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=demande.motif,
             )
         return _modele_en_reponse(cree)
 
@@ -1473,6 +1498,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             creee = creer_une_version(
                 connexion,
                 modele=modele.id,
@@ -1480,6 +1506,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 change_summary=demande.change_summary,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=demande.motif,
             )
         return _version_en_reponse(creee)
 
@@ -1580,6 +1607,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             demandees = [
                 NouvelleTacheDeVersion(
                     task_reference_id=tache.task_reference_id,
@@ -1597,6 +1625,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 taches=demandees,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=demande.motif,
             )
         servies = [_tache_de_version_en_reponse(tache) for tache in ecrites]
         return ReponseDesTachesDeVersion(taches=servies, nombre_de_taches=len(servies))
@@ -1668,6 +1697,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
         version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
     ) -> ReponseDePublicationDeVersion:
         """Publier une version — matrice §9, modele §13.3."""
@@ -1696,12 +1726,15 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             publiee = publier_une_version(
                 connexion,
                 version=version.id,
                 entite_du_modele=modele.entity_id,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _publication_en_reponse(publiee)
 
@@ -1728,8 +1761,9 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         },
         summary="Archiver une version — la retirer de la circulation",
         description=(
-            "Matrice §9 « Archiver une version ». `published` devient `retired`. Aucun "
-            "motif : le §18.1 n'enumere pas ce geste parmi ses cinq cas obligatoires."
+            "Matrice §9 « Archiver une version ». `published` devient `retired`. Un "
+            "motif devient obligatoire quand `SUPER` est l'acteur (§18.1, `ECART-064`, "
+            "LOT 10 `T7`)."
         ),
     )
     def archiver_une_version_onboarding(
@@ -1744,6 +1778,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
         version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_des_modeles),  # noqa: B008
     ) -> ReponseDArchivageDeVersion:
         """Archiver une version — matrice §9, modele §13.3."""
@@ -1772,12 +1807,15 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             archivee = archiver_une_version(
                 connexion,
                 version=version.id,
                 entite_du_modele=modele.entity_id,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _archivage_en_reponse(archivee)
 
@@ -1824,6 +1862,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         template_id: Annotated[uuid.UUID, Path(description="L'identifiant du modele")],
         version_id: Annotated[uuid.UUID, Path(description="L'identifiant de la version")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_de_restauration),  # noqa: B008
     ) -> ReponseDeRestaurationDeVersion:
         """Restaurer une version — matrice §9, modele §13.3, `ECART-066` resolu."""
@@ -1845,12 +1884,15 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             restauree = restaurer_une_version(
                 connexion,
                 version=version.id,
                 entite_du_modele=modele.entity_id,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _restauration_en_reponse(restauree)
 
@@ -1904,6 +1946,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         ],
         appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_d_affectation),  # noqa: B008
     ) -> ReponseDuParcours:
         """Affecter un parcours — matrice §8.1, modele §13.5."""
@@ -1941,6 +1984,8 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             parcours = affecter_un_parcours(
                 connexion,
                 entite=entite.id,
@@ -1948,6 +1993,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 cible=cible,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _parcours_en_reponse(parcours)
 
@@ -2374,6 +2420,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         ],
         appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_d_archivage_et_restauration),  # noqa: B008
     ) -> ReponseDeLInstance:
         """Archiver manuellement un parcours termine — matrice §8.1, `T11`."""
@@ -2399,12 +2446,16 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             instance_active = _resoudre_l_instance_active_ou_404(
                 connexion, entite=entite.id, appartenance=appartenance
             )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             archivee = archiver_un_parcours_termine(
                 connexion,
                 entite=entite.id,
                 instance=instance_active.id,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _instance_en_reponse(archivee)
 
@@ -2454,6 +2505,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         appartenance: Annotated[uuid.UUID, Path(description="L'identifiant de l'appartenance")],
         instance: Annotated[uuid.UUID, Path(description="L'identifiant de l'instance archivee")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_d_archivage_et_restauration),  # noqa: B008
     ) -> ReponseDeLInstance:
         """Restaurer un parcours archive — matrice §8.1, `T11`, `ECART-066`."""
@@ -2485,12 +2537,16 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_INSTANCE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            motif = demande.motif if demande else None
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             restauree = restaurer_un_parcours(
                 connexion,
                 entite=entite.id,
                 instance=instance,
                 acteur=appelant.personne,
                 instant=instant,
+                motif=motif,
             )
         return _instance_en_reponse(restauree)
 

@@ -165,9 +165,13 @@ def _session(parametres: Parametres, personne: uuid.UUID) -> str:
     return jeton
 
 
-def _appeler_ecriture(parametres: Parametres, chemin: str, jeton: str | None) -> Any:
+def _appeler_ecriture(
+    parametres: Parametres, chemin: str, jeton: str | None, *, motif: str | None = None
+) -> Any:
     """Ecriture protegee par les deux barrieres CSRF — §7.4, `DEC-531`. Corps
-    vide : aucune des trois transitions de ce module n'en attend."""
+    vide par defaut : aucune des trois transitions de ce module n'exigeait
+    rien d'autre jusqu'a `motif` (LOT 10, `T7`, `ECART-064`), obligatoire
+    pour `SUPER` seulement."""
     parametres_csrf = parametres.model_copy(update={"PUBLIC_BASE_URL": ORIGINE_DE_TEST})
     with TestClient(creer_application(parametres_csrf), base_url=ORIGINE_DE_TEST) as client:
         entetes = {"Origin": ORIGINE_DE_TEST}
@@ -176,7 +180,8 @@ def _appeler_ecriture(parametres: Parametres, chemin: str, jeton: str | None) ->
             entetes[EN_TETE_JETON] = jeton_pour(
                 empreinte_de_session(jeton), parametres_csrf.APP_SECRET_KEY
             )
-        return client.post(chemin, json={}, headers=entetes)
+        corps = {"motif": motif} if motif is not None else {}
+        return client.post(chemin, json=corps, headers=entetes)
 
 
 @pytest.fixture
@@ -309,8 +314,17 @@ def _creer_modele_et_version(
     scope_circle_id: uuid.UUID | None = None,
 ) -> tuple[uuid.UUID, uuid.UUID]:
     """Cree un modele puis sa premiere version brouillon — reutilise les deux
-    routes de `T5`, jamais une ecriture directe en base."""
-    corps: dict[str, Any] = {"name": name, "target_status": "mission", "portee": portee}
+    routes de `T5`, jamais une ecriture directe en base.
+
+    `motif` (LOT 10, `T7`) : obligatoire pour `SUPER` seulement (`ECART-064`) —
+    fourni ici inconditionnellement, sans effet sur les autres roles.
+    """
+    corps: dict[str, Any] = {
+        "name": name,
+        "target_status": "mission",
+        "portee": portee,
+        "motif": "Decor de test",
+    }
     if scope_person_id is not None:
         corps["scope_person_id"] = str(scope_person_id)
     if scope_circle_id is not None:
@@ -327,32 +341,61 @@ def _creer_modele_et_version(
             CHEMIN_MODELES.format(code=code_entite), json=corps, headers=entetes
         ).json()["id"]
         version = client.post(
-            CHEMIN_VERSIONS.format(code=code_entite, modele=modele), json={}, headers=entetes
+            CHEMIN_VERSIONS.format(code=code_entite, modele=modele),
+            json={"motif": "Decor de test"},
+            headers=entetes,
         ).json()["id"]
     return uuid.UUID(modele), uuid.UUID(version)
 
 
 def _publier(
-    parametres: Parametres, code: str, modele: uuid.UUID, version: uuid.UUID, jeton: str | None
+    parametres: Parametres,
+    code: str,
+    modele: uuid.UUID,
+    version: uuid.UUID,
+    jeton: str | None,
+    *,
+    motif: str | None = None,
 ) -> Any:
     return _appeler_ecriture(
-        parametres, CHEMIN_PUBLICATION.format(code=code, modele=modele, version=version), jeton
+        parametres,
+        CHEMIN_PUBLICATION.format(code=code, modele=modele, version=version),
+        jeton,
+        motif=motif,
     )
 
 
 def _archiver(
-    parametres: Parametres, code: str, modele: uuid.UUID, version: uuid.UUID, jeton: str | None
+    parametres: Parametres,
+    code: str,
+    modele: uuid.UUID,
+    version: uuid.UUID,
+    jeton: str | None,
+    *,
+    motif: str | None = None,
 ) -> Any:
     return _appeler_ecriture(
-        parametres, CHEMIN_ARCHIVAGE.format(code=code, modele=modele, version=version), jeton
+        parametres,
+        CHEMIN_ARCHIVAGE.format(code=code, modele=modele, version=version),
+        jeton,
+        motif=motif,
     )
 
 
 def _restaurer(
-    parametres: Parametres, code: str, modele: uuid.UUID, version: uuid.UUID, jeton: str | None
+    parametres: Parametres,
+    code: str,
+    modele: uuid.UUID,
+    version: uuid.UUID,
+    jeton: str | None,
+    *,
+    motif: str | None = None,
 ) -> Any:
     return _appeler_ecriture(
-        parametres, CHEMIN_RESTAURATION.format(code=code, modele=modele, version=version), jeton
+        parametres,
+        CHEMIN_RESTAURATION.format(code=code, modele=modele, version=version),
+        jeton,
+        motif=motif,
     )
 
 
@@ -642,8 +685,8 @@ def test_SEUL_SUPER_restaure_une_version_GLOBALE(decor: dict[str, Any]) -> None:
     modele, version = _creer_modele_et_version(
         parametres, decor["code"], super_jeton, name=f"{decor['marqueur']}-global", portee="GLOBAL"
     )
-    _publier(parametres, decor["code"], modele, version, super_jeton)
-    _archiver(parametres, decor["code"], modele, version, super_jeton)
+    _publier(parametres, decor["code"], modele, version, super_jeton, motif="Decor de test")
+    _archiver(parametres, decor["code"], modele, version, super_jeton, motif="Decor de test")
 
     refus = _restaurer(
         parametres, decor["code"], modele, version, _session(parametres, decor["esm_personne"])
@@ -651,7 +694,9 @@ def test_SEUL_SUPER_restaure_une_version_GLOBALE(decor: dict[str, Any]) -> None:
     assert refus.status_code == 403, refus.text
     assert refus.json()["erreur"]["code"] == "acces_refuse"
 
-    reussite = _restaurer(parametres, decor["code"], modele, version, super_jeton)
+    reussite = _restaurer(
+        parametres, decor["code"], modele, version, super_jeton, motif="Decor de test"
+    )
     assert reussite.status_code == 200, reussite.text
 
 

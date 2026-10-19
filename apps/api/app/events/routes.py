@@ -52,6 +52,7 @@ from typing import TYPE_CHECKING, Annotated
 from fastapi import APIRouter, Depends, Path, Query, Request, status
 from pydantic import BaseModel, Field
 
+from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
@@ -151,6 +152,11 @@ class DemandeDeCreationDEvenement(BaseModel):
     bureau: str | None = Field(
         default=None, description="Le `code` du bureau — requis si `portee=bureau`"
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeCreationDEvenement(BaseModel):
@@ -197,12 +203,22 @@ class DemandeDeModificationDEvenement(BaseModel):
             "ne touche pas cette dimension. `[]` : la vide."
         ),
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class DemandeDePublicationDEvenement(BaseModel):
     """Publier un evenement — matrice §11 « Publier ». Immediate, sans second geste."""
 
     version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDEvenementEcrit(BaseModel):
@@ -237,9 +253,20 @@ class ReponseDAnnulationDEvenement(BaseModel):
 
 
 class DemandeDeTransitionDEvenement(BaseModel):
-    """Archiver ou restaurer un evenement — aucun motif, meme parti que les pages (LOT 6)."""
+    """Archiver ou restaurer un evenement — la version, et un motif conditionnel.
+
+    **LE MOTIF N'ETAIT PAS OBLIGATOIRE A `T5`**, meme parti que les pages (LOT
+    6) : archiver/restaurer un evenement n'est pas l'un des cinq cas du §18.1.
+    LOT 10 `T7` ferme `ECART-064` par le sixieme angle, transversal :
+    obligatoire quand `SUPER` est l'acteur, jamais pour les roles locaux.
+    """
 
     version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDArchivageDEvenement(BaseModel):
@@ -277,6 +304,11 @@ class DemandeDeGestionDesMediasDEvenement(BaseModel):
     version: int = Field(ge=1, description="Concurrence optimiste — cahier §18.4")
     medias: list[MediaSoumis] = Field(
         description="Remplace la liste complete, dans l'ordre fourni."
+    )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
     )
 
 
@@ -682,6 +714,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 code_de_cercle=demande.cercle,
                 code_de_bureau=demande.bureau,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDeCreationDEvenement(
@@ -794,6 +827,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 codes_de_cercle=demande.cercles,
                 codes_de_bureau=demande.bureaux,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDEvenementEcrit(
@@ -877,6 +911,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             publie = publier_un_evenement(
                 connexion,
                 entite=entite.id,
@@ -884,6 +919,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDEvenementEcrit(
@@ -969,6 +1005,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             annule = annuler_un_evenement(
                 connexion,
                 entite=entite.id,
@@ -1007,8 +1044,8 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
         summary="Archiver un evenement — brouillon, publie ou annule",
         description=(
             "Matrice §11 « Archiver », §18 « Archiver un evenement ». L'evenement quitte "
-            "la consultation publique (`T2`). Aucun motif n'est demande — §18.1 ne le "
-            "nomme pas pour cette ressource."
+            "la consultation publique (`T2`). Un motif devient obligatoire quand `SUPER` "
+            "est l'acteur (§18.1, `ECART-064`, LOT 10 `T7`)."
         ),
     )
     def archiver_un_evenement_route(
@@ -1055,6 +1092,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             archive = archiver_un_evenement(
                 connexion,
                 entite=entite.id,
@@ -1062,6 +1100,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDArchivageDEvenement(
@@ -1142,6 +1181,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             restaure = restaurer_un_evenement(
                 connexion,
                 entite=entite.id,
@@ -1149,6 +1189,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDeRestaurationDEvenement(version=restaure.version, etat=restaure.etat)
@@ -1231,6 +1272,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             resultat = gerer_les_medias_d_un_evenement(
                 connexion,
                 entite=entite.id,
@@ -1239,6 +1281,7 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 version_attendue=demande.version,
                 medias=[(item.media, item.role) for item in demande.medias],
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDeGestionDesMediasDEvenement(

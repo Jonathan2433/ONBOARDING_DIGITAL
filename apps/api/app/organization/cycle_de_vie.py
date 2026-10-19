@@ -273,6 +273,7 @@ def archiver_un_cercle(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> CercleArchive:
     """§10.2 « Archiver un cercle | Entite, si aucun membre actif » et §18.
 
@@ -310,6 +311,7 @@ def archiver_un_cercle(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Archivage d'un cercle",
+        reason=motif,
     )
     return CercleArchive(version=resultat[0], archive_le=resultat[1])
 
@@ -322,6 +324,7 @@ def restaurer_un_cercle(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> CercleRestaure:
     """§18 « Restaurer un cercle ou bureau | Entite, restauration fonctionnelle »."""
     _exiger_la_version(
@@ -345,6 +348,7 @@ def restaurer_un_cercle(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Restauration d'un cercle",
+        reason=motif,
     )
     return CercleRestaure(version=resultat[0])
 
@@ -357,6 +361,7 @@ def archiver_un_bureau(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> BureauArchive:
     """§10.3 « Archiver un bureau | Entite » — AUCUNE condition de ressource.
 
@@ -382,6 +387,7 @@ def archiver_un_bureau(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Archivage d'un bureau",
+        reason=motif,
     )
     return BureauArchive(version=resultat[0], archive_le=resultat[1])
 
@@ -394,6 +400,7 @@ def restaurer_un_bureau(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> BureauRestaure:
     """§18 « Restaurer un cercle ou bureau | Entite, restauration fonctionnelle »."""
     _exiger_la_version(
@@ -417,6 +424,7 @@ def restaurer_un_bureau(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Restauration d'un bureau",
+        reason=motif,
     )
     return BureauRestaure(version=resultat[0])
 

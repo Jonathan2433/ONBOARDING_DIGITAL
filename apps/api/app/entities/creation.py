@@ -137,12 +137,17 @@ def creer_une_entite(
     demande: DemandeDeCreationDEntite,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EntiteCreee:
     """Creer l'entite et nommer son premier administrateur — UNE transaction.
 
     Leve `ErreurApplicative` : `422` personne introuvable, `409` code deja
     utilise. Voir l'en-tete du module pour ce qui n'est PAS fait ici (aucun
     contenu, role Framework ni modele d'onboarding n'est seme).
+
+    `motif` : LOT 10 `T7`, `ECART-064` — TOUJOURS fourni par la route (seul
+    `SUPER` peut l'appeler), jamais verifie ici : ce service n'a aucun role
+    a verifier, voir `app/entities/routes.py`.
     """
     #  **LA PERSONNE D'ABORD** : `technical_role_assignment.person_id` est une
     #  cle etrangere vers `person`, et un refus de la base sur ELLE SEULE
@@ -207,5 +212,6 @@ def creer_une_entite(
         entity_id=entite_id,
         actor_person_id=acteur,
         summary=f"Creation de l'entite {demande.code}",
+        reason=motif,
     )
     return EntiteCreee(id=entite_id, code=demande.code, version=version)

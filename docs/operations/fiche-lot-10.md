@@ -3,8 +3,8 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6` faites
-**Sous-étape suivante :** `T7` — câblage sur l'import CSV et le back-office (LOT 9), motif obligatoire des interventions du super-administrateur
+**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7` faites
+**Sous-étape suivante :** `T8` — `GET` journal d'audit filtrable par périmètre
 **Porte de sortie :** `G10`, tag attendu `v0.10.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -102,7 +102,7 @@ suivante ne commence.
 | `T4` ✅ | Câblage sur les contenus et le Framework (LOT 6) | `US001`/`US002` | `DEC-658`. Huit sites câblés — `creer_une_page`, `remplacer_le_contenu` (un seul `audit_event` pour l'appel entier), les trois du cycle de vie (`ActionEditoriale`), `creer_un_lien`/`modifier_un_lien`/`reordonner_les_liens` (un seul `audit_event` pour tout l'ensemble réordonné) |
 | `T5` ✅ | Câblage sur les événements (LOT 8) | `US001`/`US002` | `DEC-659`. Sept sites câblés — `creer_un_evenement` (littéral `creer`, aucune valeur `ActionEvenement` n'étant une ligne du §11), `modifier_un_evenement` (un seul `audit_event` pour l'appel entier, même en remplaçant aussi les cercles/bureaux), les trois du cycle de vie (`ActionEvenement`, `motif` d'annulation porté dans `reason`), `gerer_les_medias_d_un_evenement` (un seul `audit_event` pour tout le remplacement de la liste, y compris quand elle est vidée) |
 | `T6` ✅ | Câblage sur l'onboarding (LOT 7) | `US001`/`US002` | `DEC-660`. Treize fonctions câblées — catalogue des tâches, modèles et versions, cycle de vie d'une version, affectation d'un parcours, trois gestes sur une tâche, archivage/restauration manuels d'un parcours — `action_code` réutilisant `TypeEvenementTache` pour les quatre gestes sur une tâche, neuf littéraux pour le reste |
-| `T7` | Câblage sur l'import CSV et le back-office (LOT 9), et le motif obligatoire des interventions du super-administrateur | `US001`/`US002`, ferme `ECART-064` | dépôt, décisions, lancement, rejeu, transfert en masse, création d'entité, archivage/restauration |
+| `T7` ✅ | Câblage sur l'import CSV et le back-office (LOT 9), et le motif obligatoire des interventions du super-administrateur | `US001`/`US002`, ferme `ECART-064` | `DEC-661`. Six écritures jamais encore auditées (dépôt, décision, octroi des responsabilités/rôles techniques, rafraîchissement des cercles secondaires, résolution du DSM) ; retrofit du motif obligatoire sur la totalité des fonctions déjà câblées par `T2`-`T6`, nouveau module `app.audit.motif` |
 | `T8` | `GET` journal d'audit filtrable par périmètre | `US001` (clôt), `US002` (clôt) | témoin des exclusions, de la conservation et de la corrélation |
 | `T9` | Export CSV de l'audit, réservé à `ADM-E`/`SUPER`, lui-même audité | `US004` | |
 | `T10` | Reporting étendu — compteurs et tableaux du §15.1/§10.10 | `US003` | distinct du tableau de bord du LOT 9 `T5`, à vérifier en construisant |

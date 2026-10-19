@@ -416,10 +416,13 @@ def test_les_DEMANDES_ne_portent_NI_RANG_NI_IDENTIFIANT_NI_CHAMP_HTML() -> None:
         "description",
         "reference_d_icone",
         "actif",
+        #  LOT 10, `T7` : le motif conditionnel du §18.1 (`ECART-064`),
+        #  obligatoire pour `SUPER` seulement.
+        "motif",
     }
     #  La modification ajoute la version, et RIEN d'autre.
     assert set(DemandeDeModificationDeLien.model_fields) == champs_creation | {"version"}
-    assert set(DemandeDOrdreDesLiens.model_fields) == {"ordre"}
+    assert set(DemandeDOrdreDesLiens.model_fields) == {"ordre", "motif"}
     for interdit in ("rang", "identifiant", "html", "format", "rendu", "ordre"):
         assert interdit not in champs_creation, interdit
 

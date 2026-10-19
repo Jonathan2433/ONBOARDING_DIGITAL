@@ -298,6 +298,7 @@ def creer_un_modele(
     scope_circle_id: uuid.UUID | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Modele:
     """Creer le conteneur d'un modele — modele §13.2. `entite=None` : GLOBAL.
 
@@ -334,6 +335,7 @@ def creer_un_modele(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Creation du modele d'onboarding « {name} »",
+        reason=motif,
     )
     return cree
 
@@ -392,6 +394,7 @@ def creer_une_version(
     change_summary: str | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> VersionDeModele:
     """Creer une nouvelle version brouillon — modele §13.3.
 
@@ -422,6 +425,7 @@ def creer_une_version(
         entity_id=entite_du_modele,
         actor_person_id=acteur,
         summary=f"Creation de la version {creee.version_number} du modele",
+        reason=motif,
     )
     return creee
 
@@ -462,6 +466,7 @@ def definir_les_taches_de_la_version(
     taches: Sequence[NouvelleTacheDeVersion],
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> tuple[TacheDeVersion, ...]:
     """Poser (ou reordonner) la liste ENTIERE des taches d'une version brouillon.
 
@@ -539,5 +544,6 @@ def definir_les_taches_de_la_version(
                 for t in resultat
             ]
         },
+        reason=motif,
     )
     return resultat

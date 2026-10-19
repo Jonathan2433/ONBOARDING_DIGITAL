@@ -368,7 +368,14 @@ def _creer_modele(
     scope_person_id: uuid.UUID | None = None,
     scope_circle_id: uuid.UUID | None = None,
 ) -> Any:
-    corps: dict[str, Any] = {"name": name, "target_status": target_status, "portee": portee}
+    #  LOT 10, `T7` : `motif` — obligatoire pour `SUPER` seulement (`ECART-064`),
+    #  fourni ici inconditionnellement, sans effet sur les autres roles.
+    corps: dict[str, Any] = {
+        "name": name,
+        "target_status": target_status,
+        "portee": portee,
+        "motif": "Decor de test",
+    }
     if scope_person_id is not None:
         corps["scope_person_id"] = str(scope_person_id)
     if scope_circle_id is not None:
@@ -384,7 +391,10 @@ def _creer_version(
     parametres: Parametres, code_entite: str, modele: uuid.UUID, jeton: str | None
 ) -> Any:
     return _appeler_ecriture(
-        parametres, CHEMIN_VERSIONS.format(code=code_entite, modele=modele), jeton, {}
+        parametres,
+        CHEMIN_VERSIONS.format(code=code_entite, modele=modele),
+        jeton,
+        {"motif": "Decor de test"},
     )
 
 
@@ -400,7 +410,7 @@ def _definir_les_taches(
         parametres,
         CHEMIN_TACHES.format(code=code_entite, modele=modele, version=version),
         jeton,
-        {"taches": taches},
+        {"taches": taches, "motif": "Decor de test"},
         methode="PUT",
     )
 

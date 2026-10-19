@@ -36,6 +36,7 @@ from fastapi import APIRouter, Depends, Path, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
+from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
@@ -64,7 +65,7 @@ from app.permissions.dependances import (
     MESSAGE_ROLE_REFUSE,
     exiger_un_role_dans_l_entite,
 )
-from app.permissions.services import resoudre_les_permissions
+from app.permissions.services import RoleDeLaMatrice, resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
@@ -238,12 +239,14 @@ class ReponseDuBureau(BaseModel):
 
 
 class DemandeDeTransitionOrganisation(BaseModel):
-    """Archiver ou restaurer un cercle/bureau — la version, et rien d'autre.
+    """Archiver ou restaurer un cercle/bureau — la version, et un motif conditionnel.
 
-    **AUCUN MOTIF**, et le §18.1 en donne la raison : il enumere cinq cas ou un
-    motif est obligatoire, et ni l'archivage ni la restauration d'un cercle ou
-    d'un bureau n'y figurent — meme lecture que `T7` du LOT 6 pour le contenu
-    editorial (`ECART-064`).
+    **LE MOTIF N'ETAIT PAS OBLIGATOIRE A `T3`**, et le §18.1 en donnait la
+    raison : aucun des cinq cas qu'il enumere ne nommait cette action. LOT 10
+    `T7` ferme `ECART-064` par un SIXIEME angle, transversal : le §18.1 exige
+    aussi un motif pour « toute intervention du super-administrateur dans une
+    entite » — qui, elle, s'applique ICI des que `SUPER` est l'acteur, meme
+    si l'action elle-meme reste hors des cinq cas nommement cites.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -254,6 +257,11 @@ class DemandeDeTransitionOrganisation(BaseModel):
             "La version lue sur la synthese Framework ou la page detaillee. Cahier "
             "§18.4 : une version obsolete rend 409 sans ecrasement silencieux."
         ),
+    )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
     )
 
 
@@ -631,13 +639,17 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
 
     def _resoudre_l_entite_et_verifier_le_role(
         connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
-    ) -> uuid.UUID:
+    ) -> tuple[uuid.UUID, frozenset[RoleDeLaMatrice]]:
         """L'entite active, ET les roles reverifies DANS cette transaction.
 
         **LA GARDE A RESOLU LES SIENS DANS SA PROPRE CONNEXION, A SON PROPRE
         INSTANT** : s'y fier ferait agir sur ce qui a ete autorise ailleurs,
         exactement le motif de `_resoudre_le_cycle` (`app.people.routes`) et de
         `_agir` (`app.content.routes`).
+
+        Les roles sont rendus en plus depuis LOT 10 `T7` : `SUPER_ADMINISTRATEUR`
+        fait toujours partie de `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK`, donc le
+        controle du motif (`ECART-064`) n'a besoin que de l'ensemble COMPLET.
         """
         entite = resoudre_une_entite_active(connexion, code)
         if entite is None:
@@ -651,7 +663,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
             raise ErreurApplicative(
                 code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
             )
-        return entite.id
+        return entite.id, frozenset(permissions.roles)
 
     @routeur.post(
         "/entities/{code}/circles/{circle_id}/archivage",
@@ -707,9 +719,10 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite = _resoudre_l_entite_et_verifier_le_role(
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             archive = archiver_un_cercle(
                 connexion,
                 entite=entite,
@@ -717,6 +730,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDArchivageDUnCercle(version=archive.version, archive_le=archive.archive_le)
 
@@ -770,9 +784,10 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite = _resoudre_l_entite_et_verifier_le_role(
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             restaure = restaurer_un_cercle(
                 connexion,
                 entite=entite,
@@ -780,6 +795,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeRestaurationDUnCercle(version=restaure.version)
 
@@ -832,9 +848,10 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite = _resoudre_l_entite_et_verifier_le_role(
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             archive = archiver_un_bureau(
                 connexion,
                 entite=entite,
@@ -842,6 +859,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDArchivageDUnBureau(version=archive.version, archive_le=archive.archive_le)
 
@@ -895,9 +913,10 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite = _resoudre_l_entite_et_verifier_le_role(
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             restaure = restaurer_un_bureau(
                 connexion,
                 entite=entite,
@@ -905,6 +924,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeRestaurationDUnBureau(version=restaure.version)
 

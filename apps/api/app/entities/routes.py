@@ -139,6 +139,11 @@ class DemandeDeCreationDEntiteRequete(BaseModel):
 
     `premier_administrateur` DESIGNE une personne EXISTANTE — cette route ne
     cree personne, elle nomme seulement qui administre la nouvelle entite.
+
+    `motif` est OBLIGATOIRE, et non conditionnel comme ailleurs (§18.1,
+    `ECART-064`, LOT 10 `T7`) : la garde de cette route N'ACCEPTE QUE `SUPER`
+    (voir `_exiger_le_super_administrateur` ci-dessous) — l'intersection avec
+    les roles autorisants vaut donc toujours `{SUPER}`, jamais conditionnelle.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -154,6 +159,11 @@ class DemandeDeCreationDEntiteRequete(BaseModel):
     fuseau: str = Field(min_length=1, description="IANA, ex. `Europe/Paris`")
     premier_administrateur: uuid.UUID = Field(
         description="La personne qui devient administrateur de cette entite"
+    )
+    motif: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="Le motif du §18.1 — toujours obligatoire ici (`ECART-064`).",
     )
 
 
@@ -387,6 +397,7 @@ def routeur_entites(parametres: Parametres) -> APIRouter:
                 ),
                 acteur=appelant.personne,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeCreationDEntite(id=cree.id, code=cree.code, version=cree.version)
 

@@ -233,11 +233,16 @@ def modifier_les_donnees_organisationnelles(
     demande: Mapping[ChampOrganisationnel, Any],
     perimetre: PerimetreDEcriture,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Modification:
     """Ecrire les champs demandes, en closant puis ouvrant les periodes.
 
     Leve `ErreurApplicative` avec le format du §18.3 : `403` hors perimetre,
     `409` version obsolete ou periode incompatible, `422` valeur refusee.
+
+    `motif` : le motif du §18.1 — obligatoire cote ROUTE quand `SUPER`
+    autorise l'appel (`app.audit.motif`, `ECART-064`, LOT 10 `T7`). Repris sur
+    CHAQUE `audit_event` par champ : un seul motif couvre l'appel entier.
     """
     #  1. LE PERIMETRE D'ABORD. Un champ hors perimetre est refuse AVANT toute
     #     lecture d'etat : le §2.5 « refus par defaut » ne veut pas qu'on
@@ -369,6 +374,7 @@ def modifier_les_donnees_organisationnelles(
             summary=f"Modification du champ organisationnel « {champ.value} »",
             old_values={"valeur": None if ancienne is None else str(ancienne)},
             new_values={"valeur": None if nouvelle is None else str(nouvelle)},
+            reason=motif,
         )
     return Modification(version=version, champs=frozenset(ecrits))
 

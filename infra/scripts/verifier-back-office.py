@@ -545,6 +545,7 @@ def main() -> int:
                 "pays": "FR",
                 "fuseau": "Europe/Paris",
                 "premier_administrateur": str(id_esm_a),
+                "motif": "Controle de pile back-office",
             },
         )
         constater(

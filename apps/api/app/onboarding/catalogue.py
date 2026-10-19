@@ -125,6 +125,7 @@ def creer_une_tache_de_reference(
     category: str | None,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> TacheDeReference:
     """Ajouter une tache au catalogue — `entite=None` pour une tache GLOBALE.
 
@@ -176,5 +177,6 @@ def creer_une_tache_de_reference(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Creation de la tache de reference « {title} »",
+        reason=motif,
     )
     return creee

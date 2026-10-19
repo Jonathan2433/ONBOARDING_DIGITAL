@@ -77,8 +77,10 @@ def test_la_demande_d_annulation_ne_porte_NI_etat_NI_archivage() -> None:
 
 
 def test_la_demande_de_transition_ne_porte_QUE_la_version() -> None:
-    """Archiver et restaurer partagent la meme forme — aucun motif (§18.1)."""
-    assert set(DemandeDeTransitionDEvenement.model_fields) == {"version"}
+    """Archiver et restaurer partagent la meme forme — `version`, et le motif
+    conditionnel du §18.1 (LOT 10 `T7`, `ECART-064`, obligatoire pour SUPER
+    seulement)."""
+    assert set(DemandeDeTransitionDEvenement.model_fields) == {"version", "motif"}
 
 
 # ============================================================================
