@@ -172,8 +172,17 @@ def _modele_publie(
         scope_type="ENTITY",
         scope_person_id=None,
         scope_circle_id=None,
+        acteur=acteur,
+        instant=ANCRAGE,
     )
-    version = creer_une_version(cx, modele=modele.id, change_summary=None)
+    version = creer_une_version(
+        cx,
+        modele=modele.id,
+        entite_du_modele=modele.entity_id,
+        change_summary=None,
+        acteur=acteur,
+        instant=ANCRAGE,
+    )
     definir_les_taches_de_la_version(
         cx,
         modele=modele,
@@ -188,8 +197,12 @@ def _modele_publie(
             )
             for reference, decalage, titre in taches
         ),
+        acteur=acteur,
+        instant=ANCRAGE,
     )
-    publiee = publier_une_version(cx, version=version.id, acteur=acteur, instant=ANCRAGE)
+    publiee = publier_une_version(
+        cx, version=version.id, entite_du_modele=modele.entity_id, acteur=acteur, instant=ANCRAGE
+    )
     return publiee.id
 
 
