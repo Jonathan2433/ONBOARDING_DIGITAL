@@ -326,6 +326,14 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "DELETE FROM onboarding_task_reference WHERE code LIKE :motif_code",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T6` : creer un modele/une version/des taches (routes HTTP
+            #  de ce fichier) ecrit desormais `audit_event` aussi —
+            #  `actor_person_id` ET `entity_id` y referencent `person`/`entity`,
+            #  meme classe que `T2`/`T3` (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM framework_responsibility_assignment WHERE entity_id IN "

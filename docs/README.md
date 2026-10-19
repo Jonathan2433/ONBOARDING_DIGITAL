@@ -73,7 +73,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `659` en usage | `DEC-660` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `660` en usage | `DEC-661` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -1370,7 +1370,38 @@ LOT 8 `T13`) rejoué après le câblage ne rapporte aucun échec de nettoyage �
 concerné, `verifier-accueil-evenements.py`, nettoyait déjà `audit_event` correctement avant ce
 câblage. Zéro régression : 1 759 pytest collectés (+10, tous d'intégration), 73 échecs
 environnementaux identiques à `origin/develop` par comparaison de worktree, listes identiques
-terme à terme. La sous-étape suivante est **`T6`** : le câblage sur l'onboarding (LOT 7).
+terme à terme.
+
+**`T6` est faite** (`DEC-660`) : le même service câblé sur l'onboarding (LOT 7) —
+`creer_une_tache_de_reference` (`onboarding_task_reference`), `creer_un_modele`/`creer_une_version`
+(`onboarding_template`/`onboarding_template_version`), `definir_les_taches_de_la_version`
+(`onboarding_template_task`, UN SEUL `audit_event` pour l'appel entier, MÊME quand la liste soumise
+est vidée — aucun retour anticipé n'existe, même principe que `gerer_les_medias_d_un_evenement` au
+LOT 8), `publier_une_version`/`archiver_une_version`/`restaurer_une_version` (neuf littéraux
+namespacés couvrant ces sept gestes, aucune enum n'existant pour le cycle de vie d'un modèle ou
+d'une version), `affecter_un_parcours` (`onboarding_instance`, UN SEUL `audit_event` pour l'appel
+entier malgré un `onboarding_task_event` PAR tâche snapshottée, `action_code` réutilisant
+`TypeEvenementTache.ASSIGNED`), `terminer_une_tache`/`annuler_la_completion`/`reouvrir_une_tache`
+(`onboarding_instance_task`, `action_code` réutilisant `TypeEvenementTache` — déjà le vocabulaire du
+journal §13.7 de ce domaine, même lecture que `TypeEvenementAuth` au LOT 3/`T2` — le motif de
+réouverture porté dans `reason`), et l'archivage/la restauration MANUELS d'un parcours. TREIZE
+fonctions au total, chacune à appelant HTTP unique ou geste manuel. `entity_id` de l'audit porte le
+périmètre RÉEL de la ressource (`None` pour un modèle/une tâche GLOBAL), jamais celui de l'entité
+appelante — même lecture que `creer_une_entite` au `T3`. TROIS fonctions internes sans appelant HTTP
+propre (archivage automatique d'un parcours terminé, archivage au départ, remplacement du parcours
+après changement de statut) ne sont PAS câblées séparément : chacune est la conséquence d'une action
+déjà auditée, même discipline que `T3` pour l'import CSV et le transfert en masse. Aucun défaut
+trouvé en câblant, mesuré comme à `T4`/`T5` — mais SEPT fichiers de test existants ont dû étendre
+leur nettoyage à `audit_event`, même classe que les neuf fichiers de `T2` : `make onboarding-check`
+(14 contrôles sur la pile réelle, LOT 7 `T14`) rejoué après le câblage ne rapporte aucun échec de
+nettoyage — le seul script d'infra du domaine, `verifier-administration-onboarding.py`, nettoyait
+déjà `audit_event` correctement avant ce câblage. Zéro régression : 1 777 pytest collectés (+18,
+tous d'intégration), 71 échecs environnementaux identiques à `origin/develop` par comparaison de
+worktree, listes identiques terme à terme (le nombre d'échecs environnementaux dérive avec la
+pollution du jeu de démonstration, 73 à `T5`, 71 ici, aucun n'étant du fait de ce travail). La
+sous-étape suivante est **`T7`** : le câblage sur l'import CSV et le back-office (LOT 9), et le
+motif obligatoire des interventions du super-administrateur.
+
 L'écriture d'audit est **synchrone**,
 dans la MÊME transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la
 file `security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du

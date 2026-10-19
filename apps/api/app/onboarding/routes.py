@@ -1218,6 +1218,8 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 title=demande.title,
                 description=demande.description,
                 category=demande.category,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _tache_en_reponse(creee)
 
@@ -1391,6 +1393,8 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 scope_type=demande.portee,
                 scope_person_id=demande.scope_person_id,
                 scope_circle_id=demande.scope_circle_id,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _modele_en_reponse(cree)
 
@@ -1470,7 +1474,12 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_403_FORBIDDEN,
                 )
             creee = creer_une_version(
-                connexion, modele=modele.id, change_summary=demande.change_summary
+                connexion,
+                modele=modele.id,
+                entite_du_modele=modele.entity_id,
+                change_summary=demande.change_summary,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _version_en_reponse(creee)
 
@@ -1582,7 +1591,12 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 for tache in demande.taches
             ]
             ecrites = definir_les_taches_de_la_version(
-                connexion, modele=modele, version=version, taches=demandees
+                connexion,
+                modele=modele,
+                version=version,
+                taches=demandees,
+                acteur=appelant.personne,
+                instant=instant,
             )
         servies = [_tache_de_version_en_reponse(tache) for tache in ecrites]
         return ReponseDesTachesDeVersion(taches=servies, nombre_de_taches=len(servies))
@@ -1683,7 +1697,11 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_403_FORBIDDEN,
                 )
             publiee = publier_une_version(
-                connexion, version=version.id, acteur=appelant.personne, instant=instant
+                connexion,
+                version=version.id,
+                entite_du_modele=modele.entity_id,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _publication_en_reponse(publiee)
 
@@ -1754,7 +1772,13 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
-            archivee = archiver_une_version(connexion, version=version.id)
+            archivee = archiver_une_version(
+                connexion,
+                version=version.id,
+                entite_du_modele=modele.entity_id,
+                acteur=appelant.personne,
+                instant=instant,
+            )
         return _archivage_en_reponse(archivee)
 
     @routeur.post(
@@ -1821,7 +1845,13 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ROLE_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
-            restauree = restaurer_une_version(connexion, version=version.id)
+            restauree = restaurer_une_version(
+                connexion,
+                version=version.id,
+                entite_du_modele=modele.entity_id,
+                acteur=appelant.personne,
+                instant=instant,
+            )
         return _restauration_en_reponse(restauree)
 
     #  §8.1 « Affecter un parcours » : DSM/ESM/BOOST/ADM-E/SUPER a la garde
@@ -2370,7 +2400,11 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                 connexion, entite=entite.id, appartenance=appartenance
             )
             archivee = archiver_un_parcours_termine(
-                connexion, entite=entite.id, instance=instance_active.id, instant=instant
+                connexion,
+                entite=entite.id,
+                instance=instance_active.id,
+                acteur=appelant.personne,
+                instant=instant,
             )
         return _instance_en_reponse(archivee)
 
@@ -2426,6 +2460,7 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
         jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
         proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
 
+        instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
             entite = resoudre_une_entite_active(connexion, code)
             if entite is None:
@@ -2450,7 +2485,13 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_INSTANCE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
-            restauree = restaurer_un_parcours(connexion, entite=entite.id, instance=instance)
+            restauree = restaurer_un_parcours(
+                connexion,
+                entite=entite.id,
+                instance=instance,
+                acteur=appelant.personne,
+                instant=instant,
+            )
         return _instance_en_reponse(restauree)
 
     @routeur.get(

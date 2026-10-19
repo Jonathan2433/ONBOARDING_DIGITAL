@@ -78,6 +78,7 @@ LA LISTE DES TACHES EST REECRITE EN BLOC, JAMAIS FUSIONNEE
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import uuid
 from collections.abc import Sequence
 from typing import Any, Final
@@ -86,6 +87,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.audit.services import enregistrer_un_evenement
 from app.shared.errors import ErreurApplicative
 
 CODE_MODELE_INTROUVABLE: Final = "modele_introuvable"
@@ -294,8 +296,15 @@ def creer_un_modele(
     scope_type: str,
     scope_person_id: uuid.UUID | None,
     scope_circle_id: uuid.UUID | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
 ) -> Modele:
-    """Creer le conteneur d'un modele — modele §13.2. `entite=None` : GLOBAL."""
+    """Creer le conteneur d'un modele — modele §13.2. `entite=None` : GLOBAL.
+
+    `acteur`/`instant` (LOT 10, `T6`) ne servent qu'a l'ecriture d'audit : le
+    modele §13.2 ne declare ni `created_by_person_id` ni aucune date propre a
+    ce geste.
+    """
     ligne = (
         connexion.execute(
             text(_INSERER_MODELE),
@@ -311,7 +320,22 @@ def creer_un_modele(
         .mappings()
         .one()
     )
-    return _modele_depuis_la_ligne(ligne)
+    cree = _modele_depuis_la_ligne(ligne)
+
+    #  LOT 10, `T6` : `entity_id=entite` — None pour un modele GLOBAL, meme
+    #  lecture que `creer_une_entite` (`T3`) ou `entity_id` est la ressource
+    #  elle-meme. Litteral : la matrice §9 ne porte aucune enum d'action.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="modele_cree",
+        resource_type="onboarding_template",
+        resource_reference=cree.id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation du modele d'onboarding « {name} »",
+    )
+    return cree
 
 
 def lire_un_modele(connexion: Connection, *, entite: uuid.UUID, modele: uuid.UUID) -> Modele | None:
@@ -361,13 +385,24 @@ def lister_les_versions(
 
 
 def creer_une_version(
-    connexion: Connection, *, modele: uuid.UUID, change_summary: str | None
+    connexion: Connection,
+    *,
+    modele: uuid.UUID,
+    entite_du_modele: uuid.UUID | None,
+    change_summary: str | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
 ) -> VersionDeModele:
     """Creer une nouvelle version brouillon — modele §13.3.
 
     `version_number` est calcule EN SQL, dans la MEME requete que l'insertion
     — jamais lu puis recalcule en Python, ce qui laisserait une fenetre a une
     course entre deux creations concurrentes de la meme version.
+
+    `entite_du_modele`/`acteur`/`instant` (LOT 10, `T6`) : la version n'a pas
+    d'`entity_id` propre (elle herite celui du modele, voir l'en-tete de
+    classe) — l'appelant le transmet pour que l'audit porte le MEME perimetre
+    que le modele, jamais une colonne ecrite sur `onboarding_template_version`.
     """
     ligne = (
         connexion.execute(
@@ -376,7 +411,19 @@ def creer_une_version(
         .mappings()
         .one()
     )
-    return _version_depuis_la_ligne(ligne)
+    creee = _version_depuis_la_ligne(ligne)
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="version_creee",
+        resource_type="onboarding_template_version",
+        resource_reference=creee.id,
+        entity_id=entite_du_modele,
+        actor_person_id=acteur,
+        summary=f"Creation de la version {creee.version_number} du modele",
+    )
+    return creee
 
 
 def lire_une_version(
@@ -413,6 +460,8 @@ def definir_les_taches_de_la_version(
     modele: Modele,
     version: VersionDeModele,
     taches: Sequence[NouvelleTacheDeVersion],
+    acteur: uuid.UUID,
+    instant: dt.datetime,
 ) -> tuple[TacheDeVersion, ...]:
     """Poser (ou reordonner) la liste ENTIERE des taches d'une version brouillon.
 
@@ -420,6 +469,15 @@ def definir_les_taches_de_la_version(
     cette sous-etape. **REFUSE SUR UNE TACHE HORS PERIMETRE** — voir l'en-tete
     du module. Les deux refus sont verifies AVANT toute ecriture : la liste
     precedente reste intacte si l'un des deux mord.
+
+    LOT 10, `T6` : UN SEUL `audit_event` pour l'appel entier — « poser la
+    liste » est UNE action metier, meme discipline que `reordonner_les_liens`
+    (LOT 6) et `gerer_les_medias_d_un_evenement` (LOT 8). **Mais, comme ce
+    dernier et a la difference de `reordonner_les_liens`, AUCUN retour
+    anticipe n'existe sur une liste vide** : `_SUPPRIMER_TACHES_DE_LA_VERSION`
+    s'execute INCONDITIONNELLEMENT ci-dessous, et vider la liste des taches
+    d'une version brouillon est une forme normale de ce geste. Un `audit_event`
+    est donc ecrit MEME quand `taches=()`.
     """
     if version.state != "draft":
         raise ErreurApplicative(
@@ -457,4 +515,29 @@ def definir_les_taches_de_la_version(
             .one()
         )
         ecrites.append(_tache_depuis_la_ligne(ligne))
-    return tuple(ecrites)
+    resultat = tuple(ecrites)
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="taches_de_version_definies",
+        resource_type="onboarding_template_version",
+        resource_reference=version.id,
+        entity_id=modele.entity_id,
+        actor_person_id=acteur,
+        summary=(
+            f"Composition des taches de la version {version.version_number} "
+            f"({len(resultat)} tache(s))"
+        ),
+        new_values={
+            "taches": [
+                {
+                    "task_reference_id": str(t.task_reference_id),
+                    "required": t.required,
+                    "due_offset_days": t.due_offset_days,
+                }
+                for t in resultat
+            ]
+        },
+    )
+    return resultat

@@ -98,6 +98,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.instances import (
     COLONNES_TACHE,
     TacheDuParcours,
@@ -211,7 +212,14 @@ def terminer_une_tache(
     """Matrice §8.1 « Marquer une tache comme terminee » — `Soi` uniquement,
     verifie par l'appelant (`perimetre.peut_agir_sur_sa_tache_onboarding`).
     Accepte `todo` ET `reopened` comme etat de depart — voir l'en-tete,
-    diagramme §24.2, correctif `T9`."""
+    diagramme §24.2, correctif `T9`.
+
+    LOT 10, `T6` : `action_code` reutilise `TypeEvenementTache.COMPLETED`, le
+    vocabulaire DEJA pose par le journal §13.7 de ce domaine — meme lecture
+    que `TypeEvenementAuth` a `T2`. UN SEUL `audit_event`, meme si
+    `archiver_le_parcours_si_termine` agit juste apres : cette archive
+    automatique n'a pas son propre evenement, voir sa docstring.
+    """
     ligne = (
         connexion.execute(
             text(_TERMINER_LA_TACHE),
@@ -235,6 +243,16 @@ def terminer_une_tache(
         instant=instant,
         acteur=acteur,
     )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementTache.COMPLETED.value,
+        resource_type="onboarding_instance_task",
+        resource_reference=tache,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Completion d'une tache d'onboarding",
+    )
     #  `T11` : archive l'instance SI cette completion etait la derniere tache
     #  obligatoire — matrice §8.1 « Archiver un parcours termine », colonne
     #  `NEW` = Automatique. Ne fait rien, silencieusement, sinon — voir
@@ -255,7 +273,11 @@ def annuler_la_completion(
     """Matrice §8.1 « Annuler la completion dans les 5 minutes » — `Soi`
     uniquement. `completed` redevient `todo`, JAMAIS `cancelled` — voir
     l'en-tete du module. Au-dela de cinq minutes, seule `T9` (reouverture
-    administrative, motif obligatoire) peut agir."""
+    administrative, motif obligatoire) peut agir.
+
+    LOT 10, `T6` : `action_code` reutilise `TypeEvenementTache.CANCELLED`,
+    meme vocabulaire que le journal §13.7.
+    """
     ligne = (
         connexion.execute(
             text(_ANNULER_LA_COMPLETION), {"tache": tache, "instance": instance, "instant": instant}
@@ -280,6 +302,16 @@ def annuler_la_completion(
         instant=instant,
         acteur=acteur,
     )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementTache.CANCELLED.value,
+        resource_type="onboarding_instance_task",
+        resource_reference=tache,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Annulation de la completion d'une tache d'onboarding",
+    )
     return tache_depuis_la_ligne(ligne)
 
 
@@ -302,7 +334,12 @@ def reouvrir_une_tache(
     OBLIGATOIRE (§8.3, « exige un motif ») ; la base l'impose aussi, par la
     contrainte `motif_requis_a_la_reouverture` (modele §13.6, posee des
     `T1`) — voir §7.32, n'ecris pas de defense contre un etat que la base
-    interdit deja."""
+    interdit deja.
+
+    LOT 10, `T6` : `action_code` reutilise `TypeEvenementTache.REOPENED`, et
+    `motif` (deja obligatoire) est porte dans `reason` — jamais dans
+    `summary` — meme discipline que `annuler_un_evenement` au LOT 8.
+    """
     ligne = (
         connexion.execute(
             text(_REOUVRIR_LA_TACHE),
@@ -334,5 +371,16 @@ def reouvrir_une_tache(
         instant=instant,
         acteur=acteur,
         motif=motif,
+    )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementTache.REOPENED.value,
+        resource_type="onboarding_instance_task",
+        resource_reference=tache,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Reouverture administrative d'une tache d'onboarding",
+        reason=motif,
     )
     return tache_depuis_la_ligne(ligne)

@@ -361,6 +361,13 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T6` : affecter un parcours (route HTTP de ce fichier)
+            #  ecrit desormais `audit_event` aussi — meme classe que `T2`/`T3`
+            #  (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM framework_responsibility_assignment WHERE entity_id IN "
