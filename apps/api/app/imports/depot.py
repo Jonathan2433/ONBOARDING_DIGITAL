@@ -105,6 +105,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.audit.services import enregistrer_un_evenement
 from app.imports.analyse import analyser_le_lot
 from app.imports.modeles import EtatLotImport
 from app.media.objets import deposer_l_objet
@@ -246,6 +247,7 @@ def deposer_un_csv(
     acteur: uuid.UUID,
     nom_de_fichier: str,
     contenu: bytes,
+    motif: str | None = None,
     instant: dt.datetime,
 ) -> LotDepose:
     """Deposer un CSV, l'analyser structurellement — cahier §9.5 (1 et 2), §19.1.
@@ -254,6 +256,10 @@ def deposer_un_csv(
     et `import_row`, jamais `person`, `client`, `entity_membership` ou une
     autre table du domaine (§19.2 : « le contenu ne doit jamais etre recopie
     dans les logs » — et il n'entre pas davantage ailleurs qu'ici).
+
+    `motif` : le motif du §18.1, obligatoire cote ROUTE quand `SUPER` autorise
+    l'appel (`app.audit.motif`, `ECART-064`) — jamais verifie ici, ce module
+    ne connait aucun role.
     """
     nom_nettoye = _nettoyer_le_nom_de_fichier(nom_de_fichier)
     if not nom_nettoye:
@@ -337,6 +343,20 @@ def deposer_un_csv(
     #  `analyzing -> preview_ready` — voir l'en-tete du module.
     previsualisation = analyser_le_lot(
         connexion, entite=entite, lot=lot, acteur=acteur, instant=instant
+    )
+
+    #  LOT 10, `T7` : UN SEUL `audit_event` pour l'appel entier — depot ET
+    #  previsualisation sont la MEME action metier, dans la MEME transaction.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="import_lot_depose",
+        resource_type="import_batch",
+        resource_reference=lot,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Depot du CSV « {nom_nettoye} » ({len(lignes)} ligne(s))",
+        reason=motif,
     )
 
     return LotDepose(

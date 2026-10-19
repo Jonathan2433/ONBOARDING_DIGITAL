@@ -757,6 +757,7 @@ def archiver_un_parcours_termine(
     instance: uuid.UUID,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Instance:
     """Matrice §8.1 « Archiver un parcours termine » — `ESM`/`ADM-E`/`SUPER`
     SEULEMENT (`perimetre.ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS`),
@@ -807,6 +808,7 @@ def archiver_un_parcours_termine(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Archivage manuel d'un parcours d'onboarding termine",
+        reason=motif,
     )
     return archivee
 
@@ -847,6 +849,7 @@ def restaurer_un_parcours(
     instance: uuid.UUID,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Instance:
     """Matrice §8.1 « Restaurer un parcours archive » — `ESM`/`ADM-E`/`SUPER`
     SEULEMENT, `T11`, `ECART-066` (volet parcours) RESOLU le 28/09/2026 :
@@ -884,6 +887,7 @@ def restaurer_un_parcours(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Restauration d'un parcours d'onboarding archive",
+        reason=motif,
     )
     return restauree
 
@@ -1108,6 +1112,7 @@ def affecter_un_parcours(
     cible: Appartenance,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Parcours:
     """Matrice §8.1 « Affecter un parcours » — modele §13.5/§13.4.
 
@@ -1224,6 +1229,7 @@ def affecter_un_parcours(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Affectation d'un parcours d'onboarding ({len(taches)} tache(s))",
+        reason=motif,
     )
     return Parcours(
         instance=instance,

@@ -393,6 +393,7 @@ def creer_une_page(
     code_de_cercle: str | None,
     code_de_bureau: str | None,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> PageCreee:
     """Creer une page en BROUILLON — §13 « Creer un contenu general ».
 
@@ -463,6 +464,7 @@ def creer_une_page(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Creation de la page « {titre} » ({type_de_page})",
+        reason=motif,
     )
 
     return PageCreee(
@@ -485,6 +487,7 @@ def remplacer_le_contenu(
     titre: str,
     blocs: tuple[BlocDemande, ...],
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> ContenuEcrit:
     """Remplacer le titre et les blocs d'une page — §13 « Modifier un contenu de … ».
 
@@ -588,6 +591,7 @@ def remplacer_le_contenu(
         ),
         old_values={"titre": ancien_titre},
         new_values={"titre": titre},
+        reason=motif,
     )
 
     return ContenuEcrit(

@@ -95,6 +95,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.motif import exiger_un_motif_si_necessaire
+from app.audit.services import enregistrer_un_evenement
 from app.imports.analyse import (
     CODE_EMAIL_ABSENT,
     CODE_EMAIL_DOMAINE_REFUSE,
@@ -420,8 +422,10 @@ def _accorder_les_responsabilites(
     personne: uuid.UUID,
     responsabilites: tuple[ResponsabiliteDemandee, ...],
     acteur: uuid.UUID,
+    motif: str | None,
     instant: dt.datetime,
 ) -> None:
+    accordees: list[dict[str, str | None]] = []
     for demandee in responsabilites:
         deja_active = connexion.execute(
             _RESPONSABILITE_ACTIVE,
@@ -448,6 +452,33 @@ def _accorder_les_responsabilites(
                 "instant": instant,
             },
         )
+        accordees.append(
+            {
+                "responsibility_type": demandee.type_responsabilite,
+                "circle_id": str(demandee.circle_id) if demandee.circle_id else None,
+                "office_id": str(demandee.office_id) if demandee.office_id else None,
+            }
+        )
+    if not accordees:
+        return
+    #  LOT 10, `T7` : UN SEUL `audit_event` par appel — meme discipline que
+    #  `definir_les_taches_de_la_version` (LOT 10, `T6`), jamais un par
+    #  responsabilite accordee. Rien n'est ecrit si la liste est vide : a la
+    #  difference de `definir_les_taches_de_la_version`, aucun `DELETE`
+    #  inconditionnel n'existe ici — une ligne sans responsabilite nouvelle
+    #  ne justifie aucun evenement.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="responsabilites_framework_accordees",
+        resource_type="framework_responsibility_assignment",
+        resource_reference=personne,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Attribution de {len(accordees)} responsabilite(s) Framework a l'import",
+        new_values={"responsabilites": accordees},
+        reason=motif,
+    )
 
 
 def _accorder_les_roles_techniques(
@@ -457,8 +488,10 @@ def _accorder_les_roles_techniques(
     personne: uuid.UUID,
     roles_techniques: tuple[str, ...],
     acteur: uuid.UUID,
+    motif: str | None,
     instant: dt.datetime,
 ) -> None:
+    accordes: list[str] = []
     for role in roles_techniques:
         deja_actif = connexion.execute(
             _ROLE_TECHNIQUE_ACTIF,
@@ -475,6 +508,21 @@ def _accorder_les_roles_techniques(
                     "instant": instant,
                 },
             )
+            accordes.append(role)
+    if not accordes:
+        return
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="roles_techniques_accordes_a_l_import",
+        resource_type="technical_role_assignment",
+        resource_reference=personne,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Attribution de {len(accordes)} role(s) technique(s) a l'import",
+        new_values={"roles_techniques": accordes},
+        reason=motif,
+    )
 
 
 def _rafraichir_les_cercles_secondaires(
@@ -484,6 +532,7 @@ def _rafraichir_les_cercles_secondaires(
     appartenance: uuid.UUID,
     cercles_vises: tuple[uuid.UUID, ...],
     acteur: uuid.UUID,
+    motif: str | None,
     instant: dt.datetime,
 ) -> None:
     """Ferme les secondaires qui ne sont plus vises, ouvre les nouveaux.
@@ -496,12 +545,15 @@ def _rafraichir_les_cercles_secondaires(
         row.circle_id: row.id
         for row in connexion.execute(_CERCLES_SECONDAIRES_ACTIFS, {"appartenance": appartenance})
     }
+    fermes: list[str] = []
+    ouverts: list[str] = []
     for cercle_id, ligne_id in actifs.items():
         if cercle_id not in cercles_vises:
             connexion.execute(
                 _FERMER_LE_CERCLE_SECONDAIRE,
                 {"ligne": ligne_id, "instant": instant, "acteur": acteur},
             )
+            fermes.append(str(cercle_id))
     for cercle_id in cercles_vises:
         if cercle_id not in actifs:
             connexion.execute(
@@ -514,6 +566,26 @@ def _rafraichir_les_cercles_secondaires(
                     "acteur": acteur,
                 },
             )
+            ouverts.append(str(cercle_id))
+    if not fermes and not ouverts:
+        return
+    #  LOT 10, `T7` : UN SEUL `audit_event` pour le rafraichissement entier,
+    #  meme motif que `changer_d_entite` (LOT 10, `T3`) — fermeture et
+    #  ouverture sont LA MEME action metier, « rafraichir les cercles
+    #  secondaires », jamais deux evenements pour un seul geste.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="cercles_secondaires_rafraichis",
+        resource_type="circle_membership",
+        resource_reference=appartenance,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Rafraichissement des cercles secondaires a l'import",
+        old_values={"cercles_fermes": fermes} if fermes else None,
+        new_values={"cercles_ouverts": ouverts} if ouverts else None,
+        reason=motif,
+    )
 
 
 def _archiver_si_depart_passe(
@@ -524,6 +596,7 @@ def _archiver_si_depart_passe(
     roles: frozenset[RoleDeLaMatrice],
     departure_date: dt.date | None,
     acteur: uuid.UUID,
+    motif: str | None,
     instant: dt.datetime,
 ) -> None:
     """`W-DEPART-001` : « le profil est importe PUIS archive, sans acces »."""
@@ -542,6 +615,7 @@ def _archiver_si_depart_passe(
         perimetre=perimetre,
         instant=instant,
         date_de_depart=departure_date,
+        motif=motif,
     )
 
 
@@ -554,6 +628,7 @@ def _creer(
     raw_data: dict[str, object],
     resolution: ResolutionOrganisationnelle,
     client_id: uuid.UUID | None,
+    motif: str | None,
     instant: dt.datetime,
 ) -> tuple[uuid.UUID, uuid.UUID]:
     """Chemin CREATION — `app.people.creation`, `T2`. Rend `(personne, appartenance)`."""
@@ -575,7 +650,12 @@ def _creer(
         ),
     )
     cree = creer_un_collaborateur(
-        connexion, entite=resolution.entite_cible, acteur=acteur, demande=demande, instant=instant
+        connexion,
+        entite=resolution.entite_cible,
+        acteur=acteur,
+        demande=demande,
+        instant=instant,
+        motif=motif,
     )
     personne = uuid.UUID(
         str(
@@ -591,6 +671,7 @@ def _creer(
             appartenance=cree.appartenance,
             attribue_par=acteur,
             debut=instant,
+            motif=motif,
         )
     connexion.execute(
         _ECRIRE_LA_PRESENTATION,
@@ -608,6 +689,7 @@ def _creer(
         appartenance=cree.appartenance,
         cercles_vises=resolution.cercles_secondaires_ids,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _accorder_les_responsabilites(
@@ -616,6 +698,7 @@ def _creer(
         personne=personne,
         responsabilites=resolution.responsabilites,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _accorder_les_roles_techniques(
@@ -624,6 +707,7 @@ def _creer(
         personne=personne,
         roles_techniques=resolution.roles_techniques,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _archiver_si_depart_passe(
@@ -633,6 +717,7 @@ def _creer(
         roles=roles,
         departure_date=resolution.departure_date,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     return personne, cree.appartenance
@@ -648,6 +733,7 @@ def _mettre_a_jour(
     reactiver: bool,
     resolution: ResolutionOrganisationnelle,
     client_id: uuid.UUID | None,
+    motif: str | None,
     instant: dt.datetime,
 ) -> uuid.UUID:
     """Chemin MISE A JOUR (`person_merge`) ou REACTIVATION (`profile_reactivation`).
@@ -671,6 +757,7 @@ def _mettre_a_jour(
             version_attendue=version,
             perimetre=perimetre_cycle,
             instant=instant,
+            motif=motif,
         )
         version = restauration.version
     else:
@@ -699,6 +786,7 @@ def _mettre_a_jour(
             demande=demande,
             perimetre=PerimetreDEcriture(champs=TOUS_LES_CHAMPS),
             instant=instant,
+            motif=motif,
         )
 
     connexion.execute(
@@ -717,6 +805,7 @@ def _mettre_a_jour(
         appartenance=appartenance,
         cercles_vises=resolution.cercles_secondaires_ids,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _accorder_les_responsabilites(
@@ -725,6 +814,7 @@ def _mettre_a_jour(
         personne=personne,
         responsabilites=resolution.responsabilites,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _accorder_les_roles_techniques(
@@ -733,6 +823,7 @@ def _mettre_a_jour(
         personne=personne,
         roles_techniques=resolution.roles_techniques,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     _archiver_si_depart_passe(
@@ -742,6 +833,7 @@ def _mettre_a_jour(
         roles=roles,
         departure_date=resolution.departure_date,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     return appartenance
@@ -756,6 +848,7 @@ def _traiter_une_ligne(
     ligne: _LigneAImporter,
     decisions_de_la_ligne: dict[str, uuid.UUID | None],
     resolution: ResolutionOrganisationnelle,
+    motif: str | None,
     instant: dt.datetime,
 ) -> str:
     """Le corps PAR LIGNE de `lancer_l_import` — partage avec `rejouer_une_ligne`.
@@ -859,6 +952,7 @@ def _traiter_une_ligne(
                     reactiver=reactiver,
                     resolution=resolution,
                     client_id=client_id,
+                    motif=motif,
                     instant=instant,
                 )
                 personne = personne_cible
@@ -871,6 +965,7 @@ def _traiter_une_ligne(
                     raw_data=ligne.raw_data,
                     resolution=resolution,
                     client_id=client_id,
+                    motif=motif,
                     instant=instant,
                 )
     except (IntegrityError, DataError) as erreur:
@@ -938,13 +1033,21 @@ def lancer_l_import(
     lot: uuid.UUID,
     acteur: uuid.UUID,
     roles: frozenset[RoleDeLaMatrice],
+    motif: str | None = None,
     instant: dt.datetime,
 ) -> RapportDeLancement:
     """Transitionner `preview_ready -> importing -> completed` et ecrire les lignes.
 
     Matrice §14 : la garde de ROUTE verifie deja `ROLES_DE_DEPOT_DE_L_IMPORT`
     (reutilisee, §7.27) — ce service re-verifie l'etat du lot, pas le role.
+
+    `motif` : LOT 10, `T7`, `ECART-064` — obligatoire si `SUPER` autorise cet
+    appel (§18.1), verifie ICI puisque ce service recoit deja `roles`. Repris
+    tel quel par CHAQUE `audit_event` ecrit par cet import, du collaborateur
+    cree a la derniere responsabilite accordee : une seule intervention
+    humaine, un seul motif.
     """
+    exiger_un_motif_si_necessaire(roles, motif)
     ligne_lot = connexion.execute(_LOT_SOUS_VERROU, {"lot": lot, "entite": entite}).one_or_none()
     if ligne_lot is None:
         raise ErreurApplicative(
@@ -995,6 +1098,7 @@ def lancer_l_import(
             ligne=ligne,
             decisions_de_la_ligne=decisions.get(ligne.identifiant, {}),
             resolution=resolutions[ligne.identifiant],
+            motif=motif,
             instant=instant,
         )
         if resultat == "importee":
@@ -1015,6 +1119,7 @@ def lancer_l_import(
         lignes=lignes,
         resolutions=resolutions,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
 
@@ -1055,6 +1160,7 @@ def rejouer_une_ligne(
     ligne_id: uuid.UUID,
     acteur: uuid.UUID,
     roles: frozenset[RoleDeLaMatrice],
+    motif: str | None = None,
     instant: dt.datetime,
 ) -> ResultatDuRejeu:
     """Rejouer UNE ligne rejetee — matrice §14, `MVP-L09-US006` (2/2), `T10`.
@@ -1068,9 +1174,12 @@ def rejouer_une_ligne(
     enregistree. Le CSV corrige a la source reste le chemin normal : un
     NOUVEAU depot (`T6`/`T7`).
 
+    `motif` : LOT 10, `T7`, `ECART-064` — meme regle que `lancer_l_import`.
+
     Seule `app.imports.organisation` est revalidee ici — jamais les codes
     `E-EMAIL-*` d'`app.imports.analyse`, voir `_CODES_HORS_PORTEE_DU_REJEU`.
     """
+    exiger_un_motif_si_necessaire(roles, motif)
     ligne_lot = connexion.execute(_LOT_SOUS_VERROU, {"lot": lot, "entite": entite}).one_or_none()
     if ligne_lot is None:
         raise ErreurApplicative(
@@ -1142,6 +1251,7 @@ def rejouer_une_ligne(
         ligne=ligne,
         decisions_de_la_ligne=decisions_de_la_ligne,
         resolution=resolutions[ligne.identifiant],
+        motif=motif,
         instant=instant,
     )
 
@@ -1156,6 +1266,7 @@ def rejouer_une_ligne(
         lignes=[ligne],
         resolutions=resolutions,
         acteur=acteur,
+        motif=motif,
         instant=instant,
     )
     relue = connexion.execute(
@@ -1216,6 +1327,7 @@ def _resoudre_les_dsm(
     lignes: list[_LigneAImporter],
     resolutions: dict[uuid.UUID, ResolutionOrganisationnelle],
     acteur: uuid.UUID,
+    motif: str | None,
     instant: dt.datetime,
 ) -> None:
     emails_cibles_vus: set[str] = set()
@@ -1261,4 +1373,21 @@ def _resoudre_les_dsm(
                 "instant": instant,
                 "acteur": acteur,
             },
+        )
+        #  LOT 10, `T7` : UN evenement PAR APPARTENANCE resolue — a la
+        #  difference des trois fonctions ci-dessus, cette boucle traite
+        #  DEJA des personnes distinctes en un seul appel (passe 2 sur tout
+        #  le lot) : agreger les agreperait a tort sous un acteur commun.
+        enregistrer_un_evenement(
+            connexion,
+            instant=instant,
+            action_code="dsm_resolu_a_l_import",
+            resource_type="dsm_assignment",
+            resource_reference=appartenance,
+            entity_id=entite,
+            actor_person_id=acteur,
+            summary="Resolution du DSM a l'import",
+            old_values={"dsm_precedent": str(actuel.dsm_person_id)} if actuel is not None else None,
+            new_values={"dsm": str(dsm_person_id)},
+            reason=motif,
         )

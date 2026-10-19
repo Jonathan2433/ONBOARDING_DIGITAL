@@ -614,6 +614,7 @@ def creer_un_lien(
     reference_d_icone: str | None,
     actif: bool,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> LienInterne:
     """Creer un lien interne, EN QUEUE de liste — §13, §19, modele §15.3.
 
@@ -660,6 +661,7 @@ def creer_un_lien(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Creation du lien interne « {libelle} »",
+        reason=motif,
     )
 
     return _relire(connexion, entite=entite, lien=identifiant)
@@ -679,6 +681,7 @@ def modifier_un_lien(
     reference_d_icone: str | None,
     actif: bool,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> LienInterne:
     """Remplacer la definition d'un lien — §19 « Modifier les liens internes ».
 
@@ -746,6 +749,7 @@ def modifier_un_lien(
         actor_person_id=acteur,
         summary=f"Modification du lien interne « {libelle} »",
         new_values={"libelle": libelle, "url": url_validee, "actif": actif},
+        reason=motif,
     )
 
     return _relire(connexion, entite=entite, lien=lien)
@@ -758,6 +762,7 @@ def reordonner_les_liens(
     acteur: uuid.UUID,
     ordre: tuple[uuid.UUID, ...],
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> tuple[LienInterne, ...]:
     """Reecrire l'ordre d'affichage — modele §15.3, `display_order`.
 
@@ -826,6 +831,7 @@ def reordonner_les_liens(
         actor_person_id=acteur,
         summary=f"Reordonnancement de {len(ordre)} lien(s) interne(s)",
         new_values={"ordre": [str(identifiant) for identifiant in ordre]},
+        reason=motif,
     )
 
     return lister_les_liens(connexion, entite=entite, inclure_les_inactifs=True)

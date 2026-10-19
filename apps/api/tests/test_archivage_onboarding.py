@@ -380,14 +380,23 @@ def _archiver_le_parcours(
 
 
 def _restaurer_le_parcours(
-    parametres: Parametres, code: str, appartenance: uuid.UUID, instance: str, jeton: str | None
+    parametres: Parametres,
+    code: str,
+    appartenance: uuid.UUID,
+    instance: str,
+    jeton: str | None,
+    *,
+    motif: str | None = None,
 ) -> Any:
+    #  LOT 10, `T7` : motif conditionnel du §18.1 (`ECART-064`), obligatoire
+    #  pour SUPER seulement.
     return _appeler_ecriture(
         parametres,
         CHEMIN_RESTAURATION_PARCOURS.format(
             code=code, appartenance=appartenance, instance=instance
         ),
         jeton,
+        {"motif": motif} if motif is not None else None,
     )
 
 
@@ -704,6 +713,7 @@ def test_le_super_administrateur_restaure(decor: dict[str, Any]) -> None:
         consultant,
         instance,
         _session(parametres, decor["super_personne"]),
+        motif="Decor de test",
     )
     assert reponse.status_code == 200, reponse.text
     assert reponse.json()["state"] == "active"

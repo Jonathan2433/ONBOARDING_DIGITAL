@@ -74,8 +74,9 @@ def test_la_demande_de_modification_ne_porte_NI_etat_NI_publication() -> None:
 
 
 def test_la_demande_de_publication_ne_porte_QUE_la_version() -> None:
-    """Publier est immediat, en un clic : aucun autre champ n'a de sens ici."""
-    assert set(DemandeDePublicationDEvenement.model_fields) == {"version"}
+    """Publier est immediat, en un clic — plus `motif`, conditionnel au §18.1
+    (`ECART-064`, LOT 10 `T7`), obligatoire pour `SUPER` seulement."""
+    assert set(DemandeDePublicationDEvenement.model_fields) == {"version", "motif"}
 
 
 def test_cercles_et_bureaux_n_ont_aucun_champ_de_nature_participant() -> None:

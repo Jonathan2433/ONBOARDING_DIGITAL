@@ -88,6 +88,7 @@ from typing import TYPE_CHECKING, Annotated, Final, TypeVar
 from fastapi import APIRouter, Depends, Path, Request, status
 from pydantic import BaseModel, Field
 
+from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.content.cycle_de_vie import (
     PageArchivee,
@@ -252,6 +253,11 @@ class DemandeDeCreationDePage(BaseModel):
     bureau: str | None = Field(
         default=None, description="Le `code` du bureau — requis pour une page `OFFICE` (§15.1)"
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class DemandeDEcritureDuContenu(BaseModel):
@@ -270,6 +276,11 @@ class DemandeDEcritureDuContenu(BaseModel):
             "supprimes (modele §2.4). Une liste vide est legitime : une page sans bloc "
             "existe, et `T5` la rend avec un tableau vide."
         ),
+    )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
     )
 
 
@@ -345,7 +356,7 @@ class ReponseDeLaPageDeContenuPourEdition(BaseModel):
 
 
 class DemandeDeTransition(BaseModel):
-    """Publier, archiver ou restaurer — **la version, et rien d'autre**.
+    """Publier, archiver ou restaurer — la version, et un motif conditionnel.
 
     **AUCUN CHAMP D'ETAT CIBLE, ET C'EST LE MEME PARTI QUE LA CREATION DE `T6`.**
     Un champ `etat` laisserait croire a une machine a etats pilotee par
@@ -354,15 +365,23 @@ class DemandeDeTransition(BaseModel):
     lignes du §13, et les transitions absentes du document sont **inexprimables**
     plutot que refusees (§7.35).
 
-    **AUCUN MOTIF NON PLUS.** Le §18.1 enumere les cinq cas ou un motif est
-    obligatoire, et archiver un contenu n'y est pas. En demander un ici seulement
-    donnerait une regle appliquee a une route sur quarante -- `ECART-064`.
+    **LE MOTIF N'ETAIT PAS OBLIGATOIRE A `T4`**, et le §18.1 en donnait la
+    raison : archiver un contenu n'est pas l'un des cinq cas qu'il enumere.
+    LOT 10 `T7` ferme `ECART-064` par le sixieme angle, transversal : « toute
+    intervention du super-administrateur dans une entite » — qui s'applique
+    ICI des que `SUPER` est l'acteur, meme si l'action elle-meme reste hors
+    des cinq cas nommement cites.
     """
 
     #  §18.4, « concurrence optimiste [...] sans ecrasement silencieux ».
     #  Obligatoire comme pour l'ecriture : publier ce qu'un autre vient de
     #  reecrire est exactement ce que ce verrou existe pour empecher.
     version: int = Field(ge=1, description="La version lue — §18.4, concurrence optimiste")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDePublication(BaseModel):
@@ -501,6 +520,12 @@ class DemandeDeCreationDeLien(_ChampsDuLien):
     ecraser. Le §18.4 borne les modifications, pas les creations.
     """
 
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
+
 
 class DemandeDeModificationDeLien(_ChampsDuLien):
     """Remplacer la definition d'un lien — §19 « Modifier les liens internes »."""
@@ -510,6 +535,11 @@ class DemandeDeModificationDeLien(_ChampsDuLien):
     #  Obligatoire, comme chez `T6` et `T7` -- defaut `T11-6` du LOT 5, ou un
     #  bouchon rendait 200 sur un corps vide la ou l'API rend 422.
     version: int = Field(ge=1, description="La version lue — §18.4, concurrence optimiste")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class DemandeDOrdreDesLiens(BaseModel):
@@ -534,6 +564,11 @@ class DemandeDOrdreDesLiens(BaseModel):
             "exhaustive** : exactement une fois chacun des liens non archives de "
             "l'entite, actifs comme inactifs."
         )
+    )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
     )
 
 
@@ -969,6 +1004,8 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
             entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             creee = creer_une_page(
                 connexion,
                 entite=entite.id,
@@ -979,6 +1016,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 code_de_cercle=demande.cercle,
                 code_de_bureau=demande.bureau,
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDeCreationDePage(
@@ -1085,6 +1123,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_CONTENU_HORS_PERIMETRE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             ecrit = remplacer_le_contenu(
                 connexion,
                 entite=entite.id,
@@ -1097,6 +1136,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                     for b in demande.blocs
                 ),
                 instant=instant,
+                motif=demande.motif,
             )
 
         return ReponseDEcritureDuContenu(
@@ -1131,6 +1171,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         page: uuid.UUID,
         action: ActionEditoriale,
         appelant: SessionEtablie,
+        motif: str | None,
         executer: Callable[[Connection, uuid.UUID, dt.datetime], _Resultat],
     ) -> _Resultat:
         """Le chemin commun des trois transitions — CSRF, entite, roles, perimetre.
@@ -1143,6 +1184,10 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         **LES PERMISSIONS SONT RESOLUES A NOUVEAU DANS CETTE TRANSACTION.** La
         garde a resolu les SIENNES, dans sa propre connexion et a son propre
         instant : s'y fier ferait agir sur ce qui a ete autorise ailleurs.
+
+        **LE MOTIF DU §18.1 EST VERIFIE ICI, PAS DANS CHAQUE `executer`** — LOT
+        10 `T7`, `ECART-064` : les permissions sont deja resolues a cette
+        ligne, le controle SUPER n'a besoin d'aucune seconde resolution.
         """
         _proteger(parametres, requete)
 
@@ -1150,6 +1195,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         with moteur(parametres).begin() as connexion:
             entite = _resoudre_ou_404(connexion, code)
             permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
             perimetre = resoudre_le_perimetre_editorial(
                 connexion,
                 entite=entite.id,
@@ -1233,6 +1279,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         publiee = _agir(
@@ -1241,6 +1288,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
             page=page,
             action=ActionEditoriale.PUBLIER,
             appelant=appelant,
+            motif=demande.motif,
             executer=executer,
         )
         return ReponseDePublication(
@@ -1273,8 +1321,8 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
             "**L'archivage LIBERE le slug** — l'index unique du §15.1 est partiel sur "
             "`archived_at IS NULL`. Une page neuve peut donc le reprendre, et c'est "
             "alors la RESTAURATION qui sera refusee, jamais l'archivage.<br><br>"
-            "**Aucun motif n'est demande** : le §18.1 en enumere cinq cas, et archiver "
-            "un contenu n'en est pas un."
+            "**Un motif devient obligatoire quand `SUPER` est l'acteur** (§18.1, "
+            "`ECART-064`, LOT 10 `T7`) — jamais pour `ESM`/`ADM-E`/les roles locaux."
         ),
     )
     def archiver_une_page_de_contenu(
@@ -1303,6 +1351,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         archivee = _agir(
@@ -1311,6 +1360,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
             page=page,
             action=ActionEditoriale.ARCHIVER,
             appelant=appelant,
+            motif=demande.motif,
             executer=executer,
         )
         return ReponseDArchivageDUnContenu(
@@ -1384,6 +1434,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 version_attendue=demande.version,
                 instant=instant,
+                motif=demande.motif,
             )
 
         restauree = _agir(
@@ -1392,6 +1443,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
             page=page,
             action=ActionEditoriale.RESTAURER,
             appelant=appelant,
+            motif=demande.motif,
             executer=executer,
         )
         return ReponseDeRestaurationDUnContenu(
@@ -1577,6 +1629,8 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
             entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             cree = creer_un_lien(
                 connexion,
                 entite=entite.id,
@@ -1588,6 +1642,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 reference_d_icone=demande.reference_d_icone,
                 actif=demande.actif,
                 instant=instant,
+                motif=demande.motif,
             )
         return _servir((cree,)).liens[0]
 
@@ -1643,12 +1698,15 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
             entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             liens = reordonner_les_liens(
                 connexion,
                 entite=entite.id,
                 acteur=appelant.personne,
                 ordre=tuple(demande.ordre),
                 instant=instant,
+                motif=demande.motif,
             )
         return _servir(liens)
 
@@ -1714,6 +1772,8 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
             entite = _resoudre_ou_404(connexion, code)
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             modifie = modifier_un_lien(
                 connexion,
                 entite=entite.id,
@@ -1727,6 +1787,7 @@ def routeur_contenus(parametres: Parametres) -> APIRouter:
                 reference_d_icone=demande.reference_d_icone,
                 actif=demande.actif,
                 instant=instant,
+                motif=demande.motif,
             )
         return _servir((modifie,)).liens[0]
 

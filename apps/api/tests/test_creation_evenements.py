@@ -305,7 +305,9 @@ def _creer(
     debut: dt.datetime = DEBUT,
     fin: dt.datetime = FIN,
     instant: dt.datetime = DEMAIN,
+    motif: str | None = None,
 ) -> EvenementCree:
+    #  LOT 10, `T7` : `motif` — obligatoire pour `SUPER` seulement (`ECART-064`).
     return creer_un_evenement(
         cx,
         entite=entite,
@@ -320,6 +322,7 @@ def _creer(
         code_de_cercle=cercle,
         code_de_bureau=bureau,
         instant=instant,
+        motif=motif,
     )
 
 
@@ -384,7 +387,9 @@ def test_un_SUPER_ADMINISTRATEUR_cree_un_evenement_de_portee_ENTITE(cx: Connecti
         ),
         {"p": super_admin, "debut": JANVIER},
     )
-    cree = _creer(cx, entite=entite, acteur=super_admin, portee=PorteeDeCreation.ENTITE)
+    cree = _creer(
+        cx, entite=entite, acteur=super_admin, portee=PorteeDeCreation.ENTITE, motif="Decor de test"
+    )
     assert cree.etat == "draft"
 
 

@@ -248,12 +248,17 @@ def creer_un_collaborateur(
     acteur: uuid.UUID,
     demande: DemandeDeCollaborateur,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> CollaborateurCree:
     """Creer la personne, puis son appartenance, dans UNE seule transaction.
 
     La biconditionnelle est validee ICI, AVANT la personne : sans cela, une
     demande incoherente laisserait une ligne `person` orpheline derriere un
     `422`, puisque `creer_l_appartenance` ne la revalide qu'ensuite.
+
+    `motif` : le motif du §18.1 — obligatoire cote ROUTE quand `SUPER`
+    autorise l'appel (`app.audit.motif`, `ECART-064`, LOT 10 `T7`), repris tel
+    quel par l'import (`app.imports.execution`), qui appelle ce service aussi.
     """
     valider_la_biconditionnelle_statut_client(demande.appartenance)
     email_normalise = normaliser_email(demande.email)
@@ -298,5 +303,6 @@ def creer_un_collaborateur(
         entity_id=entite,
         actor_person_id=acteur,
         summary=f"Creation d'un collaborateur dans l'entite {entite}",
+        reason=motif,
     )
     return cree

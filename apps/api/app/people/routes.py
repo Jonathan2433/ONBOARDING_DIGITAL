@@ -46,6 +46,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Final
 from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
@@ -100,7 +101,7 @@ from app.permissions.perimetre import (
     resoudre_le_cycle_de_vie,
     resoudre_le_perimetre,
 )
-from app.permissions.services import resoudre_les_permissions
+from app.permissions.services import RoleDeLaMatrice, resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
@@ -310,6 +311,11 @@ class DemandeDeCreationDeCollaborateur(BaseModel):
     )
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
     cercle_principal: uuid.UUID = Field(description="§8.2")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeCreationDeCollaborateur(BaseModel):
@@ -364,6 +370,11 @@ class DemandeDeChangementDEntite(BaseModel):
     client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
     cercle_principal: uuid.UUID = Field(description="Dans l'entite d'arrivee")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDeChangementDEntite(BaseModel):
@@ -413,6 +424,11 @@ class DemandeDeTransfertEnMasse(BaseModel):
         min_length=1,
         max_length=TAILLE_MAXIMALE_DU_LOT,
         description="Un a cent elements — chacun traite dans son propre savepoint",
+    )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
     )
 
 
@@ -490,6 +506,11 @@ class DemandeDeModification(BaseModel):
     )
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM")
     cercle_principal: uuid.UUID | None = Field(default=None, description="§8.2")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 #  Les champs dont un `null` EXPLICITE est refuse, parce que leur colonne est
@@ -552,6 +573,11 @@ class DemandeDArchivage(BaseModel):
             "`depart_apres_arrivee` refuse une date anterieure a l'arrivee (422)."
         ),
     )
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class DemandeDeRestauration(BaseModel):
@@ -566,6 +592,11 @@ class DemandeDeRestauration(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: int = Field(ge=1, description="Cahier §18.4, comme pour l'archivage.")
+    motif: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Le motif du §18.1 — obligatoire pour `SUPER` (`ECART-064`).",
+    )
 
 
 class ReponseDArchivage(BaseModel):
@@ -1133,6 +1164,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 roles=frozenset(permissions.roles),
                 instant=instant,
             )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             modification = modifier_les_donnees_organisationnelles(
                 connexion,
                 entite=entite.id,
@@ -1142,6 +1174,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 demande=demandes,
                 perimetre=perimetre,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeModification(
             version=modification.version,
@@ -1225,6 +1258,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             cree = creer_un_collaborateur(
                 connexion,
                 entite=entite.id,
@@ -1244,6 +1278,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     ),
                 ),
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeCreationDeCollaborateur(
             appartenance=cree.appartenance, version=cree.version
@@ -1340,6 +1375,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ACCES_REFUSE,
                     statut=status.HTTP_403_FORBIDDEN,
                 )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             transfert = changer_d_entite(
                 connexion,
                 entite_source=entite_source.id,
@@ -1356,6 +1392,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     circle_id=demande.cercle_principal,
                 ),
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeChangementDEntite(
             nouvelle_appartenance=transfert.nouvelle_appartenance,
@@ -1471,6 +1508,10 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ENTITE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
+            permissions = resoudre_les_permissions(
+                connexion, appelant.personne, entite_source.id, instant
+            )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             resultats = executer_le_transfert_en_masse(
                 connexion,
                 entite_source=entite_source.id,
@@ -1478,6 +1519,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 elements=_elements_du_lot(demande),
                 instant=instant,
                 mode="apercu",
+                motif=demande.motif,
             )
         return _reponse_du_lot(resultats)
 
@@ -1519,6 +1561,10 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                     message=MESSAGE_ENTITE_INTROUVABLE,
                     statut=status.HTTP_404_NOT_FOUND,
                 )
+            permissions = resoudre_les_permissions(
+                connexion, appelant.personne, entite_source.id, instant
+            )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), demande.motif)
             resultats = executer_le_transfert_en_masse(
                 connexion,
                 entite_source=entite_source.id,
@@ -1526,6 +1572,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 elements=_elements_du_lot(demande),
                 instant=instant,
                 mode="execution",
+                motif=demande.motif,
             )
         return _reponse_du_lot(resultats)
 
@@ -1692,9 +1739,10 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite, perimetre = _resoudre_le_cycle(
+            entite, perimetre, roles = _resoudre_le_cycle(
                 connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             archivage = archiver_un_profil(
                 connexion,
                 entite=entite,
@@ -1704,6 +1752,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 perimetre=perimetre,
                 instant=instant,
                 date_de_depart=demande.date_de_depart,
+                motif=demande.motif,
             )
         return ReponseDArchivage(
             version=archivage.version,
@@ -1774,9 +1823,10 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite, perimetre = _resoudre_le_cycle(
+            entite, perimetre, roles = _resoudre_le_cycle(
                 connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
             )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
             restauration = restaurer_un_profil(
                 connexion,
                 entite=entite,
@@ -1785,6 +1835,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
                 version_attendue=demande.version,
                 perimetre=perimetre,
                 instant=instant,
+                motif=demande.motif,
             )
         return ReponseDeRestauration(
             version=restauration.version,
@@ -1842,7 +1893,7 @@ def routeur_trombinoscope(parametres: Parametres) -> APIRouter:
         """Consulter un profil archive — matrice §6.1."""
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite, perimetre = _resoudre_le_cycle(
+            entite, perimetre, _roles = _resoudre_le_cycle(
                 connexion, code=code, appelant=appelant, cible=appartenance, instant=instant
             )
             if ActionDeCycleDeVie.CONSULTER_UN_ARCHIVE not in perimetre.actions:
@@ -2088,8 +2139,8 @@ def _resoudre_le_cycle(
     appelant: SessionEtablie,
     cible: uuid.UUID,
     instant: dt.datetime,
-) -> tuple[uuid.UUID, PerimetreDuCycleDeVie]:
-    """L'entite active et le perimetre de cycle de vie, en UN exemplaire.
+) -> tuple[uuid.UUID, PerimetreDuCycleDeVie, frozenset[RoleDeLaMatrice]]:
+    """L'entite active, le perimetre de cycle de vie, et les ROLES — en UN exemplaire.
 
     **LES TROIS ROUTES DE `T8` PARTAGENT CE PROLOGUE**, et l'ecrire trois fois
     donnerait trois regles pour une seule -- `DEC-466`, `ECART-022`. Le jour ou le
@@ -2100,6 +2151,11 @@ def _resoudre_le_cycle(
     la garde de role : celle-ci a resolu les siennes dans sa propre connexion et
     a son propre instant. Ce n'est pas une seconde copie de la regle, c'est le
     meme appel au bon instant -- exactement le parti de `T7`.
+
+    Les roles sont rendus en plus depuis LOT 10 `T7` : `SUPER_ADMINISTRATEUR`
+    fait toujours partie de `ROLES_DU_CYCLE_DE_VIE`, donc le controle du motif
+    (`ECART-064`) n'a besoin que de l'ensemble COMPLET, jamais d'une seconde
+    intersection.
     """
     entite = resoudre_une_entite_active(connexion, code)
     if entite is None:
@@ -2115,7 +2171,7 @@ def _resoudre_le_cycle(
         cible=cible,
         roles=frozenset(permissions.roles),
     )
-    return entite.id, perimetre
+    return entite.id, perimetre, frozenset(permissions.roles)
 
 
 def _cercle(cercle: CercleDuProfil) -> CercleDeLaFiche:

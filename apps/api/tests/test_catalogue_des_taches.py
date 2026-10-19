@@ -302,11 +302,13 @@ def _creer(
     code: str,
     portee: str = "ENTITE",
 ) -> Any:
+    #  LOT 10, `T7` : un motif est TOUJOURS fourni — obligatoire pour `SUPER`
+    #  seulement (`ECART-064`), sans effet sur les autres roles.
     return _appeler_ecriture(
         parametres,
         CHEMIN_CATALOGUE.format(code=code_entite),
         jeton,
-        {"code": code, "title": f"Titre {code}", "portee": portee},
+        {"code": code, "title": f"Titre {code}", "portee": portee, "motif": "Decor de test"},
     )
 
 
@@ -376,7 +378,7 @@ def test_un_SUPER_cree_une_tache_ENTITE_par_defaut(decor: dict[str, Any]) -> Non
         parametres,
         CHEMIN_CATALOGUE.format(code=decor["code"]),
         _session(parametres, decor["super_personne"]),
-        {"code": f"{decor['marqueur']}-super-tache", "title": "Titre"},
+        {"code": f"{decor['marqueur']}-super-tache", "title": "Titre", "motif": "Decor de test"},
     )
     assert reponse.status_code == 201, reponse.text
     assert reponse.json()["entity_id"] == str(decor["entite"])

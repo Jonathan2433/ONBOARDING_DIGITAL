@@ -290,6 +290,7 @@ def publier_une_page(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> PagePubliee:
     """§13, « Publier immediatement » — un BROUILLON devient `published`.
 
@@ -328,6 +329,7 @@ def publier_une_page(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Publication de la page",
+        reason=motif,
     )
 
     return PagePubliee(version=ligne[0], etat=str(ligne[1]), publiee_le=ligne[2])
@@ -341,6 +343,7 @@ def archiver_une_page(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> PageArchivee:
     """§13 « Archiver » et §18 « Archiver un contenu dans son perimetre ».
 
@@ -380,6 +383,7 @@ def archiver_une_page(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Archivage de la page",
+        reason=motif,
     )
 
     return PageArchivee(
@@ -395,6 +399,7 @@ def restaurer_une_page(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> PageRestauree:
     """§18 « Restaurer un contenu | Entite, restauration fonctionnelle ».
 
@@ -435,6 +440,7 @@ def restaurer_une_page(
         entity_id=entite,
         actor_person_id=acteur,
         summary="Restauration de la page",
+        reason=motif,
     )
 
     return PageRestauree(version=ligne[0], etat=str(ligne[1]), publiee_le=ligne[2])

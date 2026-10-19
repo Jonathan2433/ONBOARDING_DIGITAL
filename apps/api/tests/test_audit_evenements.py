@@ -176,6 +176,8 @@ def _media(connexion: Connection, entite: uuid.UUID, acteur: uuid.UUID) -> uuid.
 def _evenement(
     connexion: Connection, entite: uuid.UUID, acteur: uuid.UUID, *, titre: str
 ) -> uuid.UUID:
+    #  LOT 10, `T7` : `_ROLES_SUPER` exige desormais un motif (`ECART-064`) —
+    #  fourni ici une fois, pour tout le decor partage de ce fichier.
     return creer_un_evenement(
         connexion,
         entite=entite,
@@ -190,6 +192,7 @@ def _evenement(
         code_de_cercle=None,
         code_de_bureau=None,
         instant=INSTANT,
+        motif="Decor de test",
     ).identifiant
 
 
@@ -228,6 +231,7 @@ def test_la_creation_d_un_evenement_ecrit_un_audit_event(cx: Connection) -> None
         code_de_cercle=None,
         code_de_bureau=None,
         instant=INSTANT,
+        motif="Decor de test",
     )
 
     lignes = _audit_events(cx, action_code="creer", resource_reference=cree.identifiant)
@@ -275,6 +279,7 @@ def test_la_modification_d_un_evenement_ecrit_un_SEUL_audit_event(cx: Connection
         codes_de_cercle=[f"{MARQUEUR}-CERCLE"],
         codes_de_bureau=None,
         instant=PLUS_TARD,
+        motif="Decor de test",
     )
 
     lignes = _audit_events(
