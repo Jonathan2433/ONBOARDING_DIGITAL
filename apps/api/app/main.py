@@ -35,6 +35,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import __version__
 from app.accueil.routes import routeur_accueil
 from app.administration.routes import routeur_administration
+from app.audit.routes import routeur_audit
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
@@ -172,6 +173,10 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  écriture métier. Monté après les entités, dont il réutilise la
     #  résolution et le gabarit de 404.
     routeur_v1.include_router(routeur_imports(config))
+    #  LOT 10, T8 : le journal d'audit en lecture, filtrable par perimetre.
+    #  Monte apres les entites, dont il reutilise la resolution et le gabarit
+    #  de 404 -- meme discipline que toutes les routes qui precedent.
+    routeur_v1.include_router(routeur_audit(config))
     application.include_router(routeur_v1)
 
     return application
