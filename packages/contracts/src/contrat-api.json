@@ -2187,6 +2187,35 @@
         "cette entite, le role n'y porte rien, ou il y porte un droit mais",
         "aucune action."
       ]
+    },
+    {
+      "cle": "journalDAudit",
+      "chemin": "/api/v1/entities/{code}/audit",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDuJournalDAudit",
+      "role": [
+        "Consulter le journal d'audit filtrable par perimetre — LOT 10, T8,",
+        "matrice §16, US001 (clot)/US002 (clot).",
+        "DSM Consultants, ESM/ADM-E/SUPER Entite, Booster Cercle, responsable",
+        "de bureau Bureau — EMP/NEW/ANON a tiret, refus 403 avant toute",
+        "resolution de perimetre.",
+        "DEUX ARBITRAGES EXPLICITES DE JONATHAN (AskUserQuestion) : les",
+        "evenements d'authentification (sans entite, ecrits par T2) sont",
+        "retrouves par l'entite ACTUELLE de l'acteur, jamais celle d'alors ;",
+        "Booster et responsable de bureau voient AUSSI les evenements sur les",
+        "AUTRES ressources de leur perimetre (le cercle/bureau lui-meme, son",
+        "contenu, ses evenements), pas seulement sur les personnes — fidele",
+        "au mot choisi par la matrice (Cercle/Bureau, jamais Consultants",
+        "comme pour le DSM).",
+        "`resource_reference`/`correlation_token` sont `null` pour qui n'a",
+        "pas les details techniques (§16, Limite pour DSM/ESM/BOOST/OFFICE,",
+        "Entite/Global pour ADM-E/SUPER).",
+        "Cinq filtres facultatifs, derives des colonnes reelles",
+        "d'audit_event : depuis, jusqua, action_code, resource_type, acteur.",
+        "Pagination du cahier §18.2, ordre le plus RECENT d'abord",
+        "(occurred_at DESC puis id DESC)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
