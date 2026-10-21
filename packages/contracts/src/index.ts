@@ -635,3 +635,8 @@ export type {
   ReponseDesClients,
   TypeDeDecision,
 } from './imports.js';
+
+//  LE SIGNALEMENT D'UN BUG — LOT 10, `T11`, `MVP-L10-US005`. Aucun code
+//  d'entite dans le chemin -- voir l'en-tete de `signalement.ts`.
+export { CHEMIN_SIGNALEMENT, CODES_SIGNALEMENT, validerUnSignalement } from './signalement.js';
+export type { DemandeDeSignalement, SignalementServi } from './signalement.js';

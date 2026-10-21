@@ -51,6 +51,7 @@ import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portai
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
+import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 import { NavigationPrincipale } from './NavigationPrincipale';
 import { PanneauDErreur } from './PanneauDErreur';
 import { SelecteurDEntite } from './SelecteurDEntite';
@@ -339,11 +340,23 @@ function Squelette({
         {children}
       </main>
       {/*
+        **LE PIED DE PAGE — LOT 10, `T11`, cahier §10.12.** Rendu dans LE
+        SEUL `Squelette` partagé par les cinq états du cadre (chargement,
+        trouvée, introuvable, session expirée, erreur, hors connexion) : il
+        couvre donc chaque page interne PAR CONSTRUCTION, sans qu'aucun état
+        n'ait à y penser séparément — même discipline que l'en-tête et la
+        barre mobile. Aucune entité n'est passée au bouton : la route qu'il
+        appelle n'en a pas besoin, voir `app/support/routes.py`.
+      */}
+      <footer className="app-pied-de-page">
+        <BoutonSignalerUnBug />
+      </footer>
+      {/*
         **LA BARRE VIENT EN DERNIER DANS LE DOM, ET C'EST L'ORDRE VISUEL.** Elle
         est ancree en bas de l'ecran ; la mettre avant le contenu ferait diverger
         l'ordre de tabulation de l'ordre visuel, ce que le critere de `T4`
-        interdit. Un utilisateur au clavier parcourt donc le contenu, puis la
-        barre -- exactement ce que son oeil parcourt.
+        interdit. Un utilisateur au clavier parcourt donc le contenu, puis le
+        pied de page, puis la barre -- exactement ce que son oeil parcourt.
       */}
       {barre}
     </div>
