@@ -57,6 +57,7 @@ from app.shared.errors import (
     gerer_erreur_validation,
 )
 from app.shared.journal import journaliser_requete
+from app.support.routes import routeur_support
 from observabilite import configurer_journalisation
 
 
@@ -181,6 +182,9 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 10, T10 : le reporting etendu. Monte apres le tableau de bord
     #  administratif (LOT 9, T5), dont il reutilise la meme grille de role.
     routeur_v1.include_router(routeur_reporting(config))
+    #  LOT 10, T11 : le signalement d'un bug, MVP-L10-US005. Aucun code
+    #  d'entite dans son chemin -- voir l'en-tete d'app/support/routes.py.
+    routeur_v1.include_router(routeur_support(config))
     application.include_router(routeur_v1)
 
     return application

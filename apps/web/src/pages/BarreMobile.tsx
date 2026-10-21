@@ -60,6 +60,7 @@ import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 
 import { cheminDeRubrique, RUBRIQUES, rubriqueEstVisible } from '../routes';
+import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 
 export interface ProprietesBarre {
   readonly code: string;
@@ -111,30 +112,36 @@ export function BarreMobile({
             </NavLink>
           </li>
         ))}
-        {secondaires.length === 0 ? null : (
-          <li className="app-barre-cellule" key="plus">
-            {/*
-              **« PLUS » N'APPARAIT QUE S'IL A QUELQUE CHOSE A CONTENIR.** C'est
-              la lecture mesuree de « lorsque necessaire » du §8.2 : avec six
-              cellules a 320 px, « Mon onboarding » passerait sur TROIS lignes.
-            */}
-            <details className="app-barre-plus">
-              <summary className="app-barre-lien">Plus</summary>
-              <ul className="app-barre-panneau">
-                {secondaires.map((rubrique) => (
-                  <li key={rubrique.cle}>
-                    <NavLink
-                      className="app-barre-lien-secondaire"
-                      to={cheminDeRubrique(code, rubrique.suffixe)}
-                    >
-                      {rubrique.libelle}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </li>
-        )}
+        <li className="app-barre-cellule" key="plus">
+          {/*
+            **« PLUS » N'APPARAISSAIT QUE S'IL AVAIT UNE RUBRIQUE A CONTENIR**
+            — lecture mesuree de « lorsque necessaire » du §8.2 : avec six
+            cellules a 320 px, « Mon onboarding » passerait sur TROIS lignes.
+            **DEPUIS `T11` DU LOT 10, IL A TOUJOURS AU MOINS UNE CHOSE A
+            CONTENIR** : le cahier §10.12 place « Reporter un bug » dans le
+            menu mobile, et ce panneau EST ce menu — y ouvrir un second
+            `<details>` imbrique dupliquerait un mecanisme deja pose pour
+            la meme raison (§7.27).
+          */}
+          <details className="app-barre-plus">
+            <summary className="app-barre-lien">Plus</summary>
+            <ul className="app-barre-panneau">
+              {secondaires.map((rubrique) => (
+                <li key={rubrique.cle}>
+                  <NavLink
+                    className="app-barre-lien-secondaire"
+                    to={cheminDeRubrique(code, rubrique.suffixe)}
+                  >
+                    {rubrique.libelle}
+                  </NavLink>
+                </li>
+              ))}
+              <li>
+                <BoutonSignalerUnBug />
+              </li>
+            </ul>
+          </details>
+        </li>
       </ul>
     </nav>
   );

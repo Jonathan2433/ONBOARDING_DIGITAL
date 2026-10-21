@@ -27,6 +27,7 @@ import type { JSX } from 'react';
 import { Link } from 'react-router';
 
 import { CHEMINS } from '../routes';
+import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 import { Cadre } from './Cadre';
 
 interface ProprietesEcranDErreur {
@@ -60,6 +61,14 @@ function EcranDErreur({ titre, explication, correlation }: ProprietesEcranDErreu
           </Link>
         </li>
       </ul>
+      {/*
+        **CAHIER §10.12 : « pied de page, pages d'erreur, menu mobile ».**
+        Les trois écrans de ce fichier SONT les « pages d'erreur » du cahier —
+        voir la démonstration citée au §9.6, « création d'un signalement
+        depuis une page d'erreur ». Aucune entité n'est dans le contexte ici :
+        voir l'en-tête d'`app/support/routes.py` pour la résolution côté API.
+      */}
+      <BoutonSignalerUnBug />
     </Cadre>
   );
 }

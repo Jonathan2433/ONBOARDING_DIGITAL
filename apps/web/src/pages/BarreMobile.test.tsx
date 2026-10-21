@@ -5,8 +5,12 @@
  *
  *   1. **les quatre rubriques principales y sont TOUJOURS.** `US003` : « les
  *      rubriques principales restent accessibles a 320 et 390 px » ;
- *   2. **« Plus » n'existe QUE s'il a quelque chose a contenir.** C'est la lecture
- *      mesuree de « lorsque necessaire » du §8.2 ;
+ *   2. **« Plus » EXISTE TOUJOURS DEPUIS `T11` DU LOT 10** : il porte desormais
+ *      en permanence le bouton « Reporter un bug » (cahier §10.12), la ou il
+ *      n'existait avant que « lorsque necessaire » (§8.2) l'exigeait pour une
+ *      rubrique conditionnelle. Ce que ce fichier prouve a change en
+ *      consequence : aucune rubrique conditionnelle ne vide plus jamais « Plus »,
+ *      seule la LISTE de rubriques qu'il contient varie ;
  *   3. **les rubriques conditionnelles vont sous « Plus », jamais dans la barre.**
  *      A six cellules de 53 px, un libelle passerait sur trois lignes -- mesure ;
  *   4. **les libelles sont COMPLETS**, ni tronques ni abreges. `US003` exige
@@ -53,15 +57,22 @@ describe('la barre inferieure mobile', () => {
     expect(libelles).toHaveLength(CELLULES_MAXIMUM_A_320);
   });
 
-  it("n'affiche PAS « Plus » quand il n'y a rien a y mettre — §8.2, « lorsque necessaire »", () => {
+  it('affiche TOUJOURS « Plus », meme SANS aucune rubrique conditionnelle — cahier §10.12', () => {
     monter(`/entites/${CODE}`);
-    //  **UN « PLUS » VIDE EST UN ARRET DE TABULATION POUR RIEN**, et il apprend a
-    //  ne pas s'en servir : le §7.21 dans un autre costume.
-    expect(barre().querySelector('details')).toBeNull();
-    expect(screen.queryByText('Plus')).toBeNull();
+    //  **DEPUIS `T11` DU LOT 10, « PLUS » N'EST PLUS JAMAIS VIDE** : il porte
+    //  en permanence le bouton « Reporter un bug », meme quand aucune
+    //  rubrique conditionnelle n'existe. Le revoir disparaitre serait
+    //  reproduire l'avertissement faux du §7.21 — un menu mobile qui cesserait
+    //  de donner acces au signalement sans que rien ne le dise.
+    expect(barre().querySelector('details.app-barre-plus')).toBeTruthy();
+    expect(screen.getByText('Plus')).toBeTruthy();
+    expect(screen.getByText('Reporter un bug')).toBeTruthy();
+    //  Et AUCUNE rubrique secondaire n'y figure, faute de condition vraie.
+    const panneau = barre().querySelector('.app-barre-panneau');
+    expect(panneau!.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it("affiche « Plus » des QU'UNE conditionnelle existe", () => {
+  it("ajoute les rubriques conditionnelles a « Plus » des QU'UNE existe", () => {
     monter(`/entites/${CODE}`, { aUnParcoursActif: true });
     expect(barre().querySelector('details')).toBeTruthy();
     expect(screen.getByText('Plus')).toBeTruthy();

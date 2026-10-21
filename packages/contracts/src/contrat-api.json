@@ -2304,6 +2304,34 @@
         "LISTE plutot qu'en compte. MEME GRILLE DE ROLE QUE",
         "indicateursDeReporting. Pagination du cahier §18.2, memes filtres."
       ]
+    },
+    {
+      "cle": "signalerUnBug",
+      "chemin": "/api/v1/bug-reports",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 422],
+      "forme": "ReponseDuSignalement",
+      "role": [
+        "Signaler un bug depuis l'application — LOT 10, T11, cahier",
+        "§9.6/§10.12, matrice §17 « Reporter un bug », MVP-L10-US005.",
+        "AUCUNE GARDE DE ROLE AU-DELA D'UNE SESSION ETABLIE : la seule",
+        "ligne du §17 sans aucun tiret, l'acteur du backlog est",
+        "« Utilisateur », et le bouton vit au pied de page, sur les pages",
+        "d'erreur et dans le menu mobile -- des emplacements que EMP et NEW",
+        "voient autant que les six roles elargis. Meme motif que",
+        "`accueilDUneEntite` (LOT 8, T8).",
+        "AUCUN CODE D'ENTITE DANS LE CHEMIN : les pages d'erreur du cahier",
+        "n'en portent structurellement aucune. L'entite rattachee est",
+        "toujours l'entite PRINCIPALE du rapporteur",
+        "(`app.permissions.services.entite_principale`), jamais une entite",
+        "soumise par le client.",
+        "`application_version`, `environment` et `browser_summary` sont",
+        "ajoutes AUTOMATIQUEMENT par le serveur ; seuls `description`,",
+        "`etapes_de_reproduction` et `chemin_de_page` sont soumis.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`), comme toute",
+        "ecriture : le 403 ne vient JAMAIS d'un role refuse ici, uniquement",
+        "d'une origine ou d'un jeton anti-CSRF invalide."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
