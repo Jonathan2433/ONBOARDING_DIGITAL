@@ -2240,6 +2240,70 @@
         "export_request (demandeur, perimetre normalise) et un second",
         "audit_event (action_code audit_exporte_en_csv)."
       ]
+    },
+    {
+      "cle": "indicateursDeReporting",
+      "chemin": "/api/v1/entities/{code}/reporting",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesIndicateurs",
+      "role": [
+        "Consulter les compteurs et repartitions du reporting etendu — LOT 10,",
+        "T10, cahier §10.10, matrice §15.1, MVP-L10-US003.",
+        "MEME GRILLE DE ROLE QUE tableauDeBordAdministratif (LOT 9, T5) :",
+        "DSM Consultants, ESM/ADM-E/SUPER Entite, BOOST Cercle, OFFICE —.",
+        "Les deux ressources sont DISTINCTES et ne se recoupent pas : ce",
+        "module sert ce que le tableau de bord ne sert PAS -- onboardings",
+        "termines, progression moyenne, duree moyenne, arrivees dans les",
+        "30 jours (fenetre BORNEE, distincte des arrivees futures illimitees",
+        "du tableau de bord), repartitions par cercle/client/DSM.",
+        "« Onboardings termines » = state 'archived' ET completed_at NON NUL",
+        "(un archivage par depart ne pose jamais completed_at). « Duree",
+        "moyenne » = completed_at - started_at, sur la MEME population --",
+        "`null` si elle est vide, jamais 0. « Progression moyenne » = la",
+        "somme du couple (obligatoires totales/terminees) sur les SEULES",
+        "instances actives de la portee.",
+        "Filtrer par periode (borne arrival_date), DSM, cercle ou client --",
+        "axe transversal du §15.1, narrowe SANS jamais elargir le perimetre",
+        "deja resolu.",
+        "La sixieme ligne du §15.1, « Consulter les evenements », n'est PAS",
+        "construite ici : absente du cahier §10.10 et des criteres",
+        "d'acceptation litteraux d'US003, une inference ne suffit pas a",
+        "batir une route (§6.5)."
+      ]
+    },
+    {
+      "cle": "detailOnboardingDuReporting",
+      "chemin": "/api/v1/entities/{code}/reporting/onboarding",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDuDetailOnboarding",
+      "role": [
+        "Consulter le detail onboarding — LOT 10, T10, matrice §15.1",
+        "« Consulter le detail onboarding », MVP-L10-US003.",
+        "La progression PAR PERSONNE du cahier §10.10, sur les instances",
+        "ACTIVES seules — une instance terminee est a 100% par definition",
+        "et diluerait la mesure sans rien dire de la progression en cours.",
+        "MEME GRILLE DE ROLE QUE indicateursDeReporting. Pagination du",
+        "cahier §18.2, memes filtres (periode/DSM/cercle/client)."
+      ]
+    },
+    {
+      "cle": "profilsIncompletsEnDetail",
+      "chemin": "/api/v1/entities/{code}/reporting/profils-incomplets",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDesProfilsIncomplets",
+      "role": [
+        "Consulter les profils incomplets en detail — LOT 10, T10, matrice",
+        "§15.1 « Consulter les profils incomplets », MVP-L10-US003.",
+        "MEME REGLE QUE tableauDeBordAdministratif (LOT 9, T5, arbitrage de",
+        "Jonathan du 09/10/2026) -- un profil ACTIF auquel il manque au",
+        "moins une de ses quatre relations courantes (metier, cercle",
+        "principal, DSM, statut) -- jamais une seconde definition, ici en",
+        "LISTE plutot qu'en compte. MEME GRILLE DE ROLE QUE",
+        "indicateursDeReporting. Pagination du cahier §18.2, memes filtres."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

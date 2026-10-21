@@ -1,17 +1,17 @@
 # Registre des questions ouvertes
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 12 octobre 2026, `QO-125` ouverte par `T10` du LOT 9
+**Dernière mise à jour :** 21 octobre 2026, `QO-126` ouverte par `T10` du LOT 10
 **Source reprise :** cahier des charges §32
 
 | Catégorie | Nombre | Dont closes |
 |---|---:|---:|
 | Bloquantes avant données réelles ou production générale | 17 | 2 |
 | Non bloquantes pour le développement | 12 | 1 |
-| Ouvertes par la réalisation, à partir de `QO-106` | 20 | 11 |
-| **Total** | **49** | **14** |
+| Ouvertes par la réalisation, à partir de `QO-106` | 21 | 11 |
+| **Total** | **50** | **14** |
 
-**35 questions restent ouvertes**, sur **49** entrées — `QO-072` **close le 22/08/2026** par `T10` du LOT 3, la **première du corpus** à l'être par arbitrage de Jonathan — et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`, et **remis à jour le 20/08/2026** à la
+**36 questions restent ouvertes**, sur **50** entrées — `QO-072` **close le 22/08/2026** par `T10` du LOT 3, la **première du corpus** à l'être par arbitrage de Jonathan — et ces nombres sont **dérivés du corps de ce registre** — le tableau ci-dessus annonçait 38 pour 39 entrées en prose, et comptait `QO-085` comme non close alors qu'elle l'est depuis `T8`. Corrigé le 18/08/2026 au titre de la classe `ECART-021`, et **remis à jour le 20/08/2026** à la
 clôture de `QO-115` (`DEC-519`).
 
 > **Et la mise à jour du 20/08/2026 a d'abord été FAUSSE.** J'ai **décrémenté** le compte de closes de
@@ -30,7 +30,7 @@ clôture de `QO-115` (`DEC-519`).
 iCloud, `DEC-439` et `DEC-447`). Une question close conserve son identifiant, sa réponse et sa
 date de clôture ; elle n'est jamais retirée du registre.
 
-**Prochain identifiant libre : **`QO-126`.**
+**Prochain identifiant libre : **`QO-127`.**
 
 > **Trous conservés dans la séquence.** La plage `QO-072` à `QO-105` couvre 34 numéros mais
 > seules **29** questions sont présentes dans le corpus. Absentes : `QO-075`, `QO-079`,
@@ -293,6 +293,7 @@ GitHub interdisant l'auto-approbation.
 | `QO-110` | Quelle nomenclature et quelle langue pour les en-têtes du CSV collaborateurs ? Jonathan n'a pas encore de visibilité sur la source de données réelle. Traitement retenu en attendant : le schéma définit des champs logiques `F01` à `F19` et un profil de correspondance versionné associe les en-têtes réelles (`DEC-434`). Un profil provisoire, non normatif, est utilisé dans le jeu d'exemple. | Jonathan / ESM | Non pour `G0`. Rattachée à `QO-096`, **bloquante avant l'import réel** au LOT 9. | Ouverte |
 | ~~`QO-124`~~ | **CLOSE le 25/09/2026, avant `T11` du LOT 6 — `DEC-594` : la lecture restrictive du §13 est DÉFINITIVE.** La question posait : le §10.1 donne au DSM « Modifier la page DSM », et aucun `page_type` du §15.1 ne porte cette page — `T6` avait suivi la lecture la plus restrictive sans que Léa ne la tranche, `T9` et `T10` l'avaient reconduite de façon cohérente. **Ce que l'arbitrage retient** : le DSM n'a et n'aura **aucune** page à éditer. Aucun changement de code — c'était déjà le comportement appliqué depuis `T6` — et aucun sixième `page_type` à prévoir. `ECART-062` clôt avec elle. | Léa, pour le produit | — | **Close le 25/09/2026**, avant `T11` du LOT 6, `DEC-594` — relance de `ECART-062`, ouvert depuis `T2` |
 | `QO-125` | **Comment filtrer un rapport d'import pour le DSM (« Consultants ») et le Booster (« Cercle limité ») ?** La matrice §14 « Consulter le rapport » leur donne un accès scopé, en plus d'`ESM`/`ADM-E`/`SUPER` — mais aucun document ne dit COMMENT filtrer un rapport d'import par DSM ou par cercle. **Mesure du 12/10/2026, `T10` du LOT 9** : une ligne rejetée n'a souvent **aucun** collaborateur rattaché (`target_person_id`/`target_membership_id` restent `NULL`), donc aucun moyen structurel de savoir si elle concerne le périmètre d'un DSM ou d'un cercle avant qu'elle n'ait réussi — inventer une règle (ex. filtrer sur `F16`/le cercle du CSV brut, non validé) aurait été une heuristique sur du contenu non vérifié, §7.25. `app.imports.rapport.consulter_le_rapport` ne sert donc que `ESM`/`ADM-E`/`SUPER` (`ROLES_DE_DEPOT_DE_L_IMPORT`, réutilisée) ; aucun 403 partiel n'est renvoyé au DSM/Booster — la route leur est simplement fermée, comme `OFFICE` l'est pour les trois rôles. | Léa, pour le produit | **Non bloquante pour `T10`, et c'est mesuré.** Le rapport complet (créations/mises à jour/rejets/en attente, toutes les lignes) est servi aux trois rôles qui chargent et lancent déjà l'import — rien dans le découpage du LOT 9 ne nomme un écran DSM/Booster pour ce rapport avant `T14`. | **Ouverte le 12/10/2026**, `T10` du LOT 9 |
+| `QO-126` | **La matrice §15.1 porte une sixième ligne, « Consulter les évenements » (seule du §15.1 où `OFFICE` reçoit `Bureau` plutôt qu'un tiret), qu'aucune sous-étape n'a construite — faut-il la servir dans le reporting étendu, et si oui, quels événements désigne-t-elle ?** Mesuré avant tout code, `T10` du LOT 10 : ni le cahier §10.10 (la liste MVP des indicateurs) ni les critères d'acceptation littéraux de `MVP-L10-US003` (« Compteurs et tableaux respectent ESM, DSM, Booster, admin et superadmin ») ne nomment cette ligne ni `OFFICE`. Sa grille est **mot pour mot identique** à celle de « Archiver un événement » (§18) et de quatre lignes du §11 — une lecture plausible la rattacherait au calendrier d'événements du LOT 8 (`app.events.perimetre`), mais aucune phrase du corpus ne le dit explicitement, et bâtir une route sur une inférence serait §6.5. | Jonathan, pour trancher la portée | **Non bloquante pour `T10`.** Les cinq autres lignes du §15.1 sont servies ; celle-ci n'a aucun consommateur avant `T15` (écrans back-office du LOT 10) si elle est un jour retenue. | **Ouverte le 21/10/2026**, `T10` du LOT 10 |
 
 ---
 

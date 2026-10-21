@@ -47,6 +47,7 @@ from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
 from app.permissions.routes import routeur_permissions
+from app.reporting.routes import routeur_reporting
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
 from app.shared.errors import (
     ErreurApplicative,
@@ -177,6 +178,9 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  Monte apres les entites, dont il reutilise la resolution et le gabarit
     #  de 404 -- meme discipline que toutes les routes qui precedent.
     routeur_v1.include_router(routeur_audit(config))
+    #  LOT 10, T10 : le reporting etendu. Monte apres le tableau de bord
+    #  administratif (LOT 9, T5), dont il reutilise la meme grille de role.
+    routeur_v1.include_router(routeur_reporting(config))
     application.include_router(routeur_v1)
 
     return application
