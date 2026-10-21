@@ -2216,6 +2216,30 @@
         "Pagination du cahier §18.2, ordre le plus RECENT d'abord",
         "(occurred_at DESC puis id DESC)."
       ]
+    },
+    {
+      "cle": "exportDuJournalDAudit",
+      "chemin": "/api/v1/entities/{code}/audit/export",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "octets",
+      "role": [
+        "Exporter le journal d'audit en CSV — LOT 10, T9, matrice §16",
+        "« Exporter en CSV », US004.",
+        "RESERVE A ADM-E (son entite) ET SUPER (global) — les quatre autres",
+        "roles de ROLES_DE_L_AUDIT (DSM/ESM/BOOST/OFFICE) sont a TIRET sur",
+        "cette ligne precise, refus 403 meme s'ils lisent deja le journal.",
+        "MEME PERIMETRE ET MEMES CINQ FILTRES QUE journalDAudit, AUCUNE",
+        "PAGINATION : le CSV entier du perimetre/des filtres resolus est",
+        "rendu dans la reponse, `text/csv`, `Content-Disposition: attachment`.",
+        "SYNCHRONE : export_request.generated_media_id/.expires_at restent",
+        "`null` — le depot MinIO et le telechargement differe/expirant sont",
+        "la V1 asynchrone (V1-L04-US002, un worker qui n'existe pas dans ce",
+        "lot).",
+        "L'EXPORT LUI-MEME EST JOURNALISE (cahier §10.11) : une ligne",
+        "export_request (demandeur, perimetre normalise) et un second",
+        "audit_event (action_code audit_exporte_en_csv)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
