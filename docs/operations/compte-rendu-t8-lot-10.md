@@ -133,6 +133,21 @@ directement dans `onboarding_instance_task` plutôt que d'appeler `terminer_une_
 aide `_page`. Les deux ont été séparés en paramètres distincts, et `make parametres-check` confirme
 qu'aucun partage fautif ne subsiste dans tout le dépôt.
 
+**Un troisième défaut, trouvé APRÈS l'ouverture de la pull request `#284`, par la CI elle-même, et
+corrigé avant la fusion** — même théâtre que `§7.47` de la passation, déjà rencontré par
+`test_analyse_import.py` : `make domaines-provision` sème le domaine e-mail global
+(`exalt-company.com`) avec `starts_at = now()` au moment où `make migrate` tourne dans la tâche
+« Stack réelle » de la CI. `ANCRAGE`, lui, est dérivé de `now() - 10 min` au moment de la COLLECTE
+du module `test_journal_d_audit.py` — plus tard dans la même exécution, mais l'écart entre les
+deux instants peut dépasser le tampon de dix minutes selon la durée des étapes qui précèdent
+`residu-check` (environ dix minutes dans le run en cause). Quand c'est le cas, la période de
+validité du domaine ne couvre pas encore `ANCRAGE`, et le témoin du pipeline écriture-puis-lecture
+(`test_aucune_donnee_interdite_et_la_correlation_est_tracee`, §3) reçoit `domaine_non_autorise` au
+lieu de `lien_emis` — un échec non reproductible en local, où ce délai est généralement plus court.
+Corrigé par une seconde ligne globale du domaine, bornée dans le passé (`2020-01-01`), insérée dans
+la même transaction que le reste du décor et effacée PAR SON IDENTIFIANT au ménage — jamais par le
+nom du domaine, pour ne jamais toucher la ligne semée par `make domaines-provision` elle-même.
+
 | Contrôle | Résultat |
 |---|---|
 | `pytest` racine | 1 804 collectés (+21, tous d'intégration), 1 727 passés / 77 échecs |

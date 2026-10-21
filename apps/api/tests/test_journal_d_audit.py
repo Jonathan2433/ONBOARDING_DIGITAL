@@ -354,6 +354,27 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
     r: dict[str, Any] = {"parametres": parametres, "marqueur": marqueur}
 
     with moteur(parametres).begin() as cx:
+        #  Une seconde ligne GLOBALE, bornee dans le passe — §7.47, meme
+        #  theatre que `test_analyse_import.py`. `make domaines-provision`
+        #  seme `exalt-company.com` avec `starts_at = now()` AU MOMENT OU
+        #  `make migrate` tourne en integration continue ; `ANCRAGE` est
+        #  derive de `now()` AU MOMENT DE LA COLLECTE de ce module, souvent
+        #  plus TARD. L'ecart entre les deux peut neanmoins depasser le
+        #  tampon de 10 minutes d'`ANCRAGE` selon la duree des etapes qui
+        #  precedent `residu-check` — auquel cas la ligne semee ne couvre
+        #  pas encore `ANCRAGE`, et le temoin du §3 recevrait
+        #  `domaine_non_autorise` au lieu de `lien_emis`. Une seconde ligne
+        #  globale, sans fin et anterieure a toute date possible, ferme la
+        #  question sans dependre de l'instant de demarrage de la stack.
+        #  Capturee par identifiant pour n'effacer QUE celle-ci au menage.
+        r["domaine_global_id"] = cx.execute(
+            text(
+                "INSERT INTO allowed_email_domain (domain, entity_id, starts_at) "
+                "VALUES ('exalt-company.com', NULL, '2020-01-01T00:00:00+00:00') "
+                "RETURNING id"
+            )
+        ).scalar_one()
+
         entite = _entite(cx, f"{marqueur}-home")
         autre_entite = _entite(cx, f"{marqueur}-autre")
         r["entite"] = entite
@@ -506,6 +527,7 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
 
     with moteur(parametres).begin() as menage:
         for requete in (
+            "DELETE FROM allowed_email_domain WHERE id = :domaine_global_id",
             "DELETE FROM audit_event WHERE entity_id IN "
             "(SELECT id FROM entity WHERE code LIKE :motif) OR actor_person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne) OR "
@@ -554,6 +576,7 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
                     "motif": f"{marqueur}%",
                     "motif_personne": f"{marqueur}-%",
                     "motif_service": f"{marqueur}-service",
+                    "domaine_global_id": r["domaine_global_id"],
                 },
             )
 
