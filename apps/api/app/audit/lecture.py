@@ -112,8 +112,14 @@ CE QUE CE MODULE NE FAIT PAS
   Aucune exclusion de contenu : §16.2/§21.1 l'exigent AU MOMENT DE L'ECRITURE
   (`T2`-`T7`), jamais ici — un filtre pose a la lecture masquerait un defaut
   d'ecriture au lieu de le faire echouer au bon endroit (meme discipline que
-  `app/audit/services.py`, voir son en-tete). Aucun export (`T9`), aucun
-  reporting agrege (`T10`).
+  `app/audit/services.py`, voir son en-tete). Aucun reporting agrege (`T10`).
+
+`T9` AJOUTE `lister_tout_le_journal_d_audit`, SANS DEUXIEME REQUETE SQL
+
+  L'export reutilise EXACTEMENT la construction CTE/clause de la lecture
+  paginee (`_cte_et_source`, extraite pour l'occasion) — seule la PARTIE FINALE
+  change, un `ORDER BY` seul plutot qu'un `LIMIT`/`OFFSET`. La SERIALISATION en
+  CSV, elle, n'a rien a faire ici : voir `app/audit/export.py`.
 """
 
 from __future__ import annotations
@@ -448,6 +454,34 @@ _COLONNES: Final[str] = (
 )
 
 
+def _cte_et_source(
+    *,
+    perimetre: PerimetreDAudit,
+    filtres: FiltresDAudit,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+) -> tuple[str, str, dict[str, object]]:
+    """Le CTE, la clause `FROM ... WHERE ...` et ses parametres lies — PARTAGES
+    entre la lecture paginee et l'export (`T9`), qui ne different QUE par ce
+    qu'ils font de ce `FROM` (une page LIMIT/OFFSET, ou la totalite ORDER BY
+    seul) — jamais une seconde construction qui pourrait diverger (§7.27)."""
+    cte = _CTE_PAR_PERIMETRE[perimetre]
+    clause_perimetre = _CLAUSE_PAR_PERIMETRE[perimetre]
+    clause_filtres, valeurs_filtres = _clause_de_filtres(filtres)
+    source = f"FROM audit_event ae WHERE ({clause_perimetre}) AND ({clause_filtres})"
+    parametres: dict[str, object] = {
+        "entite": entite,
+        "acteur": acteur,
+        "instant": instant,
+        "etats_occupants": list(ETATS_OCCUPANTS),
+        "type_booster": _TYPE_BOOSTER,
+        "type_responsable_de_bureau": _TYPE_RESPONSABLE_DE_BUREAU,
+        **valeurs_filtres,
+    }
+    return cte, source, parametres
+
+
 def lister_le_journal_d_audit(
     connexion: Connection,
     *,
@@ -479,20 +513,13 @@ def lister_le_journal_d_audit(
         message = f"taille doit etre l'une de {TAILLES_DE_PAGE}, recu {taille}"
         raise ValueError(message)
 
-    filtres = filtres or FiltresDAudit()
-    cte = _CTE_PAR_PERIMETRE[perimetre]
-    clause_perimetre = _CLAUSE_PAR_PERIMETRE[perimetre]
-    clause_filtres, valeurs_filtres = _clause_de_filtres(filtres)
-    source = f"FROM audit_event ae WHERE ({clause_perimetre}) AND ({clause_filtres})"
-    parametres: dict[str, object] = {
-        "entite": entite,
-        "acteur": acteur,
-        "instant": instant,
-        "etats_occupants": list(ETATS_OCCUPANTS),
-        "type_booster": _TYPE_BOOSTER,
-        "type_responsable_de_bureau": _TYPE_RESPONSABLE_DE_BUREAU,
-        **valeurs_filtres,
-    }
+    cte, source, parametres = _cte_et_source(
+        perimetre=perimetre,
+        filtres=filtres or FiltresDAudit(),
+        entite=entite,
+        acteur=acteur,
+        instant=instant,
+    )
 
     total = int(connexion.execute(text(f"{cte} SELECT count(*) {source}"), parametres).scalar_one())
 
@@ -513,6 +540,41 @@ def lister_le_journal_d_audit(
         evenements=[_en_evenement(ligne, avec_details_techniques) for ligne in lignes],
         total=total,
     )
+
+
+def lister_tout_le_journal_d_audit(
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    acteur: uuid.UUID,
+    perimetre: PerimetreDAudit,
+    avec_details_techniques: bool,
+    instant: dt.datetime,
+    filtres: FiltresDAudit | None = None,
+) -> list[EvenementDAudit]:
+    """TOUTE la population du perimetre/des filtres resolus, SANS pagination —
+    `T9`, l'export CSV. Meme ordre que `lister_le_journal_d_audit` (le plus
+    RECENT d'abord), meme CTE/clause de perimetre, AUCUNE `LIMIT` : un export
+    rend tout ce qu'une consultation paginee rendrait page apres page, jamais
+    un sous-ensemble arbitraire — exigence du backlog, « le perimetre est
+    respecte », appliquee a l'export comme a la lecture.
+    """
+    cte, source, parametres = _cte_et_source(
+        perimetre=perimetre,
+        filtres=filtres or FiltresDAudit(),
+        entite=entite,
+        acteur=acteur,
+        instant=instant,
+    )
+    lignes = (
+        connexion.execute(
+            text(f"{cte} SELECT {_COLONNES} {source} ORDER BY ae.occurred_at DESC, ae.id DESC"),
+            parametres,
+        )
+        .mappings()
+        .all()
+    )
+    return [_en_evenement(ligne, avec_details_techniques) for ligne in lignes]
 
 
 def _en_evenement(ligne: Any, avec_details_techniques: bool) -> EvenementDAudit:

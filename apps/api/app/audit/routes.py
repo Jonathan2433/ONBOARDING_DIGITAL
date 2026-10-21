@@ -1,4 +1,4 @@
-"""La route du journal d'audit — matrice §16, `T8`, `US001`/`US002`.
+"""Les routes du journal d'audit — matrice §16, `T8` (`US001`/`US002`) et `T9` (`US004`).
 
 La derivation complete — qui peut lire, dans quel perimetre, ce qui est masque
 et pourquoi — est dans l'en-tete d'`app/audit/perimetre.py` et d'`app/audit/
@@ -25,6 +25,16 @@ LE REFUS D'UNE TAILLE OU D'UNE PAGE HORS BORNE EST UN 422 QUE JE N'ECRIS PAS
   C'est la largeur REELLE des colonnes (`String(64)`, `app/audit/modeles.py`) —
   aucune valeur plus longue ne pourrait jamais correspondre, borner le
   parametre de recherche a la largeur de la colonne qu'il interroge.
+
+`T9` : L'EXPORT PARTAGE LA GARDE ET LES FILTRES, AJOUTE UN ROLE PLUS ETROIT
+
+  `_resoudre_l_entite_et_les_roles` reste la SEULE resolution — l'export verifie
+  en plus `ROLES_D_EXPORT_DE_L_AUDIT`, un sous-ensemble de `ROLES_DE_L_AUDIT`.
+  Les cinq filtres de `consulter_le_journal_d_audit` sont REPRIS a l'identique
+  (memes bornes, meme description) : un export qui accepterait d'autres valeurs
+  que la lecture pourrait exporter ce qu'aucune page ne montre jamais. La
+  derivation complete — mecanisme, formats, ce qui n'est PAS ecrit — est dans
+  l'en-tete d'`app/audit/export.py`.
 """
 
 from __future__ import annotations
@@ -33,16 +43,29 @@ import datetime as dt
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy.engine import Connection
 
-from app.audit.lecture import FiltresDAudit, lister_le_journal_d_audit
+from app.audit.export import (
+    ACTION_CODE_AUDIT_EXPORTE,
+    RESOURCE_TYPE_EXPORT_REQUEST,
+    ecrire_la_demande_d_export,
+    generer_le_csv,
+    normaliser_la_portee,
+)
+from app.audit.lecture import (
+    FiltresDAudit,
+    lister_le_journal_d_audit,
+    lister_tout_le_journal_d_audit,
+)
 from app.audit.perimetre import (
+    ROLES_D_EXPORT_DE_L_AUDIT,
     ROLES_DE_L_AUDIT,
     a_les_details_techniques,
     resoudre_le_perimetre_de_l_audit,
 )
+from app.audit.services import enregistrer_un_evenement
 from app.auth.dependances import SessionEtablie, exiger_une_session
 from app.configuration.settings import Parametres
 from app.entities.routes import (
@@ -247,6 +270,139 @@ def routeur_audit(parametres: Parametres) -> APIRouter:
             taille=int(taille),
             total=resultat.total,
             pages=pages,
+        )
+
+    @routeur.post(
+        "/entities/{code}/audit/export",
+        status_code=status.HTTP_200_OK,
+        responses={
+            status.HTTP_200_OK: {
+                "content": {"text/csv": {}},
+                "description": "Le CSV complet du perimetre/des filtres resolus.",
+            },
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : ni `ADM-E` ni `SUPER` dans cette entite."
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Un filtre de recherche hors de ses bornes."
+            },
+        },
+        summary="Exporter le journal d'audit en CSV, reserve a ADM-E/SUPER",
+        description=(
+            "Matrice §16 « Exporter en CSV », `T9`, `US004`. Reserve a ADM-E (son "
+            "entite) et SUPER (global) — memes filtres que la lecture paginee, aucune "
+            "pagination : le CSV entier est rendu. L'export lui-meme est journalise "
+            "(`export_request` et un `audit_event`), cahier §10.11."
+        ),
+    )
+    def exporter_le_journal_d_audit_en_csv(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        depuis: Annotated[
+            dt.datetime | None,
+            Query(description="Occurrences a partir de cet instant (inclus), le cas echeant"),
+        ] = None,
+        jusqua: Annotated[
+            dt.datetime | None,
+            Query(description="Occurrences avant cet instant (exclu), le cas echeant"),
+        ] = None,
+        action_code: Annotated[
+            str | None,
+            Query(
+                min_length=1,
+                max_length=_LONGUEUR_MAXIMALE_CODE_D_AUDIT,
+                description="Code d'action exact (`audit_event.action_code`)",
+            ),
+        ] = None,
+        resource_type: Annotated[
+            str | None,
+            Query(
+                min_length=1,
+                max_length=_LONGUEUR_MAXIMALE_CODE_D_AUDIT,
+                description="Type de ressource exact (`audit_event.resource_type`)",
+            ),
+        ] = None,
+        acteur: Annotated[
+            uuid.UUID | None, Query(description="Identifiant de la personne auteure de l'action")
+        ] = None,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> Response:
+        """Exporter le journal d'audit en CSV — matrice §16, `T9`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, roles = _resoudre_l_entite_et_les_roles(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            #  Une SECONDE garde, PLUS ETROITE que celle deja franchie : un role de
+            #  `ROLES_DE_L_AUDIT` (par exemple DSM) peut lire le journal sans
+            #  jamais pouvoir l'exporter — §16, ligne « Exporter en CSV ».
+            if not ROLES_D_EXPORT_DE_L_AUDIT & roles:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            perimetre = resoudre_le_perimetre_de_l_audit(roles=roles)
+            avec_details_techniques = a_les_details_techniques(roles=roles)
+            filtres = FiltresDAudit(
+                depuis=depuis,
+                jusqua=jusqua,
+                action_code=action_code,
+                resource_type=resource_type,
+                acteur=acteur,
+            )
+            evenements = lister_tout_le_journal_d_audit(
+                connexion,
+                entite=entite_id,
+                acteur=appelant.personne,
+                perimetre=perimetre,
+                avec_details_techniques=avec_details_techniques,
+                instant=instant,
+                filtres=filtres,
+            )
+
+            portee_normalisee = normaliser_la_portee(
+                perimetre=perimetre,
+                entite=entite_id,
+                filtres={
+                    "depuis": depuis,
+                    "jusqua": jusqua,
+                    "action_code": action_code,
+                    "resource_type": resource_type,
+                    "acteur": acteur,
+                },
+            )
+            demande_id = ecrire_la_demande_d_export(
+                connexion,
+                requested_by_person_id=appelant.personne,
+                normalized_scope=portee_normalisee,
+            )
+            enregistrer_un_evenement(
+                connexion,
+                instant=instant,
+                action_code=ACTION_CODE_AUDIT_EXPORTE,
+                resource_type=RESOURCE_TYPE_EXPORT_REQUEST,
+                resource_reference=demande_id,
+                entity_id=entite_id,
+                actor_person_id=appelant.personne,
+                summary=f"Export CSV du journal d'audit ({len(evenements)} ligne(s))",
+                new_values=portee_normalisee,
+            )
+
+        contenu_csv = generer_le_csv(evenements)
+        nom_de_fichier = f"audit-{code}-{instant:%Y%m%dT%H%M%S}.csv"
+        return Response(
+            content=contenu_csv,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{nom_de_fichier}"'},
         )
 
     return routeur

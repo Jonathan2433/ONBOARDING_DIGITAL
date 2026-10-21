@@ -48,6 +48,17 @@ CE QUE LA MATRICE DONNE, ET LES DEUX POINTS QU'ELLE NE TRANCHAIT PAS
      choisi par la matrice (`Cercle`/`Bureau`, jamais `Consultants` comme pour le
      DSM). Voir `app/audit/lecture.py` pour la traduction SQL complete.
 
+`T9` AJOUTE LA QUATRIEME LIGNE DU §16, « EXPORTER EN CSV »
+
+  Seuls `ADM-E` (son entite) et `SUPER` (global) exportent — les quatre autres
+  roles de `ROLES_DE_L_AUDIT` sont a TIRET sur cette ligne precise, confirme
+  par le controle d'acceptation §24 point 18 : « l'export d'audit est refuse a
+  tous les roles sauf `ADM-E` et `SUPER` ». Le PERIMETRE de l'export est le MEME que
+  celui de la lecture (`resoudre_le_perimetre_de_l_audit`, toujours `Entite`
+  pour ces deux roles) — aucune troisieme fonction de resolution, l'export ne
+  fait QUE filtrer `ROLES_D_EXPORT_DE_L_AUDIT` en plus de `ROLES_DE_L_AUDIT`
+  avant d'appeler la MEME lecture. Voir `app/audit/export.py` pour le reste.
+
 CE QUE CE MODULE FAIT, ET CE QU'IL NE FAIT PAS
 
   Meme separation que partout ailleurs dans ce depot (`app/onboarding/
@@ -89,6 +100,20 @@ ROLES_DE_L_AUDIT: Final[frozenset[RoleDeLaMatrice]] = frozenset(
 #  « jeton de correlation technique ») — aucune troisieme colonne n'est nommee
 #  ainsi nulle part dans ce depot, et en inventer une serait §6.5.
 ROLES_DES_DETAILS_TECHNIQUES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  §16, ligne « Exporter en CSV » — `T9` : SEULS `ADM-E` et `SUPER` exportent,
+#  tiret partout ailleurs. MEMES DEUX MEMBRES QUE `ROLES_DES_DETAILS_
+#  TECHNIQUES` ci-dessus, et c'est une COINCIDENCE DE CETTE MATRICE, PAS UNE
+#  IDENTITE CONCEPTUELLE — ce sont deux lignes distinctes du §16, et les
+#  fusionner reviendrait a lier au silence deux regles que la matrice pourrait
+#  un jour faire diverger (§7.27 : une liste recopiee vieillit au premier
+#  ajout, ici dans l'autre sens — une liste FUSIONNEE a tort).
+ROLES_D_EXPORT_DE_L_AUDIT: Final[frozenset[RoleDeLaMatrice]] = frozenset(
     {
         RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
         RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
