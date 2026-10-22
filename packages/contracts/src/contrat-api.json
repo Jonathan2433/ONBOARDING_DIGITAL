@@ -2481,6 +2481,87 @@
         "§17 fusionne Resoudre et commenter dans un seul verbe.",
         "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
       ]
+    },
+    {
+      "cle": "demandesRGPD",
+      "chemin": "/api/v1/data-subject-requests",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 422],
+      "forme": "LigneDeDemandeRGPDRendue",
+      "role": [
+        "Receptionner une demande de droit RGPD — LOT 10, T14, cahier",
+        "§21.5, modele §22.3, MVP-L10-US008.",
+        "Ressource GLOBALE (data_subject_request n'a aucun entity_id,",
+        "modele §22.3) : route PLATE. Reservee a ADM-E (n'importe",
+        "ou)/SUPER, par analogie avec la matrice §18 « Lancer",
+        "l'anonymisation RGPD » — aucune ligne de matrice ne nomme cette",
+        "ressource directement. Le responsable est toujours l'appelant.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "demandesRGPDEnListe",
+      "chemin": "/api/v1/data-subject-requests",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 422],
+      "forme": "ReponseDesDemandesRGPD",
+      "role": [
+        "Consulter les demandes de droit RGPD — LOT 10, T14. Meme",
+        "perimetre que `demandesRGPD` : ADM-E (n'importe ou)/SUPER",
+        "seulement, aucune lecture partielle pour un autre role — a la",
+        "difference des alertes (T13), ou l'ESM recoit une lecture",
+        "limitee fonctionnelle."
+      ]
+    },
+    {
+      "cle": "uneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "LigneDeDemandeRGPDRendue",
+      "role": ["Consulter une demande precise — LOT 10, T14. Meme perimetre que `demandesRGPD`."]
+    },
+    {
+      "cle": "historiqueDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/historique",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeLHistoriqueRGPD",
+      "role": [
+        "Consulter l'historique d'une demande de droit RGPD — LOT 10,",
+        "T14. La suite des audit_event de cette demande (reception,",
+        "verification d'identite, cloture)."
+      ]
+    },
+    {
+      "cle": "verificationIdentiteDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/verification-identite",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionRGPD",
+      "role": [
+        "Marquer l'identite du demandeur comme verifiee — LOT 10, T14,",
+        "cahier §21.5. ADM-E (n'importe ou)/SUPER seulement. Aucune",
+        "precondition d'etat, IDEMPOTENT si deja verifiee. Version du",
+        "cahier §18.4 : 409 version_obsolete sans ecrasement silencieux.",
+        "Aucun motif : ECART-064 ne s'applique jamais a une ressource",
+        "sans entite. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "clotureDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/cloture",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionRGPD",
+      "role": [
+        "Cloturer une demande de droit RGPD — LOT 10, T14, cahier §21.5",
+        "« cloture tracable ». ADM-E (n'importe ou)/SUPER seulement.",
+        "Valide SEULEMENT depuis l'etat `received` (409",
+        "transition_invalide si deja cloturee). `reponse` resume ce qui a",
+        "ete transmis (export structure du backlog), jamais un fichier",
+        "genere. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

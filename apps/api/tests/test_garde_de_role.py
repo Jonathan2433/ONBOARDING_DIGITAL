@@ -526,8 +526,10 @@ def test_une_route_SANS_parametre_de_chemin_leve_au_lieu_de_refuser_tout_le_mond
 #  voir `app/support/perimetre_alertes.py`) sont les PREMIERES a porter un
 #  parametre de chemin SANS jamais porter `{code}` — meme motif structurel,
 #  exclusion explicite plutot qu'un filtre elargi qui masquerait une vraie
-#  faute de frappe ailleurs.
-_PREFIXES_SANS_GARDE_D_ENTITE = ("/api/v1/alerts",)
+#  faute de frappe ailleurs. `/data-subject-requests/...` (LOT 10, T14 —
+#  `data_subject_request` ne porte pas plus d'`entity_id`, voir
+#  `app/privacy/perimetre.py`) rejoint la meme exclusion pour le meme motif.
+_PREFIXES_SANS_GARDE_D_ENTITE = ("/api/v1/alerts", "/api/v1/data-subject-requests")
 
 
 def test_le_nom_du_parametre_de_chemin_est_celui_du_CONTRAT() -> None:

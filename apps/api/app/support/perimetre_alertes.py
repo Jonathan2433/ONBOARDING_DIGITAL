@@ -79,8 +79,12 @@ from typing import TYPE_CHECKING, Final
 
 from sqlalchemy import text
 
-from app.organization.modeles import TypeResponsabilite, TypeRoleTechnique
-from app.permissions.services import RoleDeLaMatrice, est_super_administrateur
+from app.organization.modeles import TypeResponsabilite
+from app.permissions.services import (
+    RoleDeLaMatrice,
+    est_administrateur_d_entite_quelque_part,
+    est_super_administrateur,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection
@@ -100,34 +104,6 @@ class PerimetreDesAlertes(enum.Enum):
 ROLES_DE_TRAITEMENT_DES_ALERTES: Final[frozenset[RoleDeLaMatrice]] = frozenset(
     {RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE, RoleDeLaMatrice.SUPER_ADMINISTRATEUR}
 )
-
-
-def _est_administrateur_d_entite_quelque_part(
-    connexion: Connection, personne: uuid.UUID, instant: dt.datetime
-) -> bool:
-    """`personne` tient-elle `ENTITY_ADMIN`, DANS N'IMPORTE QUELLE entité, à `instant`.
-
-    Même requête qu'`est_super_administrateur` (`app.permissions.services`),
-    SANS le filtre `entity_id IS NULL` qui est propre à `SUPER_ADMIN` —
-    extension du même patron, nécessaire ici seulement : voir l'en-tête du
-    module.
-    """
-    return bool(
-        connexion.execute(
-            text(
-                "SELECT EXISTS ("
-                "  SELECT 1 FROM technical_role_assignment "
-                "  WHERE person_id = :personne_adm AND role_type = :type_adm "
-                "    AND archived_at IS NULL AND period @> :instant_adm"
-                ")"
-            ),
-            {
-                "personne_adm": personne,
-                "type_adm": TypeRoleTechnique.ENTITY_ADMIN.value,
-                "instant_adm": instant,
-            },
-        ).scalar_one()
-    )
 
 
 def _est_esm_quelque_part(connexion: Connection, personne: uuid.UUID, instant: dt.datetime) -> bool:
@@ -163,7 +139,7 @@ def resoudre_les_roles_pour_les_alertes(
     roles: set[RoleDeLaMatrice] = set()
     if est_super_administrateur(connexion, personne, instant):
         roles.add(RoleDeLaMatrice.SUPER_ADMINISTRATEUR)
-    if _est_administrateur_d_entite_quelque_part(connexion, personne, instant):
+    if est_administrateur_d_entite_quelque_part(connexion, personne, instant):
         roles.add(RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE)
     if _est_esm_quelque_part(connexion, personne, instant):
         roles.add(RoleDeLaMatrice.ESM)
