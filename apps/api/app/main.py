@@ -47,6 +47,7 @@ from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
 from app.permissions.routes import routeur_permissions
+from app.privacy.routes import routeur_rgpd
 from app.reporting.routes import routeur_reporting
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
 from app.shared.errors import (
@@ -185,6 +186,10 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 10, T11 : le signalement d'un bug, MVP-L10-US005. Aucun code
     #  d'entite dans son chemin -- voir l'en-tete d'app/support/routes.py.
     routeur_v1.include_router(routeur_support(config))
+    #  LOT 10, T14 : le suivi d'une demande de droit RGPD, MVP-L10-US008.
+    #  Ressource globale, meme regime que /alerts -- voir l'en-tete
+    #  d'app/privacy/routes.py.
+    routeur_v1.include_router(routeur_rgpd(config))
     application.include_router(routeur_v1)
 
     return application
