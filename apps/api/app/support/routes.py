@@ -60,22 +60,54 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Request, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Path, Query, Request, status
+from pydantic import BaseModel, ConfigDict, Field
 
+from app.audit.modeles import EtatSignalement
+from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
-from app.permissions.services import entite_principale
+from app.entities.routes import (
+    CODE_ENTITE_INTROUVABLE,
+    LONGUEUR_MAXIMALE_CODE,
+    MESSAGE_ENTITE_INTROUVABLE,
+)
+from app.entities.services import resoudre_une_entite_active
+from app.permissions.dependances import (
+    CODE_ROLE_REFUSE,
+    MESSAGE_ROLE_REFUSE,
+    exiger_un_role_dans_l_entite,
+)
+from app.permissions.services import RoleDeLaMatrice, entite_principale, resoudre_les_permissions
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
+from app.shared.pagination import TAILLE_PAR_DEFAUT, TailleDePage
+from app.support.perimetre import (
+    ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS,
+    a_la_lecture_complete,
+    resoudre_le_perimetre_des_signalements,
+)
 from app.support.signalement import creer_un_signalement
+from app.support.traitement import (
+    CODE_SIGNALEMENT_INTROUVABLE,
+    MESSAGE_SIGNALEMENT_INTROUVABLE,
+    lire_l_historique_d_un_signalement,
+    lister_les_signalements,
+    modifier_l_etat_d_un_signalement,
+    signalement_visible,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
+    from sqlalchemy.engine import Connection
+
     from app.configuration.settings import Parametres
 
 CODE_AUCUNE_ENTITE_PRINCIPALE: Final = "aucune_entite_principale"
 MESSAGE_AUCUNE_ENTITE_PRINCIPALE: Final = (
     "Aucune appartenance active n'a ete trouvee pour rattacher ce signalement."
 )
+
+#  §17 : meme borne que les saisies libres de `DemandeDeSignalement`.
+LONGUEUR_MAXIMALE_DU_COMMENTAIRE: Final = 2000
 
 #  Bornes larges et arbitraires : aucun document ne nomme de longueur maximale
 #  pour une saisie libre de signalement, et refuser silencieusement un texte
@@ -125,6 +157,86 @@ class ReponseDuSignalement(BaseModel):
     identifiant: uuid.UUID
     etat: str
     cree_le: dt.datetime
+
+
+class LigneDeSignalementRendue(BaseModel):
+    """Une ligne de la liste — `T12`, matrice §17.
+
+    Les quatre champs techniques sont `null` pour qui n'a que la « Lecture
+    fonctionnelle » (l'`ESM`, lisant les signalements d'autrui) — jamais une
+    absence de colonne, voir `app/support/perimetre.py`.
+    """
+
+    identifiant: uuid.UUID
+    etat: str
+    description: str
+    etapes_de_reproduction: str | None
+    chemin_de_page: str
+    entite_id: uuid.UUID
+    rapporteur_id: uuid.UUID
+    cree_le: dt.datetime
+    version: int
+    version_application: str | None
+    environnement: str | None
+    resume_navigateur: str | None
+    jeton_de_correlation: str | None
+
+
+class ReponseDesSignalements(BaseModel):
+    """Une page de signalements — meme forme que `ReponseDuJournalDAudit` (`T8`)."""
+
+    signalements: list[LigneDeSignalementRendue]
+    page: int
+    taille: int
+    total: int
+    pages: int
+
+
+class EvenementDHistoriqueRendu(BaseModel):
+    """Une ligne de l'historique — `audit_event` de ce signalement."""
+
+    survenu_le: dt.datetime
+    ancien_etat: str | None
+    nouvel_etat: str | None
+    commentaire: str | None
+    acteur_id: uuid.UUID | None
+
+
+class ReponseDeLHistorique(BaseModel):
+    """L'historique complet d'un signalement, le plus recent d'abord."""
+
+    evenements: list[EvenementDHistoriqueRendu]
+
+
+class DemandeDeChangementDEtat(BaseModel):
+    """Corps de `POST .../bug-reports/{signalement}/etat` — matrice §17.
+
+    `commentaire` sert DEUX fins : le commentaire du backlog `US006`, ET le
+    motif obligatoire du §18.1 quand `SUPER` autorise l'appel (voir l'en-tete
+    d'`app/support/traitement.py`) — jamais deux champs redondants.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    nouvel_etat: EtatSignalement
+    version: int = Field(
+        ge=1,
+        description=(
+            "La version lue sur la liste des signalements. Cahier §18.4 : une "
+            "version obsolete rend 409 sans ecrasement silencieux."
+        ),
+    )
+    commentaire: Annotated[
+        str | None,
+        Field(default=None, max_length=LONGUEUR_MAXIMALE_DU_COMMENTAIRE),
+    ] = None
+
+
+class ReponseDeChangementDEtat(BaseModel):
+    """Ce que le changement d'etat a produit."""
+
+    etat: str
+    version: int
 
 
 def routeur_support(parametres: Parametres) -> APIRouter:
@@ -201,5 +313,264 @@ def routeur_support(parametres: Parametres) -> APIRouter:
             etat=signalement.state,
             cree_le=signalement.created_at,
         )
+
+    # ========================================================================
+    #
+    #  LE TRAITEMENT DES SIGNALEMENTS — LOT 10, `T12`, `MVP-L10-US006`. Voir
+    #  l'en-tete d'`app/support/perimetre.py` et d'`app/support/traitement.py`
+    #  pour la derivation complete : qui voit quoi, pourquoi l'historique
+    #  n'est pas servi par `GET /entities/{code}/audit`, et comment `QO-092`
+    #  est resolue par la matrice plutot qu'arbitree.
+    #
+    # ========================================================================
+
+    def _resoudre_l_entite_et_les_roles(
+        connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
+    ) -> tuple[uuid.UUID, frozenset[RoleDeLaMatrice]]:
+        """L'entite active, ET les roles resolus dans CETTE transaction.
+
+        **AUCUNE GARDE COARSE ICI** : contrairement au journal d'audit (six
+        roles, aucun tiret total), la liste des signalements n'a pas de
+        plancher de role — `Soi` est servi a QUI QUE CE SOIT d'authentifie
+        (voir `app.support.perimetre`). Le refus 403 n'existe donc QUE sur la
+        route de changement d'etat, verifiee separement.
+        """
+        entite = resoudre_une_entite_active(connexion, code)
+        if entite is None:
+            raise ErreurApplicative(
+                code=CODE_ENTITE_INTROUVABLE,
+                message=MESSAGE_ENTITE_INTROUVABLE,
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+        return entite.id, frozenset(permissions.roles)
+
+    @routeur.get(
+        "/entities/{code}/bug-reports",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesSignalements,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {"description": "Entite inconnue ou non active."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`taille` hors des trois valeurs du cahier §18.2, ou `page` < 1."
+            },
+        },
+        summary="Consulter les signalements, selon le perimetre resolu",
+        description=(
+            "Matrice §17 « Consulter ses signalements »/« Consulter les signalements "
+            "de l'entite », `T12`, `MVP-L10-US006`. `Soi` pour qui n'a aucun role "
+            "etendu, lecture fonctionnelle (sans contexte technique) pour l'`ESM`, "
+            "complete pour `ADM-E`/`SUPER`. Le `total` sert de compteur back-office, "
+            "filtrable par `etat`."
+        ),
+    )
+    def consulter_les_signalements(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        page: Annotated[int, Query(ge=1, description="Numero de page, 1-indexee")] = 1,
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Elements par page — les trois valeurs du cahier §18.2, seules"),
+        ] = TAILLE_PAR_DEFAUT,
+        etat: Annotated[
+            EtatSignalement | None,
+            Query(description="Filtrer sur un etat exact — sert le compteur back-office."),
+        ] = None,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDesSignalements:
+        """Consulter les signalements — matrice §17, `T12`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, roles = _resoudre_l_entite_et_les_roles(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            perimetre = resoudre_le_perimetre_des_signalements(roles=roles)
+            resultat = lister_les_signalements(
+                connexion,
+                entite=entite_id,
+                acteur=appelant.personne,
+                perimetre=perimetre,
+                avec_lecture_complete=a_la_lecture_complete(perimetre=perimetre),
+                filtre_etat=etat.value if etat is not None else None,
+                page=page,
+                taille=int(taille),
+            )
+
+        pages = -(-resultat.total // int(taille))
+        return ReponseDesSignalements(
+            signalements=[
+                LigneDeSignalementRendue(
+                    identifiant=ligne.id,
+                    etat=ligne.state,
+                    description=ligne.description,
+                    etapes_de_reproduction=ligne.reproduction_steps,
+                    chemin_de_page=ligne.page_path,
+                    entite_id=ligne.entity_id,
+                    rapporteur_id=ligne.reported_by_person_id,
+                    cree_le=ligne.created_at,
+                    version=ligne.version,
+                    version_application=ligne.application_version,
+                    environnement=ligne.environment,
+                    resume_navigateur=ligne.browser_summary,
+                    jeton_de_correlation=ligne.correlation_token,
+                )
+                for ligne in resultat.signalements
+            ],
+            page=page,
+            taille=int(taille),
+            total=resultat.total,
+            pages=pages,
+        )
+
+    @routeur.get(
+        "/entities/{code}/bug-reports/{signalement}/historique",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeLHistorique,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite inconnue, ou signalement inconnu/hors du perimetre resolu."
+            },
+        },
+        summary="Consulter l'historique d'un signalement",
+        description=(
+            "La suite des `audit_event` de ce signalement — jamais la route "
+            "generique d'audit, dont le perimetre (matrice §16) differe de celui "
+            "du support (matrice §17). Visible a qui peut deja voir le signalement "
+            "lui-meme, jamais plus loin."
+        ),
+    )
+    def consulter_l_historique(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite consultee",
+            ),
+        ],
+        signalement: Annotated[uuid.UUID, Path(description="L'identifiant du signalement")],
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDeLHistorique:
+        """Consulter l'historique d'un signalement — matrice §17, `T12`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, roles = _resoudre_l_entite_et_les_roles(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            perimetre = resoudre_le_perimetre_des_signalements(roles=roles)
+            if not signalement_visible(
+                connexion,
+                signalement=signalement,
+                entite=entite_id,
+                acteur=appelant.personne,
+                perimetre=perimetre,
+            ):
+                raise ErreurApplicative(
+                    code=CODE_SIGNALEMENT_INTROUVABLE,
+                    message=MESSAGE_SIGNALEMENT_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            evenements = lire_l_historique_d_un_signalement(connexion, signalement=signalement)
+        return ReponseDeLHistorique(
+            evenements=[
+                EvenementDHistoriqueRendu(
+                    survenu_le=evenement.occurred_at,
+                    ancien_etat=(evenement.old_values or {}).get("state"),
+                    nouvel_etat=(evenement.new_values or {}).get("state"),
+                    commentaire=evenement.reason,
+                    acteur_id=evenement.actor_person_id,
+                )
+                for evenement in evenements
+            ]
+        )
+
+    garde_du_traitement = exiger_un_role_dans_l_entite(
+        parametres, ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS
+    )
+
+    @routeur.post(
+        "/entities/{code}/bug-reports/{signalement}/etat",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeChangementDEtat,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ADM-E` ni `SUPER` dans cette entite, ou le "
+                    "jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite inconnue, ou signalement inconnu dans cette entite."
+            },
+            status.HTTP_409_CONFLICT: {"description": "`version_obsolete` — cahier §18.4."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`motif_obligatoire` : `SUPER` autorise cet appel et `commentaire` "
+                    "est absent ou vide (cahier §18.1, `ECART-064`)."
+                )
+            },
+        },
+        summary="Modifier l'etat d'un signalement",
+        description=(
+            "Matrice §17 « Modifier l'etat d'un signalement | Entite | Global », "
+            "`T12`, `MVP-L10-US006`. Aucune transition n'est restreinte — le corpus "
+            "ne porte aucun diagramme d'etat pour `bug_report`. `commentaire` est "
+            "trace dans `audit_event.reason` : c'est l'historique du backlog, et le "
+            "motif du §18.1 quand `SUPER` autorise l'appel."
+        ),
+    )
+    def modifier_l_etat(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1,
+                max_length=LONGUEUR_MAXIMALE_CODE,
+                description="Le `code` de l'entite",
+            ),
+        ],
+        signalement: Annotated[uuid.UUID, Path(description="L'identifiant du signalement")],
+        demande: DemandeDeChangementDEtat,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_traitement),  # noqa: B008
+    ) -> ReponseDeChangementDEtat:
+        """Modifier l'etat d'un signalement — matrice §17, `T12`.
+
+        **LA GARDE COARSE A RESOLU LES SIENS DANS SA PROPRE CONNEXION** :
+        reverifies ici, dans la transaction qui ecrit — meme motif que
+        `_resoudre_l_entite_et_verifier_le_role` (`app.organization.routes`).
+        """
+        _proteger(requete)
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite_id, roles = _resoudre_l_entite_et_les_roles(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            if not ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS & roles:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            exiger_un_motif_si_necessaire(roles, demande.commentaire)
+            resultat = modifier_l_etat_d_un_signalement(
+                connexion,
+                entite=entite_id,
+                signalement=signalement,
+                nouvel_etat=demande.nouvel_etat.value,
+                version_attendue=demande.version,
+                commentaire=demande.commentaire,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return ReponseDeChangementDEtat(etat=resultat.state, version=resultat.version)
 
     return routeur
