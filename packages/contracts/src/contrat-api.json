@@ -2332,6 +2332,66 @@
         "ecriture : le 403 ne vient JAMAIS d'un role refuse ici, uniquement",
         "d'une origine ou d'un jeton anti-CSRF invalide."
       ]
+    },
+    {
+      "cle": "signalements",
+      "chemin": "/api/v1/entities/{code}/bug-reports",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesSignalements",
+      "role": [
+        "Consulter les signalements, selon le perimetre resolu — LOT 10,",
+        "T12, matrice §17, MVP-L10-US006.",
+        "Soi pour DSM/BOOST/OFFICE/EMP/NEW (le plancher universel, meme",
+        "motif que PerimetreDuSuivi, LOT 7 T12), Lecture fonctionnelle pour",
+        "l'ESM (toute l'entite, SANS le contexte technique), complete pour",
+        "ADM-E (Entite)/SUPER (Global).",
+        "Qui voit SES PROPRES signalements voit toujours le contexte",
+        "technique, meme en Soi : ce sont des donnees que son propre",
+        "navigateur a transmises a sa propre demande.",
+        "Le `total`, filtrable par `etat`, sert le « compteur back-office »",
+        "du backlog -- aucune route separee."
+      ]
+    },
+    {
+      "cle": "historiqueDUnSignalement",
+      "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/historique",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDeLHistorique",
+      "role": [
+        "Consulter l'historique d'un signalement — LOT 10, T12.",
+        "JAMAIS servi par la route generique d'audit (matrice §16) : son",
+        "perimetre (Consultants/Cercle/Bureau) differe de celui du support",
+        "(matrice §17) -- le servir par l'audit violerait le critere de",
+        "sortie 3 du lot. Visible a qui peut deja voir le signalement",
+        "lui-meme (meme perimetre que `signalements`), jamais plus loin :",
+        "404 hors de la portee resolue, jamais 403, meme discipline que",
+        "l'isolation multi-entites du LOT 9."
+      ]
+    },
+    {
+      "cle": "changementDEtatDUnSignalement",
+      "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/etat",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeChangementDEtat",
+      "role": [
+        "Modifier l'etat d'un signalement — LOT 10, T12, matrice §17",
+        "« Modifier l'etat d'un signalement | Entite | Global »,",
+        "MVP-L10-US006.",
+        "ADM-E/SUPER SEULEMENT : DSM/ESM/BOOST/OFFICE a tiret, y compris",
+        "l'ESM qui lit pourtant toute l'entite (ligne du dessus).",
+        "Aucune transition n'est restreinte -- le corpus ne porte aucun",
+        "diagramme d'etat pour bug_report, a la difference de l'onboarding.",
+        "`commentaire` sert deux fins : le « commentaires et historique »",
+        "du backlog (trace dans audit_event.reason, l'historique EST la",
+        "suite de ces evenements), ET le motif obligatoire du §18.1 quand",
+        "SUPER autorise l'appel (ECART-064, regle permanente du projet,",
+        "pas seulement le retrofit de T7).",
+        "Version du cahier §18.4 : 409 sans ecrasement silencieux.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

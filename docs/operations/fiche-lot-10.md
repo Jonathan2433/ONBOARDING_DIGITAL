@@ -3,8 +3,8 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11` faites
-**Sous-étape suivante :** `T12` — Le traitement des signalements par Jonathan
+**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12` faites
+**Sous-étape suivante :** `T13` — Les alertes opérationnelles
 **Porte de sortie :** `G10`, tag attendu `v0.10.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -73,10 +73,15 @@ que six critères pour ce lot.
 super-administrateur dans une entité » ; `archive_reason` et `assignment_reason` existent depuis
 le LOT 2 et aucune route ne les écrit encore. Ce lot les alimente, avec `audit_event`.
 
-`QO-092` — **ouverte, à trancher avant ou pendant `T12`** (traitement des signalements). Le cahier
-ne dit pas si un signalement part vers Jonathan seul ou vers un canal eXalt plus large ; le
-backlog nomme « Jonathan » comme rôle du besoin de `US006`, ce qui penche pour la première lecture
-sans la trancher définitivement — à poser explicitement le moment venu.
+`QO-092` — **résolue par `T12`, pas arbitrée, et reste ouverte pour un seul volet.** Le cahier ne
+disait pas si un signalement part vers Jonathan seul ou vers un canal eXalt plus large. La matrice
+§17 (verrouillée depuis le 25/07/2026) règle la question pour l'APPLICATION : « Modifier l'état d'un
+signalement » donne `ADM-E` (son entité) ET `SUPER` (global), jamais « Jonathan seul » au sens
+propre — confirmé par la phrase distincte du cahier « visibilité du super-administrateur ». Aucun
+canal externe (e-mail, Teams, billetterie) n'est décrit nulle part pour les signalements, à la
+différence des alertes qui nomment explicitement Uptime Kuma : ce lot n'en construit aucun. `QO-092`
+reste donc ouverte au registre pour son seul volet réellement hors périmètre — un canal de
+notification futur — non bloquant, à reposer si le LOT 11/13 le rencontre.
 
 **Une divergence trouvée dans `infra/scripts/verifier-recette-modele.py`, à vérifier à `T16`, pas
 à recopier.** Les classements existants des contrôles `§30.19` à `§30.24` portent des annotations
@@ -107,7 +112,7 @@ suivante ne commence.
 | `T9` ✅ | Export CSV de l'audit, réservé à `ADM-E`/`SUPER`, lui-même audité | `US004` (clôt) | `DEC-663`. Synchrone, sans dépôt MinIO — dicté par le docstring d'`ExportRequest` lui-même (`T1`) et la contrepartie explicite V1 asynchrone (`V1-L04-US002`). Aucun arbitrage de Jonathan nécessaire |
 | `T10` ✅ | Reporting étendu — compteurs et tableaux du §15.1/§10.10 | `US003` (clôt) | `DEC-664`. Mesuré en construisant : distinct du tableau de bord du LOT 9 `T5` sur six grandeurs partagées (`ROLES_DU_TABLEAU_DE_BORD` réutilisée telle quelle) ; onboardings terminés, progression/durée moyennes, arrivées à 30 jours (fenêtre bornée), répartitions cercle/client/DSM, détail onboarding et profils incomplets |
 | `T11` ✅ | Le bouton « Reporter un bug » et le signalement | `US005` | `DEC-665`. Aucune garde de rôle au-delà d'une session établie — seule ligne du §17 sans tiret ; aucun code d'entité dans le chemin, entité toujours résolue à l'entité principale du rapporteur ; pied de page, pages d'erreur, menu mobile |
-| `T12` | Le traitement des signalements par Jonathan | `US006` | `QO-092` à trancher ici |
+| `T12` ✅ | Le traitement des signalements par Jonathan | `US006` | `DEC-666`. `QO-092` résolue par la matrice (§17 « Modifier l'état » : `ADM-E`/`SUPER`), pas arbitrée — reste ouverte pour son seul volet hors périmètre (canal externe, LOT 11/13) |
 | `T13` | Les alertes opérationnelles — cycle ouverture/acquittement/commentaire/résolution/réouverture | `US007` | suivi applicatif seul, pas l'intégration Uptime Kuma (LOT 13) |
 | `T14` | Le suivi d'une demande de droit RGPD | `US008` | `data_subject_request` |
 | `T15` | Les écrans back-office — audit, reporting, support | transversal | pattern `T14` du LOT 9, onglets de la page `administration` existante |
