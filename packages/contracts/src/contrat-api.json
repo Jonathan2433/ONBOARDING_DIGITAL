@@ -2392,6 +2392,95 @@
         "Version du cahier §18.4 : 409 sans ecrasement silencieux.",
         "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
       ]
+    },
+    {
+      "cle": "alertes",
+      "chemin": "/api/v1/alerts",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 422],
+      "forme": "ReponseDesAlertes",
+      "role": [
+        "Consulter les alertes operationnelles — LOT 10, T13, matrice §17",
+        "« Consulter les alertes de securite », MVP-L10-US007.",
+        "Ressource GLOBALE (operational_alert n'a aucun entity_id, modele",
+        "§21.2) : route PLATE, ADM-E/ESM resolus N'IMPORTE OU plutot que",
+        "dans une entite consultee.",
+        "Complet pour ADM-E (n'importe ou)/SUPER, Limite fonctionnel pour",
+        "l'ESM (source/empreinte masques, meme mot que la lecture",
+        "fonctionnelle de T12), refuse (403) a DSM/BOOST/OFFICE/EMP -- aucun",
+        "plancher Soi, a la difference des signalements."
+      ]
+    },
+    {
+      "cle": "uneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "LigneDAlerteRendue",
+      "role": ["Consulter une alerte precise — LOT 10, T13. Meme perimetre que `alertes`."]
+    },
+    {
+      "cle": "commentairesDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/commentaires",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDesCommentaires",
+      "role": [
+        "Consulter les commentaires d'une alerte — LOT 10, T13.",
+        "`alert_comment` (modele §21.3) -- JAMAIS audit_event.reason : a la",
+        "difference du signalement (T12, aucune table dediee), l'alerte",
+        "porte DEUX verbes distincts (Acquitter / Resoudre ou commenter),",
+        "et le commentaire vit UNE SEULE FOIS, dans sa propre table."
+      ]
+    },
+    {
+      "cle": "ajouterUnCommentaireAUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/commentaires",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCommentaireAjoute",
+      "role": [
+        "Commenter une alerte SANS changer son etat — LOT 10, T13, matrice",
+        "§17 « Resoudre ou commenter une alerte | Entite | Global ».",
+        "ADM-E (n'importe ou)/SUPER seulement. Aucune precondition d'etat :",
+        "une note est utile a tout moment du cycle, y compris apres",
+        "resolution. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "acquittementDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/acquittement",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionDAlerte",
+      "role": [
+        "Acquitter une alerte — LOT 10, T13, matrice §17 « Acquitter une",
+        "alerte | Entite | Global ». ADM-E (n'importe ou)/SUPER seulement.",
+        "Valide SEULEMENT depuis l'etat `open` (409 transition_invalide",
+        "sinon) -- acquitter une alerte deja resolue ou deja acquittee n'a",
+        "pas de sens operationnel.",
+        "Version du cahier §18.4 : 409 version_obsolete sans ecrasement",
+        "silencieux. Aucun motif : ECART-064 ne s'applique jamais a une",
+        "ressource sans entite. PROTEGEE PAR LES DEUX BARRIERES CSRF",
+        "(`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "resolutionDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/resolution",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionDAlerte",
+      "role": [
+        "Resoudre une alerte — LOT 10, T13, matrice §17 « Resoudre ou",
+        "commenter une alerte | Entite | Global ». ADM-E (n'importe",
+        "ou)/SUPER seulement.",
+        "Valide depuis `open` OU `acknowledged` (409 transition_invalide si",
+        "deja resolue) -- aucun diagramme n'exige l'acquittement prealable.",
+        "`commentaire` facultatif cree AUSSI une ligne alert_comment : le",
+        "§17 fusionne Resoudre et commenter dans un seul verbe.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [

@@ -3,8 +3,8 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12` faites
-**Sous-étape suivante :** `T13` — Les alertes opérationnelles
+**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13` faites
+**Sous-étape suivante :** `T14` — Le suivi d'une demande de droit RGPD
 **Porte de sortie :** `G10`, tag attendu `v0.10.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
@@ -113,7 +113,7 @@ suivante ne commence.
 | `T10` ✅ | Reporting étendu — compteurs et tableaux du §15.1/§10.10 | `US003` (clôt) | `DEC-664`. Mesuré en construisant : distinct du tableau de bord du LOT 9 `T5` sur six grandeurs partagées (`ROLES_DU_TABLEAU_DE_BORD` réutilisée telle quelle) ; onboardings terminés, progression/durée moyennes, arrivées à 30 jours (fenêtre bornée), répartitions cercle/client/DSM, détail onboarding et profils incomplets |
 | `T11` ✅ | Le bouton « Reporter un bug » et le signalement | `US005` | `DEC-665`. Aucune garde de rôle au-delà d'une session établie — seule ligne du §17 sans tiret ; aucun code d'entité dans le chemin, entité toujours résolue à l'entité principale du rapporteur ; pied de page, pages d'erreur, menu mobile |
 | `T12` ✅ | Le traitement des signalements par Jonathan | `US006` | `DEC-666`. `QO-092` résolue par la matrice (§17 « Modifier l'état » : `ADM-E`/`SUPER`), pas arbitrée — reste ouverte pour son seul volet hors périmètre (canal externe, LOT 11/13) |
-| `T13` | Les alertes opérationnelles — cycle ouverture/acquittement/commentaire/résolution/réouverture | `US007` | suivi applicatif seul, pas l'intégration Uptime Kuma (LOT 13) |
+| `T13` ✅ | Les alertes opérationnelles — cycle ouverture/acquittement/commentaire/résolution/réouverture | `US007` (clôt) | `DEC-667`. Ressource GLOBALE (`operational_alert` sans `entity_id`) : routes plates, `ADM-E`/`ESM` résolus n'importe où (extension du patron `est_super_administrateur`) ; aucun motif exigé (`ECART-064` ne s'applique qu'à une intervention dans une entité) ; `lever_une_alerte` sans route HTTP, réouverture sur la même ligne |
 | `T14` | Le suivi d'une demande de droit RGPD | `US008` | `data_subject_request` |
 | `T15` | Les écrans back-office — audit, reporting, support | transversal | pattern `T14` du LOT 9, onglets de la page `administration` existante |
 | `T16` | Recette de clôture, classement du §30 (`§30.19`-`§30.24` à vérifier, pas à recopier), checklist `G10` | porte | pattern `T14`/`T15`/`T16` des LOTS 7/8/9 |

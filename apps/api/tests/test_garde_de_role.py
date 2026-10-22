@@ -518,6 +518,18 @@ def test_une_route_SANS_parametre_de_chemin_leve_au_lieu_de_refuser_tout_le_mond
     )
 
 
+#  Prefixes ENTITE-LESS, jamais gardes par `exiger_un_role_dans_l_entite` — la
+#  dependance EXIGE un parametre de chemin `code` (voir son propre docstring),
+#  structurellement absent d'une ressource GLOBALE. `POST /bug-reports` (T11)
+#  n'avait aucune accolade et echappait deja au filtre ci-dessous ; les routes
+#  `/alerts/...` (LOT 10, T13 — `operational_alert` ne porte aucun `entity_id`,
+#  voir `app/support/perimetre_alertes.py`) sont les PREMIERES a porter un
+#  parametre de chemin SANS jamais porter `{code}` — meme motif structurel,
+#  exclusion explicite plutot qu'un filtre elargi qui masquerait une vraie
+#  faute de frappe ailleurs.
+_PREFIXES_SANS_GARDE_D_ENTITE = ("/api/v1/alerts",)
+
+
 def test_le_nom_du_parametre_de_chemin_est_celui_du_CONTRAT() -> None:
     """`PARAMETRE_DE_CHEMIN` doit valoir le nom que les routes emploient.
 
@@ -531,7 +543,11 @@ def test_le_nom_du_parametre_de_chemin_est_celui_du_CONTRAT() -> None:
     memoire d'une API.
     """
     manifeste = json.loads(MANIFESTE.read_text(encoding="utf-8"))
-    gabarits = [point["chemin"] for point in manifeste["endpoints"] if "{" in point["chemin"]]
+    gabarits = [
+        point["chemin"]
+        for point in manifeste["endpoints"]
+        if "{" in point["chemin"] and not point["chemin"].startswith(_PREFIXES_SANS_GARDE_D_ENTITE)
+    ]
     assert gabarits, "aucun gabarit parametre dans le contrat : le test ne prouverait rien"
     for gabarit in gabarits:
         assert f"{{{PARAMETRE_DE_CHEMIN}}}" in gabarit, (

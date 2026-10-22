@@ -1,4 +1,18 @@
-"""`POST /bug-reports` — LOT 10, `T11`, `MVP-L10-US005`.
+"""`POST /bug-reports` — LOT 10, `T11`, `MVP-L10-US005`. Et les alertes, `T13`.
+
+LES ALERTES OPÉRATIONNELLES (`T13`, `MVP-L10-US007`) — ROUTES PLATES, SANS `{code}`
+
+  `operational_alert` est une ressource GLOBALE (modèle §21.2, aucun
+  `entity_id` — voir `app/audit/modeles.py`) : ses routes ne peuvent pas
+  suivre le gabarit `/entities/{code}/...` des autres routes de ce fichier,
+  qui portent toutes une entité DÉJÀ DÉSIGNÉE par l'appelant. `/alerts` est
+  donc PLATE, même régime que `POST /bug-reports` et `POST /entities` — les
+  deux seules autres routes entité-less de ce dépôt. Voir l'en-tête d'
+  `app/support/perimetre_alertes.py` et d'`app/support/traitement_alertes.py`
+  pour la dérivation complète : pourquoi `ADM-E`/`ESM` sont résolus
+  « n'importe où » plutôt que dans une entité, pourquoi `ECART-064` ne
+  s'applique jamais ici, et pourquoi le cycle n'autorise que deux
+  transitions restreintes.
 
 AUCUNE GARDE DE RÔLE AU-DELÀ D'UNE SESSION ÉTABLIE, ET CE N'EST PAS UNE OMISSION
 
@@ -60,10 +74,10 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final
 
-from fastapi import APIRouter, Depends, Path, Query, Request, status
+from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.audit.modeles import EtatSignalement
+from app.audit.modeles import EtatAlerte, EtatSignalement
 from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
 from app.entities.routes import (
@@ -86,6 +100,15 @@ from app.support.perimetre import (
     a_la_lecture_complete,
     resoudre_le_perimetre_des_signalements,
 )
+from app.support.perimetre_alertes import (
+    ROLES_DE_TRAITEMENT_DES_ALERTES,
+    PerimetreDesAlertes,
+    resoudre_le_perimetre_des_alertes,
+    resoudre_les_roles_pour_les_alertes,
+)
+from app.support.perimetre_alertes import (
+    a_la_lecture_complete as alerte_a_la_lecture_complete,
+)
 from app.support.signalement import creer_un_signalement
 from app.support.traitement import (
     CODE_SIGNALEMENT_INTROUVABLE,
@@ -95,8 +118,18 @@ from app.support.traitement import (
     modifier_l_etat_d_un_signalement,
     signalement_visible,
 )
+from app.support.traitement_alertes import (
+    acquitter_une_alerte,
+    ajouter_un_commentaire,
+    lire_une_alerte,
+    lister_les_alertes,
+    lister_les_commentaires,
+    resoudre_une_alerte,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Callable
+
     from sqlalchemy.engine import Connection
 
     from app.configuration.settings import Parametres
@@ -237,6 +270,113 @@ class ReponseDeChangementDEtat(BaseModel):
 
     etat: str
     version: int
+
+
+#  §17 : meme borne que le commentaire d'un signalement — aucune raison de
+#  diverger pour une saisie libre de meme nature.
+LONGUEUR_MAXIMALE_DU_COMMENTAIRE_D_ALERTE: Final = 2000
+
+
+class LigneDAlerteRendue(BaseModel):
+    """Une ligne de la liste des alertes — `T13`, matrice §17.
+
+    `source`/`empreinte` sont `null` pour le perimetre `LIMITE` (l'`ESM`) —
+    voir `app/support/perimetre_alertes.py`.
+    """
+
+    identifiant: uuid.UUID
+    gravite: str
+    source: str | None
+    etat: str
+    assigne_a: uuid.UUID | None
+    ouverte_le: dt.datetime
+    acquittee_le: dt.datetime | None
+    resolue_le: dt.datetime | None
+    empreinte: str | None
+    version: int
+
+
+class ReponseDesAlertes(BaseModel):
+    """Une page d'alertes — meme forme que `ReponseDesSignalements`."""
+
+    alertes: list[LigneDAlerteRendue]
+    page: int
+    taille: int
+    total: int
+    pages: int
+
+
+class CommentaireDAlerteRendu(BaseModel):
+    """Un commentaire d'`alert_comment`."""
+
+    identifiant: uuid.UUID
+    contenu: str
+    cree_le: dt.datetime
+    auteur_id: uuid.UUID | None
+
+
+class ReponseDesCommentaires(BaseModel):
+    """Les commentaires d'une alerte, le plus recent d'abord."""
+
+    commentaires: list[CommentaireDAlerteRendu]
+
+
+class DemandeDAcquittement(BaseModel):
+    """Corps de `POST .../alerts/{alerte}/acquittement` — matrice §17.
+
+    Aucun champ `motif` : `ECART-064` ne s'applique jamais a une ressource
+    globale (voir `app/support/perimetre_alertes.py`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(
+        ge=1,
+        description=(
+            "La version lue sur la liste des alertes. Cahier §18.4 : une "
+            "version obsolete rend 409 sans ecrasement silencieux."
+        ),
+    )
+
+
+class DemandeDeResolution(BaseModel):
+    """Corps de `POST .../alerts/{alerte}/resolution` — matrice §17.
+
+    `commentaire` est facultatif : « Resoudre ou commenter » est UN SEUL
+    verbe, qui peut s'exercer avec ou sans note jointe.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=1)
+    commentaire: Annotated[
+        str | None,
+        Field(default=None, max_length=LONGUEUR_MAXIMALE_DU_COMMENTAIRE_D_ALERTE),
+    ] = None
+
+
+class DemandeDeCommentaire(BaseModel):
+    """Corps de `POST .../alerts/{alerte}/commentaires` — commenter SANS resoudre."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    contenu: Annotated[
+        str, Field(min_length=1, max_length=LONGUEUR_MAXIMALE_DU_COMMENTAIRE_D_ALERTE)
+    ]
+
+
+class ReponseDeTransitionDAlerte(BaseModel):
+    """Ce qu'une transition d'etat d'alerte a produit."""
+
+    etat: str
+    version: int
+
+
+class ReponseDeCommentaireAjoute(BaseModel):
+    """Ce que l'ajout d'un commentaire a produit."""
+
+    identifiant: uuid.UUID
+    cree_le: dt.datetime
 
 
 def routeur_support(parametres: Parametres) -> APIRouter:
@@ -572,5 +712,327 @@ def routeur_support(parametres: Parametres) -> APIRouter:
                 instant=instant,
             )
         return ReponseDeChangementDEtat(etat=resultat.state, version=resultat.version)
+
+    # ========================================================================
+    #
+    #  LES ALERTES OPÉRATIONNELLES — LOT 10, `T13`, `MVP-L10-US007`. Routes
+    #  PLATES (`/alerts`, jamais `/entities/{code}/...`) : voir l'en-tete du
+    #  module, d'`app/support/perimetre_alertes.py` et d'`app/support/
+    #  traitement_alertes.py` pour la derivation complete.
+    #
+    # ========================================================================
+
+    def _resoudre_le_perimetre_des_alertes(
+        connexion: Connection, *, appelant: SessionEtablie, instant: dt.datetime
+    ) -> PerimetreDesAlertes:
+        """Le perimetre resolu, OU 403 — aucune des trois lignes du §17 ne
+        porte de plancher `Soi` (voir `app/support/perimetre_alertes.py`)."""
+        roles = resoudre_les_roles_pour_les_alertes(
+            connexion, personne=appelant.personne, instant=instant
+        )
+        perimetre = resoudre_le_perimetre_des_alertes(roles=roles)
+        if perimetre is None:
+            raise ErreurApplicative(
+                code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
+            )
+        return perimetre
+
+    def _exiger_le_traitement_des_alertes(
+        parametres: Parametres,
+    ) -> Callable[[Request, Response], SessionEtablie]:
+        """Coarse : exige `ADM-E` (n'importe ou) ou `SUPER` — reverifiee dans
+        la transaction d'ecriture, meme motif que `garde_du_traitement`
+        ci-dessus. Pas `exiger_un_role_dans_l_entite` : cette dependance
+        EXIGE un parametre de chemin `code` (`app.permissions.dependances`),
+        absent de toute route plate."""
+        controler_la_session = exiger_une_session(parametres)
+
+        def controler(requete: Request, reponse: Response) -> SessionEtablie:
+            appelant = controler_la_session(requete, reponse)
+            instant = dt.datetime.now(tz=dt.UTC)
+            with moteur(parametres).connect() as connexion:
+                roles = resoudre_les_roles_pour_les_alertes(
+                    connexion, personne=appelant.personne, instant=instant
+                )
+            if not ROLES_DE_TRAITEMENT_DES_ALERTES & roles:
+                raise ErreurApplicative(
+                    code=CODE_ROLE_REFUSE,
+                    message=MESSAGE_ROLE_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            return appelant
+
+        return controler
+
+    garde_du_traitement_des_alertes = _exiger_le_traitement_des_alertes(parametres)
+
+    @routeur.get(
+        "/alerts",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesAlertes,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": "`acces_refuse` : ni `ESM`, ni `ADM-E`, ni `SUPER`."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`taille` hors des trois valeurs du cahier §18.2, ou `page` < 1."
+            },
+        },
+        summary="Consulter les alertes operationnelles",
+        description=(
+            "Matrice §17 « Consulter les alertes de securite », `T13`, "
+            "`MVP-L10-US007`. Ressource globale : complete pour `ADM-E` "
+            "(n'importe ou) et `SUPER`, limitee fonctionnellement pour l'`ESM` "
+            "(`source`/`empreinte` masques), refusee aux autres roles."
+        ),
+    )
+    def consulter_les_alertes(
+        page: Annotated[int, Query(ge=1, description="Numero de page, 1-indexee")] = 1,
+        taille: Annotated[
+            TailleDePage,
+            Query(description="Elements par page — les trois valeurs du cahier §18.2, seules"),
+        ] = TAILLE_PAR_DEFAUT,
+        etat: Annotated[EtatAlerte | None, Query(description="Filtrer sur un etat exact.")] = None,
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDesAlertes:
+        """Consulter les alertes operationnelles — matrice §17, `T13`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            perimetre = _resoudre_le_perimetre_des_alertes(
+                connexion, appelant=appelant, instant=instant
+            )
+            resultat = lister_les_alertes(
+                connexion,
+                avec_lecture_complete=alerte_a_la_lecture_complete(perimetre=perimetre),
+                filtre_etat=etat.value if etat is not None else None,
+                page=page,
+                taille=int(taille),
+            )
+
+        pages = -(-resultat.total // int(taille))
+        return ReponseDesAlertes(
+            alertes=[
+                LigneDAlerteRendue(
+                    identifiant=ligne.id,
+                    gravite=ligne.severity,
+                    source=ligne.source,
+                    etat=ligne.state,
+                    assigne_a=ligne.assigned_to_person_id,
+                    ouverte_le=ligne.opened_at,
+                    acquittee_le=ligne.acknowledged_at,
+                    resolue_le=ligne.resolved_at,
+                    empreinte=ligne.fingerprint,
+                    version=ligne.version,
+                )
+                for ligne in resultat.alertes
+            ],
+            page=page,
+            taille=int(taille),
+            total=resultat.total,
+            pages=pages,
+        )
+
+    @routeur.get(
+        "/alerts/{alerte}",
+        status_code=status.HTTP_200_OK,
+        response_model=LigneDAlerteRendue,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {"description": "`acces_refuse`."},
+            status.HTTP_404_NOT_FOUND: {"description": "Aucune alerte avec cet identifiant."},
+        },
+        summary="Consulter une alerte operationnelle",
+    )
+    def consulter_une_alerte(
+        alerte: Annotated[uuid.UUID, Path(description="L'identifiant de l'alerte")],
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> LigneDAlerteRendue:
+        """Consulter une alerte — matrice §17, `T13`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            perimetre = _resoudre_le_perimetre_des_alertes(
+                connexion, appelant=appelant, instant=instant
+            )
+            ligne = lire_une_alerte(
+                connexion,
+                alerte=alerte,
+                avec_lecture_complete=alerte_a_la_lecture_complete(perimetre=perimetre),
+            )
+        return LigneDAlerteRendue(
+            identifiant=ligne.id,
+            gravite=ligne.severity,
+            source=ligne.source,
+            etat=ligne.state,
+            assigne_a=ligne.assigned_to_person_id,
+            ouverte_le=ligne.opened_at,
+            acquittee_le=ligne.acknowledged_at,
+            resolue_le=ligne.resolved_at,
+            empreinte=ligne.fingerprint,
+            version=ligne.version,
+        )
+
+    @routeur.get(
+        "/alerts/{alerte}/commentaires",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDesCommentaires,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {"description": "`acces_refuse`."},
+            status.HTTP_404_NOT_FOUND: {"description": "Aucune alerte avec cet identifiant."},
+        },
+        summary="Consulter les commentaires d'une alerte",
+        description=(
+            "`alert_comment` (modele §21.3) — jamais `audit_event.reason` "
+            "(voir l'en-tete d'`app/support/traitement_alertes.py`)."
+        ),
+    )
+    def consulter_les_commentaires(
+        alerte: Annotated[uuid.UUID, Path(description="L'identifiant de l'alerte")],
+        appelant: SessionEtablie = Depends(exiger_une_session(parametres)),  # noqa: B008
+    ) -> ReponseDesCommentaires:
+        """Consulter les commentaires d'une alerte — matrice §17, `T13`."""
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            _resoudre_le_perimetre_des_alertes(connexion, appelant=appelant, instant=instant)
+            commentaires = lister_les_commentaires(connexion, alerte=alerte)
+        return ReponseDesCommentaires(
+            commentaires=[
+                CommentaireDAlerteRendu(
+                    identifiant=commentaire.id,
+                    contenu=commentaire.content,
+                    cree_le=commentaire.created_at,
+                    auteur_id=commentaire.created_by_person_id,
+                )
+                for commentaire in commentaires
+            ]
+        )
+
+    @routeur.post(
+        "/alerts/{alerte}/acquittement",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransitionDAlerte,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ADM-E` ni `SUPER`, ou le jeton anti-CSRF "
+                    "manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Aucune alerte avec cet identifiant."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` (cahier §18.4), ou `transition_invalide` "
+                    "si l'alerte n'est pas `open`."
+                )
+            },
+        },
+        summary="Acquitter une alerte",
+        description="Matrice §17 « Acquitter une alerte | Entite | Global », `T13`.",
+    )
+    def acquitter(
+        alerte: Annotated[uuid.UUID, Path(description="L'identifiant de l'alerte")],
+        demande: DemandeDAcquittement,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_traitement_des_alertes),  # noqa: B008
+    ) -> ReponseDeTransitionDAlerte:
+        """Acquitter une alerte — matrice §17, `T13`."""
+        _proteger(requete)
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            resultat = acquitter_une_alerte(
+                connexion,
+                alerte=alerte,
+                version_attendue=demande.version,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return ReponseDeTransitionDAlerte(etat=resultat.state, version=resultat.version)
+
+    @routeur.post(
+        "/alerts/{alerte}/commentaires",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeCommentaireAjoute,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ADM-E` ni `SUPER`, ou le jeton anti-CSRF "
+                    "manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Aucune alerte avec cet identifiant."},
+        },
+        summary="Commenter une alerte sans changer son etat",
+        description=(
+            "Matrice §17 « Resoudre ou commenter une alerte » — commenter SEUL, "
+            "a n'importe quel etat du cycle (`T13`)."
+        ),
+    )
+    def commenter(
+        alerte: Annotated[uuid.UUID, Path(description="L'identifiant de l'alerte")],
+        demande: DemandeDeCommentaire,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_traitement_des_alertes),  # noqa: B008
+    ) -> ReponseDeCommentaireAjoute:
+        """Ajouter un commentaire a une alerte — matrice §17, `T13`."""
+        _proteger(requete)
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            resultat = ajouter_un_commentaire(
+                connexion,
+                alerte=alerte,
+                contenu=demande.contenu,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return ReponseDeCommentaireAjoute(identifiant=resultat.id, cree_le=resultat.created_at)
+
+    @routeur.post(
+        "/alerts/{alerte}/resolution",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeTransitionDAlerte,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ADM-E` ni `SUPER`, ou le jeton anti-CSRF "
+                    "manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {"description": "Aucune alerte avec cet identifiant."},
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`version_obsolete` (cahier §18.4), ou `transition_invalide` "
+                    "si l'alerte est deja `resolved`."
+                )
+            },
+        },
+        summary="Resoudre une alerte",
+        description=(
+            "Matrice §17 « Resoudre ou commenter une alerte | Entite | Global », "
+            "`T13`. `commentaire` facultatif cree aussi une ligne `alert_comment`."
+        ),
+    )
+    def resoudre(
+        alerte: Annotated[uuid.UUID, Path(description="L'identifiant de l'alerte")],
+        demande: DemandeDeResolution,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_traitement_des_alertes),  # noqa: B008
+    ) -> ReponseDeTransitionDAlerte:
+        """Resoudre une alerte — matrice §17, `T13`."""
+        _proteger(requete)
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            resultat = resoudre_une_alerte(
+                connexion,
+                alerte=alerte,
+                version_attendue=demande.version,
+                commentaire=demande.commentaire,
+                acteur=appelant.personne,
+                instant=instant,
+            )
+        return ReponseDeTransitionDAlerte(etat=resultat.state, version=resultat.version)
 
     return routeur
