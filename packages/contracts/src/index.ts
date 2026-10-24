@@ -640,3 +640,161 @@ export type {
 //  d'entite dans le chemin -- voir l'en-tete de `signalement.ts`.
 export { CHEMIN_SIGNALEMENT, CODES_SIGNALEMENT, validerUnSignalement } from './signalement.js';
 export type { DemandeDeSignalement, SignalementServi } from './signalement.js';
+
+//  LE JOURNAL D'AUDIT, SES DETAILS TECHNIQUES ET SON EXPORT CSV — LOT 10,
+//  `T8`/`T9` (API), `T15` (premier ecran), `US001`/`US002`/`US004`.
+export {
+  cheminExportDuJournal,
+  cheminJournalDAudit,
+  CODES_EXPORT_DU_JOURNAL,
+  CODES_JOURNAL_D_AUDIT,
+  GABARIT_CHEMIN_EXPORT_DU_JOURNAL,
+  GABARIT_CHEMIN_JOURNAL_D_AUDIT,
+  peutConsulterLAudit,
+  peutExporterLAudit,
+  peutVoirLesDetailsTechniquesDeLAudit,
+  ROLES_DE_L_AUDIT,
+  ROLES_DETAILS_TECHNIQUES_DE_L_AUDIT,
+  ROLES_EXPORT_DE_L_AUDIT,
+  validerLeJournalDAudit,
+} from './audit.js';
+export type { EvenementDAudit, FiltresDAudit, ReponseDuJournalDAudit } from './audit.js';
+
+//  LE REPORTING ETENDU — LOT 10, `T10` (API), `T15` (premier ecran), `US003`.
+//  AUCUNE GRILLE PROPRE : reutilise `ROLES_TABLEAU_DE_BORD`/
+//  `peutConsulterLeTableauDeBord` de `tableauDeBord.js` -- voir l'en-tete de
+//  `reporting.ts`.
+export {
+  cheminDetailOnboarding,
+  cheminIndicateurs,
+  cheminProfilsIncomplets,
+  CODES_DETAIL_ONBOARDING,
+  CODES_INDICATEURS,
+  CODES_PROFILS_INCOMPLETS,
+  GABARIT_CHEMIN_DETAIL_ONBOARDING,
+  GABARIT_CHEMIN_INDICATEURS,
+  GABARIT_CHEMIN_PROFILS_INCOMPLETS,
+  validerLeDetailOnboarding,
+  validerLesIndicateurs,
+  validerLesProfilsIncomplets,
+} from './reporting.js';
+export type {
+  FiltresDeReporting,
+  Indicateurs,
+  OnboardingDuDetail,
+  ProfilIncomplet,
+  ProgressionAgregee,
+  RepartitionParGroupe,
+  ReponseDesProfilsIncomplets,
+  ReponseDuDetailOnboarding,
+} from './reporting.js';
+
+//  LE TRAITEMENT DES SIGNALEMENTS — LOT 10, `T12` (API), `T15` (premier
+//  ecran), `US006`. Declare separement de `signalement.js`, qui reste la
+//  SEULE ecriture ouverte a toute session -- voir l'en-tete du fichier.
+export {
+  cheminChangementDEtatSignalement,
+  cheminHistoriqueSignalement,
+  cheminSignalements,
+  CODES_CHANGEMENT_D_ETAT_SIGNALEMENT,
+  CODES_HISTORIQUE_SIGNALEMENT,
+  CODES_SIGNALEMENTS,
+  ETATS_DE_SIGNALEMENT,
+  GABARIT_CHEMIN_CHANGEMENT_D_ETAT_SIGNALEMENT,
+  GABARIT_CHEMIN_HISTORIQUE_SIGNALEMENT,
+  GABARIT_CHEMIN_SIGNALEMENTS,
+  peutTraiterLesSignalements,
+  ROLES_TRAITEMENT_DES_SIGNALEMENTS,
+  validerLeChangementDEtatSignalement,
+  validerLesSignalements,
+  validerLHistoriqueSignalement,
+} from './traitementDesSignalements.js';
+export type {
+  DemandeDeChangementDEtatSignalement,
+  EtatDeSignalement,
+  EvenementDHistoriqueSignalement,
+  LigneDeSignalement,
+  ReponseDeChangementDEtatSignalement,
+  ReponseDesSignalements,
+  ReponseDeLHistoriqueSignalement,
+} from './traitementDesSignalements.js';
+
+//  LE CYCLE DES ALERTES OPERATIONNELLES — LOT 10, `T13` (API), `T15`
+//  (premier ecran), `US007`. Ressource GLOBALE, aucun code d'entite dans
+//  les chemins -- voir l'en-tete de `alertes.ts`.
+export {
+  cheminAcquittementDAlerte,
+  cheminAlertes,
+  cheminCommentairesDAlerte,
+  cheminResolutionDAlerte,
+  cheminUneAlerte,
+  CODES_ACQUITTEMENT_D_ALERTE,
+  CODES_ALERTES,
+  CODES_COMMENTAIRES_D_ALERTE,
+  CODES_RESOLUTION_D_ALERTE,
+  CODES_UNE_ALERTE,
+  ETATS_D_ALERTE,
+  GABARIT_CHEMIN_ACQUITTEMENT_D_ALERTE,
+  GABARIT_CHEMIN_ALERTES,
+  GABARIT_CHEMIN_COMMENTAIRES_D_ALERTE,
+  GABARIT_CHEMIN_RESOLUTION_D_ALERTE,
+  GABARIT_CHEMIN_UNE_ALERTE,
+  peutTraiterLesAlertes,
+  ROLES_TRAITEMENT_DES_ALERTES,
+  validerLeCommentaireAjoute,
+  validerLesAlertes,
+  validerLesCommentairesDAlerte,
+  validerLaTransitionDAlerte,
+  validerUneAlerte,
+} from './alertes.js';
+export type {
+  CommentaireDAlerte,
+  DemandeDAcquittementDAlerte,
+  DemandeDeCommentaireDAlerte,
+  DemandeDeResolutionDAlerte,
+  EtatDAlerte,
+  LigneDAlerte,
+  ReponseDeCommentaireAjoute,
+  ReponseDesAlertes,
+  ReponseDesCommentairesDAlerte,
+  ReponseDeTransitionDAlerte,
+} from './alertes.js';
+
+//  LE SUIVI D'UNE DEMANDE DE DROIT RGPD — LOT 10, `T14` (API), `T15`
+//  (premier ecran), `US008`. Ressource GLOBALE -- voir l'en-tete de `rgpd.ts`.
+export {
+  cheminClotureRGPD,
+  cheminDemandesRGPD,
+  cheminHistoriqueRGPD,
+  cheminUneDemandeRGPD,
+  cheminVerificationIdentiteRGPD,
+  CHEMIN_DEMANDES_RGPD,
+  CODES_CLOTURE_RGPD,
+  CODES_DEMANDES_RGPD_EN_LISTE,
+  CODES_HISTORIQUE_RGPD,
+  CODES_RECEPTION_RGPD,
+  CODES_UNE_DEMANDE_RGPD,
+  CODES_VERIFICATION_IDENTITE_RGPD,
+  GABARIT_CHEMIN_CLOTURE_RGPD,
+  GABARIT_CHEMIN_HISTORIQUE_RGPD,
+  GABARIT_CHEMIN_UNE_DEMANDE_RGPD,
+  GABARIT_CHEMIN_VERIFICATION_IDENTITE_RGPD,
+  peutTraiterLesDemandesRGPD,
+  ROLES_TRAITEMENT_DES_DEMANDES_RGPD,
+  TYPES_DE_DEMANDE_RGPD,
+  validerLaTransitionRGPD,
+  validerLesDemandesRGPD,
+  validerLHistoriqueRGPD,
+  validerUneDemandeRGPD,
+} from './rgpd.js';
+export type {
+  DemandeDeClotureRGPD,
+  DemandeDeReceptionRGPD,
+  DemandeDeVerificationIdentiteRGPD,
+  EvenementDHistoriqueRGPD,
+  LigneDeDemandeRGPD,
+  ReponseDesDemandesRGPD,
+  ReponseDeLHistoriqueRGPD,
+  ReponseDeTransitionRGPD,
+  TypeDeDemandeRGPD,
+} from './rgpd.js';

@@ -2773,5 +2773,55 @@
     "Confrontee a `ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` par un test",
     "Python, dans les deux sens."
   ],
-  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"]
+  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"],
+  "_commentaire_audit": [
+    "LOT 10, T8/T9/T15 -- LE JOURNAL D'AUDIT EN LECTURE, SES DETAILS",
+    "TECHNIQUES, SON EXPORT CSV (matrice 16).",
+    "TROIS GRILLES, JAMAIS FUSIONNEES : `rolesDeLAudit` (lecture generale,",
+    "ROLES_DE_L_AUDIT) exclut EMP/NEW/ANON ; `rolesDetailsTechniquesDeLAudit`",
+    "(ROLES_DES_DETAILS_TECHNIQUES) et `rolesExportDeLAudit`",
+    "(ROLES_D_EXPORT_DE_L_AUDIT) portent aujourd'hui les MEMES deux roles",
+    "(ADM-E/SUPER) mais sont deux lignes distinctes du 16 -- une",
+    "coincidence, pas une identite, cote API comme ici.",
+    "Confrontees aux trois constantes Python par un test, dans les deux",
+    "sens."
+  ],
+  "rolesDeLAudit": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
+  "rolesDetailsTechniquesDeLAudit": ["ADM-E", "SUPER"],
+  "rolesExportDeLAudit": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_signalements": [
+    "LOT 10, T12/T15 -- MODIFIER L'ETAT D'UN SIGNALEMENT (matrice 17).",
+    "DEUX ROLES SEULEMENT : c'est ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS de",
+    "`app/support/perimetre.py`. La LECTURE se degrade jusqu'a `Soi` (aucun",
+    "role refuse), mais cette grille-ci ne garde QUE l'ecriture -- ESM lit",
+    "en fonctionnel (details techniques masques) sans jamais changer",
+    "l'etat.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS par un test Python,",
+    "dans les deux sens."
+  ],
+  "rolesTraitementDesSignalements": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_alertes": [
+    "LOT 10, T13/T15 -- ACQUITTER, COMMENTER, RESOUDRE UNE ALERTE",
+    "(matrice 17).",
+    "DEUX ROLES, ET L'ESM N'Y FIGURE PAS : c'est",
+    "ROLES_DE_TRAITEMENT_DES_ALERTES de",
+    "`app/support/perimetre_alertes.py` -- a la difference des",
+    "signalements, l'ESM (perimetre LIMITE) ne peut JAMAIS ecrire, mesure",
+    "sur les trois routes POST qui partagent la MEME garde.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_ALERTES par un test Python, dans",
+    "les deux sens."
+  ],
+  "rolesTraitementDesAlertes": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_demandes_rgpd": [
+    "LOT 10, T14/T15 -- RECEPTIONNER, VERIFIER, CLOTURER UNE DEMANDE RGPD.",
+    "UNE SEULE GRILLE, GARDE LES SIX ROUTES (lecture ET ecriture) : c'est",
+    "ROLES_DE_TRAITEMENT_DES_DEMANDES_RGPD de `app/privacy/perimetre.py`,",
+    "resolue par analogie avec la matrice 18 -- aucune ligne ne nomme cette",
+    "ressource. Aucun plancher `Soi` ni `Limite`, a la difference des",
+    "signalements et des alertes : le cahier 21.5 nomme un canal RGPD",
+    "externe, jamais un self-service.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_DEMANDES_RGPD par un test Python,",
+    "dans les deux sens."
+  ],
+  "rolesTraitementDesDemandesRGPD": ["ADM-E", "SUPER"]
 }

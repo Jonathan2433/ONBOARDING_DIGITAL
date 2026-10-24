@@ -1,6 +1,7 @@
 /**
- * « Pilotage » — le tableau de bord administratif (`US001`, LOT 9 `T5`) et le
- * suivi des tâches en retard (LOT 7 `T12`), LOT 9 `T14`.
+ * « Pilotage » — le tableau de bord administratif (`US001`, LOT 9 `T5`), le
+ * suivi des tâches en retard (LOT 7 `T12`), LOT 9 `T14`, et le reporting
+ * étendu (`US003`, LOT 10 `T10`/`T15`).
  *
  * LE SUIVI EST DÉPLACÉ ICI, SANS AUCUNE RÈGLE CHANGÉE
  *
@@ -10,21 +11,32 @@
  *   naturel, aux côtés du tableau de bord — mais la portée, la pagination et
  *   le filtrage restent EXACTEMENT ceux de `T12` du LOT 7, inchangés.
  *
- * LE TABLEAU DE BORD N'EST PAS GARDÉ PAR LE MÊME RÔLE QUE LE SUIVI
+ * LE REPORTING ÉTENDU REJOINT CE MÊME ONGLET, PAS UN ONGLET DE PLUS
  *
- *   `ROLES_TABLEAU_DE_BORD` exclut OFFICE ; le suivi n'exclut personne. Les
- *   deux sections de cet onglet se gardent donc SÉPARÉMENT, chacune pour sa
- *   propre raison (§7.0 : ne jamais fusionner deux grilles qui coïncident par
- *   coïncidence).
+ *   `app/reporting/lecture.py` réutilise LITTÉRALEMENT `ROLES_DU_TABLEAU_DE_
+ *   BORD` (LOT 9 `T5`) : les quatre premières lignes du §15.1 portent la
+ *   MÊME grille que le tableau de bord — ce n'est pas une coïncidence comme
+ *   pour l'audit (§7.27), c'est la même règle, donc le même emplacement.
+ *   `peutConsulterLeTableauDeBord` garde donc aussi cette troisième section,
+ *   jamais une seconde fonction qui redirait la même chose.
+ *
+ * TROIS SECTIONS, TROIS GARDES INDÉPENDANTES
+ *
+ *   `ROLES_TABLEAU_DE_BORD`/reporting (OFFICE exclu) et le suivi (aucun rôle
+ *   exclu, dégradé à `Soi`) ne coïncident pas — chaque section se garde pour
+ *   sa propre raison (§7.0 : ne jamais fusionner deux grilles qui coïncident
+ *   par coïncidence).
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
 import { lireLeSuiviOnboarding } from '../../api/administration';
+import { lireLesIndicateurs } from '../../api/reporting';
 import { lireLeTableauDeBord } from '../../api/tableauDeBord';
 import {
   peutConsulterLeTableauDeBord,
   TAILLE_PAR_DEFAUT,
+  type Indicateurs,
   type PageDeSuiviOnboarding,
   type TableauDeBord,
 } from '@onboarding/contracts';
@@ -79,6 +91,69 @@ function SectionTableauDeBord({ tableau }: { readonly tableau: TableauDeBord }):
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Les sept grandeurs du cahier §10.10 que `T5` ne sert pas déjà — `US003`. */
+function SectionReportingEtendu({
+  indicateurs,
+}: {
+  readonly indicateurs: Indicateurs;
+}): JSX.Element {
+  return (
+    <section
+      className="administration-reporting-etendu"
+      aria-labelledby="administration-reporting-etendu-titre"
+    >
+      <h3 id="administration-reporting-etendu-titre">Reporting étendu</h3>
+      <dl className="administration-grandeurs">
+        <div className="administration-grandeur">
+          <dt>Onboardings terminés</dt>
+          <dd>{indicateurs.onboardingsTermines}</dd>
+        </div>
+        <div className="administration-grandeur">
+          <dt>Progression moyenne</dt>
+          <dd>
+            {indicateurs.progressionMoyenne.tachesObligatoiresTerminees} /{' '}
+            {indicateurs.progressionMoyenne.tachesObligatoiresTotales} tâche(s) obligatoire(s)
+          </dd>
+        </div>
+        <div className="administration-grandeur">
+          <dt>Durée moyenne</dt>
+          <dd>
+            {indicateurs.dureeMoyenneJours === null
+              ? '—'
+              : `${indicateurs.dureeMoyenneJours.toFixed(1)} jour(s)`}
+          </dd>
+        </div>
+        <div className="administration-grandeur">
+          <dt>Arrivées dans les 30 jours</dt>
+          <dd>{indicateurs.arrivees30Jours}</dd>
+        </div>
+      </dl>
+      {(
+        [
+          ['Par cercle', indicateurs.repartitionParCercle],
+          ['Par client', indicateurs.repartitionParClient],
+          ['Par DSM', indicateurs.repartitionParDsm],
+        ] as const
+      ).map(([titre, repartition]) => (
+        <div className="administration-repartition" key={titre}>
+          <h4>{titre}</h4>
+          {repartition.length === 0 ? (
+            <p>Aucune donnée.</p>
+          ) : (
+            <ul>
+              {repartition.map((r) => (
+                <li key={r.identifiant}>
+                  {r.libelle} — {r.profilsActifs} profil(s) actif(s)
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
     </section>
   );
 }
@@ -154,6 +229,7 @@ function SectionSuivi({
 
 interface Chargement {
   readonly tableau: { readonly statut: number; readonly corps: TableauDeBord | null } | null;
+  readonly reporting: { readonly statut: number; readonly corps: Indicateurs | null } | null;
   readonly suivi: { readonly statut: number; readonly corps: PageDeSuiviOnboarding | null };
 }
 
@@ -172,12 +248,14 @@ export function SectionPilotage({
     const abandon = new AbortController();
 
     async function charger(): Promise<Chargement> {
-      const [tableau, suivi] = await Promise.all([
+      const [tableau, reporting, suivi] = await Promise.all([
         voitLeTableauDeBord ? lireLeTableauDeBord(code, abandon.signal) : Promise.resolve(null),
+        voitLeTableauDeBord ? lireLesIndicateurs(code, {}, abandon.signal) : Promise.resolve(null),
         lireLeSuiviOnboarding(code, page, TAILLE_PAR_DEFAUT, abandon.signal),
       ]);
       return {
         tableau: tableau === null ? null : { statut: tableau.statut, corps: tableau.corps },
+        reporting: reporting === null ? null : { statut: reporting.statut, corps: reporting.corps },
         suivi: { statut: suivi.statut, corps: suivi.corps },
       };
     }
@@ -186,6 +264,7 @@ export function SectionPilotage({
       if (!abandon.signal.aborted) {
         setCharge({
           tableau: voitLeTableauDeBord ? { statut: 0, corps: null } : null,
+          reporting: voitLeTableauDeBord ? { statut: 0, corps: null } : null,
           suivi: { statut: 0, corps: null },
         });
       }
@@ -204,7 +283,7 @@ export function SectionPilotage({
     );
   }
 
-  const { tableau, suivi } = charge;
+  const { tableau, reporting, suivi } = charge;
 
   return (
     <div className="administration-pilotage">
@@ -215,6 +294,15 @@ export function SectionPilotage({
       ) : (
         <Alerte ton={tableau?.statut === 401 ? 'avertissement' : 'erreur'} urgence="alerte">
           Le tableau de bord n’a pas pu être chargé. Réessayez dans un instant.
+        </Alerte>
+      )}
+      {!voitLeTableauDeBord ? null : reporting !== null &&
+        reporting.statut === 200 &&
+        reporting.corps !== null ? (
+        <SectionReportingEtendu indicateurs={reporting.corps} />
+      ) : (
+        <Alerte ton={reporting?.statut === 401 ? 'avertissement' : 'erreur'} urgence="alerte">
+          Le reporting étendu n’a pas pu être chargé. Réessayez dans un instant.
         </Alerte>
       )}
       {suivi.statut === 200 && suivi.corps !== null ? (

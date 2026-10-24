@@ -1,15 +1,19 @@
 /**
- * « Pilotage » à l'écran — tableau de bord (LOT 9, `T5`/`T14`) et suivi des
- * tâches en retard (LOT 7, `T12`, déplacé ici par le LOT 9 `T14`).
+ * « Pilotage » à l'écran — tableau de bord (LOT 9, `T5`/`T14`), suivi des
+ * tâches en retard (LOT 7, `T12`, déplacé ici par le LOT 9 `T14`) et
+ * reporting étendu (LOT 10, `T10`/`T15`, `US003`).
  *
  * LE SUIVI EST REPRIS À L'IDENTIQUE DE `PageAdministration.test.tsx` (LOT 7)
  *
  *   Aucune règle changée en migrant — ces tests le prouvent.
  *
- * LE TABLEAU DE BORD EST GARDÉ SÉPARÉMENT DU SUIVI
+ * LE TABLEAU DE BORD ET LE REPORTING ÉTENDU PARTAGENT LA MÊME GARDE
  *
- *   `OFFICE` n'y voit rien, mais voit quand même le suivi — aucun rôle n'y
- *   est refusé (portée dégradée à `Soi`).
+ *   `OFFICE` n'y voit ni l'un ni l'autre, mais voit quand même le suivi —
+ *   aucun rôle n'y est refusé (portée dégradée à `Soi`). Le test qui le
+ *   prouve pour le tableau de bord (ligne 77) prouve donc la MÊME chose
+ *   pour le reporting, sans qu'il soit besoin de le répéter : les deux
+ *   réutilisent `peutConsulterLeTableauDeBord` (§7.27).
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -41,10 +45,25 @@ function tableauDeBord(supplement: Record<string, unknown> = {}): Record<string,
   };
 }
 
+function indicateurs(supplement: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    onboardings_termines: 5,
+    progression_moyenne: { taches_obligatoires_totales: 20, taches_obligatoires_terminees: 12 },
+    duree_moyenne_jours: 14.5,
+    arrivees_30_jours: 3,
+    repartition_par_cercle: [],
+    repartition_par_client: [],
+    repartition_par_dsm: [],
+    ...supplement,
+  };
+}
+
 function servir(options: {
   suivi?: unknown;
   tableau?: unknown;
   statutTableau?: number;
+  reporting?: unknown;
+  statutReporting?: number;
 }): ReturnType<typeof vi.fn> {
   const appel = vi.fn((url: string) => {
     if (url.includes('/onboarding-suivi/taches-en-retard')) {
@@ -53,6 +72,11 @@ function servir(options: {
     if (url.includes('/administration/tableau-de-bord')) {
       return Promise.resolve(
         json(options.tableau ?? tableauDeBord(), options.statutTableau ?? 200),
+      );
+    }
+    if (url.includes('/reporting')) {
+      return Promise.resolve(
+        json(options.reporting ?? indicateurs(), options.statutReporting ?? 200),
       );
     }
     return Promise.resolve(json({ erreur: { code: 'inattendu', message: url } }, 404));
@@ -85,6 +109,41 @@ describe('le tableau de bord — OFFICE exclu', () => {
       appel.mock.calls.some((c) => (c[0] as string).includes('/administration/tableau-de-bord')),
     ).toBe(false);
     expect(screen.queryByText('Tableau de bord')).toBeNull();
+  });
+});
+
+describe('le reporting étendu — même garde que le tableau de bord', () => {
+  it('affiche les quatre grandeurs et les trois répartitions pour un ESM', async () => {
+    servir({
+      reporting: indicateurs({
+        onboardings_termines: 7,
+        repartition_par_cercle: [{ identifiant: 'c1', libelle: 'Change', profils_actifs: 4 }],
+      }),
+    });
+    monter(['ESM']);
+
+    await waitFor(() => expect(screen.getByText('Reporting étendu')).toBeTruthy());
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText(/Change — 4 profil\(s\) actif\(s\)/)).toBeTruthy();
+  });
+
+  it('rend « — » quand la durée moyenne est nulle, jamais « 0 » (§7.0 sixième proposition)', async () => {
+    servir({ reporting: indicateurs({ duree_moyenne_jours: null }) });
+    monter(['ESM']);
+
+    await waitFor(() => expect(screen.getByText('Reporting étendu')).toBeTruthy());
+    expect(screen.getByText('—', { selector: 'dd' })).toBeTruthy();
+  });
+
+  it("n'appelle PAS le reporting pour un OFFICE", async () => {
+    const appel = servir({});
+    monter(['OFFICE']);
+
+    await waitFor(() =>
+      expect(screen.getByText(/Aucune tâche en retard dans votre périmètre/)).toBeTruthy(),
+    );
+    expect(appel.mock.calls.some((c) => (c[0] as string).includes('/reporting'))).toBe(false);
+    expect(screen.queryByText('Reporting étendu')).toBeNull();
   });
 });
 
