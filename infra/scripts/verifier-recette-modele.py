@@ -10,6 +10,37 @@ recette au moment meme ou la porte `G7` s'appuie sur lui. `T16` du LOT 9
 reclasse de meme `§30.17` et `§30.18`, livres respectivement par `T6`-`T9` et
 `T9` de ce lot.
 
+`T16` du LOT 10 corrige QUATRE annotations `lot=` ecrites tot dans le projet,
+avant que la roadmap ne fixe l'ordre definitif des lots (fiche-lot-10.md §2.1),
+et reclasse DEUX controles qu'elles masquaient comme deja acquis :
+
+  - `§30.19` (jobs et idempotence) portait `lot="LOT 10"` — la roadmap donne
+    « un job rejoue ne duplique pas son effet » comme critere de sortie du
+    LOT 11, jamais de celui-ci, qui ne pose ni `async_job` ni worker. Corrige
+    en `LOT 11`.
+  - `§30.20` (`audit_event` et atomicite) portait `lot="LOT 12"` — c'est le
+    CRITERE DE SORTIE 1 de CE lot, et CINQ temoins le prouvent deja, un par
+    domaine cable par `T2` a `T6` (authentification, organisation, contenus,
+    evenements, onboarding), chacun portant litteralement `ARB-DATA-005/
+    §30.20` dans son en-tete. Reclasse ACQUIS : reutiliser ces cinq temoins
+    plutot que d'en ecrire un sixieme, meme discipline que `§7.27`.
+  - `§30.21` (purge sans orphelin) portait `lot="LOT 12 — purge RGPD"` — la
+    roadmap place « nettoyage des objets orphelins » dans le LOT 11, jamais
+    dans le LOT 12 (qualite transversale), qui ne construit rien. Corrige en
+    `LOT 11`.
+  - `§30.23` (anonymisation et durees de conservation) portait `lot="LOT 12"`
+    — la roadmap place « anonymisation apres depart » et « purge de l'audit »
+    dans le LOT 11, jamais dans le LOT 12. Corrige en `LOT 11`.
+  - `§30.24` (exports au meme perimetre que la consultation) portait
+    `lot="LOT 11"` — c'est l'export d'audit de CE lot (`T9`,
+    `MVP-L10-US004`), deja construit et deja teste
+    (`test_le_perimetre_de_l_export_est_celui_de_la_lecture`,
+    `test_le_csv_rend_les_memes_evenements_que_la_lecture`). Reclasse ACQUIS.
+
+Les quatre annotations fautives dataient toutes d'avant que la roadmap ne
+fixe l'ordre des lots 10 a 13 (§2.1 de `fiche-lot-10.md`) : aucune n'a ete
+relue depuis. Verifiees contre la ROADMAP reelle, pas recopiees entre elles.
+
 CE QUE CE CONTROLE PROUVE, ET POURQUOI IL EXISTE
 
   Le §30 du modele enumere 25 controles et pose : « le modele sera accepte si les
@@ -340,9 +371,22 @@ CLASSEMENT: dict[int, Classement] = {
         ),
         tests=("test_une_ligne_en_echec_n_empeche_pas_les_autres_d_etre_importees",),
     ),
-    19: Classement(19, REPORTE, lot="LOT 10 — jobs et idempotence"),
-    20: Classement(20, REPORTE, lot="LOT 12 — `audit_event` et atomicite"),
-    21: Classement(21, REPORTE, lot="LOT 12 — purge RGPD"),
+    19: Classement(19, REPORTE, lot="LOT 11 — jobs et idempotence"),
+    20: Classement(
+        20,
+        ACQUIS,
+        preuve=(
+            "LOT 10 `T2`-`T6` — CINQ temoins, un par domaine cable sur le service "
+            "generique `enregistrer_un_evenement` (authentification, organisation, "
+            "contenus, evenements, onboarding) : un echec FORCE APRES l'ecriture de "
+            "`audit_event`, dans la MEME transaction que l'action metier, annule "
+            "AUSSI cette ecriture — rien n'est propre a `audit_event`, c'est la "
+            "transaction qui le protege. Les cinq portent litteralement "
+            "`ARB-DATA-005/§30.20` dans leur en-tete"
+        ),
+        tests=("test_un_echec_APRES_l_ecriture_annule_AUSSI_l_audit_event",),
+    ),
+    21: Classement(21, REPORTE, lot="LOT 11 — purge sans orphelin"),
     22: Classement(
         22,
         ACQUIS,
@@ -366,8 +410,22 @@ CLASSEMENT: dict[int, Classement] = {
             "test_UNE_TRANSITION_HORS_24_1_est_REFUSEE",
         ),
     ),
-    23: Classement(23, REPORTE, lot="LOT 12 — anonymisation et durees de conservation"),
-    24: Classement(24, REPORTE, lot="LOT 11 — exports"),
+    23: Classement(23, REPORTE, lot="LOT 11 — anonymisation et durees de conservation"),
+    24: Classement(
+        24,
+        ACQUIS,
+        preuve=(
+            "LOT 10 `T9` — `GET .../audit` (`T8`) et `POST .../audit/export` "
+            "REUTILISENT LA MEME construction SQL (`_cte_et_source`), seul "
+            "`ORDER BY`/`LIMIT` differant : le perimetre de l'export est celui de "
+            "la lecture PAR CONSTRUCTION, jamais une seconde resolution qui "
+            "pourrait diverger"
+        ),
+        tests=(
+            "test_le_perimetre_de_l_export_est_celui_de_la_lecture",
+            "test_le_csv_rend_les_memes_evenements_que_la_lecture",
+        ),
+    ),
     25: Classement(
         25,
         ACQUIS,
