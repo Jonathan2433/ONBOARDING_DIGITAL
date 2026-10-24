@@ -30,14 +30,26 @@ engineStrict: true
 # GHSA-3wwx-pv8p-q78v : jsdom@30 autorise la ligne corrigee ^8.7.0 ;
 # cette contrainte transitive fixe le minimum corrige sans modifier ses consommateurs.
 #
+# CORRIGE EN T15 DU LOT 10 : une version NUE dans `overrides` est une EPINGLE
+# EXACTE pour pnpm, pas un plancher — malgre le commentaire ci-dessus qui
+# promettait l'un et posait l'autre. `8.10.2` bloquait donc silencieusement
+# toute resolution plus recente, y compris GHSA-xjj6-f33q-929c/GHSA-4qv8-2p9j-
+# 2685/GHSA-f72v-6w45-q472 (deni de service et contournement d'integrite,
+# corriges en 8.12.2, mesures le 24/10/2026) que jsdom@30.1.3 demande deja
+# (`^8.12.1`). Le `>=` rend l'intention du commentaire exacte : un PLANCHER,
+# qui laisse pnpm resoudre vers le correctif le plus recent de ses
+# consommateurs, jamais une version figee pour toujours. Meme defaut que
+# §7.34 de la passation : un garde-fou ecrit contre un incident ne couvre pas
+# sa classe.
+#
 # GHSA-68fv-2mgg-jv7q, mesure en T11 du LOT 8 : deni de service par
 # decalages de section indexee dans source-map-js, chemins transitifs via
 # postcss (vite) et css-tree (jsdom). Corrige en 1.2.2 ; le lockfile portait
 # 1.2.1. Meme parti qu'undici ci-dessus : fixer le minimum corrige, sans
 # toucher aucun consommateur direct ni leur plage declaree.
 overrides:
-  undici: 8.10.2
-  source-map-js: 1.2.2
+  undici: ">=8.10.2"
+  source-map-js: ">=1.2.2"
 
 # ============================================================================
 #  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
