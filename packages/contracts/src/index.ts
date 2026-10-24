@@ -739,6 +739,7 @@ export {
   GABARIT_CHEMIN_COMMENTAIRES_D_ALERTE,
   GABARIT_CHEMIN_RESOLUTION_D_ALERTE,
   GABARIT_CHEMIN_UNE_ALERTE,
+  peutLireLesAlertes,
   peutTraiterLesAlertes,
   ROLES_TRAITEMENT_DES_ALERTES,
   validerLeCommentaireAjoute,

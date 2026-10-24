@@ -27,6 +27,17 @@ export function peutTraiterLesAlertes(roles: readonly string[] | null): boolean 
   return roles !== null && roles.some((role) => ROLES_TRAITEMENT_DES_ALERTES.includes(role));
 }
 
+/**
+ * La LECTURE, elle, reste ouverte à `peutTraiterLesAlertes` ∪ `ESM` (périmètre
+ * `LIMITE` de l'API, `app/support/perimetre_alertes.py`) — aucune grille
+ * statique ne la nomme, l'écriture seule distinguant les deux. Exportée ici
+ * plutôt que laissée au composant appelant : le littéral `ESM` doit vivre
+ * dans le contrat, jamais dans `apps/web` (`DEC-492`, `make cadre-check`).
+ */
+export function peutLireLesAlertes(roles: readonly string[] | null): boolean {
+  return roles !== null && (peutTraiterLesAlertes(roles) || roles.includes('ESM'));
+}
+
 /** Les trois états réels — cahier §27.5. */
 export const ETATS_D_ALERTE = ['open', 'acknowledged', 'resolved'] as const;
 export type EtatDAlerte = (typeof ETATS_D_ALERTE)[number];

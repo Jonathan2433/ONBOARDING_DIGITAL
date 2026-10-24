@@ -54,6 +54,7 @@ import {
 } from '../../api/traitementDesSignalements';
 import {
   ETATS_DE_SIGNALEMENT,
+  peutLireLesAlertes,
   peutTraiterLesAlertes,
   peutTraiterLesDemandesRGPD,
   peutTraiterLesSignalements,
@@ -274,7 +275,7 @@ function PanneauAlertes({
 }: {
   readonly roles: readonly string[] | null;
 }): JSX.Element | null {
-  const peutLire = roles !== null && (peutTraiterLesAlertes(roles) || roles.includes('ESM'));
+  const peutLire = peutLireLesAlertes(roles);
   const peutTraiter = peutTraiterLesAlertes(roles);
   const [charge, setCharge] = useState<{
     readonly statut: number;
