@@ -3,8 +3,8 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14` faites
-**Sous-étape suivante :** `T15` — Les écrans back-office (audit, reporting, support)
+**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14`/`T15` faites
+**Sous-étape suivante :** `T16` — Recette de clôture, classement du §30, checklist `G10`
 **Porte de sortie :** `G10`, tag attendu `v0.10.0`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les

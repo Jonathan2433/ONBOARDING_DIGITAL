@@ -1,5 +1,6 @@
 /**
- * « Administration » à l'écran — LOT 9, `T14`, les SEPT groupes du cahier §8.1/§10.8.
+ * « Administration » à l'écran — LOT 9, `T14`, les SEPT groupes du cahier
+ * §8.1/§10.8, PLUS « Audit » et « Support » (LOT 10, `T15`).
  *
  * CE QUE CE FICHIER ÉPROUVE, ET CE QU'IL N'ÉPROUVE PAS
  *
@@ -93,8 +94,8 @@ function monter(): void {
   render(<PageAdministration />);
 }
 
-describe('la coquille à onglets — un SUPER voit les sept groupes', () => {
-  it('affiche les sept onglets, dans l’ordre du cahier §8.1/§10.8', async () => {
+describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
+  it('affiche les neuf onglets — les sept du cahier, puis Audit et Support (LOT 10, T15)', async () => {
     servirDesReponsesVides();
     monter();
 
@@ -108,6 +109,8 @@ describe('la coquille à onglets — un SUPER voit les sept groupes', () => {
       'Pilotage',
       'Configuration',
       'Super-administration',
+      'Audit',
+      'Support',
     ]);
   });
 
@@ -143,20 +146,23 @@ describe('la coquille à onglets — un SUPER voit les sept groupes', () => {
 });
 
 describe('un rôle sans aucun droit — refus par défaut, §20.1', () => {
-  it('un EMP ne voit que les trois groupes SANS garde de rôle (Contenu, Pilotage, Configuration)', async () => {
+  it('un EMP ne voit que Contenu, Pilotage, Configuration et Support — jamais Audit', async () => {
     //  « Aucun rôle n'y est refusé » pour Pilotage (le suivi se dégrade
-    //  jusqu'à `Soi`, LOT 7 `T12`) ; Contenu et Configuration n'ont tout
-    //  simplement AUCUNE garde, faute de route à garder (`SectionAVenir`).
-    //  §20.1 porte sur ce que le MENU PRINCIPAL annonce (`droitsDeNavigation`,
-    //  `routes.ts`), pas sur ce qu'un accès direct à cette page peut encore
-    //  montrer quand rien ne distingue les rôles.
+    //  jusqu'à `Soi`, LOT 7 `T12`) et pour Support (les signalements se
+    //  dégradent jusqu'à `Soi`, LOT 10 `T12`) ; Contenu et Configuration
+    //  n'ont tout simplement AUCUNE garde, faute de route à garder
+    //  (`SectionAVenir`). `ROLES_DE_L_AUDIT` refuse EMP en bloc, à la
+    //  différence des trois autres. §20.1 porte sur ce que le MENU PRINCIPAL
+    //  annonce (`droitsDeNavigation`, `routes.ts`), pas sur ce qu'un accès
+    //  direct à cette page peut encore montrer quand rien ne distingue les
+    //  rôles.
     rolesDuCadre = ['EMP'];
     servirDesReponsesVides();
     monter();
 
     await waitFor(() => expect(screen.getByRole('tablist')).toBeTruthy());
     const onglets = screen.getAllByRole('tab').map((o) => o.textContent);
-    expect(onglets).toEqual(['Contenu', 'Pilotage', 'Configuration']);
+    expect(onglets).toEqual(['Contenu', 'Pilotage', 'Configuration', 'Support']);
   });
 
   it('un ESM voit Organisation, Onboarding, Contenu, Données, Pilotage et Configuration, mais PAS Super-administration', async () => {
