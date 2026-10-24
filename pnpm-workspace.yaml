@@ -48,8 +48,8 @@ engineStrict: true
 # 1.2.1. Meme parti qu'undici ci-dessus : fixer le minimum corrige, sans
 # toucher aucun consommateur direct ni leur plage declaree.
 overrides:
-  undici: ">=8.10.2"
-  source-map-js: ">=1.2.2"
+  undici: '>=8.10.2'
+  source-map-js: '>=1.2.2'
 
 # ============================================================================
 #  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
