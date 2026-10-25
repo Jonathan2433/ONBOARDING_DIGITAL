@@ -3,7 +3,7 @@
 **Lot :** LOT 10 — Audit, reporting, supervision fonctionnelle et support
 **Préparée le :** 24 octobre 2026, à la sortie de `T16`
 **Destinataire :** Jonathan — il coordonne la validation technique
-**Décision de franchissement :** en attente
+**Décision de franchissement :** **franchie le 25 octobre 2026**
 
 ---
 
@@ -20,7 +20,7 @@ n'est jamais présentée comme accomplie par la CI.
 | 3 | les rapports respectent les mêmes droits que les écrans source | **Tenu** | `T9` — l'export CSV (`lister_tout_le_journal_d_audit`) RÉUTILISE la même construction SQL que la lecture (`T8`, `_cte_et_source`), jamais une seconde résolution de périmètre ; `test_le_perimetre_de_l_export_est_celui_de_la_lecture` |
 | 4 | les durées de conservation sont configurées | **Tenu** | `T1` — `retention_until` posé à un an par défaut ; `T8` — `test_retention_jusqua_est_un_an_apres_l_occurrence` |
 | 5 | l'identifiant de corrélation relie interface, API et logs | **Tenu** | `T2`-`T7` — réutilisation de `correlation_courante()` (`packages/observabilite`, LOT 1 `T4`), jamais un second mécanisme ; même test que le critère 2 |
-| 6 | Jonathan valide l'audit et le pilotage | **En attente** | Cette checklist, section 6 |
+| 6 | Jonathan valide l'audit et le pilotage | **Tenu** | Cette checklist, section 6 — validation explicite donnée le 25/10/2026 |
 
 Aucun des six critères n'a exigé de code nouveau à `T16` : les cinq premiers étaient déjà prouvés
 par `T1` à `T15`, et `T16` n'a fait que les relire, confronter au §30 du modèle, et classer le
@@ -110,7 +110,10 @@ techniques tenues (§1) de ta propre confirmation requise par le sixième.
 
 | | |
 |---|---|
-| Date | — |
-| Décision | ☐ franchie ☐ à reprendre |
-| Validation de Jonathan | en attente |
+| Date | 25 octobre 2026 |
+| Décision | ☑ franchie ☐ à reprendre |
+| Validation de Jonathan | **confirmée explicitement le 25/10/2026** (« je confirme la clôture ») |
 | Réserves | `ECART-012`, `QO-092` (volet canal externe), `QO-096`/`QO-097`/`QO-099`/`QO-100`/`QO-110`/`QO-121`/`QO-125`/`QO-126`, `ROAD-RSK-033`/`ROAD-RSK-034` restent ouvertes, non bloquantes pour `G10` — à reprendre aux lots suivants au besoin |
+
+Décision consignée au registre : [`DEC-671`](../decisions/registre-decisions.md). Tag `v0.10.0`
+posé sur `main`. Le LOT 10 est **verrouillé** ; aucun lot n'est ouvert.
