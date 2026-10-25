@@ -3,9 +3,11 @@
 **Intitulé :** Audit, reporting, supervision fonctionnelle et support
 **Épic :** `MVP-L10` — issue `#267`
 **Ouvert par Jonathan le :** 14 octobre 2026
-**État :** **OUVERT** — `DEC-654`; découpage validé en seize sous-étapes, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14`/`T15` faites
-**Sous-étape suivante :** `T16` — Recette de clôture, classement du §30, checklist `G10`
-**Porte de sortie :** `G10`, tag attendu `v0.10.0`
+**État :** **VERROUILLÉ** — `DEC-654`; les SEIZE sous-étapes sont faites, `T1`/`T2`/`T3`/`T4`/`T5`/`T6`/`T7`/`T8`/`T9`/`T10`/`T11`/`T12`/`T13`/`T14`/`T15`/`T16` par `DEC-655`/`DEC-656`/`DEC-657`/`DEC-658`/`DEC-659`/`DEC-660`/`DEC-661`/`DEC-662`/`DEC-663`/`DEC-664`/`DEC-665`/`DEC-666`/`DEC-667`/`DEC-668`/`DEC-669`/`DEC-670`.
+**La porte `G10` est FRANCHIE le 25/10/2026** (`DEC-671`) : validation explicite de Jonathan
+donnée sur `checklist-validation-G10.md` (critère de sortie 6).
+**Sous-étape suivante :** aucune — le lot est verrouillé, et aucun lot nouveau n'est ouvert
+**Porte de sortie :** `G10`, **FRANCHIE**, tag `v0.10.0` posé sur `main`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
 > réutiliser : une copie manuelle devient fausse dès la première évolution (`ECART-021`).
@@ -48,7 +50,7 @@ mot, pour ces six critères — deux sources qui concordent, pas une invention.
 | 3 | les rapports respectent les mêmes droits que les écrans source | périmètres de lecture confrontés à ceux des routes déjà construites, `T8` et `T10` |
 | 4 | les durées de conservation sont configurées | `retention_until` posé par défaut à un an, `T1` ; lu et rapporté à `T8` |
 | 5 | l'identifiant de corrélation relie interface, API et logs | réutilisation de `packages/observabilite` (LOT 1 `T4`), jamais un second mécanisme, `T2` à `T7` ; témoin à `T8` |
-| 6 | Jonathan valide l'audit et le pilotage | checklist `G10`, à `T16` |
+| 6 | Jonathan valide l'audit et le pilotage | **✅** — checklist `G10` validée explicitement le 25/10/2026 (`DEC-671`) |
 
 Aucun des huit critères de la fiche LOT 9 ne se répète ici : le texte des deux sources ne porte
 que six critères pour ce lot.
