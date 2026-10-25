@@ -74,6 +74,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
+from app.audit.services import enregistrer_un_evenement
 from app.auth.jetons import empreinte_de_jeton, engendrer_jeton_magic_link
 from app.auth.modeles import (
     MINUTES_DE_VALIDITE_DU_MAGIC_LINK,
@@ -171,6 +172,11 @@ def _tracer(
     Le type des sept est `MAGIC_LINK_REQUESTED` dans tous les cas : la demande a
     bien eu lieu. **Les six autres types du §10.6 relevent de `T12`**, qui porte
     l'audit complet et son controle d'exhaustivite.
+
+    **LOT 10, `T2` : ecrit AUSSI une ligne `audit_event`**, dans la MEME
+    transaction — `action_code` reutilise `TypeEvenementAuth`, jamais un second
+    vocabulaire pour la meme notion (voir `app/audit/services.py`). `summary`
+    ne porte que le motif interne, jamais l'adresse : meme regle que `detail`.
     """
     connexion.execute(
         text(
@@ -185,6 +191,14 @@ def _tracer(
             "origine": empreinte_origine,
             "detail": motif,
         },
+    )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementAuth.MAGIC_LINK_REQUESTED.value,
+        resource_type="magic_link_request",
+        summary=f"Demande de magic link : {motif}",
+        actor_person_id=personne,
     )
 
 
@@ -553,6 +567,9 @@ def _tracer_consommation(
     **`detail` ne porte QUE le motif interne**, jamais le jeton ni son empreinte.
     Le §10.3 interdit « aucun lien complet dans les logs **ou l'audit** », et une
     empreinte n'apporterait rien : `magic_link_request` la porte deja.
+
+    **LOT 10, `T2` : ecrit AUSSI une ligne `audit_event`**, meme motif qu'a la
+    demande — `summary` ne porte que le motif interne, jamais le jeton.
     """
     connexion.execute(
         text(
@@ -567,6 +584,14 @@ def _tracer_consommation(
             "origine": empreinte_origine,
             "detail": motif,
         },
+    )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=type_evenement.value,
+        resource_type="magic_link_request",
+        summary=f"Consommation de magic link : {motif}",
+        actor_person_id=personne,
     )
 
 
@@ -950,6 +975,10 @@ def _tracer_connexion(
     exclut les donnees sensibles, et le §28.2 interdit le secret sous toute forme.
     `user_account_id` est renseigne quand il est connu : c'est ce qui permettra a
     `T12` de compter les echecs PAR COMPTE.
+
+    **LOT 10, `T2` : ecrit AUSSI une ligne `audit_event`**, `resource_type=
+    "user_account"` — le meme compte que `user_account_id` ci-dessus, jamais
+    une seconde requete pour le retrouver.
     """
     connexion.execute(
         text(
@@ -965,4 +994,13 @@ def _tracer_connexion(
             "origine": empreinte_origine,
             "detail": motif,
         },
+    )
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=type_evenement.value,
+        resource_type="user_account",
+        resource_reference=compte,
+        summary=f"Authentification administrateur : {motif}",
+        actor_person_id=personne,
     )

@@ -644,6 +644,9 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
     etapes = (
         "DELETE FROM auth_event WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        "DELETE FROM audit_event WHERE actor_person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         "DELETE FROM user_session WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         "DELETE FROM admin_password_credential WHERE user_account_id IN "  # noqa: S608
@@ -653,6 +656,7 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         f"DELETE FROM person WHERE email_normalized = '{adresse}'",  # noqa: S608
         f"DELETE FROM auth_event WHERE person_id IS NULL AND created_at >= '{debut}'",  # noqa: S608
+        f"DELETE FROM audit_event WHERE actor_person_id IS NULL AND created_at >= '{debut}'",  # noqa: S608
     )
     restes = 0
     for requete in etapes:

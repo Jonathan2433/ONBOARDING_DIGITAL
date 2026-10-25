@@ -73,14 +73,14 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `652` en usage | `DEC-653` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `671` en usage | `DEC-672` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
 | `BACKLOG-nnn` | Décisions de backlog | `001` à `010` | `BACKLOG-011` | [décisions](decisions/registre-decisions.md) |
 | `ARB-DROIT / ARB-DATA / ARB-ROAD / ARB-BACK-nnn` | Arbitrages | `-001` à `-005` chacun | `-006` | [décisions](decisions/registre-decisions.md) |
 | `ECART-nnn` | Écarts |  `001` à `069` |  `ECART-070` | [écarts](decisions/registre-ecarts.md) |
-| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `125` | `QO-126` | [questions](operations/registre-questions-ouvertes.md) |
+| `QO-nnn` | Questions ouvertes | `072` à `105` avec **5 trous**, puis `106` à `126` | `QO-127` | [questions](operations/registre-questions-ouvertes.md) |
 | `ROAD-RSK-nnn` | Risques | `001` à `034` | `ROAD-RSK-035` | [risques](operations/registre-risques.md) |
 | `DEP-nnn` | Dépendances externes | `001` à `017` | `DEP-018` | [dépendances](operations/registre-dependances-externes.md) |
 | `CONT-nnn` | Contenus éditoriaux inventoriés | `001` à `029` | `CONT-030` | [inventaire](product/contenus/inventaire-prototype.md) |
@@ -135,7 +135,7 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
 | ~~`G9`~~ | Fin du back-office | Import réel répété et validé | **FRANCHIE le 14/10/2026** — `DEC-652`, les **huit** critères classés (cinq tenus, deux gestes procéduraux à organiser, la validation de Jonathan), [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md), tag `v0.9.0` posé sur `main` |
-| `G10` | Fin du pilotage | Audit, reporting et support validés | Planifiée |
+| `G10` | Fin du pilotage | Audit, reporting et support validés | **LOT 10 OUVERT le 14/10/2026** — `DEC-654`, [fiche](operations/fiche-lot-10.md) |
 | `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
 | `G13` | Production temporaire | Déploiement, sauvegarde et restauration validés | Planifiée |
@@ -1297,6 +1297,116 @@ validations humaines encore à recueillir. **Jonathan a validé
 explicitement la checklist le 14/10/2026** (`DEC-652`) : la porte `G9`
 est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
 **VERROUILLÉ**.
+
+---
+
+## 17. Avancement du LOT 10 — **lot OUVERT**, porte `G10`
+
+**Ouvert par Jonathan le 14 octobre 2026 (`DEC-654`).** Plan :
+[`operations/fiche-lot-10.md`](operations/fiche-lot-10.md) — **8** stories, dont **5 `P0`** et
+**3 `P1`**, **six** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
+**seize** sous-étapes. Épic `#267`, jalon `G10`, stories `#268` à `#275`.
+
+**`T1` est faite** (`DEC-655`) : les six tables — `audit_event`, `operational_alert`,
+`alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle
+§22.3) — aucune route. Trois références nues renommées (`resource_reference`,
+`correlation_token` ×2), `export_request.job_id` retiré (`async_job` n'existe pas, LOT 11) —
+défauts trouvés par `make isolation-check` sur la base réellement migrée.
+
+**`T2` est faite** (`DEC-656`) : le service générique `app.audit.services.enregistrer_un_evenement`,
+câblé sur les quatre sites qui écrivaient déjà `auth_event` depuis le LOT 3 — demande et
+consommation de magic link, connexion administrateur et changement de mot de passe, révocation de
+session (une ou en masse), authentification d'un jeton de compte de service. `action_code`
+réutilise `TypeEvenementAuth`, aucun second vocabulaire pour la même notion (§7.27) ;
+`correlation_token` reprend `correlation_courante()` ; `retention_until` est calculé explicitement
+(`occurred_at + 365 jours`). Aucune migration, aucune route. Neuf fichiers de test existants ont dû
+étendre leur nettoyage de décor à `audit_event` — même classe de défaut que `user_session` au
+LOT 3 `T6`. Zéro régression : 1 725 pytest collectés (+11), 71 échecs environnementaux identiques à
+`origin/develop` par comparaison de worktree (en baisse de 74 à 71, un résidu de développement
+retiré des deux côtés, pas une régression corrigée).
+
+**`T3` est faite** (`DEC-657`) : le même service câblé sur les personnes et l'organisation
+(LOT 2/4/5/9) — `creer_un_collaborateur`, `modifier_les_donnees_organisationnelles` (UN
+`audit_event` **par champ** réellement écrit, `action_code` réutilisant `ChampOrganisationnel`),
+`changer_d_entite`, l'archivage/la restauration d'un profil (`action_code` réutilisant
+`ActionDeCycleDeVie`), d'un cercle, d'un bureau, `creer_une_entite`, `attribuer_la_categorie_dg` —
+sept fonctions PARTAGÉES câblées une seule fois chacune, dont héritent sans câblage séparé l'import
+CSV et le transfert en masse (LOT 9), ce qui acquitte `ECART-064` pour `US003`. Deux défauts
+trouvés en câblant, corrigés avant commit : `attribuer_la_categorie_dg` calculait l'instant deux
+fois indépendamment (même classe que `creer_un_jeton`, §7.47) ; huit scripts `infra/scripts/
+verifier-*.py` n'étaient pas préparés à la clé étrangère `audit_event.entity_id`, jamais exercée
+par `T2`. Un troisième, trouvé par la suite elle-même (`test_archivage_onboarding.py`, nettoyage
+manuel incomplet sur une route HTTP réelle). Zéro régression : 1 738 pytest collectés (+13, tous
+d'intégration), 73 échecs environnementaux identiques à `origin/develop` par comparaison de
+worktree, listes identiques terme à terme.
+
+**`T4` est faite** (`DEC-658`) : le même service câblé sur les contenus et le Framework (LOT 6) —
+`creer_une_page`, `remplacer_le_contenu` (UN SEUL `audit_event` pour l'appel entier — pas une
+fonction de diff par champ, elle archive et recrée les blocs à chaque appel), `publier_une_page`/
+`archiver_une_page`/`restaurer_une_page` (`action_code` réutilisant `ActionEditoriale`, déjà posé
+par le LOT 6 `T7`), `creer_un_lien`/`modifier_un_lien`/`reordonner_les_liens` (`internal_link`,
+trois littéraux nouveaux faute d'enum existant, UN SEUL `audit_event` pour tout l'ensemble
+réordonné, aucun quand la liste est vide). Huit fonctions, chacune à appelant HTTP unique — aucune
+n'a l'ambiguïté multi-appelants de `creer_l_appartenance` (LOT 2), donc aucune n'a été laissée au
+niveau de ses appelants. Aucun défaut trouvé en câblant, mesuré et non simplement constaté :
+`make framework-check` (77 contrôles sur la pile réelle) rejoué après le câblage ne rapporte aucun
+échec de nettoyage — le nettoyage par `actor_person_id`, hérité du correctif `T2`, couvre déjà les
+nouvelles lignes `audit_event`. Zéro régression : 1 749 pytest collectés (+11, tous d'intégration),
+73 échecs environnementaux identiques à `origin/develop` par comparaison de worktree, listes
+identiques terme à terme.
+
+**`T5` est faite** (`DEC-659`) : le même service câblé sur les événements (LOT 8) —
+`creer_un_evenement` (littéral `creer` : aucune valeur `ActionEvenement` ne nomme la création,
+cette enum étant scopée aux SIX lignes de permission du §11, « Créer » se réglant par
+`PorteeDeCreation`), `modifier_un_evenement` (UN SEUL `audit_event` pour l'appel entier, même en
+remplaçant aussi les cercles/bureaux rattachés), `publier_un_evenement`/`annuler_un_evenement`/
+`archiver_un_evenement`/`restaurer_un_evenement` (`action_code` réutilisant `ActionEvenement`, le
+motif d'annulation porté dans `reason`), `gerer_les_medias_d_un_evenement` (UN SEUL `audit_event`
+pour tout le remplacement de la liste des médias, MÊME quand elle est vidée — à la différence de
+`reordonner_les_liens` au LOT 6, aucun retour anticipé n'existe sur une liste vide). Sept
+fonctions, chacune à appelant HTTP unique — même configuration qu'à `T4`. Aucun défaut trouvé en
+câblant, mesuré et non simplement constaté : `make accueil-check` (29 contrôles sur la pile réelle,
+LOT 8 `T13`) rejoué après le câblage ne rapporte aucun échec de nettoyage — le seul script d'infra
+concerné, `verifier-accueil-evenements.py`, nettoyait déjà `audit_event` correctement avant ce
+câblage. Zéro régression : 1 759 pytest collectés (+10, tous d'intégration), 73 échecs
+environnementaux identiques à `origin/develop` par comparaison de worktree, listes identiques
+terme à terme.
+
+**`T6` est faite** (`DEC-660`) : le même service câblé sur l'onboarding (LOT 7) —
+`creer_une_tache_de_reference` (`onboarding_task_reference`), `creer_un_modele`/`creer_une_version`
+(`onboarding_template`/`onboarding_template_version`), `definir_les_taches_de_la_version`
+(`onboarding_template_task`, UN SEUL `audit_event` pour l'appel entier, MÊME quand la liste soumise
+est vidée — aucun retour anticipé n'existe, même principe que `gerer_les_medias_d_un_evenement` au
+LOT 8), `publier_une_version`/`archiver_une_version`/`restaurer_une_version` (neuf littéraux
+namespacés couvrant ces sept gestes, aucune enum n'existant pour le cycle de vie d'un modèle ou
+d'une version), `affecter_un_parcours` (`onboarding_instance`, UN SEUL `audit_event` pour l'appel
+entier malgré un `onboarding_task_event` PAR tâche snapshottée, `action_code` réutilisant
+`TypeEvenementTache.ASSIGNED`), `terminer_une_tache`/`annuler_la_completion`/`reouvrir_une_tache`
+(`onboarding_instance_task`, `action_code` réutilisant `TypeEvenementTache` — déjà le vocabulaire du
+journal §13.7 de ce domaine, même lecture que `TypeEvenementAuth` au LOT 3/`T2` — le motif de
+réouverture porté dans `reason`), et l'archivage/la restauration MANUELS d'un parcours. TREIZE
+fonctions au total, chacune à appelant HTTP unique ou geste manuel. `entity_id` de l'audit porte le
+périmètre RÉEL de la ressource (`None` pour un modèle/une tâche GLOBAL), jamais celui de l'entité
+appelante — même lecture que `creer_une_entite` au `T3`. TROIS fonctions internes sans appelant HTTP
+propre (archivage automatique d'un parcours terminé, archivage au départ, remplacement du parcours
+après changement de statut) ne sont PAS câblées séparément : chacune est la conséquence d'une action
+déjà auditée, même discipline que `T3` pour l'import CSV et le transfert en masse. Aucun défaut
+trouvé en câblant, mesuré comme à `T4`/`T5` — mais SEPT fichiers de test existants ont dû étendre
+leur nettoyage à `audit_event`, même classe que les neuf fichiers de `T2` : `make onboarding-check`
+(14 contrôles sur la pile réelle, LOT 7 `T14`) rejoué après le câblage ne rapporte aucun échec de
+nettoyage — le seul script d'infra du domaine, `verifier-administration-onboarding.py`, nettoyait
+déjà `audit_event` correctement avant ce câblage. Zéro régression : 1 777 pytest collectés (+18,
+tous d'intégration), 71 échecs environnementaux identiques à `origin/develop` par comparaison de
+worktree, listes identiques terme à terme (le nombre d'échecs environnementaux dérive avec la
+pollution du jeu de démonstration, 73 à `T5`, 71 ici, aucun n'étant du fait de ce travail). La
+sous-étape suivante est **`T7`** : le câblage sur l'import CSV et le back-office (LOT 9), et le
+motif obligatoire des interventions du super-administrateur.
+
+L'écriture d'audit est **synchrone**,
+dans la MÊME transaction que l'action métier (`ARB-DATA-005`, `§30.20`) : ce lot ne consomme pas la
+file `security` de Dramatiq, réservée au LOT 11. `ECART-064` (motif d'intervention du
+super-administrateur) est explicitement rattaché à ce lot et doit y être fermé ; `QO-092`
+(destination des signalements de bugs) reste ouverte, à trancher avant ou pendant `T12`.
 
 ---
 

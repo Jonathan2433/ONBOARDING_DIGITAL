@@ -25,10 +25,11 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated, Final, Literal
 
-from fastapi import APIRouter, Depends, File, Path, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Path, Query, Request, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.engine import Connection
 
+from app.audit.motif import DemandeDeMotif, exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, proteger_du_csrf
 from app.entities.routes import (
     CODE_ENTITE_INTROUVABLE,
@@ -396,6 +397,10 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
         ],
         requete: Request,
         fichier: Annotated[UploadFile, File(description="Le CSV brut, depose tel quel.")],
+        motif: Annotated[
+            str | None,
+            Form(description="Le motif du §18.1 — obligatoire pour `SUPER`.", max_length=2000),
+        ] = None,
         appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
     ) -> ReponseDeDepotDImport:
         """Deposer un CSV — cahier §9.5 (points 1 et 2), §19.1."""
@@ -408,9 +413,13 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
 
         instant = dt.datetime.now(tz=dt.UTC)
         with moteur(parametres).begin() as connexion:
-            entite, _roles = _resoudre_l_entite_et_verifier_le_role(
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
                 connexion, code=code, appelant=appelant, instant=instant
             )
+            #  `ECART-064`, LOT 10 `T7` : `deposer_un_csv` ne connait aucun
+            #  role, la verification a donc lieu ICI, comme pour chaque
+            #  route de ce module.
+            exiger_un_motif_si_necessaire(roles, motif)
             lot = deposer_un_csv(
                 connexion,
                 parametres,
@@ -418,6 +427,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 acteur=appelant.personne,
                 nom_de_fichier=fichier.filename or "import.csv",
                 contenu=contenu,
+                motif=motif,
                 instant=instant,
             )
         return _lot_rendu(lot)
@@ -605,6 +615,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
         ],
         lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
     ) -> ReponseDeLancement:
         """Lancer l'import — matrice §14, diagramme §24.4."""
@@ -622,6 +633,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 lot=lot,
                 acteur=appelant.personne,
                 roles=roles,
+                motif=demande.motif if demande else None,
                 instant=instant,
             )
         return _lancement_rendu(rapport)
@@ -679,6 +691,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
         lot: Annotated[uuid.UUID, Path(description="L'identifiant du lot d'import")],
         ligne: Annotated[uuid.UUID, Path(description="L'identifiant de la ligne")],
         requete: Request,
+        demande: DemandeDeMotif | None = None,
         appelant: SessionEtablie = Depends(garde_du_depot_d_import),  # noqa: B008
     ) -> ReponseDeRejeu:
         """Rejouer une ligne rejetee — matrice §14, modele §19.5."""
@@ -697,6 +710,7 @@ def routeur_imports(parametres: Parametres) -> APIRouter:
                 ligne_id=ligne,
                 acteur=appelant.personne,
                 roles=roles,
+                motif=demande.motif if demande else None,
                 instant=instant,
             )
         return ReponseDeRejeu(etat=resultat.etat, codes_derreur=resultat.codes_derreur)

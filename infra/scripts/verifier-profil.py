@@ -529,6 +529,8 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
     motif = f"{marqueur}%"
     for requete in (
         f"DELETE FROM auth_event WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        f"DELETE FROM audit_event WHERE actor_person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM user_session WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM admin_password_credential WHERE user_account_id IN (SELECT id FROM user_account WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}'))",  # noqa: S608,E501
         f"DELETE FROM user_account WHERE person_id IN (SELECT id FROM person WHERE email_normalized LIKE '{motif}')",  # noqa: S608,E501
@@ -546,9 +548,13 @@ def nettoyer(compose: list[str], env: dict[str, str], marqueur: str, debut: str)
         f"DELETE FROM job_catalog WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM client WHERE canonical_name LIKE '{motif}'",  # noqa: S608
         f"DELETE FROM person WHERE email_normalized LIKE '{motif}'",  # noqa: S608
+        #  LOT 10, `T3` : `audit_event.entity_id` reference aussi `entity`.
+        f"DELETE FROM audit_event WHERE entity_id IN (SELECT id FROM entity WHERE code LIKE '{motif}')",  # noqa: S608,E501
         f"DELETE FROM entity WHERE code LIKE '{motif}'",  # noqa: S608
         "DELETE FROM auth_event WHERE person_id IS NULL AND service_account_id IS NULL "  # noqa: S608
         f"AND created_at >= '{debut}'",
+        "DELETE FROM audit_event WHERE actor_person_id IS NULL "  # noqa: S608
+        f"AND actor_service_account_id IS NULL AND occurred_at >= '{debut}'",
     ):
         psql(compose, env, requete)
 

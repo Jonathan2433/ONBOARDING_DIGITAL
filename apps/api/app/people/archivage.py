@@ -106,6 +106,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.instances import archiver_le_parcours_au_depart
 from app.people.ecriture import (
     CODE_VERSION_OBSOLETE,
@@ -345,6 +346,7 @@ def archiver_un_profil(
     perimetre: PerimetreDuCycleDeVie,
     instant: dt.datetime,
     date_de_depart: dt.date | None = None,
+    motif: str | None = None,
 ) -> Archivage:
     """« Archiver un profil » du §6.1 — le chemin du §24.1 jusqu'a `archived`.
 
@@ -354,6 +356,10 @@ def archiver_un_profil(
             Elle n'est posee que si la colonne est nulle, et la contrainte
             `depart_apres_arrivee` refuse une date anterieure a l'arrivee -- un
             `422` au format du §18.3.
+        motif: le motif du §18.1 — obligatoire cote ROUTE quand `SUPER`
+            autorise l'appel (`app.audit.motif`, `ECART-064`, LOT 10 `T7`),
+            jamais verifie ici : ce service est aussi appele par l'import
+            (`app.imports.execution`), qui connait les roles lui-meme.
 
     Leve `ErreurApplicative` : `403` hors perimetre, `409` version obsolete,
     `422` date refusee.
@@ -405,6 +411,19 @@ def archiver_un_profil(
             {"cible": cible, "entite": entite, "acteur": acteur, "instant": instant},
         ).scalar_one()
     )
+    #  LOT 10, `T3` : `ActionDeCycleDeVie.ARCHIVER` est deja le vocabulaire du
+    #  perimetre (§7.27), reutilise tel quel comme `action_code`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionDeCycleDeVie.ARCHIVER.value,
+        resource_type="entity_membership",
+        resource_reference=cible,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Archivage du profil, depuis l'etat « {depuis} »",
+        reason=motif,
+    )
     return Archivage(
         version=version,
         etat_precedent=depuis,
@@ -422,11 +441,14 @@ def restaurer_un_profil(
     version_attendue: int,
     perimetre: PerimetreDuCycleDeVie,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Restauration:
     """« Reactiver un profil archive » du §6.1 — `Archived --> Active` du §24.1.
 
     **ELLE NE ROUVRE AUCUNE RELATION**, et elle DIT lesquelles manquent : voir
     l'en-tete du module.
+
+    `motif` : voir `archiver_un_profil`, meme regle.
 
     Leve `ErreurApplicative` : `403` hors perimetre, `409` version obsolete ou
     etat incompatible.
@@ -480,6 +502,20 @@ def restaurer_un_profil(
             },
         )
         raise refus from erreur
+
+    #  LOT 10, `T3` : meme reutilisation de `ActionDeCycleDeVie`, pour l'action
+    #  symetrique.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionDeCycleDeVie.RESTAURER.value,
+        resource_type="entity_membership",
+        resource_reference=cible,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Restauration du profil, depuis l'etat « {depuis} »",
+        reason=motif,
+    )
 
     #  **LES SIX RELATIONS DU §25.2 AUTRES QUE L'APPARTENANCE, ET NON QUATRE.**
     #

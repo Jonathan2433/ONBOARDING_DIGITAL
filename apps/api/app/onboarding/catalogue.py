@@ -37,6 +37,7 @@ CE QUE CETTE SOUS-ETAPE NE FAIT PAS
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import uuid
 from typing import Any, Final
 
@@ -46,6 +47,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.shared.errors import ErreurApplicative
 
 CODE_TACHE_DEJA_UTILISEE: Final = "code_de_tache_deja_utilise"
@@ -121,12 +123,20 @@ def creer_une_tache_de_reference(
     title: str,
     description: str | None,
     category: str | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
 ) -> TacheDeReference:
     """Ajouter une tache au catalogue — `entite=None` pour une tache GLOBALE.
 
     L'unicite du `code` est tenue par les DEUX index partiels poses en `T1`
     (`app/onboarding/modeles.py`) — un par perimetre, entite ou global —
     jamais recalculee ici : la CONTRAINTE decide, cette fonction la traduit.
+
+    `acteur`/`instant` : LOT 10, `T6`. Ce module ne les employait pour AUCUNE
+    colonne avant ce cablage — ni `created_by_person_id` ni `created_at` ne
+    sont ecrits ici, `ChampsCommuns` laissant ses defauts serveur jouer. Les
+    deux ne servent QUE l'ecriture d'audit ci-dessous.
     """
     try:
         ligne = (
@@ -153,4 +163,20 @@ def creer_une_tache_de_reference(
                 statut=status.HTTP_409_CONFLICT,
             ) from erreur
         raise
-    return _depuis_la_ligne(ligne)
+    creee = _depuis_la_ligne(ligne)
+
+    #  LOT 10, `T6` : litteral, meme discipline que la creation d'un modele ou
+    #  d'une version (`gabarits.py`) — la matrice §9 ne porte aucune enum
+    #  d'actions, a la difference des evenements du LOT 8.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="tache_de_reference_creee",
+        resource_type="onboarding_task_reference",
+        resource_reference=creee.id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation de la tache de reference « {title} »",
+        reason=motif,
+    )
+    return creee

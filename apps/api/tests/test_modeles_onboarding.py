@@ -326,6 +326,14 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "DELETE FROM onboarding_task_reference WHERE code LIKE :motif_code",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T6` : creer un modele/une version/des taches (routes HTTP
+            #  de ce fichier) ecrit desormais `audit_event` aussi —
+            #  `actor_person_id` ET `entity_id` y referencent `person`/`entity`,
+            #  meme classe que `T2`/`T3` (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM framework_responsibility_assignment WHERE entity_id IN "
@@ -360,7 +368,14 @@ def _creer_modele(
     scope_person_id: uuid.UUID | None = None,
     scope_circle_id: uuid.UUID | None = None,
 ) -> Any:
-    corps: dict[str, Any] = {"name": name, "target_status": target_status, "portee": portee}
+    #  LOT 10, `T7` : `motif` — obligatoire pour `SUPER` seulement (`ECART-064`),
+    #  fourni ici inconditionnellement, sans effet sur les autres roles.
+    corps: dict[str, Any] = {
+        "name": name,
+        "target_status": target_status,
+        "portee": portee,
+        "motif": "Decor de test",
+    }
     if scope_person_id is not None:
         corps["scope_person_id"] = str(scope_person_id)
     if scope_circle_id is not None:
@@ -376,7 +391,10 @@ def _creer_version(
     parametres: Parametres, code_entite: str, modele: uuid.UUID, jeton: str | None
 ) -> Any:
     return _appeler_ecriture(
-        parametres, CHEMIN_VERSIONS.format(code=code_entite, modele=modele), jeton, {}
+        parametres,
+        CHEMIN_VERSIONS.format(code=code_entite, modele=modele),
+        jeton,
+        {"motif": "Decor de test"},
     )
 
 
@@ -392,7 +410,7 @@ def _definir_les_taches(
         parametres,
         CHEMIN_TACHES.format(code=code_entite, modele=modele, version=version),
         jeton,
-        {"taches": taches},
+        {"taches": taches, "motif": "Decor de test"},
         methode="PUT",
     )
 

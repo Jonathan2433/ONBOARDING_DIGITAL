@@ -415,9 +415,13 @@ class ServiceToken(ChampsCommuns, Base):
 class AuthEvent(ChampsCommuns, Base):
     """Historique specialise des evenements d'authentification — modele §10.6.
 
-    **CE N'EST PAS L'AUDIT GENERAL.** Le §21.1 declare `audit_event`, qui releve du
-    LOT 12, et le controle §30.20 -- « une action metier et son audit sont
-    atomiques » -- y reste classe. Confondre les deux ferait croire l'audit acquis.
+    **CE N'EST PAS L'AUDIT GENERAL.** Le §21.1 declare `audit_event`, posee par
+    le LOT 10 (`app/audit/modeles.py`, `T1`) — cette docstring disait
+    « LOT 12 » depuis sa redaction au LOT 3, avant que la roadmap ne fixe
+    l'ordre definitif des lots, corrige ici (meme classe que la divergence
+    mesuree dans `infra/scripts/verifier-recette-modele.py`, voir
+    `fiche-lot-10.md` §2.1). Confondre les deux tables ferait croire l'audit
+    general acquis alors qu'`auth_event` ne couvre QUE l'authentification.
 
     « Les donnees sensibles sont exclues » : la table ne porte NI mot de passe, NI
     jeton, NI lien complet. `person_id` et `user_account_id` sont NULLABLES parce

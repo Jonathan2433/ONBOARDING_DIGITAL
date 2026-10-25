@@ -195,6 +195,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.modeles import TypeEvenementTache
 from app.shared.errors import ErreurApplicative
 
@@ -513,6 +514,14 @@ def remplacer_le_parcours_apres_changement_de_statut(
     Ne fait RIEN si aucune instance `active` n'existe — un collaborateur
     jamais affecte a un parcours n'a rien a remplacer, ce sera le geste
     (humain, matrice §8.1) d'« Affecter un parcours ».
+
+    LOT 10, `T6` : AUCUN `audit_event` separe ici — cette fonction n'a aucun
+    appelant HTTP propre, elle est une CONSEQUENCE automatique d'un changement
+    de `STATUT`, deja audite PAR CHAMP par `modifier_les_donnees_
+    organisationnelles` (`T3` de ce lot, `action_code` reutilisant
+    `ChampOrganisationnel`). Le remplacement du parcours est l'IMPLICATION
+    metier de ce champ, pas une decision distincte de l'acteur — meme
+    discipline que `T3` pour l'import CSV et le transfert en masse.
     """
     active = lire_l_instance_active(connexion, entite=entite, appartenance=appartenance)
     if active is None:
@@ -728,6 +737,12 @@ def archiver_le_parcours_si_termine(
     vient d'etre terminee n'etait pas la derniere). Aucune erreur n'est levee
     ici : completer une tache reste un succes, que l'instance se termine ou
     non par le meme geste.
+
+    LOT 10, `T6` : AUCUN `audit_event` separe ici — cette archive AUTOMATIQUE
+    est une CONSEQUENCE de « terminer une tache », deja auditee par son
+    appelant. Un second evenement decrirait un effet de bord, pas une
+    decision distincte de l'acteur — meme lecture que `archiver_le_parcours_
+    au_depart` ci-dessous.
     """
     connexion.execute(
         text(_ARCHIVER_LE_PARCOURS_TERMINE),
@@ -736,7 +751,13 @@ def archiver_le_parcours_si_termine(
 
 
 def archiver_un_parcours_termine(
-    connexion: Connection, *, entite: uuid.UUID, instance: uuid.UUID, instant: dt.datetime
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    instance: uuid.UUID,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
 ) -> Instance:
     """Matrice §8.1 « Archiver un parcours termine » — `ESM`/`ADM-E`/`SUPER`
     SEULEMENT (`perimetre.ROLES_D_ARCHIVAGE_ET_RESTAURATION_DU_PARCOURS`),
@@ -756,6 +777,11 @@ def archiver_un_parcours_termine(
     de filet pour le residuel — matrice §8.1, l'entitlement existe en toutes
     lettres pour `ESM`/`ADM-E`/`SUPER`, independamment de ce que l'automatique
     couvre deja.
+
+    LOT 10, `T6` : ce geste MANUEL est cable — un acteur humain le declenche,
+    verifie par la garde de role. L'automatique (`archiver_le_parcours_si_
+    termine`, appelee depuis `terminer_une_tache`) ne l'est PAS separement :
+    voir sa propre docstring.
     """
     ligne = (
         connexion.execute(
@@ -771,7 +797,20 @@ def archiver_un_parcours_termine(
             message=MESSAGE_PARCOURS_NON_TERMINE,
             statut=status.HTTP_409_CONFLICT,
         )
-    return _instance_depuis_la_ligne(ligne)
+    archivee = _instance_depuis_la_ligne(ligne)
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="parcours_archive",
+        resource_type="onboarding_instance",
+        resource_reference=archivee.id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Archivage manuel d'un parcours d'onboarding termine",
+        reason=motif,
+    )
+    return archivee
 
 
 def archiver_le_parcours_au_depart(
@@ -788,6 +827,14 @@ def archiver_le_parcours_au_depart(
     Rend `None` sans rien ecrire si aucune instance active n'existait : un
     collaborateur jamais affecte a un parcours, ou dont le parcours est deja
     `replaced`/`archived`, n'a rien a archiver de plus.
+
+    LOT 10, `T6` : AUCUN `audit_event` separe ici — cette fonction n'a aucun
+    appelant HTTP propre, elle est une CONSEQUENCE de `archiver_un_profil`
+    (LOT 2/5, deja audite par `T3` de ce lot). Lui donner un second evenement
+    dupliquerait le journal d'UN SEUL geste humain (le depart) plutot que de
+    decrire une decision distincte — meme discipline que `T3` pour l'import
+    CSV et le transfert en masse, qui « heritent sans cablage separe » des
+    fonctions partagees deja auditees.
     """
     ligne = connexion.execute(
         text(_ARCHIVER_LE_PARCOURS_AU_DEPART), {"appartenance": appartenance, "entite": entite}
@@ -796,7 +843,13 @@ def archiver_le_parcours_au_depart(
 
 
 def restaurer_un_parcours(
-    connexion: Connection, *, entite: uuid.UUID, instance: uuid.UUID
+    connexion: Connection,
+    *,
+    entite: uuid.UUID,
+    instance: uuid.UUID,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
 ) -> Instance:
     """Matrice §8.1 « Restaurer un parcours archive » — `ESM`/`ADM-E`/`SUPER`
     SEULEMENT, `T11`, `ECART-066` (volet parcours) RESOLU le 28/09/2026 :
@@ -808,6 +861,9 @@ def restaurer_un_parcours(
     absente de cette appartenance). Refuse 409 si elle n'est pas `archived`,
     ou si l'appartenance porte deja une instance `active` — l'index partiel
     de `T1` l'interdirait de toute facon.
+
+    `acteur`/`instant` (LOT 10, `T6`) ne servent que l'audit : `onboarding_
+    instance` ne declare aucune colonne pour tracer qui restaure, ni quand.
     """
     ligne = (
         connexion.execute(text(_RESTAURER_LE_PARCOURS), {"instance": instance, "entite": entite})
@@ -820,7 +876,20 @@ def restaurer_un_parcours(
             message=MESSAGE_PARCOURS_NON_ARCHIVE,
             statut=status.HTTP_409_CONFLICT,
         )
-    return _instance_depuis_la_ligne(ligne)
+    restauree = _instance_depuis_la_ligne(ligne)
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="parcours_restaure",
+        resource_type="onboarding_instance",
+        resource_reference=restauree.id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Restauration d'un parcours d'onboarding archive",
+        reason=motif,
+    )
+    return restauree
 
 
 def tache_depuis_la_ligne(ligne: Any) -> TacheDuParcours:
@@ -1043,6 +1112,7 @@ def affecter_un_parcours(
     cible: Appartenance,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Parcours:
     """Matrice §8.1 « Affecter un parcours » — modele §13.5/§13.4.
 
@@ -1060,6 +1130,13 @@ def affecter_un_parcours(
     une tache snapshottee pose desormais son evenement `ASSIGNED`, avec pour
     acteur la personne qui a affecte ce parcours, jamais `None` : « Affecter
     un parcours » est un geste HUMAIN (§8.1), pas un automatisme.
+
+    LOT 10, `T6` : UN SEUL `audit_event` pour l'appel entier, meme si la
+    boucle ci-dessous pose un `onboarding_task_event` PAR tache snapshottee —
+    « affecter un parcours » est UNE action metier, jamais une par tache.
+    `action_code` reutilise `TypeEvenementTache.ASSIGNED`, le vocabulaire
+    DEJA pose par le journal propre a ce domaine (§13.7) — meme lecture que
+    `TypeEvenementAuth` a `T2`.
     """
     reference_date = cible.arrival_date
 
@@ -1142,6 +1219,18 @@ def affecter_un_parcours(
         )
         ecrites.append(tache_ecrite)
     taches = tuple(ecrites)
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=TypeEvenementTache.ASSIGNED.value,
+        resource_type="onboarding_instance",
+        resource_reference=instance.id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Affectation d'un parcours d'onboarding ({len(taches)} tache(s))",
+        reason=motif,
+    )
     return Parcours(
         instance=instance,
         progression=_progression_depuis_les_taches(taches),

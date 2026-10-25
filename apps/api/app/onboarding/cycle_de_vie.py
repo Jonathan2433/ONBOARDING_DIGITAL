@@ -96,6 +96,7 @@ from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.modeles import EtatDeLaVersionDuModele
 from app.shared.errors import ErreurApplicative
 
@@ -184,13 +185,22 @@ def _refuser_si_aucune_ligne(ligne: Any) -> Any:
 
 
 def publier_une_version(
-    connexion: Connection, *, version: uuid.UUID, acteur: uuid.UUID, instant: dt.datetime
+    connexion: Connection,
+    *,
+    version: uuid.UUID,
+    entite_du_modele: uuid.UUID | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
 ) -> VersionPubliee:
     """Matrice §9 « Publier une version » — `draft` devient `published`.
 
     Seul un brouillon peut etre publie : aucune republication, aucune
     publication d'une version deja retiree — le §9 n'a qu'UNE ligne
     « Publier », jamais de transition inverse.
+
+    `entite_du_modele` (LOT 10, `T6`) : sert exclusivement l'audit — la
+    version n'a pas d'`entity_id` propre, voir l'en-tete de classe.
     """
     ligne = _refuser_si_aucune_ligne(
         connexion.execute(
@@ -206,7 +216,7 @@ def publier_une_version(
         .mappings()
         .one_or_none()
     )
-    return VersionPubliee(
+    publiee = VersionPubliee(
         id=uuid.UUID(str(ligne["id"])),
         version_number=int(ligne["version_number"]),
         state=str(ligne["state"]),
@@ -214,14 +224,41 @@ def publier_une_version(
         published_by_person_id=uuid.UUID(str(ligne["published_by_person_id"])),
     )
 
+    #  LOT 10, `T6` : aucune enum n'existe pour le cycle de vie d'une version —
+    #  litteral, meme discipline que la creation (`gabarits.py`).
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="version_publiee",
+        resource_type="onboarding_template_version",
+        resource_reference=publiee.id,
+        entity_id=entite_du_modele,
+        actor_person_id=acteur,
+        summary=f"Publication de la version {publiee.version_number} du modele",
+        reason=motif,
+    )
+    return publiee
 
-def archiver_une_version(connexion: Connection, *, version: uuid.UUID) -> VersionArchivee:
+
+def archiver_une_version(
+    connexion: Connection,
+    *,
+    version: uuid.UUID,
+    entite_du_modele: uuid.UUID | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
+) -> VersionArchivee:
     """Matrice §9 « Archiver une version » — `published` devient `retired`.
 
     Pas d'archivage direct depuis `draft` : un brouillon n'a jamais ete
     « en circulation », rien ne le distingue alors de le laisser en brouillon
     — le §9 ne nomme aucune transition `draft --> retired`, et en inventer
     une serait §6.5.
+
+    `entite_du_modele`/`acteur`/`instant` (LOT 10, `T6`) ne servent QUE
+    l'audit : voir l'en-tete du module, « aucun motif, aucun acteur trace »
+    reste vrai pour `onboarding_template_version` elle-meme.
     """
     ligne = _refuser_si_aucune_ligne(
         connexion.execute(
@@ -229,18 +266,42 @@ def archiver_une_version(connexion: Connection, *, version: uuid.UUID) -> Versio
             {"version": version, "etat_retire": _ETAT_RETIRED, "etat_attendu": _ETAT_PUBLISHED},
         ).one_or_none()
     )
-    return VersionArchivee(
+    archivee = VersionArchivee(
         id=uuid.UUID(str(ligne[0])), version_number=int(ligne[1]), state=str(ligne[2])
     )
 
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="version_archivee",
+        resource_type="onboarding_template_version",
+        resource_reference=archivee.id,
+        entity_id=entite_du_modele,
+        actor_person_id=acteur,
+        summary=f"Archivage de la version {archivee.version_number} du modele",
+        reason=motif,
+    )
+    return archivee
 
-def restaurer_une_version(connexion: Connection, *, version: uuid.UUID) -> VersionRestauree:
+
+def restaurer_une_version(
+    connexion: Connection,
+    *,
+    version: uuid.UUID,
+    entite_du_modele: uuid.UUID | None,
+    acteur: uuid.UUID,
+    instant: dt.datetime,
+    motif: str | None = None,
+) -> VersionRestauree:
     """Matrice §9 « Restaurer une version » — `retired` redevient `published`.
 
     **ET NON `draft`** — voir l'en-tete du module, le choix le plus important
     de cette sous-etape. `published_at`/`published_by_person_id` d'ORIGINE
     sont rendus intacts : cette transition ne les ecrit pas, elle les lit
     seulement.
+
+    `entite_du_modele`/`acteur`/`instant` (LOT 10, `T6`) ne servent QUE
+    l'audit, meme motif que `archiver_une_version`.
     """
     ligne = _refuser_si_aucune_ligne(
         connexion.execute(
@@ -250,7 +311,7 @@ def restaurer_une_version(connexion: Connection, *, version: uuid.UUID) -> Versi
         .mappings()
         .one_or_none()
     )
-    return VersionRestauree(
+    restauree = VersionRestauree(
         id=uuid.UUID(str(ligne["id"])),
         version_number=int(ligne["version_number"]),
         state=str(ligne["state"]),
@@ -261,3 +322,16 @@ def restaurer_une_version(connexion: Connection, *, version: uuid.UUID) -> Versi
             else uuid.UUID(str(ligne["published_by_person_id"]))
         ),
     )
+
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="version_restauree",
+        resource_type="onboarding_template_version",
+        resource_reference=restauree.id,
+        entity_id=entite_du_modele,
+        actor_person_id=acteur,
+        summary=f"Restauration de la version {restauree.version_number} du modele",
+        reason=motif,
+    )
+    return restauree

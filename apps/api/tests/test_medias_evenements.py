@@ -68,7 +68,12 @@ FIN = dt.datetime(2026, 10, 10, 10, 0, tzinfo=dt.UTC)
 
 
 def test_la_demande_porte_EXACTEMENT_version_et_medias() -> None:
-    assert set(DemandeDeGestionDesMediasDEvenement.model_fields) == {"version", "medias"}
+    #  LOT 10, `T7` : plus `motif`, le motif conditionnel du §18.1 (`ECART-064`).
+    assert set(DemandeDeGestionDesMediasDEvenement.model_fields) == {
+        "version",
+        "medias",
+        "motif",
+    }
 
 
 def test_un_media_soumis_porte_EXACTEMENT_media_et_role() -> None:

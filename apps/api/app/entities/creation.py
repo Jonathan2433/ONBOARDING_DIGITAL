@@ -79,6 +79,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.entities.modeles import StatutEntite
 from app.organization.modeles import TypeRoleTechnique
 from app.shared.errors import ErreurApplicative
@@ -136,12 +137,17 @@ def creer_une_entite(
     demande: DemandeDeCreationDEntite,
     acteur: uuid.UUID,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EntiteCreee:
     """Creer l'entite et nommer son premier administrateur — UNE transaction.
 
     Leve `ErreurApplicative` : `422` personne introuvable, `409` code deja
     utilise. Voir l'en-tete du module pour ce qui n'est PAS fait ici (aucun
     contenu, role Framework ni modele d'onboarding n'est seme).
+
+    `motif` : LOT 10 `T7`, `ECART-064` — TOUJOURS fourni par la route (seul
+    `SUPER` peut l'appeler), jamais verifie ici : ce service n'a aucun role
+    a verifier, voir `app/entities/routes.py`.
     """
     #  **LA PERSONNE D'ABORD** : `technical_role_assignment.person_id` est une
     #  cle etrangere vers `person`, et un refus de la base sur ELLE SEULE
@@ -194,4 +200,18 @@ def creer_une_entite(
         },
     )
 
+    #  LOT 10, `T3` : une seule action metier — « creer une entite », meme si
+    #  elle pose aussi le premier administrateur dans le MEME appel (voir
+    #  l'en-tete du module). `entity_id` est l'entite qui vient de naitre.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="entite_creee",
+        resource_type="entity",
+        resource_reference=entite_id,
+        entity_id=entite_id,
+        actor_person_id=acteur,
+        summary=f"Creation de l'entite {demande.code}",
+        reason=motif,
+    )
     return EntiteCreee(id=entite_id, code=demande.code, version=version)

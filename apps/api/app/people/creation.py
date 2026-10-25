@@ -59,6 +59,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.ecriture import traduire_un_refus_de_la_base
 from app.people.modeles import (
@@ -247,12 +248,17 @@ def creer_un_collaborateur(
     acteur: uuid.UUID,
     demande: DemandeDeCollaborateur,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> CollaborateurCree:
     """Creer la personne, puis son appartenance, dans UNE seule transaction.
 
     La biconditionnelle est validee ICI, AVANT la personne : sans cela, une
     demande incoherente laisserait une ligne `person` orpheline derriere un
     `422`, puisque `creer_l_appartenance` ne la revalide qu'ensuite.
+
+    `motif` : le motif du §18.1 — obligatoire cote ROUTE quand `SUPER`
+    autorise l'appel (`app.audit.motif`, `ECART-064`, LOT 10 `T7`), repris tel
+    quel par l'import (`app.imports.execution`), qui appelle ce service aussi.
     """
     valider_la_biconditionnelle_statut_client(demande.appartenance)
     email_normalise = normaliser_email(demande.email)
@@ -275,7 +281,7 @@ def creer_un_collaborateur(
     except (IntegrityError, DataError) as erreur:
         raise traduire_un_refus_de_la_base(erreur) from erreur
 
-    return creer_l_appartenance(
+    cree = creer_l_appartenance(
         connexion,
         entite=entite,
         person_id=personne,
@@ -283,3 +289,20 @@ def creer_un_collaborateur(
         acteur=acteur,
         instant=instant,
     )
+    #  LOT 10, `T3` : UN SEUL `audit_event` POUR L'ACTION ENTIERE, PAS UN PAR
+    #  TABLE ECRITE -- la personne et ses cinq relations (`creer_l_appartenance`)
+    #  sont une seule action metier, « creer un collaborateur ». Aucune enum
+    #  Python ne nomme cette action (a la difference de l'authentification,
+    #  LOT 3) : `action_code` est donc un litteral, §7.27 n'ayant rien a reutiliser.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="collaborateur_cree",
+        resource_type="person",
+        resource_reference=personne,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation d'un collaborateur dans l'entite {entite}",
+        reason=motif,
+    )
+    return cree

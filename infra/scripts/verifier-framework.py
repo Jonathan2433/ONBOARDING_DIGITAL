@@ -2477,6 +2477,10 @@ def main() -> int:
             #  personne et son compte. L'ordre inverse rend
             #  « violates foreign key constraint fk_auth_event_user_account_id ».
             f"auth_event WHERE person_id IN ({personnes})",
+            #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+            #  `person`, meme motif que `auth_event` juste au-dessus — onzieme
+            #  occurrence de la classe §7.30.
+            f"audit_event WHERE actor_person_id IN ({personnes})",
             f"user_account WHERE person_id IN ({personnes})",
             f"person WHERE email LIKE '{MARQUEUR}%'",
             f"entity WHERE code LIKE '{MARQUEUR}%'",

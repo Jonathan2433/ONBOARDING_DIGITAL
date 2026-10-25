@@ -35,6 +35,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import __version__
 from app.accueil.routes import routeur_accueil
 from app.administration.routes import routeur_administration
+from app.audit.routes import routeur_audit
 from app.auth.routes import routeur_authentification
 from app.configuration.settings import Parametres, parametres_en_cache
 from app.content.routes import routeur_contenus
@@ -46,6 +47,8 @@ from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
 from app.permissions.routes import routeur_permissions
+from app.privacy.routes import routeur_rgpd
+from app.reporting.routes import routeur_reporting
 from app.shared.correlation import EN_TETE_CORRELATION, definir_correlation
 from app.shared.errors import (
     ErreurApplicative,
@@ -55,6 +58,7 @@ from app.shared.errors import (
     gerer_erreur_validation,
 )
 from app.shared.journal import journaliser_requete
+from app.support.routes import routeur_support
 from observabilite import configurer_journalisation
 
 
@@ -172,6 +176,20 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  écriture métier. Monté après les entités, dont il réutilise la
     #  résolution et le gabarit de 404.
     routeur_v1.include_router(routeur_imports(config))
+    #  LOT 10, T8 : le journal d'audit en lecture, filtrable par perimetre.
+    #  Monte apres les entites, dont il reutilise la resolution et le gabarit
+    #  de 404 -- meme discipline que toutes les routes qui precedent.
+    routeur_v1.include_router(routeur_audit(config))
+    #  LOT 10, T10 : le reporting etendu. Monte apres le tableau de bord
+    #  administratif (LOT 9, T5), dont il reutilise la meme grille de role.
+    routeur_v1.include_router(routeur_reporting(config))
+    #  LOT 10, T11 : le signalement d'un bug, MVP-L10-US005. Aucun code
+    #  d'entite dans son chemin -- voir l'en-tete d'app/support/routes.py.
+    routeur_v1.include_router(routeur_support(config))
+    #  LOT 10, T14 : le suivi d'une demande de droit RGPD, MVP-L10-US008.
+    #  Ressource globale, meme regime que /alerts -- voir l'en-tete
+    #  d'app/privacy/routes.py.
+    routeur_v1.include_router(routeur_rgpd(config))
     application.include_router(routeur_v1)
 
     return application

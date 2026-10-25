@@ -192,17 +192,20 @@ def test_les_deux_DIVERGENCES_entre_state_et_archived_at_se_lisent_au_plus_RESTR
     }
 
 
-def test_la_DEMANDE_ne_porte_QUE_la_version() -> None:
-    """**NI ETAT CIBLE, NI MOTIF, ET LES DEUX ABSENCES SONT RAISONNEES.**
+def test_la_DEMANDE_ne_porte_QUE_la_version_et_le_motif_conditionnel() -> None:
+    """**AUCUN ETAT CIBLE, ET L'ABSENCE EST RAISONNEE.**
 
     Un champ `etat` laisserait croire a une machine a etats pilotee par
     l'appelant : l'etat cible est porte par la ROUTE, si bien que les transitions
     que le §13 n'ecrit pas sont **inexprimables** plutot que refusees (§7.35).
 
-    Un champ `motif` contredirait le §18.1, qui enumere cinq cas ou un motif est
-    obligatoire — et archiver un contenu n'en est pas un.
+    `motif` EST present depuis LOT 10 `T7` (`ECART-064`) : le §18.1 enumere
+    cinq cas ou un motif est obligatoire, et archiver un contenu n'en est pas
+    un — mais un SIXIEME angle, transversal, s'applique ICI : « toute
+    intervention du super-administrateur dans une entite », conditionnel au
+    role reellement utilise.
     """
-    assert set(DemandeDeTransition.model_fields) == {"version"}
+    assert set(DemandeDeTransition.model_fields) == {"version", "motif"}
 
 
 def test_les_TROIS_REPONSES_rendent_l_etat_plutot_que_de_le_laisser_deduire() -> None:

@@ -883,6 +883,12 @@ def stack_avec_domaine(parametres_de_la_stack: Parametres) -> Iterator[Parametre
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+                #  `person`, et sans ce retrait `DELETE FROM person` ci-dessous
+                #  echoue en violation de cle etrangere — meme classe que la
+                #  ligne `auth_event` juste au-dessus, pour la MEME raison.
+                "DELETE FROM audit_event WHERE actor_person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM magic_link_request WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM entity_membership WHERE person_id IN "
@@ -893,6 +899,8 @@ def stack_avec_domaine(parametres_de_la_stack: Parametres) -> Iterator[Parametre
                 #  Les evenements SANS personne, bornes a cette execution.
                 "DELETE FROM auth_event WHERE person_id IS NULL "
                 "  AND event_type = 'MAGIC_LINK_REQUESTED' AND occurred_at >= :debut",
+                "DELETE FROM audit_event WHERE actor_person_id IS NULL "
+                "  AND action_code = 'MAGIC_LINK_REQUESTED' AND occurred_at >= :debut",
             ):
                 connexion.execute(
                     text(requete),
@@ -1482,6 +1490,10 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
             for requete in (
                 "DELETE FROM auth_event WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
+                #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi
+                #  `person`, meme motif que la ligne `auth_event` au-dessus.
+                "DELETE FROM audit_event WHERE actor_person_id IN "
+                "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM magic_link_request WHERE person_id IN "
                 "(SELECT id FROM person WHERE email_normalized LIKE :motif)",
                 "DELETE FROM entity_membership WHERE person_id IN "
@@ -1491,6 +1503,7 @@ def test_la_consommation_est_ATOMIQUE_sous_CONCURRENCE(
                 "DELETE FROM allowed_email_domain WHERE domain = :domaine",
                 #  Les evenements SANS personne, bornes a cette execution.
                 "DELETE FROM auth_event WHERE person_id IS NULL   AND created_at >= :debut",
+                "DELETE FROM audit_event WHERE actor_person_id IS NULL   AND created_at >= :debut",
             ):
                 menage.execute(
                     text(requete),

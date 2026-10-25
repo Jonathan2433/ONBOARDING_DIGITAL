@@ -273,6 +273,14 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T3` : l'archivage d'un profil (route HTTP de ce
+            #  fichier) ecrit desormais `audit_event` aussi —
+            #  `actor_person_id` ET `entity_id` y referencent `person`/
+            #  `entity`, meme classe que `T2` pour `auth_event` (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM entity_membership WHERE entity_id IN "
@@ -372,14 +380,23 @@ def _archiver_le_parcours(
 
 
 def _restaurer_le_parcours(
-    parametres: Parametres, code: str, appartenance: uuid.UUID, instance: str, jeton: str | None
+    parametres: Parametres,
+    code: str,
+    appartenance: uuid.UUID,
+    instance: str,
+    jeton: str | None,
+    *,
+    motif: str | None = None,
 ) -> Any:
+    #  LOT 10, `T7` : motif conditionnel du §18.1 (`ECART-064`), obligatoire
+    #  pour SUPER seulement.
     return _appeler_ecriture(
         parametres,
         CHEMIN_RESTAURATION_PARCOURS.format(
             code=code, appartenance=appartenance, instance=instance
         ),
         jeton,
+        {"motif": motif} if motif is not None else None,
     )
 
 
@@ -696,6 +713,7 @@ def test_le_super_administrateur_restaure(decor: dict[str, Any]) -> None:
         consultant,
         instance,
         _session(parametres, decor["super_personne"]),
+        motif="Decor de test",
     )
     assert reponse.status_code == 200, reponse.text
     assert reponse.json()["state"] == "active"

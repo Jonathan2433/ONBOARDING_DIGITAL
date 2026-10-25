@@ -139,6 +139,15 @@ _COMPTER_LES_TRACES_SANS_ACTEUR = (
     "WHERE person_id IS NULL AND user_account_id IS NULL AND service_account_id IS NULL;"
 )
 
+#  LOT 10, `T2` : `audit_event` recoit desormais la MEME classe de trace
+#  structurelle, pour la MEME raison — chacun des quatre sites cables sur
+#  l'authentification ecrit AUSSI une ligne `audit_event` sur un refus sans
+#  acteur (adresse de magic link inconnue, jeton de service inconnu).
+_COMPTER_LES_TRACES_AUDIT_SANS_ACTEUR = (
+    "SELECT count(*) FROM audit_event "
+    "WHERE actor_person_id IS NULL AND actor_service_account_id IS NULL;"
+)
+
 
 def ventiler(compose: list[str], env: dict[str, str], comptes: dict[str, int]) -> int:
     """Nommer le residu PREALABLE table par table, et rendre ce qu'il reste d'inexplique.
@@ -170,25 +179,32 @@ def ventiler(compose: list[str], env: dict[str, str], comptes: dict[str, int]) -
         print("    ok       aucun residu prealable : les tables comptees sont vides")
         return 0
 
-    structurelles = 0
-    if peuplees.get("auth_event"):
-        code, sortie = psql(compose, env, _COMPTER_LES_TRACES_SANS_ACTEUR)
+    structurelles_par_table: dict[str, int] = {}
+    for table, requete in (
+        ("auth_event", _COMPTER_LES_TRACES_SANS_ACTEUR),
+        ("audit_event", _COMPTER_LES_TRACES_AUDIT_SANS_ACTEUR),
+    ):
+        if not peuplees.get(table):
+            continue
+        code, sortie = psql(compose, env, requete)
         if code == 0 and sortie.strip().isdigit():
-            structurelles = int(sortie.strip())
+            structurelles_par_table[table] = int(sortie.strip())
         else:
-            print(f"    info     auth_event : ventilation illisible ({sortie[:80]})")
+            print(f"    info     {table} : ventilation illisible ({sortie[:80]})")
 
     print("    info     residu prealable, table par table :")
     for table, nombre in sorted(peuplees.items()):
         detail = ""
-        if table == "auth_event" and structurelles:
-            detail = f"  dont {structurelles} SANS ACTEUR, donc structurelle(s)"
+        if structurelles_par_table.get(table):
+            detail = f"  dont {structurelles_par_table[table]} SANS ACTEUR, donc structurelle(s)"
         print(f"               {table:34s} {nombre:6d}{detail}")
 
+    structurelles = sum(structurelles_par_table.values())
     inexplique = sum(peuplees.values()) - structurelles
     if structurelles:
         print(
-            f"    info     les {structurelles} trace(s) sans acteur d'`auth_event` sont des REFUS,"
+            f"    info     les {structurelles} trace(s) sans acteur (`auth_event`/`audit_event`) "
+            "sont des REFUS,"
         )
         print("             ecrits par `magic-link-check` et `admin-check` qui demandent")
         print("             un lien pour une adresse INCONNUE afin de prouver que la reponse")

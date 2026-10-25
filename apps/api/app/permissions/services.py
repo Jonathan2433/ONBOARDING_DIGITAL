@@ -278,6 +278,42 @@ def est_super_administrateur(
     )
 
 
+def est_administrateur_d_entite_quelque_part(
+    connexion: Connection, personne: uuid.UUID, instant: dt.datetime
+) -> bool:
+    """`personne` tient-elle `ENTITY_ADMIN`, DANS N'IMPORTE QUELLE entite, a `instant`.
+
+    Meme requete qu'`est_super_administrateur`, SANS le filtre
+    `entity_id IS NULL` qui est propre a `SUPER_ADMIN` — extension du meme
+    patron pour une ressource GLOBALE ou la grille Entite/Global de la
+    matrice ne peut pas se lire comme un filtrage par entite, faute d'entite
+    a filtrer sur la ressource elle-meme.
+
+    **PROMUE ICI DEPUIS `app.support.perimetre_alertes` (LOT 10, `T13`)**,
+    son premier appelant : `T14` (demandes RGPD) en est le second, et une
+    fonction recopiee deux fois est exactement ce que le §7.27 de la
+    passation apprend a partager plutot qu'a dupliquer — a la difference
+    d'`_est_esm_quelque_part`, qui reste propre aux alertes faute d'un
+    second appelant.
+    """
+    return bool(
+        connexion.execute(
+            text(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM technical_role_assignment "
+                "  WHERE person_id = :personne_adm AND role_type = :type_adm "
+                "    AND archived_at IS NULL AND period @> :instant_adm"
+                ")"
+            ),
+            {
+                "personne_adm": personne,
+                "type_adm": TypeRoleTechnique.ENTITY_ADMIN.value,
+                "instant_adm": instant,
+            },
+        ).scalar_one()
+    )
+
+
 def resoudre_les_permissions(
     connexion: Connection,
     personne: uuid.UUID,

@@ -1047,12 +1047,15 @@ def main() -> int:
               DELETE FROM admin_password_credential WHERE user_account_id IN (
                 SELECT id FROM user_account WHERE person_id = ANY(ids));
               DELETE FROM auth_event WHERE person_id = ANY(ids);
+              DELETE FROM audit_event WHERE actor_person_id = ANY(ids);
               DELETE FROM user_session WHERE person_id = ANY(ids);
               DELETE FROM user_account WHERE person_id = ANY(ids);
               DELETE FROM person WHERE id = ANY(ids);
               DELETE FROM office WHERE entity_id IN (
                 SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
               DELETE FROM circle WHERE entity_id IN (
+                SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
+              DELETE FROM audit_event WHERE entity_id IN (
                 SELECT id FROM entity WHERE code LIKE '{MARQUEUR}%');
               DELETE FROM entity WHERE code LIKE '{MARQUEUR}%';
             END $$;

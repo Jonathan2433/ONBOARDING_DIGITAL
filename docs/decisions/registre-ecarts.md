@@ -2,7 +2,7 @@
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
 **Séquence créée par :** `DEC-431`
-**Dernière mise à jour :** 13 octobre 2026 — `ECART-035` clos (`T13` du LOT 9, `DEC-648`)
+**Dernière mise à jour :** 19 octobre 2026 — `ECART-064` clos (`T7` du LOT 10, `DEC-661`)
 
 Un écart est une différence constatée entre l'existant et les documents validés. Il n'est
 jamais corrigé silencieusement : il est décrit, son impact est évalué, une recommandation est
@@ -10,7 +10,7 @@ formulée, et son caractère bloquant est explicité.
 
 | Statut | Ouverts | Clos | Acceptés |
 |---|---:|---:|---:|
-| Total 69 | 12 | 54 | 3 |
+| Total 69 | 11 | 55 | 3 |
 
 ---
 
@@ -81,7 +81,7 @@ formulée, et son caractère bloquant est explicité.
 | `ECART-061` | Le modèle §10.2 et `DEC-527` veulent qu'un mot de passe provisoire soit changé ; **`changement_exige` est servi par l'API et aucun écran ne le lit** — la session est ouverte et toutes les routes répondent | Non pour le MVP, **oui avant la production** | Ouvert, à instruire au LOT 13 |
 | `ECART-062` | Le §10.1 donne au DSM « Modifier la page DSM \| Entité ou propre contenu », et **aucun `page_type` du §15.1 ne porte cette page** ; le §13 met le DSM à tiret sur ses trois lignes de modification | Non — `T6` suit le §13, la lecture la plus restrictive | **Clos le 25/09/2026**, `QO-124`, `DEC-594` — lecture restrictive définitive |
 | `ECART-063` | L'annexe A **§13 et §18 divergent** sur l'archivage d'un contenu : le §18 donne « Périmètre » au DSM que le §13 lui refuse, et « Entité » à l'ESM que le §13 borne au « Périmètre » | Non — **cinq rôles sur six concordent**, et la sixième cellule n'est pas exprimable dans le modèle | **Clos en `T7`** — la mesure a réduit la divergence à une cellule, et le §13 est suivi |
-| `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | Ouvert, à instruire **avant la production**, avec `audit_event` (LOT 10) |
+| `ECART-064` | **Le §18.1 exige un motif pour « toute intervention du super-administrateur dans une entité », et aucune route du dépôt n'en demande un.** `archive_reason` et `assignment_reason` existent depuis le LOT 2 et **rien ne les écrit** — zéro occurrence mesurée hors de leur déclaration | Non pour le MVP — aucune donnée réelle | **Clos** (`T7` du LOT 10, `DEC-661`) |
 | `ECART-065` | **Le `<h1>` du cadre applicatif retombe sur « Accueil de l'entité » sur toute sous-page dont le chemin est PARAMÉTRÉ au-delà d'une rubrique** — `useTitreDeLaPage` ne compare que l'ÉGALITÉ du chemin. Corrigé pour les DEUX pages livrées par `T9` (cercle, bureau) ; **la fiche profil du LOT 5 `T11` porte le même défaut et n'est pas corrigée ici** | Non — le contenu de la page reste correct, seul le titre du document est faux | Ouvert, à reprendre au LOT 7 ou 9, quand une sous-étape touchera à nouveau `CadreApplicatif.tsx` |
 | `ECART-066` | **La matrice donne `ESM` → « Conditionnel » sur la restauration d'un parcours d'onboarding archivé (§8.1) et d'une version de modèle (§9), et rien dans le corpus ne définit cette condition pour ces deux lignes** — `ARB-DROIT-003`, qui définit « Conditionnel » pour profil, contenu, événement, cercle et bureau, ne nomme ni l'un ni l'autre | Non — les deux volets sont résolus | **Clos le 28/09/2026** — volet « version de modèle » résolu le 26/09/2026 (`DEC-605`, `T6`), volet « parcours archivé » résolu le 28/09/2026 (`DEC-611`, `T11`) : les deux fois, l'ESM restaure librement dans son entité, même régime qu'`ARB-DROIT-003` |
 | `ECART-067` | **La matrice autorise le DSM à créer un événement pour « Entité ou consultants », mais le modèle ne sait rattacher un événement qu'à l'entité, à des cercles ou à des bureaux.** Il n'existe aucun `event_dsm_scope` ni lien vers un consultant | Oui avant `T3`, pas pour le schéma `T1` | **Clos le 04/10/2026** (`DEC-622`, `T3`) — arbitrage explicite de Jonathan entre deux options présentées (table dédiée ou colonne unique sur `event`) : **table dédiée** `event_dsm_scope(event_id, entity_id, dsm_person_id)`, migration `0023`, symétrique aux deux portées déjà posées par `T1`, index unique partiel sur `event_id` seul (« Entité OU consultants », jamais les deux) |
@@ -247,7 +247,7 @@ formulée, et son caractère bloquant est explicité.
 
 ---
 
-## `ECART-064` — le motif du §18.1 n'est demandé par aucune route, et deux colonnes l'attendent
+## `ECART-064` — CLOS — le motif du §18.1 n'est demandé par aucune route, et deux colonnes l'attendent
 
 | Champ | Valeur |
 |---|---|
@@ -257,7 +257,7 @@ formulée, et son caractère bloquant est explicité.
 | Cause | Les quatre premiers cas appartiennent à des lots ultérieurs — purge et anonymisation au LOT 10, rollback d'import au LOT 9. **Le cinquième, lui, est transversal** : il porte sur **toute** action d'un super-administrateur dans une entité, donc sur des routes déjà livrées. Il n'a jamais été instruit parce qu'aucune sous-étape ne l'avait sous les yeux : c'est le §18.1 lu pour une autre question — « faut-il un motif pour archiver un contenu ? » — qui l'a fait apparaître. |
 | Bloquant | **Non pour le MVP.** Aucune donnée réelle n'est manipulée, il n'existe qu'un super-administrateur, et la trace minimale existe : `archived_by_person_id`, `updated_by_person_id` et `created_by_person_id` nomment l'auteur de chaque écriture. Ce qui manque est le **motif**, et la table qui le conserverait. |
 | Recommandation | **Ne pas l'implémenter dans `T7` seul.** Demander un motif ici et nulle part ailleurs donnerait une règle appliquée à une route sur quarante, ce qui est la forme exacte du garde-fou à couverture partielle du §7.40 — et un champ obligatoire sur une seule route apprend surtout à le remplir de n'importe quoi.<br>**L'instruire avec `audit_event`**, §21.1 du modèle, **LOT 10** : c'est là que le motif trouve une table qui le conserve et un lecteur qui le lit. Un motif stocké dans `archive_reason` sans consommateur serait un champ que personne ne lit — `ECART-061` a montré ce que cela coûte, `changement_exige` étant servi depuis `T5` du LOT 3 sans qu'aucun écran ne le lise.<br>**Recommandation générale** : quand une règle transversale est découverte en lisant une section pour autre chose, mesure d'abord **combien de routes déjà livrées elle concerne**. Ici la réponse est « toutes celles qu'un `SUPER` peut appeler », et c'est ce qui la sort du périmètre d'une sous-étape. |
-| Résolution | **Ouvert.** Échéance : **avant la production**, à instruire au LOT 10 avec `audit_event`. À annoncer à la porte `G6`. |
+| Résolution | **Clos par `T7` du LOT 10 (`DEC-661`), 19/10/2026.** `app.audit.motif.exiger_un_motif_si_necessaire` lève un refus `422` quand `SUPER_ADMINISTRATEUR` figure parmi les rôles qui ont RÉELLEMENT autorisé l'appel et qu'aucun motif n'est fourni — arbitré par Jonathan sur une portée LARGE (toutes les fonctions déjà câblées par `T2`-`T6`, ~25 fonctions, pas seulement celles de `T7`) et sur le mécanisme exact (le rôle réellement utilisé, pas le rôle global de l'acteur — équivalents dans ce dépôt puisque `SUPER` s'ajoute sans condition à toute résolution). Le motif est tracé dans `audit_event.reason`, jamais dans `archive_reason`/`assignment_reason`, qui restent un résidu nommé et non écrit : la recommandation ci-dessus demandait d'instruire le motif « avec `audit_event` », pas dans ces deux colonnes. Voir `compte-rendu-t7-lot-10.md`. |
 
 ---
 

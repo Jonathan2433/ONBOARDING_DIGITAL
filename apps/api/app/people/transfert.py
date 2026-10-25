@@ -71,6 +71,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.services import enregistrer_un_evenement
 from app.onboarding.instances import archiver_le_parcours_au_depart
 from app.people.creation import (
     CollaborateurCree,
@@ -175,6 +176,7 @@ def changer_d_entite(
     version_attendue: int,
     demande: DemandeDAppartenance,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> Transfert:
     """Fermer l'ancienne appartenance et en ouvrir une nouvelle — UNE transaction.
 
@@ -184,6 +186,10 @@ def changer_d_entite(
     **LA GRILLE D'ETAT D'ABORD** — `409` pour une cible deja `departed` ou
     `archived` : on ne transfere pas une appartenance qui n'occupe plus rien,
     meme discipline que `_CIBLE_MODIFIABLE` (LOT 5 `T7`).
+
+    `motif` : le motif du §18.1 — obligatoire cote ROUTE quand `SUPER`
+    autorise l'appel (`app.audit.motif`, `ECART-064`, LOT 10 `T7`), repris
+    aussi par le transfert en masse (`app.people.transfert_masse`).
     """
     valider_la_biconditionnelle_statut_client(demande)
 
@@ -230,6 +236,24 @@ def changer_d_entite(
     except (IntegrityError, DataError) as erreur:
         raise traduire_un_refus_de_la_base(erreur) from erreur
 
+    #  LOT 10, `T3` : UN SEUL `audit_event` — « transfert », pas « depart » +
+    #  « arrivee » separes, meme discipline que `creer_un_collaborateur`. Les
+    #  deux entites sont les seules valeurs qu'un transfert fait varier, donc
+    #  les seules portees par `old_values`/`new_values` : stringifiees, car
+    #  `jsonb` ne sait pas serialiser un `uuid.UUID`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="collaborateur_transfere",
+        resource_type="entity_membership",
+        resource_reference=cree.appartenance,
+        entity_id=entite_destination,
+        actor_person_id=acteur,
+        summary=f"Changement d'entite : {entite_source} -> {entite_destination}",
+        old_values={"entite": str(entite_source)},
+        new_values={"entite": str(entite_destination)},
+        reason=motif,
+    )
     return Transfert(
         nouvelle_appartenance=cree.appartenance,
         version=cree.version,

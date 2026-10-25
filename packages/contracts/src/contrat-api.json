@@ -2187,6 +2187,381 @@
         "cette entite, le role n'y porte rien, ou il y porte un droit mais",
         "aucune action."
       ]
+    },
+    {
+      "cle": "journalDAudit",
+      "chemin": "/api/v1/entities/{code}/audit",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDuJournalDAudit",
+      "role": [
+        "Consulter le journal d'audit filtrable par perimetre — LOT 10, T8,",
+        "matrice §16, US001 (clot)/US002 (clot).",
+        "DSM Consultants, ESM/ADM-E/SUPER Entite, Booster Cercle, responsable",
+        "de bureau Bureau — EMP/NEW/ANON a tiret, refus 403 avant toute",
+        "resolution de perimetre.",
+        "DEUX ARBITRAGES EXPLICITES DE JONATHAN (AskUserQuestion) : les",
+        "evenements d'authentification (sans entite, ecrits par T2) sont",
+        "retrouves par l'entite ACTUELLE de l'acteur, jamais celle d'alors ;",
+        "Booster et responsable de bureau voient AUSSI les evenements sur les",
+        "AUTRES ressources de leur perimetre (le cercle/bureau lui-meme, son",
+        "contenu, ses evenements), pas seulement sur les personnes — fidele",
+        "au mot choisi par la matrice (Cercle/Bureau, jamais Consultants",
+        "comme pour le DSM).",
+        "`resource_reference`/`correlation_token` sont `null` pour qui n'a",
+        "pas les details techniques (§16, Limite pour DSM/ESM/BOOST/OFFICE,",
+        "Entite/Global pour ADM-E/SUPER).",
+        "Cinq filtres facultatifs, derives des colonnes reelles",
+        "d'audit_event : depuis, jusqua, action_code, resource_type, acteur.",
+        "Pagination du cahier §18.2, ordre le plus RECENT d'abord",
+        "(occurred_at DESC puis id DESC)."
+      ]
+    },
+    {
+      "cle": "exportDuJournalDAudit",
+      "chemin": "/api/v1/entities/{code}/audit/export",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "octets",
+      "role": [
+        "Exporter le journal d'audit en CSV — LOT 10, T9, matrice §16",
+        "« Exporter en CSV », US004.",
+        "RESERVE A ADM-E (son entite) ET SUPER (global) — les quatre autres",
+        "roles de ROLES_DE_L_AUDIT (DSM/ESM/BOOST/OFFICE) sont a TIRET sur",
+        "cette ligne precise, refus 403 meme s'ils lisent deja le journal.",
+        "MEME PERIMETRE ET MEMES CINQ FILTRES QUE journalDAudit, AUCUNE",
+        "PAGINATION : le CSV entier du perimetre/des filtres resolus est",
+        "rendu dans la reponse, `text/csv`, `Content-Disposition: attachment`.",
+        "SYNCHRONE : export_request.generated_media_id/.expires_at restent",
+        "`null` — le depot MinIO et le telechargement differe/expirant sont",
+        "la V1 asynchrone (V1-L04-US002, un worker qui n'existe pas dans ce",
+        "lot).",
+        "L'EXPORT LUI-MEME EST JOURNALISE (cahier §10.11) : une ligne",
+        "export_request (demandeur, perimetre normalise) et un second",
+        "audit_event (action_code audit_exporte_en_csv)."
+      ]
+    },
+    {
+      "cle": "indicateursDeReporting",
+      "chemin": "/api/v1/entities/{code}/reporting",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDesIndicateurs",
+      "role": [
+        "Consulter les compteurs et repartitions du reporting etendu — LOT 10,",
+        "T10, cahier §10.10, matrice §15.1, MVP-L10-US003.",
+        "MEME GRILLE DE ROLE QUE tableauDeBordAdministratif (LOT 9, T5) :",
+        "DSM Consultants, ESM/ADM-E/SUPER Entite, BOOST Cercle, OFFICE —.",
+        "Les deux ressources sont DISTINCTES et ne se recoupent pas : ce",
+        "module sert ce que le tableau de bord ne sert PAS -- onboardings",
+        "termines, progression moyenne, duree moyenne, arrivees dans les",
+        "30 jours (fenetre BORNEE, distincte des arrivees futures illimitees",
+        "du tableau de bord), repartitions par cercle/client/DSM.",
+        "« Onboardings termines » = state 'archived' ET completed_at NON NUL",
+        "(un archivage par depart ne pose jamais completed_at). « Duree",
+        "moyenne » = completed_at - started_at, sur la MEME population --",
+        "`null` si elle est vide, jamais 0. « Progression moyenne » = la",
+        "somme du couple (obligatoires totales/terminees) sur les SEULES",
+        "instances actives de la portee.",
+        "Filtrer par periode (borne arrival_date), DSM, cercle ou client --",
+        "axe transversal du §15.1, narrowe SANS jamais elargir le perimetre",
+        "deja resolu.",
+        "La sixieme ligne du §15.1, « Consulter les evenements », n'est PAS",
+        "construite ici : absente du cahier §10.10 et des criteres",
+        "d'acceptation litteraux d'US003, une inference ne suffit pas a",
+        "batir une route (§6.5)."
+      ]
+    },
+    {
+      "cle": "detailOnboardingDuReporting",
+      "chemin": "/api/v1/entities/{code}/reporting/onboarding",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDuDetailOnboarding",
+      "role": [
+        "Consulter le detail onboarding — LOT 10, T10, matrice §15.1",
+        "« Consulter le detail onboarding », MVP-L10-US003.",
+        "La progression PAR PERSONNE du cahier §10.10, sur les instances",
+        "ACTIVES seules — une instance terminee est a 100% par definition",
+        "et diluerait la mesure sans rien dire de la progression en cours.",
+        "MEME GRILLE DE ROLE QUE indicateursDeReporting. Pagination du",
+        "cahier §18.2, memes filtres (periode/DSM/cercle/client)."
+      ]
+    },
+    {
+      "cle": "profilsIncompletsEnDetail",
+      "chemin": "/api/v1/entities/{code}/reporting/profils-incomplets",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDesProfilsIncomplets",
+      "role": [
+        "Consulter les profils incomplets en detail — LOT 10, T10, matrice",
+        "§15.1 « Consulter les profils incomplets », MVP-L10-US003.",
+        "MEME REGLE QUE tableauDeBordAdministratif (LOT 9, T5, arbitrage de",
+        "Jonathan du 09/10/2026) -- un profil ACTIF auquel il manque au",
+        "moins une de ses quatre relations courantes (metier, cercle",
+        "principal, DSM, statut) -- jamais une seconde definition, ici en",
+        "LISTE plutot qu'en compte. MEME GRILLE DE ROLE QUE",
+        "indicateursDeReporting. Pagination du cahier §18.2, memes filtres."
+      ]
+    },
+    {
+      "cle": "signalerUnBug",
+      "chemin": "/api/v1/bug-reports",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 422],
+      "forme": "ReponseDuSignalement",
+      "role": [
+        "Signaler un bug depuis l'application — LOT 10, T11, cahier",
+        "§9.6/§10.12, matrice §17 « Reporter un bug », MVP-L10-US005.",
+        "AUCUNE GARDE DE ROLE AU-DELA D'UNE SESSION ETABLIE : la seule",
+        "ligne du §17 sans aucun tiret, l'acteur du backlog est",
+        "« Utilisateur », et le bouton vit au pied de page, sur les pages",
+        "d'erreur et dans le menu mobile -- des emplacements que EMP et NEW",
+        "voient autant que les six roles elargis. Meme motif que",
+        "`accueilDUneEntite` (LOT 8, T8).",
+        "AUCUN CODE D'ENTITE DANS LE CHEMIN : les pages d'erreur du cahier",
+        "n'en portent structurellement aucune. L'entite rattachee est",
+        "toujours l'entite PRINCIPALE du rapporteur",
+        "(`app.permissions.services.entite_principale`), jamais une entite",
+        "soumise par le client.",
+        "`application_version`, `environment` et `browser_summary` sont",
+        "ajoutes AUTOMATIQUEMENT par le serveur ; seuls `description`,",
+        "`etapes_de_reproduction` et `chemin_de_page` sont soumis.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`), comme toute",
+        "ecriture : le 403 ne vient JAMAIS d'un role refuse ici, uniquement",
+        "d'une origine ou d'un jeton anti-CSRF invalide."
+      ]
+    },
+    {
+      "cle": "signalements",
+      "chemin": "/api/v1/entities/{code}/bug-reports",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404, 422],
+      "forme": "ReponseDesSignalements",
+      "role": [
+        "Consulter les signalements, selon le perimetre resolu — LOT 10,",
+        "T12, matrice §17, MVP-L10-US006.",
+        "Soi pour DSM/BOOST/OFFICE/EMP/NEW (le plancher universel, meme",
+        "motif que PerimetreDuSuivi, LOT 7 T12), Lecture fonctionnelle pour",
+        "l'ESM (toute l'entite, SANS le contexte technique), complete pour",
+        "ADM-E (Entite)/SUPER (Global).",
+        "Qui voit SES PROPRES signalements voit toujours le contexte",
+        "technique, meme en Soi : ce sont des donnees que son propre",
+        "navigateur a transmises a sa propre demande.",
+        "Le `total`, filtrable par `etat`, sert le « compteur back-office »",
+        "du backlog -- aucune route separee."
+      ]
+    },
+    {
+      "cle": "historiqueDUnSignalement",
+      "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/historique",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ReponseDeLHistorique",
+      "role": [
+        "Consulter l'historique d'un signalement — LOT 10, T12.",
+        "JAMAIS servi par la route generique d'audit (matrice §16) : son",
+        "perimetre (Consultants/Cercle/Bureau) differe de celui du support",
+        "(matrice §17) -- le servir par l'audit violerait le critere de",
+        "sortie 3 du lot. Visible a qui peut deja voir le signalement",
+        "lui-meme (meme perimetre que `signalements`), jamais plus loin :",
+        "404 hors de la portee resolue, jamais 403, meme discipline que",
+        "l'isolation multi-entites du LOT 9."
+      ]
+    },
+    {
+      "cle": "changementDEtatDUnSignalement",
+      "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/etat",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeChangementDEtat",
+      "role": [
+        "Modifier l'etat d'un signalement — LOT 10, T12, matrice §17",
+        "« Modifier l'etat d'un signalement | Entite | Global »,",
+        "MVP-L10-US006.",
+        "ADM-E/SUPER SEULEMENT : DSM/ESM/BOOST/OFFICE a tiret, y compris",
+        "l'ESM qui lit pourtant toute l'entite (ligne du dessus).",
+        "Aucune transition n'est restreinte -- le corpus ne porte aucun",
+        "diagramme d'etat pour bug_report, a la difference de l'onboarding.",
+        "`commentaire` sert deux fins : le « commentaires et historique »",
+        "du backlog (trace dans audit_event.reason, l'historique EST la",
+        "suite de ces evenements), ET le motif obligatoire du §18.1 quand",
+        "SUPER autorise l'appel (ECART-064, regle permanente du projet,",
+        "pas seulement le retrofit de T7).",
+        "Version du cahier §18.4 : 409 sans ecrasement silencieux.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "alertes",
+      "chemin": "/api/v1/alerts",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 422],
+      "forme": "ReponseDesAlertes",
+      "role": [
+        "Consulter les alertes operationnelles — LOT 10, T13, matrice §17",
+        "« Consulter les alertes de securite », MVP-L10-US007.",
+        "Ressource GLOBALE (operational_alert n'a aucun entity_id, modele",
+        "§21.2) : route PLATE, ADM-E/ESM resolus N'IMPORTE OU plutot que",
+        "dans une entite consultee.",
+        "Complet pour ADM-E (n'importe ou)/SUPER, Limite fonctionnel pour",
+        "l'ESM (source/empreinte masques, meme mot que la lecture",
+        "fonctionnelle de T12), refuse (403) a DSM/BOOST/OFFICE/EMP -- aucun",
+        "plancher Soi, a la difference des signalements."
+      ]
+    },
+    {
+      "cle": "uneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "LigneDAlerteRendue",
+      "role": ["Consulter une alerte precise — LOT 10, T13. Meme perimetre que `alertes`."]
+    },
+    {
+      "cle": "commentairesDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/commentaires",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDesCommentaires",
+      "role": [
+        "Consulter les commentaires d'une alerte — LOT 10, T13.",
+        "`alert_comment` (modele §21.3) -- JAMAIS audit_event.reason : a la",
+        "difference du signalement (T12, aucune table dediee), l'alerte",
+        "porte DEUX verbes distincts (Acquitter / Resoudre ou commenter),",
+        "et le commentaire vit UNE SEULE FOIS, dans sa propre table."
+      ]
+    },
+    {
+      "cle": "ajouterUnCommentaireAUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/commentaires",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeCommentaireAjoute",
+      "role": [
+        "Commenter une alerte SANS changer son etat — LOT 10, T13, matrice",
+        "§17 « Resoudre ou commenter une alerte | Entite | Global ».",
+        "ADM-E (n'importe ou)/SUPER seulement. Aucune precondition d'etat :",
+        "une note est utile a tout moment du cycle, y compris apres",
+        "resolution. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "acquittementDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/acquittement",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionDAlerte",
+      "role": [
+        "Acquitter une alerte — LOT 10, T13, matrice §17 « Acquitter une",
+        "alerte | Entite | Global ». ADM-E (n'importe ou)/SUPER seulement.",
+        "Valide SEULEMENT depuis l'etat `open` (409 transition_invalide",
+        "sinon) -- acquitter une alerte deja resolue ou deja acquittee n'a",
+        "pas de sens operationnel.",
+        "Version du cahier §18.4 : 409 version_obsolete sans ecrasement",
+        "silencieux. Aucun motif : ECART-064 ne s'applique jamais a une",
+        "ressource sans entite. PROTEGEE PAR LES DEUX BARRIERES CSRF",
+        "(`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "resolutionDUneAlerte",
+      "chemin": "/api/v1/alerts/{alerte}/resolution",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionDAlerte",
+      "role": [
+        "Resoudre une alerte — LOT 10, T13, matrice §17 « Resoudre ou",
+        "commenter une alerte | Entite | Global ». ADM-E (n'importe",
+        "ou)/SUPER seulement.",
+        "Valide depuis `open` OU `acknowledged` (409 transition_invalide si",
+        "deja resolue) -- aucun diagramme n'exige l'acquittement prealable.",
+        "`commentaire` facultatif cree AUSSI une ligne alert_comment : le",
+        "§17 fusionne Resoudre et commenter dans un seul verbe.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "demandesRGPD",
+      "chemin": "/api/v1/data-subject-requests",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 422],
+      "forme": "LigneDeDemandeRGPDRendue",
+      "role": [
+        "Receptionner une demande de droit RGPD — LOT 10, T14, cahier",
+        "§21.5, modele §22.3, MVP-L10-US008.",
+        "Ressource GLOBALE (data_subject_request n'a aucun entity_id,",
+        "modele §22.3) : route PLATE. Reservee a ADM-E (n'importe",
+        "ou)/SUPER, par analogie avec la matrice §18 « Lancer",
+        "l'anonymisation RGPD » — aucune ligne de matrice ne nomme cette",
+        "ressource directement. Le responsable est toujours l'appelant.",
+        "PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "demandesRGPDEnListe",
+      "chemin": "/api/v1/data-subject-requests",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 422],
+      "forme": "ReponseDesDemandesRGPD",
+      "role": [
+        "Consulter les demandes de droit RGPD — LOT 10, T14. Meme",
+        "perimetre que `demandesRGPD` : ADM-E (n'importe ou)/SUPER",
+        "seulement, aucune lecture partielle pour un autre role — a la",
+        "difference des alertes (T13), ou l'ESM recoit une lecture",
+        "limitee fonctionnelle."
+      ]
+    },
+    {
+      "cle": "uneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "LigneDeDemandeRGPDRendue",
+      "role": ["Consulter une demande precise — LOT 10, T14. Meme perimetre que `demandesRGPD`."]
+    },
+    {
+      "cle": "historiqueDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/historique",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeLHistoriqueRGPD",
+      "role": [
+        "Consulter l'historique d'une demande de droit RGPD — LOT 10,",
+        "T14. La suite des audit_event de cette demande (reception,",
+        "verification d'identite, cloture)."
+      ]
+    },
+    {
+      "cle": "verificationIdentiteDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/verification-identite",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionRGPD",
+      "role": [
+        "Marquer l'identite du demandeur comme verifiee — LOT 10, T14,",
+        "cahier §21.5. ADM-E (n'importe ou)/SUPER seulement. Aucune",
+        "precondition d'etat, IDEMPOTENT si deja verifiee. Version du",
+        "cahier §18.4 : 409 version_obsolete sans ecrasement silencieux.",
+        "Aucun motif : ECART-064 ne s'applique jamais a une ressource",
+        "sans entite. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
+    },
+    {
+      "cle": "clotureDUneDemandeRGPD",
+      "chemin": "/api/v1/data-subject-requests/{demande}/cloture",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeTransitionRGPD",
+      "role": [
+        "Cloturer une demande de droit RGPD — LOT 10, T14, cahier §21.5",
+        "« cloture tracable ». ADM-E (n'importe ou)/SUPER seulement.",
+        "Valide SEULEMENT depuis l'etat `received` (409",
+        "transition_invalide si deja cloturee). `reponse` resume ce qui a",
+        "ete transmis (export structure du backlog), jamais un fichier",
+        "genere. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -2398,5 +2773,55 @@
     "Confrontee a `ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` par un test",
     "Python, dans les deux sens."
   ],
-  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"]
+  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"],
+  "_commentaire_audit": [
+    "LOT 10, T8/T9/T15 -- LE JOURNAL D'AUDIT EN LECTURE, SES DETAILS",
+    "TECHNIQUES, SON EXPORT CSV (matrice 16).",
+    "TROIS GRILLES, JAMAIS FUSIONNEES : `rolesDeLAudit` (lecture generale,",
+    "ROLES_DE_L_AUDIT) exclut EMP/NEW/ANON ; `rolesDetailsTechniquesDeLAudit`",
+    "(ROLES_DES_DETAILS_TECHNIQUES) et `rolesExportDeLAudit`",
+    "(ROLES_D_EXPORT_DE_L_AUDIT) portent aujourd'hui les MEMES deux roles",
+    "(ADM-E/SUPER) mais sont deux lignes distinctes du 16 -- une",
+    "coincidence, pas une identite, cote API comme ici.",
+    "Confrontees aux trois constantes Python par un test, dans les deux",
+    "sens."
+  ],
+  "rolesDeLAudit": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
+  "rolesDetailsTechniquesDeLAudit": ["ADM-E", "SUPER"],
+  "rolesExportDeLAudit": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_signalements": [
+    "LOT 10, T12/T15 -- MODIFIER L'ETAT D'UN SIGNALEMENT (matrice 17).",
+    "DEUX ROLES SEULEMENT : c'est ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS de",
+    "`app/support/perimetre.py`. La LECTURE se degrade jusqu'a `Soi` (aucun",
+    "role refuse), mais cette grille-ci ne garde QUE l'ecriture -- ESM lit",
+    "en fonctionnel (details techniques masques) sans jamais changer",
+    "l'etat.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS par un test Python,",
+    "dans les deux sens."
+  ],
+  "rolesTraitementDesSignalements": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_alertes": [
+    "LOT 10, T13/T15 -- ACQUITTER, COMMENTER, RESOUDRE UNE ALERTE",
+    "(matrice 17).",
+    "DEUX ROLES, ET L'ESM N'Y FIGURE PAS : c'est",
+    "ROLES_DE_TRAITEMENT_DES_ALERTES de",
+    "`app/support/perimetre_alertes.py` -- a la difference des",
+    "signalements, l'ESM (perimetre LIMITE) ne peut JAMAIS ecrire, mesure",
+    "sur les trois routes POST qui partagent la MEME garde.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_ALERTES par un test Python, dans",
+    "les deux sens."
+  ],
+  "rolesTraitementDesAlertes": ["ADM-E", "SUPER"],
+  "_commentaire_traitement_des_demandes_rgpd": [
+    "LOT 10, T14/T15 -- RECEPTIONNER, VERIFIER, CLOTURER UNE DEMANDE RGPD.",
+    "UNE SEULE GRILLE, GARDE LES SIX ROUTES (lecture ET ecriture) : c'est",
+    "ROLES_DE_TRAITEMENT_DES_DEMANDES_RGPD de `app/privacy/perimetre.py`,",
+    "resolue par analogie avec la matrice 18 -- aucune ligne ne nomme cette",
+    "ressource. Aucun plancher `Soi` ni `Limite`, a la difference des",
+    "signalements et des alertes : le cahier 21.5 nomme un canal RGPD",
+    "externe, jamais un self-service.",
+    "Confrontee a ROLES_DE_TRAITEMENT_DES_DEMANDES_RGPD par un test Python,",
+    "dans les deux sens."
+  ],
+  "rolesTraitementDesDemandesRGPD": ["ADM-E", "SUPER"]
 }

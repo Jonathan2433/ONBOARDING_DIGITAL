@@ -45,15 +45,19 @@ COMMENT L'IDEMPOTENCE DU §18.6 EST SATISFAITE SANS MECANISME NOUVEAU
   (§18.4). Aucun jeton d'idempotence n'est introduit : l'etat de la cible EST
   le jeton, et il est deja verrouille (`FOR UPDATE`) par `_lire_sous_verrou`.
 
-CE QUE CE MODULE NE FAIT JAMAIS
+CE QUE CE MODULE NE FAIT JAMAIS, ET CE QUI A CHANGE DEPUIS
 
-  Aucune ecriture d'audit : `archive_reason`/`assignment_reason` et
-  `audit_event` restent hors du perimetre de ce lot (`ECART-064`, LOT 10).
-  Le critere d'acceptation de `US003` nomme « auditees », mais le decoupage
-  valide de la fiche (`fiche-lot-9.md`) a deja reduit l'enonce de `T11` a
-  « previsualisation d'impact, idempotence, erreurs partielles explicites »
-  — sans le mot « auditees » — et c'est cette portee, deja arretee avant
-  cette sous-etape, qui est suivie ici plutot qu'une relecture du backlog.
+  A `T11` du LOT 9, l'audit (`archive_reason`/`assignment_reason` et
+  `audit_event`) restait hors perimetre (`ECART-064`) : le critere
+  d'acceptation de `US003` nomme « auditees », mais le decoupage de la fiche
+  avait deja reduit `T11` a « previsualisation d'impact, idempotence, erreurs
+  partielles explicites » — sans ce mot.
+
+  **DEPUIS `T7` DU LOT 10, LA DETTE EST ACQUITTEE PAR HERITAGE, SANS SECOND
+  GESTE ICI** : `changer_d_entite` ecrit desormais son propre `audit_event`
+  (LOT 10, `T3`), et CE module ne fait QUE l'appeler, dans son SAVEPOINT —
+  aucune ligne nouvelle n'a ete ajoutee a cette fonction pour l'audit
+  lui-meme, seul un `motif` (§18.1, `ECART-064`) est transmis TEL QUEL.
 """
 
 from __future__ import annotations
@@ -131,6 +135,7 @@ def executer_le_transfert_en_masse(
     elements: Sequence[ElementDuTransfertEnMasse],
     instant: dt.datetime,
     mode: Mode,
+    motif: str | None = None,
 ) -> tuple[ResultatDUnTransfert, ...]:
     """Appliquer `changer_d_entite` a chaque element, un SAVEPOINT par element.
 
@@ -146,6 +151,11 @@ def executer_le_transfert_en_masse(
     un succes est LIBERE (donc ecrit dans la transaction englobante de la
     route), un echec est annule — le motif exact de `app.imports.execution`,
     `T9`.
+
+    `motif` : LOT 10, `T7` — le motif du §18.1 pour l'acteur du LOT, repris
+    par CHAQUE appel a `changer_d_entite`. L'audit lui-meme (ECART-064)
+    n'etait pas dans le perimetre de `T11` du LOT 9 ; il l'est desormais,
+    par heritage de `changer_d_entite`, sans second geste ici.
     """
     resultats: list[ResultatDUnTransfert] = []
     for element in elements:
@@ -189,6 +199,7 @@ def executer_le_transfert_en_masse(
                 version_attendue=element.version_attendue,
                 demande=element.demande,
                 instant=instant,
+                motif=motif,
             )
         except ErreurApplicative as erreur:
             point.rollback()

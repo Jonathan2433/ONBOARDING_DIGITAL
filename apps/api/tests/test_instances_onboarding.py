@@ -361,6 +361,13 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T6` : affecter un parcours (route HTTP de ce fichier)
+            #  ecrit desormais `audit_event` aussi — meme classe que `T2`/`T3`
+            #  (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM framework_responsibility_assignment WHERE entity_id IN "
@@ -397,7 +404,12 @@ def _creer_modele_publie(
 ) -> uuid.UUID:
     """Cree un modele, une version, une tache, puis PUBLIE — les quatre routes
     reelles, jamais une ecriture directe en base."""
-    corps: dict[str, Any] = {"name": name, "target_status": "intercontract", "portee": portee}
+    corps: dict[str, Any] = {
+        "name": name,
+        "target_status": "intercontract",
+        "portee": portee,
+        "motif": "Decor de test",
+    }
     if scope_person_id is not None:
         corps["scope_person_id"] = str(scope_person_id)
     if scope_circle_id is not None:
@@ -414,17 +426,22 @@ def _creer_modele_publie(
             CHEMIN_MODELES.format(code=code_entite), json=corps, headers=entetes
         ).json()["id"]
         version = client.post(
-            CHEMIN_VERSIONS.format(code=code_entite, modele=modele), json={}, headers=entetes
+            CHEMIN_VERSIONS.format(code=code_entite, modele=modele),
+            json={"motif": "Decor de test"},
+            headers=entetes,
         ).json()["id"]
         reponse_taches = client.put(
             CHEMIN_TACHES.format(code=code_entite, modele=modele, version=version),
-            json={"taches": [{"task_reference_id": str(tache), "due_offset_days": 3}]},
+            json={
+                "taches": [{"task_reference_id": str(tache), "due_offset_days": 3}],
+                "motif": "Decor de test",
+            },
             headers=entetes,
         )
         assert reponse_taches.status_code == 200, reponse_taches.text
         publiee = client.post(
             CHEMIN_PUBLICATION.format(code=code_entite, modele=modele, version=version),
-            json={},
+            json={"motif": "Decor de test"},
             headers=entetes,
         )
         assert publiee.status_code == 200, publiee.text

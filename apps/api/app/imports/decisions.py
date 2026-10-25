@@ -67,6 +67,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.audit.motif import exiger_un_motif_si_necessaire
+from app.audit.services import enregistrer_un_evenement
 from app.clients import normaliser_nom_client
 from app.imports.analyse import CODE_PERSONNE_PROFIL_ACTIF, CODE_PERSONNE_PROFIL_ARCHIVE
 from app.imports.clients import CODE_CLIENT_INCONNU
@@ -301,6 +303,12 @@ def enregistrer_une_decision(
             champ="target_person_id",
         )
 
+    #  LOT 10, `T7` : ferme `ECART-064` — `SUPER` decidant dans une entite
+    #  exige un motif. Le champ `reason` du corps sert deja l'un ET l'autre :
+    #  la justification humaine de la decision (toujours facultative pour un
+    #  role local) ET le motif du §18.1 (obligatoire pour `SUPER`).
+    exiger_un_motif_si_necessaire(roles, motif)
+
     try:
         identifiant = connexion.execute(
             _INSERER_LA_DECISION,
@@ -343,5 +351,20 @@ def enregistrer_une_decision(
             message=MESSAGE_CIBLE_INCONNUE,
             statut=status.HTTP_404_NOT_FOUND,
         ) from erreur
+
+    #  LOT 10, `T7` : UN SEUL `audit_event` pour l'appel entier, meme quand
+    #  `client_alias_creation` ecrit aussi `client_alias` — une seule action
+    #  metier, « enregistrer une decision ».
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="decision_d_import_enregistree",
+        resource_type="import_decision",
+        resource_reference=identifiant,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Decision « {type_de_decision} » sur une ligne d'import",
+        reason=motif,
+    )
 
     return DecisionEnregistree(identifiant=identifiant, decision_type=type_de_decision)

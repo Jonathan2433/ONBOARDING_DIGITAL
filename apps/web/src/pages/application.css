@@ -1759,3 +1759,80 @@
 .accueil-liens-description {
   margin: 0;
 }
+
+/* ==========================================================================
+   Le pied de page et le signalement d'un bug — LOT 10, `T11`, cahier §10.12
+   ========================================================================== */
+
+/* **MEME RESERVE QUE `.app-principal`, ET POUR LA MEME RAISON** : le pied de
+   page est un FRERE de `<main>` dans le flux, pas un enfant — la reserve de
+   `.app-principal` ne protege donc que son propre contenu, pas le sien. Sans
+   elle, le bouton « Reporter un bug » serait masque par la barre fixe sur
+   mobile. Supprimee a 768 px, ou la barre disparait deja (meme regle). */
+.app-pied-de-page {
+  padding: var(--espace-m) var(--espace-s) calc(44px + 2 * var(--espace-m));
+  border-top: 1px solid var(--trait);
+}
+
+@media (min-width: 768px) {
+  .app-pied-de-page {
+    padding: var(--espace-m);
+  }
+}
+
+.app-signalement-bouton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--espace-xs) var(--espace-s);
+  font: inherit;
+  font-weight: 600;
+  color: var(--encre);
+  cursor: pointer;
+  list-style: none;
+}
+
+/* Chrome par defaut du marqueur de `<summary>`, retire — le libelle textuel
+   porte deja l'information, et `<details>` reste annonce par son role natif. */
+.app-signalement-bouton::-webkit-details-marker {
+  display: none;
+}
+
+.app-signalement-bouton:focus-visible {
+  outline: 2px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+.app-signalement-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  max-width: 32rem;
+  padding: var(--espace-m);
+  margin-top: var(--espace-xs);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.app-signalement-panneau label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+}
+
+.app-signalement-panneau textarea {
+  min-height: 4rem;
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font: inherit;
+  resize: vertical;
+}
+
+/* Le menu mobile y imbrique le bouton dans SON panneau ; il n'a donc pas
+   besoin de sa propre reserve ni de sa propre bordure. */
+.app-barre-panneau .app-signalement-panneau {
+  border: 0;
+  padding: var(--espace-xs) 0 0;
+  margin-top: 0;
+}

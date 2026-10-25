@@ -103,9 +103,12 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql.elements import TextClause
 
+from app.audit.motif import exiger_un_motif_si_necessaire
+from app.audit.services import enregistrer_un_evenement
 from app.events.modeles import EtatEvenement
 from app.events.perimetre import (
     ROLES_DE_PORTEE_ENTITE,
+    ActionEvenement,
     PorteeDeCreation,
     peut_creer_un_evenement,
     verifier_le_rattachement_au_bureau,
@@ -241,12 +244,17 @@ def creer_un_evenement(
     code_de_cercle: str | None,
     code_de_bureau: str | None,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementCree:
     """Creer un evenement en BROUILLON, dans la portee demandee — matrice §11.
 
     `roles` vient de `resoudre_les_permissions`, donc le §5.1 est **deja
     applique** : hors de son entite principale une personne n'a que `EMP`, et
     `EMP` ne porte aucune portee de creation.
+
+    `motif` : le motif du §18.1 — obligatoire quand `SUPER` autorise l'appel
+    (`app.audit.motif`, `ECART-064`, LOT 10 `T7`), verifie ICI puisque
+    `roles` est deja un parametre.
     """
     if not peut_creer_un_evenement(roles, portee):
         raise ErreurApplicative(
@@ -254,6 +262,7 @@ def creer_un_evenement(
             message=MESSAGE_ACCES_REFUSE,
             statut=status.HTTP_403_FORBIDDEN,
         )
+    exiger_un_motif_si_necessaire(roles, motif)
 
     #  **VALIDE ICI, PAS LAISSE A LA CONTRAINTE.** `ck_event_chronologie_valide`
     #  refuserait aussi, en `IntegrityError`, donc en 500 — et un 500 sur une
@@ -366,6 +375,23 @@ def creer_un_evenement(
             _INSERER_LA_PORTEE_CONSULTANTS,
             {"entite": entite, "evenement": evenement_id, "acteur": acteur},
         )
+
+    #  LOT 10, `T5` : aucune valeur `ActionEvenement` ne nomme la creation —
+    #  l'enumeration ne couvre que les six lignes du §11 ou un DROIT se joue,
+    #  et « creer » releve de `PorteeDeCreation`, une structure distincte.
+    #  Litteral, meme discipline que les liens internes au LOT 6 (`T8`,
+    #  reutilisee par `T4` de ce lot).
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code="creer",
+        resource_type="event",
+        resource_reference=evenement_id,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Creation de l'evenement « {title} »",
+        reason=motif,
+    )
 
     return EvenementCree(
         identifiant=evenement_id,
@@ -569,6 +595,7 @@ def modifier_un_evenement(
     codes_de_cercle: list[str] | None,
     codes_de_bureau: list[str] | None,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementModifie:
     """Remplacer les champs d'un evenement, et ses rattachements si fournis.
 
@@ -581,7 +608,11 @@ def modifier_un_evenement(
     `codes_de_cercle`/`codes_de_bureau` valant `None` signifie « ne pas toucher
     cette dimension » ; une liste vide la VIDE — meme distinction que
     `BlocSoumis` au LOT 6, ou la liste remplace la liste.
+
+    `motif` : meme regle que `creer_un_evenement` — LOT 10 `T7`, `ECART-064`,
+    verifie ICI puisque `roles` est deja un parametre.
     """
+    exiger_un_motif_si_necessaire(roles, motif)
     if not starts_at < ends_at:
         raise ErreurApplicative(
             code=CODE_CHRONOLOGIE_INVALIDE,
@@ -656,6 +687,31 @@ def modifier_un_evenement(
         },
     ).one()
 
+    #  LOT 10, `T5` : UN SEUL `audit_event` pour l'appel entier -- « modifier
+    #  un evenement » est UNE action metier, meme quand elle remplace aussi
+    #  les listes de cercles/bureaux. Aucune ancienne valeur n'est portee :
+    #  cette fonction ne lit jamais l'etat anterieur des champs avant de les
+    #  ecraser (a la difference de `remplacer_le_contenu` au LOT 6, qui avait
+    #  deja l'ancien titre sous la main pour une autre raison).
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.MODIFIER.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Modification de l'evenement",
+        new_values={
+            "title": title,
+            "description": description,
+            "starts_at": str(starts_at),
+            "ends_at": str(ends_at),
+            "location_text": location_text,
+        },
+        reason=motif,
+    )
+
     return EvenementModifie(
         identifiant=evenement,
         title=title,
@@ -676,6 +732,7 @@ def publier_un_evenement(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementModifie:
     """§11 « Publier » — un BROUILLON devient `published`, immediatement.
 
@@ -709,6 +766,21 @@ def publier_un_evenement(
             "acteur": acteur,
         },
     ).one()
+
+    #  LOT 10, `T5` : `ActionEvenement.PUBLIER` est deja le vocabulaire du
+    #  perimetre (§7.27), reutilise tel quel comme `action_code`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.PUBLIER.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Publication de l'evenement",
+        reason=motif,
+    )
+
     return EvenementModifie(
         identifiant=ligne[0],
         title=ligne[1],
@@ -845,6 +917,23 @@ def annuler_un_evenement(
             "acteur": acteur,
         },
     ).one()
+
+    #  LOT 10, `T5` : meme reutilisation de `ActionEvenement`. `motif` est le
+    #  seul champ de ce module qui corresponde a un vrai motif humain -- porte
+    #  dans `reason`, jamais dans `summary`, meme discipline que `raison` pour
+    #  la revocation de session (LOT 3) ou `motif` pour la categorie DG (LOT 2).
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.ANNULER.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Annulation de l'evenement",
+        reason=motif,
+    )
+
     return EvenementAnnule(
         version=int(ligne[0]),
         etat=str(ligne[1]),
@@ -861,11 +950,14 @@ def archiver_un_evenement(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementArchive:
     """§11 « Archiver » — brouillon, publie ou annule devient `archived`.
 
-    L'appelant a deja prouve `ActionEvenement.ARCHIVER`. Aucun motif n'est
-    demande : le §18.1 n'en fait pas un cas obligatoire pour cette ressource.
+    L'appelant a deja prouve `ActionEvenement.ARCHIVER`. Le §18.1 n'en fait
+    pas un cas obligatoire pour cette ressource EN GENERAL — mais LOT 10
+    `T7` (`ECART-064`) exige un motif quand l'acteur est `SUPER`, verifie a
+    la ROUTE, qui connait deja les roles.
     """
     _exiger_la_version(
         connexion,
@@ -883,6 +975,21 @@ def archiver_un_evenement(
             "acteur": acteur,
         },
     ).one()
+
+    #  LOT 10, `T5`/`T7` : meme reutilisation. `reason` ne porte que le motif
+    #  de `SUPER` quand il est fourni — `ECART-064`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.ARCHIVER.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Archivage de l'evenement",
+        reason=motif,
+    )
+
     return EvenementArchive(version=int(ligne[0]), etat=str(ligne[1]), archive_le=ligne[2])
 
 
@@ -894,6 +1001,7 @@ def restaurer_un_evenement(
     acteur: uuid.UUID,
     version_attendue: int,
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementRestaure:
     """§11 « Restaurer » — un ARCHIVE revient en `draft`, jamais en `published`.
 
@@ -917,6 +1025,20 @@ def restaurer_un_evenement(
             "acteur": acteur,
         },
     ).one()
+
+    #  LOT 10, `T5` : meme reutilisation, pour l'action symetrique.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.RESTAURER.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary="Restauration de l'evenement",
+        reason=motif,
+    )
+
     return EvenementRestaure(version=int(ligne[0]), etat=str(ligne[1]))
 
 
@@ -1025,6 +1147,7 @@ def gerer_les_medias_d_un_evenement(
     version_attendue: int,
     medias: list[tuple[uuid.UUID, str]],
     instant: dt.datetime,
+    motif: str | None = None,
 ) -> EvenementMediasRemplaces:
     """Remplacer la liste COMPLETE des medias d'un evenement — §11.
 
@@ -1068,6 +1191,27 @@ def gerer_les_medias_d_un_evenement(
         _INCREMENTER_LA_VERSION_DE_L_EVENEMENT,
         {"evenement": evenement, "entite": entite, "instant": instant, "acteur": acteur},
     ).scalar_one()
+
+    #  LOT 10, `T5` : UN SEUL `audit_event` pour l'appel entier -- « remplacer
+    #  la liste des medias » est UNE action metier, meme discipline que
+    #  `reordonner_les_liens` au LOT 6 : jamais un evenement par media. Aucune
+    #  liste vide ne court-circuite cette fonction avant l'ecriture (a la
+    #  difference de `reordonner_les_liens`) : une galerie VIDEE est une forme
+    #  normale de ce geste, donc un `audit_event` est ecrit meme sur `medias=[]`.
+    enregistrer_un_evenement(
+        connexion,
+        instant=instant,
+        action_code=ActionEvenement.GERER_LES_MEDIAS.value,
+        resource_type="event",
+        resource_reference=evenement,
+        entity_id=entite,
+        actor_person_id=acteur,
+        summary=f"Remplacement des medias de l'evenement ({len(medias)} media(s))",
+        new_values={
+            "medias": [{"media_asset_id": str(media_id), "role": role} for media_id, role in medias]
+        },
+        reason=motif,
+    )
 
     return EvenementMediasRemplaces(
         version=int(version),

@@ -264,6 +264,13 @@ def decor(parametres_de_la_stack: Parametres) -> Iterator[dict[str, Any]]:
             "DELETE FROM onboarding_task_reference WHERE code LIKE :motif_code",
             "DELETE FROM auth_event WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            #  LOT 10, `T6` : creer une tache de reference (route HTTP de ce
+            #  fichier) ecrit desormais `audit_event` aussi — meme classe que
+            #  `T2`/`T3` (§7.30).
+            "DELETE FROM audit_event WHERE actor_person_id IN "
+            "(SELECT id FROM person WHERE email LIKE :motif_personne)",
+            "DELETE FROM audit_event WHERE entity_id IN "
+            "(SELECT id FROM entity WHERE code LIKE :motif)",
             "DELETE FROM user_session WHERE person_id IN "
             "(SELECT id FROM person WHERE email LIKE :motif_personne)",
             "DELETE FROM framework_responsibility_assignment WHERE entity_id IN "
@@ -295,11 +302,13 @@ def _creer(
     code: str,
     portee: str = "ENTITE",
 ) -> Any:
+    #  LOT 10, `T7` : un motif est TOUJOURS fourni — obligatoire pour `SUPER`
+    #  seulement (`ECART-064`), sans effet sur les autres roles.
     return _appeler_ecriture(
         parametres,
         CHEMIN_CATALOGUE.format(code=code_entite),
         jeton,
-        {"code": code, "title": f"Titre {code}", "portee": portee},
+        {"code": code, "title": f"Titre {code}", "portee": portee, "motif": "Decor de test"},
     )
 
 
@@ -369,7 +378,7 @@ def test_un_SUPER_cree_une_tache_ENTITE_par_defaut(decor: dict[str, Any]) -> Non
         parametres,
         CHEMIN_CATALOGUE.format(code=decor["code"]),
         _session(parametres, decor["super_personne"]),
-        {"code": f"{decor['marqueur']}-super-tache", "title": "Titre"},
+        {"code": f"{decor['marqueur']}-super-tache", "title": "Titre", "motif": "Decor de test"},
     )
     assert reponse.status_code == 201, reponse.text
     assert reponse.json()["entity_id"] == str(decor["entite"])

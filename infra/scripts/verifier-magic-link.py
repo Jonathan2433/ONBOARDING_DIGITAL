@@ -884,6 +884,9 @@ def _nettoyer(compose: list[str], env: dict[str, str]) -> None:
     etapes = (
         f"DELETE FROM auth_event WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        f"DELETE FROM audit_event WHERE actor_person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM magic_link_request WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         #  `user_session` A ETE AJOUTEE PAR `T6`. Ce nettoyage etait complet quand
@@ -897,6 +900,9 @@ def _nettoyer(compose: list[str], env: dict[str, str]) -> None:
         f"DELETE FROM entity_membership WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized LIKE '{MARQUEUR}%')",
         f"DELETE FROM person WHERE email_normalized LIKE '{MARQUEUR}%'",  # noqa: S608
+        #  LOT 10, `T3` : `audit_event.entity_id` reference aussi `entity`.
+        f"DELETE FROM audit_event WHERE entity_id IN "  # noqa: S608
+        f"(SELECT id FROM entity WHERE code = '{MARQUEUR}')",
         f"DELETE FROM entity WHERE code = '{MARQUEUR}'",  # noqa: S608
         #  Les evenements SANS personne — adresse inconnue en `T3`, jeton
         #  inconnu en `T4` — ne peuvent pas etre rattaches au marqueur : ils n'ont
@@ -909,6 +915,8 @@ def _nettoyer(compose: list[str], env: dict[str, str]) -> None:
         #  vieillit des qu'on y ajoute quelque chose. Le type n'est donc plus
         #  nomme : seule la borne temporelle delimite, et elle ne vieillit pas.
         "DELETE FROM auth_event WHERE person_id IS NULL "
+        "  AND occurred_at > now() - interval '5 minutes'",
+        "DELETE FROM audit_event WHERE actor_person_id IS NULL "
         "  AND occurred_at > now() - interval '5 minutes'",
     )
     restes = 0

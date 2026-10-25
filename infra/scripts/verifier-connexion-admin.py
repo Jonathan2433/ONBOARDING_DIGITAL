@@ -570,6 +570,9 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
     etapes = (
         "DELETE FROM auth_event WHERE person_id IN "  # noqa: S608
         f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
+        #  LOT 10, `T2` : `audit_event.actor_person_id` reference aussi `person`.
+        "DELETE FROM audit_event WHERE actor_person_id IN "  # noqa: S608
+        f"(SELECT id FROM person WHERE email_normalized = '{adresse}')",
         #  `user_session` A ETE AJOUTEE PAR `T6` : la route de connexion cree
         #  desormais une session, et la cle etrangere bloque la suppression de la
         #  personne. Ce nettoyage etait complet quand `T5` l'a ecrit. §7.21, et
@@ -584,6 +587,7 @@ def _nettoyer(compose: list[str], env: dict[str, str], adresse: str, debut: str)
         f"DELETE FROM person WHERE email_normalized = '{adresse}'",  # noqa: S608
         #  Les evenements SANS personne, bornes a cette execution.
         f"DELETE FROM auth_event WHERE person_id IS NULL   AND created_at >= '{debut}'",  # noqa: S608
+        f"DELETE FROM audit_event WHERE actor_person_id IS NULL   AND created_at >= '{debut}'",  # noqa: S608
     )
     restes = 0
     for requete in etapes:
