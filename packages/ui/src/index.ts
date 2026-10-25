@@ -21,12 +21,15 @@
  *   onglets, tableaux, alertes, carrousels, lecteurs video, etats vides. Elles
  *   arrivent avec les ecrans qui les emploient, et le cahier dit qu'elles
  *   seront construites au-dessus de primitives accessibles, « notamment Radix
- *   UI ». **Les onglets sont desormais ICI** (chantier front hors lot,
- *   sous-etape S1, `DEC-672`) : sur `@radix-ui/react-tabs`, avec DEUX
- *   consommateurs reels deja mesures (`PageAdministration.tsx`,
- *   `PageEvenements.tsx`). Les autres familles — menus, modales, tableaux,
- *   lecteurs video — restent absentes, faute de consommateur reel : livrer un
- *   menu deroulant sans ecran qui l'emploie serait du code non eprouve.
+ *   UI ». **Les onglets existent desormais** (chantier front hors lot,
+ *   sous-etape S1, `DEC-672`, `Onglets.tsx`, sur `@radix-ui/react-tabs`) mais
+ *   ne sont PAS encore exportes ici : aucun ecran ne les consomme avant S2
+ *   (migration de `PageAdministration.tsx` et `PageEvenements.tsx`), et
+ *   `make cadre-check` exige qu'un composant expose par ce fichier soit
+ *   EMPLOYE par un ecran du frontend (critere de `T11` du LOT 1) — l'exporter
+ *   maintenant serait livrer du code non eprouve. Les autres familles —
+ *   menus, modales, tableaux, lecteurs video — restent absentes pour la meme
+ *   raison, faute de consommateur reel.
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
@@ -58,9 +61,8 @@ export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
-//  Chantier front hors lot, S1 (`DEC-672`) — onglets sur primitive Radix.
-export { Onglets } from './Onglets.js';
-export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';
+//  `Onglets` (chantier front, S1, `DEC-672`) n'est PAS exporte ici : voir
+//  l'en-tete de ce fichier — aucun ecran ne le consomme avant S2.
 export {
   atteintSeuil,
   contraste,
