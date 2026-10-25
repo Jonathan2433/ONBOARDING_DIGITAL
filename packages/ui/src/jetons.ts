@@ -121,6 +121,38 @@ export const MARQUE = {
 } as const satisfies Record<string, CoupleColore>;
 
 /**
+ * Le degrade de marque — cahier 13.2, « degrades bleu, rose et violet ».
+ *
+ * Chantier front hors lot, sous-etape S1 (`DEC-672`, 25/10/2026). Arbitrage
+ * explicite de Jonathan : BLEU VERS ROSE UNIQUEMENT, aucune troisieme teinte
+ * violette ajoutee — coherent avec `MARQUE` ci-dessus, qui n'en relevait deja
+ * aucune du prototype (`DEC-491`, LOT 1 `T10`).
+ *
+ * UN DEGRADE DECORATIF, JAMAIS UN FOND DE TEXTE DIRECT — ET C'EST MESURE
+ *
+ *   Ni le blanc ni le texte sombre n'atteignent AA (4,5) sur l'ETENDUE ENTIERE
+ *   du degrade : le blanc tombe a 3,45 a l'extremite rose, le texte sombre
+ *   tombe a 3,39 a l'extremite bleue. **ET LA MESURE VA PLUS LOIN QUE CETTE
+ *   SEULE CONSTATATION** : vers t=0,75 (`#D536B4`), les DEUX rendent sous le
+ *   seuil a la fois — blanc 4,19, sombre 4,16 — une vraie ZONE MORTE ou aucune
+ *   couleur de texte, ni l'une ni l'autre, n'atteint AA. `jetons.test.ts` le
+ *   prouve explicitement plutot que de supposer qu'un des deux textes reste
+ *   toujours lisible quelque part sur le degrade.
+ *
+ *   LA REGLE QUI EN DECOULE : ce degrade est un fond DECORATIF. Tout texte qui
+ *   doit s'y superposer vit dans un conteneur opaque (`Carte`, `Badge`, une
+ *   pastille sur `--fond`), jamais directement sur le degrade. Un composant
+ *   qui poserait du texte en clair sur `DEGRADE_MARQUE.css` romprait l'AA sans
+ *   qu'aucun contrôle de ce fichier ne puisse le voir — a verifier a l'oeil,
+ *   dans les sous-etapes d'ecran qui l'emploient.
+ */
+export const DEGRADE_MARQUE = {
+  de: MARQUE.bleu.surface,
+  vers: MARQUE.rose.surface,
+  css: `linear-gradient(135deg, ${MARQUE.bleu.surface}, ${MARQUE.rose.surface})`,
+} as const;
+
+/**
  * Les couleurs de marque employees en ACCENT — texte ou bordure sur le fond de
  * la page. Le seuil y est celui du GRAND texte, et deux d'entre elles n'y sont
  * volontairement PAS admises.

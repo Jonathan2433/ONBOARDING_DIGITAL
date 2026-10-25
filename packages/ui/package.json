@@ -35,5 +35,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^4.1.12"
+  },
+  "dependencies": {
+    "@radix-ui/react-tabs": "^1.2.1"
   }
 }

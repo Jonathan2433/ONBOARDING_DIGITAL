@@ -34,6 +34,10 @@
   --marque-jaune: #ffda3e;
   --marque-jaune-texte: #1a1a1a;
 
+  /* Degrade de marque — bleu vers rose uniquement (chantier front, DEC-672).
+     DECORATIF SEUL : aucun texte directement dessus, voir jetons.ts. */
+  --degrade-marque: linear-gradient(135deg, #5853ff, #ff2c9b);
+
   /* Neutres et etats — theme clair, repris de T5 sans modification. */
   --fond: #ffffff;
   --fond-doux: #f4f4f5;

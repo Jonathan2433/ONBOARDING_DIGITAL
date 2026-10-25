@@ -24,7 +24,15 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ESPACEMENTS, MARQUE, OMBRES, RAYONS, THEMES, TYPOGRAPHIE } from './jetons.js';
+import {
+  DEGRADE_MARQUE,
+  ESPACEMENTS,
+  MARQUE,
+  OMBRES,
+  RAYONS,
+  THEMES,
+  TYPOGRAPHIE,
+} from './jetons.js';
 
 // `?raw` de Vite plutot que `node:fs` : le contenu du fichier arrive comme une
 // chaine, sans ajouter @types/node au projet. C'est Vite qui lit le disque, et
@@ -81,6 +89,7 @@ const ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--marque-rose-texte', MARQUE.rose.texte],
   ['--marque-jaune', MARQUE.jaune.surface],
   ['--marque-jaune-texte', MARQUE.jaune.texte],
+  ['--degrade-marque', DEGRADE_MARQUE.css],
   ['--fond', THEMES.clair.fond],
   ['--fond-doux', THEMES.clair.fondDoux],
   ['--encre', THEMES.clair.encre],

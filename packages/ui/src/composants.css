@@ -198,6 +198,57 @@
 }
 
 /* ==========================================================================
+   Onglets — chantier front hors lot, sous-etape S1 (`DEC-672`). Sur primitive
+   Radix (`@radix-ui/react-tabs`) : role, aria-selected, aria-controls et la
+   navigation au clavier par les fleches viennent de la primitive, pas d'ici.
+   Cette feuille ne stylise que `[data-state]`, que Radix pose lui-meme.
+   ========================================================================== */
+
+.ui-onglets__liste {
+  display: flex;
+  gap: var(--espace-xs);
+  border-bottom: 1px solid var(--trait);
+}
+
+.ui-onglets__onglet {
+  padding: var(--espace-s) var(--espace-m);
+  font-family: var(--police);
+  font-size: var(--taille-s);
+  font-weight: 600;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+
+  /* Cible tactile d'au moins 24 px — WCAG 2.2 critere 2.5.8, meme regle que
+     `.ex-bouton`. */
+  min-height: 40px;
+}
+
+/* L'ETAT ACTIF N'EST PAS LA SEULE COULEUR DU TEXTE : la bordure epaisse en
+   porte aussi le signal, et `aria-selected` (pose par Radix) le porte pour les
+   technologies d'assistance. WCAG 1.4.1. */
+.ui-onglets__onglet[data-state='active'] {
+  color: var(--encre);
+  border-bottom-color: var(--marque-bleu);
+}
+
+.ui-onglets__onglet:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: -3px;
+}
+
+.ui-onglets__panneau {
+  padding-top: var(--espace-m);
+}
+
+.ui-onglets__panneau:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
    La carte retournable — LOT 5, `T10`, story `MVP-L05-US003`
    ========================================================================== */
 
