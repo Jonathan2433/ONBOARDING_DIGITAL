@@ -146,7 +146,9 @@ describe('les evenements a l’ecran', () => {
         }),
       ),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Passes' }));
+    //  `fireEvent.mouseDown`, PAS `.click` — Radix active un onglet sur
+    //  `onMouseDown` (S2, `DEC-672`, voir `Onglets.test.tsx`).
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Passes' }));
     await waitFor(() => {
       expect(screen.getByText('Aucun evenement passe.')).toBeTruthy();
     });

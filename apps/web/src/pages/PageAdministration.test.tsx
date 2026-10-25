@@ -126,7 +126,9 @@ describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
     monter();
 
     await waitFor(() => expect(screen.getByText('Créer un collaborateur')).toBeTruthy());
-    fireEvent.click(screen.getByRole('tab', { name: 'Super-administration' }));
+    //  `fireEvent.mouseDown`, PAS `.click` — Radix active un onglet sur
+    //  `onMouseDown` (S2, `DEC-672`, voir `Onglets.test.tsx`).
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Super-administration' }));
 
     await waitFor(() => expect(screen.getByText('Créer une entité')).toBeTruthy());
     expect(screen.queryByText('Créer un collaborateur')).toBeNull();
@@ -137,7 +139,7 @@ describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
     monter();
 
     await waitFor(() => expect(screen.getByText('Créer un collaborateur')).toBeTruthy());
-    fireEvent.click(screen.getByRole('tab', { name: 'Contenu' }));
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Contenu' }));
 
     await waitFor(() =>
       expect(screen.getByText(/« Contenu » arrive dans un lot ultérieur/)).toBeTruthy(),

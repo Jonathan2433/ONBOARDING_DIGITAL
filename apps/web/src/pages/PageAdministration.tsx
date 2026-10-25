@@ -7,9 +7,7 @@
  *   `RUBRIQUES` (`routes.ts`) ne réserve toujours qu'UN chemin,
  *   `administration` (LOT 4, `T4`). Les sept groupes du cahier §8.1/§10.8
  *   (Organisation/Onboarding/Contenu/Données/Pilotage/Configuration/
- *   Super-administration) restent dans leur ORDRE d'origine, motif
- *   WAI-ARIA `tablist`/`tab`/`tabpanel` — aucune primitive d'onglets
- *   n'existe dans `packages/ui` (mesuré, comme au LOT 8 `T9`). « Audit » et
+ *   Super-administration) restent dans leur ORDRE d'origine. « Audit » et
  *   « Support » sont ajoutés APRÈS : le cahier les traite comme deux
  *   sujets séparés (§10.11/§10.12), jamais comme un huitième ou neuvième
  *   groupe officiel — les insérer dans la liste fixe aurait prétendu qu'ils
@@ -19,6 +17,19 @@
  *   de bord (`T5`/`T10`), même règle et même emplacement — voir l'en-tête
  *   de `SectionPilotage.tsx`. Arbitrage de Jonathan (`AskUserQuestion`,
  *   22/10/2026) : deux onglets de plus, jamais neuf fusionnés en un.
+ *
+ * LES ONGLETS SONT DESORMAIS `Onglets` (`@onboarding/ui`), SUR RADIX
+ *
+ *   Chantier front hors lot, sous-étape S2 (`DEC-672`). Le motif ARIA
+ *   `tablist`/`tab`/`tabpanel` fabriqué à la main (neuf `<button>`, un seul
+ *   `role="tabpanel"`) est remplacé par la primitive posée en S1 — même
+ *   contrat accessible, plus la navigation au clavier (`ArrowLeft`/
+ *   `ArrowRight`) qu'aucune des deux copies manuelles du dépôt ne rendait.
+ *   `activationMode="manual"` (posé dans `Onglets.tsx`) : parcourir les neuf
+ *   groupes à la flèche ne déclenche aucun appel réseau, seule une
+ *   confirmation (clic, Entrée, Espace) active réellement un onglet — sans
+ *   ce choix, une simple navigation au clavier monterait neuf sections,
+ *   chacune appelant sa propre route.
  *
  * CETTE PAGE REMPLACE L'ANCIENNE `PageAdministration.tsx` MONOLITHIQUE (LOT 7 `T14`)
  *
@@ -61,6 +72,7 @@ import {
   peutGererLeCycleDeVieDeLaStructure,
   peutValiderLesRapprochements,
 } from '@onboarding/contracts';
+import { Onglets } from '@onboarding/ui';
 
 import { SectionAudit } from './administration/SectionAudit';
 import { SectionAVenir } from './administration/SectionAVenir';
@@ -143,45 +155,27 @@ export function PageAdministration(): JSX.Element {
     );
   }
 
-  const idDuPanneau = 'administration-panneau';
   const groupesVisibles = GROUPES.filter((g) => g.visible(roles));
   const actif = groupesVisibles.some((g) => g.cle === groupeActif)
     ? groupeActif
     : (groupesVisibles[0]?.cle ?? null);
 
+  //  `actif === null` exige `groupesVisibles` vide — inatteignable en
+  //  pratique (Pilotage/Contenu/Configuration/Support sont visibles à
+  //  TOUTE session), mais `Onglets` exige une `valeurActive` non nulle : la
+  //  branche défensive reste, sans tablist vide à sa place.
   return (
     <div className="administration-page">
-      <div
-        aria-label="Groupes de l’administration"
-        className="administration-onglets"
-        role="tablist"
-      >
-        {groupesVisibles.map((g) => (
-          <button
-            aria-controls={idDuPanneau}
-            aria-selected={actif === g.cle}
-            className="administration-onglet"
-            data-selectionne={actif === g.cle}
-            id={`administration-onglet-${g.cle}`}
-            key={g.cle}
-            onClick={() => {
-              setGroupeActif(g.cle);
-            }}
-            role="tab"
-            type="button"
-          >
-            {g.libelle}
-          </button>
-        ))}
-      </div>
       {actif === null ? (
         <p>Votre rôle ne porte aucun droit d’administration dans cette entité.</p>
       ) : (
-        <div
-          aria-labelledby={`administration-onglet-${actif}`}
-          className="administration-panneau"
-          id={idDuPanneau}
-          role="tabpanel"
+        <Onglets
+          libelleDeLaListe="Groupes de l’administration"
+          onChangerDOnglet={(valeur) => {
+            setGroupeActif(valeur as CleDeGroupe);
+          }}
+          onglets={groupesVisibles.map((g) => ({ valeur: g.cle, libelle: g.libelle }))}
+          valeurActive={actif}
         >
           {actif === 'organisation' ? (
             <SectionOrganisation code={entite.code} roles={roles} />
@@ -202,7 +196,7 @@ export function PageAdministration(): JSX.Element {
           ) : (
             <SectionSupport code={entite.code} roles={roles} />
           )}
-        </div>
+        </Onglets>
       )}
     </div>
   );

@@ -5,8 +5,8 @@ hors épic/stories du backlog. Demandé directement par Jonathan le 25/10/2026, 
 de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
-25/10/2026 (`DEC-672`)
-**Sous-étape suivante :** `S1` — Fondations (jetons de dégradé + primitive Radix `Tabs`)
+25/10/2026 (`DEC-672`). `S1` (fondations) et `S2` (migration des onglets) **FAITES**.
+**Sous-étape suivante :** `S3` — Page nationale + cadre applicatif
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -128,17 +128,31 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
 
 ## 5. Sous-étapes proposées — une à la fois, comme pour un lot
 
-1. **Fondations.** Deux volets indépendants, un seul `packages/ui` touché :
+1. **Fondations. FAITE** (PR #297, fusionnée dans `develop` le 25/10/2026). Deux volets
+   indépendants, un seul `packages/ui` touché :
    - jetons de dégradé dérivés des couleurs déjà validées
      (`--degrade-marque: linear-gradient(135deg, var(--marque-bleu), var(--marque-rose))`, bleu→rose
      uniquement — décision du 25/10/2026), contraste du texte sur dégradé remesuré (pas seulement
-     sur une couleur plate, §7.0) ;
+     sur une couleur plate, §7.0) — **une zone morte réelle trouvée et prouvée** : à t≈0,75 du
+     dégradé, ni le blanc ni un texte sombre n'atteignent AA 4.5 simultanément, d'où la règle
+     « ce dégradé est décoratif seul, jamais de texte directement dessus » ;
    - `@radix-ui/react-tabs` posée comme dépendance, nouveau composant `Onglets` dans `packages/ui`
      construit dessus, ses propres tests ; **aucun écran migré à cette étape**, seulement la
-     primitive et sa preuve isolée.
-2. **Migration des onglets existants.** `PageAdministration.tsx` et `PageEvenements.tsx` basculent
-   sur `Onglets` ; le motif ARIA fabriqué à la main est retiré des deux fichiers. Sous-étape
-   structurelle, aucun habillage visuel nouveau.
+     primitive et sa preuve isolée — non exportée du paquet avant `S2` (`make cadre-check`, LOT 1
+     `T11`, exige qu'un composant exposé soit employé par un écran).
+2. **Migration des onglets existants. FAITE** (25/10/2026). `PageAdministration.tsx` et
+   `PageEvenements.tsx` basculent sur `Onglets` ; le motif ARIA fabriqué à la main (neuf `<button>`
+   plus deux, chacun sa propre copie `tablist`/`tab`/`tabpanel`) est retiré des deux fichiers,
+   remplacé par la primitive de `S1` — gain réel, pas seulement structurel : la navigation au
+   clavier (`ArrowLeft`/`ArrowRight`) qu'aucune des deux copies manuelles ne rendait est désormais
+   fournie par Radix, en mode `activationMode="manual"` (aucun appel réseau déclenché en parcourant
+   les onglets à la flèche). `Onglets` est désormais exporté par `packages/ui/src/index.ts`,
+   `make cadre-check` le confirme « testé et employé ». Treize tests existants mis à jour
+   (`fireEvent.click` → `fireEvent.mouseDown` sur l'activation d'un onglet — Radix active sur
+   `onMouseDown`, mesuré en `S1`) ; zéro test nouveau, zéro régression de comportement : même
+   contenu, mêmes règles de visibilité par rôle. Sous-étape structurelle, aucun habillage visuel
+   nouveau — les deux écrans gardent leurs classes CSS propres (`evenements-panneau`, etc.) comme
+   conteneurs de LAYOUT à l'intérieur du panneau que `Onglets` fournit.
 3. **Page nationale + cadre applicatif.** Bandeau d'accueil (dégradé), carte de France existante
    conservée telle quelle (`DEP-006`), navigation et barre mobile avec icônes `lucide-react`.
 4. **Page entité.** Généraliser `Carte` aux trois blocs d'information, badges pour les compteurs,
@@ -168,8 +182,8 @@ Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (
 
 1. Les cinq éléments du §13.2 absents aujourd'hui (dégradés, badges étendus, icônes maîtrisées,
    cartes généralisées, animations courtes) sont présents sur les écrans du périmètre §4.
-2. `PageAdministration.tsx`/`PageEvenements.tsx` consomment `Onglets` (`@radix-ui/react-tabs`),
-   aucun motif ARIA fabriqué à la main ne subsiste pour les onglets.
+2. **TENU (`S2`, 25/10/2026).** `PageAdministration.tsx`/`PageEvenements.tsx` consomment `Onglets`
+   (`@radix-ui/react-tabs`), aucun motif ARIA fabriqué à la main ne subsiste pour les onglets.
 3. Aucune régression de contraste AA (mesuré, pas supposé — `jetons.test.ts` étendu).
 4. Aucune nouvelle dépendance visuelle au-delà de `@radix-ui/react-tabs`, nommée ici.
 5. Les cinq largeurs de recette du §13.4 sont vérifiées sans débordement.
