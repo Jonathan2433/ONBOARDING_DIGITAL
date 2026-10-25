@@ -19,10 +19,14 @@
  *
  *   Le cahier 13.3 enumere douze familles de composants — menus, modales,
  *   onglets, tableaux, alertes, carrousels, lecteurs video, etats vides. Elles
- *   arrivent avec les ecrans qui les emploient, a partir du LOT 4, et le cahier
- *   dit qu'elles seront construites au-dessus de primitives accessibles,
- *   « notamment Radix UI ». Aucune n'est ici : livrer un menu deroulant sans
- *   ecran qui l'emploie serait du code non eprouve.
+ *   arrivent avec les ecrans qui les emploient, et le cahier dit qu'elles
+ *   seront construites au-dessus de primitives accessibles, « notamment Radix
+ *   UI ». **Les onglets sont desormais ICI** (chantier front hors lot,
+ *   sous-etape S1, `DEC-672`) : sur `@radix-ui/react-tabs`, avec DEUX
+ *   consommateurs reels deja mesures (`PageAdministration.tsx`,
+ *   `PageEvenements.tsx`). Les autres familles — menus, modales, tableaux,
+ *   lecteurs video — restent absentes, faute de consommateur reel : livrer un
+ *   menu deroulant sans ecran qui l'emploie serait du code non eprouve.
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
@@ -54,15 +58,20 @@ export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
+//  Chantier front hors lot, S1 (`DEC-672`) — onglets sur primitive Radix.
+export { Onglets } from './Onglets.js';
+export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';
 export {
   atteintSeuil,
   contraste,
   luminance,
+  melangerCouleurs,
   SEUIL_AA_GRAND_TEXTE,
   SEUIL_AA_TEXTE_NORMAL,
 } from './contraste.js';
 export {
   ACCENTS_ADMIS,
+  DEGRADE_MARQUE,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,

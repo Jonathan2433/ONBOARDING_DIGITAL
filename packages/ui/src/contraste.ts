@@ -71,3 +71,34 @@ export function contraste(a: string, b: string): number {
 export function atteintSeuil(fond: string, texte: string, seuil: number): boolean {
   return contraste(fond, texte) >= seuil;
 }
+
+/**
+ * Melange lineaire de deux couleurs `#rrggbb`, canal par canal.
+ *
+ * Chantier front hors lot, sous-etape S1 (`DEC-672`). Un degrade CSS n'est pas
+ * un seul couple fond/texte : c'est un CONTINUUM de couleurs, et une mesure qui
+ * ne porterait que sur ses deux extremites manquerait tout defaut qui vivrait
+ * entre les deux. Cette fonction rend le point a `proportion` du chemin entre
+ * `depart` et `arrivee` (0 = depart, 1 = arrivee), pour que `jetons.test.ts`
+ * puisse echantillonner le degrade et mesurer chaque point, pas seulement ses
+ * bornes.
+ *
+ * L'interpolation est faite en sRGB, canal par canal — exactement ce que fait
+ * `linear-gradient()` en CSS par defaut, sans espace de couleur declare. Une
+ * interpolation perceptuelle rendrait des points differents de ceux que le
+ * navigateur affiche reellement.
+ */
+export function melangerCouleurs(depart: string, arrivee: string, proportion: number): string {
+  if (!MOTIF_HEXA.test(depart) || !MOTIF_HEXA.test(arrivee)) {
+    throw new Error(
+      `couleur invalide : ${JSON.stringify({ depart, arrivee })} — attendu #rrggbb sur six hexadecimaux`,
+    );
+  }
+  const canal = (position: number): number => {
+    const d = Number.parseInt(depart.slice(position, position + 2), 16);
+    const a = Number.parseInt(arrivee.slice(position, position + 2), 16);
+    return Math.round(d + (a - d) * proportion);
+  };
+  const hex = (v: number): string => v.toString(16).padStart(2, '0');
+  return `#${hex(canal(1))}${hex(canal(3))}${hex(canal(5))}`;
+}
