@@ -231,6 +231,35 @@ ont été vérifiés en lecture et leurs clients API partagent exactement le mê
 d'idempotence que celui prouvé en direct pour la RGPD — déjà éprouvé côté API par les 35 et 54
 tests de `T12`/`T13` respectivement.
 
+### 4.2 Deux défauts trouvés par la CI sur la pull request, corrigés avant la fusion
+
+**`T15-1` : un rôle écrit en littéral dans le frontend.** `make cadre-check` a refusé
+`SectionSupport.tsx` : `roles.includes('ESM')` écrivait un rôle en dur côté client, en violation de
+`DEC-492` (les rôles viennent du manifeste, source unique de TypeScript et Python). Le périmètre
+`LIMITE` de l'ESM sur les alertes n'a pas de grille statique exposée par l'API
+(`app/support/perimetre_alertes.py`) — le défaut est corrigé en exportant `peutLireLesAlertes`
+depuis `packages/contracts/src/alertes.ts`, qui encapsule l'union `peutTraiterLesAlertes` ∪ `ESM`
+sans qu'aucun littéral de rôle ne vive plus dans `apps/web`.
+
+**`T15-2` : un override pnpm écrit comme un plancher était une épingle exacte.** `make audit` a
+trouvé trois avis publiés depuis la dernière exécution de la CI, sans rapport avec `T15` —
+`uv.lock`/`pnpm-lock.yaml` étaient identiques à `origin/develop` avant ces commits. `filelock`
+(trois CVE, dépendance transitive de `pip-audit` lui-même, jamais consommée en exécution) et `zod`
+(dépendance de développement d'`eslint-plugin-react-hooks`) se sont corrigés par une simple montée
+dans les plages déjà déclarées. `undici` (trois CVE, corrigées en `8.12.2`) a révélé un défaut plus
+sérieux, dormant depuis `GHSA-3wwx-pv8p-q78v` : `pnpm-workspace.yaml` portait
+`overrides: { undici: 8.10.2 }`, posé comme un **plancher corrigé** — mais une version NUE dans
+`overrides` est une **épingle exacte** pour pnpm, jamais un plancher. Elle bloquait donc
+silencieusement toute résolution plus récente, y compris celle que `jsdom@30.1.3` demande déjà
+(`^8.12.1`). Même classe que `§7.34` de la passation : un garde-fou écrit contre un incident ne
+couvre pas sa classe. Corrigé en `>=8.10.2` (et `source-map-js: >=1.2.2`, même défaut, même
+correctif), `jsdom` monté à `^30.1.3` dans les deux `package.json` qui le déclarent.
+
+Vérifié dans les deux sens après chaque correctif : `make audit`/`make cadre-check`/`make
+format-check`/`lint`/`typecheck`/`mypy` verts, 889 Vitest et 472 tests pytest unitaires inchangés.
+Aucun des deux défauts n'a nécessité de nouvel arbitrage de Jonathan ni de nouvelle décision —
+corrections mécaniques sous la discipline déjà posée par `DEC-492` et `DEC-474`/`DEC-493`.
+
 ## 5. Décisions et écarts
 
 `DEC-669` : organisation des écrans back-office du LOT 10 en deux onglets de plus (« Audit »,
