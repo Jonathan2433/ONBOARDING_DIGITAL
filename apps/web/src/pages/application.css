@@ -1439,35 +1439,11 @@
   gap: var(--espace-l);
 }
 
-.evenements-onglets {
-  display: flex;
-  gap: var(--espace-s);
-  border-bottom: 1px solid var(--trait);
-}
-
-/* Le minimum de 44px est le meme seuil que `.cercle-page`/`.trombi-page`. */
-.evenements-onglet {
-  min-height: 44px;
-  padding: 0 var(--espace-m);
-  font: inherit;
-  font-weight: 600;
-  color: var(--encre-douce);
-  background: none;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-}
-
-.evenements-onglet[data-selectionne='true'] {
-  color: var(--encre);
-  border-bottom-color: var(--marque-bleu);
-}
-
-.evenements-onglet:focus-visible {
-  outline: 3px solid var(--encre);
-  outline-offset: 2px;
-}
-
+/*  Les onglets eux-memes (liste, bouton, etat actif) sont desormais ceux du
+    composant `Onglets` (`@onboarding/ui`, `.ui-onglets__*`) — chantier
+    front, S2, `DEC-672`. `.evenements-panneau` reste un conteneur de
+    LAYOUT pour le contenu de l'onglet actif, a l'interieur du panneau que
+    `Onglets` fournit. */
 .evenements-panneau {
   display: flex;
   flex-direction: column;
