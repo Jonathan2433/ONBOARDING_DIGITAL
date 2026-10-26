@@ -448,3 +448,157 @@ describe("`T12` : les trois listes de l'accueil defilent en carrousel", () => {
     expect(screen.queryByRole('list', { name: 'Ressources internes' })).toBeNull();
   });
 });
+
+describe('chantier front, S4 : des `Badge` pour les compteurs (`DEC-672`)', () => {
+  const FRAMEWORK_AVEC_DONNEES = {
+    responsabilites: [
+      {
+        type_de_responsabilite: 'DSM',
+        titulaires: [{ identifiant: 't1', prenom: 'Ada', nom: 'Lovelace' }],
+        chemin_detaille: null,
+      },
+      { type_de_responsabilite: 'BOOSTER', titulaires: [], chemin_detaille: null },
+    ],
+    cercles: [
+      {
+        identifiant: 'c1',
+        code: 'C1',
+        nom: 'Cercle un',
+        description: null,
+        jeton_de_couleur: null,
+        booster: null,
+        membres_actifs: 3,
+        chemin_detaille: '/x',
+      },
+      {
+        identifiant: 'c2',
+        code: 'C2',
+        nom: 'Cercle deux',
+        description: null,
+        jeton_de_couleur: null,
+        booster: null,
+        membres_actifs: 2,
+        chemin_detaille: '/y',
+      },
+    ],
+    bureaux: [
+      {
+        identifiant: 'b1',
+        code: 'B1',
+        nom: 'Bureau un',
+        description: null,
+        localisation: null,
+        responsables: [],
+        chemin_detaille: '/z',
+      },
+    ],
+  };
+
+  it('Framework : trois Badge, derives des listes et non d’une phrase prose', async () => {
+    rolesActuels = ['EMP'];
+    servir({ ...ACCUEIL_DE_BASE, framework: FRAMEWORK_AVEC_DONNEES });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('2 cercles')).toBeTruthy();
+    });
+    expect(screen.getByText('1 bureau')).toBeTruthy();
+    //  Une seule des deux responsabilites a un titulaire : le compte est
+    //  POURVUES, pas le nombre total de responsabilites du Framework.
+    expect(screen.getByText('1 responsabilite pourvue')).toBeTruthy();
+    //  Et chacun est bien un `Badge` du design system (`.ex-badge`), pas un
+    //  texte libre : la classe porte le ton `marque` pose par le composant.
+    expect(screen.getByText('2 cercles').closest('.ex-badge')).toBeTruthy();
+  });
+
+  it('Framework : zero cercle, bureau et responsabilite se lisent au singulier', async () => {
+    rolesActuels = ['EMP'];
+    servir(ACCUEIL_DE_BASE);
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('0 cercle')).toBeTruthy();
+    });
+    expect(screen.getByText('0 bureau')).toBeTruthy();
+    expect(screen.getByText('0 responsabilite pourvue')).toBeTruthy();
+  });
+
+  it('Arrivees recentes : le Badge reflete le TOTAL, pas la longueur de la page affichee', async () => {
+    rolesActuels = ['EMP'];
+    servir({
+      ...ACCUEIL_DE_BASE,
+      arrivees_recentes: {
+        arrivees: [
+          {
+            appartenance: 'm1',
+            person_id: 'pe1',
+            first_name: 'Ada',
+            last_name: 'Lovelace',
+            preferred_name: null,
+            arrival_date: '2026-10-01',
+            short_intro: null,
+            fun_fact: null,
+          },
+        ],
+        page: 1,
+        taille: 25,
+        total: 5,
+        pages: 1,
+      },
+    });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('5 arrivees')).toBeTruthy();
+    });
+  });
+
+  it('Arrivees recentes : aucun Badge quand la section est vide — l’Alerte suffit deja', async () => {
+    rolesActuels = ['EMP'];
+    servir(ACCUEIL_DE_BASE);
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Aucune arrivee recente pour le moment.')).toBeTruthy();
+    });
+    const badges = [...document.querySelectorAll('.ex-badge')].map((b) => b.textContent ?? '');
+    expect(badges.some((texte) => texte.includes('arrivee'))).toBe(false);
+  });
+
+  it('Evenements a venir : le Badge reflete le TOTAL, et disparait quand la section est vide', async () => {
+    rolesActuels = ['EMP'];
+    servir({
+      ...ACCUEIL_DE_BASE,
+      evenements_a_venir: {
+        classement: 'a_venir',
+        evenements: [
+          {
+            identifiant: 'ev1',
+            titre: 'Pot de rentree',
+            description: null,
+            commence_le: '2026-10-10T08:00:00+00:00',
+            finit_le: '2026-10-10T09:00:00+00:00',
+            lieu: null,
+            etat: 'published',
+            annule_le: null,
+            motif_d_annulation: null,
+          },
+        ],
+        page: 1,
+        taille: 25,
+        total: 3,
+        pages: 1,
+      },
+    });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('3 evenements')).toBeTruthy();
+    });
+
+    cleanup();
+    rolesActuels = ['EMP'];
+    servir(ACCUEIL_DE_BASE);
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Aucun evenement a venir pour le moment.')).toBeTruthy();
+    });
+    const badges = [...document.querySelectorAll('.ex-badge')].map((b) => b.textContent ?? '');
+    expect(badges.some((texte) => texte.includes('evenement'))).toBe(false);
+  });
+});

@@ -5,9 +5,9 @@ hors épic/stories du backlog. Demandé directement par Jonathan le 25/10/2026, 
 de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
-25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets) et `S3` (page nationale +
-cadre applicatif) **FAITES**.
-**Sous-étape suivante :** `S4` — Page entité
+25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
+cadre applicatif) et `S4` (page entité) **FAITES**.
+**Sous-étape suivante :** `S5` — Framework, cercle, bureau
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -206,8 +206,24 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    deux sens). Une seule, `packages/ui/src/index.ts`, était un FICHIER SUIVI reverté localement à
    son état `S1` (avant l'export d'`Onglets` par `S2`) — restaurée par `git checkout` avant de
    commencer `S3`.
-4. **Page entité.** Généraliser `Carte` aux trois blocs d'information, badges pour les compteurs,
-   vérifier le carrousel déjà en place.
+4. **Page entité. FAITE** (26/10/2026). `apps/web/src/pages/PageEntite.tsx` — **mesuré AVANT tout
+   code** : `Carte` couvrait déjà les cinq sections (posé par le LOT 8 `T11`) et `Carrousel` portait
+   déjà les trois listes (LOT 8 `T12`) — ni l'un ni l'autre n'était donc à construire, contrairement
+   à ce que la ligne ci-dessus laissait entendre avant vérification (§7.29 de la passation : chercher
+   avant de bâtir). **Seul manquait « badges pour les compteurs »**, cahier §13.2 : les trois blocs
+   d'INFORMATION (Framework, Arrivées récentes, Événements à venir — par opposition à Présentation et
+   Ressources internes, des blocs de CONTENU) portent désormais leurs compteurs en `Badge` plutôt
+   qu'en phrase prose. Framework : trois `Badge` (`N cercle(s)`, `N bureau(x)`, `N responsabilité(s)
+   pourvue(s)`), toujours affichés, même à zéro — remplace l'unique phrase `.accueil-framework-resume`.
+   Arrivées récentes et Événements à venir : un `Badge` reflétant le `total` de la pagination (pas la
+   longueur de la page affichée, plafonnée à `NOMBRE_MONTRE`), affiché seulement aux côtés du
+   carrousel — l'état vide garde sa seule `Alerte`, un badge « 0 » à côté aurait été redondant.
+   `Carte de France` hors périmètre de cette sous-étape (`PageCercle.tsx`/`PageBureau.tsx`, `S5`).
+   **Zéro régression** : 318 tests Vitest du frontend (+7, décoratif prouvé : chaque compteur est un
+   vrai `.ex-badge`, le Framework reflète les listes réelles et non une phrase recopiée, le badge
+   d'arrivées/événements suit le `total` et non la page affichée, et disparaît avec la section vide).
+   `make cadre-check` (25 contrôles), `make icloud-verify`, `uv run mypy`/`tsc --noEmit`/ESLint/
+   Prettier verts.
 5. **Framework, cercle, bureau.** Appliquer `Carte`/`Badge` (actuellement absents de ces trois
    écrans), icônes de bureau (`lucide-react`, pas d'emoji brut — accessibilité, cohérence avec le
    reste du design system).

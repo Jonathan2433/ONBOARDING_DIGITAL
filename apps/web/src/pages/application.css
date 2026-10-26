@@ -1726,7 +1726,14 @@
   margin: 0;
 }
 
-.accueil-framework-resume {
+/* Chantier front, S4 (`DEC-672`) : les compteurs des trois blocs
+   d'information (Framework, Arrivees recentes, Evenements a venir) sont des
+   `Badge` du design system, cahier §13.2 — jamais une phrase prose seule. */
+.accueil-framework-compteurs,
+.accueil-compteur {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-xs);
   margin: 0 0 var(--espace-s);
 }
 
