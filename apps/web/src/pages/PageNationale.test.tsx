@@ -160,6 +160,22 @@ describe('la page nationale', () => {
     expect([...screen.getByRole('navigation').querySelectorAll('a')]).toHaveLength(2);
   });
 
+  it('porte le bandeau d’accueil, texte dans sa pastille — chantier front, S3, `DEC-672`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json({ entites: [BORDEAUX] }, 200))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByRole('navigation')).toBeTruthy());
+    const bandeau = document.querySelector('.nat-bandeau');
+    expect(bandeau).toBeTruthy();
+    //  **LE TEXTE VIT DANS LA PASTILLE, PAS A MEME LE BANDEAU** — le degrade
+    //  de marque n'atteint pas l'AA sur toute son etendue (`jetons.test.ts`),
+    //  donc aucun texte ne doit s'y poser directement.
+    const pastille = bandeau?.querySelector('.nat-bandeau-pastille');
+    expect(pastille?.textContent).toBe('eXalt Onboarding');
+  });
+
   it("porte un lien d'evitement dont la cible est FOCUSABLE", async () => {
     vi.stubGlobal(
       'fetch',

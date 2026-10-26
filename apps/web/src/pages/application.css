@@ -317,7 +317,9 @@
    « Target Size (Minimum) », 2.5.8. `--espace-s` deux fois plus la hauteur de
    ligne du texte y suffisent, et le `min-height` le garantit si un jeton change. */
 .app-navigation-lien {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-xs);
   min-height: 44px;
   padding: var(--espace-s) var(--espace-xs);
   color: var(--encre-douce);
@@ -328,6 +330,22 @@
   border-bottom: 3px solid transparent;
   box-sizing: border-box;
   transition: color 120ms ease-in-out;
+}
+
+/* L'icone d'une rubrique — menu principal, barre mobile et panneau « Plus ».
+   UNE SEULE REGLE DE TAILLE, trois conteneurs qui orientent differemment
+   (chantier front, S3, `DEC-672`). `color: currentColor` : lucide-react pose
+   `stroke="currentColor"` par defaut (voir `defaultAttributes` du paquet), si
+   bien que l'icone suit la couleur du lien dans tous ses etats — hover, focus,
+   `aria-current` — sans aucune regle de couleur ecrite ici. */
+.app-rubrique-icone {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--espace-l);
+  height: var(--espace-l);
+  color: currentColor;
 }
 
 .app-navigation-lien:hover {
@@ -385,12 +403,22 @@
 }
 
 /* 44 px de haut au minimum — WCAG 2.2 AA « Target Size (Minimum) », 2.5.8. La
-   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`. */
+   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`.
+
+   **`flex-direction: column` — L'ICONE AU-DESSUS, JAMAIS A COTE (chantier
+   front, S3, `DEC-672`).** La mesure du 23/08/2026 ci-dessus, en LARGEUR, a
+   cale QUATRE cellules a 320 px -- et elle reste valide : empiler l'icone
+   consomme de la HAUTEUR, que `min-height` laisse deja croitre (elle le fait
+   deja pour « Trombinoscope » sur deux lignes), jamais la largeur du texte.
+   Une icone a cote du libelle, elle, aurait grignote la marge qui separe deja
+   « Trombinoscope » du bord de sa cellule de 80 px. */
 .app-barre-lien {
   flex: 1 1 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   min-height: 44px;
   padding: var(--espace-xs) 2px;
   color: var(--encre-douce);
@@ -458,7 +486,9 @@
 }
 
 .app-barre-lien-secondaire {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
   min-height: 44px;
   padding: var(--espace-s);
   color: var(--encre);
@@ -558,6 +588,47 @@
 }
 
 /* ─── la page nationale — LOT 4, T6, cahier §8.3 ──────────────────────── */
+
+/* Le bandeau d'accueil — chantier front hors lot, S3 (`DEC-672`), cahier
+   §13.2. PROPRE a cette page : voir le commentaire JSX de `PageNationale.tsx`
+   sur pourquoi ce n'est pas `.app-entete`. */
+.nat-bandeau {
+  display: flex;
+  justify-content: center;
+  padding: var(--espace-m) var(--espace-s);
+  background: var(--degrade-marque);
+}
+
+/* **LE TEXTE VIT ICI, JAMAIS A MEME `.nat-bandeau`.** `DEGRADE_MARQUE`
+   (`packages/ui/jetons.ts`) le dit explicitement : aucune couleur de texte
+   n'atteint AA sur toute l'etendue du degrade (zone morte mesuree vers
+   t=0,75). La pastille est un fond OPAQUE — `--fond`, le meme que le reste de
+   la page — pose par-dessus, exactement le renoncement documente pour
+   `Badge`/`Carte`. */
+.nat-bandeau-pastille {
+  margin: 0;
+  display: inline-flex;
+  padding: var(--espace-xs) var(--espace-m);
+  /* Un vrai pastille : meme jeton que `Badge` et l'avatar du trombinoscope
+     (`--rayon-pastille`, 999px), pas une carte rectangulaire arrondie. */
+  border-radius: var(--rayon-pastille);
+  background: var(--fond);
+  color: var(--encre);
+  font-size: var(--taille-s);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: var(--ombre-douce);
+}
+
+@media (min-width: 768px) {
+  .nat-bandeau {
+    padding: var(--espace-l) var(--espace-m);
+  }
+
+  .nat-bandeau-pastille {
+    font-size: var(--taille-m);
+  }
+}
 
 /* **AUCUN `order`, AUCUN `row-reverse`.** Le critere de `T6` est que la liste
    precede la carte DANS LE DOM, pas seulement a l'oeil : une inversion en CSS

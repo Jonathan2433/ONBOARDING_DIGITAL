@@ -80,8 +80,25 @@ export function PageNationale(): JSX.Element {
       <a className="app-evitement" href="#contenu">
         Aller au contenu
       </a>
-      <header className="app-entete">
-        <p className="app-marque">eXalt Onboarding</p>
+      {/*
+        **LE BANDEAU D'ACCUEIL — chantier front hors lot, S3 (`DEC-672`),
+        cahier §13.2.** Une classe PROPRE a cette page, `nat-bandeau`, et non
+        `app-entete` : ce dernier est le bandeau FONCTIONNEL du cadre
+        applicatif, partage par CHAQUE page interne une fois une entite
+        choisie (nom, ville, selecteur) — y poser un degrade colorerait, de
+        facto, l'en-tete de tous les ecrans dont l'habillage visuel n'est pas
+        encore du a cette sous-etape (S4 a S7). La page nationale, elle, n'a
+        pas d'entite a montrer : son bandeau est purement decoratif.
+
+        **LE TEXTE VIT DANS UNE PASTILLE OPAQUE, JAMAIS A MEME LE DEGRADE** —
+        `DEGRADE_MARQUE` (`packages/ui/jetons.ts`) le dit explicitement :
+        aucune couleur de texte, claire ou sombre, n'atteint AA sur toute
+        l'etendue du degrade (une vraie zone morte existe vers t=0,75). Le
+        meme renoncement que `Badge`/`Carte` : le texte se pose sur
+        `--fond`, jamais sur le degrade lui-meme.
+      */}
+      <header className="nat-bandeau">
+        <p className="nat-bandeau-pastille">eXalt Onboarding</p>
       </header>
       {/*
         `tabIndex={-1}` : sans lui le lien d'evitement ferait defiler sans deplacer
