@@ -178,40 +178,63 @@ export function PageEntite(): JSX.Element {
         />
       </Carte>
 
-      {/* 2. Framework, cercles et bureaux — cahier §8.4 */}
+      {/* 2. Framework, cercles et bureaux — cahier §8.4. Chantier front, S4
+         (`DEC-672`) : trois compteurs en `Badge`, plutot qu'une seule phrase
+         prose — cahier §13.2, « badges ». */}
       <Carte titre="Framework">
-        <p className="accueil-framework-resume">
-          {donnee.framework.cercles.length} cercle
-          {donnee.framework.cercles.length > 1 ? 's' : ''}, {donnee.framework.bureaux.length} bureau
-          {donnee.framework.bureaux.length > 1 ? 'x' : ''}, {nombreDeResponsabilitesPourvues}{' '}
-          responsabilite{nombreDeResponsabilitesPourvues > 1 ? 's' : ''} pourvue
-          {nombreDeResponsabilitesPourvues > 1 ? 's' : ''}.
-        </p>
+        <div className="accueil-framework-compteurs">
+          <Badge ton="marque">
+            {donnee.framework.cercles.length} cercle
+            {donnee.framework.cercles.length > 1 ? 's' : ''}
+          </Badge>
+          <Badge ton="marque">
+            {donnee.framework.bureaux.length} bureau
+            {donnee.framework.bureaux.length > 1 ? 'x' : ''}
+          </Badge>
+          <Badge ton="marque">
+            {nombreDeResponsabilitesPourvues} responsabilite
+            {nombreDeResponsabilitesPourvues > 1 ? 's' : ''} pourvue
+            {nombreDeResponsabilitesPourvues > 1 ? 's' : ''}
+          </Badge>
+        </div>
         <Link className="app-lien" to={cheminDeRubrique(entite.code, 'framework')}>
           Voir la page Framework
         </Link>
       </Carte>
 
-      {/* 3. Personnes recemment arrivees — cahier §8.4 */}
+      {/* 3. Personnes recemment arrivees — cahier §8.4. Le compteur en `Badge`
+         n'apparait qu'avec le carrousel : la section vide porte deja son
+         message dans l'Alerte, un badge « 0 » a cote serait redondant. */}
       <Carte titre="Arrivees recentes">
         {donnee.arriveesRecentes.arrivees.length === 0 ? (
           <Alerte>Aucune arrivee recente pour le moment.</Alerte>
         ) : (
-          <Carrousel libelle="Arrivees recentes">
-            {donnee.arriveesRecentes.arrivees.slice(0, NOMBRE_MONTRE).map((arrivee) => (
-              <li key={arrivee.appartenance} className="ui-carrousel__item accueil-arrivees-carte">
-                <Link
-                  className="app-lien"
-                  to={cheminDuProfilALEcran(entite.code, arrivee.appartenance)}
+          <>
+            <p className="accueil-compteur">
+              <Badge ton="marque">
+                {donnee.arriveesRecentes.total} arrivee
+                {donnee.arriveesRecentes.total > 1 ? 's' : ''}
+              </Badge>
+            </p>
+            <Carrousel libelle="Arrivees recentes">
+              {donnee.arriveesRecentes.arrivees.slice(0, NOMBRE_MONTRE).map((arrivee) => (
+                <li
+                  key={arrivee.appartenance}
+                  className="ui-carrousel__item accueil-arrivees-carte"
                 >
-                  {arrivee.nomPrefere ?? arrivee.prenom} {arrivee.nom}
-                </Link>
-                <span className="accueil-arrivees-date">
-                  Arrive le {dateComplete(arrivee.dateArrivee)}
-                </span>
-              </li>
-            ))}
-          </Carrousel>
+                  <Link
+                    className="app-lien"
+                    to={cheminDuProfilALEcran(entite.code, arrivee.appartenance)}
+                  >
+                    {arrivee.nomPrefere ?? arrivee.prenom} {arrivee.nom}
+                  </Link>
+                  <span className="accueil-arrivees-date">
+                    Arrive le {dateComplete(arrivee.dateArrivee)}
+                  </span>
+                </li>
+              ))}
+            </Carrousel>
+          </>
         )}
         {donnee.arriveesRecentes.total > NOMBRE_MONTRE ? (
           <Link className="app-lien" to={cheminDeRubrique(entite.code, 'trombinoscope')}>
@@ -220,27 +243,36 @@ export function PageEntite(): JSX.Element {
         ) : null}
       </Carte>
 
-      {/* 4. Evenements a venir — cahier §8.4 */}
+      {/* 4. Evenements a venir — cahier §8.4. Meme parti qu'au bloc 3 : le
+         compteur en `Badge` n'apparait qu'avec le carrousel. */}
       <Carte titre="Evenements a venir">
         {donnee.evenementsAVenir.evenements.length === 0 ? (
           <Alerte>Aucun evenement a venir pour le moment.</Alerte>
         ) : (
-          <Carrousel libelle="Evenements a venir">
-            {donnee.evenementsAVenir.evenements.slice(0, NOMBRE_MONTRE).map((evenement) => (
-              <li
-                key={evenement.identifiant}
-                className="ui-carrousel__item accueil-evenements-carte"
-              >
-                <div className="accueil-evenements-entete">
-                  <span className="accueil-evenements-titre">{evenement.titre}</span>
-                  {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
-                </div>
-                <span className="accueil-evenements-horaire">
-                  {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
-                </span>
-              </li>
-            ))}
-          </Carrousel>
+          <>
+            <p className="accueil-compteur">
+              <Badge ton="marque">
+                {donnee.evenementsAVenir.total} evenement
+                {donnee.evenementsAVenir.total > 1 ? 's' : ''}
+              </Badge>
+            </p>
+            <Carrousel libelle="Evenements a venir">
+              {donnee.evenementsAVenir.evenements.slice(0, NOMBRE_MONTRE).map((evenement) => (
+                <li
+                  key={evenement.identifiant}
+                  className="ui-carrousel__item accueil-evenements-carte"
+                >
+                  <div className="accueil-evenements-entete">
+                    <span className="accueil-evenements-titre">{evenement.titre}</span>
+                    {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
+                  </div>
+                  <span className="accueil-evenements-horaire">
+                    {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
+                  </span>
+                </li>
+              ))}
+            </Carrousel>
+          </>
         )}
         <Link className="app-lien" to={cheminDeRubrique(entite.code, 'evenements')}>
           Voir tous les evenements
