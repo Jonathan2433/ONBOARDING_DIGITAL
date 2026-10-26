@@ -5,8 +5,9 @@ hors épic/stories du backlog. Demandé directement par Jonathan le 25/10/2026, 
 de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
-25/10/2026 (`DEC-672`). `S1` (fondations) et `S2` (migration des onglets) **FAITES**.
-**Sous-étape suivante :** `S3` — Page nationale + cadre applicatif
+25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets) et `S3` (page nationale +
+cadre applicatif) **FAITES**.
+**Sous-étape suivante :** `S4` — Page entité
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -153,8 +154,58 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    contenu, mêmes règles de visibilité par rôle. Sous-étape structurelle, aucun habillage visuel
    nouveau — les deux écrans gardent leurs classes CSS propres (`evenements-panneau`, etc.) comme
    conteneurs de LAYOUT à l'intérieur du panneau que `Onglets` fournit.
-3. **Page nationale + cadre applicatif.** Bandeau d'accueil (dégradé), carte de France existante
-   conservée telle quelle (`DEP-006`), navigation et barre mobile avec icônes `lucide-react`.
+3. **Page nationale + cadre applicatif. FAITE** (26/10/2026). Trois volets, aucune migration,
+   aucune route nouvelle :
+   - **Bandeau d'accueil (dégradé).** `PageNationale.tsx` seule — nouvelle classe `.nat-bandeau`,
+     PROPRE à cette page et non `.app-entete` : ce dernier est le bandeau FONCTIONNEL du cadre
+     applicatif, partagé par CHAQUE page interne une fois une entité choisie (nom, ville,
+     sélecteur) — y poser un dégradé colorerait de facto l'en-tête de tous les écrans dont
+     l'habillage visuel n'est pas dû avant `S4`-`S7`. Le texte (« eXalt Onboarding ») vit dans une
+     pastille OPAQUE (`.nat-bandeau-pastille`, `--rayon-pastille`) posée sur le dégradé, jamais à
+     même lui — `DEGRADE_MARQUE` (`packages/ui/jetons.ts`, `S1`) le dit explicitement : aucune
+     couleur de texte n'atteint AA sur toute l'étendue du dégradé, une vraie zone morte existant
+     vers t=0,75. Vérifié dans un vrai navigateur, HTTPS, 320/375/1024 px.
+   - **Carte de France.** `CarteDeFrance.tsx` **non touchée**, conformément à `DEP-006` (§3) :
+     aucune ligne modifiée.
+   - **Navigation et barre mobile avec icônes `lucide-react`.** Nouveau module partagé
+     `apps/web/src/iconesDeRubrique.tsx` (`IconeDeRubrique`), UNE SEULE source pour
+     `NavigationPrincipale.tsx` ET `BarreMobile.tsx` — deux correspondances écrites séparément
+     divergeraient au premier ajout (§7.27 de la passation, déjà la raison de l'extraction de
+     `rubriqueEstVisible` dans `routes.ts` au LOT 4 `T9`). Six icônes statiques (`Home`, `Network`,
+     `Users`, `Calendar`, `ClipboardCheck`, `Settings`), importées par leur nom depuis `lucide-react`
+     — pas `lucide-react/dynamic`, réservé à un champ texte libre (`icones.tsx`, LOT 6 `T10`) : les
+     six rubriques sont une liste FERMÉE connue à la compilation. Toutes `aria-hidden` : le libellé
+     texte porte déjà l'information, l'icône la rappelle seulement à l'œil (§13.2, « icônes
+     maîtrisées »). **Menu principal** : icône à côté du libellé (`display: inline-flex`, espace
+     horizontal disponible, `overflow-x: auto` déjà en place). **Barre mobile** : icône AU-DESSUS du
+     libellé (`flex-direction: column`), jamais à côté — la mesure du 23/08/2026 (`T5` du LOT 4)
+     calait QUATRE cellules à 320 px en LARGEUR, et elle reste valide : empiler consomme de la
+     HAUTEUR, que `min-height` laisse déjà croître pour « Trombinoscope » sur deux lignes, jamais la
+     largeur du texte. **Panneau « Plus »** : icône à côté du libellé pour les rubriques
+     secondaires, et un `MoreHorizontal` ajouté sur le bouton « Plus » lui-même (pas une rubrique de
+     `RUBRIQUES`, donc pas `IconeDeRubrique`). Une seule règle de taille partagée,
+     `.app-rubrique-icone` (`color: currentColor` — lucide-react pose `stroke="currentColor"` par
+     défaut, donc l'icône suit la couleur du lien dans tous ses états sans règle de couleur
+     supplémentaire). Vérifié dans un vrai navigateur à 320, 375 et 1024 px : aucun débordement,
+     aucune troisième ligne de libellé.
+
+   **Zéro régression** : les 313 tests Vitest du frontend passent (+7 nouveaux, décoratif de
+   l'icône et de la pastille prouvé explicitement — un `<svg aria-hidden="true">` par lien,
+   `textContent` inchangé). `make cadre-check` (25 contrôles), `make icloud-verify` et
+   `uv run mypy`/`tsc --noEmit`/ESLint/Prettier verts. `make check` complet buté sur 78 échecs
+   **environnementaux** `pytest` (jeu de démonstration du LOT 2 chargé sur cette machine, CLAUDE.md
+   §11, aucun rapport avec ce travail — exclusivement frontend, zéro fichier Python touché, `make
+   code-check` confirme les 166 fichiers de l'API identiques au dépôt). Aller-retour réel effectué
+   après `make code-refresh`/`make apercu` : lien magique administrateur réel, page nationale et une
+   entité consultées à travers Caddy en HTTPS, bandeau et icônes vus à 320/375/1024 px, décor
+   nettoyé par `make apercu-fin`.
+
+   **Un nettoyage non lié à ce travail, fait en chemin** : 137 copies de conflit iCloud (classe
+   `ROAD-RSK-026`/`ECART-038`, §7.1/§7.34 de la passation), toutes git-ignorées et vérifiées
+   byte-identiques à leur original avant suppression (`make icloud-verify` l'a confirmé dans les
+   deux sens). Une seule, `packages/ui/src/index.ts`, était un FICHIER SUIVI reverté localement à
+   son état `S1` (avant l'export d'`Onglets` par `S2`) — restaurée par `git checkout` avant de
+   commencer `S3`.
 4. **Page entité.** Généraliser `Carte` aux trois blocs d'information, badges pour les compteurs,
    vérifier le carrousel déjà en place.
 5. **Framework, cercle, bureau.** Appliquer `Carte`/`Badge` (actuellement absents de ces trois
