@@ -21,9 +21,23 @@
  *   Les responsables sont un ensemble BORNE par le §8.4, jamais une population :
  *   le §18.2 regit les populations, et en paginer trois inventerait un parametre
  *   que le cahier ne demande pas (§6.5). Meme raisonnement que `bureaux.py`.
+ *
+ * CHANTIER FRONT, S5 (`DEC-672`) : `CARTE`, ICONE DE BUREAU
+ *
+ *   **Mesure avant tout code** : `Badge` servait deja l'etat publie/brouillon
+ *   depuis `T9` du LOT 6 — seul `Carte` manquait ici, a la difference de
+ *   `PageFramework`/`PageCercle` ou les deux etaient absents. Deux `Carte`
+ *   (identite, responsables) remplacent le `<article>`/`<header>` ecrits a la
+ *   main. Une icone decorative (`Building2`, `lucide-react`, `aria-hidden`)
+ *   rejoint le badge d'etat — aucun code de bureau (BDS/BDE/BDG…) n'etant
+ *   ferme (`test_bureaux.py`, « entierement configurables »), une icone PAR
+ *   TYPE de bureau est hors de portee : une seule icone generique marque la
+ *   ressource, jamais une seconde source d'information (§13.2, « icones
+ *   maitrisees »).
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { Building2 } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
 import { lireLeBureau } from '../api/organisation';
@@ -35,7 +49,7 @@ import {
   type PageDuBureau,
   respecteLaBorneDuHuitQuatre,
 } from '@onboarding/contracts';
-import { Alerte, Badge } from '@onboarding/ui';
+import { Alerte, Badge, Carte } from '@onboarding/ui';
 
 type Etat =
   | { readonly phase: 'chargement' }
@@ -116,20 +130,20 @@ export function PageBureau(): JSX.Element {
   const conforme = respecteLaBorneDuHuitQuatre(b);
 
   return (
-    <article className="bureau">
-      <header className="bureau-entete">
-        <h2 className="bureau-nom">{b.nom}</h2>
-        <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+    <div className="bureau">
+      <Carte titre={b.nom}>
+        <div className="bureau-entete-meta">
+          <Building2 className="icone-bureau" aria-hidden="true" size={20} />
+          <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+        </div>
         {b.description === null ? null : <p className="bureau-description">{b.description}</p>}
-      </header>
+        <dl className="bureau-champs">
+          <dt>Localisation</dt>
+          <dd>{b.localisation ?? 'Non renseignee'}</dd>
+        </dl>
+      </Carte>
 
-      <dl className="bureau-champs">
-        <dt>Localisation</dt>
-        <dd>{b.localisation ?? 'Non renseignee'}</dd>
-      </dl>
-
-      <section className="bureau-responsables">
-        <h3>Responsables ({b.nombreDeResponsables})</h3>
+      <Carte titre={`Responsables (${String(b.nombreDeResponsables)})`}>
         {!conforme ? (
           //  **RAPPORTE, PAS BLOQUE.** Ce bureau est publie et sa base ne respecte
           //  pas « un a trois » — le declencheur qui le garantira est `T7`, deja
@@ -152,9 +166,9 @@ export function PageBureau(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
       {retour}
-    </article>
+    </div>
   );
 }

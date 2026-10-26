@@ -204,3 +204,53 @@ describe('la page Framework a l’ecran', () => {
     });
   });
 });
+
+describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () => {
+  it('les trois familles sont des `Carte` — trois regions nommees', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Responsabilites' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Cercles' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Bureaux' })).toBeTruthy();
+  });
+
+  it('les compteurs de membres et de responsables sont des `Badge` reels, pas de la prose', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    //  Data : 3 membres actifs. Shield : 0 -- le couple du §7.42, applique au
+    //  compteur plutot qu'a la couleur : la forme zero doit rester un vrai badge.
+    expect(screen.getByText('3 membres').closest('.ex-badge')).not.toBeNull();
+    expect(screen.getByText('0 membre').closest('.ex-badge')).not.toBeNull();
+    //  Siege : zero responsable.
+    expect(screen.getByText('0 responsable').closest('.ex-badge')).not.toBeNull();
+  });
+
+  it('un bureau porte une icone DECORATIVE — cahier §13.2, « icones maitrisees »', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    const icone = screen.getByText('Siege').closest('a')?.querySelector('svg');
+    expect(icone).toBeTruthy();
+    expect(icone?.getAttribute('aria-hidden')).toBe('true');
+    //  Un cercle ne porte PAS cette icone : sa bordure coloree est deja sa
+    //  propre marque visuelle, une seconde n'ajouterait aucune information.
+    expect(screen.getByText('Data').closest('a')?.querySelector('svg')).toBeNull();
+  });
+});

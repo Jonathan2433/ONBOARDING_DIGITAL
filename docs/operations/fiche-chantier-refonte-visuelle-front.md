@@ -6,8 +6,8 @@ de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
 25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
-cadre applicatif) et `S4` (page entité) **FAITES**.
-**Sous-étape suivante :** `S5` — Framework, cercle, bureau
+cadre applicatif), `S4` (page entité) et `S5` (Framework, cercle, bureau) **FAITES**.
+**Sous-étape suivante :** `S6` — Trombinoscope et profil
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -224,9 +224,46 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    d'arrivées/événements suit le `total` et non la page affichée, et disparaît avec la section vide).
    `make cadre-check` (25 contrôles), `make icloud-verify`, `uv run mypy`/`tsc --noEmit`/ESLint/
    Prettier verts.
-5. **Framework, cercle, bureau.** Appliquer `Carte`/`Badge` (actuellement absents de ces trois
-   écrans), icônes de bureau (`lucide-react`, pas d'emoji brut — accessibilité, cohérence avec le
-   reste du design system).
+5. **Framework, cercle, bureau. FAITE** (26/10/2026). Trois fichiers, `PageFramework.tsx`,
+   `PageCercle.tsx`, `PageBureau.tsx` — **mesuré avant tout code** : `Carte` et `Badge` n'étaient
+   employés dans AUCUN des trois ; `PageBureau.tsx` faisait exception partielle, `Badge` y servait
+   déjà l'état publié/brouillon depuis `T9` du LOT 6, seul `Carte` manquait.
+   - **`PageFramework.tsx`** : les trois sections (Responsabilités, Cercles, Bureaux) deviennent
+     des `<Carte titre="…">` — la région nommée et le `<h2>` que `Carte` fournit déjà remplacent le
+     `<section aria-labelledby>`/`<h2 id>` écrits à la main. Les deux compteurs de prose (membres
+     actifs d'un cercle, responsables d'un bureau) deviennent des `Badge`.
+   - **`PageCercle.tsx`** : deux `Carte` (identité, membres) remplacent l'`<article>`/`<dl>`/`<ul>`
+     écrits à la main ; le type d'appartenance (« Principal »/« Secondaire ») devient un `Badge`.
+   - **`PageBureau.tsx`** : deux `Carte` (identité, responsables) remplacent l'`<article>`/
+     `<header>` ; le `Badge` d'état existant est conservé tel quel.
+   - **Icône de bureau** (`Building2`, `lucide-react`, décorative — `aria-hidden`) : un cercle
+     garde sa bordure de couleur comme marque visuelle distinctive (déjà posée au LOT 6), un
+     bureau n'en avait AUCUNE — l'icône rejoint le badge d'état, dans `PageFramework.tsx` (carte de
+     la liste) et `PageBureau.tsx` (en-tête). Aucune icône PAR TYPE de bureau (BDS/BDE/BDG…) :
+     `test_bureaux.py` l'affirme déjà, « entièrement configurables », donc un type n'est fermé
+     nulle part — une icône générique marque la ressource, jamais une seconde source d'information
+     sur un champ texte libre (§13.2, « icônes maîtrisées »).
+   - **Défaut latent trouvé en mesurant, corrigé au passage, hors du périmètre demandé mais
+     directement sur le fichier touché** : `Carte` n'accepte aucune `className`
+     (`ProprietesCarte`, `packages/ui`), donc la variable de couleur `--cercle-couleur` ne peut
+     plus vivre sur la carte elle-même — elle revient sur un conteneur dédié,
+     `.cercle-identite`, qui la déclare ET la consomme, comme `.framework-carte-cercle`.
+     **L'ancienne règle (`.cercle-entete`) déclarait déjà `--cercle-couleur`, mais sur un élément
+     DIFFÉRENT de celui qui recevait le style en ligne** (le `<header>` enfant, quand l'inline
+     visait l'`<article>` parent) : une règle qui cible un élément gagne toujours sur un style posé
+     EN LIGNE par un ANCÊTRE pour la même propriété — la bordure colorée d'un cercle ne pouvait
+     donc JAMAIS s'afficher, et aucun test ne l'éprouvait. Vérifié réellement : la bordure se
+     colore désormais (bleu/rose/jaune selon le jeton) sur la page Framework ET sur la page de
+     détail du cercle.
+   **Zéro régression** : 326 tests Vitest du frontend (+8, dont un témoin dédié au défaut corrigé —
+   la propriété `--cercle-couleur` est désormais lue avec une valeur non vide quand un jeton
+   résout). `make cadre-check` (25 contrôles, qui a d'abord ÉCHOUÉ une fois sur une variable
+   utilisée sans être déclarée par aucune feuille chargée — corrigé en déclarant
+   `--cercle-couleur` sur `.cercle-identite`, exactement le motif que le contrôle exige pour
+   `--framework-cercle-couleur`), `make icloud-verify`, `uv run mypy`/`tsc --noEmit`/ESLint/
+   Prettier verts. Aller-retour réel effectué après `make code-refresh`/`make apercu` : Framework,
+   un cercle et un bureau de l'entité de démonstration vus à travers Caddy en HTTPS, bordures
+   colorées et icône de bureau confirmées à l'écran, décor nettoyé par `make apercu-fin`.
 6. **Trombinoscope et profil.** Cartes, badges de statut/cercle, vérifier que `CarteRetournable`
    est le bon véhicule pour la richesse voulue.
 7. **Événements et mon onboarding.** Cohérence avec les carrousels déjà posés au LOT 8.

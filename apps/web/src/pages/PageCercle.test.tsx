@@ -116,3 +116,48 @@ describe('la page detaillee d’un cercle a l’ecran', () => {
     });
   });
 });
+
+describe('chantier front, S5 : `Carte`/`Badge` (`DEC-672`)', () => {
+  it('l’identite et les membres sont des `Carte` — deux regions nommees', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle())),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Data' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Membres (1)' })).toBeTruthy();
+  });
+
+  it('le type d’appartenance est un `Badge` reel, pas un simple texte', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle())),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Principal')).toBeTruthy();
+    });
+    expect(screen.getByText('Principal').closest('.ex-badge')).not.toBeNull();
+  });
+
+  it('LE JETON DE COULEUR ATTEINT REELLEMENT LA BORDURE — defaut latent corrige, S5', async () => {
+    //  Avant S5, la regle `.cercle-entete` redeclarait `--cercle-couleur` sur
+    //  l'element meme qui posait la bordure, et la valeur en ligne du jeton
+    //  n'etait donc JAMAIS lue -- aucun test ne l'eprouvait. Celui-ci lit la
+    //  valeur de la propriete personnalisee la ou elle est desormais ecrite.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle())),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    const conteneur = screen.getByText('Data').closest('.cercle-identite');
+    expect(conteneur).not.toBeNull();
+    expect((conteneur as HTMLElement).style.getPropertyValue('--cercle-couleur')).not.toBe('');
+  });
+});

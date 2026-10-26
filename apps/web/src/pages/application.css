@@ -1114,15 +1114,23 @@
 
 /* ==========================================================================
    La page Framework — LOT 6, `T9`, story `MVP-L06-US001`
+   Chantier front, S5 (`DEC-672`) : les trois sections sont des `Carte`,
+   espacees comme `.accueil` plutot que par la marge d'un `<section>` ecrit
+   a la main.
    ========================================================================== */
 
-.framework-section {
-  margin-bottom: var(--espace-l);
+.framework {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
 }
 
-.framework-section h2 {
-  margin: 0 0 var(--espace-m);
-  font-size: var(--taille-l);
+/* L'entete d'une carte de bureau — icone decorative puis titre, chantier
+   front S5. Meme recette que `.bureau-entete-meta`, plus bas. */
+.framework-carte-entete {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
 }
 
 /* La grille est responsive SANS point de rupture ecrit, comme `.trombi-grille`. */
@@ -1184,6 +1192,22 @@
   color: var(--encre-douce);
 }
 
+/* `.framework-carte` empile ses enfants en colonne avec `align-items: stretch`
+   (valeur initiale) : sans ceci, le `Badge` — `inline-flex` mais un enfant
+   flex comme un autre — s'etirerait sur toute la largeur de la carte au lieu
+   de rester une pastille compacte. */
+.framework-carte .ex-badge {
+  align-self: flex-start;
+}
+
+/* L'icone decorative d'un bureau — chantier front S5, `PageFramework` ET
+   `PageBureau` (§7.27 : une seule regle de taille/couleur, comme
+   `.app-rubrique-icone` pour la navigation). */
+.icone-bureau {
+  flex-shrink: 0;
+  color: var(--encre-douce);
+}
+
 /* ==========================================================================
    La page detaillee d'un cercle — LOT 6, `T9`, story `MVP-L06-US002`
    ========================================================================== */
@@ -1194,17 +1218,26 @@
   gap: var(--espace-l);
 }
 
-/* Meme motif que `.framework-carte-cercle` : declaree ici avec sa valeur
-   neutre, surchargee en ligne par le composant quand un jeton resout. */
-.cercle-entete {
+/* **CHANTIER FRONT, S5 (`DEC-672`) — DEFAUT LATENT TROUVE ET CORRIGE EN
+   MESURANT, PAS EN CONSTRUISANT.** `Carte` ne porte jamais de `className`
+   (`ProprietesCarte`), donc la variable de couleur ne peut plus vivre sur la
+   carte elle-meme : elle revient sur ce conteneur, au MEME endroit que
+   `PageCercle.tsx` l'ECRIT en ligne — exactement le motif de
+   `.framework-carte-cercle`. **`--cercle-couleur` EST DECLAREE ICI, ET
+   `cadre-check` L'EXIGE** (meme motif que `--framework-cercle-couleur`) : un
+   repli `var(--x, repli)` SANS declaration cacherait l'absence de regle au
+   lieu de la signaler. L'ANCIENNE regle (`.cercle-entete`) declarait DEJA
+   `--cercle-couleur: var(--trait)`, mais sur un ELEMENT DIFFERENT de celui
+   qui recevait l'inline (le `<header>` enfant, quand l'inline visait
+   l'`<article>` parent) : une regle qui cible un element GAGNE toujours sur
+   un style pose EN LIGNE par un ANCETRE pour la meme propriete — la bordure
+   coloree ne s'affichait donc JAMAIS, pour aucun cercle, et aucun test ne
+   l'eprouvait. Desormais la regle ET l'inline ciblent le MEME element :
+   l'inline gagne, comme pour `.framework-carte-cercle`. */
+.cercle-identite {
   --cercle-couleur: var(--trait);
 
-  padding: var(--espace-m);
   border-left: 4px solid var(--cercle-couleur);
-}
-
-.cercle-nom {
-  margin: 0 0 var(--espace-xs);
 }
 
 .cercle-description {
@@ -1231,15 +1264,11 @@
 
 .cercle-liste-membres li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--espace-s);
   padding: var(--espace-xs) 0;
   border-bottom: 1px solid var(--trait);
-}
-
-.cercle-membre-type {
-  font-size: var(--taille-s);
-  color: var(--encre-douce);
 }
 
 .cercle-pagination {
@@ -1288,19 +1317,17 @@
   gap: var(--espace-l);
 }
 
-.bureau-entete {
+/* L'icone de bureau et le badge d'etat, juste sous le titre que `Carte`
+   affiche deja — chantier front S5. Meme recette que
+   `.framework-carte-entete`. */
+.bureau-entete-meta {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--espace-s);
-}
-
-.bureau-nom {
-  margin: 0;
+  align-items: center;
+  gap: var(--espace-xs);
+  margin-bottom: var(--espace-s);
 }
 
 .bureau-description {
-  flex-basis: 100%;
   margin: 0;
   color: var(--encre-douce);
 }

@@ -132,3 +132,32 @@ describe('la page detaillee d’un bureau a l’ecran', () => {
     expect(screen.getByText('Malo X')).toBeTruthy();
   });
 });
+
+describe('chantier front, S5 : `Carte`/icone de bureau (`DEC-672`)', () => {
+  it('l’identite et les responsables sont des `Carte` — deux regions nommees', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeBureau())),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Siege' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Responsables (1)' })).toBeTruthy();
+  });
+
+  it('porte une icone DECORATIVE, aux cotes du badge d’etat — cahier §13.2', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeBureau())),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    const icone = screen.getByRole('region', { name: 'Siege' }).querySelector('svg');
+    expect(icone).toBeTruthy();
+    expect(icone?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
