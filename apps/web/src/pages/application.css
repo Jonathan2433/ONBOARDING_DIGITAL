@@ -1902,3 +1902,120 @@
   padding: var(--espace-xs) 0 0;
   margin-top: 0;
 }
+
+/* ==========================================================================
+   « Mon onboarding » — LOT 7, `T13`. Chantier front, S7 (`DEC-672`) :
+   DEFAUT LATENT TROUVE EN MESURANT — cet ecran n'avait AUCUNE regle propre
+   depuis sa creation, rendu en HTML entierement brut. Les recettes
+   ci-dessous reprennent TEXTUELLEMENT celles deja posees ailleurs
+   (`.profil-champs` pour les grilles dt/dd, `.liens-formulaire` pour les
+   champs de saisie, `.evenements-carte` pour la carte de tache) — rien
+   n'est invente, §6.4.
+   ========================================================================== */
+
+.onboarding-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.onboarding-chargement {
+  color: var(--encre-douce);
+}
+
+.onboarding-fiche-etat {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  margin: 0 0 var(--espace-s);
+}
+
+.onboarding-fiche-organisation,
+.onboarding-fiche-lecture {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--espace-xs) var(--espace-l);
+  margin: 0 0 var(--espace-m);
+}
+
+.onboarding-fiche-organisation dt,
+.onboarding-fiche-lecture dt {
+  color: var(--encre-douce);
+}
+
+.onboarding-fiche-organisation dd,
+.onboarding-fiche-lecture dd {
+  margin: 0;
+}
+
+.onboarding-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  margin: 0 0 var(--espace-m);
+}
+
+.onboarding-champ textarea,
+.onboarding-champ input {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.onboarding-fiche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+.onboarding-progression {
+  margin: 0 0 var(--espace-s);
+  color: var(--encre-douce);
+}
+
+.onboarding-liste-des-taches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Meme recette que `.evenements-carte` (LOT 8, `T9`) : une tache est une
+   carte miniature au meme titre qu'un evenement — cohérence voulue par `S7`. */
+.onboarding-tache {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.onboarding-tache-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-s);
+}
+
+.onboarding-tache-titre {
+  font-weight: 600;
+}
+
+.onboarding-tache-description,
+.onboarding-tache-echeance {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+/* Un ecran etroit empile les definitions plutot que de les serrer — meme
+   motif que `.profil-champs`, §13.4. */
+@media (max-width: 40rem) {
+  .onboarding-fiche-organisation,
+  .onboarding-fiche-lecture {
+    grid-template-columns: 1fr;
+  }
+}

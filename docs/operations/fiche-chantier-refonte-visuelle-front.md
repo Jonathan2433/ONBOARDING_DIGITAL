@@ -6,9 +6,9 @@ de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
 25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
-cadre applicatif), `S4` (page entité), `S5` (Framework, cercle, bureau) et `S6` (trombinoscope et
-profil) **FAITES**.
-**Sous-étape suivante :** `S7` — Événements et mon onboarding
+cadre applicatif), `S4` (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et
+profil) et `S7` (événements et mon onboarding) **FAITES**.
+**Sous-étape suivante :** `S8` — Recette visuelle finale
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -318,7 +318,48 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    profil de l'entité de démonstration (`BORDEA00`, 76 collaborateurs) vus à travers Caddy en HTTPS,
    à 1280 px et à 375 px — les cartes colorées, le badge de statut et les six régions nommées
    confirmés à l'écran, aucun débordement à 375 px, décor nettoyé par `make apercu-fin`.
-7. **Événements et mon onboarding.** Cohérence avec les carrousels déjà posés au LOT 8.
+7. **Événements et mon onboarding. FAITE** (27/10/2026). Deux fichiers, `PageEvenements.tsx` et
+   `PageMonOnboarding.tsx` — **mesuré avant tout code** : `PageEvenements.tsx` employait déjà
+   `Badge` pour l'état annulé (LOT 8 `T9`), et `.evenements-carte` (CSS) était déjà identique,
+   trait pour trait, à `.accueil-evenements-carte` que `T12` du LOT 8 avait posée pour le
+   carrousel de la page entité — aucune divergence visuelle à corriger entre les deux. Ce qui
+   manquait était `Carte` elle-même : le panneau de chaque onglet restait un `<div>` nu, sans
+   l'ombre douce ni le fond qu'apporte `.ex-carte`.
+   - **`Carrousel` (LOT 8, `T12`) ne s'applique PAS à l'écran de liste complète**, et c'est la
+     vérification que demandait la fiche : il est réservé à une liste résumée et bornée
+     (`NOMBRE_MONTRE`, avec un lien « voir plus »), jamais à un écran qui porte sa propre
+     pagination serveur — en faire un carrousel aurait cassé la pagination par page
+     (`donnees.pages`) en la remplaçant par un défilement continu que l'API ne sait pas servir.
+     La « cohérence avec les carrousels » est donc visuelle (même recette de carte), pas
+     structurelle : le panneau de chaque onglet devient une `Carte` **sans titre** — un simple
+     `<div className="ex-carte">`, jamais une région — pour ne pas dupliquer le nom déjà porté
+     par le `tabpanel` d'`Onglets`.
+   - **`PageMonOnboarding.tsx` : défaut latent trouvé en mesurant, pas construit par cette
+     sous-étape.** `application.css` ne portait AUCUNE règle pour les classes `.onboarding-*` de
+     ce fichier depuis sa création au LOT 7 `T13` — l'écran rendait du HTML entièrement brut,
+     sans mise en page ni habillage d'aucune sorte. Les deux sections (fiche d'arrivée, parcours)
+     deviennent des `<Carte titre="…">` — mêmes `h2` frères qu'avant, aucune hiérarchie à
+     préserver ici (contrairement à `PageProfil` en `S6`, qui avait un `h2` englobant). L'état de
+     la fiche et l'état d'une tâche deviennent des `Badge`, selon la MÊME convention à quatre
+     tons (`neutre`/`ok`/`ko`/`marque`) déjà posée pour les événements
+     (`PageGestionDesEvenements.tsx`/`PageEditionEvenement.tsx`, hors périmètre mais même
+     idiome) plutôt qu'une nouvelle inventée ici. Le marqueur « Obligatoire » d'une tâche devient
+     aussi un `Badge`. La mise en page manquante reprend TEXTUELLEMENT les recettes déjà posées
+     ailleurs (`.profil-champs` pour les grilles dt/dd, `.liens-formulaire` pour les champs de
+     saisie, `.evenements-carte` pour la carte de tâche) — rien n'est inventé, §6.4.
+   **Zéro régression** : 335 tests Vitest du frontend (+4 : un au panneau des événements — le
+   panneau actif est une vraie `Carte` — et trois à « Mon onboarding » — les deux régions
+   nommées, l'état de la fiche en `Badge`, l'état et le marqueur « Obligatoire » d'une tâche en
+   `Badge`), `make cadre-check` (25 contrôles), `make icloud-verify`, `make sources-check`,
+   Ruff/Prettier/ESLint/mypy (276 fichiers)/`tsc --noEmit` (trois paquets) verts. `make check`
+   complet buté sur 78 échecs **environnementaux** `pytest` identiques au compte déjà documenté
+   à `S5`/`S6` (1 914 passés), aucun fichier Python touché. Aller-retour réel effectué après
+   `make code-refresh`/`make apercu` : un événement réel créé puis publié dans l'entité de
+   démonstration (`BORDEA00`), vu avec sa carte et son badge « Annulé » à travers Caddy en
+   HTTPS, à 1280 px et à 375 px, aucun débordement ; la fiche d'arrivée et le panneau « Mon
+   parcours » vus en direct pour un compte temporaire doté d'une appartenance réelle — les deux
+   comme de vraies `Carte`, l'état de la fiche comme un vrai `Badge` — décor nettoyé (événement,
+   rôle technique et appartenance retirés, `make apercu-fin`).
 8. **Recette visuelle.** Les cinq largeurs du §13.4 (320/390/768/1280/1920), contraste AA sur
    chaque nouvelle combinaison couleur/dégradé, `make ecrans-check`/`make web-check` rejoués,
    capture avant/après par écran.

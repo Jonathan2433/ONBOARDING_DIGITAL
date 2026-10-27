@@ -205,3 +205,23 @@ describe('les evenements a l’ecran', () => {
     });
   });
 });
+
+describe('chantier front, S7 : `Carte` généralisée au panneau (DEC-672)', () => {
+  it('le panneau de l’onglet actif est une vraie `Carte`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDesEvenements())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/evenements']}>
+        <Routes>
+          <Route path="/entites/:code/evenements" element={<PageEvenements />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Petit-dejeuner d’accueil')).toBeTruthy();
+    });
+    expect(container.querySelector('.ex-carte')).not.toBeNull();
+  });
+});
