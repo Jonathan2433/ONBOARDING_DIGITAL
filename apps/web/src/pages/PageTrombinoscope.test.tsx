@@ -200,8 +200,11 @@ describe('le trombinoscope a l’ecran', () => {
     fireEvent.click(faceDe('Ada Lovelace'));
     expect(screen.getByText('Data')).toBeTruthy();
     expect(screen.getByText('Ingenieure logicielle')).toBeTruthy();
-    //  Le statut est TRADUIT, et le client accole.
-    expect(screen.getByText(/En mission — Client Alpha/)).toBeTruthy();
+    //  Le statut est TRADUIT — depuis S6 (`DEC-672`), dans un `Badge` — et le
+    //  client accole en texte simple, a cote de lui. `{ selector: '.ex-badge' }`
+    //  ecarte l'option du meme nom dans le filtre « Statut ».
+    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+    expect(screen.getByText(/Client Alpha/)).toBeTruthy();
   });
 
   it.each([
@@ -374,6 +377,41 @@ describe('le trombinoscope a l’ecran', () => {
     expect((precedente as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('button', { name: 'Page suivante' })).toBeTruthy();
     expect(screen.getByText(/Page 1 sur 3/)).toBeTruthy();
+  });
+});
+
+describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le vehicule (`DEC-672`)', () => {
+  it('le statut du verso est un vrai `Badge`, pas du texte simple', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([ADA]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    });
+    fireEvent.click(faceDe('Ada Lovelace'));
+    //  **PORTEE AU VERSO** : le filtre « Statut » du formulaire porte la MEME
+    //  chaine dans une `<option>`, et un `getByText` nu y trouverait un second
+    //  candidat.
+    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+  });
+
+  it('la carte reste une `CarteRetournable` — le vehicule n’a pas change', async () => {
+    //  **VERIFICATION, PAS CONSTRUCTION.** `Carte` n'accepte ni `className` ni
+    //  `style` : elle ne pourrait pas porter `--carte-cercle`, et n'offre aucun
+    //  recto/verso. `CarteRetournable` reste donc le bon vehicule pour la
+    //  richesse de cet ecran (§13.2, `S6`).
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([ADA]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    });
+    const carte = faceDe('Ada Lovelace').closest('article');
+    expect(carte?.classList.contains('ui-carte-retournable')).toBe(true);
   });
 });
 

@@ -50,6 +50,31 @@
  *   deviendrait close en decembre. Les segments sont donc lus dans la CHAINE, ce
  *   qui est exact et ne depend d'aucun ICU -- `toLocaleDateString` varie avec la
  *   version de Node, et un test qui en dependrait mesurerait la machine.
+ *
+ * CHANTIER FRONT, S6 (`DEC-672`) : `CARTE`/`BADGE`
+ *
+ *   **Mesure avant tout code** : aucun des cinq blocs (identite, informations
+ *   professionnelles, cercles, responsabilites, presentation, historique) ne
+ *   vivait dans une `Carte` -- chacun etait une `<section className="profil-bloc">`
+ *   ecrite a la main. Le statut de l'en-tete et le type de responsabilite
+ *   portaient DEJA un `Badge` (LOT 5 `T11`) ; seul le type d'appartenance d'un
+ *   cercle (« Principal »/« Secondaire ») restait un `<span>` de texte simple --
+ *   l'exact pendant de ce que `S5` a corrige sur `PageCercle.tsx` pour la meme
+ *   notion, et traite ici de la meme facon (`Badge ton="marque"` pour Principal,
+ *   `ton="neutre"` pour Secondaire).
+ *
+ *   **Le niveau de titre est explicite, et ce n'est pas un detail.** L'identite
+ *   (le nom de la personne) garde le niveau par defaut de `Carte`, `h2` : c'est
+ *   le titre du document. Les cinq blocs qui suivent passent `niveauTitre="h3"`
+ *   -- ils etaient deja des `<h3>`, SOUS ce `h2`, et laisser `Carte` imposer son
+ *   defaut aurait APLATI une hierarchie correcte en sept `h2` freres. `Carte`
+ *   expose `niveauTitre` precisement pour ce cas, documente dans son propre
+ *   en-tete (« une carte imbriquee dans une section plus profonde »).
+ *
+ *   `PanneauDuCycleDeVie` partageait `.profil-bloc` par un commentaire explicite
+ *   (« Le bloc reprend `.profil-bloc` ») : il devient lui aussi une `Carte`, pour
+ *   la meme raison -- sans quoi la derniere section de la page resterait seule
+ *   dans l'ancien habillage, a cote de cinq `Carte`.
  */
 import type { JSX, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -70,7 +95,7 @@ import {
   type HistoriqueOrganisationnel,
   peutGererLeCycleDeVie,
 } from '@onboarding/contracts';
-import { Alerte, Badge } from '@onboarding/ui';
+import { Alerte, Badge, Carte } from '@onboarding/ui';
 
 /** Les douze mois, en toutes lettres. Aucune dependance a l'ICU de la machine. */
 const MOIS: readonly string[] = [
@@ -161,7 +186,7 @@ function Cercle({ cercle, nature }: { cercle: CercleDuProfil; nature: string }):
       style={couleur === undefined ? undefined : ({ '--profil-cercle': couleur } as never)}
     >
       <span className="profil-cercle-nom">{cercle.nom}</span>
-      <span className="profil-cercle-role">{nature}</span>
+      <Badge ton={nature === 'Principal' ? 'marque' : 'neutre'}>{nature}</Badge>
     </li>
   );
 }
@@ -368,27 +393,28 @@ export function PageProfil(): JSX.Element {
 
   return (
     <article className="profil">
-      <header className="profil-entete">
-        {/*
-          **L'AVATAR NEUTRE EST UN `<img>` ABSENT, PAS UNE IMAGE CASSEE** — §21.2,
-          et les cinq causes d'absence sont indistinguables a dessein. L'alternative
-          textuelle est vide : le nom est juste a cote, et un `alt` qui le
-          repeterait le ferait annoncer deux fois.
-        */}
-        {p.photo === null ? (
-          <span aria-hidden="true" className="profil-avatar">
-            {(p.nomPrefere ?? p.prenom).slice(0, 1)}
-            {p.nom.slice(0, 1)}
-          </span>
-        ) : (
-          <img alt="" className="profil-photo" src={p.photo} />
-        )}
-        <div className="profil-titre">
-          <h2>{nom}</h2>
-          <p className="profil-metier">{p.metier ?? 'Metier non renseigne'}</p>
-          {statut === null ? null : <Badge ton="marque">{statut}</Badge>}
+      <Carte titre={nom}>
+        <div className="profil-identite">
+          {/*
+            **L'AVATAR NEUTRE EST UN `<img>` ABSENT, PAS UNE IMAGE CASSEE** — §21.2,
+            et les cinq causes d'absence sont indistinguables a dessein. L'alternative
+            textuelle est vide : le nom est juste a cote, et un `alt` qui le
+            repeterait le ferait annoncer deux fois.
+          */}
+          {p.photo === null ? (
+            <span aria-hidden="true" className="profil-avatar">
+              {(p.nomPrefere ?? p.prenom).slice(0, 1)}
+              {p.nom.slice(0, 1)}
+            </span>
+          ) : (
+            <img alt="" className="profil-photo" src={p.photo} />
+          )}
+          <div className="profil-titre">
+            <p className="profil-metier">{p.metier ?? 'Metier non renseigne'}</p>
+            {statut === null ? null : <Badge ton="marque">{statut}</Badge>}
+          </div>
         </div>
-      </header>
+      </Carte>
 
       {charge.archive ? (
         //  **DIRE QU'IL EST ARCHIVE AVANT TOUT LE RESTE.** Sans ce bandeau, la
@@ -402,8 +428,7 @@ export function PageProfil(): JSX.Element {
         </Alerte>
       ) : null}
 
-      <section className="profil-bloc">
-        <h3>Informations professionnelles</h3>
+      <Carte niveauTitre="h3" titre="Informations professionnelles">
         {/*
           **NI LE METIER NI LE STATUT NE SONT REPETES ICI**, et c'est un test qui
           l'a dit : il en comptait TROIS occurrences a l'ecran -- l'en-tete, ce
@@ -417,10 +442,9 @@ export function PageProfil(): JSX.Element {
           <Champ nom="DSM">{p.dsm}</Champ>
           <Champ nom="Date d’arrivee">{dateComplete(p.dateArrivee)}</Champ>
         </dl>
-      </section>
+      </Carte>
 
-      <section className="profil-bloc">
-        <h3>Cercles</h3>
+      <Carte niveauTitre="h3" titre="Cercles">
         {p.cerclePrincipal === null && p.cerclesSecondaires.length === 0 ? (
           <p className="profil-vide">Aucun cercle.</p>
         ) : (
@@ -433,10 +457,9 @@ export function PageProfil(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
-      <section className="profil-bloc">
-        <h3>Responsabilites Framework</h3>
+      <Carte niveauTitre="h3" titre="Responsabilites Framework">
         {p.responsabilites.length === 0 ? (
           <p className="profil-vide">Aucune responsabilite.</p>
         ) : (
@@ -453,18 +476,16 @@ export function PageProfil(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
-      <section className="profil-bloc">
-        <h3>Presentation</h3>
+      <Carte niveauTitre="h3" titre="Presentation">
         <dl className="profil-champs">
           <Champ nom="Presentation courte">{p.presentation}</Champ>
           <Champ nom="Fun fact">{p.funFact}</Champ>
         </dl>
-      </section>
+      </Carte>
 
-      <section className="profil-bloc profil-histoire">
-        <h3>Historique organisationnel</h3>
+      <Carte niveauTitre="h3" titre="Historique organisationnel">
         {histoire.statut === 200 && histoire.corps !== null ? (
           //  **LES AXES SONT DERIVES DU CONTRAT, PAS ECRITS ICI** : un sixieme axe
           //  ajoute cote API apparaitrait sans qu'on y pense -- §7.27.
@@ -487,7 +508,7 @@ export function PageProfil(): JSX.Element {
                 : 'L’historique n’a pas pu etre charge.'}
           </Alerte>
         )}
-      </section>
+      </Carte>
 
       <PanneauDuCycleDeVie
         appartenance={p.id}

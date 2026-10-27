@@ -6,8 +6,9 @@ de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
 25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
-cadre applicatif), `S4` (page entité) et `S5` (Framework, cercle, bureau) **FAITES**.
-**Sous-étape suivante :** `S6` — Trombinoscope et profil
+cadre applicatif), `S4` (page entité), `S5` (Framework, cercle, bureau) et `S6` (trombinoscope et
+profil) **FAITES**.
+**Sous-étape suivante :** `S7` — Événements et mon onboarding
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -264,8 +265,59 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    Prettier verts. Aller-retour réel effectué après `make code-refresh`/`make apercu` : Framework,
    un cercle et un bureau de l'entité de démonstration vus à travers Caddy en HTTPS, bordures
    colorées et icône de bureau confirmées à l'écran, décor nettoyé par `make apercu-fin`.
-6. **Trombinoscope et profil.** Cartes, badges de statut/cercle, vérifier que `CarteRetournable`
-   est le bon véhicule pour la richesse voulue.
+6. **Trombinoscope et profil. FAITE** (27/10/2026). Deux fichiers, `PageTrombinoscope.tsx` et
+   `PageProfil.tsx` (plus `PanneauDuCycleDeVie.tsx`, partagé par le second) — **mesuré avant tout
+   code** : le trombinoscope employait déjà `CarteRetournable` (LOT 5 `T10`) pour chaque
+   collaborateur, et le statut de l'en-tête du profil ainsi que le type de responsabilité portaient
+   déjà un `Badge` (LOT 5 `T11`) ; aucun des deux écrans n'employait `Carte`, et le type
+   d'appartenance d'un cercle (« Principal »/« Secondaire ») sur le profil restait un `<span>` de
+   texte simple, exact pendant de ce que `S5` avait déjà corrigé sur `PageCercle.tsx` pour la même
+   notion.
+   - **`PageTrombinoscope.tsx`** : le statut du verso devient un `Badge` — il rejoint celui de la
+     fiche profil, les deux écrans disant désormais la même chose de la même façon. Aucune `Carte`
+     n'y est introduite : la grille de collaborateurs reste une liste de `CarteRetournable`, comme
+     `PageFramework.tsx` garde ses propres cartes de liste (`Link`) hors `Carte` à `S5`.
+   - **`PageProfil.tsx`** : l'identité (avatar, métier, statut) et les cinq blocs (Informations
+     professionnelles, Cercles, Responsabilités Framework, Présentation, Historique
+     organisationnel) deviennent des `Carte` — remplaçant le `<header>`/`<section
+     className="profil-bloc">` écrits à la main. Le type d'appartenance d'un cercle devient un
+     `Badge` (`ton="marque"` pour Principal, `ton="neutre"` pour Secondaire — même convention que
+     `S5`). `PanneauDuCycleDeVie.tsx`, qui partageait `.profil-bloc` par un commentaire explicite,
+     devient lui aussi une `Carte` — sinon la dernière section de la page serait restée seule dans
+     l'ancien habillage.
+   - **Le niveau de titre est explicite, pas le défaut.** L'identité garde `h2` (titre du
+     document), les cinq blocs et le panneau de cycle de vie passent `niveauTitre="h3"` : ils
+     étaient déjà des `<h3>` SOUS ce `h2`, et laisser `Carte` imposer son défaut aurait **aplati**
+     une hiérarchie correcte en sept `h2` frères — exactement le cas que `niveauTitre` existe pour
+     couvrir, documenté dans l'en-tête même de `Carte` (« une carte imbriquée dans une section plus
+     profonde »). `PageCercle.tsx`/`PageFramework.tsx` (`S5`) n'avaient pas ce problème : leurs
+     sections étaient déjà des `h2` frères avant la migration.
+   - **Vérification demandée par la fiche : `CarteRetournable` reste le bon véhicule.**
+     Documenté dans l'en-tête de `PageTrombinoscope.tsx` et prouvé par un test dédié : `Carte`
+     n'accepte ni `className` ni `style` (`ProprietesCarte` les exclut explicitement) — elle ne
+     pourrait pas porter `--carte-cercle` (§10.1) et n'offre aucun recto/verso, la richesse que le
+     critère de `MVP-L05-US003` exige. `CarteRetournable` fournit déjà les deux sur un `<button>`
+     natif (la propriété STRUCTURELLE du §7.35 de la passation) : c'est le bon véhicule, et rien du
+     §13.2 ne s'ajoute à une carte dont le contenu est déjà une photo et un nom.
+   - **Deux classes CSS devenues mortes, retirées plutôt que laissées traîner** : `.profil-entete`
+     et `.profil-bloc`/`.profil-bloc h3` (remplacées par `.ex-carte`/`.ex-carte__titre`, qui
+     ajoutent au passage l'ombre douce du cahier §13.2 que `.profil-bloc` n'avait jamais portée) ;
+     `.profil-cercle-role` (remplacée par le `Badge`). `.profil-identite` (nouvelle) ne garde que la
+     mise en page interne — avatar à côté du bloc métier/statut — que `Carte` ne connaît pas.
+     `.profil-cercle` passe de `align-items: baseline` à `center`, même motif que
+     `.cercle-liste-membres li` à `S5` : le second enfant est désormais un `Badge`, pas du texte
+     dont la ligne de base s'alignerait.
+   **Zéro régression** : 331 tests Vitest du frontend (+5 : deux au trombinoscope — le `Badge` de
+   statut, la vérification du véhicule — et trois au profil — les six régions nommées, le `Badge`
+   du type d'appartenance, la région du panneau de cycle de vie), `make cadre-check` (25 contrôles,
+   dont « les 8 composants exportés sont testés et employés » — `Carte`/`Badge`/`CarteRetournable`
+   confirmés), `make icloud-verify`, `make sources-check`, Ruff/Prettier/ESLint/mypy (276 fichiers)/
+   `tsc --noEmit` (trois paquets) verts. `make check` complet buté sur 78 échecs **environnementaux**
+   `pytest` identiques au compte déjà documenté à `S5` (1 914 passés), aucun fichier Python touché.
+   Aller-retour réel effectué après `make code-refresh`/`make apercu` : trombinoscope et une fiche
+   profil de l'entité de démonstration (`BORDEA00`, 76 collaborateurs) vus à travers Caddy en HTTPS,
+   à 1280 px et à 375 px — les cartes colorées, le badge de statut et les six régions nommées
+   confirmés à l'écran, aucun débordement à 375 px, décor nettoyé par `make apercu-fin`.
 7. **Événements et mon onboarding.** Cohérence avec les carrousels déjà posés au LOT 8.
 8. **Recette visuelle.** Les cinq largeurs du §13.4 (320/390/768/1280/1920), contraste AA sur
    chaque nouvelle combinaison couleur/dégradé, `make ecrans-check`/`make web-check` rejoués,
