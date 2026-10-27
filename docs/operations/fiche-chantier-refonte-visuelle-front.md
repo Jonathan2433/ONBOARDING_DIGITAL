@@ -7,8 +7,10 @@ de `G10`.
 **État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
 25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
 cadre applicatif), `S4` (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et
-profil) et `S7` (événements et mon onboarding) **FAITES**.
-**Sous-étape suivante :** `S8` — Recette visuelle finale
+profil), `S7` (événements et mon onboarding) et `S8` (recette visuelle finale) **FAITES**.
+**LE CHANTIER EST TECHNIQUEMENT COMPLET** : les huit sous-étapes du §5 sont réalisées et les six
+critères de sortie du §7 sont tenus. Aucune sous-étape suivante n'est proposée — la suite
+(LOT 11 ou autre) relève d'une décision explicite de Jonathan, hors de ce chantier.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -360,9 +362,55 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    parcours » vus en direct pour un compte temporaire doté d'une appartenance réelle — les deux
    comme de vraies `Carte`, l'état de la fiche comme un vrai `Badge` — décor nettoyé (événement,
    rôle technique et appartenance retirés, `make apercu-fin`).
-8. **Recette visuelle.** Les cinq largeurs du §13.4 (320/390/768/1280/1920), contraste AA sur
-   chaque nouvelle combinaison couleur/dégradé, `make ecrans-check`/`make web-check` rejoués,
-   capture avant/après par écran.
+8. **Recette visuelle finale. FAITE** (27/10/2026). Pas de code applicatif : une vérification sur
+   le périmètre entier du §4, dans un vrai navigateur, à travers Caddy en HTTPS.
+   - **Les cinq largeurs du §13.4 (320/390/768/1280/1920), mesurées, pas devinées.** Chaque écran
+     du périmètre a été visité et son `document.documentElement.scrollWidth` confronté à son
+     `clientWidth` aux cinq largeurs — jamais un simple coup d'œil, qui aurait pu manquer un
+     débordement d'un pixel. **Zéro débordement horizontal sur aucun écran, à aucune largeur** :
+     `PageNationale`, `PageEntite`, `PageFramework`, `PageCercle`, `PageBureau`,
+     `PageTrombinoscope`, `PageProfil` (deux variantes — profil incomplet et profil avec cercle/
+     responsabilité), `PageEvenements`, `PageMonOnboarding` (avec une fiche et un parcours réels,
+     pas seulement l'état vide), `PageConnexion`. Le menu bascule bien de la barre mobile au menu
+     du haut à 768 px exactement, comme posé par `S3`.
+   - **Contraste AA : aucune nouvelle combinaison n'existe, et c'est mesuré plutôt que supposé.**
+     `jetons.test.ts` (`S1`) couvre déjà le dégradé bleu→rose aux cinq points de mesure — y compris
+     la zone morte à t=0,75 — et les seize couples neutres/états sur les deux surfaces (`fond`,
+     `fondDoux`) des deux thèmes. **Vérifié une par une, les couleurs que `S4`-`S7` ont réellement
+     posées n'en ajoutent aucune** : `Badge ton="marque"` réutilise `MARQUE.bleu` (déjà testé),
+     `ton="ok"`/`"ko"`/`"neutre"` réutilisent `--ok`/`--ko`/`--encre` sur `--fond-doux` (déjà
+     testés), les icônes `lucide-react` héritent `currentColor` sans déclarer de couleur propre.
+     Zéro couple nouveau à mesurer, donc aucune extension de `jetons.test.ts` — l'étendre aurait
+     dupliqué des assertions déjà vraies sans rien prouver de plus (§7.27).
+   - **`make cadre-check` (25 contrôles), `make ecrans-check` (8 contrôles) et `make web-check`
+     (7 contrôles) rejoués, 0 échec.** `make test-frontend` : 926 tests Vitest passés (459
+     `contracts`, 132 `ui`, 335 `web`), 0 échec. `uv run mypy` (276 fichiers), Ruff, ESLint,
+     Prettier verts.
+   - **Capture avant/après par écran, sous la forme validée par Jonathan (`AskUserQuestion`,
+     27/10/2026) : l'« après » est capturé en direct, l'« avant » reste la description déjà écrite
+     dans le compte rendu de chaque sous-étape** — reconstruire un conteneur `web` depuis le commit
+     d'avant le chantier pour des paires d'images littérales a été explicitement écarté comme
+     disproportionné au regard de ce que `S1`-`S7` documentent déjà (la grille `.evenements-carte`
+     nue devient `.ex-carte`, l'`<article>`/`<dl>` du profil devient `Carte`/`Badge`, etc.).
+     Décor réel posé pour l'« après » : `SUPER_ADMIN` temporaire sur `apercu-demo@exalt-company.com`
+     (aucune donnée réelle, §2 de la passation), `BORDEA00` consultée pour ses données Framework
+     réelles (4 cercles, 1 bureau, 3 responsabilités pourvues, 76 collaborateurs), une appartenance,
+     une fiche d'arrivée et un parcours avec une tâche posés temporairement pour voir `PageMonOnboarding`
+     peuplée — tout retiré après capture, vérifié à zéro ligne résiduelle, puis `make apercu-fin`.
+   - **Un point vérifié plutôt que supposé : le cinquième élément du §13.2, « animations courtes et
+     non essentielles », était déjà présent avant `S8` — aucune sous-étape ne l'a jamais construit,
+     et `S8` aurait pu le découvrir manquant.** Mesuré : `.app-evitement`/`.app-lien`/
+     `.app-navigation-lien`/`.app-barre-lien` (120 ms, cadre applicatif, donc sur **chaque** écran
+     authentifié du périmètre), `.nat-entite` (page nationale) et `CarteRetournable` (180 ms, flip,
+     trombinoscope) portent déjà une transition courte, et les trois respectent
+     `prefers-reduced-motion` (`application.css` §14.2, `composants.css`). `Carte` elle-même reste
+     volontairement STATIQUE — ni transition ni `:hover`, cahier §13.2 ne l'exigeant que pour les
+     éléments interactifs, qu'elle n'est pas. Rien à ajouter : les cinq éléments du critère de
+     sortie 1 sont bien présents, et aucun ne l'est par construction de `S8`.
+   - **Aucun défaut trouvé sur les écrans du périmètre.** La seule observation hors périmètre :
+     `PageNationale` rend une liste de 26+ entités plutôt qu'une carte de France graphique pour la
+     session `SUPER` utilisée ici — comportement de `CarteDeFrance.tsx`, explicitement **non
+     touché** par ce chantier (§3, `DEP-006`), non mesuré avant `S8` et donc non imputable à lui.
 
 Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (`make test-frontend`,
 `make ecrans-check`, contraste), rapporter, attendre ta validation avant la suivante.
@@ -377,11 +425,19 @@ Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (
 
 ## 7. Critères de sortie
 
-1. Les cinq éléments du §13.2 absents aujourd'hui (dégradés, badges étendus, icônes maîtrisées,
-   cartes généralisées, animations courtes) sont présents sur les écrans du périmètre §4.
+1. **TENU (`S8`, 27/10/2026).** Les cinq éléments du §13.2 (dégradés, badges étendus, icônes
+   maîtrisées, cartes généralisées, animations courtes) sont présents sur les écrans du périmètre
+   §4 — les quatre premiers construits par `S1`/`S3`-`S7`, le cinquième déjà présent (transitions
+   courtes du cadre applicatif, de `.nat-entite` et de `CarteRetournable`), vérifié plutôt que
+   construit à nouveau.
 2. **TENU (`S2`, 25/10/2026).** `PageAdministration.tsx`/`PageEvenements.tsx` consomment `Onglets`
    (`@radix-ui/react-tabs`), aucun motif ARIA fabriqué à la main ne subsiste pour les onglets.
-3. Aucune régression de contraste AA (mesuré, pas supposé — `jetons.test.ts` étendu).
-4. Aucune nouvelle dépendance visuelle au-delà de `@radix-ui/react-tabs`, nommée ici.
-5. Les cinq largeurs de recette du §13.4 sont vérifiées sans débordement.
-6. `DEP-006` reste intacte : aucun logo ni illustration de marque inventés à sa place.
+3. **TENU (`S8`, 27/10/2026).** Aucune régression de contraste AA : mesuré, pas supposé —
+   `jetons.test.ts` (posé par `S1`) couvre déjà chaque combinaison couleur/dégradé réellement
+   employée par `S4`-`S7`, confirmé une par une, zéro couple nouveau à ajouter.
+4. **TENU.** Aucune nouvelle dépendance visuelle au-delà de `@radix-ui/react-tabs`, nommée au §2.1
+   — confirmé par `package.json` inchangé depuis `S1`.
+5. **TENU (`S8`, 27/10/2026).** Les cinq largeurs de recette du §13.4 sont vérifiées sans
+   débordement, mesuré (`scrollWidth`/`clientWidth`) sur chaque écran du périmètre §4.
+6. **TENU.** `DEP-006` reste intacte : aucun logo ni illustration de marque inventés à sa place —
+   `CarteDeFrance.tsx` non touché de `S1` à `S8`.
