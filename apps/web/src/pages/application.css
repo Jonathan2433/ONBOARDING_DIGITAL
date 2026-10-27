@@ -912,6 +912,12 @@
    de marque, et sa valeur de repli est `--trait` : un cercle sans couleur
    declaree garde donc une bordure, neutre. §10.1, la couleur ne transmet
    jamais seule.
+
+   CHANTIER FRONT, S6 (`DEC-672`) : `.profil-entete` et `.profil-bloc` sont
+   RETIREES. `Carte` (`packages/ui`) fournit desormais le cadre, l'ombre et le
+   titre de chaque section -- `.ex-carte` les porte, pas une regle locale.
+   `.profil-identite` ne garde que la mise en page INTERNE (avatar a cote du
+   bloc metier/statut) que `Carte` ne connait pas.
    ========================================================================= */
 
 .profil {
@@ -924,13 +930,10 @@
   color: var(--encre-douce);
 }
 
-.profil-entete {
+.profil-identite {
   display: flex;
   gap: var(--espace-l);
   align-items: center;
-  padding: var(--espace-l);
-  background: var(--fond-doux);
-  border-radius: var(--rayon-l);
 }
 
 .profil-avatar,
@@ -959,26 +962,9 @@
   align-items: flex-start;
 }
 
-.profil-titre h2 {
-  margin: 0;
-  font-size: var(--taille-xl);
-}
-
 .profil-metier {
   margin: 0;
   color: var(--encre-douce);
-}
-
-.profil-bloc {
-  padding: var(--espace-l);
-  background: var(--fond);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon-l);
-}
-
-.profil-bloc h3 {
-  margin: 0 0 var(--espace-m);
-  font-size: var(--taille-m);
 }
 
 .profil-champs {
@@ -1029,15 +1015,13 @@
 
   display: flex;
   gap: var(--espace-s);
-  align-items: baseline;
+  /* `align-items: center`, pas `baseline` : depuis S6 le second enfant est un
+     `Badge` (pastille), plus un texte dont la ligne de base s'alignerait mal
+     avec elle — meme motif que `.cercle-liste-membres li` au LOT 6, `S5`. */
+  align-items: center;
   padding: var(--espace-xs) var(--espace-s);
   border-left: 4px solid var(--profil-cercle);
   border-radius: var(--rayon-s);
-}
-
-.profil-cercle-role {
-  font-size: var(--taille-s);
-  color: var(--encre-douce);
 }
 
 .profil-vide,
@@ -1080,7 +1064,7 @@
     grid-template-columns: 1fr;
   }
 
-  .profil-entete {
+  .profil-identite {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1088,8 +1072,9 @@
 
 /* LOT 5, `T11` seconde partie — le cycle de vie.
 
-   Le bloc reprend `.profil-bloc` ; seuls l'espacement des actions et la liste
-   des affectations non rouvertes lui sont propres. */
+   Depuis S6 (`DEC-672`), le panneau vit dans une `Carte` ; cette regle ne porte
+   plus que la mise en page INTERNE a cette carte — l'espacement des actions et
+   la liste des affectations non rouvertes. */
 
 .profil-cycle {
   display: flex;

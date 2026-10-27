@@ -397,6 +397,44 @@ describe('la fiche d’un profil ARCHIVE — `T11`, seconde partie', () => {
   });
 });
 
+describe('chantier front, S6 : `Carte`/`Badge` (`DEC-672`)', () => {
+  it('l’identite et les cinq blocs sont des `Carte` — six regions nommees', async () => {
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Informations professionnelles' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Cercles' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Responsabilites Framework' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Presentation' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Historique organisationnel' })).toBeTruthy();
+  });
+
+  it('le type d’appartenance du cercle est un `Badge` reel, pas un simple texte', async () => {
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    //  **LE COUPLE** : « Principal » est de marque, « Secondaire » est neutre —
+    //  meme convention que `PageCercle.tsx`, `S5`, pour la meme notion.
+    expect(screen.getByText('Principal').closest('.ex-badge')).not.toBeNull();
+    expect(screen.getByText('Secondaire').closest('.ex-badge')).not.toBeNull();
+  });
+
+  it('le panneau de cycle de vie est AUSSI une `Carte`, region « Cycle de vie »', async () => {
+    rolesDuCadre = ['ESM'];
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Cycle de vie' })).toBeTruthy();
+  });
+});
+
 describe('le formatage des dates', () => {
   it('NE PASSE PAS par `Date` — le 1er janvier UTC reste JANVIER', () => {
     //  **LE PIEGE MESURE** : `new Date('2026-01-01T00:00:00Z').getMonth()` rend
