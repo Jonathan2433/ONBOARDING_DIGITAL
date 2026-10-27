@@ -51,6 +51,25 @@
  *   evite depuis le LOT 4 — « un lien qui aboutit au fourre-tout 404 est
  *   atteignable et INUTILE ». `T10` (l'ecran de GESTION) aura besoin d'une
  *   cible propre pour editer ; la lecture n'en a pas besoin.
+ *
+ * CHANTIER FRONT, S7 (`DEC-672`) : `CARTE` GENERALISEE AU PANNEAU, PAS DE
+ * `CARROUSEL` ICI
+ *
+ *   Mesure avant construction : `Badge` sur l'etat annule existe deja depuis
+ *   le LOT 8 `T9`, et `.evenements-carte` (CSS) est DEJA identique, trait
+ *   pour trait, a `.accueil-evenements-carte` que `T12` du LOT 8 a posee pour
+ *   le carrousel de la page entite — aucune divergence a corriger. Ce qui
+ *   manquait etait `Carte` elle-meme : le panneau de chaque onglet reste un
+ *   `<div>` nu. `Carrousel` (LOT 8, `T12`) ne s'applique PAS ici — il est
+ *   reserve a une liste RESUMEE et bornee (`NOMBRE_MONTRE`, avec un lien
+ *   « voir plus »), jamais a l'ecran de liste COMPLETE qui porte sa propre
+ *   pagination serveur : en faire un carrousel casserait la pagination par
+ *   page (`donnees.pages`) en la remplacant par un defilement continu que
+ *   l'API ne sait pas servir. La « coherence » demandee est donc visuelle,
+ *   pas structurelle : le panneau devient une `Carte` SANS titre (un
+ *   `<div className="ex-carte">`, jamais une region) — le tour de carte que
+ *   `S3`-`S6` appliquent partout ailleurs — sans dupliquer le nom de
+ *   l'onglet actif, deja porte par le `tabpanel` de `Onglets`.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -68,7 +87,7 @@ import {
   type PageDesEvenements,
   TAILLE_PAR_DEFAUT,
 } from '@onboarding/contracts';
-import { Alerte, Badge, Onglets } from '@onboarding/ui';
+import { Alerte, Badge, Carte, Onglets } from '@onboarding/ui';
 
 const TAILLE = TAILLE_PAR_DEFAUT;
 
@@ -135,7 +154,9 @@ export function PageEvenements(): JSX.Element {
           onglets={onglets}
           valeurActive={classement}
         >
-          <Alerte urgence="information">Chargement des evenements…</Alerte>
+          <Carte>
+            <Alerte urgence="information">Chargement des evenements…</Alerte>
+          </Carte>
         </Onglets>
       </div>
     );
@@ -150,11 +171,13 @@ export function PageEvenements(): JSX.Element {
           onglets={onglets}
           valeurActive={classement}
         >
-          <Alerte ton="erreur" urgence="alerte">
-            {etat.statut === 401
-              ? 'Votre session a expire. Reconnectez-vous pour consulter les evenements.'
-              : "Les evenements n'ont pas pu etre charges. Cela ne dit rien de leur contenu : verifiez votre connexion, puis reessayez."}
-          </Alerte>
+          <Carte>
+            <Alerte ton="erreur" urgence="alerte">
+              {etat.statut === 401
+                ? 'Votre session a expire. Reconnectez-vous pour consulter les evenements.'
+                : "Les evenements n'ont pas pu etre charges. Cela ne dit rien de leur contenu : verifiez votre connexion, puis reessayez."}
+            </Alerte>
+          </Carte>
         </Onglets>
       </div>
     );
@@ -177,63 +200,65 @@ export function PageEvenements(): JSX.Element {
         onglets={onglets}
         valeurActive={classement}
       >
-        <div className="evenements-panneau">
-          {donnees.evenements.length === 0 ? (
-            <Alerte>
-              {classement === 'a_venir'
-                ? 'Aucun evenement a venir pour le moment.'
-                : 'Aucun evenement passe.'}
-            </Alerte>
-          ) : (
-            <ul className="evenements-liste">
-              {donnees.evenements.map((evenement) => (
-                <li key={evenement.identifiant} className="evenements-carte">
-                  <div className="evenements-carte-entete">
-                    <h2 className="evenements-titre">{evenement.titre}</h2>
-                    {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
-                  </div>
-                  <p className="evenements-horaire">
-                    {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
-                  </p>
-                  {evenement.lieu === null ? null : (
-                    <p className="evenements-lieu">{evenement.lieu}</p>
-                  )}
-                  {evenement.description === null ? null : (
-                    <p className="evenements-description">{evenement.description}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+        <Carte>
+          <div className="evenements-panneau">
+            {donnees.evenements.length === 0 ? (
+              <Alerte>
+                {classement === 'a_venir'
+                  ? 'Aucun evenement a venir pour le moment.'
+                  : 'Aucun evenement passe.'}
+              </Alerte>
+            ) : (
+              <ul className="evenements-liste">
+                {donnees.evenements.map((evenement) => (
+                  <li key={evenement.identifiant} className="evenements-carte">
+                    <div className="evenements-carte-entete">
+                      <h2 className="evenements-titre">{evenement.titre}</h2>
+                      {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
+                    </div>
+                    <p className="evenements-horaire">
+                      {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
+                    </p>
+                    {evenement.lieu === null ? null : (
+                      <p className="evenements-lieu">{evenement.lieu}</p>
+                    )}
+                    {evenement.description === null ? null : (
+                      <p className="evenements-description">{evenement.description}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          {donnees.pages > 1 ? (
-            <nav aria-label="Pagination des evenements" className="evenements-pagination">
-              <button
-                type="button"
-                className="evenements-page"
-                disabled={donnees.page <= 1}
-                onClick={() => {
-                  setPage((precedente) => Math.max(1, precedente - 1));
-                }}
-              >
-                Page precedente
-              </button>
-              <span className="evenements-position">
-                Page {donnees.page} sur {donnees.pages}
-              </span>
-              <button
-                type="button"
-                className="evenements-page"
-                disabled={donnees.page >= donnees.pages}
-                onClick={() => {
-                  setPage((precedente) => precedente + 1);
-                }}
-              >
-                Page suivante
-              </button>
-            </nav>
-          ) : null}
-        </div>
+            {donnees.pages > 1 ? (
+              <nav aria-label="Pagination des evenements" className="evenements-pagination">
+                <button
+                  type="button"
+                  className="evenements-page"
+                  disabled={donnees.page <= 1}
+                  onClick={() => {
+                    setPage((precedente) => Math.max(1, precedente - 1));
+                  }}
+                >
+                  Page precedente
+                </button>
+                <span className="evenements-position">
+                  Page {donnees.page} sur {donnees.pages}
+                </span>
+                <button
+                  type="button"
+                  className="evenements-page"
+                  disabled={donnees.page >= donnees.pages}
+                  onClick={() => {
+                    setPage((precedente) => precedente + 1);
+                  }}
+                >
+                  Page suivante
+                </button>
+              </nav>
+            ) : null}
+          </div>
+        </Carte>
       </Onglets>
     </div>
   );
