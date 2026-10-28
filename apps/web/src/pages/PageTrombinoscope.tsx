@@ -66,7 +66,7 @@ import type { JSX } from 'react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-import { STATUTS, couleurDuCercle, libelleDuStatut } from '../affichage';
+import { STATUTS, couleurDuCercle, libelleDuStatut, texteDuCercle } from '../affichage';
 import { type CriteresDeRecherche, listerLeTrombinoscope } from '../api/trombinoscope';
 import { cheminDuProfilALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
@@ -335,6 +335,7 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
   //  sans jeton declare : la bordure reste neutre dans les deux cas, et le NOM du
   //  cercle reste du texte sur le verso -- c'est le §10.1 qui l'exige.
   const couleur = couleurDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
+  const texte = texteDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
   const libelleStatut = libelleDuStatut(ligne.statut);
 
   return (
@@ -361,6 +362,32 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
             <img alt="" className="trombi-photo" src={ligne.photo} />
           )}
           <span className="trombi-nom">{nom}</span>
+          {/*
+            **LA PASTILLE DE CERCLE AU RECTO — chantier front S10 (`DEC-673`)**.
+            Le `Badge` est deja une pastille (`--rayon-pastille`), deja
+            accessible (le texte du cercle est OBLIGATOIRE dans son type,
+            §10.1) : aucun composant nouveau. Sans cercle, rien n'est rendu —
+            le verso continue de dire « Aucun cercle principal » en toutes
+            lettres, et une pastille vide n'ajouterait rien.
+          */}
+          {ligne.cercle === null ? null : (
+            <span className="trombi-pastille-cercle">
+              <Badge
+                ton={couleur === undefined ? 'neutre' : 'marque'}
+                style={
+                  couleur === undefined
+                    ? undefined
+                    : ({
+                        background: couleur,
+                        borderColor: 'transparent',
+                        color: texte,
+                      } as React.CSSProperties)
+                }
+              >
+                {ligne.cercle.nom}
+              </Badge>
+            </span>
+          )}
         </>
       }
       verso={

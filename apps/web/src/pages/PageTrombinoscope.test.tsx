@@ -198,7 +198,11 @@ describe('le trombinoscope a l’ecran', () => {
       expect(screen.getByText('Ada Lovelace')).toBeTruthy();
     });
     fireEvent.click(faceDe('Ada Lovelace'));
-    expect(screen.getByText('Data')).toBeTruthy();
+    //  **`{ selector: '.trombi-verso dd' }` DEPUIS S10** (`DEC-673`) : « Data »
+    //  existe desormais DEUX FOIS dans le DOM — la pastille du recto (cachee
+    //  par `hidden`, mais `getByText` ne filtre pas la visibilite) et ce
+    //  `<dd>` du verso. Le selecteur ecarte la premiere, pas une regression.
+    expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
     expect(screen.getByText('Ingenieure logicielle')).toBeTruthy();
     //  Le statut est TRADUIT — depuis S6 (`DEC-672`), dans un `Badge` — et le
     //  client accole en texte simple, a cote de lui. `{ selector: '.ex-badge' }`
@@ -234,9 +238,53 @@ describe('le trombinoscope a l’ecran', () => {
       const carte = faceDe('Ada Lovelace').closest('article');
       expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe(attendu);
       fireEvent.click(faceDe('Ada Lovelace'));
-      expect(screen.getByText('Data')).toBeTruthy();
+      //  Depuis S10 (`DEC-673`), « Data » existe aussi sur le recto (pastille) :
+      //  le selecteur cible le verso, seul concerne par ce test.
+      expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
     },
   );
+
+  //  ========================================================================
+  //  Chantier front, S10 : la pastille de cercle au RECTO (`DEC-673`)
+  //  ========================================================================
+
+  it.each([
+    ['bleu', 'var(--marque-bleu)', 'var(--marque-bleu-texte)', 'marque'],
+    ['jaune', 'var(--marque-jaune)', 'var(--marque-jaune-texte)', 'marque'],
+    [null, '', '', 'neutre'],
+    ['jeton-inconnu-du-design-system', '', '', 'neutre'],
+  ])(
+    'la pastille du recto porte le jeton « %s », colore ou neutre',
+    async (jeton, surface, texte, ton) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(page([{ ...ADA, cercle: { ...ADA.cercle, jeton_de_couleur: jeton } }])),
+        ),
+      );
+      monter();
+      await waitFor(() => {
+        expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      });
+      //  Le recto n'est pas retourne : la pastille est deja visible ici.
+      const pastille = screen.getByText('Data', { selector: '.ex-badge' });
+      expect(pastille.getAttribute('data-ton')).toBe(ton);
+      expect((pastille as HTMLElement).style.background).toBe(surface);
+      expect((pastille as HTMLElement).style.color).toBe(texte);
+    },
+  );
+
+  it('sans cercle, AUCUNE pastille n’est rendue au recto — une pastille vide n’ajouterait rien', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([NOUVELLE]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+    });
+    expect(document.querySelector('.trombi-pastille-cercle')).toBeNull();
+  });
 
   it('un collaborateur SANS affectation affiche « Non renseigne », jamais du vide', async () => {
     //  Un champ vide laisserait croire a une panne d'affichage ; « Non

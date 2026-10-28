@@ -8,8 +8,9 @@ de `G10`.
 techniquement complètes puis confrontées par Jonathan à des captures d'écran réelles (voir §8).
 `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale + cadre applicatif), `S4`
 (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
-et mon onboarding), `S8` (recette visuelle finale) et **`S9` (bascule clair/sombre) FAITES**.
-`S10` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
+et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)** et **`S10`
+(trombinoscope/profil « pop ») FAITES**.
+`S11` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
 périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
@@ -438,6 +439,47 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
    de connexion ou d'une page d'erreur (aucune ne porte le bouton) ignorerait un choix « sombre »
    fait ailleurs sur le même appareil. `make ecrans-check`/`make web-check`/`make test-frontend`
    rejoués, 0 échec — 938 tests Vitest (459 `contracts`, 140 `ui`, 339 `web`).
+10. **Trombinoscope/profil « pop ». FAITE** (28/10/2026). Les trois défauts constatés au §8.1
+    corrigés par RÉEMPLOI, zéro nouveau composant, zéro nouvelle mesure de contraste :
+    - **l'avatar neutre gris sur gris** (`.trombi-avatar`) prend la MÊME couleur que l'avatar neutre
+      du profil (`.profil-avatar`, LOT 5) — `--marque-bleu`/`--marque-bleu-texte`, un couple déjà
+      mesuré AA par `jetons.test.ts` (LOT 1 `T10`). Aucune nouvelle combinaison : une réutilisation
+      stricte, §7.27 ;
+    - **la pastille de cercle au recto** réutilise le `Badge` du design system TEL QUEL — déjà une
+      pastille (`border-radius: var(--rayon-pastille)`), déjà accessible (le texte est obligatoire
+      dans son type). `ton="marque"` pour la forme, la couleur du cercle posée en `style` inline
+      (`background`/`color`), avec repli `ton="neutre"` sans couleur résolue. Nouvelle fonction
+      `texteDuCercle` (`apps/web/src/affichage.ts`), appariée à `couleurDuCercle` (LOT 1 `T10`) :
+      les QUATRE couples qu'elle expose sont les mêmes que `MARQUE` dans `jetons.ts`, déjà prouvés
+      par `jetons.test.ts` — exposer leur texte n'ajoute donc AUCUNE mesure de contraste à faire.
+      Sans cercle, AUCUNE pastille n'est rendue (une pastille vide n'ajouterait rien ; le verso dit
+      toujours « Aucun cercle principal » en toutes lettres, §10.1 inchangé) ;
+    - **la hauteur de carte harmonisée** : `CarteRetournable` (`packages/ui`) ne s'étirait pas dans
+      sa cellule de grille — `.trombi-grille` (CSS Grid) étire déjà ses `<li>` par défaut
+      (`align-items: stretch`), mais l'`<article>` qu'ils contiennent n'en héritait pas, laissant
+      chaque carte à la hauteur de son seul contenu. `height: 100%` sur `.ui-carte-retournable` et
+      `flex: 1 1 auto` sur sa face poussent désormais « Voir plus » en bas de la carte quelle que
+      soit la hauteur de la rangée — vérifié en direct, une carte sans aucun cercle ni métier/statut
+      (« Noa Chevalier ») s'aligne exactement sur ses trois voisines de rangée.
+    - **Témoin de nettoyage** : « Data » existe désormais deux fois dans le DOM d'une carte (la
+      pastille du recto, cachée par `hidden` après retournement, et le `<dd>` du verso) —
+      `getByText` ne filtre pas la visibilité, donc les quatre tests existants qui lisaient le nom
+      du cercle après un clic ont dû être scopés (`{ selector: '.trombi-verso dd' }`), régression
+      de test attendue et documentée dans le fichier lui-même, pas un défaut du livrable.
+    - **Contrôles** : `pnpm test` 344/344 (`web`, +5), 140/140 (`ui`, inchangé), lint/format/
+      `tsc --noEmit` (3 paquets) verts, `make ecrans-check` (8 contrôles) et `make web-check`
+      (7 contrôles) rejoués sur le conteneur reconstruit, 0 échec, `make trombinoscope-check`
+      (38 contrôles API) inchangé — aucune route touchée. **Aller-retour réel effectué** après
+      `make code-refresh` : lien magique réel consommé pour un compte temporaire (entité
+      `BORDEA00`, qui porte les quatre jetons de couleur du design system), les quatre pastilles
+      vues avec leur couple couleur/texte attendu, l'avatar neutre coloré, et la harmonisation de
+      hauteur confirmée aux cinq largeurs du §13.4 (320/390/768/1280/1920, `scrollWidth`/
+      `clientWidth` confrontés, aucun débordement) — en thème clair et en thème sombre. Décor
+      nettoyé (adresse de courriel du compte de test restaurée, session et lien magique retirés).
+    - **Hors périmètre de `S10`, volontairement** : la fiche de profil (`PageProfil.tsx`) n'a reçu
+      AUCUNE pastille de cercle — elle n'a pas de structure recto/verso, et le constat du §8.1 ne
+      visait que « montré en pastille au recto **de la carte** », donc le trombinoscope seul. Son
+      avatar neutre était déjà coloré depuis le LOT 5 et n'avait rien à corriger.
 
 Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (`make test-frontend`,
 `make ecrans-check`, contraste), rapporter, attendre ta validation avant la suivante.
@@ -509,7 +551,7 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 | | Sous-étape |
 |---|---|
 | `S9` | Bascule thème clair/sombre — **FAITE** |
-| `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée |
+| `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée — **FAITE** |
 | `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) |
 | `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) |
 | `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs |
