@@ -33,6 +33,15 @@
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
+ * LA BASCULE CLAIR/SOMBRE — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
+ *
+ *   `theme.ts` porte la logique (attribut `data-theme`, memorisation par
+ *   appareil), sans aucun JSX : le bouton visible (`BoutonBasculerTheme`) vit
+ *   dans `apps/web`, avec ses icones `lucide-react`, deja une dependance de
+ *   l'application et non de ce paquet. Voir l'en-tete de `theme.ts` pour
+ *   l'arbitrage complet — le clair est desormais TOUJOURS le theme de
+ *   premiere visite, quelle que soit la preference systeme.
+ *
  * COMMENT ON L'EMPLOIE
  *
  *   Les styles sont deux feuilles separees, a importer par l'application :
@@ -85,5 +94,8 @@ export {
   TYPOGRAPHIE,
 } from './jetons.js';
 export type { CoupleColore } from './jetons.js';
+//  Chantier front hors lot, S9 (`DEC-672`/`DEC-673`) — la bascule clair/sombre.
+export { appliquerLeTheme, CLE_DE_STOCKAGE_DU_THEME, lireLeThemeStocke } from './theme.js';
+export type { Theme } from './theme.js';
 
 export const PACKAGE_NAME = '@onboarding/ui';

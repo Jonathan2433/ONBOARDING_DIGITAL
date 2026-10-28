@@ -69,6 +69,22 @@ RACINES_FRONTEND = ("apps/web/src", "packages/ui/src", "packages/contracts/src")
 #  Ce que le cahier §7.4 interdit de stocker durablement cote navigateur.
 STOCKAGES_INTERDITS = ("localStorage", "sessionStorage")
 
+#  Les SEULS fichiers ou localStorage/sessionStorage sont autorises, chacun avec
+#  son motif ecrit. Ce que le §7.4 interdit est une donnee d'AUTHENTIFICATION,
+#  pas tout usage de ce stockage -- et jusqu'ici, personne n'en avait besoin
+#  pour autre chose. `DEC-673` (chantier front S9) y stocke une PREFERENCE
+#  D'AFFICHAGE non sensible (theme clair/sombre), memorisee PAR APPAREIL,
+#  explicitement PAS une donnee de compte. Nommee et CONFRONTEE au reel : ce
+#  controle echoue aussi si une exception cesse d'etre exercee, parce qu'une
+#  exception morte avalerait silencieusement la reapparition d'un usage
+#  qu'elle ne devrait plus couvrir -- meme discipline que `verifier-sources-
+#  suivies.py` (§7.22).
+EXCEPTIONS_PREFERENCE_NON_AUTHENTIFICATION = {
+    "packages/ui/src/theme.ts": "preference de theme clair/sombre par appareil, DEC-673",
+    "packages/ui/src/theme.test.ts": "tests du module ci-dessus",
+    "apps/web/src/pages/BoutonBasculerTheme.test.tsx": "tests du bouton de bascule du theme",
+}
+
 EXTENSIONS_SOURCE = (".ts", ".tsx", ".js", ".jsx")
 
 
@@ -103,6 +119,21 @@ def usages_de_stockage(racine: pathlib.Path) -> list[tuple[pathlib.Path, int, st
                     if stockage in ligne:
                         trouves.append((fichier.relative_to(racine), numero, stockage))
     return trouves
+
+
+def filtrer_les_exceptions(
+    tous_les_usages: list[tuple[pathlib.Path, int, str]],
+    exceptions: dict[str, str],
+) -> tuple[list[tuple[pathlib.Path, int, str]], list[str]]:
+    """Separer les usages INTERDITS de ceux couverts par une exception NOMMEE.
+
+    Rend aussi les exceptions MORTES : declarees mais dont le fichier ne
+    stocke plus rien. Pure, sans filesystem ni stack -- eprouvable en §7.25.
+    """
+    chemins_couverts = {str(fichier) for fichier, _, _ in tous_les_usages}
+    restants = [usage for usage in tous_les_usages if str(usage[0]) not in exceptions]
+    mortes = sorted(chemin for chemin in exceptions if chemin not in chemins_couverts)
+    return restants, mortes
 
 
 def compter_les_fichiers(racine: pathlib.Path) -> int:
@@ -264,7 +295,10 @@ def main() -> int:
     #  ------------------------------------------------------------------
     controles += 1
     examines = compter_les_fichiers(RACINE)
-    usages = usages_de_stockage(RACINE)
+    tous_les_usages = usages_de_stockage(RACINE)
+    usages, exceptions_mortes = filtrer_les_exceptions(
+        tous_les_usages, EXCEPTIONS_PREFERENCE_NON_AUTHENTIFICATION
+    )
     if usages:
         print(f"    ECHEC    {len(usages)} usage(s) de stockage navigateur interdit :")
         for fichier, ligne, stockage in usages:
@@ -274,8 +308,19 @@ def main() -> int:
         echecs += 1
     else:
         print(
-            f"    ok       aucun {' ni '.join(STOCKAGES_INTERDITS)} dans les "
+            f"    ok       aucun {' ni '.join(STOCKAGES_INTERDITS)} hors exception dans les "
             f"{examines} fichiers source du frontend"
+        )
+    if exceptions_mortes:
+        echecs += 1
+        print(f"    ECHEC    {len(exceptions_mortes)} exception(s) MORTE(S) :")
+        for chemin in exceptions_mortes:
+            print(f"             {chemin} — {EXCEPTIONS_PREFERENCE_NON_AUTHENTIFICATION[chemin]}")
+        print("             -> une exception morte avalerait la reapparition du cas (§7.22).")
+    else:
+        print(
+            f"    ok       les {len(EXCEPTIONS_PREFERENCE_NON_AUTHENTIFICATION)} exception(s) "
+            "nommee(s) sont toujours exercees"
         )
     if examines < 5:
         print(f"    ECHEC    seuls {examines} fichiers examines : le controle ne prouve rien")
@@ -625,6 +670,25 @@ def _temoin_du_controle_frontend() -> int:
     finally:
         usage.unlink(missing_ok=True)
         commentaire.unlink(missing_ok=True)
+
+    #  Le mecanisme d'EXCEPTION NOMMEE, pur et sans filesystem — DEC-673.
+    faux_usages = [
+        (pathlib.Path("x/exempte.ts"), 1, "localStorage"),
+        (pathlib.Path("x/interdit.ts"), 2, "localStorage"),
+    ]
+    restants, mortes = filtrer_les_exceptions(faux_usages, {"x/exempte.ts": "motif de test"})
+    if restants == [faux_usages[1]] and not mortes:
+        print("    ok       un usage COUVERT par une exception nommee est ECARTE, l'autre reste")
+    else:
+        print(f"    ECHEC    filtrage d'exception incorrect : restants={restants} mortes={mortes}")
+        echecs += 1
+
+    _, mortes_attendues = filtrer_les_exceptions(faux_usages, {"x/disparu.ts": "motif de test"})
+    if mortes_attendues == ["x/disparu.ts"]:
+        print("    ok       une exception DECLAREE mais plus exercee est signalee MORTE")
+    else:
+        print(f"    ECHEC    exception morte NON detectee : {mortes_attendues}")
+        echecs += 1
 
     print()
     if echecs:
