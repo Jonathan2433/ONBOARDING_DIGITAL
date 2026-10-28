@@ -220,6 +220,32 @@ export const RAYONS = {
 } as const;
 
 /**
+ * Decoupes de forme — chantier front hors lot, sous-etape S11 (`DEC-673`,
+ * 28/10/2026). Inspiration du site reel `exalt-company.com` (§8.1 de la fiche
+ * de chantier) : les photos y sont cadrees en hexagone plutot qu'en cercle.
+ *
+ * UN `clip-path`, JAMAIS UN `border-radius` DE PLUS
+ *
+ *   `RAYONS` ne decrit que des coins arrondis — un hexagone n'en est pas un, et
+ *   l'inscrire dans cette table aurait fait echouer le controle qui exige que
+ *   chaque rayon soit un entier en pixels (`jetons.test.ts`). Une table separee
+ *   est donc necessaire, pas une extension de `RAYONS`.
+ *
+ * AUCUNE NOUVELLE MESURE DE CONTRASTE
+ *
+ *   Un decoupage de forme n'est ni une couleur ni un couple surface/texte : il
+ *   ne change que le contour d'un avatar ou d'une photo, jamais ce qui s'y
+ *   affiche. Rien a ajouter a `jetons.test.ts` au titre du contraste.
+ *
+ * Le polygone pose un sommet en haut et en bas, deux cotes plats a gauche et a
+ * droite — la silhouette d'hexagone la plus reconnaissable pour un avatar, et
+ * celle qu'emploie le site reel.
+ */
+export const DECOUPES = {
+  hexagone: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+} as const;
+
+/**
  * Ombres. Le cahier 13.2 dit « ombres DOUCES » : opacite faible et diffusion
  * large, jamais de trait dur.
  */
