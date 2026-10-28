@@ -83,6 +83,7 @@ export {
 } from './contraste.js';
 export {
   ACCENTS_ADMIS,
+  DECOUPES,
   DEGRADE_MARQUE,
   ESPACEMENTS,
   LARGEURS_RECETTE,

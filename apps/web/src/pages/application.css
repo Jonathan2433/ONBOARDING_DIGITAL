@@ -866,13 +866,15 @@
   list-style: none;
 }
 
+/* Cadre hexagonal — chantier front S11 (DEC-673), meme jeton que
+   `.profil-avatar`/`.profil-photo` : `--decoupe-hexagone` remplace le cercle. */
 .trombi-avatar,
 .trombi-photo {
   display: block;
   width: 5rem;
   height: 5rem;
   margin: 0 auto var(--espace-s);
-  border-radius: 50%;
+  clip-path: var(--decoupe-hexagone);
   object-fit: cover;
 }
 
@@ -991,12 +993,15 @@
   align-items: center;
 }
 
+/* Cadre hexagonal — chantier front S11 (DEC-673), inspire du site reel
+   exalt-company.com (§8.1 de la fiche de chantier) : `--decoupe-hexagone`
+   remplace le cercle (`--rayon-pastille`) sur l'avatar comme sur la photo. */
 .profil-avatar,
 .profil-photo {
   flex: 0 0 auto;
   width: 5rem;
   height: 5rem;
-  border-radius: var(--rayon-pastille);
+  clip-path: var(--decoupe-hexagone);
   object-fit: cover;
 }
 

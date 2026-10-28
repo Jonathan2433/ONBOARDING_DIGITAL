@@ -25,6 +25,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DECOUPES,
   DEGRADE_MARQUE,
   ESPACEMENTS,
   MARQUE,
@@ -113,6 +114,7 @@ const ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--rayon-m', RAYONS.m],
   ['--rayon-l', RAYONS.l],
   ['--rayon-pastille', RAYONS.pastille],
+  ['--decoupe-hexagone', DECOUPES.hexagone],
   ['--ombre-douce', OMBRES.douce],
   ['--ombre-posee', OMBRES.posee],
   ['--police', TYPOGRAPHIE.pile],

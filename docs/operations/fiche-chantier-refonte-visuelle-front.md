@@ -8,9 +8,9 @@ de `G10`.
 techniquement complètes puis confrontées par Jonathan à des captures d'écran réelles (voir §8).
 `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale + cadre applicatif), `S4`
 (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
-et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)** et **`S10`
-(trombinoscope/profil « pop ») FAITES**.
-`S11` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
+et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)**, **`S10`
+(trombinoscope/profil « pop »)** et **`S11` (cadres hexagonaux) FAITES**.
+`S12` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
 périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
@@ -480,6 +480,46 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
       AUCUNE pastille de cercle — elle n'a pas de structure recto/verso, et le constat du §8.1 ne
       visait que « montré en pastille au recto **de la carte** », donc le trombinoscope seul. Son
       avatar neutre était déjà coloré depuis le LOT 5 et n'avait rien à corriger.
+11. **Cadres hexagonaux pour les photos. FAITE** (28/10/2026). Inspiration du site réel
+    `exalt-company.com` (§8.1) : les photos y sont cadrées en hexagone plutôt qu'en cercle.
+    - **Mesuré AVANT tout code, et ça a changé le périmètre** : le profil et le trombinoscope
+      portent déjà un avatar (photo ou initiales, même paire de classes partagées
+      `.profil-avatar`/`.profil-photo` et `.trombi-avatar`/`.trombi-photo`), mais les représentants
+      de bureau (`PageBureau.tsx`/`PageFramework.tsx`) n'ont aujourd'hui **aucun** avatar — ni
+      photo (le contrat `ResponsableDuBureau` n'a pas de champ `photo`), ni même un avatar à
+      initiales, juste une liste de noms en texte brut. Posé à Jonathan avant tout code
+      (`AskUserQuestion`, reformulé sans jargon) : construire un avatar provisoire à initiales
+      maintenant aurait exigé de le retoucher à `S12` (qui ajoute justement la photo pour les
+      bureaux) — **arbitrage retenu : `S11` se limite au profil et au trombinoscope**, les
+      représentants de bureau recevront leur avatar ET son cadre hexagonal d'un coup à `S12`,
+      zéro travail à refaire.
+    - **Un seul jeton nouveau, zéro nouvelle mesure de contraste.** Nouvelle table
+      `DECOUPES` (`packages/ui/src/jetons.ts`), séparée de `RAYONS` : un hexagone n'est pas un
+      coin arrondi, et l'inscrire dans `RAYONS` aurait fait échouer le contrôle qui exige que
+      chaque rayon soit un entier en pixels (`jetons.test.ts`). `DECOUPES.hexagone` porte le
+      `clip-path` (`polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)`, sommet en
+      haut et en bas, côtés plats à gauche et à droite — la silhouette la plus reconnaissable
+      pour un avatar). Projection CSS (`--decoupe-hexagone`, `packages/ui/src/jetons.css`) et
+      contrôle de divergence étendu (`jetons-css.test.ts`), même mécanisme que tous les jetons
+      existants. **Aucune mesure de contraste à ajouter** : un découpage de forme ne change ni
+      couleur ni couple surface/texte.
+    - **`.profil-avatar`/`.profil-photo` et `.trombi-avatar`/`.trombi-photo`** : `border-radius`
+      (`--rayon-pastille` puis `50%`) remplacé par `clip-path: var(--decoupe-hexagone)` — un
+      changement CSS pur, aucune ligne JSX modifiée dans `PageProfil.tsx` ni
+      `PageTrombinoscope.tsx`, puisque l'avatar et la photo partageaient déjà une seule règle de
+      forme.
+    - **Contrôles** : `pnpm test` 141/141 (`ui`, +1 — la parité `--decoupe-hexagone`), 344/344
+      (`web`, inchangé, changement purement CSS), `tsc --noEmit` (3 paquets)/ESLint/Prettier
+      verts. `make ecrans-check` (8 contrôles, « 0 couleur littérale hors des jetons ») et
+      `make web-check` (7 contrôles) rejoués sur le conteneur reconstruit, 0 échec. **Aller-retour
+      réel effectué** après `make code-refresh` : lien magique réel consommé pour un compte
+      temporaire (entité `BORDEA00`), l'avatar hexagonal vu sur le trombinoscope ET sur la fiche
+      profil, aux cinq largeurs du §13.4 (320/390/768/1280/1920, `scrollWidth`/`clientWidth`
+      confrontés, aucun débordement), en thème clair et en thème sombre. Décor nettoyé (adresse
+      de courriel du compte de test restaurée, session et lien magique retirés).
+    - **Hors périmètre de `S11`, sur arbitrage explicite de Jonathan** : les représentants de
+      bureau n'ont reçu aucun avatar — ni hexagonal, ni à initiales. `S12` les ajoutera avec leur
+      photo, cadre hexagonal compris.
 
 Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (`make test-frontend`,
 `make ecrans-check`, contraste), rapporter, attendre ta validation avant la suivante.
@@ -552,10 +592,17 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 |---|---|
 | `S9` | Bascule thème clair/sombre — **FAITE** |
 | `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée — **FAITE** |
-| `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) |
+| `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) — **FAITE, limitée au profil et au trombinoscope** (§8.2 note) |
 | `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) |
 | `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs |
 | `S14` | Recette visuelle finale de la reprise, même format que `S8` |
+
+> **Note sur `S11` (28/10/2026, `AskUserQuestion`)** : mesuré avant tout code, les représentants
+> de bureau n'ont aujourd'hui **aucun** avatar (ni photo, ni initiales) — cette capacité arrive à
+> `S12` avec l'extension du contrat. Construire un avatar provisoire à initiales pour `S11` aurait
+> exigé de le retoucher à `S12`. Arbitrage de Jonathan : `S11` se limite au profil et au
+> trombinoscope, qui portent déjà un avatar ; les représentants de bureau reçoivent leur avatar ET
+> son cadre hexagonal d'un coup à `S12`.
 
 ### 8.3 Critères de sortie de la reprise
 
