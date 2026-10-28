@@ -106,6 +106,37 @@
 }
 
 /* ==========================================================================
+   La bascule clair/sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
+   ========================================================================== */
+
+/* **UN FOND OPAQUE PROPRE, PAS `--fond-doux`** : ce bouton est aussi pose sur
+   le bandeau en degrade de `PageNationale` (`.nat-bandeau`), ou seule une
+   surface OPAQUE atteint l'AA — meme renoncement que `.nat-bandeau-pastille`
+   (`DEGRADE_MARQUE` est decoratif seul, voir jetons.ts). Le reprendre ici
+   evite une seconde regle qui ne vaudrait que pour l'un des deux contextes. */
+.app-bascule-theme {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--espace-xs);
+  min-height: 44px;
+  padding: var(--espace-xs) var(--espace-m);
+  font: inherit;
+  font-weight: 600;
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-pastille);
+  box-shadow: var(--ombre-douce);
+  cursor: pointer;
+}
+
+.app-bascule-theme:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
    Le panneau d'erreur — LOT 4, T10, cahier §17.4
    ========================================================================== */
 
@@ -533,8 +564,16 @@
     padding-bottom: var(--espace-l);
   }
 
+  /* **`flex-wrap`, AJOUTE EN S9** : la bascule clair/sombre est un cinquieme
+     enfant de cette ligne (marque, entite, selecteur, alerte de consultation,
+     bascule). Mesure a 1 280 px : sans lui, l'entite — seul enfant a
+     `min-width: 0` — se comprime jusqu'a couper « Bordeaux » au milieu du mot
+     plutot que de laisser la ligne s'allonger. Avec lui, la bascule (et elle
+     seule, `flex-shrink: 0`) passe a la ligne suivante quand la place manque,
+     et l'entite retrouve sa largeur naturelle. */
   .app-entete {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--espace-m);
@@ -592,9 +631,14 @@
 /* Le bandeau d'accueil — chantier front hors lot, S3 (`DEC-672`), cahier
    §13.2. PROPRE a cette page : voir le commentaire JSX de `PageNationale.tsx`
    sur pourquoi ce n'est pas `.app-entete`. */
+/* **`space-between`, PAS `center`, DEPUIS S9** : la pastille et la bascule
+   clair/sombre se partagent desormais la ligne — centrer les forcerait a se
+   chevaucher ou a s'empiler sans raison sur les tres petits ecrans. */
 .nat-bandeau {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
   padding: var(--espace-m) var(--espace-s);
   background: var(--degrade-marque);
 }

@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 25 octobre 2026 — décision `DEC-672`, ouverture du chantier front
+**Dernière mise à jour :** 27 octobre 2026 — décision `DEC-673`, reprise du chantier front
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -177,6 +177,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Réalisation du LOT 10 `DEC-670`, sous-étape `T16`** | 1 | **Soumise le 24/10/2026** |
 | **Franchissement de la porte `G10` `DEC-671`** | 1 | **Validée le 25/10/2026** |
 | **Ouverture du chantier front `DEC-672`** | 1 | **Validée le 25/10/2026** |
+| **Reprise du chantier front `DEC-673`** | 1 | **Validée le 27/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -188,7 +189,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **340** | |
+| **Total** | **341** | |
 
 ---
 
@@ -986,7 +987,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-672` | **Ouverture du chantier de refonte visuelle du front — hors numérotation `LOT n`, demandé directement par Jonathan à la clôture de `G10` — et deux arbitrages tranchés avant tout code.** Le constat : le prototype `V1.html` (référence d'intention, règle n°4 du §2) est visuel/coloré/ludique (dégradés, cartes, carrousels, emoji), l'application réelle sert le même design system de jetons (`DEC-491`) mais sans aucun dégradé ni badge/carte sur plusieurs écrans — un écart documenté, jamais un défaut de code : chaque lot a livré la fonction, aucun n'a reçu de passe de direction artistique comparable au cahier §13.2. **(a)** Le dégradé de marque reste **bleu → rose uniquement** ; le violet du §13.2 n'est pas ajouté, cohérent avec `DEC-491` qui n'en avait déjà pas retenu. **(b)** **Radix UI est inclus**, borné à `@radix-ui/react-tabs` : deux consommateurs réels existent déjà (`PageAdministration.tsx`, neuf onglets ; `PageEvenements.tsx`, deux onglets), chacun avec sa propre copie du motif ARIA `tablist`/`tab`/`tabpanel` fabriqué à la main depuis le LOT 7 `T14` — alors que le §13.3 nomme Radix explicitement. Les autres primitives Radix (Dialog, Menu, Select…) restent hors périmètre, faute de consommateur réel mesuré : `PanneauDuCycleDeVie.tsx` évite délibérément une modale, `SelecteurDEntite.tsx` évite délibérément un menu — les deux documentés dans leur propre en-tête. | **`DEP-006` (charte, logo et typographie officiels) reste OUVERTE, échéance LOT 14** : aucun logo, aucune police officielle, aucune illustration de marque définitive n'est inventée à sa place — la carte de France (`CarteDeFrance.tsx`) reste son tracé provisoire assumé, le retoucher serait un travail jeté. Le périmètre retenu couvre les écrans que le prototype modélise réellement (national, entité, cercles/bureaux, trombinoscope/profil, événements, onboarding) ; le back-office reste hors périmètre pour l'habillage visuel — exception structurelle pour la migration des onglets (`PageAdministration.tsx`), qui n'est pas une passe de direction artistique. Découpage en huit sous-étapes (`fiche-chantier-refonte-visuelle-front.md`) : fondations (jetons de dégradé + primitive `Onglets`), migration des onglets existants, puis écran par écran dans l'ordre du parcours d'un nouvel arrivant, recette visuelle finale sur les cinq largeurs du §13.4. Aucune nouvelle dépendance au-delà de `@radix-ui/react-tabs` sans être nommée explicitement dans une sous-étape. | Validée le 25/10/2026 |
 
-**Prochain identifiant libre : `DEC-673`.**
+| `DEC-673` | **Reprise du chantier de refonte visuelle du front, `S9` à `S14` — Jonathan a confronté des captures d'écran réelles de l'application (trombinoscope, page cercle, Framework) à celles du prototype et du site réel `exalt-company.com`, après que `S1`-`S8` (`DEC-672`) avaient été déclarées techniquement complètes.** Cinq écarts mesurés, aucun n'étant un défaut de code mais tous des décisions de portée jamais prises : **(1)** le thème sombre suivait la préférence système (`@media (prefers-color-scheme: dark)`, hérité du LOT 1 `T5`, jamais repensé pour l'app métier), sans aucun bouton pour revenir au clair — l'inverse du prototype et du site réel, qui n'ont ni l'un ni l'autre de variante sombre ; **(2)** l'avatar neutre du trombinoscope est gris sur gris (`.trombi-avatar`, LOT 5), jamais coloré ; **(3)** les cartes d'une même rangée du trombinoscope n'ont pas une hauteur égale quand leur contenu diffère ; **(4)** le nom du cercle n'est jamais montré en pastille au recto de la carte, relégué au verso en texte brut (§10.1) ; **(5)** la liste des membres d'un cercle ou d'un bureau reste un texte brut sans photo, `S5` ayant délibérément limité sa portée à l'habillage (`Carte`/`Badge`), documenté dans le fichier lui-même. **DEUX ARBITRAGES EXPLICITES DE JONATHAN POSÉS AVANT TOUT CODE** (`AskUserQuestion`, reformulé sans jargon) : (a) le niveau d'inspiration du vrai site — emprunter AUSSI ses motifs distinctifs (cadres de photo hexagonaux, gros chiffres bold, soulignés « tracé main » jaunes), pas seulement recolorer le système existant, risque et effort plus élevés assumés ; (b) le thème par défaut — TOUJOURS clair, y compris au tout premier chargement, quelle que soit la préférence système, jamais déduit. Découpage en six sous-étapes (`fiche-chantier-refonte-visuelle-front.md` §8) : `S9` (bascule clair/sombre), `S10` (trombinoscope/profil « pop »), `S11` (cadres hexagonaux), `S12` (cartes-photo des membres), `S13` (accents visuels), `S14` (recette visuelle finale de la reprise). Même discipline que `S1`-`S8` : une sous-étape à la fois, jamais empilée, PR et validation de Jonathan entre chacune. | La consultation du vrai site a confirmé que `MARQUE` (`DEC-491`) n'a aucune couleur à changer — palette identique (indigo, rose, jaune). Le périmètre reste celui du §4 de la fiche : aucun écran du back-office, aucune donnée réelle. `DEP-006` (charte, logo et typographie officiels) reste ouverte, échéance LOT 14, inchangée par cette reprise. | Validée le 27/10/2026 |
+
+**Prochain identifiant libre : `DEC-674`.**
 
 ---
 
@@ -1305,6 +1308,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-670` — réalisation du LOT 10, `T16` | 1 | 1 |
 | `DEC-671` — franchissement de la porte `G10` | 1 | 1 |
 | `DEC-672` — ouverture du chantier front | 1 | 1 |
+| `DEC-673` — reprise du chantier front | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1316,7 +1320,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **340** | **340** |
+| **Total** | **341** | **341** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

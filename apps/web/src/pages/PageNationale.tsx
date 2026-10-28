@@ -44,6 +44,7 @@ import type { EntiteDuPortail } from '@onboarding/contracts';
 import { Alerte } from '@onboarding/ui';
 
 import { listerLesEntites } from '../api/portail';
+import { BoutonBasculerTheme } from './BoutonBasculerTheme';
 import { CarteDeFrance } from './CarteDeFrance';
 import { cheminDeLEntite, CHEMINS } from '../routes';
 
@@ -99,6 +100,12 @@ export function PageNationale(): JSX.Element {
       */}
       <header className="nat-bandeau">
         <p className="nat-bandeau-pastille">eXalt Onboarding</p>
+        {/*
+          **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Le bouton est visible
+          des la page nationale, avant tout choix d'entite — la preference est
+          par appareil, elle n'a besoin d'aucune entite resolue.
+        */}
+        <BoutonBasculerTheme />
       </header>
       {/*
         `tabIndex={-1}` : sans lui le lien d'evitement ferait defiler sans deplacer

@@ -4,13 +4,13 @@
 hors épic/stories du backlog. Demandé directement par Jonathan le 25/10/2026, à la fermeture
 de `G10`.
 **Ouvert par Jonathan le :** 25 octobre 2026
-**État :** **VALIDÉ** — découpage et les deux questions ouvertes tranchées par Jonathan le
-25/10/2026 (`DEC-672`). `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale +
-cadre applicatif), `S4` (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et
-profil), `S7` (événements et mon onboarding) et `S8` (recette visuelle finale) **FAITES**.
-**LE CHANTIER EST TECHNIQUEMENT COMPLET** : les huit sous-étapes du §5 sont réalisées et les six
-critères de sortie du §7 sont tenus. Aucune sous-étape suivante n'est proposée — la suite
-(LOT 11 ou autre) relève d'une décision explicite de Jonathan, hors de ce chantier.
+**État :** **REPRIS le 27/10/2026 (`DEC-673`)**, après que `S1`-`S8` ont été déclarées
+techniquement complètes puis confrontées par Jonathan à des captures d'écran réelles (voir §8).
+`S1` (fondations), `S2` (migration des onglets), `S3` (page nationale + cadre applicatif), `S4`
+(page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
+et mon onboarding), `S8` (recette visuelle finale) et **`S9` (bascule clair/sombre) FAITES**.
+`S10` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
+périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -411,6 +411,33 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
      `PageNationale` rend une liste de 26+ entités plutôt qu'une carte de France graphique pour la
      session `SUPER` utilisée ici — comportement de `CarteDeFrance.tsx`, explicitement **non
      touché** par ce chantier (§3, `DEP-006`), non mesuré avant `S8` et donc non imputable à lui.
+9. **Bascule clair/sombre. FAITE** (27/10/2026, reprise `DEC-673`, voir §8). `jetons.css`
+   suivait `@media (prefers-color-scheme: dark)` depuis le LOT 1 `T5` — juste pour la seule page
+   de statut de l'époque, jamais reconsidéré quand `S1`-`S8` ont étendu ces jetons à toute
+   l'application métier. **Un second site du même défaut, non prévu au découpage, a été trouvé en
+   construisant S9** : `apps/web/src/styles.css` (propre à la page de statut) est en réalité
+   importée GLOBALEMENT par `main.tsx`, pour CHAQUE page — sa propre règle `@media` continuait de
+   suivre le système par-dessus le correctif de `jetons.css`, un bouton qui semblait n'avoir aucun
+   effet. Les deux feuilles reçoivent le même mécanisme : un attribut `data-theme="sombre"` sur
+   `<html>` remplace la préférence système, l'absence d'attribut étant le clair — jamais une
+   troisième valeur. Nouveau module `packages/ui/src/theme.ts` (`appliquerLeTheme`,
+   `lireLeThemeStocke`, pur, sans JSX) : la préférence est mémorisée **par appareil**
+   (`localStorage`), jamais par compte — rien dans le corpus ne décide qu'elle doive survivre à un
+   changement de machine (§6.5). **Arbitrage de Jonathan du 27/10/2026** : le clair est désormais
+   TOUJOURS le thème de la première visite, quelle que soit la préférence système — cohérent avec
+   le prototype et `exalt-company.com`, qui n'ont ni l'un ni l'autre de variante sombre. Nouveau
+   composant `BoutonBasculerTheme` (`apps/web`, icônes `Sun`/`Moon` de `lucide-react`,
+   `aria-pressed` suivant l'état réel), posé dans le SEUL `Squelette` partagé par les six états du
+   cadre applicatif et dans le bandeau de `PageNationale` — deux emplacements, un seul composant
+   (§7.27). **Un défaut de disposition trouvé en mesurant aux cinq largeurs** : à 1280 px, le
+   bouton — cinquième enfant de `.app-entete` — forçait l'entité active (seul enfant à
+   `min-width: 0`) à couper « Bordeaux » au milieu du mot plutôt que de passer à la ligne ; corrigé
+   par `flex-wrap: wrap` sur `.app-entete`, mesuré avant/après sur les cinq largeurs du §13.4,
+   zéro débordement (`scrollWidth`/`clientWidth`). **La préférence est appliquée une fois, dans
+   `main.tsx`, avant tout rendu** — sans cette ligne, un chargement direct de `/statut`, d'une page
+   de connexion ou d'une page d'erreur (aucune ne porte le bouton) ignorerait un choix « sombre »
+   fait ailleurs sur le même appareil. `make ecrans-check`/`make web-check`/`make test-frontend`
+   rejoués, 0 échec — 938 tests Vitest (459 `contracts`, 140 `ui`, 339 `web`).
 
 Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (`make test-frontend`,
 `make ecrans-check`, contraste), rapporter, attendre ta validation avant la suivante.
@@ -441,3 +468,62 @@ Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (
    débordement, mesuré (`scrollWidth`/`clientWidth`) sur chaque écran du périmètre §4.
 6. **TENU.** `DEP-006` reste intacte : aucun logo ni illustration de marque inventés à sa place —
    `CarteDeFrance.tsx` non touché de `S1` à `S8`.
+
+## 8. Reprise du chantier — `S9` à `S14` (`DEC-673`, 27/10/2026)
+
+### 8.1 Constat
+
+Jonathan a confronté des captures d'écran réelles de l'application (trombinoscope, page cercle,
+Framework) aux captures équivalentes du prototype et du site réel `exalt-company.com`. Mesuré
+avant tout code :
+
+- **le thème sombre suivait la préférence système** (`@media (prefers-color-scheme: dark)`,
+  hérité du LOT 1 `T5`, jamais repensé pour l'app métier) — sans aucun bouton pour revenir au
+  clair, contrairement au prototype et au site réel, qui n'ont ni l'un ni l'autre de variante
+  sombre ;
+- **l'avatar neutre du trombinoscope est gris sur gris** (`.trombi-avatar`, LOT 5), jamais coloré ;
+- **les cartes d'une même rangée du trombinoscope n'ont pas une hauteur égale** quand leur contenu
+  diffère (métier/statut absents) ;
+- **le nom du cercle n'est jamais montré en pastille au recto** de la carte, relégué au verso en
+  texte brut (§10.1, décision jamais retranchée depuis) ;
+- **la liste des membres d'un cercle ou d'un bureau reste un texte brut sans photo**
+  (`PageCercle.tsx`), `S5` ayant délibérément limité sa portée à l'habillage (`Carte`/`Badge`),
+  jamais à la restructuration du contenu — documenté dans le fichier lui-même.
+
+Consultation de `https://www.exalt-company.com/fr-fr/` pour inspiration : fond **toujours blanc**,
+un seul bloc sombre délibéré (bande CTA, pied de page) jamais le thème de lecture par défaut ;
+palette de marque identique à `MARQUE` (`DEC-491`) ; motifs distinctifs absents de notre design
+system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs, soulignés
+« tracé main » jaunes, pastilles à pointeur coloré.
+
+### 8.2 Arbitrages de Jonathan (`AskUserQuestion`, 27/10/2026)
+
+1. **Niveau d'inspiration** : **emprunter aussi les motifs du vrai site** (hexagones, gros
+   chiffres, soulignés), pas seulement recolorer le système existant — risque et effort plus
+   élevés qu'une passe de couleur seule, assumés.
+2. **Thème par défaut** : **toujours clair**, y compris au tout premier chargement, quelle que
+   soit la préférence système — jamais déduit, un bouton explicite permet de choisir le sombre.
+
+### Découpage retenu
+
+| | Sous-étape |
+|---|---|
+| `S9` | Bascule thème clair/sombre — **FAITE** |
+| `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée |
+| `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) |
+| `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) |
+| `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs |
+| `S14` | Recette visuelle finale de la reprise, même format que `S8` |
+
+### 8.3 Critères de sortie de la reprise
+
+1. Un bouton explicite permet de basculer entre thème clair et sombre sur toute page de
+   l'application, mémorisé par appareil.
+2. Le thème clair est actif à la première visite sur un appareil, quelle que soit la préférence
+   système.
+3. Les cinq largeurs de recette du §13.4 restent sans débordement sur chaque écran modifié par
+   `S9`-`S13`.
+4. Aucune régression de contraste AA sur les combinaisons déjà prouvées ; chaque nouvelle
+   combinaison (pastille de cercle, hexagone, soulignement décoratif) est mesurée par
+   `jetons.test.ts` ou son équivalent avant d'être employée.
+5. Le périmètre reste celui du §4 : aucun écran du back-office, aucune donnée réelle.

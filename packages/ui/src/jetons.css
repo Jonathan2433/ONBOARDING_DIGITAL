@@ -74,23 +74,49 @@
   --taille-m: 16px;
   --taille-l: 20px;
   --taille-xl: 28px;
+
+  /* Le theme CLAIR est celui que le navigateur doit annoncer par defaut : voir
+     le bloc sombre ci-dessous, qui le corrige explicitement pour l'autre cas. */
+  color-scheme: light;
 }
 
 /*
- * Theme sombre, repris de T5.
+ * Theme sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`).
  *
- * `prefers-color-scheme` et non une classe : le theme suit la preference du
- * systeme, ce qui est le comportement que la page de statut a deja depuis T5.
- * Les quatre couples de ce theme atteignent AA, remesures par jetons.test.ts.
+ * UN ATTRIBUT EXPLICITE, PLUS `prefers-color-scheme`
+ *
+ *   Ce bloc suivait la preference SYSTEME depuis le LOT 1 `T5` — un choix juste
+ *   pour la seule page de statut de l'epoque, jamais reconsidere quand le
+ *   chantier a etendu ces jetons a toute l'application metier. Consequence
+ *   mesuree le 27/10/2026 : un systeme regle en sombre faisait basculer le
+ *   trombinoscope, le Framework et la page nationale eux aussi, SANS AUCUN
+ *   bouton pour revenir au clair — l'inverse exact du prototype et du site
+ *   reel (`exalt-company.com`), qui n'ont ni l'un ni l'autre de variante
+ *   sombre.
+ *
+ *   Arbitrage de Jonathan du 27/10/2026 : le CLAIR est desormais TOUJOURS le
+ *   theme de premiere visite, quelle que soit la preference systeme, et
+ *   `BoutonBasculerTheme` (`apps/web`) permet de choisir le sombre — memorise
+ *   PAR APPAREIL par `packages/ui/src/theme.ts`, jamais par compte (§6.5 : rien
+ *   ne decide qu'une preference d'affichage doive survivre a un changement de
+ *   machine).
+ *
+ *   L'ABSENCE de `data-theme` EST LE CLAIR : `:root` porte deja ses valeurs,
+ *   et poser `data-theme="clair"` serait une valeur qu'aucun CSS ne lit. Seul
+ *   le sombre a besoin d'un selecteur, exactement comme `@media` ne portait
+ *   avant que le bloc qui le change.
+ *
+ *   Les sept couples de ce theme sont INCHANGES — memes valeurs qu'avant, donc
+ *   toujours AA, remesurees par `jetons.test.ts` — seul le MECANISME qui les
+ *   active change.
  */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fond: #18181b;
-    --fond-doux: #27272a;
-    --encre: #f4f4f5;
-    --encre-douce: #a1a1aa;
-    --trait: #3f3f46;
-    --ok: #6ee7a8;
-    --ko: #fca5a5;
-  }
+:root[data-theme='sombre'] {
+  --fond: #18181b;
+  --fond-doux: #27272a;
+  --encre: #f4f4f5;
+  --encre-douce: #a1a1aa;
+  --trait: #3f3f46;
+  --ok: #6ee7a8;
+  --ko: #fca5a5;
+  color-scheme: dark;
 }

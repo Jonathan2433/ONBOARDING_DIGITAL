@@ -40,15 +40,21 @@ import {
 import CSS from './jetons.css?raw';
 
 /**
- * Les declarations de `:root`, hors media query — c'est-a-dire le theme clair.
+ * Les declarations de `:root`, hors selecteur du theme sombre — c'est-a-dire
+ * le theme clair.
  *
- * Le decoupage s'arrete au premier `}` : la regle `@media` qui suit porte les
+ * Le decoupage s'arrete au premier `:root[data-theme` : cette regle porte les
  * memes noms avec les valeurs du theme sombre, et les melanger ferait comparer
- * une valeur claire a une valeur sombre.
+ * une valeur claire a une valeur sombre. **CE MARQUEUR A REMPLACE `@media`
+ * depuis S9 (`DEC-673`)** : le sombre n'est plus active par la preference
+ * systeme mais par un attribut explicite, voir l'en-tete de `jetons.css`.
  */
 function declarations(portee: string): Map<string, string> {
+  const marqueurSombre = ':root[data-theme';
   const bloc =
-    portee === 'clair' ? CSS.slice(0, CSS.indexOf('@media')) : CSS.slice(CSS.indexOf('@media'));
+    portee === 'clair'
+      ? CSS.slice(0, CSS.indexOf(marqueurSombre))
+      : CSS.slice(CSS.indexOf(marqueurSombre));
   const trouvees = new Map<string, string>();
   // DECOUPAGE PAR DECLARATION, ET NON PAR LIGNE. Premiere version de ce parseur :
   // une expression reguliere ancree en debut de ligne, qui exigeait la valeur sur

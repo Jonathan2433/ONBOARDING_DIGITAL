@@ -10,6 +10,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { appliquerLeTheme, lireLeThemeStocke } from '@onboarding/ui';
+
 //  **LES JETONS SONT CHARGES ICI, ET ILS NE L'ETAIENT PAS.** LOT 4, `T3`.
 //
 //  `auth.css`, posee en `T11` du LOT 3, emploie 21 proprietes personnalisees.
@@ -48,6 +50,16 @@ import '@onboarding/ui/composants.css';
 
 import { App } from './App';
 import './styles.css';
+
+//  **LA PREFERENCE DE THEME EST APPLIQUEE ICI, UNE FOIS, AVANT TOUT RENDU —
+//  chantier front hors lot, S9 (`DEC-672`/`DEC-673`).** `BoutonBasculerTheme`
+//  n'est monte que sur DEUX pages (`CadreApplicatif`, `PageNationale`) : sans
+//  cette ligne, un chargement direct de `/statut`, d'une page d'erreur ou d'un
+//  ecran de connexion ne lirait JAMAIS `localStorage`, et un choix « sombre »
+//  fait ailleurs semblerait s'etre perdu sur CES pages precises — memorise
+//  par appareil doit vouloir dire sur TOUTE page, pas seulement celles qui
+//  portent le bouton.
+appliquerLeTheme(lireLeThemeStocke() ?? 'clair');
 
 const hote = document.getElementById('racine');
 if (hote === null) {
