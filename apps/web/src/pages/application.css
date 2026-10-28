@@ -876,21 +876,32 @@
   object-fit: cover;
 }
 
-/* L'avatar neutre du §21.2 : les initiales sur un fond doux, jamais une image
-   cassee ni un trou. */
+/* L'avatar neutre du §21.2 : les initiales sur un fond de marque, jamais une
+   image cassee ni un trou. MEME couple que `.profil-avatar` (bleu/texte,
+   deja mesure AA par `jetons.test.ts`) — chantier front S10 (`DEC-673`) :
+   aucune nouvelle combinaison, le gris sur gris disparait par reemploi. */
 .trombi-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--encre);
-  background: var(--fond-doux);
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
 }
 
 .trombi-nom {
   display: block;
   font-weight: 600;
+  text-align: center;
+}
+
+/* La pastille de cercle du recto n'est qu'un conteneur de CENTRAGE : le
+   `Badge` qu'il porte fournit deja sa propre forme et sa propre couleur
+   (chantier front S10, `DEC-673`). */
+.trombi-pastille-cercle {
+  display: block;
+  margin-top: var(--espace-xs);
   text-align: center;
 }
 
