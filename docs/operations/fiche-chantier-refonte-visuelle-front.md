@@ -9,9 +9,9 @@ techniquement complètes puis confrontées par Jonathan à des captures d'écran
 `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale + cadre applicatif), `S4`
 (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
 et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)**, **`S10`
-(trombinoscope/profil « pop »)**, **`S11` (cadres hexagonaux)** et **`S12` (cartes-photo cercle/
-bureau) FAITES**.
-`S13` et `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
+(trombinoscope/profil « pop »)**, **`S11` (cadres hexagonaux)**, **`S12` (cartes-photo cercle/
+bureau)** et **`S13` (accents visuels) FAITES**.
+`S14` reste à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
 périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
@@ -654,7 +654,7 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 | `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée — **FAITE** |
 | `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) — **FAITE, limitée au profil et au trombinoscope** (§8.2 note) |
 | `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) — **FAITE, limitée aux pages détail cercle et bureau** (§8.2 note) |
-| `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs |
+| `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs — **FAITE, limitée aux deux compteurs stricts et au titre de la page nationale** (§8.2 note) |
 | `S14` | Recette visuelle finale de la reprise, même format que `S8` |
 
 > **Note sur `S11` (28/10/2026, `AskUserQuestion`)** : mesuré avant tout code, les représentants
@@ -676,6 +676,25 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 > bureau n'avaient qu'un `person.id` — une jointure SQL supplémentaire (`LEFT JOIN
 > entity_membership`, aucune migration) le retrouve quand il existe, et laisse `photo` à `null`
 > sinon, exactement comme un titulaire sans photo.
+
+> **Note sur `S13` (29/10/2026, deux `AskUserQuestion`)** : mesuré avant tout code, les seuls
+> « compteurs » au sens strict (un total mis en avant, pas un indicateur de navigation) sont
+> « Membres (N) » et « Responsables (N) » — la pagination et le total du trombinoscope en sont
+> exclus. Arbitrage de Jonathan : le gros chiffre ne porte que sur ces deux compteurs,
+> `Carte.titre` (`packages/ui`) passant de `string` à `ReactNode` pour isoler le nombre dans
+> `.ex-carte__titre-chiffre` sans changer le nom accessible de la région (`aria-labelledby` lit le
+> texte concaténé). Pour le soulignement, seul le `<h1>` de la page nationale le reçoit, jamais les
+> titres de `Carte` (répétés des dizaines de fois par écran) — nouvelle classe `.nat-titre`,
+> volontairement PAS posée sur `.app-titre` seul, qui est aussi le titre FONCTIONNEL partagé par
+> `CadreApplicatif` sur chaque page interne (même piège que `.nat-bandeau`/`.app-entete` en `S3`).
+> **Un second arbitrage, trouvé en mesurant avant de coder** : le jaune de marque, littéral au site
+> réel, ne rend que 1,37:1 sur le fond CLAIR — exactement la valeur déjà écrite dans `jetons.ts`
+> pour exclure le jaune des accents en thème clair, désormais le thème par défaut (`S9`). Arbitrage
+> de Jonathan : le souligné est BLEU (`--marque-bleu`), un accent déjà PROUVÉ dans les deux thèmes
+> (`ACCENTS_ADMIS`) — zéro nouvelle mesure de contraste. Le trait est purement décoratif
+> (`text-decoration-style: wavy`, aucune information portée), exempté du contraste non textuel
+> (WCAG 1.4.11), même parti que les icônes `aria-hidden` de `S3` et le `clip-path` hexagonal de
+> `S11`.
 
 ### 8.3 Critères de sortie de la reprise
 

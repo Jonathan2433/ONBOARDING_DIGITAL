@@ -219,3 +219,35 @@ describe('chantier front, S12 : cadres hexagonaux des responsables (DEC-673)', (
     expect(image?.getAttribute('alt')).toBe('');
   });
 });
+
+describe('chantier front, S13 : le compteur de responsables en gros chiffre (DEC-673)', () => {
+  it('le nombre de responsables est isole dans `.ex-carte__titre-chiffre`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeBureau())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/bureaux/siege']}>
+        <Routes>
+          <Route path="/entites/:code/framework/bureaux/:codeBureau" element={<PageBureau />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    expect(container.querySelector('.ex-carte__titre-chiffre')?.textContent).toBe('1');
+  });
+
+  it("l'accent n'altere pas le nom accessible de la region — LE TEMOIN CENTRAL", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeBureau({ responsables: [], nombre_de_responsables: 0 }))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Responsables (0)' })).toBeTruthy();
+  });
+});
