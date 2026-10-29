@@ -28,7 +28,7 @@
 
 import { estObjet, exigerChaine } from './formes.js';
 import { endpoint } from './sante.js';
-import { TAILLE_PAR_DEFAUT, TAILLES_DE_PAGE } from './trombinoscope.js';
+import { cheminDePhotoOuNul, TAILLE_PAR_DEFAUT, TAILLES_DE_PAGE } from './trombinoscope.js';
 
 /** Les deux natures d'appartenance a un cercle — modele §8.2. */
 export const TYPES_D_APPARTENANCE_AU_CERCLE = ['principal', 'secondary'] as const;
@@ -60,12 +60,16 @@ export interface MembreDuCercle {
   readonly nom: string;
   /** `principal` ou `secondary` — la distinction porte des droits, §8.2 et `ARB-DROIT-004`. */
   readonly typeDAppartenance: string;
+  /** Chantier front hors lot, `S12` (`DEC-673`). Voir `cheminDePhotoOuNul`. */
+  readonly photo: string | null;
 }
 
 export interface TitulaireDuCercle {
   readonly identifiant: string;
   readonly prenom: string;
   readonly nom: string;
+  /** Chantier front hors lot, `S12` (`DEC-673`). Voir `cheminDePhotoOuNul`. */
+  readonly photo: string | null;
 }
 
 export interface PageDuCercle {
@@ -117,6 +121,7 @@ function titulaire(valeur: unknown): TitulaireDuCercle | null {
     identifiant: exigerChaine(valeur, 'identifiant'),
     prenom: exigerChaine(valeur, 'prenom'),
     nom: exigerChaine(valeur, 'nom'),
+    photo: cheminDePhotoOuNul(valeur),
   };
 }
 
@@ -148,6 +153,7 @@ export function validerLaPageDuCercle(valeur: unknown): PageDuCercle {
       prenom: exigerChaine(brut, 'prenom'),
       nom: exigerChaine(brut, 'nom'),
       typeDAppartenance: exigerChaine(brut, 'type_d_appartenance'),
+      photo: cheminDePhotoOuNul(brut),
     };
   });
 

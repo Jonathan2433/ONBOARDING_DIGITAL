@@ -31,6 +31,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.configuration.settings import Parametres
+from app.media.modeles import EtatMedia, SourceAutorisationPhoto, TypeMedia, TypeVarianteMedia
 from app.organization.cercles import CercleDetaille, lire_le_cercle
 from app.organization.modeles import TypeAppartenanceCercle
 from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
@@ -163,6 +164,64 @@ def _membre(
     return appartenance  # type: ignore[no-any-return]
 
 
+def _photo_servable(
+    cx: Connection, entite: uuid.UUID, appartenance: uuid.UUID, *, maintenant: dt.datetime
+) -> None:
+    """Autorise et sert une photo pour l'appartenance donnee.
+
+    Chantier front hors lot, `S12` (`DEC-673`). Reprend exactement la recette de
+    `test_photo_de_profil.py` (media_asset `READY`, variante
+    `MINIATURE_TROMBINOSCOPE`, autorisation active) : une seconde regle
+    divergerait au premier ajout (§7.27).
+    """
+    personne = cx.execute(
+        text("SELECT person_id FROM entity_membership WHERE id = :a"), {"a": appartenance}
+    ).scalar_one()
+    actif = cx.execute(
+        text(
+            "INSERT INTO media_asset (entity_id, uploaded_by_person_id, state, media_type, "
+            "original_filename, object_key, mime_declared, size_bytes, checksum_sha256, "
+            "ready_at) VALUES (:e, :p, :etat, :type_m, 'photo.jpg', :cle, 'image/jpeg', "
+            "2000000, :emp, :pret) RETURNING id"
+        ),
+        {
+            "e": entite,
+            "p": personne,
+            "etat": EtatMedia.READY.value,
+            "type_m": TypeMedia.IMAGE.value,
+            "cle": f"originaux-s12/{uuid.uuid4().hex}",
+            "emp": "a" * 64,
+            "pret": maintenant - dt.timedelta(days=1),
+        },
+    ).scalar_one()
+    cx.execute(
+        text(
+            "INSERT INTO media_variant (entity_id, media_asset_id, variant_type, width, "
+            "height, variant_format, size_bytes, checksum_sha256, object_key) "
+            "VALUES (:e, :a, :t, 200, 200, 'jpeg', 4096, :emp, :cle)"
+        ),
+        {
+            "e": entite,
+            "a": actif,
+            "t": TypeVarianteMedia.MINIATURE_TROMBINOSCOPE.value,
+            "emp": "a" * 64,
+            "cle": f"miniatures-s12/{uuid.uuid4().hex}",
+        },
+    )
+    cx.execute(
+        text(
+            "INSERT INTO photo_authorization (person_id, media_asset_id, granted_at, source) "
+            "VALUES (:p, :m, :octroi, :src)"
+        ),
+        {
+            "p": personne,
+            "m": actif,
+            "octroi": maintenant - dt.timedelta(days=1),
+            "src": SourceAutorisationPhoto.SELF_SERVICE.value,
+        },
+    )
+
+
 def _lire(
     cx: Connection, entite: uuid.UUID, code_entite: str, code_cercle: str, **kwargs: object
 ) -> CercleDetaille | None:
@@ -256,7 +315,58 @@ def test_le_Booster_ACTIF_est_nomme_et_son_absence_rend_None(cx: Connection) -> 
     rendu_sans = _lire(cx, entite, code, "SANS")
     assert rendu_avec is not None and rendu_avec.booster is not None
     assert rendu_avec.booster.nom == "Martin"
+    #  Chantier front S12 (DEC-673) : ce Booster n'a AUCUNE appartenance dans
+    #  cette entite -- `appartenance` reste None et `a_une_photo` reste faux,
+    #  plutot que de lever sur une jointure qui ne trouve rien.
+    assert rendu_avec.booster.appartenance is None
+    assert rendu_avec.booster.a_une_photo is False
     assert rendu_sans is not None and rendu_sans.booster is None
+
+
+# ---- la photo, chantier front hors lot S12 (DEC-673) -----------------------
+@pytest.mark.integration
+def test_le_Booster_AVEC_une_appartenance_et_une_photo_autorisee_la_sert(cx: Connection) -> None:
+    """Contrairement au Booster sans appartenance ci-dessus : ici une
+    appartenance active et listee existe, et une photo lui est autorisee."""
+    entite, code = _entite(cx, "BPHO")
+    cercle = _cercle(cx, entite, "DATA")
+    appartenance = _membre(cx, entite, cercle, nom="Booster")
+    personne = cx.execute(
+        text("SELECT person_id FROM entity_membership WHERE id = :a"), {"a": appartenance}
+    ).scalar_one()
+    cx.execute(
+        text(
+            "INSERT INTO framework_responsibility_assignment (person_id, entity_id, "
+            "responsibility_type, circle_id, assigned_by_person_id, starts_at) "
+            "VALUES (:p, :e, 'BOOSTER', :c, :p, :d)"
+        ),
+        {"p": personne, "e": entite, "c": cercle, "d": JANVIER},
+    )
+    _photo_servable(cx, entite, appartenance, maintenant=JUIN)
+    rendu = _lire(cx, entite, code, "DATA")
+    assert rendu is not None and rendu.booster is not None
+    assert rendu.booster.appartenance == appartenance
+    assert rendu.booster.a_une_photo is True
+
+
+@pytest.mark.integration
+def test_TEMOIN_un_membre_AVEC_photo_la_sert_un_membre_SANS_ne_la_sert_pas(
+    cx: Connection,
+) -> None:
+    """**LE TEMOIN QUI DISCRIMINE.** Deux membres, MEME cercle, MEME instant —
+    seule la presence d'une autorisation differe. Sans ce couple, un `EXISTS`
+    qui ne rend jamais rien donnerait la meme observation qu'un `EXISTS` exact,
+    exactement le piege du defaut `T2-3` (huit refus restaient verts)."""
+    entite, code = _entite(cx, "MPHO")
+    cercle = _cercle(cx, entite, "DATA")
+    avec = _membre(cx, entite, cercle, nom="Avec")
+    sans = _membre(cx, entite, cercle, nom="Sans")
+    _photo_servable(cx, entite, avec, maintenant=JUIN)
+    rendu = _lire(cx, entite, code, "DATA")
+    assert rendu is not None
+    par_appartenance = {m.appartenance: m for m in rendu.membres}
+    assert par_appartenance[avec].a_une_photo is True
+    assert par_appartenance[sans].a_une_photo is False
 
 
 # ---- les membres, et leurs sept exclusions ---------------------------------

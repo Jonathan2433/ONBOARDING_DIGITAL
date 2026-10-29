@@ -25,7 +25,13 @@ import {
   validerLaPageDuBureau,
 } from './bureaux.js';
 
-const RESPONSABLE = { identifiant: 'r1', prenom: 'Ada', nom: 'Lovelace' };
+const RESPONSABLE = {
+  identifiant: 'r1',
+  prenom: 'Ada',
+  nom: 'Lovelace',
+  //  Chantier front hors lot, S12 (DEC-673).
+  photo: null,
+};
 
 function charge(modifications: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -148,6 +154,25 @@ describe('`publie` n’est jamais coerce', () => {
     );
 
     expect(lu.publie).toBe(false);
+  });
+});
+
+describe('la photo d’un responsable — chantier front hors lot S12 (DEC-673)', () => {
+  it('distingue un responsable AVEC photo d’un responsable SANS, meme bureau', () => {
+    //  **LE COUPLE, PAS UNE SEULE MOITIE** — meme motif que `cercles.test.ts`.
+    const avecPhoto = { ...RESPONSABLE, photo: '/api/v1/entities/BDX/people/r1/photo' };
+    const sansPhoto = { ...RESPONSABLE, identifiant: 'r2' };
+    const lu = validerLaPageDuBureau(
+      charge({ responsables: [avecPhoto, sansPhoto], nombre_de_responsables: 2 }),
+    );
+
+    expect(lu.responsables[0]?.photo).toBe('/api/v1/entities/BDX/people/r1/photo');
+    expect(lu.responsables[1]?.photo).toBeNull();
+  });
+
+  it('refuse un chemin de photo hors du prefixe versionne', () => {
+    const corrompu = { ...RESPONSABLE, photo: 'https://ailleurs.test/x.jpg' };
+    expect(() => validerLaPageDuBureau(charge({ responsables: [corrompu] }))).toThrow(TypeError);
   });
 });
 

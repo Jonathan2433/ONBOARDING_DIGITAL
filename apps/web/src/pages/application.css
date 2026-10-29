@@ -1298,6 +1298,37 @@
   color: var(--encre-douce);
 }
 
+/* L'avatar du Booster et des membres — chantier front S12 (DEC-673). Meme
+   recette que `.trombi-avatar`/`.profil-avatar` (cadre hexagonal, fond de
+   marque colore), a une taille de LISTE plutot que de recto de carte — une
+   regle propre a cette page, jamais partagee entre feuilles (§7.27 dans
+   l'autre sens, comme `.cercle-page`/`.trombi-page`). */
+.cercle-avatar,
+.cercle-photo {
+  flex: 0 0 auto;
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  clip-path: var(--decoupe-hexagone);
+  object-fit: cover;
+}
+
+.cercle-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+}
+
+.cercle-booster {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+}
+
 .cercle-liste-membres {
   display: flex;
   flex-direction: column;
@@ -1314,6 +1345,12 @@
   gap: var(--espace-s);
   padding: var(--espace-xs) 0;
   border-bottom: 1px solid var(--trait);
+}
+
+.cercle-membre-identite {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
 }
 
 .cercle-pagination {
@@ -1385,9 +1422,46 @@
   color: var(--encre-douce);
 }
 
+/* La liste des responsables, et leur avatar — chantier front S12 (DEC-673).
+   Meme recette qu'un cercle (hexagone, fond de marque), classe propre a cette
+   page (§7.27 dans l'autre sens). La liste perd ses puces natives : un avatar
+   par ligne en tient deja lieu de repere visuel, meme parti que
+   `.cercle-liste-membres`. */
 .bureau-liste-responsables {
-  padding-left: var(--espace-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: 0;
   margin: 0;
+  list-style: none;
+}
+
+.bureau-liste-responsables li {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  padding: var(--espace-xs) 0;
+  border-bottom: 1px solid var(--trait);
+}
+
+.bureau-avatar,
+.bureau-photo {
+  flex: 0 0 auto;
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  clip-path: var(--decoupe-hexagone);
+  object-fit: cover;
+}
+
+.bureau-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
 }
 
 .bureau-retour {
