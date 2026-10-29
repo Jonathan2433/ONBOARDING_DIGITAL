@@ -42,6 +42,16 @@
  *   sur un style pose EN LIGNE par un ANCETRE pour la meme propriete. La
  *   bordure coloree ne pouvait donc jamais s'afficher, par aucun cercle, et
  *   aucun test ne l'eprouvait.
+ *
+ * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DU BOOSTER ET DES MEMBRES
+ *
+ *   `TitulaireDuCercle.photo` et `MembreDuCercle.photo` suivent exactement la
+ *   convention du trombinoscope et du profil (S11) : un cadre hexagonal
+ *   (`--decoupe-hexagone`) sur fond de marque colore quand `photo` est `null`,
+ *   l'image elle-meme sinon — meme motif, meme initiales, aucune nouvelle
+ *   mesure de contraste. Arbitrage de Jonathan (`AskUserQuestion`,
+ *   29/10/2026) : la page de synthese Framework reste hors de cette
+ *   sous-etape, reportee.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -153,7 +163,23 @@ export function PageCercle(): JSX.Element {
           {c.description === null ? null : <p className="cercle-description">{c.description}</p>}
           <dl className="cercle-champs">
             <dt>Booster</dt>
-            <dd>{c.booster === null ? 'Aucun Booster' : `${c.booster.prenom} ${c.booster.nom}`}</dd>
+            <dd>
+              {c.booster === null ? (
+                'Aucun Booster'
+              ) : (
+                <span className="cercle-booster">
+                  {c.booster.photo === null ? (
+                    <span aria-hidden="true" className="cercle-avatar">
+                      {c.booster.prenom.slice(0, 1)}
+                      {c.booster.nom.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img alt="" className="cercle-photo" src={c.booster.photo} />
+                  )}
+                  {c.booster.prenom} {c.booster.nom}
+                </span>
+              )}
+            </dd>
           </dl>
         </Carte>
       </div>
@@ -165,8 +191,18 @@ export function PageCercle(): JSX.Element {
           <ul className="cercle-liste-membres">
             {c.membres.map((membre) => (
               <li key={membre.appartenance}>
-                <span className="cercle-membre-nom">
-                  {membre.prenom} {membre.nom}
+                <span className="cercle-membre-identite">
+                  {membre.photo === null ? (
+                    <span aria-hidden="true" className="cercle-avatar">
+                      {membre.prenom.slice(0, 1)}
+                      {membre.nom.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img alt="" className="cercle-photo" src={membre.photo} />
+                  )}
+                  <span className="cercle-membre-nom">
+                    {membre.prenom} {membre.nom}
+                  </span>
                 </span>
                 <Badge ton={membre.typeDAppartenance === 'principal' ? 'marque' : 'neutre'}>
                   {libelleDAppartenance(membre.typeDAppartenance)}

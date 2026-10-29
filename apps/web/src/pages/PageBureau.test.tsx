@@ -31,7 +31,7 @@ function pageDeBureau(supplement: Record<string, unknown> = {}): Response {
       nom: 'Siege',
       description: null,
       localisation: null,
-      responsables: [{ identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace' }],
+      responsables: [{ identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace', photo: null }],
       nombre_de_responsables: 1,
       publie: true,
       chemin_detaille: '/entites/bordeaux/framework/bureaux/siege',
@@ -117,6 +117,7 @@ describe('la page detaillee d’un bureau a l’ecran', () => {
       identifiant: `p${String(i)}`,
       prenom,
       nom: 'X',
+      photo: null,
     }));
     vi.stubGlobal(
       'fetch',
@@ -159,5 +160,62 @@ describe('chantier front, S5 : `Carte`/icone de bureau (`DEC-672`)', () => {
     const icone = screen.getByRole('region', { name: 'Siege' }).querySelector('svg');
     expect(icone).toBeTruthy();
     expect(icone?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('chantier front, S12 : cadres hexagonaux des responsables (DEC-673)', () => {
+  it('sans photo, un responsable porte des initiales — AUCUNE `<img>`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeBureau())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/bureaux/siege']}>
+        <Routes>
+          <Route path="/entites/:code/framework/bureaux/:codeBureau" element={<PageBureau />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('.bureau-avatar')?.textContent).toBe('AL');
+  });
+
+  it('avec une photo, un responsable porte une `<img>` — AUCUNE initiale', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          pageDeBureau({
+            responsables: [
+              {
+                identifiant: 'p1',
+                prenom: 'Ada',
+                nom: 'Lovelace',
+                photo: '/api/v1/entities/bordeaux/people/p1/photo',
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/bureaux/siege']}>
+        <Routes>
+          <Route path="/entites/:code/framework/bureaux/:codeBureau" element={<PageBureau />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Siege')).toBeTruthy();
+    });
+    expect(container.querySelector('.bureau-avatar')).toBeNull();
+    const image = container.querySelector('img');
+    expect(image?.getAttribute('src')).toBe('/api/v1/entities/bordeaux/people/p1/photo');
+    //  Le nom est juste a cote : un `alt` qui le repeterait le ferait annoncer
+    //  deux fois par un lecteur d'ecran.
+    expect(image?.getAttribute('alt')).toBe('');
   });
 });

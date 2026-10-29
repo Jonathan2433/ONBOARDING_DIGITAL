@@ -49,8 +49,10 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError
 
 from app.configuration.settings import Parametres
+from app.media.modeles import EtatMedia, SourceAutorisationPhoto, TypeMedia, TypeVarianteMedia
 from app.organization.bureaux import BureauDetaille, lire_le_bureau
 from app.organization.framework import chemin_du_bureau
+from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 from app.shared.database import moteur
 
 MARQUEUR = "L6T4"
@@ -320,6 +322,85 @@ def _lire(
     )
 
 
+def _appartenance(cx: Connection, entite: uuid.UUID, personne: uuid.UUID) -> uuid.UUID:
+    """Une appartenance a l'entite, ACTIVE et LISTEE -- chantier front S12 (DEC-673).
+
+    `_responsable` ne cree AUCUNE appartenance pour son titulaire — un
+    responsable de bureau n'en a pas toujours une, et c'est exactement le cas
+    que `test_un_responsable_SANS_appartenance_ne_sert_aucune_photo` eprouve.
+    Ce helper en ajoute une, SEPAREMENT, pour le cas ou elle existe.
+    """
+    return cx.execute(  # type: ignore[no-any-return]
+        text(
+            "INSERT INTO entity_membership (entity_id, person_id, arrival_date, "
+            "membership_state, professional_category, profile_visibility) "
+            "VALUES (:e, :p, :arrivee, :etat, 'consultant', :visibilite) RETURNING id"
+        ),
+        {
+            "e": entite,
+            "p": personne,
+            "arrivee": JANVIER.date(),
+            "etat": ETAT_LISTE,
+            "visibilite": VISIBILITE_LISTEE,
+        },
+    ).scalar_one()
+
+
+def _photo_servable(
+    cx: Connection, entite: uuid.UUID, personne: uuid.UUID, *, maintenant: dt.datetime
+) -> None:
+    """Autorise et sert une photo pour la personne donnee.
+
+    Chantier front hors lot, `S12` (`DEC-673`). Reprend exactement la recette de
+    `test_photo_de_profil.py` (media_asset `READY`, variante
+    `MINIATURE_TROMBINOSCOPE`, autorisation active) : une seconde regle
+    divergerait au premier ajout (§7.27).
+    """
+    actif = cx.execute(
+        text(
+            "INSERT INTO media_asset (entity_id, uploaded_by_person_id, state, media_type, "
+            "original_filename, object_key, mime_declared, size_bytes, checksum_sha256, "
+            "ready_at) VALUES (:e, :p, :etat, :type_m, 'photo.jpg', :cle, 'image/jpeg', "
+            "2000000, :emp, :pret) RETURNING id"
+        ),
+        {
+            "e": entite,
+            "p": personne,
+            "etat": EtatMedia.READY.value,
+            "type_m": TypeMedia.IMAGE.value,
+            "cle": f"originaux-s12/{uuid.uuid4().hex}",
+            "emp": "a" * 64,
+            "pret": maintenant - dt.timedelta(days=1),
+        },
+    ).scalar_one()
+    cx.execute(
+        text(
+            "INSERT INTO media_variant (entity_id, media_asset_id, variant_type, width, "
+            "height, variant_format, size_bytes, checksum_sha256, object_key) "
+            "VALUES (:e, :a, :t, 200, 200, 'jpeg', 4096, :emp, :cle)"
+        ),
+        {
+            "e": entite,
+            "a": actif,
+            "t": TypeVarianteMedia.MINIATURE_TROMBINOSCOPE.value,
+            "emp": "a" * 64,
+            "cle": f"miniatures-s12/{uuid.uuid4().hex}",
+        },
+    )
+    cx.execute(
+        text(
+            "INSERT INTO photo_authorization (person_id, media_asset_id, granted_at, source) "
+            "VALUES (:p, :m, :octroi, :src)"
+        ),
+        {
+            "p": personne,
+            "m": actif,
+            "octroi": maintenant - dt.timedelta(days=1),
+            "src": SourceAutorisationPhoto.SELF_SERVICE.value,
+        },
+    )
+
+
 # ----------------------------------------------------------------------------
 #  2.1 LA BORNE DU §8.4 N'EST PAS TENUE, ET LA LECTURE NE DOIT PAS LA SUPPOSER
 # ----------------------------------------------------------------------------
@@ -394,6 +475,52 @@ def test_le_nombre_rendu_est_DERIVE_du_tuple_et_non_compte_a_part(cx: Connection
 
     assert lu is not None
     assert lu.nombre_de_responsables == len(lu.responsables) == 1
+
+
+# ----------------------------------------------------------------------------
+#  2.1 bis LA PHOTO D'UN RESPONSABLE, CHANTIER FRONT HORS LOT S12 (DEC-673)
+# ----------------------------------------------------------------------------
+@pytest.mark.integration
+def test_un_responsable_SANS_appartenance_ne_sert_aucune_photo(cx: Connection) -> None:
+    """`_responsable` ne cree aucune appartenance pour son titulaire — c'est
+    l'etat de TOUS les decors precedents de cette suite. `appartenance` reste
+    `None` et `a_une_photo` reste faux, plutot que de lever sur une jointure
+    qui ne trouve rien."""
+    entite, code = _entite(cx, "SANSAPP")
+    bureau = _bureau(cx, entite, "SOLO")
+    _responsable(cx, entite, bureau, nom="Seul")
+
+    lu = _lire(cx, entite, code, "SOLO")
+
+    assert lu is not None and len(lu.responsables) == 1
+    assert lu.responsables[0].appartenance is None
+    assert lu.responsables[0].a_une_photo is False
+
+
+@pytest.mark.integration
+def test_TEMOIN_un_responsable_AVEC_photo_la_sert_un_responsable_SANS_ne_la_sert_pas(
+    cx: Connection,
+) -> None:
+    """**LE TEMOIN QUI DISCRIMINE.** Deux responsables du MEME bureau, chacun
+    avec une appartenance active et listee — seule la presence d'une
+    autorisation differe. Sans ce couple, un `EXISTS` qui ne rend jamais rien
+    donnerait la meme observation qu'un `EXISTS` exact, exactement le piege du
+    defaut `T2-3` (huit refus restaient verts)."""
+    entite, code = _entite(cx, "RPHO")
+    bureau = _bureau(cx, entite, "DUO")
+    avec = _responsable(cx, entite, bureau, nom="Avec")
+    sans = _responsable(cx, entite, bureau, nom="Sans")
+    _appartenance(cx, entite, avec)
+    _appartenance(cx, entite, sans)
+    _photo_servable(cx, entite, avec, maintenant=JUIN)
+
+    lu = _lire(cx, entite, code, "DUO")
+
+    assert lu is not None
+    par_identifiant = {r.identifiant: r for r in lu.responsables}
+    assert par_identifiant[avec].a_une_photo is True
+    assert par_identifiant[avec].appartenance is not None
+    assert par_identifiant[sans].a_une_photo is False
 
 
 # ----------------------------------------------------------------------------

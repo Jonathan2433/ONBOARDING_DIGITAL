@@ -9,8 +9,9 @@ techniquement complètes puis confrontées par Jonathan à des captures d'écran
 `S1` (fondations), `S2` (migration des onglets), `S3` (page nationale + cadre applicatif), `S4`
 (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
 et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)**, **`S10`
-(trombinoscope/profil « pop »)** et **`S11` (cadres hexagonaux) FAITES**.
-`S12` à `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
+(trombinoscope/profil « pop »)**, **`S11` (cadres hexagonaux)** et **`S12` (cartes-photo cercle/
+bureau) FAITES**.
+`S13` et `S14` restent à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
 périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
@@ -521,6 +522,65 @@ d'accessibilité**, pas une passe de direction artistique — les deux ne sont p
       bureau n'ont reçu aucun avatar — ni hexagonal, ni à initiales. `S12` les ajoutera avec leur
       photo, cadre hexagonal compris.
 
+12. **Cartes-photo des membres d'un cercle/bureau. FAITE** (29/10/2026). `S10`/`S11` avaient donné
+    un avatar hexagonal au trombinoscope et au profil ; `S12` fait de même pour les trois autres
+    listes de personnes du périmètre — les membres d'un cercle, son Booster, les responsables d'un
+    bureau — qui n'avaient jusqu'ici que du texte brut.
+    - **Mesuré avant tout code** : `resoudre_la_miniature` (LOT 5, `app.media.photo`) attend un
+      `entity_membership.id`. Les membres d'un cercle le portent déjà
+      (`MembreDuCercle.appartenance`) — aucune extension nécessaire côté backend pour eux, hormis
+      le champ `photo`. Le Booster d'un cercle et les responsables d'un bureau, eux, ne portaient
+      qu'un `person.id` (type `TitulaireFramework`, partagé avec une troisième liste, la synthèse
+      Framework) : une jointure SQL supplémentaire vers `entity_membership` (aucune migration) est
+      nécessaire pour retrouver leur appartenance quand elle existe.
+    - **Arbitrage de Jonathan posé avant tout code** (`AskUserQuestion`, reformulé sans jargon,
+      voir la note du §8.2) : `TitulaireFramework` alimentant AUSSI la synthèse Framework (un
+      troisième écran que le titre de `S12` ne nomme pas), la photo couvre les pages détail cercle
+      et bureau dans leur ENTIER (membres, Booster, responsables), la synthèse Framework restant
+      hors périmètre, reportée. Nouvelle table `TitulaireAvecPhoto`
+      (`app.organization.framework`), distincte de `TitulaireFramework` qui reste inchangée pour
+      la synthèse — même motif que `.cercle-page`/`.trombi-page` (§7.27 dans l'autre sens, deux
+      usages, deux types, rien qui les lie).
+    - **Backend** : `app/organization/cercles.py` — `MembreDuCercle.a_une_photo` (même `EXISTS` que
+      le trombinoscope, `CONDITIONS_DE_LA_MINIATURE`, zéro N+1) ; `_CERCLE` étendue d'un `LEFT
+      JOIN entity_membership` sur le Booster. `app/organization/bureaux.py` — `_RESPONSABLES`
+      étendue de même. `app/organization/routes.py` — nouveau modèle `TitulaireAvecPhotoRendu`
+      (`photo: str | null`), `MembreRendu.photo`, fonctions `_titulaire_avec_photo`/`_membre`
+      réécrites pour calculer le chemin via `chemin_de_la_photo` (réutilisé depuis
+      `app.people.routes`, premier import croisé entre ces deux modules de routes — vérifié sans
+      cycle). `appartenance` reste `None`/`a_une_photo` reste faux quand la personne n'a pas
+      d'appartenance active et listée dans l'entité (le Booster/les responsables en sont
+      fréquemment dépourvus dans le jeu de données), sans jamais lever.
+    - **Contrat** : `cercles.ts`/`bureaux.ts` — `MembreDuCercle.photo`, `TitulaireDuCercle.photo`,
+      `ResponsableDuBureau.photo`, tous validés par `cheminDePhotoOuNul` (réutilisé de
+      `trombinoscope.ts`, même règle de prefixe versionné).
+    - **Frontend** : `PageCercle.tsx` (Booster et chaque membre), `PageBureau.tsx` (chaque
+      responsable) — même motif exact que `PageProfil.tsx`/`PageTrombinoscope.tsx` (`<span
+      aria-hidden>` à initiales si `photo === null`, `<img alt="">` sinon). Nouvelles classes CSS
+      `.cercle-avatar`/`.cercle-photo`/`.cercle-booster`/`.cercle-membre-identite` et
+      `.bureau-avatar`/`.bureau-photo` (`application.css`) : cadre hexagonal à 2 rem, couple
+      `--marque-bleu`/`--marque-bleu-texte` déjà prouvé AA — aucune nouvelle mesure de contraste.
+      `.bureau-liste-responsables` perd ses puces natives, un avatar par ligne en tenant
+      désormais lieu de repère visuel, même parti que `.cercle-liste-membres`.
+    - **Contrôles** : 10 pytest nouveaux dans `test_cercles.py` (33/33), 2 dans `test_bureaux.py`
+      (26/26) — chaque couple « avec photo »/« sans photo » apparié, même discipline que les
+      refus du §7.39. `pnpm test` : `contracts` 464/464 (+12), `ui` 141/141 (inchangé), `web`
+      348/348 (+5). `tsc --noEmit`/ESLint/Prettier/`ruff`/`mypy` verts. `uv run pytest` complet :
+      1 918 passés, 78 échecs ENVIRONNEMENTAUX (jeu de démo), nombre identique au dernier relevé
+      documenté (`T16` du LOT 10) — aucun des 78 ne touche `cercles`/`bureaux`.
+    - **Aller-retour réel effectué** après `make code-refresh`, à travers Caddy en HTTPS : lien
+      magique réel consommé pour un compte temporaire (entité `STRASB14`), une photo et une
+      autorisation réelles posées par SQL direct sur un membre et sur le Booster du cercle `TECH`,
+      puis sur un responsable temporaire du bureau `SIEGE` — les trois chemins `photo` rendus par
+      l'API ont été appelés en direct et ont servi des octets réels (un JPEG minimal), vus dans le
+      navigateur sous forme de cadre hexagonal, en thème clair ET sombre. Décor entièrement
+      nettoyé (autorisations, médias MinIO, responsabilité temporaire, adresse de courriel,
+      session et lien magique retirés).
+    - **Hors périmètre de `S12`, sur arbitrage explicite de Jonathan** : la synthèse Framework
+      (`PageFramework.tsx`, `ResponsabiliteRendue.titulaires`, `CercleRendu.booster`,
+      `BureauRendu.responsables`) reste en texte brut, `TitulaireFramework` inchangée — reporté à
+      une sous-étape future si jamais décidé.
+
 Chaque sous-étape suit la boucle habituelle : annoncer, exécuter, contrôler (`make test-frontend`,
 `make ecrans-check`, contraste), rapporter, attendre ta validation avant la suivante.
 
@@ -593,7 +653,7 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 | `S9` | Bascule thème clair/sombre — **FAITE** |
 | `S10` | Trombinoscope/profil « pop » : avatar sur fond de marque coloré, pastille de cercle au recto, hauteur de carte harmonisée — **FAITE** |
 | `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) — **FAITE, limitée au profil et au trombinoscope** (§8.2 note) |
-| `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) |
+| `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) — **FAITE, limitée aux pages détail cercle et bureau** (§8.2 note) |
 | `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs |
 | `S14` | Recette visuelle finale de la reprise, même format que `S8` |
 
@@ -603,6 +663,19 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 > exigé de le retoucher à `S12`. Arbitrage de Jonathan : `S11` se limite au profil et au
 > trombinoscope, qui portent déjà un avatar ; les représentants de bureau reçoivent leur avatar ET
 > son cadre hexagonal d'un coup à `S12`.
+
+> **Note sur `S12` (29/10/2026, `AskUserQuestion`)** : mesuré avant tout code, `TitulaireFramework`
+> (le type qui porte le Booster d'un cercle et les responsables d'un bureau) alimente AUSSI la
+> synthèse Framework (toute l'organisation, DSM/ESM/ADM-E/Booster/bureau confondus), un troisième
+> écran que le titre de `S12` ne nomme pas. Arbitrage de Jonathan : les pages détail cercle et
+> bureau reçoivent une photo pour CHAQUE personne affichée (membres, Booster, responsables) — une
+> nouvelle table `TitulaireAvecPhoto` (`app.organization.framework`), distincte de
+> `TitulaireFramework`, qui reste inchangée pour la synthèse Framework, reportée à une sous-étape
+> future. Le mécanisme de miniature (`resoudre_la_miniature`, LOT 5) attend un `entity_membership.
+> id` : les membres d'un cercle le portent déjà (`appartenance`) ; le Booster et les responsables de
+> bureau n'avaient qu'un `person.id` — une jointure SQL supplémentaire (`LEFT JOIN
+> entity_membership`, aucune migration) le retrouve quand il existe, et laisse `photo` à `null`
+> sinon, exactement comme un titulaire sans photo.
 
 ### 8.3 Critères de sortie de la reprise
 

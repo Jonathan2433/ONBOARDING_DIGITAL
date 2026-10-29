@@ -30,9 +30,15 @@ function pageDeCercle(supplement: Record<string, unknown> = {}): Response {
       nom: 'Data',
       description: 'Le cercle Data',
       jeton_de_couleur: 'bleu',
-      booster: { identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace' },
+      booster: { identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace', photo: null },
       membres: [
-        { appartenance: 'm1', prenom: 'Nour', nom: 'Arrivante', type_d_appartenance: 'principal' },
+        {
+          appartenance: 'm1',
+          prenom: 'Nour',
+          nom: 'Arrivante',
+          type_d_appartenance: 'principal',
+          photo: null,
+        },
       ],
       total_des_membres: 1,
       page: 1,
@@ -159,5 +165,76 @@ describe('chantier front, S5 : `Carte`/`Badge` (`DEC-672`)', () => {
     const conteneur = screen.getByText('Data').closest('.cercle-identite');
     expect(conteneur).not.toBeNull();
     expect((conteneur as HTMLElement).style.getPropertyValue('--cercle-couleur')).not.toBe('');
+  });
+});
+
+describe('chantier front, S12 : cadres hexagonaux du Booster et des membres (DEC-673)', () => {
+  it('sans photo, le Booster et le membre portent des initiales — AUCUNE `<img>`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/cercles/data']}>
+        <Routes>
+          <Route path="/entites/:code/framework/cercles/:codeCercle" element={<PageCercle />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('.cercle-booster .cercle-avatar')?.textContent).toBe('AL');
+    expect(container.querySelector('.cercle-membre-identite .cercle-avatar')?.textContent).toBe(
+      'NA',
+    );
+  });
+
+  it('avec une photo, le Booster et le membre portent une `<img>` — AUCUNE initiale', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          pageDeCercle({
+            booster: {
+              identifiant: 'p1',
+              prenom: 'Ada',
+              nom: 'Lovelace',
+              photo: '/api/v1/entities/bordeaux/people/p1/photo',
+            },
+            membres: [
+              {
+                appartenance: 'm1',
+                prenom: 'Nour',
+                nom: 'Arrivante',
+                type_d_appartenance: 'principal',
+                photo: '/api/v1/entities/bordeaux/people/m1/photo',
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/cercles/data']}>
+        <Routes>
+          <Route path="/entites/:code/framework/cercles/:codeCercle" element={<PageCercle />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(container.querySelectorAll('.cercle-avatar')).toHaveLength(0);
+    const images = container.querySelectorAll('img');
+    expect(images).toHaveLength(2);
+    expect(Array.from(images).map((img) => img.getAttribute('src'))).toEqual([
+      '/api/v1/entities/bordeaux/people/p1/photo',
+      '/api/v1/entities/bordeaux/people/m1/photo',
+    ]);
+    //  Le nom est juste a cote : un `alt` qui le repeterait le ferait annoncer
+    //  deux fois par un lecteur d'ecran.
+    expect(Array.from(images).every((img) => img.getAttribute('alt') === '')).toBe(true);
   });
 });

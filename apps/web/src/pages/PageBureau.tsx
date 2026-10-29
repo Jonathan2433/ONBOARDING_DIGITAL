@@ -34,6 +34,14 @@
  *   TYPE de bureau est hors de portee : une seule icone generique marque la
  *   ressource, jamais une seconde source d'information (§13.2, « icones
  *   maitrisees »).
+ *
+ * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DES RESPONSABLES
+ *
+ *   `ResponsableDuBureau.photo` suit exactement la convention du trombinoscope
+ *   et du profil (S11) : un cadre hexagonal sur fond de marque colore quand
+ *   `photo` est `null`, l'image sinon. Arbitrage de Jonathan
+ *   (`AskUserQuestion`, 29/10/2026) : la page de synthese Framework reste hors
+ *   de cette sous-etape.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -161,7 +169,17 @@ export function PageBureau(): JSX.Element {
           <ul className="bureau-liste-responsables">
             {b.responsables.map((responsable) => (
               <li key={responsable.identifiant}>
-                {responsable.prenom} {responsable.nom}
+                {responsable.photo === null ? (
+                  <span aria-hidden="true" className="bureau-avatar">
+                    {responsable.prenom.slice(0, 1)}
+                    {responsable.nom.slice(0, 1)}
+                  </span>
+                ) : (
+                  <img alt="" className="bureau-photo" src={responsable.photo} />
+                )}
+                <span>
+                  {responsable.prenom} {responsable.nom}
+                </span>
               </li>
             ))}
           </ul>

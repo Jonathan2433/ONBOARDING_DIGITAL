@@ -19,10 +19,22 @@ const UNE_PAGE = {
   nom: 'Data',
   description: 'Le cercle Data',
   jeton_de_couleur: 'bleu',
-  booster: { identifiant: 'a1', prenom: 'Lea', nom: 'Martin' },
+  booster: { identifiant: 'a1', prenom: 'Lea', nom: 'Martin', photo: null },
   membres: [
-    { appartenance: 'm1', prenom: 'Tess', nom: 'Durand', type_d_appartenance: 'principal' },
-    { appartenance: 'm2', prenom: 'Sam', nom: 'Petit', type_d_appartenance: 'secondary' },
+    {
+      appartenance: 'm1',
+      prenom: 'Tess',
+      nom: 'Durand',
+      type_d_appartenance: 'principal',
+      photo: '/api/v1/entities/DATA/people/m1/photo',
+    },
+    {
+      appartenance: 'm2',
+      prenom: 'Sam',
+      nom: 'Petit',
+      type_d_appartenance: 'secondary',
+      photo: null,
+    },
   ],
   total_des_membres: 2,
   page: 1,
@@ -84,6 +96,28 @@ describe('le validateur', () => {
     expect(c.membres[0]?.typeDAppartenance).toBe('principal');
     expect(c.membres[1]?.typeDAppartenance).toBe('secondary');
     expect(c.booster?.nom).toBe('Martin');
+  });
+
+  describe('la photo — chantier front hors lot S12 (DEC-673)', () => {
+    it('distingue un membre AVEC photo d’un membre SANS, meme cercle', () => {
+      //  **LE COUPLE, PAS UNE SEULE MOITIE.** Sans l’un des deux, un validateur
+      //  qui rendrait toujours `null` passerait aussi bien que l’inverse.
+      const c = validerLaPageDuCercle(UNE_PAGE);
+      expect(c.membres[0]?.photo).toBe('/api/v1/entities/DATA/people/m1/photo');
+      expect(c.membres[1]?.photo).toBeNull();
+    });
+
+    it('rend `null` pour un Booster sans photo, jamais une chaine vide', () => {
+      expect(validerLaPageDuCercle(UNE_PAGE).booster?.photo).toBeNull();
+    });
+
+    it('refuse un chemin de photo hors du prefixe versionne', () => {
+      const corrompue = {
+        ...UNE_PAGE,
+        membres: [{ ...UNE_PAGE.membres[0], photo: 'https://ailleurs.test/x.jpg' }],
+      };
+      expect(() => validerLaPageDuCercle(corrompue)).toThrow(TypeError);
+    });
   });
 
   it('rend `null` — et NON la chaine « None » — sur un cercle sans jeton', () => {
