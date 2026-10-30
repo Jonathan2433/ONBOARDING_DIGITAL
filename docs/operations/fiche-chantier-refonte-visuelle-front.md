@@ -10,9 +10,10 @@ techniquement complètes puis confrontées par Jonathan à des captures d'écran
 (page entité), `S5` (Framework, cercle, bureau), `S6` (trombinoscope et profil), `S7` (événements
 et mon onboarding), `S8` (recette visuelle finale), **`S9` (bascule clair/sombre)**, **`S10`
 (trombinoscope/profil « pop »)**, **`S11` (cadres hexagonaux)**, **`S12` (cartes-photo cercle/
-bureau)** et **`S13` (accents visuels) FAITES**.
-`S14` reste à faire (§8.2). Les six critères de sortie du §7 restent tenus pour le
-périmètre `S1`-`S8` ; la reprise porte ses propres critères, au §8.3.
+bureau)**, **`S13` (accents visuels)** et **`S14` (recette visuelle finale de la reprise) FAITES**.
+**Les quatorze sous-étapes du chantier sont faites.** Les six critères de sortie du §7 restent
+tenus pour le périmètre `S1`-`S8` ; les cinq critères de sortie de la reprise (§8.3) sont tenus
+pour le périmètre `S9`-`S13`. Le chantier attend la validation explicite de Jonathan.
 
 > Comme pour un lot, le chantier se déroule une sous-étape à la fois (§6.1 de `CLAUDE.md`) :
 > annoncer, exécuter UNE SEULE sous-étape, contrôler, rapporter, attendre la validation de
@@ -655,7 +656,7 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 | `S11` | Cadres hexagonaux pour les photos (profil, trombinoscope, représentants de bureau) — **FAITE, limitée au profil et au trombinoscope** (§8.2 note) |
 | `S12` | Cartes-photo des membres d'un cercle/bureau — extension du contrat, réutilisation de `resoudre_la_miniature` (LOT 5) — **FAITE, limitée aux pages détail cercle et bureau** (§8.2 note) |
 | `S13` | Accents visuels : gros chiffres bold, soulignés « tracé main » décoratifs — **FAITE, limitée aux deux compteurs stricts et au titre de la page nationale** (§8.2 note) |
-| `S14` | Recette visuelle finale de la reprise, même format que `S8` |
+| `S14` | Recette visuelle finale de la reprise, même format que `S8` — **FAITE** |
 
 > **Note sur `S11` (28/10/2026, `AskUserQuestion`)** : mesuré avant tout code, les représentants
 > de bureau n'ont aujourd'hui **aucun** avatar (ni photo, ni initiales) — cette capacité arrive à
@@ -696,15 +697,47 @@ system — cadres de photo **hexagonaux**, gros chiffres bold pour les compteurs
 > (WCAG 1.4.11), même parti que les icônes `aria-hidden` de `S3` et le `clip-path` hexagonal de
 > `S11`.
 
+> **Note sur `S14` (30/10/2026)** : recette visuelle finale, même format que `S8` — aucun code
+> applicatif, une vérification sur les écrans réellement touchés par `S9`-`S13`
+> (`PageNationale`, `PageFramework`, `PageCercle`, `PageBureau`, `PageTrombinoscope`, `PageProfil`,
+> plus le `Squelette` partagé du cadre applicatif qui porte le bouton de thème). Conteneurs
+> reconstruits (`make code-refresh`) avant toute mesure, pour servir le code réellement fusionné de
+> `S13` (PR #309). `make cadre-check` (25 contrôles), `make ecrans-check` (8 contrôles), `make
+> web-check` (7 contrôles) et `make test-frontend` (958 tests Vitest : 464 `contracts`, 141 `ui`,
+> 353 `web`) rejoués, 0 échec. **Les cinq largeurs du §13.4 mesurées, pas devinées**
+> (`scrollWidth`/`clientWidth` confrontés) : `PageNationale`, `PageFramework`,
+> `PageCercle`/`DATA`, `PageBureau`/`SIEGE`, `PageTrombinoscope`, `PageProfil` — zéro débordement
+> horizontal à 320/390/768/1280/1920, en thème clair et en thème sombre, sur un compte temporaire
+> doté d'une appartenance réelle dans `BORDEA00`. Le gros chiffre (`.ex-carte__titre-chiffre`,
+> « Membres (22) » sur le cercle `Data`, « Responsables (0) » sur le bureau `Siège`), les avatars
+> hexagonaux (Booster, 22 membres du cercle, un profil) et le soulignement décoratif du titre
+> national ont été vus réellement dans les deux thèmes, à 320 et à 1920 px en particulier — aucun
+> défaut trouvé. **Aucune nouvelle mesure de contraste requise** : `jetons.test.ts` reste à 141
+> tests (`ui`, inchangé depuis `S13`), toutes les couleurs employées par `S9`-`S13`
+> (`--marque-bleu` du soulignement et de l'avatar neutre, `MARQUE` des pastilles de cercle, le
+> `clip-path` hexagonal sans couleur propre) étaient déjà prouvées AA avant cette reprise —
+> confirmé par `make ecrans-check`, qui exige et vérifie « 0 couleur littérale hors des jetons ».
+> Décor réel nettoyé (adresse de courriel restaurée, session et lien magique retirés, zéro ligne
+> résiduelle vérifiée). Les cinq critères du §8.3 sont **TENUS**.
+
 ### 8.3 Critères de sortie de la reprise
 
-1. Un bouton explicite permet de basculer entre thème clair et sombre sur toute page de
-   l'application, mémorisé par appareil.
-2. Le thème clair est actif à la première visite sur un appareil, quelle que soit la préférence
-   système.
-3. Les cinq largeurs de recette du §13.4 restent sans débordement sur chaque écran modifié par
-   `S9`-`S13`.
-4. Aucune régression de contraste AA sur les combinaisons déjà prouvées ; chaque nouvelle
-   combinaison (pastille de cercle, hexagone, soulignement décoratif) est mesurée par
-   `jetons.test.ts` ou son équivalent avant d'être employée.
-5. Le périmètre reste celui du §4 : aucun écran du back-office, aucune donnée réelle.
+1. **TENU (`S9`, confirmé `S14` le 30/10/2026).** Un bouton explicite permet de basculer entre
+   thème clair et sombre sur toute page de l'application, mémorisé par appareil —
+   `BoutonBasculerTheme` vu et actionné réellement sur `PageNationale` et sur le `Squelette`
+   partagé du cadre applicatif, aux cinq largeurs.
+2. **TENU (`S9`, confirmé `S14` le 30/10/2026, mesuré en direct).** Le thème clair est actif à la
+   première visite sur un appareil, quelle que soit la préférence système — `localStorage` vidé
+   dans un vrai navigateur, rechargement, `data-theme` absent (clair), jamais une troisième valeur.
+3. **TENU (`S14`, 30/10/2026).** Les cinq largeurs de recette du §13.4 (320/390/768/1280/1920)
+   sont sans débordement sur chaque écran modifié par `S9`-`S13`, mesuré
+   (`scrollWidth`/`clientWidth`), dans les deux thèmes, sur `PageNationale`, `PageFramework`,
+   `PageCercle`, `PageBureau`, `PageTrombinoscope`, `PageProfil`.
+4. **TENU (`S14`, 30/10/2026).** Aucune régression de contraste AA : `jetons.test.ts` reste à 141
+   tests (`ui`), inchangé depuis `S13` — chaque couleur employée par `S9`-`S13`
+   (`--marque-bleu` du soulignement et de l'avatar neutre, `MARQUE` des pastilles de cercle)
+   était déjà prouvée AA ; le `clip-path` hexagonal ne porte aucune couleur propre. Confirmé par
+   `make ecrans-check`, « 0 couleur littérale hors des jetons ».
+5. **TENU.** Le périmètre reste celui du §4 : aucun écran du back-office touché, aucune donnée
+   réelle versionnée — le compte et l'appartenance temporaires de `S14` ont été entièrement
+   retirés après capture.
