@@ -51,6 +51,7 @@ import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portai
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
+import { BoutonBasculerTheme } from './BoutonBasculerTheme';
 import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 import { NavigationPrincipale } from './NavigationPrincipale';
 import { PanneauDErreur } from './PanneauDErreur';
@@ -311,6 +312,13 @@ function Squelette({
             entite principale.
           </Alerte>
         ) : null}
+        {/*
+          **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Dans le SEUL `Squelette`
+          partage par les six etats du cadre, meme discipline que le pied de
+          page (`BoutonSignalerUnBug`) : couvre chaque page interne par
+          construction, sans qu'aucun etat n'ait a y penser separement.
+        */}
+        <BoutonBasculerTheme />
       </header>
       {navigation}
       {/*

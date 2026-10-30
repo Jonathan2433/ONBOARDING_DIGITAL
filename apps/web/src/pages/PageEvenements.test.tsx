@@ -146,7 +146,9 @@ describe('les evenements a l’ecran', () => {
         }),
       ),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Passes' }));
+    //  `fireEvent.mouseDown`, PAS `.click` — Radix active un onglet sur
+    //  `onMouseDown` (S2, `DEC-672`, voir `Onglets.test.tsx`).
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Passes' }));
     await waitFor(() => {
       expect(screen.getByText('Aucun evenement passe.')).toBeTruthy();
     });
@@ -201,5 +203,25 @@ describe('les evenements a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText(/session a expire/)).toBeTruthy();
     });
+  });
+});
+
+describe('chantier front, S7 : `Carte` généralisée au panneau (DEC-672)', () => {
+  it('le panneau de l’onglet actif est une vraie `Carte`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDesEvenements())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/evenements']}>
+        <Routes>
+          <Route path="/entites/:code/evenements" element={<PageEvenements />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Petit-dejeuner d’accueil')).toBeTruthy();
+    });
+    expect(container.querySelector('.ex-carte')).not.toBeNull();
   });
 });

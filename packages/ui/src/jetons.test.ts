@@ -21,9 +21,16 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { atteintSeuil, contraste, luminance, SEUIL_AA_TEXTE_NORMAL } from './contraste.js';
+import {
+  atteintSeuil,
+  contraste,
+  luminance,
+  melangerCouleurs,
+  SEUIL_AA_TEXTE_NORMAL,
+} from './contraste.js';
 import {
   ACCENTS_ADMIS,
+  DEGRADE_MARQUE,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,
@@ -121,6 +128,62 @@ describe('les couleurs de marque, employees en accent sur le fond de page', () =
     // grand texte. L'exclusion n'est donc pas une preference.
     expect(atteintSeuil(THEMES.clair.fond, MARQUE.jaune.surface, SEUIL_ACCENT)).toBe(false);
     expect(atteintSeuil(THEMES.sombre.fond, MARQUE.bleuFonce.surface, SEUIL_ACCENT)).toBe(false);
+  });
+});
+
+describe('le degrade de marque — chantier front, DEC-672', () => {
+  it('va bien du bleu au rose, et rien d autre — pas de troisieme teinte', () => {
+    expect(DEGRADE_MARQUE.de).toBe(MARQUE.bleu.surface);
+    expect(DEGRADE_MARQUE.vers).toBe(MARQUE.rose.surface);
+    expect(DEGRADE_MARQUE.css).toBe(
+      `linear-gradient(135deg, ${MARQUE.bleu.surface}, ${MARQUE.rose.surface})`,
+    );
+  });
+
+  // CINQ POINTS LE LONG DU DEGRADE, PAS SEULEMENT SES DEUX BORNES. Un controle
+  // qui ne mesurerait que `de` et `vers` manquerait tout defaut vivant ENTRE les
+  // deux — meme principe que le §7.38 de la passation, « mesurer la grandeur
+  // qu'une hypothese predit, pas une grandeur voisine ».
+  const POINTS = [0, 0.25, 0.5, 0.75, 1] as const;
+  const couleursDuDegrade = POINTS.map(
+    (t) => [t, melangerCouleurs(DEGRADE_MARQUE.de, DEGRADE_MARQUE.vers, t)] as const,
+  );
+
+  it('ne peut pas etre mesure a moins de cinq points', () => {
+    // Le compte, pas seulement son contenu : un tableau vide passerait les
+    // `it.each` suivants sans jamais les executer.
+    expect(couleursDuDegrade).toHaveLength(5);
+  });
+
+  // LA PREMIERE VERSION DE CE TEST SUPPOSAIT QU'UN DES DEUX TEXTES RESTE
+  // TOUJOURS LISIBLE, PARTOUT SUR LE DEGRADE — ET LA MESURE L'A REFUTEE. A
+  // t=0,75 (#d536b4), le blanc rend 4,19 et le texte sombre 4,16 : LES DEUX
+  // echouent au seuil de 4,5. Il existe donc une ZONE MORTE du degrade ou
+  // AUCUNE couleur de texte, ni l'une ni l'autre, n'atteint AA — pas seulement
+  // une zone ou une des deux suffit. C'est une justification PLUS FORTE encore
+  // de la regle « jamais de texte en clair sur ce degrade » que ce qui avait
+  // ete suppose avant de mesurer.
+  it('a t=0,75, NI LE BLANC NI LE TEXTE SOMBRE n atteignent AA — une zone morte reelle', () => {
+    const milieu = melangerCouleurs(DEGRADE_MARQUE.de, DEGRADE_MARQUE.vers, 0.75);
+    const avecBlanc = contraste(milieu, '#FFFFFF');
+    const avecSombre = contraste(milieu, '#1A1A1A');
+    expect(avecBlanc, `blanc sur ${milieu}`).toBeLessThan(SEUIL_AA_TEXTE_NORMAL);
+    expect(avecSombre, `sombre sur ${milieu}`).toBeLessThan(SEUIL_AA_TEXTE_NORMAL);
+  });
+
+  // LA RAISON D'ETRE DE LA REGLE « JAMAIS DE TEXTE EN CLAIR SUR LE DEGRADE » :
+  // AUCUNE des deux couleurs de texte ne couvre a elle seule les CINQ points.
+  // Si l'une le faisait, la regle du commentaire de `jetons.ts` serait une
+  // precaution inutile plutot qu'une necessite mesuree.
+  it('confirme qu AUCUNE couleur de texte unique ne couvre tout le degrade', () => {
+    const toutBlanc = couleursDuDegrade.every(
+      ([, couleur]) => contraste(couleur, '#FFFFFF') >= SEUIL_AA_TEXTE_NORMAL,
+    );
+    const toutSombre = couleursDuDegrade.every(
+      ([, couleur]) => contraste(couleur, '#1A1A1A') >= SEUIL_AA_TEXTE_NORMAL,
+    );
+    expect(toutBlanc, 'le blanc suffirait partout : la regle serait superflue').toBe(false);
+    expect(toutSombre, 'le sombre suffirait partout : la regle serait superflue').toBe(false);
   });
 });
 

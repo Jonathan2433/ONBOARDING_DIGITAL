@@ -130,6 +130,23 @@ describe('le menu principal', () => {
     expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy();
   });
 
+  it('porte une icone DECORATIVE par rubrique — chantier front, S3, `DEC-672`', () => {
+    monter(`/entites/${CODE}`, { aUnParcoursActif: true, peutAdministrer: true });
+    const tous = liens();
+    expect(tous).toHaveLength(6);
+    for (const lien of tous) {
+      const icone = lien.querySelector('svg');
+      expect(icone).toBeTruthy();
+      //  `aria-hidden` : le libelle texte porte deja l'information, l'icone ne
+      //  fait que la rappeler a l'oeil (§13.2, « icones maitrisees »).
+      expect(icone?.getAttribute('aria-hidden')).toBe('true');
+    }
+    //  **L'ICONE NE S'AJOUTE PAS AU LIBELLE ANNONCE.** Un `<svg>` sans texte ne
+    //  change pas le `textContent` du lien -- le test de l'ordre ci-dessus,
+    //  deja vert, le prouve en creux, mais celui-ci le dit explicitement.
+    expect(tous.map((a) => a.textContent)).toEqual(RUBRIQUES.map((r) => r.libelle));
+  });
+
   it('encode le code dans chaque adresse', () => {
     render(
       <MemoryRouter initialEntries={['/entites/bord%2Feaux']}>

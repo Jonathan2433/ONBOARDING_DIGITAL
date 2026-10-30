@@ -32,9 +32,24 @@
  *   la meme facon (§7.27). Cette page est la SEULE a afficher les quatre types de
  *   responsabilite Framework : les y ajouter serait une abstraction sans second
  *   consommateur.
+ *
+ * CHANTIER FRONT, S5 (`DEC-672`) : `CARTE`/`BADGE`, ICONE DE BUREAU
+ *
+ *   **Mesure avant tout code** : ni `Carte` ni `Badge` n'etaient employes ici —
+ *   les trois sections etaient de simples `<section>` manuelles, et les
+ *   compteurs (membres actifs, responsables) de la prose dans un
+ *   `<span className="framework-carte-detail">`, cahier §13.2. Les trois
+ *   sections deviennent des `<Carte titre="…">` (la region nommee et le `<h2>`
+ *   que `Carte` fournit dejà remplacent le `<section aria-labelledby>`/`<h2 id>`
+ *   ecrits a la main) ; les deux compteurs deviennent des `Badge`. Un bureau
+ *   porte desormais une icone decorative (`Building2`, `lucide-react`,
+ *   `aria-hidden`) — un cercle garde sa bordure de couleur, deja sa propre
+ *   marque visuelle distinctive, jamais une icone de plus pour la meme
+ *   information.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { Building2 } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { couleurDuCercle } from '../affichage';
@@ -47,7 +62,7 @@ import type {
   PageFramework,
   TitulaireFramework,
 } from '@onboarding/contracts';
-import { Alerte } from '@onboarding/ui';
+import { Alerte, Badge, Carte } from '@onboarding/ui';
 
 /**
  * Le libelle francais des deux categories qui en ont un — cahier §6.2.
@@ -117,8 +132,7 @@ export function PageFramework(): JSX.Element {
 
   return (
     <div className="framework">
-      <section className="framework-section" aria-labelledby="framework-responsabilites">
-        <h2 id="framework-responsabilites">Responsabilites</h2>
+      <Carte titre="Responsabilites">
         {page.responsabilites.length === 0 ? (
           <Alerte>Aucune responsabilite Framework pour le moment.</Alerte>
         ) : (
@@ -141,10 +155,9 @@ export function PageFramework(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
-      <section className="framework-section" aria-labelledby="framework-cercles">
-        <h2 id="framework-cercles">Cercles</h2>
+      <Carte titre="Cercles">
         {page.cercles.length === 0 ? (
           <Alerte>Aucun cercle pour le moment.</Alerte>
         ) : (
@@ -156,10 +169,9 @@ export function PageFramework(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
-      <section className="framework-section" aria-labelledby="framework-bureaux">
-        <h2 id="framework-bureaux">Bureaux</h2>
+      <Carte titre="Bureaux">
         {page.bureaux.length === 0 ? (
           <Alerte>Aucun bureau pour le moment.</Alerte>
         ) : (
@@ -171,7 +183,7 @@ export function PageFramework(): JSX.Element {
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
     </div>
   );
 }
@@ -191,9 +203,9 @@ function CarteDeCercleAFramework({ cercle }: { cercle: CarteDeCercle }): JSX.Ele
       to={cercle.cheminDetaille}
     >
       <span className="framework-carte-titre">{cercle.nom}</span>
-      <span className="framework-carte-detail">
+      <Badge ton="marque">
         {cercle.membresActifs} membre{cercle.membresActifs > 1 ? 's' : ''}
-      </span>
+      </Badge>
       <span className="framework-carte-detail">
         {cercle.booster === null
           ? 'Aucun Booster'
@@ -206,10 +218,13 @@ function CarteDeCercleAFramework({ cercle }: { cercle: CarteDeCercle }): JSX.Ele
 function CarteDeBureauAFramework({ bureau }: { bureau: CarteDeBureau }): JSX.Element {
   return (
     <Link className="framework-carte" to={bureau.cheminDetaille}>
-      <span className="framework-carte-titre">{bureau.nom}</span>
-      <span className="framework-carte-detail">
-        {bureau.responsables.length} responsable{bureau.responsables.length > 1 ? 's' : ''}
+      <span className="framework-carte-entete">
+        <Building2 className="icone-bureau" aria-hidden="true" size={18} />
+        <span className="framework-carte-titre">{bureau.nom}</span>
       </span>
+      <Badge ton="marque">
+        {bureau.responsables.length} responsable{bureau.responsables.length > 1 ? 's' : ''}
+      </Badge>
     </Link>
   );
 }

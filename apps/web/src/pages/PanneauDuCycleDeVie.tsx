@@ -28,6 +28,15 @@
  *   relations**, et la restauration **n'en rouvre aucune** -- rouvrir d'anciennes
  *   valeurs serait decider a nouveau (§23.4). L'annoncer avant le geste est ce
  *   qui rend la confirmation utile ; un « Etes-vous sur ? » ne dit rien.
+ *
+ * CHANTIER FRONT, S6 (`DEC-672`) : `CARTE`
+ *
+ *   Ce panneau partageait `.profil-bloc` avec les cinq autres sections de
+ *   `PageProfil.tsx`, devenues chacune une `Carte` (`niveauTitre="h3"`, sous le
+ *   `h2` de l'identite). Rester en arriere l'aurait laisse seul dans l'ancien
+ *   habillage. `Carte` n'acceptant pas de `className`, la mise en page propre a
+ *   ce panneau (`.profil-cycle`, l'espacement des actions) vit desormais sur un
+ *   `<div>` a l'interieur de `Carte`, jamais sur la carte elle-meme.
  */
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -35,7 +44,7 @@ import { useState } from 'react';
 import { agirSurLeCycleDeVie, type ActionDuCycleDeVie } from '../api/cycleDeVie';
 
 import { peutGererLeCycleDeVie, type ResultatDuCycleDeVie } from '@onboarding/contracts';
-import { Alerte, Bouton } from '@onboarding/ui';
+import { Alerte, Bouton, Carte } from '@onboarding/ui';
 
 /** Ce que le panneau montre a un instant donne. */
 type Etat =
@@ -145,102 +154,104 @@ export function PanneauDuCycleDeVie({
   }
 
   return (
-    <section className="profil-bloc profil-cycle">
-      <h3>Cycle de vie</h3>
-
-      {etat.phase === 'fait' ? (
-        <Alerte ton="succes" urgence="alerte">
-          <p>
-            {`Profil ${etat.resultat.etatPrecedent} → ${etat.resultat.etatNouveau}, `}
-            {`version ${String(etat.resultat.version)}.`}
-          </p>
-          {etat.resultat.relationsARedonner.length === 0 ? null : (
-            <>
-              {/*
+    <Carte niveauTitre="h3" titre="Cycle de vie">
+      <div className="profil-cycle">
+        {etat.phase === 'fait' ? (
+          <Alerte ton="succes" urgence="alerte">
+            <p>
+              {`Profil ${etat.resultat.etatPrecedent} → ${etat.resultat.etatNouveau}, `}
+              {`version ${String(etat.resultat.version)}.`}
+            </p>
+            {etat.resultat.relationsARedonner.length === 0 ? null : (
+              <>
+                {/*
                 **CE QUI RESTE A FAIRE A LA MAIN, NOMME.** `T8` a arbitre que la
                 restauration ne rouvre rien ; taire ce qui manque laisserait un
                 profil actif sans DSM ni cercle, sans que personne le sache.
               */}
-              <p>Affectations NON rouvertes, a redonner a la main :</p>
-              <ul className="profil-relations">
-                {etat.resultat.relationsARedonner.map((nom) => (
-                  <li key={nom}>{nom}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {Object.keys(etat.resultat.relationsCloses).length === 0 ? null : (
-            <>
-              {/*
+                <p>Affectations NON rouvertes, a redonner a la main :</p>
+                <ul className="profil-relations">
+                  {etat.resultat.relationsARedonner.map((nom) => (
+                    <li key={nom}>{nom}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {Object.keys(etat.resultat.relationsCloses).length === 0 ? null : (
+              <>
+                {/*
                 **CE QUE L'ARCHIVAGE A REELLEMENT CLOS, PAR TABLE.** L'annoncer
                 avant le geste est une promesse ; le montrer apres est une
                 mesure -- et c'est ce que `T8` produit, table par table.
               */}
-              <p>
-                {`Affectations cloturees, et ${String(etat.resultat.sessionsRevoquees)} session(s) revoquee(s) :`}
-              </p>
-              <ul className="profil-relations">
-                {Object.entries(etat.resultat.relationsCloses).map(([table, compte]) => (
-                  <li key={table}>{`${table} — ${String(compte)}`}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </Alerte>
-      ) : etat.phase === 'refus' ? (
-        <>
-          <Alerte ton="erreur" urgence="alerte">
-            {messageDeRefus(etat.statut, action)}
+                <p>
+                  {`Affectations cloturees, et ${String(etat.resultat.sessionsRevoquees)} session(s) revoquee(s) :`}
+                </p>
+                <ul className="profil-relations">
+                  {Object.entries(etat.resultat.relationsCloses).map(([table, compte]) => (
+                    <li key={table}>{`${table} — ${String(compte)}`}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </Alerte>
-          <Bouton
-            onClick={() => {
-              setEtat({ phase: 'repos' });
-            }}
-            type="button"
-            variante="secondaire"
-          >
-            Fermer
-          </Bouton>
-        </>
-      ) : etat.phase === 'confirmation' || etat.phase === 'envoi' ? (
-        <>
-          <Alerte ton="avertissement" urgence="information">
-            {annonce.consequence}
-          </Alerte>
-          <div className="profil-actions">
+        ) : etat.phase === 'refus' ? (
+          <>
+            <Alerte ton="erreur" urgence="alerte">
+              {messageDeRefus(etat.statut, action)}
+            </Alerte>
             <Bouton
-              disabled={etat.phase === 'envoi'}
-              onClick={() => {
-                void agir();
-              }}
-              type="button"
-              variante="primaire"
-            >
-              {etat.phase === 'envoi' ? 'En cours…' : `Confirmer : ${annonce.titre.toLowerCase()}`}
-            </Bouton>
-            <Bouton
-              disabled={etat.phase === 'envoi'}
               onClick={() => {
                 setEtat({ phase: 'repos' });
               }}
               type="button"
               variante="secondaire"
             >
-              Annuler
+              Fermer
             </Bouton>
-          </div>
-        </>
-      ) : (
-        <Bouton
-          onClick={() => {
-            setEtat({ phase: 'confirmation' });
-          }}
-          type="button"
-          variante="secondaire"
-        >
-          {annonce.titre}
-        </Bouton>
-      )}
-    </section>
+          </>
+        ) : etat.phase === 'confirmation' || etat.phase === 'envoi' ? (
+          <>
+            <Alerte ton="avertissement" urgence="information">
+              {annonce.consequence}
+            </Alerte>
+            <div className="profil-actions">
+              <Bouton
+                disabled={etat.phase === 'envoi'}
+                onClick={() => {
+                  void agir();
+                }}
+                type="button"
+                variante="primaire"
+              >
+                {etat.phase === 'envoi'
+                  ? 'En cours…'
+                  : `Confirmer : ${annonce.titre.toLowerCase()}`}
+              </Bouton>
+              <Bouton
+                disabled={etat.phase === 'envoi'}
+                onClick={() => {
+                  setEtat({ phase: 'repos' });
+                }}
+                type="button"
+                variante="secondaire"
+              >
+                Annuler
+              </Bouton>
+            </div>
+          </>
+        ) : (
+          <Bouton
+            onClick={() => {
+              setEtat({ phase: 'confirmation' });
+            }}
+            type="button"
+            variante="secondaire"
+          >
+            {annonce.titre}
+          </Bouton>
+        )}
+      </div>
+    </Carte>
   );
 }

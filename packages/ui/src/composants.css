@@ -123,6 +123,17 @@
   line-height: 1.25;
 }
 
+/* Chantier front, S13 (`DEC-673`) : « gros chiffres bold » pour un compteur
+   mis en avant dans un titre de carte (ex. « Membres (3) »). AUCUNE couleur
+   nouvelle : la typographie seule porte l'accent, le texte reste `--encre`
+   sur `--fond`, deja prouve AA — zero nouvelle mesure de contraste requise,
+   meme raisonnement que `--decoupe-hexagone` en S11 (une forme, ou ici une
+   typographie, n'est ni une couleur ni un couple surface/texte). */
+.ex-carte__titre-chiffre {
+  font-size: 1.4em;
+  font-weight: 900;
+}
+
 /* ==========================================================================
    Alerte — LOT 4, T11. Couvre les familles « alertes », « loaders » et
    « etats vides » du backlog US007 : elles ne se distinguent que par le role
@@ -198,6 +209,57 @@
 }
 
 /* ==========================================================================
+   Onglets — chantier front hors lot, sous-etape S1 (`DEC-672`). Sur primitive
+   Radix (`@radix-ui/react-tabs`) : role, aria-selected, aria-controls et la
+   navigation au clavier par les fleches viennent de la primitive, pas d'ici.
+   Cette feuille ne stylise que `[data-state]`, que Radix pose lui-meme.
+   ========================================================================== */
+
+.ui-onglets__liste {
+  display: flex;
+  gap: var(--espace-xs);
+  border-bottom: 1px solid var(--trait);
+}
+
+.ui-onglets__onglet {
+  padding: var(--espace-s) var(--espace-m);
+  font-family: var(--police);
+  font-size: var(--taille-s);
+  font-weight: 600;
+  color: var(--encre-douce);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+
+  /* Cible tactile d'au moins 24 px — WCAG 2.2 critere 2.5.8, meme regle que
+     `.ex-bouton`. */
+  min-height: 40px;
+}
+
+/* L'ETAT ACTIF N'EST PAS LA SEULE COULEUR DU TEXTE : la bordure epaisse en
+   porte aussi le signal, et `aria-selected` (pose par Radix) le porte pour les
+   technologies d'assistance. WCAG 1.4.1. */
+.ui-onglets__onglet[data-state='active'] {
+  color: var(--encre);
+  border-bottom-color: var(--marque-bleu);
+}
+
+.ui-onglets__onglet:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: -3px;
+}
+
+.ui-onglets__panneau {
+  padding-top: var(--espace-m);
+}
+
+.ui-onglets__panneau:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
    La carte retournable — LOT 5, `T10`, story `MVP-L05-US003`
    ========================================================================== */
 
@@ -237,6 +299,11 @@
 .ui-carte-retournable {
   display: flex;
   flex-direction: column;
+  /* S'ETIRE dans sa cellule de grille — chantier front S10 (`DEC-673`). Une
+     grille CSS etire deja ses `<li>` par defaut (`align-items: stretch`), mais
+     cet `<article>` n'en heritait pas : plusieurs cartes d'une meme rangee
+     restaient a des hauteurs differentes des que leur contenu differait. */
+  height: 100%;
   background: var(--fond);
   /* La couleur du cercle vit dans cette variable, posee en ligne par l'appelant.
      `currentColor` en repli : une carte sans cercle garde une bordure visible. */
@@ -256,6 +323,9 @@
   display: block;
   width: 100%;
   min-height: 44px;
+  /* Pousse `.ui-carte-retournable__pied` ("Voir plus") vers le bas quand la
+     carte est plus haute que son contenu — chantier front S10, `DEC-673`. */
+  flex: 1 1 auto;
   padding: var(--espace-m);
   font: inherit;
   color: inherit;

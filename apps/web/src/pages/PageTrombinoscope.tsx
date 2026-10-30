@@ -42,12 +42,31 @@
  *   c'est une notion metier du **LOT 6** ». Les quatre jetons de marque sont donc
  *   les seuls reconnus ; tout autre laisse la bordure neutre, et le nom du cercle
  *   reste lisible -- ce qui est exactement ce que le §10.1 protege.
+ *
+ * CHANTIER FRONT, S6 (`DEC-672`) : LE STATUT DEVIENT UN `BADGE`, ET `CARTERETOURNABLE`
+ * EST VERIFIEE COMME LE BON VEHICULE
+ *
+ *   Le statut du verso etait du texte simple ; il rejoint le `Badge` que le
+ *   PROFIL porte deja pour la meme donnee (LOT 5 `T11`) -- les deux ecrans disent
+ *   desormais la meme chose de la meme facon.
+ *
+ *   **`CarteRetournable` N'EST PAS REMPLACEE PAR `Carte`, ET C'EST UNE VERIFICATION,
+ *   PAS UN OUBLI.** `Carte` (`packages/ui`) n'accepte ni `className` ni `style`
+ *   (`ProprietesCarte` les exclut explicitement) : elle ne pourrait pas porter la
+ *   bordure de couleur du cercle (`--carte-cercle`, §10.1), et n'offre surtout
+ *   aucun recto/verso -- la richesse que le critere de `MVP-L05-US003` exige
+ *   (« le recto/verso fonctionne au clic, toucher et clavier »). `CarteRetournable`
+ *   fournit deja les DEUX (`className`/`style` pour la couleur, `recto`/`verso`
+ *   pour le retournement) sur un `<button>` natif -- la propriete STRUCTURELLE du
+ *   §7.35 de la passation. C'est le bon vehicule, et aucune icone de bureau ni
+ *   aucun dégradé ne s'y ajoute : rien dans le §13.2 ne s'applique a une carte
+ *   dont le contenu entier est deja une photo et un nom.
  */
 import type { JSX } from 'react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-import { STATUTS, couleurDuCercle, libelleDuStatut } from '../affichage';
+import { STATUTS, couleurDuCercle, libelleDuStatut, texteDuCercle } from '../affichage';
 import { type CriteresDeRecherche, listerLeTrombinoscope } from '../api/trombinoscope';
 import { cheminDuProfilALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
@@ -57,7 +76,7 @@ import {
   TAILLE_PAR_DEFAUT,
   TAILLES_DE_PAGE,
 } from '@onboarding/contracts';
-import { Alerte, CarteRetournable } from '@onboarding/ui';
+import { Alerte, Badge, CarteRetournable } from '@onboarding/ui';
 
 /** §9.3 : « la recherche demarre apres environ 300 ms ». */
 export const TEMPORISATION_DE_SAISIE_MS = 300;
@@ -316,6 +335,7 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
   //  sans jeton declare : la bordure reste neutre dans les deux cas, et le NOM du
   //  cercle reste du texte sur le verso -- c'est le §10.1 qui l'exige.
   const couleur = couleurDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
+  const texte = texteDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
   const libelleStatut = libelleDuStatut(ligne.statut);
 
   return (
@@ -342,6 +362,32 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
             <img alt="" className="trombi-photo" src={ligne.photo} />
           )}
           <span className="trombi-nom">{nom}</span>
+          {/*
+            **LA PASTILLE DE CERCLE AU RECTO — chantier front S10 (`DEC-673`)**.
+            Le `Badge` est deja une pastille (`--rayon-pastille`), deja
+            accessible (le texte du cercle est OBLIGATOIRE dans son type,
+            §10.1) : aucun composant nouveau. Sans cercle, rien n'est rendu —
+            le verso continue de dire « Aucun cercle principal » en toutes
+            lettres, et une pastille vide n'ajouterait rien.
+          */}
+          {ligne.cercle === null ? null : (
+            <span className="trombi-pastille-cercle">
+              <Badge
+                ton={couleur === undefined ? 'neutre' : 'marque'}
+                style={
+                  couleur === undefined
+                    ? undefined
+                    : ({
+                        background: couleur,
+                        borderColor: 'transparent',
+                        color: texte,
+                      } as React.CSSProperties)
+                }
+              >
+                {ligne.cercle.nom}
+              </Badge>
+            </span>
+          )}
         </>
       }
       verso={
@@ -350,7 +396,7 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
           <dd>{ligne.metier ?? 'Non renseigne'}</dd>
           <dt>Statut</dt>
           <dd>
-            {libelleStatut ?? 'Non renseigne'}
+            {libelleStatut === null ? 'Non renseigne' : <Badge ton="marque">{libelleStatut}</Badge>}
             {ligne.client === null ? null : ` — ${ligne.client}`}
           </dd>
           <dt>Cercle</dt>

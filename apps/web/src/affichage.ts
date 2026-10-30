@@ -75,6 +75,27 @@ export function couleurDuCercle(jeton: string | null): string | undefined {
 }
 
 /**
+ * Le texte appareille a `couleurDuCercle`, chantier front S10 (`DEC-673`).
+ *
+ * **ZERO NOUVELLE COMBINAISON** : les quatre couples surface/texte sont deja
+ * mesures et proteges par `jetons.test.ts` (`MARQUE`, LOT 1 `T10`) — exposer le
+ * texte ici ne fait que REUTILISER ce qui est deja prouve, jamais en inventer un
+ * cinquieme. Meme repli que `couleurDuCercle` : `null` et jeton inconnu rendent
+ * `undefined`, jamais une couleur devinee.
+ */
+const TEXTES_DE_CERCLE: Readonly<Record<string, string>> = {
+  bleu: 'var(--marque-bleu-texte)',
+  'bleu-fonce': 'var(--marque-bleu-fonce-texte)',
+  rose: 'var(--marque-rose-texte)',
+  jaune: 'var(--marque-jaune-texte)',
+};
+
+/** Le texte appareille a la couleur rendue par `couleurDuCercle` pour le meme jeton. */
+export function texteDuCercle(jeton: string | null): string | undefined {
+  return jeton === null ? undefined : TEXTES_DE_CERCLE[jeton];
+}
+
+/**
  * « 14:30 », lu a position fixe dans la chaine ISO — jamais par `Date`.
  *
  * **DEPLACEE ICI DEPUIS `PageEvenements.tsx` (LOT 8, `T9`) A SON `T11`** : la

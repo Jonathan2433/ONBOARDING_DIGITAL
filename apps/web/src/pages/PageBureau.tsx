@@ -21,9 +21,37 @@
  *   Les responsables sont un ensemble BORNE par le §8.4, jamais une population :
  *   le §18.2 regit les populations, et en paginer trois inventerait un parametre
  *   que le cahier ne demande pas (§6.5). Meme raisonnement que `bureaux.py`.
+ *
+ * CHANTIER FRONT, S5 (`DEC-672`) : `CARTE`, ICONE DE BUREAU
+ *
+ *   **Mesure avant tout code** : `Badge` servait deja l'etat publie/brouillon
+ *   depuis `T9` du LOT 6 — seul `Carte` manquait ici, a la difference de
+ *   `PageFramework`/`PageCercle` ou les deux etaient absents. Deux `Carte`
+ *   (identite, responsables) remplacent le `<article>`/`<header>` ecrits a la
+ *   main. Une icone decorative (`Building2`, `lucide-react`, `aria-hidden`)
+ *   rejoint le badge d'etat — aucun code de bureau (BDS/BDE/BDG…) n'etant
+ *   ferme (`test_bureaux.py`, « entierement configurables »), une icone PAR
+ *   TYPE de bureau est hors de portee : une seule icone generique marque la
+ *   ressource, jamais une seconde source d'information (§13.2, « icones
+ *   maitrisees »).
+ *
+ * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DES RESPONSABLES
+ *
+ *   `ResponsableDuBureau.photo` suit exactement la convention du trombinoscope
+ *   et du profil (S11) : un cadre hexagonal sur fond de marque colore quand
+ *   `photo` est `null`, l'image sinon. Arbitrage de Jonathan
+ *   (`AskUserQuestion`, 29/10/2026) : la page de synthese Framework reste hors
+ *   de cette sous-etape.
+ *
+ * CHANTIER FRONT, S13 (`DEC-673`) : LE COMPTEUR DE RESPONSABLES EN GROS CHIFFRE
+ *
+ *   Meme traitement et meme arbitrage que `PageCercle` : seul le compteur
+ *   strict — « Responsables (N) » — recoit `.ex-carte__titre-chiffre`, jamais
+ *   la phrase de rapport sur la borne du §8.4.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { Building2 } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
 import { lireLeBureau } from '../api/organisation';
@@ -35,7 +63,7 @@ import {
   type PageDuBureau,
   respecteLaBorneDuHuitQuatre,
 } from '@onboarding/contracts';
-import { Alerte, Badge } from '@onboarding/ui';
+import { Alerte, Badge, Carte } from '@onboarding/ui';
 
 type Etat =
   | { readonly phase: 'chargement' }
@@ -116,20 +144,26 @@ export function PageBureau(): JSX.Element {
   const conforme = respecteLaBorneDuHuitQuatre(b);
 
   return (
-    <article className="bureau">
-      <header className="bureau-entete">
-        <h2 className="bureau-nom">{b.nom}</h2>
-        <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+    <div className="bureau">
+      <Carte titre={b.nom}>
+        <div className="bureau-entete-meta">
+          <Building2 className="icone-bureau" aria-hidden="true" size={20} />
+          <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+        </div>
         {b.description === null ? null : <p className="bureau-description">{b.description}</p>}
-      </header>
+        <dl className="bureau-champs">
+          <dt>Localisation</dt>
+          <dd>{b.localisation ?? 'Non renseignee'}</dd>
+        </dl>
+      </Carte>
 
-      <dl className="bureau-champs">
-        <dt>Localisation</dt>
-        <dd>{b.localisation ?? 'Non renseignee'}</dd>
-      </dl>
-
-      <section className="bureau-responsables">
-        <h3>Responsables ({b.nombreDeResponsables})</h3>
+      <Carte
+        titre={
+          <>
+            Responsables (<span className="ex-carte__titre-chiffre">{b.nombreDeResponsables}</span>)
+          </>
+        }
+      >
         {!conforme ? (
           //  **RAPPORTE, PAS BLOQUE.** Ce bureau est publie et sa base ne respecte
           //  pas « un a trois » — le declencheur qui le garantira est `T7`, deja
@@ -147,14 +181,24 @@ export function PageBureau(): JSX.Element {
           <ul className="bureau-liste-responsables">
             {b.responsables.map((responsable) => (
               <li key={responsable.identifiant}>
-                {responsable.prenom} {responsable.nom}
+                {responsable.photo === null ? (
+                  <span aria-hidden="true" className="bureau-avatar">
+                    {responsable.prenom.slice(0, 1)}
+                    {responsable.nom.slice(0, 1)}
+                  </span>
+                ) : (
+                  <img alt="" className="bureau-photo" src={responsable.photo} />
+                )}
+                <span>
+                  {responsable.prenom} {responsable.nom}
+                </span>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Carte>
 
       {retour}
-    </article>
+    </div>
   );
 }
