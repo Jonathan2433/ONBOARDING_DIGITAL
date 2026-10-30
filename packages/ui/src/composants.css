@@ -123,6 +123,17 @@
   line-height: 1.25;
 }
 
+/* Chantier front, S13 (`DEC-673`) : « gros chiffres bold » pour un compteur
+   mis en avant dans un titre de carte (ex. « Membres (3) »). AUCUNE couleur
+   nouvelle : la typographie seule porte l'accent, le texte reste `--encre`
+   sur `--fond`, deja prouve AA — zero nouvelle mesure de contraste requise,
+   meme raisonnement que `--decoupe-hexagone` en S11 (une forme, ou ici une
+   typographie, n'est ni une couleur ni un couple surface/texte). */
+.ex-carte__titre-chiffre {
+  font-size: 1.4em;
+  font-weight: 900;
+}
+
 /* ==========================================================================
    Alerte — LOT 4, T11. Couvre les familles « alertes », « loaders » et
    « etats vides » du backlog US007 : elles ne se distinguent que par le role

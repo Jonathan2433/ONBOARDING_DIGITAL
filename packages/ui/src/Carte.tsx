@@ -31,8 +31,16 @@ export type NiveauTitre = 'h2' | 'h3' | 'h4';
 
 export interface ProprietesCarte extends Omit<HTMLAttributes<HTMLElement>, 'className' | 'title'> {
   readonly children: ReactNode;
-  /** Facultatif. S'il est fourni, la carte devient une region nommee. */
-  readonly titre?: string;
+  /**
+   * Facultatif. S'il est fourni, la carte devient une region nommee.
+   *
+   * `ReactNode` et non `string` depuis le chantier front S13 (`DEC-673`) :
+   * un titre peut porter un accent interne (ex. `.ex-carte__titre-chiffre`
+   * sur un compteur) sans que le nom accessible change — `aria-labelledby`
+   * calcule le nom a partir du CONTENU TEXTE de l'element reference, quel
+   * que soit le balisage imbrique.
+   */
+  readonly titre?: ReactNode;
   /** `h2` par defaut. Sans effet si `titre` est absent. */
   readonly niveauTitre?: NiveauTitre;
 }

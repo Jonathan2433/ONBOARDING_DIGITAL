@@ -113,7 +113,20 @@ export function PageNationale(): JSX.Element {
         `ECART-043`.
       */}
       <main className="app-principal" id="contenu" tabIndex={-1}>
-        <h1 className="app-titre">Choisir une entite</h1>
+        {/*
+          **CHANTIER FRONT, S13 (`DEC-673`).** Souligne decoratif « trace
+          main » — seul le titre de CETTE page le porte (`.nat-titre`),
+          jamais `.app-titre` seul : cette derniere classe est AUSSI celle du
+          titre fonctionnel de `CadreApplicatif`, partage par chaque page
+          interne. Y poser l'accent aurait colore un titre dont l'habillage
+          n'est pas du. Couleur BLEUE et non jaune (arbitrage de Jonathan,
+          `AskUserQuestion`, 29/10/2026) : le jaune de marque ne rend que
+          1,37:1 sur le fond CLAIR, desormais le theme par defaut (S9) —
+          mesure deja ecrite dans `jetons.ts` pour exclure le jaune des
+          accents en clair. Le bleu est deja un accent PROUVE dans les deux
+          themes (`ACCENTS_ADMIS`), zero nouvelle mesure de contraste.
+        */}
+        <h1 className="app-titre nat-titre">Choisir une entite</h1>
 
         {etat.phase === 'chargement' ? (
           <Alerte urgence="information">Chargement des entites…</Alerte>

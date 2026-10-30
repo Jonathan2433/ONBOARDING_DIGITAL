@@ -268,3 +268,19 @@ describe('la carte de France — LOT 4, `T7`, cahier §8.3', () => {
     expect(screen.getByRole('main').querySelector('.nat-carte')).toBeNull();
   });
 });
+
+describe('chantier front, S13 : souligne decoratif du titre (DEC-673)', () => {
+  it('le titre porte `.nat-titre`, PROPRE a cette page — jamais seul sur `.app-titre`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json([BORDEAUX], 200))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Choisir une entite')).toBeTruthy();
+    });
+    const titre = screen.getByRole('heading', { level: 1 });
+    expect(titre.classList.contains('nat-titre')).toBe(true);
+    expect(titre.classList.contains('app-titre')).toBe(true);
+  });
+});

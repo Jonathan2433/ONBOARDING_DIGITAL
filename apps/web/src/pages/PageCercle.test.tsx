@@ -238,3 +238,38 @@ describe('chantier front, S12 : cadres hexagonaux du Booster et des membres (DEC
     expect(Array.from(images).every((img) => img.getAttribute('alt') === '')).toBe(true);
   });
 });
+
+describe('chantier front, S13 : le compteur de membres en gros chiffre (DEC-673)', () => {
+  it('le nombre de membres est isole dans `.ex-carte__titre-chiffre`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle())),
+    );
+    const { container } = render(
+      <MemoryRouter initialEntries={['/entites/bordeaux/framework/cercles/data']}>
+        <Routes>
+          <Route path="/entites/:code/framework/cercles/:codeCercle" element={<PageCercle />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(container.querySelector('.ex-carte__titre-chiffre')?.textContent).toBe('1');
+  });
+
+  it("l'accent n'altere pas le nom accessible de la region — LE TEMOIN CENTRAL", async () => {
+    //  `aria-labelledby` calcule le nom a partir du texte concatene de
+    //  l'element reference : isoler le nombre dans un `<span>` imbrique ne
+    //  doit RIEN changer au nom de la region, deja eprouve par `S5`.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(pageDeCercle({ total_des_membres: 42 }))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Data')).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Membres (42)' })).toBeTruthy();
+  });
+});

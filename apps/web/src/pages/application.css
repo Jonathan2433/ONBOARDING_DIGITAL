@@ -292,6 +292,26 @@
   overflow-wrap: anywhere;
 }
 
+/* Chantier front, S13 (`DEC-673`) : souligne decoratif « trace main ». PROPRE
+   a `PageNationale` — jamais sur `.app-titre` seul, partage avec le titre
+   FONCTIONNEL de `CadreApplicatif` (voir le commentaire JSX de
+   `PageNationale.tsx`). `text-decoration-style: wavy` approxime le trace a
+   main levee du site reel SANS asset SVG. Couleur BLEUE, pas jaune : le
+   jaune de marque ne rend que 1,37:1 sur `--fond` clair (mesure deja dans
+   `jetons.ts`, exclusion du jaune des accents en clair) — le bleu est deja
+   un accent PROUVE dans les deux themes (`ACCENTS_ADMIS`), zero nouvelle
+   mesure. PUREMENT DECORATIF : aucune information n'y est portee, exempt du
+   contraste non textuel (WCAG 1.4.11), meme parti que les icones `aria-hidden`
+   de S3 et le `clip-path` hexagonal de S11. */
+.nat-titre {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--marque-bleu);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 0.2em;
+  text-decoration-skip-ink: none;
+}
+
 .app-liens {
   margin: 0;
   padding: 0;

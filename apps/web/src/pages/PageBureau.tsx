@@ -42,6 +42,12 @@
  *   `photo` est `null`, l'image sinon. Arbitrage de Jonathan
  *   (`AskUserQuestion`, 29/10/2026) : la page de synthese Framework reste hors
  *   de cette sous-etape.
+ *
+ * CHANTIER FRONT, S13 (`DEC-673`) : LE COMPTEUR DE RESPONSABLES EN GROS CHIFFRE
+ *
+ *   Meme traitement et meme arbitrage que `PageCercle` : seul le compteur
+ *   strict — « Responsables (N) » — recoit `.ex-carte__titre-chiffre`, jamais
+ *   la phrase de rapport sur la borne du §8.4.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -151,7 +157,13 @@ export function PageBureau(): JSX.Element {
         </dl>
       </Carte>
 
-      <Carte titre={`Responsables (${String(b.nombreDeResponsables)})`}>
+      <Carte
+        titre={
+          <>
+            Responsables (<span className="ex-carte__titre-chiffre">{b.nombreDeResponsables}</span>)
+          </>
+        }
+      >
         {!conforme ? (
           //  **RAPPORTE, PAS BLOQUE.** Ce bureau est publie et sa base ne respecte
           //  pas « un a trois » — le declencheur qui le garantira est `T7`, deja

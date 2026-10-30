@@ -52,6 +52,14 @@
  *   mesure de contraste. Arbitrage de Jonathan (`AskUserQuestion`,
  *   29/10/2026) : la page de synthese Framework reste hors de cette
  *   sous-etape, reportee.
+ *
+ * CHANTIER FRONT, S13 (`DEC-673`) : LE COMPTEUR DE MEMBRES EN GROS CHIFFRE
+ *
+ *   Arbitrage de Jonathan (`AskUserQuestion`, 29/10/2026) : seul le compteur
+ *   strict — « Membres (N) » — recoit l'accent, jamais la pagination ni un
+ *   texte d'etat. `Carte.titre` accepte desormais un `ReactNode` (packages/ui)
+ *   pour isoler le nombre dans `.ex-carte__titre-chiffre` sans changer le nom
+ *   accessible de la region (`aria-labelledby` lit le texte concatene).
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -184,7 +192,13 @@ export function PageCercle(): JSX.Element {
         </Carte>
       </div>
 
-      <Carte titre={`Membres (${String(c.totalDesMembres)})`}>
+      <Carte
+        titre={
+          <>
+            Membres (<span className="ex-carte__titre-chiffre">{c.totalDesMembres}</span>)
+          </>
+        }
+      >
         {c.membres.length === 0 ? (
           <Alerte>Aucun membre pour le moment.</Alerte>
         ) : (
