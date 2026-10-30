@@ -58,12 +58,18 @@ def test_les_cinq_types_de_decision_du_19_4_sont_declares() -> None:
     }
 
 
-def test_l_import_reste_synchrone_aucune_table_async_job_ni_outbox_message() -> None:
-    """Arbitrage du 08/10/2026 : `async_job`/`outbox_message` restent au LOT 11."""
+def test_l_import_reste_synchrone_meme_apres_l_arrivee_d_async_job_et_outbox_message() -> None:
+    """Arbitrage du 08/10/2026 : l'import CSV (`lancer_l_import`) reste synchrone.
+
+    `async_job`/`outbox_message` existent desormais (LOT 11, `T1`), mais rien
+    dans `app.imports.execution` ne les consomme : le pipeline d'import n'a
+    pas ete reecrit, et ce test continue de prouver son absence de dependance
+    sur ces deux tables plutot que leur absence du schema.
+    """
 
     assert "import_batch" in metadonnees.tables
-    assert "async_job" not in metadonnees.tables
-    assert "outbox_message" not in metadonnees.tables
+    assert "async_job" in metadonnees.tables
+    assert "outbox_message" in metadonnees.tables
 
 
 def _exiger_postgresql(parametres: Parametres) -> None:

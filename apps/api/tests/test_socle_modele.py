@@ -556,6 +556,9 @@ TABLES_DECLAREES = {
     "bug_report",
     "export_request",
     "data_subject_request",
+    # LOT 11, T1 — modele §20.1 a §20.2, le socle asynchrone
+    "async_job",
+    "outbox_message",
 }
 
 

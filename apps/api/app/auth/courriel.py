@@ -54,7 +54,14 @@ class EchecDEnvoi(RuntimeError):
     """
 
 
-def _message(parametres: Parametres, *, destinataire: str, sujet: str, corps: str) -> EmailMessage:
+def _message(
+    parametres: Parametres,
+    *,
+    destinataire: str,
+    sujet: str,
+    corps: str,
+    corps_html: str | None = None,
+) -> EmailMessage:
     message = EmailMessage()
     message["From"] = f"{parametres.SMTP_FROM_NAME} <{parametres.SMTP_FROM_ADDRESS}>"
     message["To"] = destinataire
@@ -67,17 +74,31 @@ def _message(parametres: Parametres, *, destinataire: str, sujet: str, corps: st
     message["X-Auto-Response-Suppress"] = "All"
     message["Auto-Submitted"] = "auto-generated"
     message.set_content(corps)
+    #  `corps_html` est ajoute en ALTERNATIVE, pas en remplacement : un client
+    #  sans rendu HTML continue de lire `corps` tel quel (LOT 11, `T1`,
+    #  `MVP-L11-US003` — « les templates texte/HTML sont versionnes »).
+    if corps_html is not None:
+        message.add_alternative(corps_html, subtype="html")
     return message
 
 
-def envoyer(parametres: Parametres, *, destinataire: str, sujet: str, corps: str) -> None:
+def envoyer(
+    parametres: Parametres,
+    *,
+    destinataire: str,
+    sujet: str,
+    corps: str,
+    corps_html: str | None = None,
+) -> None:
     """Remettre un message au serveur SMTP configure.
 
     Raises:
         EchecDEnvoi: si le serveur est injoignable ou refuse le message. Le
             message de l'exception ne contient aucune donnee du courriel.
     """
-    message = _message(parametres, destinataire=destinataire, sujet=sujet, corps=corps)
+    message = _message(
+        parametres, destinataire=destinataire, sujet=sujet, corps=corps, corps_html=corps_html
+    )
     try:
         with smtplib.SMTP(
             parametres.SMTP_HOST, parametres.SMTP_PORT, timeout=DELAI_SMTP_SECONDES
