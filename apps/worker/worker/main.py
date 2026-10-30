@@ -87,4 +87,3 @@ dramatiq.set_broker(courtier)
 #  importer avant laisserait Dramatiq en declarer certains sur un courtier
 #  par defaut, jamais celui-ci.
 from worker import actors as _actors  # noqa: E402,F401
-
