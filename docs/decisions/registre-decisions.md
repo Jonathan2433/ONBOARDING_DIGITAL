@@ -1,7 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 27 octobre 2026 — décision `DEC-673`, reprise du chantier front
+**Dernière mise à jour :** 30 octobre 2026 — décision `DEC-675`, ouverture du LOT 11
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -178,6 +178,8 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Franchissement de la porte `G10` `DEC-671`** | 1 | **Validée le 25/10/2026** |
 | **Ouverture du chantier front `DEC-672`** | 1 | **Validée le 25/10/2026** |
 | **Reprise du chantier front `DEC-673`** | 1 | **Validée le 27/10/2026** |
+| **Ouverture du LOT 11 `DEC-674`** | 1 | **Validée le 30/10/2026** |
+| **Déviation tracée (métier optionnel) `DEC-675`** | 1 | **Validée le 30/10/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -189,7 +191,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **341** | |
+| **Total** | **343** | |
 
 ---
 
@@ -989,7 +991,10 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-673` | **Reprise du chantier de refonte visuelle du front, `S9` à `S14` — Jonathan a confronté des captures d'écran réelles de l'application (trombinoscope, page cercle, Framework) à celles du prototype et du site réel `exalt-company.com`, après que `S1`-`S8` (`DEC-672`) avaient été déclarées techniquement complètes.** Cinq écarts mesurés, aucun n'étant un défaut de code mais tous des décisions de portée jamais prises : **(1)** le thème sombre suivait la préférence système (`@media (prefers-color-scheme: dark)`, hérité du LOT 1 `T5`, jamais repensé pour l'app métier), sans aucun bouton pour revenir au clair — l'inverse du prototype et du site réel, qui n'ont ni l'un ni l'autre de variante sombre ; **(2)** l'avatar neutre du trombinoscope est gris sur gris (`.trombi-avatar`, LOT 5), jamais coloré ; **(3)** les cartes d'une même rangée du trombinoscope n'ont pas une hauteur égale quand leur contenu diffère ; **(4)** le nom du cercle n'est jamais montré en pastille au recto de la carte, relégué au verso en texte brut (§10.1) ; **(5)** la liste des membres d'un cercle ou d'un bureau reste un texte brut sans photo, `S5` ayant délibérément limité sa portée à l'habillage (`Carte`/`Badge`), documenté dans le fichier lui-même. **DEUX ARBITRAGES EXPLICITES DE JONATHAN POSÉS AVANT TOUT CODE** (`AskUserQuestion`, reformulé sans jargon) : (a) le niveau d'inspiration du vrai site — emprunter AUSSI ses motifs distinctifs (cadres de photo hexagonaux, gros chiffres bold, soulignés « tracé main » jaunes), pas seulement recolorer le système existant, risque et effort plus élevés assumés ; (b) le thème par défaut — TOUJOURS clair, y compris au tout premier chargement, quelle que soit la préférence système, jamais déduit. Découpage en six sous-étapes (`fiche-chantier-refonte-visuelle-front.md` §8) : `S9` (bascule clair/sombre), `S10` (trombinoscope/profil « pop »), `S11` (cadres hexagonaux), `S12` (cartes-photo des membres), `S13` (accents visuels), `S14` (recette visuelle finale de la reprise). Même discipline que `S1`-`S8` : une sous-étape à la fois, jamais empilée, PR et validation de Jonathan entre chacune. | La consultation du vrai site a confirmé que `MARQUE` (`DEC-491`) n'a aucune couleur à changer — palette identique (indigo, rose, jaune). Le périmètre reste celui du §4 de la fiche : aucun écran du back-office, aucune donnée réelle. `DEP-006` (charte, logo et typographie officiels) reste ouverte, échéance LOT 14, inchangée par cette reprise. | Validée le 27/10/2026 |
 
-**Prochain identifiant libre : `DEC-674`.**
+| `DEC-674` | **Le LOT 11 — Médias, worker et tâches planifiées — est ouvert par Jonathan le 30/10/2026, périmètre élargi aux huit stories officielles du backlog, à deux sous-étapes hors backlog et à une déviation tracée, découpage compté en SEPT sous-étapes.** `T1` pose le socle asynchrone (tables `async_job`/`outbox_message`, jobs Dramatiq persistés, outbox transactionnelle, fournisseur e-mail — `US001`/`US002`/`US003`) · `T2` sert les médias (upload en quarantaine, miniatures et variantes idempotentes, écran de dépôt de photo de profil — `US004`/`US005`) · `T3` ajoute, hors backlog, la création de cercle/bureau et l'attribution de Booster/Responsable de bureau hors import CSV · `T4` ferme le reste du backlog officiel (tâches planifiées avec verrou, nettoyage des médias, supervision Uptime Kuma — `US006`/`US007`/`US008`) · `T5` rend le métier optionnel (`DEC-675`) · `T6` relie les écrans résiduels à la navigation · `T7` réalise la recette et prépare `G11`. | **L'instruction explicite de Jonathan du 30/10/2026 ouvre la phase suivante après `G10`**, dans le contexte d'une première démonstration métier à préparer. Le découpage proposé initialement comptait quinze sous-étapes (reprenant les huit stories officielles, les deux sous-étapes d'organisation et la déviation du métier) ; Jonathan a demandé de le **regrouper pour accélérer**, et la version compilée à sept sous-étapes a été validée sans réserve (« je confirme »). Les sept critères de sortie (roadmap et cahier, texte identique) restent concordants. **L'intégration des données de démonstration (entité EXALT Bordeaux, 125 personnes, photos) est explicitement HORS de ce découpage** : Jonathan l'a lui-même séquencée après le lot (« dev du lot 11 puis intégration […] avec un script de seed »), et elle sera menée comme une action distincte une fois `G11` franchie, en s'appuyant sur les mécanismes construits ici (upload/miniatures, création d'organisation, métier optionnel) — jamais par contournement direct de la base. Aucune donnée réelle de collaborateur n'est versionnée (règle n°3 du §2 de `CLAUDE.md`). | Validée le 30/10/2026 |
+| `DEC-675` | **Le champ « métier » (`job_catalog`/`membership_job_assignment`) est rendu OPTIONNEL partout où il est aujourd'hui obligatoire dans l'application — déviation explicite et tracée du modèle de données §6.3-6.4, qui le décrit comme faisant partie du socle « personnes ».** Portée bornée, confirmée par Jonathan : le champ devient facultatif dans la création et la modification d'un collaborateur et dans tout écran qui l'exige aujourd'hui ; **aucune table, aucune colonne et aucune ligne existante n'est supprimée** — réversible, exécutée à `T5` du LOT 11. | **Jonathan a explicitement demandé, le 30/10/2026, de « retirer les métiers de notre application, nous ne voulons plus gérer ce champ ».** Le modèle de données traite pourtant `job_catalog`/`membership_job_assignment` comme core, au même rang que `person`/`entity_membership`/`professional_status_assignment` (§6.3-6.4) — une exigence `Must` ne se dégrade jamais sans décision explicite et tracée (règle n°7 du §2 de `CLAUDE.md`), d'où cette décision séparée plutôt qu'une simple note de sous-étape. L'option « rendre optionnel, ne rien supprimer » a été retenue plutôt qu'une suppression physique des tables : réversible, sans perte des données déjà écrites par les lots précédents (synthétiques ou futures), conforme à l'intention de Jonathan (« ne plus GÉRER ce champ », pas « détruire ce qui existe »). | Validée le 30/10/2026 |
+
+**Prochain identifiant libre : `DEC-676`.**
 
 ---
 
@@ -1309,6 +1314,8 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-671` — franchissement de la porte `G10` | 1 | 1 |
 | `DEC-672` — ouverture du chantier front | 1 | 1 |
 | `DEC-673` — reprise du chantier front | 1 | 1 |
+| `DEC-674` — ouverture du LOT 11 | 1 | 1 |
+| `DEC-675` — déviation tracée (métier optionnel) | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1320,7 +1327,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **341** | **341** |
+| **Total** | **343** | **343** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.
