@@ -626,6 +626,7 @@ version = "0.1.0"
 source = { editable = "apps/worker" }
 dependencies = [
     { name = "dramatiq", extra = ["redis"] },
+    { name = "onboarding-api" },
     { name = "onboarding-observabilite" },
     { name = "psycopg", extra = ["binary"] },
     { name = "redis" },
@@ -635,6 +636,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dramatiq", extras = ["redis"], specifier = ">=2.2.0" },
+    { name = "onboarding-api", editable = "apps/api" },
     { name = "onboarding-observabilite", editable = "packages/observabilite" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
     { name = "redis", specifier = ">=8.0.1" },

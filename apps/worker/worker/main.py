@@ -81,3 +81,10 @@ configurer_journalisation(
 
 courtier = creer_courtier()
 dramatiq.set_broker(courtier)
+
+#  LOT 11, T1 : les acteurs sont importes APRES `set_broker`, parce que
+#  `@dramatiq.actor` capture le courtier courant A LA DECLARATION. Les
+#  importer avant laisserait Dramatiq en declarer certains sur un courtier
+#  par defaut, jamais celui-ci.
+from worker import actors as _actors  # noqa: E402,F401
+

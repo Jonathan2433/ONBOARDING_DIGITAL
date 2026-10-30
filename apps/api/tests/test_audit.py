@@ -1,10 +1,11 @@
 """Schema de l'audit, des alertes, du support et du RGPD — LOT 10, `T1`, modele §21/§22.3.
 
 Prouve l'arbitrage pose avant tout code : l'ecriture d'audit reste SYNCHRONE
-(`ARB-DATA-005`, `§30.20`), et aucune table `async_job` n'existe encore —
-elle reste reservee au LOT 11. `export_request` ne porte donc aucune colonne
-`job_id` : voir le defaut trouve par `make isolation-check`, documente en
-tete de `app/audit/modeles.py`.
+(`ARB-DATA-005`, `§30.20`). `async_job` existe desormais — LOT 11, `T1` —
+mais cela ne retrofite PAS `export_request.job_id`, que le LOT 10 a
+explicitement retiree (defaut trouve par `make isolation-check`, documente en
+tete de `app/audit/modeles.py`) : l'export CSV de l'audit (`T9`) reste
+synchrone, et rien dans ce lot n'a jamais eu besoin de cette colonne.
 """
 
 from __future__ import annotations
@@ -30,10 +31,15 @@ def test_les_six_tables_du_lot_existent() -> None:
         assert table in metadonnees.tables
 
 
-def test_l_audit_reste_synchrone_aucune_table_async_job() -> None:
-    """Arbitrage pose avant tout code : `async_job` reste reservee au LOT 11."""
+def test_l_export_de_l_audit_n_a_jamais_eu_besoin_de_job_id() -> None:
+    """`async_job` existe depuis LOT 11 `T1` ; `export_request` n'a jamais porte `job_id`.
 
-    assert "async_job" not in metadonnees.tables
+    Les deux faits sont INDEPENDANTS : l'export CSV de l'audit (`T9`) est
+    synchrone par construction (voir `app/audit/export.py`), pas parce que
+    `async_job` manquait.
+    """
+
+    assert "async_job" in metadonnees.tables
     assert "job_id" not in metadonnees.tables["export_request"].columns
 
 
