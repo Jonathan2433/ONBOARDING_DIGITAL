@@ -1442,6 +1442,84 @@
       ]
     },
     {
+      "cle": "depotDUnePhoto",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 422],
+      "forme": "ReponseDeDepotDePhoto",
+      "role": [
+        "Deposer (ou remplacer) une photo de profil, en quarantaine — LOT 11, T2,",
+        "MVP-L11-US004. Premiere route d'upload du projet, tous medias confondus.",
+        "MEME GRILLE QUE LA FICHE D'ARRIVEE (LOT 7) : matrice §6.1 « Ajouter ou",
+        "remplacer une photo », avant publication NEW=Soi/DSM a tiret, apres",
+        "publication l'inverse — voir app.media.perimetre.peut_deposer_une_photo,",
+        "qui dispatche sur les fonctions deja prouvees de la fiche d'arrivee.",
+        "La reponse rend `pending` : la verification du contenu reel et la",
+        "generation de la miniature sont ASYNCHRONES — `GET …/media/{media}/etat`",
+        "pour suivre ce traitement.",
+        "422 pour un fichier vide, un nom vide une fois nettoye, une taille",
+        "superieure a 10 Mo (cahier §16.1, plus stricte que la borne generique de",
+        "20 Mo par media_type), ou un type declare hors JPEG/PNG/WebP."
+      ]
+    },
+    {
+      "cle": "droitsDePhoto",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/droits",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "DroitsDePhoto",
+      "role": [
+        "Commodite d'ecran, aucune ligne de matrice propre — LOT 11, T2. Dit si",
+        "l'appelant peut deposer une photo et/ou gerer l'autorisation d'affichage",
+        "de CETTE appartenance, pour que l'ecran n'ait pas a deviner un permis",
+        "qu'il ne peut pas observer autrement."
+      ]
+    },
+    {
+      "cle": "etatDUnMedia",
+      "chemin": "/api/v1/entities/{code}/media/{media}/etat",
+      "methode": "get",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "EtatDUnMedia",
+      "role": [
+        "Suivre l'avancement du traitement d'un media depose — LOT 11, T2.",
+        "pending/processing (en cours), ready (miniature prete, l'autorisation",
+        "peut etre accordee), rejected (voir rejection_code). Reserve au",
+        "deposant du media et aux roles de portee entite — pas une liste des",
+        "medias d'autrui."
+      ]
+    },
+    {
+      "cle": "autorisationPhoto",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/autorisation",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409],
+      "forme": "ReponseDAutorisation",
+      "role": [
+        "Accorder l'autorisation d'affichage d'une photo — LOT 11, T2,",
+        "MVP-L11-US005, modele §12.2. Matrice §6.1 « Enregistrer l'autorisation",
+        "photo » : Soi TOUJOURS (quel que soit l'etat de publication, a la",
+        "difference du depot), DSM a tiret, ESM/BOOST/ADM-E/SUPER en soutien.",
+        "N'IMPORTE QUELLE AUTORISATION ANTERIEURE RESTE ACTIVE : le residu du",
+        "LOT 5 (modele §16.1, « le service devra dire ce qu'il fait de deux",
+        "autorisations actives ») est tranche ici — voir app.media.autorisation.",
+        "409 `media_pas_pret` : le media n'est pas encore `ready`."
+      ]
+    },
+    {
+      "cle": "retraitAutorisationPhoto",
+      "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/autorisation/retrait",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404],
+      "forme": "ReponseDeRetrait",
+      "role": [
+        "Retirer TOUTES les autorisations actives d'affichage d'une photo — LOT 11,",
+        "T2, MVP-L11-US005, matrice §6.1 « Retirer l'autorisation photo », MEME",
+        "grille que l'octroi. Idempotent : `autorisations_retirees` peut valoir 0,",
+        "ce n'est pas un refus."
+      ]
+    },
+    {
       "cle": "catalogueDesTachesOnboarding",
       "chemin": "/api/v1/entities/{code}/onboarding/task-references",
       "methode": "get",

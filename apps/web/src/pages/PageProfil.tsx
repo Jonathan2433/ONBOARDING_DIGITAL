@@ -86,6 +86,7 @@ import { lireLaFiche, lireLHistorique } from '../api/profil';
 import { cheminDeRubrique } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 import { PanneauDuCycleDeVie } from './PanneauDuCycleDeVie';
+import { PanneauPhoto } from './PanneauPhoto';
 
 import {
   AXES_DE_L_HISTORIQUE,
@@ -414,6 +415,18 @@ export function PageProfil(): JSX.Element {
             {statut === null ? null : <Badge ton="marque">{statut}</Badge>}
           </div>
         </div>
+        {charge.archive ? null : (
+          //  **AUCUN DEPOT SUR UN PROFIL ARCHIVE** : la fiche archivee (`lire_
+          //  la_fiche_archivee`) n'a pas de fiche d'arrivee a interroger, et le
+          //  depot d'une photo pour un profil clos n'a aucun sens — LOT 11, `T2`.
+          <PanneauPhoto
+            appartenance={p.id}
+            codeEntite={entite.code}
+            surSucces={() => {
+              setRechargements((n) => n + 1);
+            }}
+          />
+        )}
       </Carte>
 
       {charge.archive ? (

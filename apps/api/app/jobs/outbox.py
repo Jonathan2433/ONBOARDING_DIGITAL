@@ -18,14 +18,17 @@ LE RELAIS, LUI, OUVRE SA PROPRE TRANSACTION PAR MESSAGE
   `app.imports.execution`/`app.people.transfert_masse` : l'echec d'un message
   n'annule jamais le travail deja fait sur les precedents du meme lot.
 
-T1 NE CABLE QU'UN SEUL `topic` : `email`
+T1 CABLAIT UN SEUL `topic`, `email` ; `T2` DU LOT 11 EN CABLE UN SECOND, `media`
 
   Le modele §20.2 en liste cinq (e-mail, media, progression, supervision,
-  export) ; seul l'envoi d'e-mail a un consommateur a ce lot (`US003`). Un
-  message d'un autre `topic` est laisse NON TRAITE — ni erreur, ni perte,
-  simplement en attente qu'un futur lot cable son relais. Le dire plutot que
-  de lever une exception qui ferait echouer tout le lot pour un message qui
-  n'a encore aucun consommateur (§6.5 de la passation).
+  export). `T2` branche `media` sur `app.media.traitement.generer_les_
+  variantes_depuis_la_charge` — MEME GABARIT que l'e-mail : `commencer_un_
+  essai`/`job_type` propre, succes ou echec traduits dans le MEME vocabulaire
+  `_MARQUER_TRAITE`/`_MARQUER_EN_ECHEC`. Les trois `topic` restants
+  (progression, supervision, export) sont laisses NON TRAITES — ni erreur, ni
+  perte, simplement en attente qu'un futur lot cable leur relais. Le dire
+  plutot que de lever une exception qui ferait echouer tout le lot pour un
+  message qui n'a encore aucun consommateur (§6.5 de la passation).
 """
 
 from __future__ import annotations
@@ -35,6 +38,7 @@ import datetime as dt
 import json
 import logging
 import uuid
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from sqlalchemy import text
@@ -46,9 +50,12 @@ from app.jobs.modeles import TypeDeJob
 if TYPE_CHECKING:  # pragma: no cover
     from sqlalchemy.engine import Connection
 
+
 journal = logging.getLogger("app.jobs.outbox")
 
 TOPIC_EMAIL: Final = "email"
+#  `T2` du LOT 11 : la generation de miniatures et variantes, `MVP-L11-US005`.
+TOPIC_MEDIA: Final = "media"
 
 TAILLE_DE_LOT_PAR_DEFAUT: Final = 20
 
@@ -187,28 +194,63 @@ def relayer_le_lot(
 def _traiter_un_message(
     connexion: Connection, message: _MessageARelayer, *, instant: dt.datetime
 ) -> bool:
-    if message.topic != TOPIC_EMAIL:
-        journal.info(
-            "message de l'outbox laisse en attente : topic sans consommateur",
-            extra={"topic": message.topic},
+    if message.topic == TOPIC_EMAIL:
+        return _traiter_un_message_de_ce_type(
+            connexion,
+            message,
+            instant=instant,
+            job_type=TypeDeJob.EMAIL.value,
+            executer=lambda: fournisseur_email.envoyer_depuis_la_charge(message.payload_json),
+            exceptions_attendues=(fournisseur_email.EchecDEnvoi,),
         )
-        return False
+    if message.topic == TOPIC_MEDIA:
+        #  Importe ICI, pas au sommet du module : `app.media.traitement`
+        #  importe Pillow, une dependance que `app.jobs` (consomme par
+        #  `app.imports`, `app.auth`...) n'a sinon aucune raison de charger.
+        from app.media.traitement import EchecDeTraitement, generer_les_variantes_depuis_la_charge
 
-    #  La cle d'idempotence du JOB est l'identifiant du MESSAGE lui-meme : si
-    #  ce message a deja ete traite jusqu'au bout par une invocation
-    #  precedente du relais (par exemple apres un crash entre l'envoi reussi
-    #  et le `UPDATE processed_at`), `commencer_un_essai` rend `None` et
-    #  aucun second e-mail n'est envoye — seul `processed_at` est rattrape.
+        return _traiter_un_message_de_ce_type(
+            connexion,
+            message,
+            instant=instant,
+            job_type=TypeDeJob.MEDIA.value,
+            executer=lambda: generer_les_variantes_depuis_la_charge(
+                connexion, message.payload_json, instant=instant
+            ),
+            exceptions_attendues=(EchecDeTraitement,),
+        )
+
+    journal.info(
+        "message de l'outbox laisse en attente : topic sans consommateur",
+        extra={"topic": message.topic},
+    )
+    return False
+
+
+def _traiter_un_message_de_ce_type(
+    connexion: Connection,
+    message: _MessageARelayer,
+    *,
+    instant: dt.datetime,
+    job_type: str,
+    executer: Callable[[], None],
+    exceptions_attendues: tuple[type[Exception], ...],
+) -> bool:
+    """Le gabarit commun aux deux `topic` cables — e-mail (`T1`) et media (`T2`).
+
+    La cle d'idempotence du JOB est l'identifiant du MESSAGE lui-meme : si ce
+    message a deja ete traite jusqu'au bout par une invocation precedente du
+    relais (par exemple apres un crash entre l'effet reussi et le `UPDATE
+    processed_at`), `commencer_un_essai` rend `None` et l'effet n'est jamais
+    rejoue — seul `processed_at` est rattrape.
+    """
     job = commencer_un_essai(
-        connexion,
-        job_type=TypeDeJob.EMAIL.value,
-        idempotency_key=str(message.id),
-        instant=instant,
+        connexion, job_type=job_type, idempotency_key=str(message.id), instant=instant
     )
     if job is not None:
         try:
-            fournisseur_email.envoyer_depuis_la_charge(message.payload_json)
-        except fournisseur_email.EchecDEnvoi as erreur:
+            executer()
+        except exceptions_attendues as erreur:
             code_erreur = type(erreur).__name__
             terminer_en_echec(connexion, job.id, instant=instant, error_code=code_erreur)
             connexion.execute(

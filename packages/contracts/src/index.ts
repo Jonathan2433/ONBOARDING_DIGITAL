@@ -329,6 +329,39 @@ export type {
   ValidationDeFiche,
 } from './ficheArrivee.js';
 
+//  LE DEPOT ET L'AUTORISATION D'UNE PHOTO DE PROFIL — LOT 11, `T2`. Cinq
+//  routes, aucune forme partagee avec une autre du contrat — voir l'en-tete.
+export {
+  cheminAutorisationPhoto,
+  cheminDepotDePhoto,
+  cheminDroitsDePhoto,
+  cheminEtatDUnMedia,
+  cheminRetraitAutorisationPhoto,
+  CODES_AUTORISATION_PHOTO,
+  CODES_DEPOT_DE_PHOTO,
+  CODES_DROITS_PHOTO,
+  CODES_ETAT_MEDIA,
+  CODES_RETRAIT_AUTORISATION_PHOTO,
+  GABARIT_CHEMIN_AUTORISATION_PHOTO,
+  GABARIT_CHEMIN_DROITS_PHOTO,
+  GABARIT_CHEMIN_ETAT_MEDIA,
+  GABARIT_CHEMIN_PHOTO,
+  GABARIT_CHEMIN_RETRAIT_AUTORISATION_PHOTO,
+  validerLAutorisation,
+  validerLeDepotDePhoto,
+  validerLesDroitsDePhoto,
+  validerLEtatDUnMedia,
+  validerLeRetrait,
+} from './media.js';
+export type {
+  Autorisation,
+  DemandeDAutorisationDePhoto,
+  DepotDePhoto,
+  DroitsDePhoto,
+  EtatDUnMedia,
+  Retrait,
+} from './media.js';
+
 //  LE CATALOGUE DES TACHES EN LECTURE — LOT 7, `T4`, ferme `ECART-013`. Meme
 //  partage : la CREATION, qui ECRIT, n'a pas de module de contrat propre.
 export {

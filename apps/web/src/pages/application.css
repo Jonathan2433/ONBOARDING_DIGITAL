@@ -1169,6 +1169,30 @@
   gap: var(--espace-s);
 }
 
+/* LOT 11, `T2` — le depot et l'autorisation d'une photo. Vit dans la MEME
+   `Carte` que l'identite (§7.27 : un panneau de plus n'a pas besoin de sa
+   propre carte, l'action porte directement sur ce que la carte montre). */
+.profil-photo-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  width: 100%;
+  margin-top: var(--espace-m);
+}
+
+.profil-champ-fichier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.profil-photo-statut {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
 .profil-relations {
   display: flex;
   flex-direction: column;
