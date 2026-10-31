@@ -178,13 +178,30 @@ prouver **trois** appels, dont le troisième se termine par `/droits` ; la fonct
 fichier sert désormais une réponse neutre (`peut_deposer`/`peut_gerer_autorisation` à `false`) sur
 ce chemin, pour que les 23 autres tests du fichier n'aient rien à changer.
 
-## 3.3 Un avis `pnpm audit` nouveau, mesuré sans rapport avec ce lot
+## 3.3 Un avis `pnpm audit` nouveau, mesuré sans rapport avec ce lot, et TRAITÉ pour que la porte passe
 
-`pnpm audit` signale un avis modéré sur `minimatch` (transitif via `eslint`, dépendance de
-développement, `GHSA-g3hv-75wg-m249`). `pnpm-lock.yaml` et `package.json` sont **inchangés** par
-cette sous-étape (aucune dépendance JavaScript ajoutée) : l'avis est donc un résidu
-environnemental, de la même classe que `brace-expansion`/`GHSA-mh99-v99m-4gvg` au LOT 1 `T10` —
-mesuré, pas causé par `T2`, et non traité ici.
+`pnpm audit` a signalé un avis modéré sur `minimatch` (`GHSA-g3hv-75wg-m249`, deni de service par
+amplification `globparts`), apparu dans la CI de la pull request de `T2` sans qu'aucune dépendance
+JavaScript n'ait été ajoutée par cette sous-étape — un résidu environnemental, exactement comme
+`brace-expansion`/`GHSA-mh99-v99m-4gvg` au LOT 1 `T6`/`T10`, mais qui **bloque la porte** (§23.1)
+et devait donc être réglé dans cette même pull request, pas laissé ouvert.
+
+**Mesuré avant d'être réglé** (§7.0 cinquième proposition) : l'avis a DEUX chemins transitifs,
+`eslint` (déjà `^10.14.0`, la dernière ligne majeure) et `eslint-plugin-jsx-a11y@6.10.2`, qui
+déclare `minimatch@^3.x` et l'appelle comme une fonction CommonJS. Forcer `minimatch` à `>=11.0.1`
+— globalement, puis même restreint au seul chemin `eslint-plugin-jsx-a11y>minimatch` par la syntaxe
+`parent>enfant` de pnpm — rend `TypeError: (0, _minimatch.default) is not a function` sur tout
+`make lint` : le motif garde-fou d'accessibilité déterministe, `DEC-451`, casserait en silence.
+**Exactement le précédent que `DEC-474`/`ROAD-RSK-032` documentent déjà pour `brace-expansion`** :
+même chemin, même dépendance de développement, même règle du §7.0 (« mesure ce que le correctif
+casse avant de l'appliquer »).
+
+La tolérance est donc déclarée par l'outil lui-même — `pnpm audit --ignore GHSA-g3hv-75wg-m249`,
+qui persiste `auditConfig.ignoreGhsas` dans `pnpm-workspace.yaml` — jamais un `overrides` forcé.
+Le bloc historique du fichier (qui racontait déjà `brace-expansion`) est étendu pour porter cette
+seconde tolérance, avec le même rappel qu'au LOT 1 `T10` : le jour où `eslint-plugin-jsx-a11y`
+republie avec un `minimatch` récent, elle devra être **retirée**, pas laissée dormir. Vérifié après
+coup : `make lint`/`format-check`/`typecheck`/`test-frontend` rejoués, 0 échec, `jsx-a11y` intact.
 
 ## 3.4 Aller-retour réel effectué (§7.43 de la passation)
 
@@ -250,7 +267,9 @@ WHERE archived_at IS NULL DO NOTHING` sur `media_variant`, le même motif que
 - `arrival_profile.photo_media_id` (modèle §12.1) reste non écrit — la bookkeeping de « quelle
   photo a été soumise pendant la fiche d'arrivée » reste un résidu distinct de l'autorisation
   d'affichage elle-même, qu'aucun lecteur du corpus n'exige aujourd'hui ;
-- `pnpm audit` : un avis modéré sur `minimatch`, mesuré sans rapport avec ce lot — voir §3.3.
+- une seconde tolérance d'audit nommée, `GHSA-g3hv-75wg-m249` (`minimatch`), aux côtés de celle que
+  le LOT 1 avait un temps portée pour `brace-expansion` puis retirée — à retirer de la même façon
+  le jour où `eslint-plugin-jsx-a11y` republie avec un `minimatch` récent — voir §3.3.
 
 # Validation demandée à Jonathan
 
