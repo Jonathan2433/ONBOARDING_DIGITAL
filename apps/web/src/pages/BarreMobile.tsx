@@ -56,9 +56,11 @@
  *   la barre au-dela. Deux reperes de navigation visibles en meme temps
  *   donneraient deux fois les memes liens dans l'ordre de tabulation.
  */
+import { MoreHorizontal } from 'lucide-react';
 import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 
+import { IconeDeRubrique } from '../iconesDeRubrique';
 import { cheminDeRubrique, RUBRIQUES, rubriqueEstVisible } from '../routes';
 import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 
@@ -108,6 +110,17 @@ export function BarreMobile({
               to={cheminDeRubrique(code, rubrique.suffixe)}
               end={rubrique.suffixe === ''}
             >
+              {/*
+                **ICONE AU-DESSUS DU LIBELLE, PAS A COTE** — chantier front,
+                S3 (`DEC-672`). La cellule la plus etroite a 320 px mesure
+                80 px (§8.2 de l'en-tete) : un ajout HORIZONTAL grignoterait
+                exactement la marge qui fait deja passer « Trombinoscope » sur
+                deux lignes. Empiler verticalement consomme de la hauteur, pas
+                de la largeur — la mesure du 23/08/2026 reste valide.
+              */}
+              <span className="app-rubrique-icone">
+                <IconeDeRubrique cle={rubrique.cle} />
+              </span>
               {rubrique.libelle}
             </NavLink>
           </li>
@@ -124,7 +137,17 @@ export function BarreMobile({
             la meme raison (§7.27).
           */}
           <details className="app-barre-plus">
-            <summary className="app-barre-lien">Plus</summary>
+            <summary className="app-barre-lien">
+              {/*
+                `MoreHorizontal` plutot que `IconeDeRubrique` : « Plus » n'est
+                pas une rubrique de `RUBRIQUES`, c'est l'acces au panneau qui
+                en contient d'autres — chantier front, S3 (`DEC-672`).
+              */}
+              <span className="app-rubrique-icone">
+                <MoreHorizontal aria-hidden="true" size={20} />
+              </span>
+              Plus
+            </summary>
             <ul className="app-barre-panneau">
               {secondaires.map((rubrique) => (
                 <li key={rubrique.cle}>
@@ -132,6 +155,9 @@ export function BarreMobile({
                     className="app-barre-lien-secondaire"
                     to={cheminDeRubrique(code, rubrique.suffixe)}
                   >
+                    <span className="app-rubrique-icone">
+                      <IconeDeRubrique cle={rubrique.cle} />
+                    </span>
                     {rubrique.libelle}
                   </NavLink>
                 </li>

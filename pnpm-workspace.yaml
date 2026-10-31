@@ -47,18 +47,19 @@ engineStrict: true
 # postcss (vite) et css-tree (jsdom). Corrige en 1.2.2 ; le lockfile portait
 # 1.2.1. Meme parti qu'undici ci-dessus : fixer le minimum corrige, sans
 # toucher aucun consommateur direct ni leur plage declaree.
+#
 overrides:
   undici: '>=8.10.2'
   source-map-js: '>=1.2.2'
 
 # ============================================================================
-#  Audit de dependances — DEC-474, puis DEC-493 en sous-etape T10.
+#  Audit de dependances — DEC-474, DEC-493 en T10 du LOT 1, et T2 du LOT 11.
 #
-#  AUCUNE TOLERANCE N'EST DECLAREE, et c'est un renforcement, pas un oubli.
+#  UNE SEULE TOLERANCE EST DECLAREE AUJOURD'HUI, ET ELLE EST NOMMEE.
 #
-#  HISTOIRE, PARCE QU'ELLE EXPLIQUE POURQUOI CE BLOC EST VIDE
+#  PREMIERE HISTOIRE, PARCE QU'ELLE EXPLIQUE LA METHODE
 #
-#    `T6` avait declare UNE tolerance nommee et etroite,
+#    `T6` du LOT 1 avait declare UNE tolerance nommee et etroite,
 #    `GHSA-mh99-v99m-4gvg` — brace-expansion, deni de service par expansion non
 #    bornee, chemin `eslint-plugin-jsx-a11y > minimatch@3 > brace-expansion@1.1.16`.
 #
@@ -69,31 +70,42 @@ overrides:
 #    ou minimatch@3 appelle `expand(motif)`. Le « correctif » aurait neutralise
 #    ESLint, donc `eslint-plugin-jsx-a11y`, motif determinant de DEC-451.
 #
-#  CE QUI A CHANGE, MESURE LE 30/07/2026 EN SOUS-ETAPE T10
+#    `T10` du LOT 1 a mesure que la ligne 1.x avait recu un correctif
+#    (`brace-expansion@1.1.18`) et a RETIRE la tolerance plutot que la laisser
+#    dormir : une tolerance qui ne couvre plus rien avalerait SILENCIEUSEMENT
+#    la reapparition du meme avis. `ROAD-RSK-032` clos par la meme mesure.
 #
-#    La ligne 1.x a recu un correctif : `brace-expansion@1.1.18`. Ce que `T6`
-#    avait mesure comme inexistant existe desormais. Un simple
-#    `pnpm update -r brace-expansion nanoid` suffit, dans les plages deja
-#    declarees, sans forcer aucune version majeure.
+#  LA SECONDE TOLERANCE, DECLAREE EN T2 DU LOT 11
 #
-#    Verifie dans les deux sens : l'audit est vert AVEC et SANS la tolerance,
-#    donc elle ne couvre plus rien. Et rien n'est casse — lint, formatage,
-#    typage et les deux suites de tests restent a zero, ESLint et jsx-a11y
-#    compris.
+#    `GHSA-g3hv-75wg-m249` : deni de service par amplification `globparts`
+#    dans minimatch, chemin transitif via `eslint` (deja la derniere version
+#    majeure, `^10.14.0`) ET via `eslint-plugin-jsx-a11y@6.10.2`, qui declare
+#    `minimatch@^3.x` et l'APPELLE COMME UNE FONCTION CommonJS — EXACTEMENT
+#    le meme chemin que `brace-expansion` ci-dessus, une dependance de
+#    developpement qui n'entre dans aucune image publiee.
 #
-#  POURQUOI LA RETIRER PLUTOT QUE LA LAISSER DORMIR
+#    **MESURE, PAS SUPPOSE** (§7.0 cinquieme proposition) : forcer `minimatch`
+#    a `>=11.0.1`, meme SCOPE au seul chemin `eslint-plugin-jsx-a11y>minimatch`
+#    (syntaxe pnpm `parent>enfant`), rend `TypeError: (0, _minimatch.default)
+#    is not a function` sur TOUT `make lint` — le motif garde-fou
+#    d'accessibilite deterministe (DEC-451) casse en silence. Le SEUL autre
+#    chemin (`eslint`/`@eslint/config-array`/`typescript-eslint`) accepte en
+#    revanche la montee sans rien casser — mais une tolerance PAR CHEMIN
+#    n'existe pas dans `pnpm audit`, seulement par identifiant d'avis global :
+#    tolerer l'avis entier, plutot qu'un correctif partiel qui laisserait
+#    croire l'audit propre, est la seule option honnete ici.
 #
-#    Une tolerance qui ne couvre plus rien n'est pas neutre : elle avalerait
-#    SILENCIEUSEMENT une reapparition du meme avis. Zero tolerance est donc
-#    strictement plus fort que « une tolerance devenue inutile », et c'est la
-#    direction que DEC-474 visait deja — « tout autre avis bloque ».
-#
-#    `ROAD-RSK-032` est clos par la meme mesure.
+#    Declaree par `pnpm audit --ignore GHSA-g3hv-75wg-m249`, qui persiste la
+#    cle `auditConfig.ignoreGhsas` ci-dessous — jamais un override force.
+#    Verifiee : `make lint`/`format-check`/`typecheck`/`test-frontend`
+#    rejoues apres, 0 echec, ESLint et `jsx-a11y` compris.
 #
 #  A SURVEILLER, ET CE N'EST PAS COUVERT ICI : `eslint-plugin-jsx-a11y` declare
 #  ESLint ^3..^9 alors que nous executons ESLint 10. Le greffon fonctionne —
 #  eprouve par temoin negatif en T5 et de nouveau en T10, cinq fautes
 #  d'accessibilite detectees — mais cette plage de paires reste a surveiller.
+#  Le jour ou `eslint-plugin-jsx-a11y` republie avec un `minimatch` recent,
+#  cette tolerance devra etre RETIREE, meme methode qu'au LOT 1 `T10`.
 # ============================================================================
 auditConfig:
-  ignoreGhsas: []
+  ignoreGhsas: [GHSA-g3hv-75wg-m249]

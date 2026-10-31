@@ -19,12 +19,28 @@
  *
  *   Le cahier 13.3 enumere douze familles de composants — menus, modales,
  *   onglets, tableaux, alertes, carrousels, lecteurs video, etats vides. Elles
- *   arrivent avec les ecrans qui les emploient, a partir du LOT 4, et le cahier
- *   dit qu'elles seront construites au-dessus de primitives accessibles,
- *   « notamment Radix UI ». Aucune n'est ici : livrer un menu deroulant sans
- *   ecran qui l'emploie serait du code non eprouve.
+ *   arrivent avec les ecrans qui les emploient, et le cahier dit qu'elles
+ *   seront construites au-dessus de primitives accessibles, « notamment Radix
+ *   UI ». **Les onglets sont desormais ICI** (chantier front hors lot,
+ *   sous-etapes S1/S2, `DEC-672`) : sur `@radix-ui/react-tabs`, avec DEUX
+ *   consommateurs reels (`PageAdministration.tsx`, `PageEvenements.tsx`,
+ *   migres en S2 — posee seule et testee en isolation par S1, l'exporter
+ *   avant S2 aurait viole le critere de `T11` du LOT 1 : un composant expose
+ *   ici doit etre EMPLOYE par un ecran). Les autres familles — menus,
+ *   modales, tableaux, lecteurs video — restent absentes, faute de
+ *   consommateur reel : livrer un menu deroulant sans ecran qui l'emploie
+ *   serait du code non eprouve.
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
+ *
+ * LA BASCULE CLAIR/SOMBRE — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
+ *
+ *   `theme.ts` porte la logique (attribut `data-theme`, memorisation par
+ *   appareil), sans aucun JSX : le bouton visible (`BoutonBasculerTheme`) vit
+ *   dans `apps/web`, avec ses icones `lucide-react`, deja une dependance de
+ *   l'application et non de ce paquet. Voir l'en-tete de `theme.ts` pour
+ *   l'arbitrage complet — le clair est desormais TOUJOURS le theme de
+ *   premiere visite, quelle que soit la preference systeme.
  *
  * COMMENT ON L'EMPLOIE
  *
@@ -54,15 +70,21 @@ export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
+//  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
+export { Onglets } from './Onglets.js';
+export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';
 export {
   atteintSeuil,
   contraste,
   luminance,
+  melangerCouleurs,
   SEUIL_AA_GRAND_TEXTE,
   SEUIL_AA_TEXTE_NORMAL,
 } from './contraste.js';
 export {
   ACCENTS_ADMIS,
+  DECOUPES,
+  DEGRADE_MARQUE,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,
@@ -73,5 +95,8 @@ export {
   TYPOGRAPHIE,
 } from './jetons.js';
 export type { CoupleColore } from './jetons.js';
+//  Chantier front hors lot, S9 (`DEC-672`/`DEC-673`) — la bascule clair/sombre.
+export { appliquerLeTheme, CLE_DE_STOCKAGE_DU_THEME, lireLeThemeStocke } from './theme.js';
+export type { Theme } from './theme.js';
 
 export const PACKAGE_NAME = '@onboarding/ui';

@@ -2,8 +2,16 @@
 #  apps/worker - worker Dramatiq
 #
 #  LOT 1, sous-etape T1, story MVP-L01-US001 : squelette et outillage seuls.
-#  Le demarrage Dramatiq et la declaration des sept files relevent de T3
-#  et T4 ; la persistance des jobs, l'outbox et l'idempotence du LOT 11.
+#  Le demarrage Dramatiq et la declaration des sept files relevent de T3 et
+#  T4 ; la persistance des jobs, l'outbox et l'idempotence du LOT 11.
+#
+#  LOT 11, T1 : `onboarding-api` devient une dependance EXPLICITE. Le worker
+#  n'avait jusqu'ici AUCUN acteur, donc aucune raison d'importer `app.*` ; ses
+#  premiers acteurs (`worker/actors.py`) reutilisent la logique de
+#  `app.jobs.*` plutot que de la dupliquer (§7.27 de la passation). Le
+#  Dockerfile du worker copie deja la source de `apps/api` et les synchronise
+#  dans le MEME environnement `uv` : cette ligne documente une dependance
+#  reelle, elle n'en cree pas une nouvelle.
 #
 #  La configuration de Ruff, de mypy et de pytest est portee par le
 #  pyproject.toml racine.
@@ -15,12 +23,16 @@ version = "0.1.0"
 description = "eXalt Onboarding Digital - worker Dramatiq (squelette, LOT 1 T1)."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "onboarding-api",
     "onboarding-observabilite",
     "dramatiq[redis]>=2.2.0",
     "psycopg[binary]>=3.3.4",
     "redis>=8.0.1",
     "sqlalchemy>=2.0.51",
 ]
+
+[tool.uv.sources]
+onboarding-api = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

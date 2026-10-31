@@ -106,6 +106,37 @@
 }
 
 /* ==========================================================================
+   La bascule clair/sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
+   ========================================================================== */
+
+/* **UN FOND OPAQUE PROPRE, PAS `--fond-doux`** : ce bouton est aussi pose sur
+   le bandeau en degrade de `PageNationale` (`.nat-bandeau`), ou seule une
+   surface OPAQUE atteint l'AA — meme renoncement que `.nat-bandeau-pastille`
+   (`DEGRADE_MARQUE` est decoratif seul, voir jetons.ts). Le reprendre ici
+   evite une seconde regle qui ne vaudrait que pour l'un des deux contextes. */
+.app-bascule-theme {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--espace-xs);
+  min-height: 44px;
+  padding: var(--espace-xs) var(--espace-m);
+  font: inherit;
+  font-weight: 600;
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-pastille);
+  box-shadow: var(--ombre-douce);
+  cursor: pointer;
+}
+
+.app-bascule-theme:focus-visible {
+  outline: 3px solid var(--marque-bleu);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
    Le panneau d'erreur — LOT 4, T10, cahier §17.4
    ========================================================================== */
 
@@ -261,6 +292,26 @@
   overflow-wrap: anywhere;
 }
 
+/* Chantier front, S13 (`DEC-673`) : souligne decoratif « trace main ». PROPRE
+   a `PageNationale` — jamais sur `.app-titre` seul, partage avec le titre
+   FONCTIONNEL de `CadreApplicatif` (voir le commentaire JSX de
+   `PageNationale.tsx`). `text-decoration-style: wavy` approxime le trace a
+   main levee du site reel SANS asset SVG. Couleur BLEUE, pas jaune : le
+   jaune de marque ne rend que 1,37:1 sur `--fond` clair (mesure deja dans
+   `jetons.ts`, exclusion du jaune des accents en clair) — le bleu est deja
+   un accent PROUVE dans les deux themes (`ACCENTS_ADMIS`), zero nouvelle
+   mesure. PUREMENT DECORATIF : aucune information n'y est portee, exempt du
+   contraste non textuel (WCAG 1.4.11), meme parti que les icones `aria-hidden`
+   de S3 et le `clip-path` hexagonal de S11. */
+.nat-titre {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--marque-bleu);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 0.2em;
+  text-decoration-skip-ink: none;
+}
+
 .app-liens {
   margin: 0;
   padding: 0;
@@ -317,7 +368,9 @@
    « Target Size (Minimum) », 2.5.8. `--espace-s` deux fois plus la hauteur de
    ligne du texte y suffisent, et le `min-height` le garantit si un jeton change. */
 .app-navigation-lien {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-xs);
   min-height: 44px;
   padding: var(--espace-s) var(--espace-xs);
   color: var(--encre-douce);
@@ -328,6 +381,22 @@
   border-bottom: 3px solid transparent;
   box-sizing: border-box;
   transition: color 120ms ease-in-out;
+}
+
+/* L'icone d'une rubrique — menu principal, barre mobile et panneau « Plus ».
+   UNE SEULE REGLE DE TAILLE, trois conteneurs qui orientent differemment
+   (chantier front, S3, `DEC-672`). `color: currentColor` : lucide-react pose
+   `stroke="currentColor"` par defaut (voir `defaultAttributes` du paquet), si
+   bien que l'icone suit la couleur du lien dans tous ses etats — hover, focus,
+   `aria-current` — sans aucune regle de couleur ecrite ici. */
+.app-rubrique-icone {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--espace-l);
+  height: var(--espace-l);
+  color: currentColor;
 }
 
 .app-navigation-lien:hover {
@@ -385,12 +454,22 @@
 }
 
 /* 44 px de haut au minimum — WCAG 2.2 AA « Target Size (Minimum) », 2.5.8. La
-   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`. */
+   cible couvre TOUTE la cellule : `flex: 1` et `width: 100%`.
+
+   **`flex-direction: column` — L'ICONE AU-DESSUS, JAMAIS A COTE (chantier
+   front, S3, `DEC-672`).** La mesure du 23/08/2026 ci-dessus, en LARGEUR, a
+   cale QUATRE cellules a 320 px -- et elle reste valide : empiler l'icone
+   consomme de la HAUTEUR, que `min-height` laisse deja croitre (elle le fait
+   deja pour « Trombinoscope » sur deux lignes), jamais la largeur du texte.
+   Une icone a cote du libelle, elle, aurait grignote la marge qui separe deja
+   « Trombinoscope » du bord de sa cellule de 80 px. */
 .app-barre-lien {
   flex: 1 1 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   min-height: 44px;
   padding: var(--espace-xs) 2px;
   color: var(--encre-douce);
@@ -458,7 +537,9 @@
 }
 
 .app-barre-lien-secondaire {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
   min-height: 44px;
   padding: var(--espace-s);
   color: var(--encre);
@@ -503,8 +584,16 @@
     padding-bottom: var(--espace-l);
   }
 
+  /* **`flex-wrap`, AJOUTE EN S9** : la bascule clair/sombre est un cinquieme
+     enfant de cette ligne (marque, entite, selecteur, alerte de consultation,
+     bascule). Mesure a 1 280 px : sans lui, l'entite — seul enfant a
+     `min-width: 0` — se comprime jusqu'a couper « Bordeaux » au milieu du mot
+     plutot que de laisser la ligne s'allonger. Avec lui, la bascule (et elle
+     seule, `flex-shrink: 0`) passe a la ligne suivante quand la place manque,
+     et l'entite retrouve sa largeur naturelle. */
   .app-entete {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--espace-m);
@@ -558,6 +647,52 @@
 }
 
 /* ─── la page nationale — LOT 4, T6, cahier §8.3 ──────────────────────── */
+
+/* Le bandeau d'accueil — chantier front hors lot, S3 (`DEC-672`), cahier
+   §13.2. PROPRE a cette page : voir le commentaire JSX de `PageNationale.tsx`
+   sur pourquoi ce n'est pas `.app-entete`. */
+/* **`space-between`, PAS `center`, DEPUIS S9** : la pastille et la bascule
+   clair/sombre se partagent desormais la ligne — centrer les forcerait a se
+   chevaucher ou a s'empiler sans raison sur les tres petits ecrans. */
+.nat-bandeau {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-s);
+  padding: var(--espace-m) var(--espace-s);
+  background: var(--degrade-marque);
+}
+
+/* **LE TEXTE VIT ICI, JAMAIS A MEME `.nat-bandeau`.** `DEGRADE_MARQUE`
+   (`packages/ui/jetons.ts`) le dit explicitement : aucune couleur de texte
+   n'atteint AA sur toute l'etendue du degrade (zone morte mesuree vers
+   t=0,75). La pastille est un fond OPAQUE — `--fond`, le meme que le reste de
+   la page — pose par-dessus, exactement le renoncement documente pour
+   `Badge`/`Carte`. */
+.nat-bandeau-pastille {
+  margin: 0;
+  display: inline-flex;
+  padding: var(--espace-xs) var(--espace-m);
+  /* Un vrai pastille : meme jeton que `Badge` et l'avatar du trombinoscope
+     (`--rayon-pastille`, 999px), pas une carte rectangulaire arrondie. */
+  border-radius: var(--rayon-pastille);
+  background: var(--fond);
+  color: var(--encre);
+  font-size: var(--taille-s);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: var(--ombre-douce);
+}
+
+@media (min-width: 768px) {
+  .nat-bandeau {
+    padding: var(--espace-l) var(--espace-m);
+  }
+
+  .nat-bandeau-pastille {
+    font-size: var(--taille-m);
+  }
+}
 
 /* **AUCUN `order`, AUCUN `row-reverse`.** Le critere de `T6` est que la liste
    precede la carte DANS LE DOM, pas seulement a l'oeil : une inversion en CSS
@@ -751,31 +886,44 @@
   list-style: none;
 }
 
+/* Cadre hexagonal — chantier front S11 (DEC-673), meme jeton que
+   `.profil-avatar`/`.profil-photo` : `--decoupe-hexagone` remplace le cercle. */
 .trombi-avatar,
 .trombi-photo {
   display: block;
   width: 5rem;
   height: 5rem;
   margin: 0 auto var(--espace-s);
-  border-radius: 50%;
+  clip-path: var(--decoupe-hexagone);
   object-fit: cover;
 }
 
-/* L'avatar neutre du §21.2 : les initiales sur un fond doux, jamais une image
-   cassee ni un trou. */
+/* L'avatar neutre du §21.2 : les initiales sur un fond de marque, jamais une
+   image cassee ni un trou. MEME couple que `.profil-avatar` (bleu/texte,
+   deja mesure AA par `jetons.test.ts`) — chantier front S10 (`DEC-673`) :
+   aucune nouvelle combinaison, le gris sur gris disparait par reemploi. */
 .trombi-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--encre);
-  background: var(--fond-doux);
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
 }
 
 .trombi-nom {
   display: block;
   font-weight: 600;
+  text-align: center;
+}
+
+/* La pastille de cercle du recto n'est qu'un conteneur de CENTRAGE : le
+   `Badge` qu'il porte fournit deja sa propre forme et sa propre couleur
+   (chantier front S10, `DEC-673`). */
+.trombi-pastille-cercle {
+  display: block;
+  margin-top: var(--espace-xs);
   text-align: center;
 }
 
@@ -841,6 +989,12 @@
    de marque, et sa valeur de repli est `--trait` : un cercle sans couleur
    declaree garde donc une bordure, neutre. §10.1, la couleur ne transmet
    jamais seule.
+
+   CHANTIER FRONT, S6 (`DEC-672`) : `.profil-entete` et `.profil-bloc` sont
+   RETIREES. `Carte` (`packages/ui`) fournit desormais le cadre, l'ombre et le
+   titre de chaque section -- `.ex-carte` les porte, pas une regle locale.
+   `.profil-identite` ne garde que la mise en page INTERNE (avatar a cote du
+   bloc metier/statut) que `Carte` ne connait pas.
    ========================================================================= */
 
 .profil {
@@ -853,21 +1007,21 @@
   color: var(--encre-douce);
 }
 
-.profil-entete {
+.profil-identite {
   display: flex;
   gap: var(--espace-l);
   align-items: center;
-  padding: var(--espace-l);
-  background: var(--fond-doux);
-  border-radius: var(--rayon-l);
 }
 
+/* Cadre hexagonal — chantier front S11 (DEC-673), inspire du site reel
+   exalt-company.com (§8.1 de la fiche de chantier) : `--decoupe-hexagone`
+   remplace le cercle (`--rayon-pastille`) sur l'avatar comme sur la photo. */
 .profil-avatar,
 .profil-photo {
   flex: 0 0 auto;
   width: 5rem;
   height: 5rem;
-  border-radius: var(--rayon-pastille);
+  clip-path: var(--decoupe-hexagone);
   object-fit: cover;
 }
 
@@ -888,26 +1042,9 @@
   align-items: flex-start;
 }
 
-.profil-titre h2 {
-  margin: 0;
-  font-size: var(--taille-xl);
-}
-
 .profil-metier {
   margin: 0;
   color: var(--encre-douce);
-}
-
-.profil-bloc {
-  padding: var(--espace-l);
-  background: var(--fond);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon-l);
-}
-
-.profil-bloc h3 {
-  margin: 0 0 var(--espace-m);
-  font-size: var(--taille-m);
 }
 
 .profil-champs {
@@ -958,15 +1095,13 @@
 
   display: flex;
   gap: var(--espace-s);
-  align-items: baseline;
+  /* `align-items: center`, pas `baseline` : depuis S6 le second enfant est un
+     `Badge` (pastille), plus un texte dont la ligne de base s'alignerait mal
+     avec elle — meme motif que `.cercle-liste-membres li` au LOT 6, `S5`. */
+  align-items: center;
   padding: var(--espace-xs) var(--espace-s);
   border-left: 4px solid var(--profil-cercle);
   border-radius: var(--rayon-s);
-}
-
-.profil-cercle-role {
-  font-size: var(--taille-s);
-  color: var(--encre-douce);
 }
 
 .profil-vide,
@@ -1009,7 +1144,7 @@
     grid-template-columns: 1fr;
   }
 
-  .profil-entete {
+  .profil-identite {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1017,8 +1152,9 @@
 
 /* LOT 5, `T11` seconde partie — le cycle de vie.
 
-   Le bloc reprend `.profil-bloc` ; seuls l'espacement des actions et la liste
-   des affectations non rouvertes lui sont propres. */
+   Depuis S6 (`DEC-672`), le panneau vit dans une `Carte` ; cette regle ne porte
+   plus que la mise en page INTERNE a cette carte — l'espacement des actions et
+   la liste des affectations non rouvertes. */
 
 .profil-cycle {
   display: flex;
@@ -1033,6 +1169,30 @@
   gap: var(--espace-s);
 }
 
+/* LOT 11, `T2` — le depot et l'autorisation d'une photo. Vit dans la MEME
+   `Carte` que l'identite (§7.27 : un panneau de plus n'a pas besoin de sa
+   propre carte, l'action porte directement sur ce que la carte montre). */
+.profil-photo-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  width: 100%;
+  margin-top: var(--espace-m);
+}
+
+.profil-champ-fichier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  font-size: var(--taille-s);
+  color: var(--encre-douce);
+}
+
+.profil-photo-statut {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
 .profil-relations {
   display: flex;
   flex-direction: column;
@@ -1043,15 +1203,23 @@
 
 /* ==========================================================================
    La page Framework — LOT 6, `T9`, story `MVP-L06-US001`
+   Chantier front, S5 (`DEC-672`) : les trois sections sont des `Carte`,
+   espacees comme `.accueil` plutot que par la marge d'un `<section>` ecrit
+   a la main.
    ========================================================================== */
 
-.framework-section {
-  margin-bottom: var(--espace-l);
+.framework {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
 }
 
-.framework-section h2 {
-  margin: 0 0 var(--espace-m);
-  font-size: var(--taille-l);
+/* L'entete d'une carte de bureau — icone decorative puis titre, chantier
+   front S5. Meme recette que `.bureau-entete-meta`, plus bas. */
+.framework-carte-entete {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
 }
 
 /* La grille est responsive SANS point de rupture ecrit, comme `.trombi-grille`. */
@@ -1113,6 +1281,22 @@
   color: var(--encre-douce);
 }
 
+/* `.framework-carte` empile ses enfants en colonne avec `align-items: stretch`
+   (valeur initiale) : sans ceci, le `Badge` — `inline-flex` mais un enfant
+   flex comme un autre — s'etirerait sur toute la largeur de la carte au lieu
+   de rester une pastille compacte. */
+.framework-carte .ex-badge {
+  align-self: flex-start;
+}
+
+/* L'icone decorative d'un bureau — chantier front S5, `PageFramework` ET
+   `PageBureau` (§7.27 : une seule regle de taille/couleur, comme
+   `.app-rubrique-icone` pour la navigation). */
+.icone-bureau {
+  flex-shrink: 0;
+  color: var(--encre-douce);
+}
+
 /* ==========================================================================
    La page detaillee d'un cercle — LOT 6, `T9`, story `MVP-L06-US002`
    ========================================================================== */
@@ -1123,17 +1307,26 @@
   gap: var(--espace-l);
 }
 
-/* Meme motif que `.framework-carte-cercle` : declaree ici avec sa valeur
-   neutre, surchargee en ligne par le composant quand un jeton resout. */
-.cercle-entete {
+/* **CHANTIER FRONT, S5 (`DEC-672`) — DEFAUT LATENT TROUVE ET CORRIGE EN
+   MESURANT, PAS EN CONSTRUISANT.** `Carte` ne porte jamais de `className`
+   (`ProprietesCarte`), donc la variable de couleur ne peut plus vivre sur la
+   carte elle-meme : elle revient sur ce conteneur, au MEME endroit que
+   `PageCercle.tsx` l'ECRIT en ligne — exactement le motif de
+   `.framework-carte-cercle`. **`--cercle-couleur` EST DECLAREE ICI, ET
+   `cadre-check` L'EXIGE** (meme motif que `--framework-cercle-couleur`) : un
+   repli `var(--x, repli)` SANS declaration cacherait l'absence de regle au
+   lieu de la signaler. L'ANCIENNE regle (`.cercle-entete`) declarait DEJA
+   `--cercle-couleur: var(--trait)`, mais sur un ELEMENT DIFFERENT de celui
+   qui recevait l'inline (le `<header>` enfant, quand l'inline visait
+   l'`<article>` parent) : une regle qui cible un element GAGNE toujours sur
+   un style pose EN LIGNE par un ANCETRE pour la meme propriete — la bordure
+   coloree ne s'affichait donc JAMAIS, pour aucun cercle, et aucun test ne
+   l'eprouvait. Desormais la regle ET l'inline ciblent le MEME element :
+   l'inline gagne, comme pour `.framework-carte-cercle`. */
+.cercle-identite {
   --cercle-couleur: var(--trait);
 
-  padding: var(--espace-m);
   border-left: 4px solid var(--cercle-couleur);
-}
-
-.cercle-nom {
-  margin: 0 0 var(--espace-xs);
 }
 
 .cercle-description {
@@ -1149,6 +1342,37 @@
   color: var(--encre-douce);
 }
 
+/* L'avatar du Booster et des membres — chantier front S12 (DEC-673). Meme
+   recette que `.trombi-avatar`/`.profil-avatar` (cadre hexagonal, fond de
+   marque colore), a une taille de LISTE plutot que de recto de carte — une
+   regle propre a cette page, jamais partagee entre feuilles (§7.27 dans
+   l'autre sens, comme `.cercle-page`/`.trombi-page`). */
+.cercle-avatar,
+.cercle-photo {
+  flex: 0 0 auto;
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  clip-path: var(--decoupe-hexagone);
+  object-fit: cover;
+}
+
+.cercle-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+}
+
+.cercle-booster {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+}
+
 .cercle-liste-membres {
   display: flex;
   flex-direction: column;
@@ -1160,15 +1384,17 @@
 
 .cercle-liste-membres li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--espace-s);
   padding: var(--espace-xs) 0;
   border-bottom: 1px solid var(--trait);
 }
 
-.cercle-membre-type {
-  font-size: var(--taille-s);
-  color: var(--encre-douce);
+.cercle-membre-identite {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
 }
 
 .cercle-pagination {
@@ -1217,19 +1443,17 @@
   gap: var(--espace-l);
 }
 
-.bureau-entete {
+/* L'icone de bureau et le badge d'etat, juste sous le titre que `Carte`
+   affiche deja — chantier front S5. Meme recette que
+   `.framework-carte-entete`. */
+.bureau-entete-meta {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--espace-s);
-}
-
-.bureau-nom {
-  margin: 0;
+  align-items: center;
+  gap: var(--espace-xs);
+  margin-bottom: var(--espace-s);
 }
 
 .bureau-description {
-  flex-basis: 100%;
   margin: 0;
   color: var(--encre-douce);
 }
@@ -1242,9 +1466,46 @@
   color: var(--encre-douce);
 }
 
+/* La liste des responsables, et leur avatar — chantier front S12 (DEC-673).
+   Meme recette qu'un cercle (hexagone, fond de marque), classe propre a cette
+   page (§7.27 dans l'autre sens). La liste perd ses puces natives : un avatar
+   par ligne en tient deja lieu de repere visuel, meme parti que
+   `.cercle-liste-membres`. */
 .bureau-liste-responsables {
-  padding-left: var(--espace-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: 0;
   margin: 0;
+  list-style: none;
+}
+
+.bureau-liste-responsables li {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  padding: var(--espace-xs) 0;
+  border-bottom: 1px solid var(--trait);
+}
+
+.bureau-avatar,
+.bureau-photo {
+  flex: 0 0 auto;
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  clip-path: var(--decoupe-hexagone);
+  object-fit: cover;
+}
+
+.bureau-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--taille-xs);
+  font-weight: 600;
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
 }
 
 .bureau-retour {
@@ -1439,35 +1700,11 @@
   gap: var(--espace-l);
 }
 
-.evenements-onglets {
-  display: flex;
-  gap: var(--espace-s);
-  border-bottom: 1px solid var(--trait);
-}
-
-/* Le minimum de 44px est le meme seuil que `.cercle-page`/`.trombi-page`. */
-.evenements-onglet {
-  min-height: 44px;
-  padding: 0 var(--espace-m);
-  font: inherit;
-  font-weight: 600;
-  color: var(--encre-douce);
-  background: none;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-}
-
-.evenements-onglet[data-selectionne='true'] {
-  color: var(--encre);
-  border-bottom-color: var(--marque-bleu);
-}
-
-.evenements-onglet:focus-visible {
-  outline: 3px solid var(--encre);
-  outline-offset: 2px;
-}
-
+/*  Les onglets eux-memes (liste, bouton, etat actif) sont desormais ceux du
+    composant `Onglets` (`@onboarding/ui`, `.ui-onglets__*`) — chantier
+    front, S2, `DEC-672`. `.evenements-panneau` reste un conteneur de
+    LAYOUT pour le contenu de l'onglet actif, a l'interieur du panneau que
+    `Onglets` fournit. */
 .evenements-panneau {
   display: flex;
   flex-direction: column;
@@ -1679,7 +1916,14 @@
   margin: 0;
 }
 
-.accueil-framework-resume {
+/* Chantier front, S4 (`DEC-672`) : les compteurs des trois blocs
+   d'information (Framework, Arrivees recentes, Evenements a venir) sont des
+   `Badge` du design system, cahier §13.2 — jamais une phrase prose seule. */
+.accueil-framework-compteurs,
+.accueil-compteur {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-xs);
   margin: 0 0 var(--espace-s);
 }
 
@@ -1835,4 +2079,121 @@
   border: 0;
   padding: var(--espace-xs) 0 0;
   margin-top: 0;
+}
+
+/* ==========================================================================
+   « Mon onboarding » — LOT 7, `T13`. Chantier front, S7 (`DEC-672`) :
+   DEFAUT LATENT TROUVE EN MESURANT — cet ecran n'avait AUCUNE regle propre
+   depuis sa creation, rendu en HTML entierement brut. Les recettes
+   ci-dessous reprennent TEXTUELLEMENT celles deja posees ailleurs
+   (`.profil-champs` pour les grilles dt/dd, `.liens-formulaire` pour les
+   champs de saisie, `.evenements-carte` pour la carte de tache) — rien
+   n'est invente, §6.4.
+   ========================================================================== */
+
+.onboarding-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+}
+
+.onboarding-chargement {
+  color: var(--encre-douce);
+}
+
+.onboarding-fiche-etat {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-xs);
+  margin: 0 0 var(--espace-s);
+}
+
+.onboarding-fiche-organisation,
+.onboarding-fiche-lecture {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--espace-xs) var(--espace-l);
+  margin: 0 0 var(--espace-m);
+}
+
+.onboarding-fiche-organisation dt,
+.onboarding-fiche-lecture dt {
+  color: var(--encre-douce);
+}
+
+.onboarding-fiche-organisation dd,
+.onboarding-fiche-lecture dd {
+  margin: 0;
+}
+
+.onboarding-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  margin: 0 0 var(--espace-m);
+}
+
+.onboarding-champ textarea,
+.onboarding-champ input {
+  padding: var(--espace-xs) var(--espace-s);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-m);
+}
+
+.onboarding-fiche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-s);
+}
+
+.onboarding-progression {
+  margin: 0 0 var(--espace-s);
+  color: var(--encre-douce);
+}
+
+.onboarding-liste-des-taches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Meme recette que `.evenements-carte` (LOT 8, `T9`) : une tache est une
+   carte miniature au meme titre qu'un evenement — cohérence voulue par `S7`. */
+.onboarding-tache {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.onboarding-tache-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-s);
+}
+
+.onboarding-tache-titre {
+  font-weight: 600;
+}
+
+.onboarding-tache-description,
+.onboarding-tache-echeance {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+/* Un ecran etroit empile les definitions plutot que de les serrer — meme
+   motif que `.profil-champs`, §13.4. */
+@media (max-width: 40rem) {
+  .onboarding-fiche-organisation,
+  .onboarding-fiche-lecture {
+    grid-template-columns: 1fr;
+  }
 }

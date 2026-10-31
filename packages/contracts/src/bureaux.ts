@@ -43,6 +43,7 @@
 
 import { estObjet, exigerChaine } from './formes.js';
 import { endpoint } from './sante.js';
+import { cheminDePhotoOuNul } from './trombinoscope.js';
 
 /** Le gabarit du chemin, lu du manifeste — `DEC-492`, source unique. */
 export const GABARIT_CHEMIN_BUREAU: string = endpoint('pageDuBureau').chemin;
@@ -76,6 +77,8 @@ export interface ResponsableDuBureau {
   readonly identifiant: string;
   readonly prenom: string;
   readonly nom: string;
+  /** Chantier front hors lot, `S12` (`DEC-673`). Voir `cheminDePhotoOuNul`. */
+  readonly photo: string | null;
 }
 
 export interface PageDuBureau {
@@ -155,6 +158,7 @@ export function validerLaPageDuBureau(valeur: unknown): PageDuBureau {
       identifiant: exigerChaine(brut, 'identifiant'),
       prenom: exigerChaine(brut, 'prenom'),
       nom: exigerChaine(brut, 'nom'),
+      photo: cheminDePhotoOuNul(brut),
     };
   });
 

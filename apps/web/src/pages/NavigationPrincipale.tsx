@@ -40,6 +40,7 @@
 import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 
+import { IconeDeRubrique } from '../iconesDeRubrique';
 import { cheminDeRubrique, RUBRIQUES, rubriqueEstVisible } from '../routes';
 
 export interface ProprietesNavigation {
@@ -88,6 +89,15 @@ export function NavigationPrincipale({
               //  lien est actif. L'ecrire a la main le figerait.
               end={rubrique.suffixe === ''}
             >
+              {/*
+                **L'ICONE EST DECORATIVE, `aria-hidden` (chantier front, S3,
+                `DEC-672`, cahier §13.2).** Le libelle seul porte
+                l'information : un lecteur d'ecran l'annonce deja, et
+                l'icone ne fait que le rappeler a l'oeil.
+              */}
+              <span className="app-rubrique-icone">
+                <IconeDeRubrique cle={rubrique.cle} />
+              </span>
               {rubrique.libelle}
             </NavLink>
           </li>

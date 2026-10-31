@@ -36,16 +36,28 @@
   --ko: #9b1c1c;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --encre: #f4f4f5;
-    --encre-douce: #a1a1aa;
-    --fond: #18181b;
-    --fond-doux: #27272a;
-    --trait: #3f3f46;
-    --ok: #6ee7a8;
-    --ko: #fca5a5;
-  }
+/*
+ * **CETTE FEUILLE EST CHARGEE PAR `main.tsx` POUR TOUTE L'APPLICATION, PAS
+ * SEULEMENT POUR LA PAGE DE STATUT** — mesure du 27/10/2026, en construisant
+ * S9 : son `@media (prefers-color-scheme: dark)` d'origine re-declarait les
+ * memes noms que `jetons.css` et gagnait la cascade sur CHAQUE page (l'ordre
+ * d'import documente dans `main.tsx`, « une feuille locale surcharge un jeton
+ * global »). Le bouton de bascule (`BoutonBasculerTheme`) posait bien
+ * `data-theme` sur `<html>`, mais cette regle-ci continuait de suivre la
+ * preference SYSTEME par-dessus, sans que rien ne le signale — le theme
+ * clair revenait en facade sur `jetons.css` et restait sombre en pratique.
+ *
+ * Meme mecanisme que `jetons.css` desormais : un attribut explicite plutot que
+ * `prefers-color-scheme`, les valeurs ELLES-MEMES inchangees.
+ */
+:root[data-theme='sombre'] {
+  --encre: #f4f4f5;
+  --encre-douce: #a1a1aa;
+  --fond: #18181b;
+  --fond-doux: #27272a;
+  --trait: #3f3f46;
+  --ok: #6ee7a8;
+  --ko: #fca5a5;
 }
 
 * {

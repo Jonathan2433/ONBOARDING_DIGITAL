@@ -31,6 +31,29 @@
  *   locales enregistrées — pas parce que l'API l'exigerait autrement (elle
  *   refuserait de toute façon en 422/409), mais parce que proposer un bouton
  *   dont l'échec est déjà connu serait l'avertissement faux du §7.21.
+ *
+ * CHANTIER FRONT, S7 (`DEC-672`) : `CARTE`/`BADGE` — ET UN DÉFAUT LATENT
+ * TROUVÉ EN MESURANT, PAS CONSTRUIT PAR CETTE SOUS-ÉTAPE
+ *
+ *   Mesuré avant tout code : `application.css` ne porte AUCUNE règle pour les
+ *   classes `.onboarding-*` de ce fichier, depuis sa création au LOT 7 `T13`
+ *   — cet écran rendait du HTML entièrement brut, sans mise en page ni
+ *   habillage visuel d'aucune sorte. Les deux sections (fiche d'arrivée,
+ *   parcours) deviennent des `<Carte titre="…">` — mêmes `h2` frères qu'avant
+ *   (aucune hiérarchie de titre à préserver ici, contrairement à `PageProfil`
+ *   en `S6` : ce fichier n'a jamais eu de titre englobant), donc aucun
+ *   `niveauTitre` à fournir. L'état de la fiche et l'état d'une tâche
+ *   deviennent des `Badge`, selon la MÊME convention à quatre tons
+ *   (`neutre`/`ok`/`ko`/`marque`) déjà posée pour les événements
+ *   (`PageGestionDesEvenements.tsx`/`PageEditionEvenement.tsx`, hors
+ *   périmètre mais même idiome) plutôt qu'une nouvelle inventée ici. Le
+ *   marqueur « Obligatoire » d'une tâche devient aussi un `Badge` — même
+ *   parti que « Principal » sur un cercle (`S5`/`S6`) : une information qui
+ *   n'apparaît que lorsqu'elle est vraie mérite le renfort visuel du design
+ *   system, pas un `<span>` nu. La mise en page manquante (grilles de champs,
+ *   listes, formulaire) reprend TEXTUELLEMENT les recettes CSS déjà posées
+ *   ailleurs (`.profil-champs`, `.liens-formulaire`, `.evenements-carte`) —
+ *   rien n'est inventé, §6.4.
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -47,7 +70,7 @@ import { dateComplete } from './PageProfil';
 import { useEntiteConsultee } from './CadreApplicatif';
 
 import type { FicheArrivee, Parcours, TacheDuParcours } from '@onboarding/contracts';
-import { Alerte, Bouton } from '@onboarding/ui';
+import { Alerte, Badge, Bouton, Carte } from '@onboarding/ui';
 
 /** Ce que la page a pu charger — même montage que `PageProfil` (LOT 5, `T11`). */
 interface Chargement {
@@ -102,11 +125,27 @@ const LIBELLES_D_ETAT_DE_LA_FICHE: Readonly<Record<string, string>> = {
   archived: 'Archivée',
 };
 
+//  Chantier front, S7 (`DEC-672`) : meme convention a quatre tons que
+//  `PageGestionDesEvenements.tsx`/`PageEditionEvenement.tsx` (`TONS_D_ETAT`),
+//  jamais une nouvelle inventee pour cet ecran.
+const TONS_D_ETAT_DE_LA_FICHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
+  draft: 'neutre',
+  published: 'ok',
+  archived: 'neutre',
+};
+
 const LIBELLES_D_ETAT_DE_LA_TACHE: Readonly<Record<string, string>> = {
   todo: 'À faire',
   completed: 'Terminée',
   reopened: 'Réouverte',
   cancelled: 'Annulée',
+};
+
+const TONS_D_ETAT_DE_LA_TACHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
+  todo: 'neutre',
+  completed: 'ok',
+  reopened: 'marque',
+  cancelled: 'ko',
 };
 
 /** La section fiche d'arrivée — complétion, validation et publication. */
@@ -183,10 +222,12 @@ function SectionFiche({
   const peutValider = fiche.identifiant !== null && !presentationVide && !aModifie;
 
   return (
-    <section className="onboarding-fiche" aria-labelledby="onboarding-fiche-titre">
-      <h2 id="onboarding-fiche-titre">Ma fiche d&rsquo;arrivée</h2>
+    <Carte titre="Ma fiche d’arrivée">
       <p className="onboarding-fiche-etat">
-        État : <strong>{LIBELLES_D_ETAT_DE_LA_FICHE[fiche.etat] ?? fiche.etat}</strong>
+        État :{' '}
+        <Badge ton={TONS_D_ETAT_DE_LA_FICHE[fiche.etat] ?? 'neutre'}>
+          {LIBELLES_D_ETAT_DE_LA_FICHE[fiche.etat] ?? fiche.etat}
+        </Badge>
       </p>
 
       <dl className="onboarding-fiche-organisation">
@@ -264,7 +305,7 @@ function SectionFiche({
           <dd>{fiche.funFact ?? 'Non renseigné'}</dd>
         </dl>
       ) : null}
-    </section>
+    </Carte>
   );
 }
 
@@ -283,12 +324,10 @@ function LigneDeTache({
     <li className="onboarding-tache">
       <div className="onboarding-tache-entete">
         <span className="onboarding-tache-titre">{tache.titre}</span>
-        <span className="onboarding-tache-etat">
+        <Badge ton={TONS_D_ETAT_DE_LA_TACHE[tache.etat] ?? 'neutre'}>
           {LIBELLES_D_ETAT_DE_LA_TACHE[tache.etat] ?? tache.etat}
-        </span>
-        {tache.obligatoire ? (
-          <span className="onboarding-tache-obligatoire">Obligatoire</span>
-        ) : null}
+        </Badge>
+        {tache.obligatoire ? <Badge ton="marque">Obligatoire</Badge> : null}
       </div>
       {tache.description === null ? null : (
         <p className="onboarding-tache-description">{tache.description}</p>
@@ -356,18 +395,16 @@ function SectionParcours({
 
   if (parcours.instance === null) {
     return (
-      <section className="onboarding-parcours" aria-labelledby="onboarding-parcours-titre">
-        <h2 id="onboarding-parcours-titre">Mon parcours</h2>
+      <Carte titre="Mon parcours">
         <Alerte urgence="information">Aucun parcours ne vous a encore été affecté.</Alerte>
-      </section>
+      </Carte>
     );
   }
 
   const progression = parcours.progression;
 
   return (
-    <section className="onboarding-parcours" aria-labelledby="onboarding-parcours-titre">
-      <h2 id="onboarding-parcours-titre">Mon parcours</h2>
+    <Carte titre="Mon parcours">
       {progression === null ? null : (
         <p className="onboarding-progression" role="status">
           {progression.tachesObligatoiresTerminees} / {progression.tachesObligatoiresTotales} tâches
@@ -395,7 +432,7 @@ function SectionParcours({
           ))}
         </ul>
       )}
-    </section>
+    </Carte>
   );
 }
 
@@ -507,14 +544,13 @@ export function PageMonOnboarding(): JSX.Element {
           onAgi={recharger}
         />
       ) : (
-        <section className="onboarding-parcours" aria-labelledby="onboarding-parcours-titre">
-          <h2 id="onboarding-parcours-titre">Mon parcours</h2>
+        <Carte titre="Mon parcours">
           <Alerte ton={parcours.statut === 401 ? 'avertissement' : 'erreur'} urgence="alerte">
             {parcours.statut === 401
               ? 'Votre session a expiré. Reconnectez-vous pour consulter votre parcours.'
               : 'Votre parcours n’a pas pu être chargé. Réessayez dans un instant.'}
           </Alerte>
-        </section>
+        </Carte>
       )}
     </div>
   );

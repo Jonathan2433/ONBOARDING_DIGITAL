@@ -109,7 +109,9 @@ import uuid
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from app.organization.framework import TitulaireFramework, chemin_du_bureau
+from app.media.photo import CONDITIONS_DE_LA_MINIATURE, ETAT_AFFICHABLE, VARIANTE_DE_LISTE
+from app.organization.framework import TitulaireAvecPhoto, chemin_du_bureau
+from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 
 #  Le bureau lui-meme, et son etat de PUBLICATION au sens de `DEC-576`.
 #
@@ -155,18 +157,32 @@ _BUREAU = text(
 #
 #  **L'ORDRE EST TOTAL, ET LA CLE PRIMAIRE EN EST LE DERNIER TERME.** Sans elle,
 #  deux homonymes rendraient un ordre non deterministe d'un appel a l'autre.
+#
+#  **LA PHOTO D'UN RESPONSABLE, CHANTIER FRONT S12 (`DEC-673`).** `LEFT JOIN`
+#  sur `entity_membership` : un responsable n'a pas TOUJOURS une appartenance
+#  active et listee dans cette entite (le decor de test en cree sans) -- sans
+#  elle, `em` est NULL et l'`EXISTS` rend faux, meme parti que le Booster d'un
+#  cercle (`app.organization.cercles`). L'alias `em` est CELUI que
+#  `CONDITIONS_DE_LA_MINIATURE` attend (voir `app.media.photo`).
 _RESPONSABLES = text(
-    """
-    SELECT r.id, r.first_name, r.last_name
+    f"""
+    SELECT r.id, r.first_name, r.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo
       FROM framework_responsibility_assignment AS fr
       JOIN person AS r ON r.id = fr.person_id
+      LEFT JOIN entity_membership AS em
+             ON em.person_id = r.id
+            AND em.entity_id = fr.entity_id
+            AND em.archived_at IS NULL
+            AND em.membership_state = :etat
+            AND em.profile_visibility = :visibilite
      WHERE fr.office_id = :bureau
        AND fr.entity_id = :entite
        AND fr.responsibility_type = 'OFFICE_MANAGER'
        AND fr.archived_at IS NULL
        AND fr.period @> :instant
      ORDER BY r.last_name, r.first_name, fr.id
-    """
+    """  # noqa: S608 — le seul fragment interpole est une constante de ce module
 )
 
 
@@ -187,7 +203,7 @@ class BureauDetaille:
     description: str | None
     #  §8.3 : « `location_text` | Facultatif ». NULLABLE, donc jamais `str(...)`.
     localisation: str | None
-    responsables: tuple[TitulaireFramework, ...]
+    responsables: tuple[TitulaireAvecPhoto, ...]
     #  `DEC-576` : porte par la page de contenu, jamais par la table `office`.
     publie: bool
     chemin_detaille: str
@@ -229,9 +245,24 @@ def lire_le_bureau(
         return None
 
     responsables = tuple(
-        TitulaireFramework(identifiant=r[0], prenom=str(r[1]), nom=str(r[2]))
+        TitulaireAvecPhoto(
+            identifiant=r[0],
+            prenom=str(r[1]),
+            nom=str(r[2]),
+            appartenance=r[3],
+            a_une_photo=bool(r[4]),
+        )
         for r in connexion.execute(
-            _RESPONSABLES, {"bureau": ligne[0], "entite": entite, "instant": maintenant}
+            _RESPONSABLES,
+            {
+                "bureau": ligne[0],
+                "entite": entite,
+                "instant": maintenant,
+                "etat": ETAT_LISTE,
+                "visibilite": VISIBILITE_LISTEE,
+                "etat_media": ETAT_AFFICHABLE,
+                "variante": VARIANTE_DE_LISTE,
+            },
         )
     )
 

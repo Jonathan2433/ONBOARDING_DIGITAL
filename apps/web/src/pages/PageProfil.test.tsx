@@ -87,7 +87,13 @@ function json(charge: unknown, statut = 200): Response {
   });
 }
 
-/** Les deux appels sont distingues par leur chemin, jamais par leur ordre. */
+//  LOT 11, `T2` : `PanneauPhoto` demande ses droits des le montage — un
+//  TROISIEME appel, independant des deux premiers. Une reponse NEUTRE (les
+//  deux droits a `false`) le fait disparaitre silencieusement : les 23 tests
+//  de ce fichier qui ne le nomment pas n'ont donc rien a changer.
+const DROITS_NEUTRES = { peut_deposer: false, peut_gerer_autorisation: false };
+
+/** Les trois appels sont distingues par leur chemin, jamais par leur ordre. */
 function servir(
   fiche: { charge: unknown; statut?: number },
   histoire: { charge: unknown; statut?: number },
@@ -98,7 +104,9 @@ function servir(
       Promise.resolve(
         url.endsWith('/historique')
           ? json(histoire.charge, histoire.statut ?? 200)
-          : json(fiche.charge, fiche.statut ?? 200),
+          : url.endsWith('/droits')
+            ? json(DROITS_NEUTRES)
+            : json(fiche.charge, fiche.statut ?? 200),
       ),
     ),
   );
@@ -293,15 +301,21 @@ describe('la fiche a l’ecran', () => {
     expect(screen.getAllByText('Dominique Lesmanager')).toHaveLength(1);
   });
 
-  it('lance les DEUX appels, et ne les enchaine pas', async () => {
+  it('lance la fiche et l’historique SANS LES ENCHAINER, et les droits de la photo en plus', async () => {
+    //  **TROIS APPELS DEPUIS `T2` DU LOT 11**, pas deux : `PanneauPhoto`
+    //  demande `GET …/photo/droits` des le montage, independamment des deux
+    //  premiers — ce test comptait deux appels avant que cette sous-etape
+    //  n'en ajoute un troisieme, legitime. §7.21 : un controle juste hier
+    //  peut etre faux aujourd'hui quand le monde change autour de lui.
     servir({ charge: FICHE }, { charge: HISTOIRE });
     monter();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     });
     const appels = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls;
-    expect(appels).toHaveLength(2);
+    expect(appels).toHaveLength(3);
     expect(appels.filter((appel) => appel[0]?.endsWith('/historique'))).toHaveLength(1);
+    expect(appels.filter((appel) => appel[0]?.endsWith('/droits'))).toHaveLength(1);
   });
 
   it('une periode CLOSE affiche ses deux bornes, une periode COURANTE dit « aujourd’hui »', async () => {
@@ -394,6 +408,44 @@ describe('la fiche d’un profil ARCHIVE — `T11`, seconde partie', () => {
       expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     });
     expect(screen.queryByRole('button', { name: /Archiver|Restaurer/ })).toBeNull();
+  });
+});
+
+describe('chantier front, S6 : `Carte`/`Badge` (`DEC-672`)', () => {
+  it('l’identite et les cinq blocs sont des `Carte` — six regions nommees', async () => {
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Informations professionnelles' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Cercles' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Responsabilites Framework' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Presentation' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Historique organisationnel' })).toBeTruthy();
+  });
+
+  it('le type d’appartenance du cercle est un `Badge` reel, pas un simple texte', async () => {
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    //  **LE COUPLE** : « Principal » est de marque, « Secondaire » est neutre —
+    //  meme convention que `PageCercle.tsx`, `S5`, pour la meme notion.
+    expect(screen.getByText('Principal').closest('.ex-badge')).not.toBeNull();
+    expect(screen.getByText('Secondaire').closest('.ex-badge')).not.toBeNull();
+  });
+
+  it('le panneau de cycle de vie est AUSSI une `Carte`, region « Cycle de vie »', async () => {
+    rolesDuCadre = ['ESM'];
+    servir({ charge: FICHE }, { charge: HISTOIRE });
+    monter();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Cycle de vie' })).toBeTruthy();
   });
 });
 

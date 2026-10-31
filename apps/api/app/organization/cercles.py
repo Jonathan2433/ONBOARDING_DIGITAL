@@ -63,7 +63,8 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from app.organization.framework import TitulaireFramework, chemin_du_cercle
+from app.media.photo import CONDITIONS_DE_LA_MINIATURE, ETAT_AFFICHABLE, VARIANTE_DE_LISTE
+from app.organization.framework import TitulaireAvecPhoto, chemin_du_cercle
 from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
 from app.shared.pagination import TAILLES_DE_PAGE
 
@@ -76,12 +77,18 @@ class MembreDuCercle:
     distinction n'est pas decorative : `ARB-DROIT-004` donne au Booster la
     gestion de l'appartenance **secondaire** et lui refuse le cercle principal,
     le DSM, le client et le statut d'un membre seulement secondaire.
+
+    `a_une_photo` — chantier front hors lot, `S12` (`DEC-673`) : le MEME
+    `EXISTS` que le trombinoscope (`CONDITIONS_DE_LA_MINIATURE`), jamais une
+    seconde regle qui pourrait diverger — §7.27. `appartenance` est deja
+    exactement l'`entity_membership.id` qu'attend `resoudre_la_miniature`.
     """
 
     appartenance: uuid.UUID
     prenom: str
     nom: str
     type_d_appartenance: str
+    a_une_photo: bool
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -95,7 +102,7 @@ class CercleDetaille:
     #  **NULLABLE AU CATALOGUE.** `str(None)` rendrait la chaine « None », servie
     #  sur 100 % des cercles pendant deux lots -- defaut `T10-8`.
     jeton_de_couleur: str | None
-    booster: TitulaireFramework | None
+    booster: TitulaireAvecPhoto | None
     membres: tuple[MembreDuCercle, ...]
     total_des_membres: int
     page: int
@@ -117,10 +124,18 @@ class CercleDetaille:
 #  responsabilite : un cercle sans Booster est parfaitement legitime, et un
 #  `INNER JOIN` le ferait disparaitre -- ce qui donnerait un 404 la ou la
 #  ressource existe.
+#
+#  **LA PHOTO DU BOOSTER, CHANTIER FRONT S12 (`DEC-673`).** `LEFT JOIN` sur
+#  `entity_membership` aussi : un Booster n'a pas TOUJOURS une appartenance
+#  active et listee dans cette entite (le decor de `T3` en cree sans, et rien
+#  dans le modele ne l'interdit) -- sans elle, `em` est NULL et l'`EXISTS` rend
+#  faux, exactement comme pour un titulaire sans aucune photo. L'alias `em` est
+#  CELUI que `CONDITIONS_DE_LA_MINIATURE` attend (voir `app.media.photo`).
 _CERCLE = text(
-    """
+    f"""
     SELECT c.id, c.code, c.name, c.description, c.color_token,
-           b.id, b.first_name, b.last_name
+           b.id, b.first_name, b.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS booster_a_une_photo
       FROM circle AS c
       LEFT JOIN framework_responsibility_assignment AS fr
              ON fr.circle_id = c.id
@@ -129,10 +144,16 @@ _CERCLE = text(
             AND fr.archived_at IS NULL
             AND fr.period @> :instant
       LEFT JOIN person AS b ON b.id = fr.person_id
+      LEFT JOIN entity_membership AS em
+             ON em.person_id = b.id
+            AND em.entity_id = c.entity_id
+            AND em.archived_at IS NULL
+            AND em.membership_state = :etat
+            AND em.profile_visibility = :visibilite
      WHERE c.entity_id = :entite
        AND c.code = :code_cercle
        AND c.archived_at IS NULL
-    """
+    """  # noqa: S608 — le seul fragment interpole est une constante de ce module
 )
 
 #  **LES DEUX FILTRES DE VISIBILITE SONT CEUX DU TROMBINOSCOPE**, lus de
@@ -157,8 +178,14 @@ _COMPTE_DES_MEMBRES = text("SELECT count(*)" + _CONDITIONS_DES_MEMBRES)
 #  **L'ORDRE EST TOTAL, ET LA CLE PRIMAIRE EN EST LE DERNIER TERME.** Sans elle,
 #  deux homonymes rendraient un ordre non deterministe entre deux pages : une
 #  ligne pourrait paraitre deux fois ou jamais. Defaut corrige en `T2` du LOT 5.
+#
+#  **`a_une_photo`, CHANTIER FRONT S12 (`DEC-673`).** Le MEME `EXISTS` que le
+#  trombinoscope, `em` deja alias ici par `_CONDITIONS_DES_MEMBRES` -- une
+#  seconde requete par ligne serait le N+1 que le critere de `T3` interdit
+#  (voir l'en-tete de `CONDITIONS_DE_LA_MINIATURE`, `app.media.photo`).
 _MEMBRES = text(
-    "SELECT em.id, p.first_name, p.last_name, cm.membership_type"
+    "SELECT em.id, p.first_name, p.last_name, cm.membership_type, "
+    f"EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo"
     + _CONDITIONS_DES_MEMBRES
     + " ORDER BY p.last_name, p.first_name, em.id LIMIT :limite OFFSET :decalage"
 )
@@ -195,8 +222,19 @@ def lire_le_cercle(
 
     maintenant = instant if instant is not None else dt.datetime.now(dt.UTC)
 
+    #  Les parametres de `CONDITIONS_DE_LA_MINIATURE`, chantier front S12.
+    photo_liaison: dict[str, Any] = {"etat_media": ETAT_AFFICHABLE, "variante": VARIANTE_DE_LISTE}
+
     ligne = connexion.execute(
-        _CERCLE, {"entite": entite, "code_cercle": code_cercle, "instant": maintenant}
+        _CERCLE,
+        {
+            "entite": entite,
+            "code_cercle": code_cercle,
+            "instant": maintenant,
+            "etat": ETAT_LISTE,
+            "visibilite": VISIBILITE_LISTEE,
+            **photo_liaison,
+        },
     ).one_or_none()
     if ligne is None:
         return None
@@ -207,6 +245,7 @@ def lire_le_cercle(
         "instant": maintenant,
         "etat": ETAT_LISTE,
         "visibilite": VISIBILITE_LISTEE,
+        **photo_liaison,
     }
     total = int(connexion.execute(_COMPTE_DES_MEMBRES, liaison).scalar_one())
     membres = tuple(
@@ -215,6 +254,7 @@ def lire_le_cercle(
             prenom=str(m[1]),
             nom=str(m[2]),
             type_d_appartenance=str(m[3]),
+            a_une_photo=bool(m[4]),
         )
         for m in connexion.execute(
             _MEMBRES, {**liaison, "limite": taille, "decalage": (page - 1) * taille}
@@ -231,7 +271,13 @@ def lire_le_cercle(
         booster=(
             None
             if ligne[5] is None
-            else TitulaireFramework(identifiant=ligne[5], prenom=str(ligne[6]), nom=str(ligne[7]))
+            else TitulaireAvecPhoto(
+                identifiant=ligne[5],
+                prenom=str(ligne[6]),
+                nom=str(ligne[7]),
+                appartenance=ligne[8],
+                a_une_photo=bool(ligne[9]),
+            )
         ),
         membres=membres,
         total_des_membres=total,

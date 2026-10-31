@@ -19,6 +19,47 @@
  *   Comme le trombinoscope de `T10` du LOT 5 : la page courante n'est pas dans
  *   l'adresse, elle est dans l'etat du composant. Changer de page ne change pas
  *   l'URL de la ressource consultee — un cercle a une seule adresse d'ecran.
+ *
+ * CHANTIER FRONT, S5 (`DEC-672`) : `CARTE`/`BADGE`
+ *
+ *   **Mesure avant tout code** : ni `Carte` ni `Badge` n'etaient employes ici —
+ *   l'identite du cercle et ses membres vivaient dans un `<article>`/`<dl>`/
+ *   `<ul>` ecrits a la main, « Principal »/« Secondaire » en simple texte.
+ *   Deux `Carte` (identite, membres) et un `Badge` pour le type d'appartenance.
+ *
+ *   **La bordure de couleur migre d'un conteneur a l'autre, et ce n'est pas
+ *   cosmetique.** `Carte` n'accepte aucune `className` (`ProprietesCarte`,
+ *   `packages/ui`) : la variable `--cercle-couleur` ne peut donc plus etre
+ *   portee par la carte elle-meme. Elle revient sur un conteneur dedie,
+ *   `.cercle-identite`, qui la DECLARE et la CONSOMME — exactement le motif
+ *   de `.framework-carte-cercle` — et c'est CE MEME element qui recoit le
+ *   style en ligne ci-dessous, jamais un parent ni un enfant.
+ *   **Un defaut latent trouve en mesurant, non construit par cette sous-etape**
+ *   est corrige au passage : l'ancienne regle (`.cercle-entete`) declarait
+ *   deja `--cercle-couleur`, mais sur un element DIFFERENT de celui qui
+ *   recevait l'inline (le `<header>` enfant, quand l'inline visait
+ *   l'`<article>` parent) — une regle qui cible un element GAGNE toujours
+ *   sur un style pose EN LIGNE par un ANCETRE pour la meme propriete. La
+ *   bordure coloree ne pouvait donc jamais s'afficher, par aucun cercle, et
+ *   aucun test ne l'eprouvait.
+ *
+ * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DU BOOSTER ET DES MEMBRES
+ *
+ *   `TitulaireDuCercle.photo` et `MembreDuCercle.photo` suivent exactement la
+ *   convention du trombinoscope et du profil (S11) : un cadre hexagonal
+ *   (`--decoupe-hexagone`) sur fond de marque colore quand `photo` est `null`,
+ *   l'image elle-meme sinon — meme motif, meme initiales, aucune nouvelle
+ *   mesure de contraste. Arbitrage de Jonathan (`AskUserQuestion`,
+ *   29/10/2026) : la page de synthese Framework reste hors de cette
+ *   sous-etape, reportee.
+ *
+ * CHANTIER FRONT, S13 (`DEC-673`) : LE COMPTEUR DE MEMBRES EN GROS CHIFFRE
+ *
+ *   Arbitrage de Jonathan (`AskUserQuestion`, 29/10/2026) : seul le compteur
+ *   strict — « Membres (N) » — recoit l'accent, jamais la pagination ni un
+ *   texte d'etat. `Carte.titre` accepte desormais un `ReactNode` (packages/ui)
+ *   pour isoler le nombre dans `.ex-carte__titre-chiffre` sans changer le nom
+ *   accessible de la region (`aria-labelledby` lit le texte concatene).
  */
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -30,7 +71,7 @@ import { cheminDeRubrique, cheminEditionCercle } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
 import { peutEditerUnContenu, TAILLE_PAR_DEFAUT, type PageDuCercle } from '@onboarding/contracts';
-import { Alerte } from '@onboarding/ui';
+import { Alerte, Badge, Carte } from '@onboarding/ui';
 
 const TAILLE = TAILLE_PAR_DEFAUT;
 
@@ -121,34 +162,65 @@ export function PageCercle(): JSX.Element {
   const couleur = couleurDuCercle(c.jetonDeCouleur);
 
   return (
-    <article
-      className="cercle"
-      style={couleur === undefined ? undefined : ({ '--cercle-couleur': couleur } as never)}
-    >
-      <header className="cercle-entete">
-        <h2 className="cercle-nom">{c.nom}</h2>
-        {c.description === null ? null : <p className="cercle-description">{c.description}</p>}
-      </header>
+    <div className="cercle">
+      <div
+        className="cercle-identite"
+        style={couleur === undefined ? undefined : ({ '--cercle-couleur': couleur } as never)}
+      >
+        <Carte titre={c.nom}>
+          {c.description === null ? null : <p className="cercle-description">{c.description}</p>}
+          <dl className="cercle-champs">
+            <dt>Booster</dt>
+            <dd>
+              {c.booster === null ? (
+                'Aucun Booster'
+              ) : (
+                <span className="cercle-booster">
+                  {c.booster.photo === null ? (
+                    <span aria-hidden="true" className="cercle-avatar">
+                      {c.booster.prenom.slice(0, 1)}
+                      {c.booster.nom.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img alt="" className="cercle-photo" src={c.booster.photo} />
+                  )}
+                  {c.booster.prenom} {c.booster.nom}
+                </span>
+              )}
+            </dd>
+          </dl>
+        </Carte>
+      </div>
 
-      <dl className="cercle-champs">
-        <dt>Booster</dt>
-        <dd>{c.booster === null ? 'Aucun Booster' : `${c.booster.prenom} ${c.booster.nom}`}</dd>
-      </dl>
-
-      <section className="cercle-membres">
-        <h3>Membres ({c.totalDesMembres})</h3>
+      <Carte
+        titre={
+          <>
+            Membres (<span className="ex-carte__titre-chiffre">{c.totalDesMembres}</span>)
+          </>
+        }
+      >
         {c.membres.length === 0 ? (
           <Alerte>Aucun membre pour le moment.</Alerte>
         ) : (
           <ul className="cercle-liste-membres">
             {c.membres.map((membre) => (
               <li key={membre.appartenance}>
-                <span className="cercle-membre-nom">
-                  {membre.prenom} {membre.nom}
+                <span className="cercle-membre-identite">
+                  {membre.photo === null ? (
+                    <span aria-hidden="true" className="cercle-avatar">
+                      {membre.prenom.slice(0, 1)}
+                      {membre.nom.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img alt="" className="cercle-photo" src={membre.photo} />
+                  )}
+                  <span className="cercle-membre-nom">
+                    {membre.prenom} {membre.nom}
+                  </span>
                 </span>
-                <span className="cercle-membre-type">
+                <Badge ton={membre.typeDAppartenance === 'principal' ? 'marque' : 'neutre'}>
                   {libelleDAppartenance(membre.typeDAppartenance)}
-                </span>
+                </Badge>
               </li>
             ))}
           </ul>
@@ -181,9 +253,9 @@ export function PageCercle(): JSX.Element {
             </button>
           </nav>
         ) : null}
-      </section>
+      </Carte>
 
       {retour}
-    </article>
+    </div>
   );
 }

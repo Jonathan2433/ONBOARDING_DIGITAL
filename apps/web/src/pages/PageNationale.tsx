@@ -44,6 +44,7 @@ import type { EntiteDuPortail } from '@onboarding/contracts';
 import { Alerte } from '@onboarding/ui';
 
 import { listerLesEntites } from '../api/portail';
+import { BoutonBasculerTheme } from './BoutonBasculerTheme';
 import { CarteDeFrance } from './CarteDeFrance';
 import { cheminDeLEntite, CHEMINS } from '../routes';
 
@@ -80,8 +81,31 @@ export function PageNationale(): JSX.Element {
       <a className="app-evitement" href="#contenu">
         Aller au contenu
       </a>
-      <header className="app-entete">
-        <p className="app-marque">eXalt Onboarding</p>
+      {/*
+        **LE BANDEAU D'ACCUEIL — chantier front hors lot, S3 (`DEC-672`),
+        cahier §13.2.** Une classe PROPRE a cette page, `nat-bandeau`, et non
+        `app-entete` : ce dernier est le bandeau FONCTIONNEL du cadre
+        applicatif, partage par CHAQUE page interne une fois une entite
+        choisie (nom, ville, selecteur) — y poser un degrade colorerait, de
+        facto, l'en-tete de tous les ecrans dont l'habillage visuel n'est pas
+        encore du a cette sous-etape (S4 a S7). La page nationale, elle, n'a
+        pas d'entite a montrer : son bandeau est purement decoratif.
+
+        **LE TEXTE VIT DANS UNE PASTILLE OPAQUE, JAMAIS A MEME LE DEGRADE** —
+        `DEGRADE_MARQUE` (`packages/ui/jetons.ts`) le dit explicitement :
+        aucune couleur de texte, claire ou sombre, n'atteint AA sur toute
+        l'etendue du degrade (une vraie zone morte existe vers t=0,75). Le
+        meme renoncement que `Badge`/`Carte` : le texte se pose sur
+        `--fond`, jamais sur le degrade lui-meme.
+      */}
+      <header className="nat-bandeau">
+        <p className="nat-bandeau-pastille">eXalt Onboarding</p>
+        {/*
+          **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Le bouton est visible
+          des la page nationale, avant tout choix d'entite — la preference est
+          par appareil, elle n'a besoin d'aucune entite resolue.
+        */}
+        <BoutonBasculerTheme />
       </header>
       {/*
         `tabIndex={-1}` : sans lui le lien d'evitement ferait defiler sans deplacer
@@ -89,7 +113,20 @@ export function PageNationale(): JSX.Element {
         `ECART-043`.
       */}
       <main className="app-principal" id="contenu" tabIndex={-1}>
-        <h1 className="app-titre">Choisir une entite</h1>
+        {/*
+          **CHANTIER FRONT, S13 (`DEC-673`).** Souligne decoratif « trace
+          main » — seul le titre de CETTE page le porte (`.nat-titre`),
+          jamais `.app-titre` seul : cette derniere classe est AUSSI celle du
+          titre fonctionnel de `CadreApplicatif`, partage par chaque page
+          interne. Y poser l'accent aurait colore un titre dont l'habillage
+          n'est pas du. Couleur BLEUE et non jaune (arbitrage de Jonathan,
+          `AskUserQuestion`, 29/10/2026) : le jaune de marque ne rend que
+          1,37:1 sur le fond CLAIR, desormais le theme par defaut (S9) —
+          mesure deja ecrite dans `jetons.ts` pour exclure le jaune des
+          accents en clair. Le bleu est deja un accent PROUVE dans les deux
+          themes (`ACCENTS_ADMIS`), zero nouvelle mesure de contraste.
+        */}
+        <h1 className="app-titre nat-titre">Choisir une entite</h1>
 
         {etat.phase === 'chargement' ? (
           <Alerte urgence="information">Chargement des entites…</Alerte>

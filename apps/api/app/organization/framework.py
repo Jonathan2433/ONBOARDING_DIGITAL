@@ -95,6 +95,36 @@ class TitulaireFramework:
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
+class TitulaireAvecPhoto:
+    """Une personne portant une responsabilite ACTIVE, avec sa photo.
+
+    Chantier front hors lot, `S12` (`DEC-673`). **Distincte de
+    `TitulaireFramework`, et c'est delibere** : la synthese Framework (toutes les
+    responsabilites de l'entite, DSM/ESM/ADM-E/Booster/bureau confondus) reste
+    hors de la portee de `S12` — arbitrage de Jonathan (`AskUserQuestion`,
+    29/10/2026). Ajouter la photo a `TitulaireFramework` directement l'aurait
+    exposee partout d'un coup, y compris sur un ecran que personne n'a decide de
+    changer — §7.27 dans l'autre sens, comme `.cercle-page`/`.trombi-page` :
+    deux usages, deux types, rien qui les lie.
+
+    Seuls le Booster d'un cercle (`CercleDetaille.booster`) et les responsables
+    d'un bureau (`BureauDetaille.responsables`) l'emploient.
+
+    `appartenance` est NULLABLE : un titulaire de responsabilite n'a pas
+    TOUJOURS une appartenance ACTIVE et LISTEE dans cette entite au sens du
+    trombinoscope (`ETAT_LISTE`/`VISIBILITE_LISTEE`, `app.people.modeles`) —
+    sans elle, `resoudre_la_miniature` n'a rien a resoudre, et `a_une_photo`
+    reste faux plutot que de lever.
+    """
+
+    identifiant: uuid.UUID
+    prenom: str
+    nom: str
+    appartenance: uuid.UUID | None
+    a_une_photo: bool
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
 class CarteDeResponsabilite:
     """Une categorie de responsabilite et ceux qui la portent."""
 

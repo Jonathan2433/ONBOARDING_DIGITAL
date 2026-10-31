@@ -136,6 +136,30 @@ describe('la barre inferieure mobile', () => {
     expect(accueil?.getAttribute('aria-current')).toBeNull();
   });
 
+  it('porte une icone DECORATIVE sur chaque cellule, sur « Plus » et sous « Plus » — chantier front, S3, `DEC-672`', () => {
+    monter(`/entites/${CODE}`, { aUnParcoursActif: true, peutAdministrer: true });
+    for (const lien of cellules()) {
+      const icone = lien.querySelector('svg');
+      expect(icone?.getAttribute('aria-hidden')).toBe('true');
+    }
+    const resume = barre().querySelector('summary');
+    expect(resume?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    const panneau = barre().querySelector('.app-barre-panneau');
+    const secondaires = [...panneau!.querySelectorAll('a')];
+    expect(secondaires).toHaveLength(2);
+    for (const lien of secondaires) {
+      expect(lien.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    }
+    //  Les icones ne s'ajoutent pas aux libelles annonces.
+    expect(cellules().map((a) => a.textContent)).toEqual([
+      'Accueil',
+      'Framework',
+      'Trombinoscope',
+      'Evenements',
+    ]);
+    expect(screen.getByText('Plus')).toBeTruthy();
+  });
+
   it('encode le code dans chaque adresse', () => {
     render(
       <MemoryRouter initialEntries={['/entites/bord%2Feaux']}>

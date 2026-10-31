@@ -56,10 +56,12 @@ from app.organization.framework import (
     CarteDeBureau,
     CarteDeCercle,
     CarteDeResponsabilite,
+    TitulaireAvecPhoto,
     TitulaireFramework,
     lire_la_page_framework,
 )
 from app.organization.perimetre import ROLES_DE_CYCLE_DE_VIE_FRAMEWORK
+from app.people.routes import chemin_de_la_photo
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
     MESSAGE_ROLE_REFUSE,
@@ -85,6 +87,27 @@ class TitulaireRendu(BaseModel):
     identifiant: uuid.UUID
     prenom: str
     nom: str
+
+
+class TitulaireAvecPhotoRendu(BaseModel):
+    """Un `TitulaireRendu`, plus sa photo — chantier front hors lot, `S12`.
+
+    **DISTINCT DE `TitulaireRendu`, DELIBEREMENT** : la synthese Framework
+    (`ResponsabiliteRendue.titulaires`, `CercleRendu.booster`,
+    `BureauRendu.responsables`) reste hors de la portee de `S12` et continue de
+    rendre `TitulaireRendu`, sans ce champ. Seuls `ReponseDuCercle.booster` et
+    `ReponseDuBureau.responsables` — les pages DETAILLEES — l'emploient. Voir
+    `TitulaireAvecPhoto` (`app.organization.framework`).
+
+    `photo` suit exactement la convention du trombinoscope et du profil : un
+    chemin prefixe-versionne, ou `null` pour les cinq causes indistinguables de
+    `resoudre_la_miniature` (§21.2).
+    """
+
+    identifiant: uuid.UUID
+    prenom: str
+    nom: str
+    photo: str | None
 
 
 class ResponsabiliteRendue(BaseModel):
@@ -168,12 +191,16 @@ class MembreRendu(BaseModel):
     n'est pas decorative : `ARB-DROIT-004` donne au Booster la gestion de
     l'appartenance **secondaire** et lui refuse le cercle principal, le DSM, le
     client et le statut d'un membre seulement secondaire.
+
+    `photo` — chantier front hors lot, `S12` (`DEC-673`). Meme convention que le
+    trombinoscope et le profil.
     """
 
     appartenance: uuid.UUID
     prenom: str
     nom: str
     type_d_appartenance: str
+    photo: str | None
 
 
 class ReponseDuCercle(BaseModel):
@@ -194,7 +221,7 @@ class ReponseDuCercle(BaseModel):
     nom: str
     description: str | None
     jeton_de_couleur: str | None
-    booster: TitulaireRendu | None
+    booster: TitulaireAvecPhotoRendu | None
     membres: list[MembreRendu]
     total_des_membres: int
     page: int
@@ -230,7 +257,7 @@ class ReponseDuBureau(BaseModel):
     nom: str
     description: str | None
     localisation: str | None
-    responsables: list[TitulaireRendu]
+    responsables: list[TitulaireAvecPhotoRendu]
     #  Le compte REEL, jamais le compte attendu. Il peut valoir zero, et il peut
     #  depasser trois : voir le docstring ci-dessus.
     nombre_de_responsables: int
@@ -291,24 +318,35 @@ class ReponseDeRestaurationDUnBureau(BaseModel):
     version: int
 
 
-def _membre(membre: MembreDuCercle) -> MembreRendu:
+def _membre(membre: MembreDuCercle, *, parametres: Parametres, code: str) -> MembreRendu:
     return MembreRendu(
         appartenance=membre.appartenance,
         prenom=membre.prenom,
         nom=membre.nom,
         type_d_appartenance=membre.type_d_appartenance,
+        photo=(
+            chemin_de_la_photo(parametres.API_PREFIX, code, membre.appartenance)
+            if membre.a_une_photo
+            else None
+        ),
     )
 
 
-def _cercle_detaille(cercle: CercleDetaille) -> ReponseDuCercle:
+def _cercle_detaille(
+    cercle: CercleDetaille, *, parametres: Parametres, code: str
+) -> ReponseDuCercle:
     return ReponseDuCercle(
         identifiant=cercle.identifiant,
         code=cercle.code,
         nom=cercle.nom,
         description=cercle.description,
         jeton_de_couleur=cercle.jeton_de_couleur,
-        booster=None if cercle.booster is None else _titulaire(cercle.booster),
-        membres=[_membre(m) for m in cercle.membres],
+        booster=(
+            None
+            if cercle.booster is None
+            else _titulaire_avec_photo(cercle.booster, parametres=parametres, code=code)
+        ),
+        membres=[_membre(m, parametres=parametres, code=code) for m in cercle.membres],
         total_des_membres=cercle.total_des_membres,
         page=cercle.page,
         taille=cercle.taille,
@@ -320,6 +358,22 @@ def _cercle_detaille(cercle: CercleDetaille) -> ReponseDuCercle:
 def _titulaire(titulaire: TitulaireFramework) -> TitulaireRendu:
     return TitulaireRendu(
         identifiant=titulaire.identifiant, prenom=titulaire.prenom, nom=titulaire.nom
+    )
+
+
+def _titulaire_avec_photo(
+    titulaire: TitulaireAvecPhoto, *, parametres: Parametres, code: str
+) -> TitulaireAvecPhotoRendu:
+    """Chantier front hors lot, `S12` (`DEC-673`). Voir `TitulaireAvecPhotoRendu`."""
+    return TitulaireAvecPhotoRendu(
+        identifiant=titulaire.identifiant,
+        prenom=titulaire.prenom,
+        nom=titulaire.nom,
+        photo=(
+            chemin_de_la_photo(parametres.API_PREFIX, code, titulaire.appartenance)
+            if titulaire.a_une_photo and titulaire.appartenance is not None
+            else None
+        ),
     )
 
 
@@ -356,14 +410,18 @@ def _bureau(carte: CarteDeBureau) -> BureauRendu:
     )
 
 
-def _bureau_detaille(bureau: BureauDetaille) -> ReponseDuBureau:
+def _bureau_detaille(
+    bureau: BureauDetaille, *, parametres: Parametres, code: str
+) -> ReponseDuBureau:
     return ReponseDuBureau(
         identifiant=bureau.identifiant,
         code=bureau.code,
         nom=bureau.nom,
         description=bureau.description,
         localisation=bureau.localisation,
-        responsables=[_titulaire(r) for r in bureau.responsables],
+        responsables=[
+            _titulaire_avec_photo(r, parametres=parametres, code=code) for r in bureau.responsables
+        ],
         #  Derive du tuple, jamais compte a part : deux sources divergeraient.
         nombre_de_responsables=bureau.nombre_de_responsables,
         publie=bureau.publie,
@@ -538,7 +596,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_404_NOT_FOUND,
                 )
 
-        return _cercle_detaille(cercle)
+        return _cercle_detaille(cercle, parametres=parametres, code=code)
 
     @routeur.get(
         "/entities/{code}/offices/{code_bureau}",
@@ -624,7 +682,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                     statut=status.HTTP_404_NOT_FOUND,
                 )
 
-        return _bureau_detaille(bureau)
+        return _bureau_detaille(bureau, parametres=parametres, code=code)
 
     # ========================================================================
     #

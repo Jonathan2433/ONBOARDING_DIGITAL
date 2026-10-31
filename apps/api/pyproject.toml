@@ -19,6 +19,13 @@ dependencies = [
     "alembic>=1.18.5",
     "boto3>=1.43.57",
     "fastapi>=0.140.7",
+    #  LOT 11, T2 : la verification de contenu reel et la generation des
+    #  variantes (§16.1/§16.2) exigent un decodeur d'image. Premiere
+    #  dependance de traitement d'image du projet — mesure du 06/09/2026
+    #  (media/photo.py) : zero occurrence de Pillow ou vips avant ce lot.
+    #  Les roues officielles embarquent deja libjpeg/libpng/libwebp pour
+    #  linux/amd64 ET linux/arm64 : aucun paquet systeme supplementaire.
+    "pillow>=11.0.0",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
     "python-multipart>=0.0.20",

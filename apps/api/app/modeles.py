@@ -23,6 +23,7 @@ from app.content import modeles as content_modeles
 from app.entities import modeles as entities_modeles
 from app.events import modeles as events_modeles
 from app.imports import modeles as imports_modeles
+from app.jobs import modeles as jobs_modeles
 from app.media import modeles as media_modeles
 from app.onboarding import modeles as onboarding_modeles
 from app.organization import modeles as organization_modeles
@@ -49,6 +50,8 @@ MODULES_DE_MODELES = (
     imports_modeles,
     #  LOT 10, T1 : les six tables de l'audit, des alertes, du support et du RGPD.
     audit_modeles,
+    #  LOT 11, T1 : les deux tables du socle asynchrone, `async_job`/`outbox_message`.
+    jobs_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]

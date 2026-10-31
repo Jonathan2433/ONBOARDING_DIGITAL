@@ -415,3 +415,34 @@ describe('les refus de chargement', () => {
     await waitFor(() => expect(screen.getByText(/session a expiré/)).toBeTruthy());
   });
 });
+
+describe('chantier front, S7 : `Carte`/`Badge` (DEC-672)', () => {
+  it('la fiche et le parcours sont des vraies `Carte` — deux régions nommées', async () => {
+    servir({ ficheCharge: fiche(), parcoursCharge: PARCOURS_VIDE });
+    monter();
+
+    await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
+    expect(screen.getByRole('region', { name: 'Ma fiche d’arrivée' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Mon parcours' })).toBeTruthy();
+  });
+
+  it('l’état de la fiche est un vrai `Badge`, pas du texte simple', async () => {
+    servir({ ficheCharge: fiche(), parcoursCharge: PARCOURS_VIDE });
+    monter();
+
+    await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
+    expect(screen.getByText('Brouillon', { selector: '.ex-badge' })).toBeTruthy();
+  });
+
+  it('l’état d’une tâche et son marqueur « Obligatoire » sont de vrais `Badge`', async () => {
+    servir({
+      ficheCharge: fiche(),
+      parcoursCharge: parcoursAvecInstance([tache()]),
+    });
+    monter();
+
+    await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
+    expect(screen.getByText('À faire', { selector: '.ex-badge' })).toBeTruthy();
+    expect(screen.getByText('Obligatoire', { selector: '.ex-badge' })).toBeTruthy();
+  });
+});

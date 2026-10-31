@@ -24,7 +24,16 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ESPACEMENTS, MARQUE, OMBRES, RAYONS, THEMES, TYPOGRAPHIE } from './jetons.js';
+import {
+  DECOUPES,
+  DEGRADE_MARQUE,
+  ESPACEMENTS,
+  MARQUE,
+  OMBRES,
+  RAYONS,
+  THEMES,
+  TYPOGRAPHIE,
+} from './jetons.js';
 
 // `?raw` de Vite plutot que `node:fs` : le contenu du fichier arrive comme une
 // chaine, sans ajouter @types/node au projet. C'est Vite qui lit le disque, et
@@ -32,15 +41,21 @@ import { ESPACEMENTS, MARQUE, OMBRES, RAYONS, THEMES, TYPOGRAPHIE } from './jeto
 import CSS from './jetons.css?raw';
 
 /**
- * Les declarations de `:root`, hors media query — c'est-a-dire le theme clair.
+ * Les declarations de `:root`, hors selecteur du theme sombre — c'est-a-dire
+ * le theme clair.
  *
- * Le decoupage s'arrete au premier `}` : la regle `@media` qui suit porte les
+ * Le decoupage s'arrete au premier `:root[data-theme` : cette regle porte les
  * memes noms avec les valeurs du theme sombre, et les melanger ferait comparer
- * une valeur claire a une valeur sombre.
+ * une valeur claire a une valeur sombre. **CE MARQUEUR A REMPLACE `@media`
+ * depuis S9 (`DEC-673`)** : le sombre n'est plus active par la preference
+ * systeme mais par un attribut explicite, voir l'en-tete de `jetons.css`.
  */
 function declarations(portee: string): Map<string, string> {
+  const marqueurSombre = ':root[data-theme';
   const bloc =
-    portee === 'clair' ? CSS.slice(0, CSS.indexOf('@media')) : CSS.slice(CSS.indexOf('@media'));
+    portee === 'clair'
+      ? CSS.slice(0, CSS.indexOf(marqueurSombre))
+      : CSS.slice(CSS.indexOf(marqueurSombre));
   const trouvees = new Map<string, string>();
   // DECOUPAGE PAR DECLARATION, ET NON PAR LIGNE. Premiere version de ce parseur :
   // une expression reguliere ancree en debut de ligne, qui exigeait la valeur sur
@@ -81,6 +96,7 @@ const ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--marque-rose-texte', MARQUE.rose.texte],
   ['--marque-jaune', MARQUE.jaune.surface],
   ['--marque-jaune-texte', MARQUE.jaune.texte],
+  ['--degrade-marque', DEGRADE_MARQUE.css],
   ['--fond', THEMES.clair.fond],
   ['--fond-doux', THEMES.clair.fondDoux],
   ['--encre', THEMES.clair.encre],
@@ -98,6 +114,7 @@ const ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--rayon-m', RAYONS.m],
   ['--rayon-l', RAYONS.l],
   ['--rayon-pastille', RAYONS.pastille],
+  ['--decoupe-hexagone', DECOUPES.hexagone],
   ['--ombre-douce', OMBRES.douce],
   ['--ombre-posee', OMBRES.posee],
   ['--police', TYPOGRAPHIE.pile],

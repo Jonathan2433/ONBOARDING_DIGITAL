@@ -198,10 +198,17 @@ describe('le trombinoscope a l’ecran', () => {
       expect(screen.getByText('Ada Lovelace')).toBeTruthy();
     });
     fireEvent.click(faceDe('Ada Lovelace'));
-    expect(screen.getByText('Data')).toBeTruthy();
+    //  **`{ selector: '.trombi-verso dd' }` DEPUIS S10** (`DEC-673`) : « Data »
+    //  existe desormais DEUX FOIS dans le DOM — la pastille du recto (cachee
+    //  par `hidden`, mais `getByText` ne filtre pas la visibilite) et ce
+    //  `<dd>` du verso. Le selecteur ecarte la premiere, pas une regression.
+    expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
     expect(screen.getByText('Ingenieure logicielle')).toBeTruthy();
-    //  Le statut est TRADUIT, et le client accole.
-    expect(screen.getByText(/En mission — Client Alpha/)).toBeTruthy();
+    //  Le statut est TRADUIT — depuis S6 (`DEC-672`), dans un `Badge` — et le
+    //  client accole en texte simple, a cote de lui. `{ selector: '.ex-badge' }`
+    //  ecarte l'option du meme nom dans le filtre « Statut ».
+    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+    expect(screen.getByText(/Client Alpha/)).toBeTruthy();
   });
 
   it.each([
@@ -231,9 +238,53 @@ describe('le trombinoscope a l’ecran', () => {
       const carte = faceDe('Ada Lovelace').closest('article');
       expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe(attendu);
       fireEvent.click(faceDe('Ada Lovelace'));
-      expect(screen.getByText('Data')).toBeTruthy();
+      //  Depuis S10 (`DEC-673`), « Data » existe aussi sur le recto (pastille) :
+      //  le selecteur cible le verso, seul concerne par ce test.
+      expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
     },
   );
+
+  //  ========================================================================
+  //  Chantier front, S10 : la pastille de cercle au RECTO (`DEC-673`)
+  //  ========================================================================
+
+  it.each([
+    ['bleu', 'var(--marque-bleu)', 'var(--marque-bleu-texte)', 'marque'],
+    ['jaune', 'var(--marque-jaune)', 'var(--marque-jaune-texte)', 'marque'],
+    [null, '', '', 'neutre'],
+    ['jeton-inconnu-du-design-system', '', '', 'neutre'],
+  ])(
+    'la pastille du recto porte le jeton « %s », colore ou neutre',
+    async (jeton, surface, texte, ton) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(page([{ ...ADA, cercle: { ...ADA.cercle, jeton_de_couleur: jeton } }])),
+        ),
+      );
+      monter();
+      await waitFor(() => {
+        expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      });
+      //  Le recto n'est pas retourne : la pastille est deja visible ici.
+      const pastille = screen.getByText('Data', { selector: '.ex-badge' });
+      expect(pastille.getAttribute('data-ton')).toBe(ton);
+      expect((pastille as HTMLElement).style.background).toBe(surface);
+      expect((pastille as HTMLElement).style.color).toBe(texte);
+    },
+  );
+
+  it('sans cercle, AUCUNE pastille n’est rendue au recto — une pastille vide n’ajouterait rien', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([NOUVELLE]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+    });
+    expect(document.querySelector('.trombi-pastille-cercle')).toBeNull();
+  });
 
   it('un collaborateur SANS affectation affiche « Non renseigne », jamais du vide', async () => {
     //  Un champ vide laisserait croire a une panne d'affichage ; « Non
@@ -374,6 +425,41 @@ describe('le trombinoscope a l’ecran', () => {
     expect((precedente as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('button', { name: 'Page suivante' })).toBeTruthy();
     expect(screen.getByText(/Page 1 sur 3/)).toBeTruthy();
+  });
+});
+
+describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le vehicule (`DEC-672`)', () => {
+  it('le statut du verso est un vrai `Badge`, pas du texte simple', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([ADA]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    });
+    fireEvent.click(faceDe('Ada Lovelace'));
+    //  **PORTEE AU VERSO** : le filtre « Statut » du formulaire porte la MEME
+    //  chaine dans une `<option>`, et un `getByText` nu y trouverait un second
+    //  candidat.
+    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+  });
+
+  it('la carte reste une `CarteRetournable` — le vehicule n’a pas change', async () => {
+    //  **VERIFICATION, PAS CONSTRUCTION.** `Carte` n'accepte ni `className` ni
+    //  `style` : elle ne pourrait pas porter `--carte-cercle`, et n'offre aucun
+    //  recto/verso. `CarteRetournable` reste donc le bon vehicule pour la
+    //  richesse de cet ecran (§13.2, `S6`).
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(page([ADA]))),
+    );
+    monter();
+    await waitFor(() => {
+      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+    });
+    const carte = faceDe('Ada Lovelace').closest('article');
+    expect(carte?.classList.contains('ui-carte-retournable')).toBe(true);
   });
 });
 
