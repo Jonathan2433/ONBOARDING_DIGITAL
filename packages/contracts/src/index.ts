@@ -605,6 +605,43 @@ export type {
 } from './organisationCycleDeVie.js';
 
 export {
+  cheminAttributionDUnResponsable,
+  cheminAttributionDuBooster,
+  cheminCreationDUnBureau,
+  cheminCreationDUnCercle,
+  cheminDuRetraitDUnResponsable,
+  cheminRetraitDuBooster,
+  CODES_ATTRIBUTION_D_UN_RESPONSABLE,
+  CODES_ATTRIBUTION_DU_BOOSTER,
+  CODES_CREATION_DE_BUREAU,
+  CODES_CREATION_DE_CERCLE,
+  CODES_RETRAIT_D_UN_RESPONSABLE,
+  CODES_RETRAIT_DU_BOOSTER,
+  GABARIT_CHEMIN_ATTRIBUTION_D_UN_RESPONSABLE,
+  GABARIT_CHEMIN_ATTRIBUTION_DU_BOOSTER,
+  GABARIT_CHEMIN_CREATION_DE_BUREAU,
+  GABARIT_CHEMIN_CREATION_DE_CERCLE,
+  GABARIT_CHEMIN_RETRAIT_D_UN_RESPONSABLE,
+  GABARIT_CHEMIN_RETRAIT_DU_BOOSTER,
+  peutAttribuerUneResponsabiliteFramework,
+  ROLES_ATTRIBUTION_FRAMEWORK,
+  validerLAttributionDUnResponsable,
+  validerLAttributionDuBooster,
+  validerLaCreationDeStructure,
+  validerLeRetraitFramework,
+} from './organisationCreationEtAttribution.js';
+export type {
+  DemandeDAttributionDeResponsabilite,
+  DemandeDeCreationDeBureau,
+  DemandeDeCreationDeCercle,
+  DemandeDeRetraitFramework,
+  ResultatDAttributionDUnResponsable,
+  ResultatDAttributionDuBooster,
+  ResultatDeCreationDeStructure,
+  ResultatDeRetraitFramework,
+} from './organisationCreationEtAttribution.js';
+
+export {
   cheminTableauDeBord,
   CODES_TABLEAU_DE_BORD,
   GABARIT_CHEMIN_TABLEAU_DE_BORD,
