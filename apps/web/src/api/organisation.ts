@@ -25,11 +25,21 @@
 import {
   cheminArchivageDUnBureau,
   cheminArchivageDUnCercle,
+  cheminAttributionDUnResponsable,
+  cheminAttributionDuBooster,
   cheminBureau,
   cheminCercle,
+  cheminCreationDUnBureau,
+  cheminCreationDUnCercle,
+  cheminDuRetraitDUnResponsable,
   cheminFramework,
   cheminRestaurationDUnBureau,
   cheminRestaurationDUnCercle,
+  cheminRetraitDuBooster,
+  type DemandeDAttributionDeResponsabilite,
+  type DemandeDeCreationDeBureau,
+  type DemandeDeCreationDeCercle,
+  type DemandeDeRetraitFramework,
   EN_TETE_CLE_IDEMPOTENCE,
   EN_TETE_CORRELATION,
   EN_TETE_JETON_CSRF,
@@ -37,12 +47,20 @@ import {
   type PageDuCercle,
   type PageFramework,
   type ResultatDArchivageDeStructure,
+  type ResultatDAttributionDUnResponsable,
+  type ResultatDAttributionDuBooster,
+  type ResultatDeCreationDeStructure,
   type ResultatDeRestaurationDeStructure,
+  type ResultatDeRetraitFramework,
   validerLArchivageDeStructure,
+  validerLAttributionDUnResponsable,
+  validerLAttributionDuBooster,
+  validerLaCreationDeStructure,
   validerLaPageDuBureau,
   validerLaPageDuCercle,
   validerLaPageFramework,
   validerLaRestaurationDeStructure,
+  validerLeRetraitFramework,
 } from '@onboarding/contracts';
 
 import { lireLaSession } from './auth';
@@ -204,5 +222,121 @@ export function restaurerUnBureau(
     cheminRestaurationDUnBureau(code, officeId),
     version,
     validerLaRestaurationDeStructure,
+  );
+}
+
+/**
+ * Créer un cercle/bureau, attribuer le Booster/un responsable de bureau,
+ * retirer l'un des deux — LOT 11, `T3`, hors backlog.
+ *
+ * **MEME MONTAGE QUE `collaborateurs.ts`** : un corps ARBITRAIRE, contrairement
+ * à `ecrireUneTransitionDeStructure` ci-dessus qui n'envoie qu'une `version` —
+ * ces six routes n'ont ni verrou optimiste ni forme de corps commune.
+ */
+async function ecrireDansLaStructure<T>(
+  chemin: string,
+  corpsEnvoye: unknown,
+  valider: (valeur: unknown) => T,
+): Promise<ReponseLue<T>> {
+  const session = await lireLaSession();
+  if (session.statut !== 200 || session.corps === null) {
+    return { statut: session.statut, corps: null, correlation: null };
+  }
+
+  const reponse = await fetch(chemin, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      [EN_TETE_JETON_CSRF]: session.corps.jeton_csrf,
+      [EN_TETE_CLE_IDEMPOTENCE]: globalThis.crypto.randomUUID(),
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(corpsEnvoye),
+  });
+  const correlation = reponse.headers.get(EN_TETE_CORRELATION);
+
+  let corps: T | null;
+  try {
+    corps = valider(await reponse.json());
+  } catch {
+    corps = null;
+  }
+  return { statut: reponse.status, corps, correlation };
+}
+
+/** `POST /entities/{code}/circles` — matrice §10.2. */
+export function creerUnCercle(
+  code: string,
+  demande: DemandeDeCreationDeCercle,
+): Promise<ReponseLue<ResultatDeCreationDeStructure>> {
+  return ecrireDansLaStructure(
+    cheminCreationDUnCercle(code),
+    demande,
+    validerLaCreationDeStructure,
+  );
+}
+
+/** `POST /entities/{code}/offices` — matrice §10.3. */
+export function creerUnBureau(
+  code: string,
+  demande: DemandeDeCreationDeBureau,
+): Promise<ReponseLue<ResultatDeCreationDeStructure>> {
+  return ecrireDansLaStructure(
+    cheminCreationDUnBureau(code),
+    demande,
+    validerLaCreationDeStructure,
+  );
+}
+
+/** `POST …/circles/{circle_id}/booster` — matrice §10.2/§20, TOUJOURS un remplacement. */
+export function attribuerLeBooster(
+  code: string,
+  circleId: string,
+  demande: DemandeDAttributionDeResponsabilite,
+): Promise<ReponseLue<ResultatDAttributionDuBooster>> {
+  return ecrireDansLaStructure(
+    cheminAttributionDuBooster(code, circleId),
+    demande,
+    validerLAttributionDuBooster,
+  );
+}
+
+/** `POST …/circles/{circle_id}/booster/retrait` — matrice §20. */
+export function retirerLeBooster(
+  code: string,
+  circleId: string,
+  demande: DemandeDeRetraitFramework,
+): Promise<ReponseLue<ResultatDeRetraitFramework>> {
+  return ecrireDansLaStructure(
+    cheminRetraitDuBooster(code, circleId),
+    demande,
+    validerLeRetraitFramework,
+  );
+}
+
+/** `POST …/offices/{office_id}/responsables` — matrice §10.3/§20, AJOUTE sans remplacer. */
+export function attribuerUnResponsableDeBureau(
+  code: string,
+  officeId: string,
+  demande: DemandeDAttributionDeResponsabilite,
+): Promise<ReponseLue<ResultatDAttributionDUnResponsable>> {
+  return ecrireDansLaStructure(
+    cheminAttributionDUnResponsable(code, officeId),
+    demande,
+    validerLAttributionDUnResponsable,
+  );
+}
+
+/** `POST …/offices/{office_id}/responsables/{affectation_id}/retrait` — matrice §20. */
+export function retirerUnResponsableDeBureau(
+  code: string,
+  officeId: string,
+  affectationId: string,
+  demande: DemandeDeRetraitFramework,
+): Promise<ReponseLue<ResultatDeRetraitFramework>> {
+  return ecrireDansLaStructure(
+    cheminDuRetraitDUnResponsable(code, officeId, affectationId),
+    demande,
+    validerLeRetraitFramework,
   );
 }

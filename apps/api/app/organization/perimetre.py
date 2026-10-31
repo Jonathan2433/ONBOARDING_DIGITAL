@@ -42,15 +42,32 @@ UNE INTERDICTION LIEE A LA RESSOURCE, PAS AU ROLE
   (`app.organization.cycle_de_vie`), jamais par ce module, qui ne resout que les
   roles.
 
-CE QUE CE MODULE NE REGLE PAS
+CE QUE CE MODULE NE REGLAIT PAS, ET QUE LOT 11 `T3` FERME
 
-  **La CREATION et la MODIFICATION DE STRUCTURE d'un cercle ou d'un bureau**
-  (§10.2 « Creer un cercle », « Modifier la structure d'un cercle ») ne sont
-  demandees par aucune sous-etape du decoupage du LOT 9 : `T4` ne porte que la
-  restauration des ressources archivees, `US008`. Les construire ici deborderait
-  le perimetre d'une sous-etape (§2, regle n°1), et aucun cercle ni bureau
-  n'existe aujourd'hui que par les modeles generiques d'une entite ou par le jeu
-  de donnees -- ce que `T4` ne change pas.
+  Ce paragraphe disait, depuis le LOT 9 : « la CREATION et la MODIFICATION DE
+  STRUCTURE d'un cercle ou d'un bureau ne sont demandees par aucune sous-etape
+  […] les construire ici deborderait le perimetre d'une sous-etape ». C'etait
+  vrai a sa date, et c'est devenu faux le jour ou Jonathan a constate ce trou a
+  l'ouverture du LOT 11 (`DEC-674`, 30/10/2026) et l'a ajoute hors backlog a
+  `T3` (`docs/operations/fiche-lot-11.md` §1.2) — §7.21 de la passation : un
+  paragraphe juste hier peut etre faux aujourd'hui, et c'est nous qui l'avons
+  rendu faux en comblant le trou qu'il decrivait.
+
+  **« Creer un cercle »/« Creer un bureau » (§10.2/§10.3) PORTENT LA MEME
+  GRILLE que « Archiver »/« Restaurer » dans ces deux memes tableaux** — `ESM`
+  et `ADM-E` « Entite », `SUPER` « Global », les trois autres roles a tiret.
+  `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` est donc REUTILISEE telle quelle pour la
+  creation (§7.27) : une seconde constante identique aurait pu diverger en
+  silence du jour ou l'une des deux grilles change.
+
+  **L'ATTRIBUTION DU BOOSTER ET DU RESPONSABLE DE BUREAU EST UNE GRILLE
+  SEPAREE, RECOPIEE ET NON CALQUEE SUR CELLE-CI** — §20 : « Affecter ou
+  remplacer un Booster »/« Affecter un responsable de bureau », `ESM` Entite,
+  `SUPER` Global, et **`ADM-E` EXCLU** (« L'administrateur d'entite ne peut pas
+  attribuer les responsabilites Framework », §20 et `ARB-DROIT-002`). Memes
+  deux roles que `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` moins l'administrateur
+  d'entite — une divergence d'une seule case qui justifie une constante a part,
+  jamais une exception codee en dur sur la premiere.
 
   **« Consulter un cercle/bureau archive »** n'est demande par AUCUNE ligne du
   §10.2, du §10.3 ni du §18 -- a la difference du profil, dont le §6.1 porte
@@ -67,13 +84,24 @@ from typing import Final
 
 from app.permissions.services import RoleDeLaMatrice
 
-#  **MEME GRILLE POUR LE CERCLE ET LE BUREAU, ET LES DEUX ACTIONS.** Voir
-#  l'en-tete du module : le §10.2, le §10.3 et le §18 la donnent trois fois,
-#  identique a chaque fois.
+#  **MEME GRILLE POUR LE CERCLE ET LE BUREAU, ET LES TROIS ACTIONS** (creer,
+#  archiver, restaurer). Voir l'en-tete du module : le §10.2, le §10.3 et le
+#  §18 la donnent plusieurs fois, identique a chaque fois.
 ROLES_DE_CYCLE_DE_VIE_FRAMEWORK: Final[frozenset[RoleDeLaMatrice]] = frozenset(
     {
         RoleDeLaMatrice.ESM,
         RoleDeLaMatrice.ADMINISTRATEUR_D_ENTITE,
+        RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
+    }
+)
+
+#  **LOT 11, `T3`.** §20 « Affecter ou remplacer un Booster »/« Affecter un
+#  responsable de bureau »/« Retirer une responsabilite Framework » — `ESM`
+#  Entite, `SUPER` Global. `ADM-E` EXCLU, a la difference de la grille
+#  ci-dessus : voir l'en-tete du module.
+ROLES_D_ATTRIBUTION_FRAMEWORK: Final[frozenset[RoleDeLaMatrice]] = frozenset(
+    {
+        RoleDeLaMatrice.ESM,
         RoleDeLaMatrice.SUPER_ADMINISTRATEUR,
     }
 )

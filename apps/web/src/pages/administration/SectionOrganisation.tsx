@@ -44,14 +44,21 @@ import { listerLesClients } from '../../api/imports';
 import {
   archiverUnBureau,
   archiverUnCercle,
+  attribuerLeBooster,
+  attribuerUnResponsableDeBureau,
+  creerUnBureau,
+  creerUnCercle,
   lireLeFramework,
   restaurerUnBureau,
   restaurerUnCercle,
+  retirerLeBooster,
+  retirerUnResponsableDeBureau,
 } from '../../api/organisation';
 import { listerLesEntites } from '../../api/portail';
 import { lireLaFiche } from '../../api/profil';
 import { listerLeTrombinoscope } from '../../api/trombinoscope';
 import {
+  peutAttribuerUneResponsabiliteFramework,
   peutEcrireSurUnCollaborateur,
   peutGererLeCycleDeVieDeLaStructure,
   TAILLE_PAR_DEFAUT,
@@ -882,6 +889,539 @@ function LigneDeTransfertFormulaire({
   );
 }
 
+/** Créer un cercle — LOT 11, `T3`, hors backlog. Matrice §10.2, même grille que l'archivage. */
+function FormulaireCreationDeCercle({
+  code,
+  onCree,
+}: {
+  readonly code: string;
+  readonly onCree: () => void;
+}): JSX.Element {
+  const [codeCercle, setCodeCercle] = useState('');
+  const [nom, setNom] = useState('');
+  const [jetonDeCouleur, setJetonDeCouleur] = useState('');
+  const [description, setDescription] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [succes, setSucces] = useState<string | null>(null);
+
+  async function creer(): Promise<void> {
+    setEnvoi(true);
+    setErreur(null);
+    setSucces(null);
+    const resultat = await creerUnCercle(code, {
+      code: codeCercle,
+      nom,
+      jeton_de_couleur: jetonDeCouleur === '' ? null : jetonDeCouleur,
+      description: description === '' ? null : description,
+    });
+    setEnvoi(false);
+    if (resultat.statut === 201 && resultat.corps !== null) {
+      setSucces(`Cercle « ${resultat.corps.code} » créé.`);
+      setCodeCercle('');
+      setNom('');
+      setJetonDeCouleur('');
+      setDescription('');
+      onCree();
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  const pretAEnvoyer = codeCercle.trim() !== '' && nom.trim() !== '';
+
+  return (
+    <section
+      className="administration-creation-cercle"
+      aria-labelledby="administration-creation-cercle-titre"
+    >
+      <h5 id="administration-creation-cercle-titre">Créer un cercle</h5>
+      {erreur === null ? null : (
+        <Alerte ton="erreur" urgence="alerte">
+          {erreur}
+        </Alerte>
+      )}
+      {succes === null ? null : (
+        <Alerte ton="succes" urgence="information">
+          {succes}
+        </Alerte>
+      )}
+      <div className="administration-champs">
+        <label className="administration-champ">
+          Code
+          <input
+            onChange={(e) => {
+              setCodeCercle(e.target.value);
+            }}
+            type="text"
+            value={codeCercle}
+          />
+        </label>
+        <label className="administration-champ">
+          Nom
+          <input
+            onChange={(e) => {
+              setNom(e.target.value);
+            }}
+            type="text"
+            value={nom}
+          />
+        </label>
+        <label className="administration-champ">
+          Jeton de couleur (facultatif)
+          <input
+            onChange={(e) => {
+              setJetonDeCouleur(e.target.value);
+            }}
+            type="text"
+            value={jetonDeCouleur}
+          />
+        </label>
+        <label className="administration-champ">
+          Description (facultative)
+          <input
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
+            type="text"
+            value={description}
+          />
+        </label>
+        <Bouton
+          disabled={envoi || !pretAEnvoyer}
+          onClick={() => {
+            void creer();
+          }}
+          type="button"
+          variante="primaire"
+        >
+          {envoi ? 'Envoi…' : 'Créer le cercle'}
+        </Bouton>
+      </div>
+    </section>
+  );
+}
+
+/** Créer un bureau — LOT 11, `T3`, hors backlog. Matrice §10.3, même grille que l'archivage. */
+function FormulaireCreationDeBureau({
+  code,
+  onCree,
+}: {
+  readonly code: string;
+  readonly onCree: () => void;
+}): JSX.Element {
+  const [codeBureau, setCodeBureau] = useState('');
+  const [nom, setNom] = useState('');
+  const [localisation, setLocalisation] = useState('');
+  const [description, setDescription] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [succes, setSucces] = useState<string | null>(null);
+
+  async function creer(): Promise<void> {
+    setEnvoi(true);
+    setErreur(null);
+    setSucces(null);
+    const resultat = await creerUnBureau(code, {
+      code: codeBureau,
+      nom,
+      localisation: localisation === '' ? null : localisation,
+      description: description === '' ? null : description,
+    });
+    setEnvoi(false);
+    if (resultat.statut === 201 && resultat.corps !== null) {
+      setSucces(`Bureau « ${resultat.corps.code} » créé.`);
+      setCodeBureau('');
+      setNom('');
+      setLocalisation('');
+      setDescription('');
+      onCree();
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  const pretAEnvoyer = codeBureau.trim() !== '' && nom.trim() !== '';
+
+  return (
+    <section
+      className="administration-creation-bureau"
+      aria-labelledby="administration-creation-bureau-titre"
+    >
+      <h5 id="administration-creation-bureau-titre">Créer un bureau</h5>
+      {erreur === null ? null : (
+        <Alerte ton="erreur" urgence="alerte">
+          {erreur}
+        </Alerte>
+      )}
+      {succes === null ? null : (
+        <Alerte ton="succes" urgence="information">
+          {succes}
+        </Alerte>
+      )}
+      <div className="administration-champs">
+        <label className="administration-champ">
+          Code
+          <input
+            onChange={(e) => {
+              setCodeBureau(e.target.value);
+            }}
+            type="text"
+            value={codeBureau}
+          />
+        </label>
+        <label className="administration-champ">
+          Nom
+          <input
+            onChange={(e) => {
+              setNom(e.target.value);
+            }}
+            type="text"
+            value={nom}
+          />
+        </label>
+        <label className="administration-champ">
+          Localisation (facultative)
+          <input
+            onChange={(e) => {
+              setLocalisation(e.target.value);
+            }}
+            type="text"
+            value={localisation}
+          />
+        </label>
+        <label className="administration-champ">
+          Description (facultative)
+          <input
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
+            type="text"
+            value={description}
+          />
+        </label>
+        <Bouton
+          disabled={envoi || !pretAEnvoyer}
+          onClick={() => {
+            void creer();
+          }}
+          type="button"
+          variante="primaire"
+        >
+          {envoi ? 'Envoi…' : 'Créer le bureau'}
+        </Bouton>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Rechercher un collaborateur de l'entité et en choisir un — brique commune à
+ * l'attribution du Booster et d'un responsable de bureau. MÊME MONTAGE que la
+ * recherche de `FormulaireChangementDEntite`/`SectionTransfertEnMasse`
+ * (`listerLeTrombinoscope`), extraite ici parce que `T3` en est le TROISIÈME
+ * consommateur (§7.27 de la passation) — les deux premiers restent inchangés,
+ * hors du périmètre de cette sous-étape.
+ */
+function RecherchePersonne({
+  code,
+  surChoix,
+}: {
+  readonly code: string;
+  readonly surChoix: (personId: string, libelle: string) => void;
+}): JSX.Element {
+  const [recherche, setRecherche] = useState('');
+  const [resultats, setResultats] = useState<
+    readonly { readonly personneId: string; readonly prenom: string; readonly nom: string }[]
+  >([]);
+
+  async function rechercher(): Promise<void> {
+    const reponse = await listerLeTrombinoscope(code, {
+      page: 1,
+      taille: TAILLE_PAR_DEFAUT,
+      recherche,
+      statut: '',
+    });
+    if (reponse.statut === 200 && reponse.corps !== null) {
+      //  `personneId` (`person_id`), JAMAIS `id` (l'APPARTENANCE) : les routes
+      //  d'attribution de `T3` écrivent `framework_responsibility_assignment.
+      //  person_id`, qui référence `person` directement — pas `entity_
+      //  membership`. Un `id` d'appartenance passé ici romprait silencieusement
+      //  la clé étrangère attendue par l'API (422 `personne_introuvable`).
+      setResultats(
+        reponse.corps.collaborateurs.map((c) => ({
+          personneId: c.personneId,
+          prenom: c.prenom,
+          nom: c.nom,
+        })),
+      );
+    }
+  }
+
+  return (
+    <div className="administration-champs">
+      <label className="administration-champ">
+        Rechercher une personne de cette entité
+        <input
+          onChange={(e) => {
+            setRecherche(e.target.value);
+          }}
+          type="text"
+          value={recherche}
+        />
+      </label>
+      <Bouton
+        onClick={() => {
+          void rechercher();
+        }}
+        type="button"
+        variante="secondaire"
+      >
+        Rechercher
+      </Bouton>
+      {resultats.length === 0 ? null : (
+        <ul>
+          {resultats.map((r) => (
+            <li key={r.personneId}>
+              {r.prenom} {r.nom}{' '}
+              <Bouton
+                onClick={() => {
+                  surChoix(r.personneId, `${r.prenom} ${r.nom}`);
+                  setResultats([]);
+                  setRecherche('');
+                }}
+                type="button"
+                variante="primaire"
+              >
+                Choisir
+              </Bouton>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+interface AffectationRecente {
+  readonly affectation: string;
+  readonly libelle: string;
+}
+
+/**
+ * Attribuer ou retirer le Booster d'un cercle, ou un responsable de bureau —
+ * LOT 11, `T3`, hors backlog. Matrice §10.2/§10.3/§20, `ROLES_ATTRIBUTION_
+ * FRAMEWORK` (`ADM-E` exclu).
+ *
+ * LE RETRAIT N'EST PROPOSÉ QUE POUR UNE AFFECTATION FAITE DANS CETTE SESSION
+ *
+ *   `GET …/framework` (`TitulaireFramework.identifiant`) rend l'identifiant de
+ *   la PERSONNE, jamais celui de la ligne `framework_responsibility_
+ *   assignment` — `retirer_le_booster`/`retirer_un_responsable_de_bureau`
+ *   exigent pourtant ce DERNIER identifiant (`affectation`). Aucune route de
+ *   `T3` n'en liste pour une ressource existante — construire une telle
+ *   lecture déborderait le périmètre nommé de cette sous-étape (création et
+ *   attribution, jamais une nouvelle lecture). MÊME RÉSIDU, MÊME PARTI que
+ *   `SectionCerclesEtBureaux` ci-dessous : l'écran garde l'identifiant produit
+ *   par SON PROPRE appel d'attribution, le temps de la session.
+ */
+function SectionAttributionFramework({ code }: { readonly code: string }): JSX.Element {
+  const [framework, setFramework] = useState<PageFramework | null>(null);
+  const [rechargements, setRechargements] = useState(0);
+  const [cercleChoisi, setCercleChoisi] = useState('');
+  const [bureauChoisi, setBureauChoisi] = useState('');
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [boosterRecent, setBoosterRecent] = useState<AffectationRecente | null>(null);
+  const [responsablesRecents, setResponsablesRecents] = useState<readonly AffectationRecente[]>([]);
+
+  useEffect(() => {
+    const abandon = new AbortController();
+    void lireLeFramework(code, abandon.signal).then((reponse) => {
+      if (!abandon.signal.aborted && reponse.statut === 200 && reponse.corps !== null) {
+        setFramework(reponse.corps);
+      }
+    });
+    return () => {
+      abandon.abort();
+    };
+  }, [code, rechargements]);
+
+  async function attribuerBooster(personId: string, libelle: string): Promise<void> {
+    setErreur(null);
+    const resultat = await attribuerLeBooster(code, cercleChoisi, { person_id: personId });
+    if (resultat.statut === 200 && resultat.corps !== null) {
+      setBoosterRecent({ affectation: resultat.corps.affectation, libelle });
+      setRechargements((p) => p + 1);
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  async function retirerBooster(): Promise<void> {
+    setErreur(null);
+    const resultat = await retirerLeBooster(code, cercleChoisi, {});
+    if (resultat.statut === 200 && resultat.corps !== null) {
+      setBoosterRecent(null);
+      setRechargements((p) => p + 1);
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  async function attribuerResponsable(personId: string, libelle: string): Promise<void> {
+    setErreur(null);
+    const resultat = await attribuerUnResponsableDeBureau(code, bureauChoisi, {
+      person_id: personId,
+    });
+    if (resultat.statut === 201 && resultat.corps !== null) {
+      setResponsablesRecents([
+        ...responsablesRecents,
+        { affectation: resultat.corps.affectation, libelle },
+      ]);
+      setRechargements((p) => p + 1);
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  async function retirerResponsable(affectation: string): Promise<void> {
+    setErreur(null);
+    const resultat = await retirerUnResponsableDeBureau(code, bureauChoisi, affectation, {});
+    if (resultat.statut === 200 && resultat.corps !== null) {
+      setResponsablesRecents(responsablesRecents.filter((r) => r.affectation !== affectation));
+      setRechargements((p) => p + 1);
+    } else {
+      setErreur(messageDeRefus(resultat.statut));
+    }
+  }
+
+  const cercleActuel = framework?.cercles.find((c) => c.identifiant === cercleChoisi) ?? null;
+  const bureauActuel = framework?.bureaux.find((b) => b.identifiant === bureauChoisi) ?? null;
+
+  return (
+    <section
+      className="administration-attribution-framework"
+      aria-labelledby="administration-attribution-framework-titre"
+    >
+      <h4 id="administration-attribution-framework-titre">Booster et responsables de bureau</h4>
+      {erreur === null ? null : (
+        <Alerte ton="erreur" urgence="alerte">
+          {erreur}
+        </Alerte>
+      )}
+      {framework === null ? (
+        <p>Chargement…</p>
+      ) : (
+        <>
+          <h5>Booster d’un cercle</h5>
+          <label className="administration-champ">
+            Cercle
+            <select
+              onChange={(e) => {
+                setCercleChoisi(e.target.value);
+                setBoosterRecent(null);
+              }}
+              value={cercleChoisi}
+            >
+              <option value="">— choisir —</option>
+              {framework.cercles.map((c) => (
+                <option key={c.identifiant} value={c.identifiant}>
+                  {c.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+          {cercleChoisi === '' ? null : (
+            <>
+              <p>
+                Booster actuel :{' '}
+                <strong>
+                  {cercleActuel?.booster === null || cercleActuel?.booster === undefined
+                    ? 'aucun'
+                    : `${cercleActuel.booster.prenom} ${cercleActuel.booster.nom}`}
+                </strong>
+                {boosterRecent === null ? null : (
+                  <>
+                    {' '}
+                    <Bouton
+                      onClick={() => {
+                        void retirerBooster();
+                      }}
+                      type="button"
+                      variante="secondaire"
+                    >
+                      Retirer
+                    </Bouton>
+                  </>
+                )}
+              </p>
+              <RecherchePersonne
+                code={code}
+                surChoix={(personId, libelle) => {
+                  void attribuerBooster(personId, libelle);
+                }}
+              />
+            </>
+          )}
+
+          <h5>Responsables d’un bureau</h5>
+          <label className="administration-champ">
+            Bureau
+            <select
+              onChange={(e) => {
+                setBureauChoisi(e.target.value);
+                setResponsablesRecents([]);
+              }}
+              value={bureauChoisi}
+            >
+              <option value="">— choisir —</option>
+              {framework.bureaux.map((b) => (
+                <option key={b.identifiant} value={b.identifiant}>
+                  {b.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+          {bureauChoisi === '' ? null : (
+            <>
+              <p>
+                Responsables actuels :{' '}
+                {(bureauActuel?.responsables.length ?? 0) === 0
+                  ? 'aucun'
+                  : bureauActuel?.responsables.map((r) => `${r.prenom} ${r.nom}`).join(', ')}
+              </p>
+              {responsablesRecents.length === 0 ? null : (
+                <ul>
+                  {responsablesRecents.map((r) => (
+                    <li key={r.affectation}>
+                      {r.libelle}{' '}
+                      <Bouton
+                        onClick={() => {
+                          void retirerResponsable(r.affectation);
+                        }}
+                        type="button"
+                        variante="secondaire"
+                      >
+                        Retirer
+                      </Bouton>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <RecherchePersonne
+                code={code}
+                surChoix={(personId, libelle) => {
+                  void attribuerResponsable(personId, libelle);
+                }}
+              />
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 /** Archiver et restaurer un cercle ou un bureau — `T4`, `US008`. */
 function SectionCerclesEtBureaux({ code }: { readonly code: string }): JSX.Element {
   const [framework, setFramework] = useState<PageFramework | null>(null);
@@ -954,6 +1494,18 @@ function SectionCerclesEtBureaux({ code }: { readonly code: string }): JSX.Eleme
       aria-labelledby="administration-cercles-et-bureaux-titre"
     >
       <h4 id="administration-cercles-et-bureaux-titre">Cercles et bureaux</h4>
+      <FormulaireCreationDeCercle
+        code={code}
+        onCree={() => {
+          setRechargements((p) => p + 1);
+        }}
+      />
+      <FormulaireCreationDeBureau
+        code={code}
+        onCree={() => {
+          setRechargements((p) => p + 1);
+        }}
+      />
       {erreur === null ? null : (
         <Alerte ton="erreur" urgence="alerte">
           {erreur}
@@ -1038,8 +1590,9 @@ export function SectionOrganisation({
 }): JSX.Element {
   const peutEcrire = peutEcrireSurUnCollaborateur(roles);
   const peutGererLaStructure = peutGererLeCycleDeVieDeLaStructure(roles);
+  const peutAttribuer = peutAttribuerUneResponsabiliteFramework(roles);
 
-  if (!peutEcrire && !peutGererLaStructure) {
+  if (!peutEcrire && !peutGererLaStructure && !peutAttribuer) {
     return <p>Votre rôle ne porte aucun droit d’écriture sur ce groupe.</p>;
   }
 
@@ -1049,6 +1602,7 @@ export function SectionOrganisation({
       {!peutEcrire ? null : <FormulaireChangementDEntite code={code} />}
       {!peutEcrire ? null : <SectionTransfertEnMasse code={code} />}
       {!peutGererLaStructure ? null : <SectionCerclesEtBureaux code={code} />}
+      {!peutAttribuer ? null : <SectionAttributionFramework code={code} />}
     </div>
   );
 }
