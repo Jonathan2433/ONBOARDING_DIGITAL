@@ -114,11 +114,7 @@
     "divergeraient au premier role ajoute (7.27), et le manifeste est",
     "precisement la source unique lue par TypeScript ET par Python (DEC-492)."
   ],
-  "rolesAdministration": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesAdministration": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_administration_onboarding": [
     "LOT 7, T14 -- UNE SECONDE raison d'afficher LA MEME rubrique, PAS UNE",
     "DERIVATION DE `rolesAdministration`. Question posee explicitement a",
@@ -145,21 +141,13 @@
     "Soi), et l'inclure rendrait la rubrique visible a TOUT LE MONDE, ce qui",
     "viderait le refus par defaut du 20.1 de son sens pour cette rubrique."
   ],
-  "rolesAdministrationOnboarding": [
-    "DSM",
-    "ESM",
-    "BOOST",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesAdministrationOnboarding": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
   "endpoints": [
     {
       "cle": "live",
       "chemin": "/health/live",
       "methode": "get",
-      "codesExploitables": [
-        200
-      ],
+      "codesExploitables": [200],
       "forme": "Vivacite",
       "role": "L'application repond. Ne sonde AUCUNE dependance (cahier 18.7)."
     },
@@ -167,10 +155,7 @@
       "cle": "ready",
       "chemin": "/health/ready",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        503
-      ],
+      "codesExploitables": [200, 503],
       "forme": "EtatServices",
       "role": [
         "Sonde reellement PostgreSQL, Redis et MinIO.",
@@ -184,9 +169,7 @@
       "cle": "version",
       "chemin": "/health/version",
       "methode": "get",
-      "codesExploitables": [
-        200
-      ],
+      "codesExploitables": [200],
       "forme": "Version",
       "role": "Version, revision et environnement du build en execution."
     },
@@ -194,9 +177,7 @@
       "cle": "racineVersionnee",
       "chemin": "/api/v1/",
       "methode": "get",
-      "codesExploitables": [
-        200
-      ],
+      "codesExploitables": [200],
       "forme": "Inconnue",
       "role": "Racine du contrat versionne. Vide au LOT 1 ; son contenu arrive au LOT 2."
     },
@@ -204,12 +185,7 @@
       "cle": "demandeDeMagicLink",
       "chemin": "/api/v1/auth/magic-link",
       "methode": "post",
-      "codesExploitables": [
-        202,
-        403,
-        429,
-        503
-      ],
+      "codesExploitables": [202, 403, 429, 503],
       "forme": "ReponseGenerique",
       "role": [
         "Demander un lien de connexion — LOT 3, T3, story MVP-L03-US001.",
@@ -235,11 +211,7 @@
       "cle": "consommationDeMagicLink",
       "chemin": "/api/v1/auth/magic-link/consommation",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        400,
-        403
-      ],
+      "codesExploitables": [200, 400, 403],
       "forme": "ReponseDeConsommation",
       "role": [
         "Consommer un lien de connexion — LOT 3, T4, story MVP-L03-US002.",
@@ -261,13 +233,7 @@
       "cle": "connexionAdministrateur",
       "chemin": "/api/v1/auth/connexion",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        400,
-        403,
-        429,
-        503
-      ],
+      "codesExploitables": [200, 400, 403, 429, 503],
       "forme": "ReponseDeConnexion",
       "role": [
         "Connexion d'un compte administrateur local — LOT 3, T5, story MVP-L03-US003.",
@@ -293,11 +259,7 @@
       "cle": "changementDeMotDePasse",
       "chemin": "/api/v1/auth/mot-de-passe",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        400,
-        403
-      ],
+      "codesExploitables": [200, 400, 403],
       "forme": "ReponseGenerique",
       "role": [
         "Changement du mot de passe administrateur — LOT 3, T5.",
@@ -312,10 +274,7 @@
       "cle": "sessionCourante",
       "chemin": "/api/v1/auth/session",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401
-      ],
+      "codesExploitables": [200, 401],
       "forme": "ReponseDeSession",
       "role": [
         "Lire la session courante — LOT 3, T6, story MVP-L03-US004.",
@@ -336,10 +295,7 @@
       "cle": "deconnexion",
       "chemin": "/api/v1/auth/deconnexion",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        403
-      ],
+      "codesExploitables": [200, 403],
       "forme": "ReponseGenerique",
       "role": [
         "Se deconnecter — LOT 3, T6.",
@@ -357,10 +313,7 @@
       "cle": "entitesDuPortail",
       "chemin": "/api/v1/entities",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401
-      ],
+      "codesExploitables": [200, 401],
       "forme": "ReponseDesEntites",
       "role": [
         "Lister les entites du portail national — LOT 4, T1, story MVP-L04-US001.",
@@ -389,13 +342,7 @@
       "cle": "creationDUneEntite",
       "chemin": "/api/v1/entities",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 409, 422],
       "forme": "ReponseDeCreationDEntite",
       "role": [
         "Creer une nouvelle entite depuis des modeles generiques -- LOT 9, T12,",
@@ -423,11 +370,7 @@
       "cle": "entiteConsultee",
       "chemin": "/api/v1/entities/{code}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "EntiteDuPortail",
       "role": [
         "Resoudre l'entite consultee — LOT 4, T2, story MVP-L04-US001.",
@@ -455,11 +398,7 @@
       "cle": "permissionsDeLEntite",
       "chemin": "/api/v1/entities/{code}/permissions",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "PermissionsDeLEntite",
       "role": [
         "Les droits de l'appelant DANS l'entite consultee — LOT 4, T8, story MVP-L04-US002.",
@@ -496,11 +435,7 @@
       "cle": "pageFramework",
       "chemin": "/api/v1/entities/{code}/framework",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDuFramework",
       "role": [
         "La vue synthetique du Framework — LOT 6, T2, story MVP-L06-US001.",
@@ -542,12 +477,7 @@
       "cle": "pageDuCercle",
       "chemin": "/api/v1/entities/{code}/circles/{code_cercle}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "ReponseDuCercle",
       "role": [
         "La page detaillee d'un cercle — LOT 6, T3, story MVP-L06-US002.",
@@ -592,11 +522,7 @@
       "cle": "pageDuBureau",
       "chemin": "/api/v1/entities/{code}/offices/{code_bureau}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDuBureau",
       "role": [
         "La page detaillee d'un bureau — LOT 6, T4, story MVP-L06-US003.",
@@ -630,13 +556,7 @@
       "cle": "archivageDUnCercle",
       "chemin": "/api/v1/entities/{code}/circles/{circle_id}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDArchivageDUnCercle",
       "role": [
         "Archiver un cercle -- LOT 9, T4, MVP-L09-US008.",
@@ -651,13 +571,7 @@
       "cle": "restaurationDUnCercle",
       "chemin": "/api/v1/entities/{code}/circles/{circle_id}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRestaurationDUnCercle",
       "role": [
         "Restaurer un cercle archive -- LOT 9, T4, MVP-L09-US008.",
@@ -673,13 +587,7 @@
       "cle": "archivageDUnBureau",
       "chemin": "/api/v1/entities/{code}/offices/{office_id}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDArchivageDUnBureau",
       "role": [
         "Archiver un bureau -- LOT 9, T4, MVP-L09-US008.",
@@ -693,13 +601,7 @@
       "cle": "restaurationDUnBureau",
       "chemin": "/api/v1/entities/{code}/offices/{office_id}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRestaurationDUnBureau",
       "role": [
         "Restaurer un bureau archive -- LOT 9, T4, MVP-L09-US008.",
@@ -713,11 +615,7 @@
       "cle": "pageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{type_de_page}/{slug}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDeLaPageDeContenu",
       "role": [
         "Le rendu des blocs d'une page de contenu — LOT 6, T5, MVP-L06-US004 (1/3).",
@@ -750,14 +648,7 @@
       "cle": "creationDUnePageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDeCreationDePage",
       "role": [
         "Creer une page de contenu, en BROUILLON — LOT 6, T6, MVP-L06-US004 (2/3).",
@@ -780,14 +671,7 @@
       "cle": "ecritureDuContenuDUnePage",
       "chemin": "/api/v1/entities/{code}/pages/{page}/contenu",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDEcritureDuContenu",
       "role": [
         "Remplacer le titre et les blocs d'une page — LOT 6, T6, MVP-L06-US004.",
@@ -821,12 +705,7 @@
       "cle": "pagesDeLEntitePourGestion",
       "chemin": "/api/v1/entities/{code}/pages/gestion",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDesPagesDeGestion",
       "role": [
         "Toutes les pages d'une entite, TOUS ETATS confondus — LOT 6, T10.",
@@ -847,12 +726,7 @@
       "cle": "pageDeContenuPourGestion",
       "chemin": "/api/v1/entities/{code}/pages/{page}/gestion",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDeLaPageDeContenuPourEdition",
       "role": [
         "Une page et ses blocs, TOUS ETATS confondus, avec sa version — T10.",
@@ -871,13 +745,7 @@
       "cle": "publicationDUnePageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{page}/publication",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDePublication",
       "role": [
         "Publier une page — LOT 6, T7, story MVP-L06-US006.",
@@ -901,13 +769,7 @@
       "cle": "archivageDUnePageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{page}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDArchivageDUnContenu",
       "role": [
         "Archiver une page — LOT 6, T7, matrice 13 « Archiver » et 18.",
@@ -930,13 +792,7 @@
       "cle": "restaurationDUnePageDeContenu",
       "chemin": "/api/v1/entities/{code}/pages/{page}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRestaurationDUnContenu",
       "role": [
         "Restaurer une page archivee — LOT 6, T7, matrice 18, ARB-DROIT-003.",
@@ -963,12 +819,7 @@
       "cle": "trombinoscopeDeLEntite",
       "chemin": "/api/v1/entities/{code}/people",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "ReponseDuTrombinoscope",
       "role": [
         "Le trombinoscope pagine d'une entite — LOT 5, T2, story MVP-L05-US001.",
@@ -1010,11 +861,7 @@
       "cle": "catalogueDesMetiers",
       "chemin": "/api/v1/entities/{code}/job-catalog",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDuCatalogueDesMetiers",
       "role": [
         "Le catalogue des metiers d'une entite — LOT 9, T14.",
@@ -1031,13 +878,7 @@
       "cle": "creationDUnCollaborateur",
       "chemin": "/api/v1/entities/{code}/people",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeCreationDeCollaborateur",
       "role": [
         "Creer manuellement un collaborateur — LOT 9, T2, MVP-L09-US002 (1/2).",
@@ -1060,14 +901,7 @@
       "cle": "changementDEntite",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/changement-d-entite",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeChangementDEntite",
       "role": [
         "Changer un collaborateur d'entite -- LOT 9, T3, MVP-L09-US002 (2/2).",
@@ -1089,13 +923,7 @@
       "cle": "previsualisationDuTransfertEnMasse",
       "chemin": "/api/v1/entities/{code}/people/transferts-en-masse/apercu",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDeTransfertEnMasse",
       "role": [
         "Previsualiser un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
@@ -1119,13 +947,7 @@
       "cle": "transfertEnMasse",
       "chemin": "/api/v1/entities/{code}/people/transferts-en-masse",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDeTransfertEnMasse",
       "role": [
         "Executer un transfert en masse -- LOT 9, T11, MVP-L09-US003.",
@@ -1147,14 +969,7 @@
       "cle": "modificationDesDonneesOrganisationnelles",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}",
       "methode": "patch",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeModification",
       "role": [
         "Modifier les donnees organisationnelles — LOT 5, T7, story MVP-L05-US006.",
@@ -1199,11 +1014,7 @@
       "cle": "ficheDuProfil",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "FicheDuProfil",
       "role": [
         "La fiche profil complete d'un collaborateur — LOT 5, T4, story MVP-L05-US004.",
@@ -1239,11 +1050,7 @@
       "cle": "photoDuProfil",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "octets",
       "role": [
         "La MINIATURE autorisee d'un collaborateur — LOT 5, T5, story MVP-L05-US005.",
@@ -1277,14 +1084,7 @@
       "cle": "archivageDUnProfil",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDArchivage",
       "role": [
         "Archiver un profil — LOT 5, T8, story MVP-L05-US007.",
@@ -1319,14 +1119,7 @@
       "cle": "restaurationDUnProfil",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeRestauration",
       "role": [
         "Reactiver un profil archive — LOT 5, T8, story MVP-L05-US007.",
@@ -1367,13 +1160,7 @@
       "cle": "ficheArchivee",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/fiche-archivee",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "FicheDuProfil",
       "role": [
         "Consulter un profil archive — LOT 5, T8, story MVP-L05-US007.",
@@ -1408,13 +1195,7 @@
       "cle": "historiqueOrganisationnel",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/historique",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDeLHistorique",
       "role": [
         "Consulter l'historique organisationnel — LOT 5, T9, story MVP-L05-US008.",
@@ -1471,11 +1252,7 @@
       "cle": "liensInternesDUneEntite",
       "chemin": "/api/v1/entities/{code}/liens",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDesLiensInternes",
       "role": [
         "Les liens internes ACTIFS d'une entite — LOT 6, T8, story MVP-L06-US005.",
@@ -1497,12 +1274,7 @@
       "cle": "gestionDesLiensInternes",
       "chemin": "/api/v1/entities/{code}/liens/gestion",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDesLiensInternes",
       "role": [
         "Tous les liens internes non archives — actifs ET inactifs. LOT 6, T8.",
@@ -1517,13 +1289,7 @@
       "cle": "creationDUnLienInterne",
       "chemin": "/api/v1/entities/{code}/liens",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "LienInterneServi",
       "role": [
         "Creer un lien interne — LOT 6, T8, story MVP-L06-US005.",
@@ -1554,13 +1320,7 @@
       "cle": "ordreDesLiensInternes",
       "chemin": "/api/v1/entities/{code}/liens/ordre",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDesLiensInternes",
       "role": [
         "Reordonner les liens internes — LOT 6, T8, modele §15.3.",
@@ -1583,14 +1343,7 @@
       "cle": "modificationDUnLienInterne",
       "chemin": "/api/v1/entities/{code}/liens/{lien}",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "LienInterneServi",
       "role": [
         "Modifier un lien interne, ou le DESACTIVER — LOT 6, T8, matrice §19.",
@@ -1612,12 +1365,7 @@
       "cle": "ficheDArrivee",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "FicheDArrivee",
       "role": [
         "La fiche d'arrivee en lecture — LOT 7, T2, cahier §9.4, modele §12.1.",
@@ -1643,13 +1391,7 @@
       "cle": "completionDeLaFicheArrivee",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile",
       "methode": "patch",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeCompletion",
       "role": [
         "Completer (brouillon) OU corriger (publiee) photo, presentation et fun",
@@ -1681,14 +1423,7 @@
       "cle": "validationDeLaFicheArrivee",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/arrival-profile/validation",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeValidation",
       "role": [
         "Valider et publier — LOT 7, T3, matrice §7.1, MVP-L07-US002. Ecriture pure,",
@@ -1710,13 +1445,7 @@
       "cle": "depotDUnePhoto",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeDepotDePhoto",
       "role": [
         "Deposer (ou remplacer) une photo de profil, en quarantaine — LOT 11, T2,",
@@ -1737,11 +1466,7 @@
       "cle": "droitsDePhoto",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/droits",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "DroitsDePhoto",
       "role": [
         "Commodite d'ecran, aucune ligne de matrice propre — LOT 11, T2. Dit si",
@@ -1754,12 +1479,7 @@
       "cle": "etatDUnMedia",
       "chemin": "/api/v1/entities/{code}/media/{media}/etat",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "EtatDUnMedia",
       "role": [
         "Suivre l'avancement du traitement d'un media depose — LOT 11, T2.",
@@ -1773,13 +1493,7 @@
       "cle": "autorisationPhoto",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/autorisation",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409],
       "forme": "ReponseDAutorisation",
       "role": [
         "Accorder l'autorisation d'affichage d'une photo — LOT 11, T2,",
@@ -1796,12 +1510,7 @@
       "cle": "retraitAutorisationPhoto",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/photo/autorisation/retrait",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDeRetrait",
       "role": [
         "Retirer TOUTES les autorisations actives d'affichage d'une photo — LOT 11,",
@@ -1814,12 +1523,7 @@
       "cle": "catalogueDesTachesOnboarding",
       "chemin": "/api/v1/entities/{code}/onboarding/task-references",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "CatalogueDeTaches",
       "role": [
         "Le catalogue des taches reutilisables — LOT 7, T4, matrice §9 « Reutiliser",
@@ -1835,13 +1539,7 @@
       "cle": "creationDUneTacheDeReference",
       "chemin": "/api/v1/entities/{code}/onboarding/task-references",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409],
       "forme": "TacheDeReference",
       "role": [
         "Creer une tache de reference — LOT 7, T4, matrice §9, ferme ECART-013.",
@@ -1865,12 +1563,7 @@
       "cle": "consultationDesModelesOnboarding",
       "chemin": "/api/v1/entities/{code}/onboarding/templates",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "PageDesModelesOnboarding",
       "role": [
         "Consulter les modeles GERES depuis cette entite — LOT 7, T14, l'ecran",
@@ -1894,13 +1587,7 @@
       "cle": "creationDUnModeleOnboarding",
       "chemin": "/api/v1/entities/{code}/onboarding/templates",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeModele",
       "role": [
         "Creer un modele d'onboarding — LOT 7, T5, matrice §9 « Creer un modele ».",
@@ -1919,12 +1606,7 @@
       "cle": "creationDUneVersionDeModele",
       "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [201, 401, 403, 404],
       "forme": "ReponseDeVersion",
       "role": [
         "Creer une nouvelle version brouillon — LOT 7, T5, matrice §9. Ecriture",
@@ -1940,14 +1622,7 @@
       "cle": "definitionDesTachesDUneVersion",
       "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/tasks",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDesTachesDeVersion",
       "role": [
         "Poser ou reordonner les taches d'une version — LOT 7, T5, matrice §9",
@@ -1966,13 +1641,7 @@
       "cle": "publicationDUneVersionDeModele",
       "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/publication",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDePublicationDeVersion",
       "role": [
         "Publier une version — LOT 7, T6, matrice §9 « Publier une version ».",
@@ -1987,13 +1656,7 @@
       "cle": "archivageDUneVersionDeModele",
       "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDArchivageDeVersion",
       "role": [
         "Archiver une version — LOT 7, T6, matrice §9 « Archiver une version ».",
@@ -2008,13 +1671,7 @@
       "cle": "restaurationDUneVersionDeModele",
       "chemin": "/api/v1/entities/{code}/onboarding/templates/{template_id}/versions/{version_id}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRestaurationDeVersion",
       "role": [
         "Restaurer une version — LOT 7, T6, matrice §9 « Restaurer une version »,",
@@ -2033,14 +1690,7 @@
       "cle": "affectationDUnParcours",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDuParcours",
       "role": [
         "Affecter un parcours — LOT 7, T7, matrice §8.1 « Affecter un parcours ».",
@@ -2057,12 +1707,7 @@
       "cle": "lectureDuParcours",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDuParcours",
       "role": [
         "Consulter le parcours — LOT 7, T7, matrice §8.1 « Consulter son",
@@ -2078,13 +1723,7 @@
       "cle": "completionDUneTacheDOnboarding",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/completion",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeTacheDuParcours",
       "role": [
         "Marquer une tache comme terminee — LOT 7, T8, matrice §8.1.",
@@ -2100,13 +1739,7 @@
       "cle": "annulationDeLaCompletionDUneTache",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/annulation",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeTacheDuParcours",
       "role": [
         "Annuler la completion d'une tache dans les cinq minutes — LOT 7, T8,",
@@ -2124,14 +1757,7 @@
       "cle": "reouvertureDUneTache",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/taches/{tache}/reouverture",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeTacheDuParcours",
       "role": [
         "Reouvrir une tache apres le delai de cinq minutes — LOT 7, T9,",
@@ -2151,13 +1777,7 @@
       "cle": "archivageManuelDUnParcours",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "InstanceDeParcours",
       "role": [
         "Archiver manuellement un parcours termine — LOT 7, T11, matrice §8.1.",
@@ -2178,13 +1798,7 @@
       "cle": "restaurationDUnParcours",
       "chemin": "/api/v1/entities/{code}/people/{appartenance}/onboarding-parcours/{instance}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "InstanceDeParcours",
       "role": [
         "Restaurer un parcours archive — LOT 7, T11, matrice §8.1,",
@@ -2205,12 +1819,7 @@
       "cle": "suiviDesTachesEnRetard",
       "chemin": "/api/v1/entities/{code}/onboarding-suivi/taches-en-retard",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "PageDeSuiviOnboarding",
       "role": [
         "Suivre les taches en retard dans son perimetre — LOT 7, T12, US008,",
@@ -2232,12 +1841,7 @@
       "cle": "lectureDesEvenements",
       "chemin": "/api/v1/entities/{code}/events",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "ReponseDesEvenements",
       "role": [
         "Consulter les evenements a venir ou passes — LOT 8, T2, US003 (1/2).",
@@ -2257,13 +1861,7 @@
       "cle": "creationDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeCreationDEvenement",
       "role": [
         "Creer un evenement, en BROUILLON — LOT 8, T3, US004 (1/3).",
@@ -2290,14 +1888,7 @@
       "cle": "modificationDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDEvenementEcrit",
       "role": [
         "Modifier un evenement — LOT 8, T4, US004 (2/3).",
@@ -2320,13 +1911,7 @@
       "cle": "publicationDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/publication",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDEvenementEcrit",
       "role": [
         "Publier un evenement — LOT 8, T4, US004 (2/3).",
@@ -2345,13 +1930,7 @@
       "cle": "annulationDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/annulation",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDAnnulationDEvenement",
       "role": [
         "Annuler un evenement — LOT 8, T5, US004 (3/3).",
@@ -2370,13 +1949,7 @@
       "cle": "archivageDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/archivage",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDArchivageDEvenement",
       "role": [
         "Archiver un evenement — LOT 8, T5, US004 (3/3).",
@@ -2393,13 +1966,7 @@
       "cle": "restaurationDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/restauration",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRestaurationDEvenement",
       "role": [
         "Restaurer un evenement archive — LOT 8, T5, US004 (3/3).",
@@ -2417,14 +1984,7 @@
       "cle": "gestionDesMediasDUnEvenement",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/medias",
       "methode": "put",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeGestionDesMediasDEvenement",
       "role": [
         "Remplacer la liste des medias d'un evenement — LOT 8, T6.",
@@ -2446,12 +2006,7 @@
       "cle": "arriveesRecentes",
       "chemin": "/api/v1/entities/{code}/arrivees-recentes",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "ReponseDesArriveesRecentes",
       "role": [
         "Consulter « Ils nous ont rejoints recemment » — LOT 8, T7, US002.",
@@ -2470,11 +2025,7 @@
       "cle": "accueilDUneEntite",
       "chemin": "/api/v1/entities/{code}/accueil",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDeLAccueil",
       "role": [
         "Consulter l'accueil d'une entite — LOT 8, T8, US001 (1/2), US006 (1/2).",
@@ -2499,12 +2050,7 @@
       "cle": "tableauDeBordAdministratif",
       "chemin": "/api/v1/entities/{code}/administration/tableau-de-bord",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDuTableauDeBord",
       "role": [
         "Consulter le tableau de bord administratif -- LOT 9, T5, MVP-L09-US001.",
@@ -2533,13 +2079,7 @@
       "cle": "depotDUnImport",
       "chemin": "/api/v1/entities/{code}/imports",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeDepotDImport",
       "role": [
         "Deposer un CSV et produire sa previsualisation -- LOT 9, T6/T7/T8,",
@@ -2570,12 +2110,7 @@
       "cle": "listeDesClients",
       "chemin": "/api/v1/entities/{code}/clients",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDesClients",
       "role": [
         "Le referentiel global des clients actifs, vu depuis une entite --",
@@ -2595,14 +2130,7 @@
       "cle": "enregistrerUneDecisionDImport",
       "chemin": "/api/v1/entities/{code}/imports/{lot}/rows/{ligne}/decisions",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDeDecision",
       "role": [
         "Enregistrer une decision humaine sur une ligne 'needs_decision' --",
@@ -2630,13 +2158,7 @@
       "cle": "lancerLImport",
       "chemin": "/api/v1/entities/{code}/imports/{lot}/lancement",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeLancement",
       "role": [
         "Lancer l'import transactionnel des lignes previsualisees -- LOT 9,",
@@ -2667,13 +2189,7 @@
       "cle": "rejouerUneLigneDImport",
       "chemin": "/api/v1/entities/{code}/imports/{lot}/rows/{ligne}/rejeu",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409],
       "forme": "ReponseDeRejeu",
       "role": [
         "Rejouer UNE ligne rejetee -- LOT 9, T10, MVP-L09-US006 (2/2).",
@@ -2694,12 +2210,7 @@
       "cle": "consulterLeRapportDImport",
       "chemin": "/api/v1/entities/{code}/imports/{lot}/rapport",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDeRapport",
       "role": [
         "Le rapport d'un lot d'import -- LOT 9, T10, MVP-L09-US006 (2/2),",
@@ -2722,12 +2233,7 @@
       "cle": "listeDesEvenementsPourGestion",
       "chemin": "/api/v1/entities/{code}/events/gestion",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDesEvenementsPourGestion",
       "role": [
         "Tous les evenements de l'entite, tous etats confondus — LOT 8, T10.",
@@ -2745,12 +2251,7 @@
       "cle": "lectureDUnEvenementPourGestion",
       "chemin": "/api/v1/entities/{code}/events/{evenement}/gestion",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDeLEvenementPourGestion",
       "role": [
         "Un evenement et ses rattachements, tous etats confondus, avec sa",
@@ -2769,13 +2270,7 @@
       "cle": "journalDAudit",
       "chemin": "/api/v1/entities/{code}/audit",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDuJournalDAudit",
       "role": [
         "Consulter le journal d'audit filtrable par perimetre — LOT 10, T8,",
@@ -2804,13 +2299,7 @@
       "cle": "exportDuJournalDAudit",
       "chemin": "/api/v1/entities/{code}/audit/export",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "octets",
       "role": [
         "Exporter le journal d'audit en CSV — LOT 10, T9, matrice §16",
@@ -2834,12 +2323,7 @@
       "cle": "indicateursDeReporting",
       "chemin": "/api/v1/entities/{code}/reporting",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDesIndicateurs",
       "role": [
         "Consulter les compteurs et repartitions du reporting etendu — LOT 10,",
@@ -2870,13 +2354,7 @@
       "cle": "detailOnboardingDuReporting",
       "chemin": "/api/v1/entities/{code}/reporting/onboarding",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDuDetailOnboarding",
       "role": [
         "Consulter le detail onboarding — LOT 10, T10, matrice §15.1",
@@ -2892,13 +2370,7 @@
       "cle": "profilsIncompletsEnDetail",
       "chemin": "/api/v1/entities/{code}/reporting/profils-incomplets",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDesProfilsIncomplets",
       "role": [
         "Consulter les profils incomplets en detail — LOT 10, T10, matrice",
@@ -2915,12 +2387,7 @@
       "cle": "signalerUnBug",
       "chemin": "/api/v1/bug-reports",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 422],
       "forme": "ReponseDuSignalement",
       "role": [
         "Signaler un bug depuis l'application — LOT 10, T11, cahier",
@@ -2948,12 +2415,7 @@
       "cle": "signalements",
       "chemin": "/api/v1/entities/{code}/bug-reports",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 404, 422],
       "forme": "ReponseDesSignalements",
       "role": [
         "Consulter les signalements, selon le perimetre resolu — LOT 10,",
@@ -2973,11 +2435,7 @@
       "cle": "historiqueDUnSignalement",
       "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/historique",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        404
-      ],
+      "codesExploitables": [200, 401, 404],
       "forme": "ReponseDeLHistorique",
       "role": [
         "Consulter l'historique d'un signalement — LOT 10, T12.",
@@ -2994,14 +2452,7 @@
       "cle": "changementDEtatDUnSignalement",
       "chemin": "/api/v1/entities/{code}/bug-reports/{signalement}/etat",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeChangementDEtat",
       "role": [
         "Modifier l'etat d'un signalement — LOT 10, T12, matrice §17",
@@ -3024,12 +2475,7 @@
       "cle": "alertes",
       "chemin": "/api/v1/alerts",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 422],
       "forme": "ReponseDesAlertes",
       "role": [
         "Consulter les alertes operationnelles — LOT 10, T13, matrice §17",
@@ -3047,29 +2493,15 @@
       "cle": "uneAlerte",
       "chemin": "/api/v1/alerts/{alerte}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "LigneDAlerteRendue",
-      "role": [
-        "Consulter une alerte precise — LOT 10, T13. Meme perimetre que `alertes`."
-      ]
+      "role": ["Consulter une alerte precise — LOT 10, T13. Meme perimetre que `alertes`."]
     },
     {
       "cle": "commentairesDUneAlerte",
       "chemin": "/api/v1/alerts/{alerte}/commentaires",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDesCommentaires",
       "role": [
         "Consulter les commentaires d'une alerte — LOT 10, T13.",
@@ -3083,13 +2515,7 @@
       "cle": "ajouterUnCommentaireAUneAlerte",
       "chemin": "/api/v1/alerts/{alerte}/commentaires",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 422],
       "forme": "ReponseDeCommentaireAjoute",
       "role": [
         "Commenter une alerte SANS changer son etat — LOT 10, T13, matrice",
@@ -3103,14 +2529,7 @@
       "cle": "acquittementDUneAlerte",
       "chemin": "/api/v1/alerts/{alerte}/acquittement",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeTransitionDAlerte",
       "role": [
         "Acquitter une alerte — LOT 10, T13, matrice §17 « Acquitter une",
@@ -3128,14 +2547,7 @@
       "cle": "resolutionDUneAlerte",
       "chemin": "/api/v1/alerts/{alerte}/resolution",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeTransitionDAlerte",
       "role": [
         "Resoudre une alerte — LOT 10, T13, matrice §17 « Resoudre ou",
@@ -3152,12 +2564,7 @@
       "cle": "demandesRGPD",
       "chemin": "/api/v1/data-subject-requests",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 422],
       "forme": "LigneDeDemandeRGPDRendue",
       "role": [
         "Receptionner une demande de droit RGPD — LOT 10, T14, cahier",
@@ -3174,12 +2581,7 @@
       "cle": "demandesRGPDEnListe",
       "chemin": "/api/v1/data-subject-requests",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 422],
       "forme": "ReponseDesDemandesRGPD",
       "role": [
         "Consulter les demandes de droit RGPD — LOT 10, T14. Meme",
@@ -3193,27 +2595,15 @@
       "cle": "uneDemandeRGPD",
       "chemin": "/api/v1/data-subject-requests/{demande}",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "LigneDeDemandeRGPDRendue",
-      "role": [
-        "Consulter une demande precise — LOT 10, T14. Meme perimetre que `demandesRGPD`."
-      ]
+      "role": ["Consulter une demande precise — LOT 10, T14. Meme perimetre que `demandesRGPD`."]
     },
     {
       "cle": "historiqueDUneDemandeRGPD",
       "chemin": "/api/v1/data-subject-requests/{demande}/historique",
       "methode": "get",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404
-      ],
+      "codesExploitables": [200, 401, 403, 404],
       "forme": "ReponseDeLHistoriqueRGPD",
       "role": [
         "Consulter l'historique d'une demande de droit RGPD — LOT 10,",
@@ -3225,14 +2615,7 @@
       "cle": "verificationIdentiteDUneDemandeRGPD",
       "chemin": "/api/v1/data-subject-requests/{demande}/verification-identite",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeTransitionRGPD",
       "role": [
         "Marquer l'identite du demandeur comme verifiee — LOT 10, T14,",
@@ -3247,14 +2630,7 @@
       "cle": "clotureDUneDemandeRGPD",
       "chemin": "/api/v1/data-subject-requests/{demande}/cloture",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDeTransitionRGPD",
       "role": [
         "Cloturer une demande de droit RGPD — LOT 10, T14, cahier §21.5",
@@ -3269,14 +2645,7 @@
       "cle": "creationDUnCercle",
       "chemin": "/api/v1/entities/{code}/circles",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDeCreationDeCercle",
       "role": [
         "Creer un cercle -- LOT 11, T3, hors backlog (fiche-lot-11.md 1.2).",
@@ -3291,14 +2660,7 @@
       "cle": "creationDUnBureau",
       "chemin": "/api/v1/entities/{code}/offices",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDeCreationDeBureau",
       "role": [
         "Creer un bureau -- LOT 11, T3, hors backlog.",
@@ -3310,14 +2672,7 @@
       "cle": "attributionDuBoosterDUnCercle",
       "chemin": "/api/v1/entities/{code}/circles/{circle_id}/booster",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
       "forme": "ReponseDAttributionDeBooster",
       "role": [
         "Affecter ou remplacer le Booster d'un cercle -- LOT 11, T3,",
@@ -3333,13 +2688,7 @@
       "cle": "retraitDuBoosterDUnCercle",
       "chemin": "/api/v1/entities/{code}/circles/{circle_id}/booster/retrait",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDeRetraitFramework",
       "role": [
         "Retirer le Booster d'un cercle, sans le remplacer -- LOT 11, T3.",
@@ -3351,14 +2700,7 @@
       "cle": "attributionDUnResponsableDeBureau",
       "chemin": "/api/v1/entities/{code}/offices/{office_id}/responsables",
       "methode": "post",
-      "codesExploitables": [
-        201,
-        401,
-        403,
-        404,
-        409,
-        422
-      ],
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
       "forme": "ReponseDAttributionDeResponsable",
       "role": [
         "Affecter un responsable de bureau -- LOT 11, T3, hors backlog.",
@@ -3372,13 +2714,7 @@
       "cle": "retraitDUnResponsableDeBureau",
       "chemin": "/api/v1/entities/{code}/offices/{office_id}/responsables/{affectation_id}/retrait",
       "methode": "post",
-      "codesExploitables": [
-        200,
-        401,
-        403,
-        404,
-        422
-      ],
+      "codesExploitables": [200, 401, 403, 404, 422],
       "forme": "ReponseDeRetraitFramework",
       "role": [
         "Retirer un responsable de bureau -- LOT 11, T3.",
@@ -3405,11 +2741,7 @@
     "l'autorite finale ». Cette liste sert a ne pas proposer un bouton qui serait",
     "refuse ; elle ne decide rien."
   ],
-  "rolesCycleDeVie": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesCycleDeVie": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_debit": [
     "LOT 3, T8 — LES SEUILS NE SONT PAS DANS CE CONTRAT, ET C'EST DELIBERE.",
     "Le §20.2 les ecrit, `app/auth/debit.py` les porte, et un test RELIT le cahier",
@@ -3430,11 +2762,7 @@
     "Les fusionner parce qu'elles coincident aujourd'hui ferait suivre l'une quand",
     "l'autre change, EN SILENCE."
   ],
-  "rolesRestaurationDUnContenu": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesRestaurationDUnContenu": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_restauration_modele_onboarding": [
     "LOT 7, T14 -- MEMES TROIS ROLES QUE `rolesRestaurationDUnContenu` ET",
     "`rolesCycleDeVie`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE DERIVATION.",
@@ -3447,11 +2775,7 @@
     "refuserait -- l'avertissement faux du 7.21. Confrontee a",
     "`ROLES_DE_RESTAURATION_DES_MODELES` (`app/onboarding/perimetre.py`)."
   ],
-  "rolesRestaurationDesModelesOnboarding": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesRestaurationDesModelesOnboarding": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_liens_internes": [
     "LOT 6, T8, story MVP-L06-US005. QUATRIEME GRILLE VOISINE DU LOT, ET LA",
     "PREMIERE QUI CONCORDE : le §13 « Gerer les cartes Hub/Academy/SharePoint »",
@@ -3460,11 +2784,7 @@
     "coincident aujourd'hui pour des raisons qui leur sont propres : les aliaser",
     "les ferait bouger ENSEMBLE le jour ou une seule de ces raisons change."
   ],
-  "rolesGestionDesLiensInternes": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesGestionDesLiensInternes": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_ecriture_editoriale": [
     "LOT 6, T10 -- ET C'EST UN TROU DEPUIS T6, PAS UN REPORT VOULU.",
     "Aucun ecran n'a consomme l'ecriture avant T10, et la discipline DEC-492 --",
@@ -3493,18 +2813,8 @@
     "editorial` reste seul a trancher la portee LOCALE (le Booster de CE cercle,",
     "pas de tous les cercles), qu'aucune cle de manifeste ne peut exprimer."
   ],
-  "rolesCreationDeContenu": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
-  "rolesEcritureEditoriale": [
-    "ESM",
-    "ADM-E",
-    "SUPER",
-    "BOOST",
-    "OFFICE"
-  ],
+  "rolesCreationDeContenu": ["ESM", "ADM-E", "SUPER"],
+  "rolesEcritureEditoriale": ["ESM", "ADM-E", "SUPER", "BOOST", "OFFICE"],
   "_commentaire_protocoles": [
     "DEC-587, et QO-120 est close. Le modele §15.3 et le cahier §13 ecrivent tous",
     "deux « les URL sont validees selon une liste de protocoles autorises » et NE",
@@ -3517,9 +2827,7 @@
     "ET UNE LISTE DE PROTOCOLES NE SUFFIT PAS : `https:alert(1)` a pour protocole",
     "`https` et n'adresse aucune ressource. L'API exige AUSSI un hote."
   ],
-  "protocolesDeLienAutorises": [
-    "https"
-  ],
+  "protocolesDeLienAutorises": ["https"],
   "_commentaire_gestion_des_evenements": [
     "LOT 8, T10 -- LA GRILLE COARSE DE L'ECRAN DE GESTION DES EVENEMENTS.",
     "SIX ROLES, CE N'EST PAS UNE COINCIDENCE -- c'est `ROLES_DE_CREATION_",
@@ -3540,14 +2848,7 @@
     "Confrontee a `ROLES_DE_CREATION_EVENEMENT` par un test Python, dans les",
     "deux sens -- la source unique de `DEC-492`."
   ],
-  "rolesGestionDesEvenements": [
-    "DSM",
-    "ESM",
-    "BOOST",
-    "OFFICE",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesGestionDesEvenements": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
   "_commentaire_restauration_evenement": [
     "LOT 8, T10 -- TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` ET",
     "`rolesRestaurationDUnContenu`, ET C'EST ENCORE UNE COINCIDENCE, PAS UNE",
@@ -3562,11 +2863,7 @@
     "Confrontee a `ROLES_DE_PORTEE_ENTITE` de `app/events/perimetre.py` par",
     "un test Python, dans les deux sens."
   ],
-  "rolesRestaurationDUnEvenement": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesRestaurationDUnEvenement": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_ecriture": [
     "LOT 9, T14 -- LA GARDE D'ECRITURE GENERALE SUR UN COLLABORATEUR.",
     "CINQ ROLES : c'est `ROLES_D_ECRITURE` de `app/permissions/perimetre.py`,",
@@ -3579,13 +2876,7 @@
     "`resoudre_l_autorisation_de_creation` qui tranche, jamais cette liste.",
     "Confrontee a `ROLES_D_ECRITURE` par un test Python, dans les deux sens."
   ],
-  "rolesEcriture": [
-    "DSM",
-    "ESM",
-    "BOOST",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesEcriture": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
   "_commentaire_cycle_de_vie_framework": [
     "LOT 9, T14 -- L'ARCHIVAGE ET LA RESTAURATION D'UN CERCLE OU D'UN BUREAU.",
     "TROIS ROLES, LES MEMES QUE `rolesCycleDeVie` (profil) ET",
@@ -3599,11 +2890,7 @@
     "Confrontee a `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK` par un test Python, dans",
     "les deux sens."
   ],
-  "rolesCycleDeVieFramework": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesCycleDeVieFramework": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_attribution_framework": [
     "LOT 11, T3 -- L'ATTRIBUTION DU BOOSTER ET DU RESPONSABLE DE BUREAU,",
     "hors backlog (fiche-lot-11.md 1.2).",
@@ -3617,10 +2904,7 @@
     "Confrontee a ROLES_D_ATTRIBUTION_FRAMEWORK par un test Python, dans",
     "les deux sens."
   ],
-  "rolesAttributionFramework": [
-    "ESM",
-    "SUPER"
-  ],
+  "rolesAttributionFramework": ["ESM", "SUPER"],
   "_commentaire_tableau_de_bord": [
     "LOT 9, T14 -- LA GARDE DU TABLEAU DE BORD ADMINISTRATIF (US001, T5).",
     "CINQ ROLES, OFFICE A TIRET : c'est `ROLES_DU_TABLEAU_DE_BORD` de",
@@ -3635,13 +2919,7 @@
     "Confrontee a `ROLES_DU_TABLEAU_DE_BORD` par un test Python, dans les",
     "deux sens."
   ],
-  "rolesTableauDeBord": [
-    "DSM",
-    "ESM",
-    "BOOST",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesTableauDeBord": ["DSM", "ESM", "BOOST", "ADM-E", "SUPER"],
   "_commentaire_depot_de_l_import": [
     "LOT 9, T14 -- CHARGER, LANCER ET REJOUER UN IMPORT CSV (matrice 14,",
     "« Charger un CSV » / « Lancer l'import »).",
@@ -3653,11 +2931,7 @@
     "Confrontee a `ROLES_DE_DEPOT_DE_L_IMPORT` par un test Python, dans les",
     "deux sens."
   ],
-  "rolesDepotDeLImport": [
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesDepotDeLImport": ["ESM", "ADM-E", "SUPER"],
   "_commentaire_validation_des_rapprochements": [
     "LOT 9, T14 -- VALIDER UN RAPPROCHEMENT DE CLIENT ET ENREGISTRER UNE",
     "DECISION D'IMPORT (US005, T8).",
@@ -3672,12 +2946,7 @@
     "Confrontee a `ROLES_DE_VALIDATION_DES_RAPPROCHEMENTS` par un test",
     "Python, dans les deux sens."
   ],
-  "rolesValidationDesRapprochements": [
-    "DSM",
-    "ESM",
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesValidationDesRapprochements": ["DSM", "ESM", "ADM-E", "SUPER"],
   "_commentaire_audit": [
     "LOT 10, T8/T9/T15 -- LE JOURNAL D'AUDIT EN LECTURE, SES DETAILS",
     "TECHNIQUES, SON EXPORT CSV (matrice 16).",
@@ -3690,22 +2959,9 @@
     "Confrontees aux trois constantes Python par un test, dans les deux",
     "sens."
   ],
-  "rolesDeLAudit": [
-    "DSM",
-    "ESM",
-    "BOOST",
-    "OFFICE",
-    "ADM-E",
-    "SUPER"
-  ],
-  "rolesDetailsTechniquesDeLAudit": [
-    "ADM-E",
-    "SUPER"
-  ],
-  "rolesExportDeLAudit": [
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesDeLAudit": ["DSM", "ESM", "BOOST", "OFFICE", "ADM-E", "SUPER"],
+  "rolesDetailsTechniquesDeLAudit": ["ADM-E", "SUPER"],
+  "rolesExportDeLAudit": ["ADM-E", "SUPER"],
   "_commentaire_traitement_des_signalements": [
     "LOT 10, T12/T15 -- MODIFIER L'ETAT D'UN SIGNALEMENT (matrice 17).",
     "DEUX ROLES SEULEMENT : c'est ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS de",
@@ -3716,10 +2972,7 @@
     "Confrontee a ROLES_DE_TRAITEMENT_DES_SIGNALEMENTS par un test Python,",
     "dans les deux sens."
   ],
-  "rolesTraitementDesSignalements": [
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesTraitementDesSignalements": ["ADM-E", "SUPER"],
   "_commentaire_traitement_des_alertes": [
     "LOT 10, T13/T15 -- ACQUITTER, COMMENTER, RESOUDRE UNE ALERTE",
     "(matrice 17).",
@@ -3731,10 +2984,7 @@
     "Confrontee a ROLES_DE_TRAITEMENT_DES_ALERTES par un test Python, dans",
     "les deux sens."
   ],
-  "rolesTraitementDesAlertes": [
-    "ADM-E",
-    "SUPER"
-  ],
+  "rolesTraitementDesAlertes": ["ADM-E", "SUPER"],
   "_commentaire_traitement_des_demandes_rgpd": [
     "LOT 10, T14/T15 -- RECEPTIONNER, VERIFIER, CLOTURER UNE DEMANDE RGPD.",
     "UNE SEULE GRILLE, GARDE LES SIX ROUTES (lecture ET ecriture) : c'est",
@@ -3746,8 +2996,5 @@
     "Confrontee a ROLES_DE_TRAITEMENT_DES_DEMANDES_RGPD par un test Python,",
     "dans les deux sens."
   ],
-  "rolesTraitementDesDemandesRGPD": [
-    "ADM-E",
-    "SUPER"
-  ]
+  "rolesTraitementDesDemandesRGPD": ["ADM-E", "SUPER"]
 }
