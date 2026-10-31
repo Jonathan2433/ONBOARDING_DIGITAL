@@ -43,6 +43,7 @@ from app.entities.routes import routeur_entites
 from app.events.routes import routeur_evenements
 from app.health import routeur as routeur_sante
 from app.imports.routes import routeur_imports
+from app.media.routes import routeur_media
 from app.onboarding.routes import routeur_onboarding
 from app.organization.routes import routeur_framework
 from app.people.routes import routeur_trombinoscope
@@ -162,6 +163,10 @@ def creer_application(parametres: Parametres | None = None) -> FastAPI:
     #  LOT 7, T2 : la fiche d'arrivee en lecture. Monte APRES le trombinoscope,
     #  dont elle reutilise la resolution d'entite et le gabarit de 404.
     routeur_v1.include_router(routeur_onboarding(config))
+    #  LOT 11, T2 : le depot et l'autorisation d'une photo de profil. Monte
+    #  APRES l'onboarding, dont elle reutilise `lire_la_fiche_arrivee` et les
+    #  permis de la fiche d'arrivee (§6.1, meme grille que §7).
+    routeur_v1.include_router(routeur_media(config))
     #  LOT 8, T2 : lecture paginee a venir/passee. Tous les roles authentifies
     #  lisent, y compris hors de leur entite principale (matrice §5 et §11).
     routeur_v1.include_router(routeur_evenements(config))
