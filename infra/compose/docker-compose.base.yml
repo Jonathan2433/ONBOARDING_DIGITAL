@@ -399,6 +399,15 @@ services:
       SESSION_ABSOLUTE_DAYS: ${SESSION_ABSOLUTE_DAYS}
       SERVICE_TOKEN_MAX_DAYS: ${SERVICE_TOKEN_MAX_DAYS}
       CSRF_PROTECTION_ENABLED: ${CSRF_PROTECTION_ENABLED}
+      # LOT 11, T4 — CINQ VARIABLES DE PLUS, DECLAREES DANS `.env.example` DEPUIS
+      # LE LOT 0 MAIS JAMAIS TRANSMISES, FAUTE DE CONSOMMATEUR AVANT CETTE
+      # SOUS-ETAPE. Meme classe que PUBLIC_BASE_URL a T3 du LOT 3 (§7.16 de la
+      # passation) : ce qui n'a jamais tourne n'est pas eprouve.
+      DEPARTURE_ARCHIVE_MONTHS: ${DEPARTURE_ARCHIVE_MONTHS}
+      JOB_STALLED_ALERT_MINUTES: ${JOB_STALLED_ALERT_MINUTES}
+      WORKER_ABSENT_ALERT_MINUTES: ${WORKER_ABSENT_ALERT_MINUTES}
+      UPTIME_KUMA_PUSH_URL: ${UPTIME_KUMA_PUSH_URL}
+      SCHEDULED_TASKS_INTERVAL_MINUTES: ${SCHEDULED_TASKS_INTERVAL_MINUTES}
     healthcheck:
       test:
         - CMD-SHELL
@@ -468,6 +477,24 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
+      # LOT 11, T4 — DEFAUT TROUVE EN CONSTRUISANT LA SOUS-ETAPE, CORRIGE AVANT
+      # COMMIT : `APP_SECRET_KEY` n'etait JAMAIS transmise au worker, alors que
+      # `OBLIGATOIRES` l'exige dans TOUS les environnements depuis `T7` du
+      # LOT 3. `worker.actors.relayer_l_outbox` (LOT 11 `T1`) portait deja ce
+      # defaut LATENT, jamais revele faute d'avoir ete reellement declenche par
+      # le worker lui-meme (son seul chemin reel passe par `BackgroundTasks`
+      # cote API, qui a DEJA ses propres `Parametres` charges). Le premier
+      # cycle reel de `executer_le_cycle_planifie` (cette sous-etape) l'a
+      # trouve immediatement : `ConfigurationInvalide` au demarrage du worker,
+      # dans les journaux reels. Meme classe que PUBLIC_BASE_URL a T3 du LOT 3
+      # (§7.16 de la passation).
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      # Les cinq variables de T4, meme raison que sur le service `api` ci-dessus.
+      DEPARTURE_ARCHIVE_MONTHS: ${DEPARTURE_ARCHIVE_MONTHS}
+      JOB_STALLED_ALERT_MINUTES: ${JOB_STALLED_ALERT_MINUTES}
+      WORKER_ABSENT_ALERT_MINUTES: ${WORKER_ABSENT_ALERT_MINUTES}
+      UPTIME_KUMA_PUSH_URL: ${UPTIME_KUMA_PUSH_URL}
+      SCHEDULED_TASKS_INTERVAL_MINUTES: ${SCHEDULED_TASKS_INTERVAL_MINUTES}
     healthcheck:
       test:
         - CMD-SHELL

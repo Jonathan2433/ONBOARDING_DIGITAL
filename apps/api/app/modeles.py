@@ -28,6 +28,7 @@ from app.media import modeles as media_modeles
 from app.onboarding import modeles as onboarding_modeles
 from app.organization import modeles as organization_modeles
 from app.people import modeles as people_modeles
+from app.scheduling import modeles as scheduling_modeles
 from app.shared.modele import Base, metadonnees
 
 #  Les modules sont references pour que les analyseurs ne les prennent pas pour
@@ -52,6 +53,8 @@ MODULES_DE_MODELES = (
     audit_modeles,
     #  LOT 11, T1 : les deux tables du socle asynchrone, `async_job`/`outbox_message`.
     jobs_modeles,
+    #  LOT 11, T4 : `scheduled_task_run`, l'historique des taches planifiees.
+    scheduling_modeles,
 )
 
 __all__ = ["MODULES_DE_MODELES", "Base", "metadonnees"]
