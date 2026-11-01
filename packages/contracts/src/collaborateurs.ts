@@ -106,6 +106,9 @@ export function cheminApercuDuTransfertEnMasse(code: string): string {
  * `professional_category` N'EST PAS UN CHAMP : elle vaut TOUJOURS `consultant`
  * côté service, la catégorie `dg` exigeant un geste séparé non exposé par
  * cette route (`attribuer_la_categorie_dg`).
+ *
+ * `metier` est FACULTATIF depuis `DEC-675` (LOT 11 `T5`) — le champ est
+ * rendu optionnel partout, jamais supprimé.
  */
 export interface DemandeDeCreationDeCollaborateur {
   readonly email: string;
@@ -113,7 +116,7 @@ export interface DemandeDeCreationDeCollaborateur {
   readonly nom: string;
   readonly nom_prefere?: string;
   readonly date_d_arrivee: string;
-  readonly metier: string;
+  readonly metier?: string | null;
   readonly statut: 'mission' | 'intercontract';
   readonly client?: string | null;
   readonly dsm?: string | null;
@@ -134,7 +137,7 @@ export interface DemandeDeChangementDEntite {
   readonly version: number;
   readonly entite_destination: string;
   readonly date_d_arrivee: string;
-  readonly metier: string;
+  readonly metier?: string | null;
   readonly statut: 'mission' | 'intercontract';
   readonly client?: string | null;
   readonly dsm?: string | null;

@@ -7,8 +7,11 @@ CE QUE CETTE SUITE PROUVE, ET DANS QUEL ORDRE
      portée `ENTITE`, et la portée `CONSULTANTS`/`CERCLE` exclut bien ce qui
      n'entre pas dans le périmètre de l'acteur ;
   2. « profil incomplet » est EXACTEMENT ce que l'arbitrage du 09/10/2026
-     dit — un profil `active` auquel il manque métier, cercle principal, DSM
-     ou statut, le client n'entrant jamais dans le calcul ;
+     dit — un profil `active` auquel il manque cercle principal, DSM ou
+     statut, le client n'entrant jamais dans le calcul. **Le métier en est
+     RETIRÉ depuis `DEC-675`** (LOT 11 `T5`, second arbitrage explicite) :
+     le champ étant redevenu facultatif partout, son absence seule n'est
+     plus comptée comme un manque ;
   3. « onboardings actifs » ne compte que les instances `active`, jamais
      `archived`/`replaced` ;
   4. « tâches en retard » est une RÉUTILISATION directe de
@@ -126,7 +129,10 @@ def _appartenance(
 def _completer_le_profil(
     cx: Connection, entite: uuid.UUID, appartenance: uuid.UUID, cercle: uuid.UUID
 ) -> None:
-    """Pose les QUATRE relations qui rendent un profil ACTIF complet."""
+    """Pose les TROIS relations comptees qui rendent un profil ACTIF complet,
+    plus un metier — pose par realisme, mais plus compte depuis `DEC-675`
+    (LOT 11 `T5`) : voir `test_un_metier_absent_seul_ne_rend_PLUS_un_profil_incomplet`.
+    """
     metier = _metier(cx, entite, f"M-{uuid.uuid4().hex[:6]}")
     debut = ANCRAGE - dt.timedelta(days=60)
     cx.execute(
@@ -294,7 +300,7 @@ def test_profils_incomplets_compte_un_profil_ACTIF_auquel_il_manque_une_relation
     complet = _appartenance(cx, entite, _personne(cx, "COMPLET"), etat="active")
     _completer_le_profil(cx, entite, complet, cercle)
 
-    #  Incomplet : AUCUNE des quatre relations posee.
+    #  Incomplet : AUCUNE des trois relations comptees n'est posee.
     _appartenance(cx, entite, _personne(cx, "NU"), etat="active")
 
     tableau = lire_le_tableau_de_bord(
@@ -308,6 +314,58 @@ def test_profils_incomplets_compte_un_profil_ACTIF_auquel_il_manque_une_relation
 
     assert tableau.profils_actifs == 2
     assert tableau.profils_incomplets == 1
+
+
+@pytest.mark.integration
+def test_un_metier_absent_seul_ne_rend_PLUS_un_profil_incomplet(cx: Connection) -> None:
+    """`DEC-675` (LOT 11 `T5`) : le metier n'est plus l'une des relations comptees.
+
+    Temoin POSITIF apparie au test precedent (negatif, §7.39) : un profil qui
+    porte les TROIS relations restantes (cercle principal, DSM, statut) mais
+    AUCUN metier n'est plus compte « incomplet » — avant ce retrait, il
+    l'aurait ete.
+    """
+    entite = _entite(cx, "ENT2-SANSMETIER")
+    acteur = _personne(cx, "ESM2-SANSMETIER")
+    cercle = _cercle(cx, entite, "C1")
+    debut = ANCRAGE - dt.timedelta(days=60)
+
+    sans_metier = _appartenance(cx, entite, _personne(cx, "SANSMETIER"), etat="active")
+    cx.execute(
+        text(
+            "INSERT INTO circle_membership (entity_id, entity_membership_id, circle_id, "
+            "membership_type, starts_at) VALUES (:e, :m, :c, 'principal', :d)"
+        ),
+        {"e": entite, "m": sans_metier, "c": cercle, "d": debut},
+    )
+    cx.execute(
+        text(
+            "INSERT INTO professional_status_assignment (entity_id, entity_membership_id, "
+            "status, starts_at) VALUES (:e, :m, 'intercontract', :d)"
+        ),
+        {"e": entite, "m": sans_metier, "d": debut},
+    )
+    dsm_personne = _personne(cx, "DSM2-SANSMETIER")
+    _dsm_responsable(cx, dsm_personne, entite)
+    cx.execute(
+        text(
+            "INSERT INTO dsm_assignment (entity_id, consultant_membership_id, dsm_person_id, "
+            "starts_at) VALUES (:e, :m, :d, :date)"
+        ),
+        {"e": entite, "m": sans_metier, "d": dsm_personne, "date": debut},
+    )
+
+    tableau = lire_le_tableau_de_bord(
+        cx,
+        entite=entite,
+        acteur=acteur,
+        roles=frozenset({RoleDeLaMatrice.ESM}),
+        perimetre=PerimetreDuTableauDeBord.ENTITE,
+        instant=ANCRAGE,
+    )
+
+    assert tableau.profils_actifs == 1
+    assert tableau.profils_incomplets == 0
 
 
 @pytest.mark.integration

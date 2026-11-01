@@ -129,8 +129,7 @@ describe('validerLesProfilsIncomplets', () => {
           person_id: 'p1',
           prenom: 'Nouvelle',
           nom: 'Arrivante',
-          metier_manquant: true,
-          cercle_principal_manquant: false,
+          cercle_principal_manquant: true,
           dsm_manquant: false,
           statut_manquant: false,
         },
@@ -140,7 +139,7 @@ describe('validerLesProfilsIncomplets', () => {
       total: 1,
       pages: 1,
     });
-    expect(resultat.elements[0]?.metierManquant).toBe(true);
+    expect(resultat.elements[0]?.cerclePrincipalManquant).toBe(true);
   });
 
   it('refuse une charge non objet', () => {

@@ -290,10 +290,12 @@ class DemandeDeCreationDeCollaborateur(BaseModel):
     separee, non exposee par ce depot. Toute creation par cette route est un
     `consultant`.
 
-    **`client` ACCEPTE `null`, SEUL DES SIX CHAMPS** : un statut `intercontract`
-    n'a pas de client, meme regle que `DemandeDeModification`. `dsm` est
-    FACULTATIF, absent par defaut — tous les consultants n'en recoivent pas un
-    a la creation.
+    **`client` ET `metier` ACCEPTENT `null`** : un statut `intercontract` n'a
+    pas de client, meme regle que `DemandeDeModification`. Le metier est
+    redevenu FACULTATIF partout (`DEC-675`, LOT 11 `T5`) — aucune ligne
+    `membership_job_assignment` n'est posee quand il est absent ou nul, meme
+    discipline que `dsm`, FACULTATIF et absent par defaut — tous les
+    consultants n'en recoivent pas un a la creation.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -303,7 +305,9 @@ class DemandeDeCreationDeCollaborateur(BaseModel):
     nom: str = Field(min_length=1, description="`last_name`")
     nom_prefere: str | None = Field(default=None, description="`preferred_name`, facultatif")
     date_d_arrivee: dt.date = Field(description="Cahier §10.2")
-    metier: uuid.UUID = Field(description="`job_catalog_id`")
+    metier: uuid.UUID | None = Field(
+        default=None, description="`job_catalog_id`, facultatif (`DEC-675`)"
+    )
     statut: SituationProfessionnelle = Field(description="§30.5")
     client: uuid.UUID | None = Field(
         default=None,
@@ -336,11 +340,13 @@ class MetierRendu(BaseModel):
 class ReponseDuCatalogueDesMetiers(BaseModel):
     """Les metiers ACTIFS et non archives d'une entite — LOT 9 `T14`.
 
-    Pose en construisant l'ecran back-office : `job_catalog_id` est un champ
-    obligatoire de la creation (`T2`) et du changement d'entite (`T3`) depuis
-    l'ouverture du lot, et aucune route n'en servait la liste jusqu'ici — un
-    formulaire ne peut pas proposer un choix dont il ne connait pas les
-    options. Meme motif que `GET .../templates`, pose par `T14` du LOT 7.
+    Pose en construisant l'ecran back-office : `job_catalog_id` etait alors un
+    champ obligatoire de la creation (`T2`) et du changement d'entite (`T3`),
+    et aucune route n'en servait la liste jusqu'ici — un formulaire ne peut
+    pas proposer un choix dont il ne connait pas les options. Meme motif que
+    `GET .../templates`, pose par `T14` du LOT 7. **Depuis `DEC-675` (LOT 11
+    `T5`), le metier est redevenu facultatif** — cette route reste utile pour
+    proposer un choix quand on veut en renseigner un.
     """
 
     metiers: list[MetierRendu]
@@ -365,7 +371,10 @@ class DemandeDeChangementDEntite(BaseModel):
         description="Le `code` de l'entite d'arrivee",
     )
     date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
-    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    metier: uuid.UUID | None = Field(
+        default=None,
+        description="`job_catalog_id`, dans l'entite d'arrivee, facultatif (`DEC-675`)",
+    )
     statut: SituationProfessionnelle
     client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
@@ -406,7 +415,10 @@ class ElementDeTransfertEnMasseRequete(BaseModel):
         description="Le `code` de l'entite d'arrivee",
     )
     date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
-    metier: uuid.UUID = Field(description="`job_catalog_id`, dans l'entite d'arrivee")
+    metier: uuid.UUID | None = Field(
+        default=None,
+        description="`job_catalog_id`, dans l'entite d'arrivee, facultatif (`DEC-675`)",
+    )
     statut: SituationProfessionnelle
     client: uuid.UUID | None = Field(default=None, description="`null` si `intercontract`")
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM, facultative")
@@ -471,13 +483,17 @@ class DemandeDeModification(BaseModel):
 
     **`CHAMP ABSENT` ET `CHAMP NUL` NE SONT PAS LA MEME CHOSE, ET LA BASE LE
     PROUVE.** Mesure du 09/09/2026 sur les six colonnes cibles : **seule**
-    `professional_status_assignment.client_id` est nullable. Un consultant en
-    intercontrat n'a pas de client, donc `client: null` est une valeur LEGITIME ;
-    un `metier: null` ne l'est pas, et la base le refuserait avec un message qui
-    ne dirait pas que la cause est une demande mal formee.
+    `professional_status_assignment.client_id` est nullable en base. Un
+    consultant en intercontrat n'a pas de client, donc `client: null` est une
+    valeur LEGITIME. **Depuis `DEC-675` (LOT 11 `T5`), `metier: null` l'est
+    aussi** — pas parce que `job_catalog_id` serait nullable (il ne l'est
+    pas), mais parce que `_ecrire_le_metier` clot l'affectation courante sans
+    en rouvrir quand la valeur demandee est `null`, exactement comme une
+    table d'historisation sans ligne active represente une absence.
 
-    `model_fields_set` distingue les deux, et un nul explicite sur les cinq
-    colonnes non nullables est refuse en `422` **avant** d'atteindre la base.
+    `model_fields_set` distingue absent et nul, et un nul explicite sur les
+    quatre colonnes restantes (hors `client`/`metier`) est refuse en `422`
+    **avant** d'atteindre la base.
 
     **`extra="forbid"` PLUTOT QUE L'IGNORANCE PAR DEFAUT.** Un client qui
     enverrait `presentation_courte` -- une ligne DISTINCTE du §6.1, hors du
@@ -495,14 +511,17 @@ class DemandeDeModification(BaseModel):
         ),
     )
     date_d_arrivee: dt.date | None = Field(default=None, description="Cahier §10.2")
-    metier: uuid.UUID | None = Field(default=None, description="`job_catalog_id`")
+    metier: uuid.UUID | None = Field(
+        default=None,
+        description=(
+            "`job_catalog_id`. `null` est une valeur LEGITIME depuis `DEC-675` : "
+            "clot l'affectation courante sans en rouvrir."
+        ),
+    )
     statut: SituationProfessionnelle | None = Field(default=None, description="§30.5")
     client: uuid.UUID | None = Field(
         default=None,
-        description=(
-            "`null` est une valeur LEGITIME : un intercontrat n'a pas de client. "
-            "C'est le seul des six champs dont la colonne soit nullable."
-        ),
+        description="`null` est une valeur LEGITIME : un intercontrat n'a pas de client.",
     )
     dsm: uuid.UUID | None = Field(default=None, description="La personne DSM")
     cercle_principal: uuid.UUID | None = Field(default=None, description="§8.2")
@@ -515,13 +534,21 @@ class DemandeDeModification(BaseModel):
 
 #  Les champs dont un `null` EXPLICITE est refuse, parce que leur colonne est
 #  `NOT NULL`. **DERIVE D'UNE MESURE, PAS D'UNE INTUITION** : les six colonnes
-#  ont ete lues dans `information_schema`, et `client_id` est la seule nullable.
+#  ont ete lues dans `information_schema`, et `client_id` est la seule nullable
+#  EN BASE. Le metier rejoint `client` depuis `DEC-675` (LOT 11 `T5`) — pas
+#  parce que `job_catalog_id` serait devenu nullable (il ne l'est pas,
+#  `membership_job_assignment` reste une table historisee sans ligne « sans
+#  metier », voir `app.people.ecriture._ecrire_le_metier`), mais parce qu'un
+#  `null` EXPLICITE y signifie desormais « clore sans rouvrir », une operation
+#  licite au lieu d'un refus.
 #
-#  Retirer une affectation sans la remplacer n'est pas « modifier » : ce serait
-#  cloturer sans ouvrir, et le §30.4 veut qu'un consultant actif AIT un DSM.
-#  L'operation existe peut-etre, mais elle n'est pas dans le §6.1 et donc pas ici.
+#  Retirer une affectation DSM sans la remplacer n'est pas « modifier » : ce
+#  serait cloturer sans ouvrir, et le §30.4 veut qu'un consultant actif AIT un
+#  DSM. L'operation existe peut-etre, mais elle n'est pas dans le §6.1 et donc
+#  pas ici.
 CHAMPS_SANS_NUL: Final[frozenset[ChampOrganisationnel]] = frozenset(ChampOrganisationnel) - {
-    ChampOrganisationnel.CLIENT
+    ChampOrganisationnel.CLIENT,
+    ChampOrganisationnel.METIER,
 }
 
 CODE_NUL_REFUSE: Final = "valeur_nulle_refusee"
