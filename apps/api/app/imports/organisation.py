@@ -129,7 +129,10 @@ CODE_CATEGORIE_INVALIDE: Final = "E-CAT-002"
 #  Metier — F11
 #  ===========================================================================
 
-CODE_METIER_ABSENT: Final = "E-METIER-001"
+#  `E-METIER-001` est RETIRE depuis `DEC-675` (LOT 11 `T5`) : le metier ne
+#  bloque plus jamais l'import, meme pour un profil actif. Code marque
+#  obsolete au referentiel (`codes-erreurs-import.md` §3.6/§7), jamais
+#  reutilise pour une autre regle.
 CODE_METIER_INCONNU_DU_CATALOGUE: Final = "D-METIER-001"
 
 #  ===========================================================================
@@ -271,10 +274,6 @@ TEXTES_ORGANISATION: Final[dict[str, tuple[str, str]]] = {
         "La catégorie professionnelle indiquée n'est pas reconnue.",
         "Utiliser une valeur de la liste contrôlée. Attention : un métier ou une "
         "responsabilité n'est pas une catégorie professionnelle.",
-    ),
-    CODE_METIER_ABSENT: (
-        "Le métier est absent alors que le profil est actif.",
-        "Renseigner le métier.",
     ),
     CODE_METIER_INCONNU_DU_CATALOGUE: (
         "Le métier indiqué est absent du catalogue de l'entité.",
@@ -432,7 +431,6 @@ NIVEAU_DU_CODE_ORGANISATION: Final[dict[str, str]] = {
     CODE_DEPART_PASSE: NIVEAU_AVERTISSEMENT,
     CODE_CATEGORIE_ABSENTE: NIVEAU_ERREUR,
     CODE_CATEGORIE_INVALIDE: NIVEAU_ERREUR,
-    CODE_METIER_ABSENT: NIVEAU_ERREUR,
     CODE_METIER_INCONNU_DU_CATALOGUE: NIVEAU_DECISION,
     CODE_PRESENTATION_ABSENTE: NIVEAU_AVERTISSEMENT,
     CODE_NOM_D_USAGE_IGNORE: NIVEAU_AVERTISSEMENT,
@@ -911,11 +909,14 @@ def valider_les_champs_organisationnels(
             p.append(Probleme(CODE_PRESENTATION_ABSENTE, "F09"))
 
         #  --- Metier ---
+        #  **`DEC-675` (LOT 11 `T5`) : LE METIER NE BLOQUE PLUS JAMAIS L'IMPORT,
+        #  MEME POUR UN PROFIL ACTIF.** `E-METIER-001` est retire (voir
+        #  l'en-tete, pres de `CODE_METIER_INCONNU_DU_CATALOGUE`). Une valeur
+        #  fournie reste resolue normalement, y compris son propre refus si
+        #  elle est inconnue du catalogue (`D-METIER-001`, decision humaine,
+        #  inchange).
         job_catalog_id: uuid.UUID | None = None
-        if f11 is None:
-            if profil_sera_actif:
-                p.append(Probleme(CODE_METIER_ABSENT, "F11"))
-        else:
+        if f11 is not None:
             job_catalog_id = metiers.get(f11)
             if job_catalog_id is None:
                 p.append(Probleme(CODE_METIER_INCONNU_DU_CATALOGUE, "F11", f11))

@@ -476,11 +476,21 @@ def _ecrire_le_metier(
     acteur: uuid.UUID,
     instant: dt.datetime,
 ) -> frozenset[ChampOrganisationnel]:
+    """Le metier est redevenu FACULTATIF -- `DEC-675`, LOT 11 `T5`.
+
+    `membership_job_assignment.job_catalog_id` reste `NOT NULL` en base : il
+    n'existe PAS de ligne « sans metier », exactement comme `dsm_assignment`/
+    `circle_membership` n'en ont jamais eu. Une demande `metier: null` CLOT
+    donc l'affectation courante sans en rouvrir -- elle n'insere jamais une
+    ligne a `job_catalog_id = NULL`, ce que la base refuserait.
+    """
     champ = ChampOrganisationnel.METIER
     if not _valeur_presente(demande, champ) or demande[champ] == etat["job_catalog_id"]:
         return frozenset()
     if etat["metier_id"] is not None:
         _fermer(connexion, "membership_job_assignment", etat["metier_id"], acteur, instant)
+    if demande[champ] is None:
+        return frozenset({champ})
     connexion.execute(
         text(
             "INSERT INTO membership_job_assignment "

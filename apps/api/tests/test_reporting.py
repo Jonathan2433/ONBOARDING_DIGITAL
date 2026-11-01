@@ -127,13 +127,6 @@ def _client(cx: Connection, entite: uuid.UUID, nom: str) -> uuid.UUID:
     return client  # type: ignore[no-any-return]
 
 
-def _metier(cx: Connection, entite: uuid.UUID, code: str) -> uuid.UUID:
-    return cx.execute(  # type: ignore[no-any-return]
-        text("INSERT INTO job_catalog (entity_id, code, label) VALUES (:e, :c, :l) RETURNING id"),
-        {"e": entite, "c": code, "l": code},
-    ).scalar_one()
-
-
 def _appartenance(
     cx: Connection,
     entite: uuid.UUID,
@@ -734,21 +727,14 @@ def test_detail_onboarding_sans_tache_rend_zero_zero(cx: Connection) -> None:
 
 
 @pytest.mark.integration
-def test_profils_incomplets_detail_rend_les_quatre_booleens(cx: Connection) -> None:
+def test_profils_incomplets_detail_rend_les_trois_booleens(cx: Connection) -> None:
+    """Le metier n'est plus l'un des booleens depuis `DEC-675` (LOT 11 `T5`)."""
     entite = _entite(cx, "ENT15")
     acteur = _personne(cx, "ESM15")
     cercle = _cercle(cx, entite, "C15")
 
     #  Il ne manque QUE le cercle principal.
     partiel = _appartenance(cx, entite, _personne(cx, "PARTIEL"))
-    metier = _metier(cx, entite, f"M-{uuid.uuid4().hex[:6]}")
-    cx.execute(
-        text(
-            "INSERT INTO membership_job_assignment (entity_id, entity_membership_id, "
-            "job_catalog_id, starts_at) VALUES (:e, :m, :j, :d)"
-        ),
-        {"e": entite, "m": partiel, "j": metier, "d": ANCRAGE - dt.timedelta(days=60)},
-    )
     cx.execute(
         text(
             "INSERT INTO professional_status_assignment (entity_id, entity_membership_id, "
@@ -763,18 +749,6 @@ def test_profils_incomplets_detail_rend_les_quatre_booleens(cx: Connection) -> N
     #  Complet : n'apparait pas dans la liste.
     complet = _appartenance(cx, entite, _personne(cx, "COMPLET"))
     _cercle_principal(cx, entite, complet, cercle)
-    cx.execute(
-        text(
-            "INSERT INTO membership_job_assignment (entity_id, entity_membership_id, "
-            "job_catalog_id, starts_at) VALUES (:e, :m, :j, :d)"
-        ),
-        {
-            "e": entite,
-            "m": complet,
-            "j": _metier(cx, entite, f"M2-{uuid.uuid4().hex[:6]}"),
-            "d": ANCRAGE - dt.timedelta(days=60),
-        },
-    )
     cx.execute(
         text(
             "INSERT INTO professional_status_assignment (entity_id, entity_membership_id, "
@@ -797,6 +771,5 @@ def test_profils_incomplets_detail_rend_les_quatre_booleens(cx: Connection) -> N
     assert page.total == 1
     assert page.elements[0].appartenance_id == partiel
     assert page.elements[0].cercle_principal_manquant is True
-    assert page.elements[0].metier_manquant is False
     assert page.elements[0].dsm_manquant is False
     assert page.elements[0].statut_manquant is False

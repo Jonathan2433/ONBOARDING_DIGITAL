@@ -201,7 +201,7 @@ function ChampsOrganisationnelsFormulaire({
         />
       </label>
       <label className="administration-champ">
-        Métier
+        Métier (facultatif)
         <select
           disabled={referentiels === null}
           onChange={(e) => {
@@ -209,7 +209,7 @@ function ChampsOrganisationnelsFormulaire({
           }}
           value={valeurs.metier}
         >
-          <option value="">— choisir —</option>
+          <option value="">— aucun —</option>
           {referentiels?.metiers.metiers.map((m) => (
             <option key={m.identifiant} value={m.identifiant}>
               {m.label}
@@ -291,10 +291,10 @@ function ChampsOrganisationnelsFormulaire({
   );
 }
 
+/** `metier` N'EST PLUS exigé — `DEC-675`, LOT 11 `T5` : rendu facultatif partout. */
 function champsCompletes(v: ChampsOrganisationnels): boolean {
   return (
     v.dateDArrivee !== '' &&
-    v.metier !== '' &&
     v.cerclePrincipal !== '' &&
     (v.statut === 'intercontract' || v.client !== '')
   );
@@ -320,7 +320,7 @@ function FormulaireCreationDeCollaborateur({ code }: { readonly code: string }):
       prenom,
       nom,
       date_d_arrivee: champs.dateDArrivee,
-      metier: champs.metier,
+      metier: champs.metier === '' ? null : champs.metier,
       statut: champs.statut,
       client: champs.statut === 'intercontract' ? null : champs.client,
       dsm: champs.dsm === '' ? null : champs.dsm,
@@ -475,7 +475,7 @@ function FormulaireChangementDEntite({ code }: { readonly code: string }): JSX.E
       version: cible.version,
       entite_destination: entiteDestination,
       date_d_arrivee: champs.dateDArrivee,
-      metier: champs.metier,
+      metier: champs.metier === '' ? null : champs.metier,
       statut: champs.statut,
       client: champs.statut === 'intercontract' ? null : champs.client,
       dsm: champs.dsm === '' ? null : champs.dsm,
@@ -686,7 +686,7 @@ function SectionTransfertEnMasse({ code }: { readonly code: string }): JSX.Eleme
         version: l.version,
         entite_destination: l.entiteDestination,
         date_d_arrivee: l.champs.dateDArrivee,
-        metier: l.champs.metier,
+        metier: l.champs.metier === '' ? null : l.champs.metier,
         statut: l.champs.statut,
         client: l.champs.statut === 'intercontract' ? null : l.champs.client,
         dsm: l.champs.dsm === '' ? null : l.champs.dsm,

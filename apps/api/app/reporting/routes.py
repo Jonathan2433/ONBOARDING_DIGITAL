@@ -119,13 +119,16 @@ class ReponseDuDetailOnboarding(BaseModel):
 
 
 class ProfilIncompletRendu(BaseModel):
-    """Une ligne de « Consulter les profils incomplets » — §15.1, le DETAIL."""
+    """Une ligne de « Consulter les profils incomplets » — §15.1, le DETAIL.
+
+    **LE METIER N'EN FAIT PLUS PARTIE DEPUIS `DEC-675`** (LOT 11 `T5`) : voir
+    `app.reporting.lecture.ProfilIncomplet`.
+    """
 
     appartenance_id: uuid.UUID
     person_id: uuid.UUID
     prenom: str
     nom: str
-    metier_manquant: bool
     cercle_principal_manquant: bool
     dsm_manquant: bool
     statut_manquant: bool
@@ -192,7 +195,6 @@ def _profil_incomplet_en_reponse(profil: ProfilIncomplet) -> ProfilIncompletRend
         person_id=profil.person_id,
         prenom=profil.first_name,
         nom=profil.last_name,
-        metier_manquant=profil.metier_manquant,
         cercle_principal_manquant=profil.cercle_principal_manquant,
         dsm_manquant=profil.dsm_manquant,
         statut_manquant=profil.statut_manquant,
