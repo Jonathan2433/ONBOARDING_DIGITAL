@@ -559,6 +559,8 @@ TABLES_DECLAREES = {
     # LOT 11, T1 — modele §20.1 a §20.2, le socle asynchrone
     "async_job",
     "outbox_message",
+    # LOT 11, T4 — modele §20.3, l'historique des taches planifiees
+    "scheduled_task_run",
 }
 
 

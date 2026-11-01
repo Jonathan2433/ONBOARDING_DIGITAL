@@ -19,6 +19,12 @@ dependencies = [
     "alembic>=1.18.5",
     "boto3>=1.43.57",
     "fastapi>=0.140.7",
+    #  LOT 11, T4 : le battement pousse vers Uptime Kuma (cahier §27) est le
+    #  PREMIER appel HTTP sortant de ce depot. `httpx` existait deja comme
+    #  dependance de DEVELOPPEMENT (racine, pour `TestClient`) : elle devient
+    #  ici une dependance de PRODUCTION, meme version epinglee, plutot que
+    #  d'installer `requests` pour un seul appel GET.
+    "httpx>=0.28.1",
     #  LOT 11, T2 : la verification de contenu reel et la generation des
     #  variantes (§16.1/§16.2) exigent un decodeur d'image. Premiere
     #  dependance de traitement d'image du projet — mesure du 06/09/2026

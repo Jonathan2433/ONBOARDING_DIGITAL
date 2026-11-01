@@ -60,9 +60,30 @@ RACINE = pathlib.Path(__file__).resolve().parents[2]
 #    `platform_setting`  reglages globaux, poses par provisionnement
 #    `allowed_email_domain`  pose par `make domaines-provision`, appele par
 #                            `make migrate` : sa presence est un ETAT VOULU
+#    `scheduled_task_run`  LOT 11, `T4` : le worker demarre sa boucle de
+#                          planification des son propre amorcage
+#                          (`DemarrerLaPlanification`, `after_worker_boot`),
+#                          et se reprogramme lui-meme toutes les
+#                          `SCHEDULED_TASKS_INTERVAL_MINUTES` -- CINQ par
+#                          defaut. La suite d'integration prend plusieurs
+#                          minutes : le worker, vivant PENDANT ce temps, y
+#                          ecrit des lignes REELLES, independamment de tout
+#                          test. Mesure le 01/11/2026 : 0 -> 12 lignes sur un
+#                          run de ~9,4 minutes (deux cycles complets). Ce
+#                          n'est PAS un residu de test -- aucun test de ce
+#                          depot n'ecrit ni ne lit cette table en dehors de
+#                          `test_taches_planifiees.py`, qui utilise le MEME
+#                          patron de transaction annulee que tout le reste de
+#                          la suite. C'est le MEME motif que
+#                          `allowed_email_domain` : une table peuplee par un
+#                          PROCESSUS d'infrastructure, jamais par un geste de
+#                          test, et dont le compte ne peut donc rien prouver
+#                          ni dans un sens ni dans l'autre.
 #
 #  Aucune autre exception : un test qui laisse une ligne ailleurs doit echouer.
-TABLES_HORS_COMPTE = frozenset({"alembic_version", "platform_setting", "allowed_email_domain"})
+TABLES_HORS_COMPTE = frozenset(
+    {"alembic_version", "platform_setting", "allowed_email_domain", "scheduled_task_run"}
+)
 
 
 def compter(compose: list[str], env: dict[str, str]) -> dict[str, int]:
