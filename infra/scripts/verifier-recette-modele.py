@@ -41,6 +41,30 @@ Les quatre annotations fautives dataient toutes d'avant que la roadmap ne
 fixe l'ordre des lots 10 a 13 (§2.1 de `fiche-lot-10.md`) : aucune n'a ete
 relue depuis. Verifiees contre la ROADMAP reelle, pas recopiees entre elles.
 
+`T7` du LOT 11 reclasse les TROIS controles que `T16` du LOT 10 avait
+reportes a ce lot, en reutilisant des temoins DEJA EXISTANTS, ecrits par
+`T1`, `T2` et `T4` de ce lot sans jamais etre confrontes au §30 :
+
+  - `§30.19` (jobs et idempotence) — DEUX temoins decisifs de `T1`/`T2`,
+    meme forme (`§7.39` de la passation) : un message d'outbox ou un job de
+    generation de variante, republie APRES un succes deja marque, ne rejoue
+    jamais son effet. Reclasse ACQUIS.
+  - `§30.21` (purge sans orphelin) — QUATRE temoins de `T4`, qui couvrent le
+    cycle complet : un media `ready` SANS reference est detecte orphelin ; un
+    media `ready` AVEC une autorisation active ne l'est jamais (negatif
+    apparie) ; un orphelin de plus de sept jours est VRAIMENT supprime de
+    MinIO (`lire_l_objet` leve ensuite) ; un orphelin de moins de sept jours
+    ne l'est pas encore. Reclasse ACQUIS.
+  - `§30.23` (anonymisation et durees de conservation) — QUATRE temoins de
+    `T4` : anonymisee apres plus de trois mois, jamais si encore active,
+    jamais si partie depuis moins de trois mois, et rejouer l'anonymisation
+    ne retouche jamais une personne deja anonymisee. Reclasse ACQUIS.
+
+Aucun des trois n'a exige de test nouveau : les neuf temoins cites existaient
+deja dans les comptes rendus de `T1`, `T2` et `T4`, jamais rapproches du §30
+avant cette relecture — meme discipline que `§30.20`/`§30.24` au LOT 10
+(`§7.27` de la passation, reutiliser plutot que reecrire).
+
 CE QUE CE CONTROLE PROUVE, ET POURQUOI IL EXISTE
 
   Le §30 du modele enumere 25 controles et pose : « le modele sera accepte si les
@@ -371,7 +395,21 @@ CLASSEMENT: dict[int, Classement] = {
         ),
         tests=("test_une_ligne_en_echec_n_empeche_pas_les_autres_d_etre_importees",),
     ),
-    19: Classement(19, REPORTE, lot="LOT 11 — jobs et idempotence"),
+    19: Classement(
+        19,
+        ACQUIS,
+        preuve=(
+            "LOT 11 `T1`/`T2` — DEUX temoins decisifs, meme forme : un message "
+            "d'outbox DEJA `succeeded` est republie (simule un relais interrompu entre "
+            "l'envoi reussi et le `UPDATE processed_at`) et ne renvoie PAS l'e-mail ; un "
+            "job de generation de variante DEJA `succeeded` est rejoue et ne genere PAS "
+            "une seconde variante (ni violation de la contrainte unique)"
+        ),
+        tests=(
+            "test_rejouer_le_relais_sur_un_message_deja_traite_ne_renvoie_pas_le_courriel",
+            "test_rejouer_le_job_sur_un_media_deja_traite_ne_regenere_pas_la_variante",
+        ),
+    ),
     20: Classement(
         20,
         ACQUIS,
@@ -386,7 +424,24 @@ CLASSEMENT: dict[int, Classement] = {
         ),
         tests=("test_un_echec_APRES_l_ecriture_annule_AUSSI_l_audit_event",),
     ),
-    21: Classement(21, REPORTE, lot="LOT 11 — purge sans orphelin"),
+    21: Classement(
+        21,
+        ACQUIS,
+        preuve=(
+            "LOT 11 `T4` — QUATRE temoins : un media `ready` SANS reference dans les "
+            "trois tables connues est detecte et archive comme orphelin ; un media "
+            "`ready` AVEC une autorisation ACTIVE ne l'est JAMAIS (negatif apparie, "
+            "`§7.39`) ; un orphelin de plus de sept jours est VRAIMENT supprime de "
+            "MinIO (`lire_l_objet` leve `ObjetIntrouvable` ensuite, pas seulement l'etat "
+            "`deleted` en base) ; un orphelin de moins de sept jours ne l'est pas encore"
+        ),
+        tests=(
+            "test_un_media_pret_sans_reference_est_archive_comme_orphelin",
+            "test_un_media_pret_avec_une_autorisation_active_n_est_jamais_archive",
+            "test_un_media_orphelin_depuis_plus_de_sept_jours_est_supprime_definitivement",
+            "test_un_media_orphelin_depuis_moins_de_sept_jours_n_est_pas_encore_supprime",
+        ),
+    ),
     22: Classement(
         22,
         ACQUIS,
@@ -410,7 +465,24 @@ CLASSEMENT: dict[int, Classement] = {
             "test_UNE_TRANSITION_HORS_24_1_est_REFUSEE",
         ),
     ),
-    23: Classement(23, REPORTE, lot="LOT 11 — anonymisation et durees de conservation"),
+    23: Classement(
+        23,
+        ACQUIS,
+        preuve=(
+            "LOT 11 `T4` — QUATRE temoins sur `DEPARTURE_ARCHIVE_MONTHS` (3 mois) : "
+            "une personne partie depuis PLUS de trois mois est anonymisee ; une "
+            "personne TOUJOURS active ne l'est jamais ; une personne partie depuis "
+            "MOINS de trois mois ne l'est pas encore (bornes mesurees, pas supposees) ; "
+            "et rejouer l'anonymisation ne retouche JAMAIS une personne deja anonymisee "
+            "(idempotence, meme forme que `§30.19`)"
+        ),
+        tests=(
+            "test_une_personne_partie_depuis_plus_de_trois_mois_est_anonymisee",
+            "test_une_personne_toujours_active_n_est_pas_anonymisee",
+            "test_une_personne_partie_depuis_moins_de_trois_mois_n_est_pas_anonymisee",
+            "test_rejouer_l_anonymisation_ne_retouche_jamais_une_personne_deja_anonymisee",
+        ),
+    ),
     24: Classement(
         24,
         ACQUIS,
