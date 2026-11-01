@@ -150,7 +150,26 @@ chaque simple import dans les tests). Il vient du nouveau middleware `DemarrerLa
 (`worker.amorcage`), sur le crochet `after_worker_boot` de Dramatiq — invoqué par le PROCESSUS
 worker réel, jamais par une importation de test.
 
-## 2.6 Deux défauts trouvés en construisant, corrigés avant commit
+## 2.6 Un troisième défaut, trouvé par la CI elle-même après l'ouverture de la pull request
+
+**`make residu-check` a échoué sur la pull request** (`#316`) : `scheduled_task_run` passait de
+0 à 12 lignes pendant la suite d'intégration (~9,4 minutes), alors qu'aucun test de ce dépôt ne
+laisse jamais de résidu dans cette table — `test_taches_planifiees.py` emploie le MÊME patron de
+transaction annulée que toute la suite. La cause réelle : le WORKER, démarré par `make up` comme les
+sept autres services, exécute sa boucle de planification pendant TOUTE la durée de la suite —
+`SCHEDULED_TASKS_INTERVAL_MINUTES=5` par défaut, deux cycles complets tiennent largement dans
+9,4 minutes, et chaque cycle écrit six lignes réelles (`0 -> 12`, exactement deux cycles).
+
+**Ce n'est pas un résidu de test** : c'est le MÊME motif qu'`allowed_email_domain`, déjà exclu du
+comptage — une table peuplée par un PROCESSUS d'infrastructure (ici, continûment, par la boucle du
+worker), jamais par un geste de test, dont le compte ne peut donc rien prouver ni dans un sens ni
+dans l'autre. `scheduled_task_run` rejoint `TABLES_HORS_COMPTE` dans
+`infra/scripts/verifier-residu.py`, avec le raisonnement tracé en commentaire. Aucune autre table
+n'a bougé pendant ce même run : la boucle réelle du worker, sur une base de CI vierge (sans jeu de
+démonstration), ne trouve rien à traiter sur les cinq autres tâches — seul `scheduled_task_run`
+porte la preuve que le cycle a bien eu lieu.
+
+## 2.7 Deux défauts trouvés en construisant, corrigés avant commit
 
 **`APP_SECRET_KEY` n'était jamais transmise au worker** dans `docker-compose.base.yml`, défaut
 LATENT depuis `T1` du LOT 11 : `worker.actors.relayer_l_outbox` appelle déjà `parametres_en_cache()`
