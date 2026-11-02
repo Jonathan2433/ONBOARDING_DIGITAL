@@ -4,9 +4,10 @@
 **Épic :** `MVP-L11` — issues GitHub à créer (aucune n'existe encore pour ce lot, mesuré le
 30/10/2026 : `gh issue list --search "MVP-L11"` ne rend rien)
 **Ouvert par Jonathan le :** 30 octobre 2026 (`DEC-674`)
-**État :** OUVERT — découpage en **SEPT** sous-étapes validé par Jonathan le 30/10/2026,
-regroupé à sa demande pour accélérer (découpage initial à 15 sous-étapes compilé en 7)
-**Sous-étape suivante :** `T1`
+**État :** TECHNIQUEMENT COMPLET — `T1` à `T5` faites, `T6` vide et fusionnée avec `T7` (§3,
+clause de contingence), `T7` faite (`DEC-681`, recette de clôture) ; `G11` attend la validation
+explicite de Jonathan
+**Sous-étape suivante :** aucune — `G11` est la seule étape restante
 **Porte de sortie :** `G11`
 
 > Tous les nombres de cette fiche sont dérivés des sources citées. Recompter avant de les
