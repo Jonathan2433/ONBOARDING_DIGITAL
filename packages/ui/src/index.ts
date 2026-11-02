@@ -40,11 +40,13 @@
  *   et `CaseACocher` arrivent ; `Onglets` et `CarteRetournable` EXISTAIENT DEJA
  *   et sont etendus plutot que recrees.
  *
- *   **AUCUN ECRAN NE LES EMPLOIE AVANT `E5`**, ce qui s'ecarte de la discipline
- *   d'`Onglets` entre `S1` et `S2` — un composant expose ici devait etre employe
- *   par un ecran (critere `T11` du LOT 1). L'instruction de `E3` est d'exposer
- *   les composants de la charte, et c'est elle qui est suivie ; l'ecart est
- *   nomme plutot que tu.
+ *   **AUCUN DES SEPT NOUVEAUX N'EST OUVERT PAR CE BARILLET, ET C'EST MESURE.**
+ *   `E3` les avait exposes sur la foi de son instruction (« exporte-les depuis
+ *   `index.ts` ») en NOMMANT l'ecart plutot qu'en le soumettant ; `make
+ *   cadre-check` l'a refuse, parce que le critere de `T11` du LOT 1 exige qu'un
+ *   composant expose soit EMPLOYE par un ecran. Arbitrage de Jonathan du
+ *   02/11/2026 : la porte attend `E5`, qui pose chaque composant a l'ecran et
+ *   rouvre sa ligne dans le meme geste. Voir le bloc correspondant plus bas.
  *
  * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-681`)
  *
@@ -96,25 +98,24 @@ export type { NiveauTitre, ProprietesCarte, VarianteCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
 //  Chantier design systeme v2, E3 (`DEC-681`) — les composants de la charte 5.
-//  `Picto` les rejoint ici : `E2` l'avait volontairement laisse hors du barillet
-//  faute de consommateur, et l'instruction de `E3` est d'exposer les composants
-//  de la charte. Leurs consommateurs arrivent a `E5`.
-export { Avatar, initiales } from './Avatar.js';
-export type { ProprietesAvatar, TailleAvatar } from './Avatar.js';
-export { CaseACocher } from './CaseACocher.js';
-export type { ProprietesCaseACocher } from './CaseACocher.js';
-export { Champ } from './Champ.js';
-export type { ProprietesChamp } from './Champ.js';
-export { Liste } from './Liste.js';
-export type { ProprietesListe } from './Liste.js';
-export { Pastille } from './Pastille.js';
-export type { ProprietesPastille } from './Pastille.js';
-export { Picto } from './Picto.js';
-export type { ProprietesPicto, TaillePicto } from './Picto.js';
-export { PICTOS } from './pictos.js';
-export type { ClePicto, DefinitionDePicto } from './pictos.js';
-export { Progression } from './Progression.js';
-export type { ProprietesProgression } from './Progression.js';
+//
+//  **LA PORTE EST FERMEE JUSQU'A `E5`, SUR ARBITRAGE DE JONATHAN DU 02/11/2026.**
+//  Le critere de `T11` du LOT 1 — « chaque composant livre est EMPLOYE par un
+//  ecran » — est tenu par `make cadre-check`, qui a refuse les huit lignes que
+//  `E3` avait ecrites ici. Rien n'est retire : `Avatar`, `CaseACocher`, `Champ`,
+//  `Liste`, `Pastille`, `Picto`, `Progression` et la table `PICTOS` vivent dans
+//  ce paquet et restent eprouves par `composantsCharte5.test.tsx` et
+//  `pictos.test.ts`. Seule leur porte attend l'ecran qui s'en sert.
+//
+//  C'est la discipline deja tenue DEUX FOIS par ce depot : `Onglets` entre `S1`
+//  et `S2`, puis `Picto` a `E2`, qui l'avait volontairement laisse hors du
+//  barillet avant que `E3` ne l'y mette. **`E5` rouvre chaque ligne en meme
+//  temps qu'il pose le composant**, et le controle passera alors de lui-meme.
+//
+//  `ClePicto` RESTE expose, et il n'y a pas d'exception a la regle : c'est un
+//  TYPE, aucun composant, et `apps/web/src/affichage.ts` l'emploie depuis `E4`
+//  pour dire quel pictogramme porte un cercle.
+export type { ClePicto } from './pictos.js';
 //  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
 export { Onglets } from './Onglets.js';
 export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';

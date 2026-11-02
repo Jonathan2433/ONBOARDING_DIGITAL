@@ -777,8 +777,38 @@ def main() -> int:
     #  ecran. Trois seulement l'etaient -- `Bouton`, par les ecrans
     #  d'authentification. Le controle existe pour que cela ne se reproduise pas.
     source_index = (UI / "index.ts").read_text(encoding="utf-8")
+    #  **UN COMPOSANT EST UN NOM PASCALCASE EXPORTE DEPUIS UN MODULE `.tsx`.**
+    #  La definition est DERIVEE du disque, jamais ecrite -- §7.27.
+    #
+    #  La premiere version cherchait `export { Nom } from './...'` avec UN SEUL
+    #  nom entre accolades. Exacte pour son mode de defaillance, AVEUGLE a deux
+    #  autres (§7.31), tous deux mesures le 02/11/2026 sur la refonte v2 :
+    #
+    #    . `export { Avatar, initiales } from './Avatar.js';` n'etait PAS vu, la
+    #      virgule suffisant a sortir la ligne du motif. Un vrai composant sans
+    #      ecran echappait donc au controle EN SILENCE, et c'est precisement ce
+    #      que ce controle existe pour attraper ;
+    #    . `export { PICTOS } from './pictos.js';` l'etait, alors que c'est une
+    #      TABLE de courbes. Jamais rendue en `<PICTOS`, elle aurait ete « non
+    #      testee » a jamais quoi qu'on ecrive -- un faux positif permanent, et
+    #      un garde-fou a faux positifs apprend a passer outre (§7.25).
+    #
+    #  L'extension du module tranche les deux d'un seul coup : un composant a un
+    #  `.tsx`, une table de donnees a un `.ts`. Le repertoire est LU et non
+    #  interroge par `exists()`, parce que le systeme de fichiers de cette
+    #  machine est INSENSIBLE A LA CASSE (§7.12) : `(UI / "PICTOS.tsx").exists()`
+    #  y repondrait oui, sur `Picto.tsx`.
+    modules_tsx = {chemin.name for chemin in UI.iterdir() if chemin.suffix == ".tsx"}
     composants = sorted(
-        set(re.findall(r"^export \{ ([A-Z][A-Za-z]*) \} from '\./", source_index, flags=re.M))
+        {
+            nom.strip()
+            for noms, module in re.findall(
+                r"^export \{([^}]*)\} from '\./([A-Za-z]+)\.js';", source_index, flags=re.M
+            )
+            if f"{module}.tsx" in modules_tsx
+            for nom in noms.split(",")
+            if nom.strip()[:1].isupper()
+        }
     )
     tests_ui = " ".join(
         chemin.read_text(encoding="utf-8") for chemin in sorted(UI.glob("*.test.tsx"))
