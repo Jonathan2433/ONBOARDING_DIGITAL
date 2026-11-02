@@ -110,7 +110,7 @@ export const MARQUE = {
 } as const satisfies Record<string, CoupleColore>;
 
 /**
- * Les quatre teintes — fonds de tuiles, badges doux, cercles en teinte.
+ * Les teintes — fonds de tuiles, badges doux, cercles en teinte.
  *
  * Elles portent toutes le bleu fonce de titre, mesure de 8,81 a 9,76. La teinte
  * rose accepte AUSSI l'encre (14,32), que la charte 2 nomme en second : les deux
@@ -126,6 +126,23 @@ export const TEINTES = {
   rose: { surface: '#FFE4F2', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
   jaune: { surface: '#FFF7D6', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
   gris: { surface: '#F5F5F5', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
+  /**
+   * MEME SURFACE QUE `gris`, MAIS UN TEXTE SOURD — le ton « annule » de la
+   * charte 5, ajoute par `E3`.
+   *
+   * La charte ecrit « annule (gris/encre-douce) ». `--encre-douce` BASCULE avec
+   * le theme, et cette surface NON : en sombre, `#A1A1AA` sur `#F5F5F5` rend
+   * **2,35:1** — exactement le defaut que `E1` a corrige sur les huit cercles.
+   * Le texte est donc un LITTERAL, et la regle structurelle de ce fichier tient :
+   * une surface qui ne bascule pas porte un texte qui ne bascule pas.
+   *
+   * **4,55:1, soit 0,05 au-dessus du seuil.** C'est la marge la plus fine de
+   * toute la palette, et elle est voulue : un badge fait 13px GRAS, ce que WCAG
+   * ne classe PAS en « grand texte » (il faut 18,66px gras), donc le seuil
+   * applicable est bien 4,5 et non 3. Assombrir le texte le rendrait moins
+   * sourd, ce qui est tout le sens de ce ton.
+   */
+  grisSourd: { surface: '#F5F5F5', texte: '#6E6E85', seuil: SEUIL_AA_TEXTE_NORMAL },
 } as const satisfies Record<string, CoupleColore>;
 
 /**
@@ -274,10 +291,35 @@ export const OMBRES = {
  * forme `outline` est retenue : elle est celle que la charte specifie, elle ne
  * participe pas au flux, et elle survit a `overflow: hidden`.
  *
- * La couleur est le bleu de marque a 45 % — #5853FF vaut rgb(88 83 255).
+ * **LA TRANSPARENCE DE 45 % DE LA CHARTE A ETE RETIREE, SUR ARBITRAGE EXPLICITE
+ * DE JONATHAN (02/11/2026), ET LA MESURE EST LA RAISON.**
+ *
+ *   Un `outline` semi-transparent prend la couleur de ce qu'il recouvre. Compose
+ *   sur les fonds reels, `rgb(88 83 255 / 45%)` donne :
+ *
+ *     #A3A0FF sur une surface claire  ->  2,33:1
+ *     #423F9F sur une surface sombre  ->  1,73:1
+ *
+ *   WCAG 2.2 AA, critere 1.4.11, exige **3:1** pour un indicateur de focus. Les
+ *   deux echouent, et c'est le SEUL repere de position pour qui navigue au
+ *   clavier. Le cahier 14 fait de WCAG AA une exigence dure, et la regle de
+ *   preseance du projet donne le cahier gagnant.
+ *
+ *   Le trait est donc OPAQUE, et il bascule : bleu de marque en theme clair
+ *   (5,13:1), `--titre` en theme sombre (7,44:1). C'est la meme regle que pour
+ *   le texte bleu du bouton discret et le remplissage de `Progression` — sur un
+ *   fond sombre, le bleu d'accent est `--titre`, jamais `--marque-bleu`, qui n'y
+ *   rend que 2,91:1.
+ *
+ *   **CE N'EST PAS UNE CORRECTION GRATUITE DE L'EXISTANT** : le depot employait
+ *   deja un trait opaque `var(--marque-bleu)` partout depuis le LOT 1 — juste en
+ *   theme clair, et en echec en sombre depuis `S9`. Ce jeton corrige les deux.
+ *
+ * Ecart avec la charte 1.6 a consigner (`E7`).
  */
 export const ANNEAU_FOCUS = {
-  trait: '3px solid rgb(88 83 255 / 45%)',
+  trait: `3px solid ${MARQUE.bleu.surface}`,
+  traitSombre: `3px solid ${THEMES.sombre.titre}`,
   decalage: '2px',
 } as const;
 

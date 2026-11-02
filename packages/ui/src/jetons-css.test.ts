@@ -127,6 +127,8 @@ const ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--teinte-jaune-texte', TEINTES.jaune.texte],
   ['--teinte-gris', TEINTES.gris.surface],
   ['--teinte-gris-texte', TEINTES.gris.texte],
+  ['--teinte-gris-sourd', TEINTES.grisSourd.surface],
+  ['--teinte-gris-sourd-texte', TEINTES.grisSourd.texte],
 
   //  LES HUIT CERCLES, SURFACE ET TEXTE. C'est ce couple-la que la charte
   //  fournie ecrivait en `var(--encre)` / `var(--titre)` : six cercles sur huit
@@ -223,6 +225,10 @@ const SOMBRE_ATTENDUS: ReadonlyArray<readonly [string, string]> = [
   ['--trait-fort', THEMES.sombre.traitFort],
   ['--ok', THEMES.sombre.ok],
   ['--ko', THEMES.sombre.ko],
+  //  ONZIEME DEPUIS `E3`, et ce n'est PAS un neutre : c'est l'anneau de focus,
+  //  dont le bleu doit basculer parce que `--marque-bleu` ne rend que 2,91:1
+  //  sur une surface sombre — sous le seuil de 3:1 d'un indicateur de focus.
+  ['--anneau-focus', ANNEAU_FOCUS.traitSombre],
 ];
 
 describe('la feuille de jetons ne divergs pas du module TypeScript', () => {
@@ -244,7 +250,7 @@ describe('la feuille de jetons ne divergs pas du module TypeScript', () => {
     ).toBe(true);
   });
 
-  it('declare les dix neutres du theme sombre, et pas davantage', () => {
+  it('declare les onze bascules du theme sombre, et pas davantage', () => {
     //  « ET PAS DAVANTAGE » EST LA MOITIE UTILE DE CE CONTROLE. Si une surface
     //  de marque, une teinte ou un cercle etait redeclare ici, son texte —
     //  ecrit en litteral dans `:root` — cesserait de lui correspondre, et le

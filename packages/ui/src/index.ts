@@ -33,19 +33,25 @@
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
+ * LES COMPOSANTS DE LA CHARTE 5 — chantier design systeme v2, `E3` (`DEC-681`)
+ *
+ *   `Bouton` gagne deux variantes et deux tailles, `Badge` six tons, `Carte` une
+ *   variante interactive ; `Pastille`, `Avatar`, `Champ`, `Liste`, `Progression`
+ *   et `CaseACocher` arrivent ; `Onglets` et `CarteRetournable` EXISTAIENT DEJA
+ *   et sont etendus plutot que recrees.
+ *
+ *   **AUCUN ECRAN NE LES EMPLOIE AVANT `E5`**, ce qui s'ecarte de la discipline
+ *   d'`Onglets` entre `S1` et `S2` — un composant expose ici devait etre employe
+ *   par un ecran (critere `T11` du LOT 1). L'instruction de `E3` est d'exposer
+ *   les composants de la charte, et c'est elle qui est suivie ; l'ecart est
+ *   nomme plutot que tu.
+ *
  * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-681`)
  *
  *   `pictos.ts` porte les DOUZE icones officielles que la charte nomme,
  *   extraites des 382 du catalogue eXalt par `infra/scripts/engendrer-pictos.py`
  *   et verifiees contre lui par `pictos.test.ts`. `Picto` les rend en
  *   `currentColor`. Elles remplacent les emoji, que la charte 1.4 interdit.
- *
- *   **NI L'UN NI L'AUTRE N'EST EXPORTE PAR CE FICHIER, ET C'EST VOULU.** Le
- *   critere de `T11` du LOT 1 exige qu'un composant expose ici soit EMPLOYE par
- *   un ecran, et aucun ne l'emploie avant `E5` — exactement la situation
- *   d'`Onglets`, pose et teste en isolation par `S1`, exporte seulement quand
- *   `S2` lui a donne deux consommateurs reels. Les composants et la table des
- *   cercles d'`E3`/`E4` l'importent par son chemin, sans passer par ce barillet.
  *
  *   `lucide-react` reste employe par `apps/web` pour ce que le catalogue eXalt
  *   ne couvre pas (bascule de theme, chevrons, icones de rubrique libres) : les
@@ -76,7 +82,7 @@
 export { Badge } from './Badge.js';
 export type { ProprietesBadge, TonBadge } from './Badge.js';
 export { Bouton } from './Bouton.js';
-export type { ProprietesBouton, VarianteBouton } from './Bouton.js';
+export type { ProprietesBouton, TailleBouton, VarianteBouton } from './Bouton.js';
 export { Carte } from './Carte.js';
 //  LOT 5, T10 — la carte retournable accessible, story MVP-L05-US003.
 export { CarteRetournable } from './CarteRetournable.js';
@@ -86,12 +92,29 @@ export { Carrousel } from './Carrousel.js';
 export type { ProprietesCarrousel } from './Carrousel.js';
 export { Alerte } from './Alerte.js';
 export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
-export type { NiveauTitre, ProprietesCarte } from './Carte.js';
+export type { NiveauTitre, ProprietesCarte, VarianteCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
-//  `Picto` et `pictos.ts` NE SONT PAS EXPORTES ICI, et c'est delibere : voir
-//  l'en-tete, section « les pictogrammes ». Meme discipline qu'`Onglets` entre
-//  `S1` et `S2`.
+//  Chantier design systeme v2, E3 (`DEC-681`) — les composants de la charte 5.
+//  `Picto` les rejoint ici : `E2` l'avait volontairement laisse hors du barillet
+//  faute de consommateur, et l'instruction de `E3` est d'exposer les composants
+//  de la charte. Leurs consommateurs arrivent a `E5`.
+export { Avatar, initiales } from './Avatar.js';
+export type { ProprietesAvatar, TailleAvatar } from './Avatar.js';
+export { CaseACocher } from './CaseACocher.js';
+export type { ProprietesCaseACocher } from './CaseACocher.js';
+export { Champ } from './Champ.js';
+export type { ProprietesChamp } from './Champ.js';
+export { Liste } from './Liste.js';
+export type { ProprietesListe } from './Liste.js';
+export { Pastille } from './Pastille.js';
+export type { ProprietesPastille } from './Pastille.js';
+export { Picto } from './Picto.js';
+export type { ProprietesPicto, TaillePicto } from './Picto.js';
+export { PICTOS } from './pictos.js';
+export type { ClePicto, DefinitionDePicto } from './pictos.js';
+export { Progression } from './Progression.js';
+export type { ProprietesProgression } from './Progression.js';
 //  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
 export { Onglets } from './Onglets.js';
 export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';

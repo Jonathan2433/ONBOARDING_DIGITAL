@@ -84,6 +84,11 @@
   --teinte-jaune-texte: #2f2f9b;
   --teinte-gris: #f5f5f5;
   --teinte-gris-texte: #2f2f9b;
+  /* Meme surface, texte SOURD : le ton « annule » de la charte 5 (`E3`).
+     Litteral comme les autres — `--encre-douce` basculerait et rendrait
+     2,35:1 en sombre sur cette surface qui, elle, ne bascule pas. */
+  --teinte-gris-sourd: #f5f5f5;
+  --teinte-gris-sourd-texte: #6e6e85;
 
   /* Les huit cercles — charte 4.
 
@@ -144,8 +149,14 @@
   --ombre-posee: none;
 
   /* Focus — charte 1.6, non negociable. Un `outline`, jamais une `box-shadow`.
-     S'emploie : `outline: var(--anneau-focus); outline-offset: var(--anneau-focus-decalage);` */
-  --anneau-focus: 3px solid rgb(88 83 255 / 45%);
+     S'emploie : `outline: var(--anneau-focus); outline-offset: var(--anneau-focus-decalage);`
+
+     LE TRAIT EST OPAQUE, et la transparence de 45 % de la charte a ete retiree
+     sur arbitrage de Jonathan : composee sur les fonds reels elle rend 2,33:1
+     en clair et 1,73:1 en sombre, contre les 3:1 qu'exige WCAG 1.4.11 pour un
+     indicateur de focus. Voir l'en-tete de `jetons.ts`. Le bloc sombre plus bas
+     le redeclare : sur fond sombre, le bleu d'accent est `--titre`. */
+  --anneau-focus: 3px solid #5853ff;
   --anneau-focus-decalage: 2px;
 
   /* Echelle typographique — charte 3. */
@@ -222,5 +233,9 @@
   --trait-fort: #52525b;
   --ok: #6ee7a8;
   --ko: #fca5a5;
+  /* ONZIEME BASCULE, ajoutee par `E3` : `--marque-bleu` ne rend que 2,91:1 sur
+     une surface sombre, sous le seuil de 3:1 d'un indicateur de focus. `--titre`
+     y rend 7,44:1. Le trait reste opaque et de meme epaisseur. */
+  --anneau-focus: 3px solid #b3afff;
   color-scheme: dark;
 }

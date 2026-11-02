@@ -21,9 +21,17 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { atteintSeuil, contraste, luminance, SEUIL_AA_TEXTE_NORMAL } from './contraste.js';
+import {
+  atteintSeuil,
+  contraste,
+  luminance,
+  melangerCouleurs,
+  SEUIL_AA_GRAND_TEXTE,
+  SEUIL_AA_TEXTE_NORMAL,
+} from './contraste.js';
 import {
   ACCENTS_ADMIS,
+  ANNEAU_FOCUS,
   CERCLES,
   ESPACEMENTS,
   LARGEURS_RECETTE,
@@ -126,11 +134,13 @@ describe('les couleurs de marque, employees en accent sur le fond de page', () =
   });
 });
 
-describe('les quatre teintes — charte 2', () => {
+describe('les teintes — charte 2, plus le ton sourd de la charte 5', () => {
   const couples = Object.entries(TEINTES);
 
-  it('sont bien quatre, et aucune ne redeclare une couleur de marque', () => {
-    expect(couples).toHaveLength(4);
+  it('sont bien cinq, et aucune ne redeclare une couleur de marque', () => {
+    //  CINQ et non quatre depuis `E3` : `grisSourd` partage la surface de
+    //  `gris` mais porte un texte SOURD, le ton « annule » de la charte 5.
+    expect(couples).toHaveLength(5);
     const surfacesDeMarque = Object.values(MARQUE).map((c) => c.surface);
     for (const [nom, couple] of couples) {
       expect(surfacesDeMarque, `${nom} redeclare une surface de marque`).not.toContain(
@@ -343,5 +353,107 @@ describe('les autres jetons', () => {
     //  synthetique : la fonte n'a que Regular et Bold. La v1 declarait un 600
     //  qu'aucune fonte ne servait.
     expect(Object.values(TYPOGRAPHIE.graisses)).toEqual([400, 700]);
+  });
+});
+
+/**
+ * L'anneau de focus et les accents bleus — charte 1.6 et 5, arbitrage du
+ * 02/11/2026.
+ *
+ * LE SEUIL EST 3, PAS 4,5 : un indicateur de focus et un remplissage de barre
+ * de progression sont des elements NON TEXTUELS (WCAG 1.4.11). Les comparer au
+ * seuil du texte normal ferait echouer un livrable conforme ; les comparer a
+ * rien ne prouverait rien.
+ */
+describe("l'anneau de focus et le bleu d'accent — charte 1.6, arbitrage du 02/11/2026", () => {
+  /** La couleur REELLE d'un trait a 45 % : elle depend du fond qu'il recouvre. */
+  const a45Pourcent = (fond: string): string => melangerCouleurs(MARQUE.bleu.surface, fond, 0.45);
+
+  it("ECHOUERAIT si l'anneau gardait les 45 % de transparence de la charte", () => {
+    //  LE TEMOIN QUI JUSTIFIE L'ECART. Sans lui, « notre anneau passe » serait
+    //  satisfait par n'importe quelle couleur sombre : il faut montrer que la
+    //  valeur ECRITE DANS LA CHARTE, elle, ne passe pas — et de combien.
+    const surfaces = [
+      THEMES.clair.surface,
+      THEMES.clair.fond,
+      THEMES.sombre.surface,
+      THEMES.sombre.fond,
+    ];
+    const mesures = surfaces.map((fond) => contraste(a45Pourcent(fond), fond));
+    expect(mesures).toHaveLength(4);
+    for (const mesure of mesures) {
+      expect(mesure, `un anneau a 45 % rendrait ${mesure.toFixed(2)}`).toBeLessThan(
+        SEUIL_AA_GRAND_TEXTE,
+      );
+    }
+  });
+
+  it('est opaque, et le trait sombre bascule sur --titre', () => {
+    expect(ANNEAU_FOCUS.trait).toBe(`3px solid ${MARQUE.bleu.surface}`);
+    expect(ANNEAU_FOCUS.traitSombre).toBe(`3px solid ${THEMES.sombre.titre}`);
+    //  La transparence ne doit pas revenir par une autre ecriture.
+    expect(`${ANNEAU_FOCUS.trait} ${ANNEAU_FOCUS.traitSombre}`).not.toMatch(/rgba?\(|%/);
+  });
+
+  it('atteint le seuil non textuel sur les quatre fonds reels', () => {
+    const couples: ReadonlyArray<readonly [string, string, string]> = [
+      ['clair / surface', MARQUE.bleu.surface, THEMES.clair.surface],
+      ['clair / fond', MARQUE.bleu.surface, THEMES.clair.fond],
+      ['sombre / surface', THEMES.sombre.titre, THEMES.sombre.surface],
+      ['sombre / fond', THEMES.sombre.titre, THEMES.sombre.fond],
+    ];
+    expect(couples).toHaveLength(4);
+    for (const [nom, trait, fond] of couples) {
+      const mesure = contraste(trait, fond);
+      expect(mesure, `${nom} rend ${mesure.toFixed(2)}`).toBeGreaterThanOrEqual(
+        SEUIL_AA_GRAND_TEXTE,
+      );
+    }
+  });
+
+  it("ECHOUERAIT si le bleu d'accent restait --marque-bleu en theme sombre", () => {
+    //  LA REGLE QUE `E3` APPLIQUE EN TROIS ENDROITS — anneau de focus, texte du
+    //  bouton discret, remplissage de `Progression`. Ce temoin dit POURQUOI.
+    const surSurface = contraste(MARQUE.bleu.surface, THEMES.sombre.surface);
+    const surFondDoux = contraste(MARQUE.bleu.surface, THEMES.sombre.fondDoux);
+    expect(surSurface).toBeLessThan(SEUIL_AA_GRAND_TEXTE);
+    expect(surFondDoux).toBeLessThan(SEUIL_AA_GRAND_TEXTE);
+    //  Et le texte du bouton discret vise le seuil du TEXTE, plus exigeant.
+    expect(surSurface).toBeLessThan(SEUIL_AA_TEXTE_NORMAL);
+    expect(contraste(THEMES.sombre.titre, THEMES.sombre.surface)).toBeGreaterThanOrEqual(
+      SEUIL_AA_TEXTE_NORMAL,
+    );
+  });
+
+  it('le bouton discret et le remplissage de progression tiennent leurs seuils', () => {
+    //  Texte bleu sur surface claire : seuil TEXTE (le libelle d'un bouton).
+    expect(contraste(MARQUE.bleu.surface, THEMES.clair.surface)).toBeGreaterThanOrEqual(
+      SEUIL_AA_TEXTE_NORMAL,
+    );
+    //  Remplissage contre sa piste : seuil NON TEXTUEL, dans les deux themes.
+    expect(contraste(MARQUE.bleu.surface, THEMES.clair.fondDoux)).toBeGreaterThanOrEqual(
+      SEUIL_AA_GRAND_TEXTE,
+    );
+    expect(contraste(THEMES.sombre.titre, THEMES.sombre.fondDoux)).toBeGreaterThanOrEqual(
+      SEUIL_AA_GRAND_TEXTE,
+    );
+  });
+
+  it('ECHOUERAIT si la bordure de champ gardait --trait-fort', () => {
+    //  Second arbitrage du 02/11/2026. La charte 5 ecrit « bordure trait-fort » :
+    //  mesure, elle rend 1,44:1 en clair et 1,93:1 en sombre, soit une bordure
+    //  qu'on ne voit pas. `--encre-douce` la remplace.
+    expect(contraste(THEMES.clair.traitFort, THEMES.clair.surface)).toBeLessThan(
+      SEUIL_AA_GRAND_TEXTE,
+    );
+    expect(contraste(THEMES.sombre.traitFort, THEMES.sombre.surface)).toBeLessThan(
+      SEUIL_AA_GRAND_TEXTE,
+    );
+    expect(contraste(THEMES.clair.encreDouce, THEMES.clair.surface)).toBeGreaterThanOrEqual(
+      SEUIL_AA_GRAND_TEXTE,
+    );
+    expect(contraste(THEMES.sombre.encreDouce, THEMES.sombre.surface)).toBeGreaterThanOrEqual(
+      SEUIL_AA_GRAND_TEXTE,
+    );
   });
 });
