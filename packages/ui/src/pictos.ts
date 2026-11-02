@@ -1,7 +1,7 @@
 /**
  * Les pictogrammes officiels eXalt employes par l'application.
  *
- * Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`). Charte 4, 6 et 7.
+ * Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`). Charte 4, 6 et 7.
  *
  * **FICHIER ENGENDRE — NE LE MODIFIE PAS A LA MAIN.**
  *

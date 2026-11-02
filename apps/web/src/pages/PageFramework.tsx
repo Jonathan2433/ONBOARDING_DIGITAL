@@ -212,7 +212,7 @@ export function PageFramework(): JSX.Element {
 }
 
 /**
- * Un cercle deplie — charte 6.4, chantier design systeme v2, `E5` (`DEC-681`).
+ * Un cercle deplie — charte 6.4, chantier design systeme v2, `E5` (`DEC-682`).
  *
  * **UN `<button aria-expanded>` ET UN PANNEAU NOMME, RIEN DE PLUS.** Aucune
  * primitive d'accordeon n'existe dans `packages/ui`, et en livrer une sans
@@ -276,7 +276,7 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
             {picto === undefined ? null : <Picto nom={picto} taille={24} />}
           </span>
           <span className="framework-accordeon-nom">{cercle.nom}</span>
-          <Badge ton="marque">
+          <Badge ton="info">
             {cercle.membresActifs} membre{cercle.membresActifs > 1 ? 's' : ''}
           </Badge>
           {/*
@@ -343,7 +343,7 @@ function CarteDeBureauAFramework({ bureau }: { bureau: CarteDeBureau }): JSX.Ele
         <Building2 aria-hidden="true" className="icone-bureau" size={32} />
         <span className="framework-carte-titre">{bureau.nom}</span>
       </span>
-      <Badge ton="marque">
+      <Badge ton="info">
         {bureau.responsables.length} responsable{bureau.responsables.length > 1 ? 's' : ''}
       </Badge>
     </Link>

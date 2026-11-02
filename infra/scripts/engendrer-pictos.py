@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Extraire les pictogrammes officiels eXalt en module TypeScript local.
 
-Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`). Charte 4 :
+Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`). Charte 4 :
 « extraire les SVG necessaires de `pictos/exalt-icons.json` en composants
 locaux, rendus en `currentColor`, taille >= 24px ».
 
@@ -171,7 +171,7 @@ def rendre_le_module(pictos: dict[str, dict[str, object]]) -> str:
     entetes = f"""/**
  * Les pictogrammes officiels eXalt employes par l'application.
  *
- * Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`). Charte 4, 6 et 7.
+ * Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`). Charte 4, 6 et 7.
  *
  * **FICHIER ENGENDRE — NE LE MODIFIE PAS A LA MAIN.**
  *

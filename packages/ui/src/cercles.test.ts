@@ -1,7 +1,7 @@
 /**
  * Le controle de fidelite entre la table `CERCLES` et le tableau de la charte 4.
  *
- * Chantier design systeme v2 hors lot, etape `E4` (`DEC-681`).
+ * Chantier design systeme v2 hors lot, etape `E4` (`DEC-682`).
  *
  * POURQUOI CE CONTROLE EXISTE
  *

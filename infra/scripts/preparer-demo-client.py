@@ -94,7 +94,7 @@ PERSONAS = (
 )
 
 #  LE JETON D'UN CERCLE EST DESORMAIS LE NOM DU CERCLE DANS LA CHARTE, pas une
-#  etiquette de couleur -- chantier design systeme v2, `E4` (`DEC-681`), arbitrage
+#  etiquette de couleur -- chantier design systeme v2, `E4` (`DEC-682`), arbitrage
 #  de Jonathan du 02/11/2026. `circle.color_token` reste le texte libre que le
 #  modele 8.1 decrit ; ce qui change est le vocabulaire qu'on y ecrit, et aucune
 #  migration n'est requise.
@@ -320,7 +320,7 @@ def verifier() -> int:
         #  La ligne « les quatre cercles portent un jeton compris par le
         #  frontend » etait affichee sans que rien n'ait regarde un seul cercle :
         #  elle serait restee verte sur n'importe quelle valeur, y compris les
-        #  quatre etiquettes de couleur devenues caduques a `E4` (`DEC-681`).
+        #  quatre etiquettes de couleur devenues caduques a `E4` (`DEC-682`).
         #  §7.0, premiere proposition — un controle qui ne peut pas echouer ne
         #  prouve rien. Il mesure desormais, et la liste des jetons admis est
         #  DERIVEE de `jetons.css` plutot que recopiee (§7.27).

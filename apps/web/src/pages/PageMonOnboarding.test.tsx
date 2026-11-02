@@ -441,7 +441,7 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
   });
 });
 
-describe('les etapes du parcours — charte 6.7, `E5` (`DEC-681`)', () => {
+describe('les etapes du parcours — charte 6.7, `E5` (`DEC-682`)', () => {
   //  **LA REFERENCE EST LE 1ᵉʳ OCTOBRE 2026** (`parcoursAvecInstance`). Les
   //  echeances ci-dessous sont donc, dans l'ordre : la veille, le jour meme,
   //  trois jours apres, vingt jours apres, soixante jours apres.

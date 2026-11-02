@@ -41,7 +41,7 @@ def test_les_jetons_de_la_demo_sont_des_cercles_que_le_frontend_sait_rendre() ->
     toutes lettres : il prouvait que le script n'avait pas change, pas que ses
     valeurs seraient comprises. Une liste recopiee vieillit au premier ajout
     (§7.27), et c'est exactement ce qui s'est produit -- les quatre etiquettes de
-    couleur ont cesse d'etre des jetons valides au chantier `E4` (`DEC-681`).
+    couleur ont cesse d'etre des jetons valides au chantier `E4` (`DEC-682`).
 
     Les huit cercles de la charte sont donc RELEVES dans `jetons.css`, ou ils
     sont declares `--cercle-<cle>`. Cette feuille est une projection verifiee de

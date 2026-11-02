@@ -44,6 +44,7 @@ import {
   type PorteeDeCreationEvenement,
 } from '@onboarding/contracts';
 import { Alerte, Badge, Bouton } from '@onboarding/ui';
+import type { TonBadge } from '@onboarding/ui';
 
 /** « 2026-10-12T08:00 » depuis une chaine ISO — AUCUN `Date`, voir l'en-tete. */
 export function versDatetimeLocal(iso: string): string {
@@ -62,11 +63,11 @@ const LIBELLES_D_ETAT: Readonly<Record<string, string>> = {
   archived: 'Archive',
 };
 
-const TONS_D_ETAT: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  draft: 'neutre',
-  published: 'ok',
-  cancelled: 'ko',
-  archived: 'neutre',
+const TONS_D_ETAT: Readonly<Record<string, TonBadge>> = {
+  draft: 'info',
+  published: 'info',
+  cancelled: 'annule',
+  archived: 'annule',
 };
 
 const CHAMPS_VIDES = {
@@ -231,7 +232,7 @@ export function PageGestionDesEvenements(): JSX.Element | null {
                   {versDatetimeLocal(evenement.commenceLe).replace('T', ' a ')}
                 </span>
               </div>
-              <Badge ton={TONS_D_ETAT[evenement.etat] ?? 'neutre'}>
+              <Badge ton={TONS_D_ETAT[evenement.etat] ?? 'info'}>
                 {LIBELLES_D_ETAT[evenement.etat] ?? evenement.etat}
               </Badge>
             </li>

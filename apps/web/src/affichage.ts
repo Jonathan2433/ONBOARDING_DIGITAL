@@ -21,7 +21,7 @@
  */
 import { STATUTS_PROFESSIONNELS } from '@onboarding/contracts';
 import { CERCLES } from '@onboarding/ui';
-import type { ClePicto, DefinitionDeCercle } from '@onboarding/ui';
+import type { ClePicto, DefinitionDeCercle, TonBadge } from '@onboarding/ui';
 
 import { dateComplete } from './pages/PageProfil';
 
@@ -53,6 +53,18 @@ export function libelleDuStatut(valeur: string | null): string | null {
     return null;
   }
   return STATUTS.find((choix) => choix.valeur === valeur)?.libelle ?? valeur;
+}
+
+/** Le ton de badge porte le même sens métier que le statut, jamais une couleur générique. */
+export function tonDuStatut(valeur: string): TonBadge {
+  if (valeur === 'mission') {
+    return 'mission';
+  }
+  if (valeur === 'intercontract') {
+    return 'intercontrat';
+  }
+  // Une valeur future reste visible par son texte et reçoit le ton informatif.
+  return 'info';
 }
 
 /**

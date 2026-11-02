@@ -63,12 +63,12 @@
 
 .app-evitement:focus-visible {
   top: var(--espace-s);
-  outline: 2px solid var(--encre);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
 /* ==========================================================================
-   L'en-tete de la charte 6.1 — chantier design systeme v2, `E5` (`DEC-681`)
+   L'en-tete de la charte 6.1 — chantier design systeme v2, `E5` (`DEC-682`)
    ========================================================================== */
 
 /* **COLLANTE, ET TRANSLUCIDE SANS AUCUNE COULEUR LITTERALE.** La charte
@@ -210,7 +210,7 @@
    le bandeau de `PageNationale` (`.nat-bandeau`), ou seule une surface OPAQUE
    garantit l'AA quel que soit ce qu'il y a dessous. Le reprendre ici evite une
    seconde regle qui ne vaudrait que pour l'un des deux contextes.
-   NOTE v2 (`DEC-681`) : ce bandeau est desormais un APLAT de bleu fonce, qui
+   NOTE v2 (`DEC-682`) : ce bandeau est desormais un APLAT de bleu fonce, qui
    porte le blanc a 10,50 — la contrainte est donc moins forte qu'au temps du
    degrade, et l'etape E5 pourra la reexaminer. */
 .app-bascule-theme {
@@ -230,7 +230,7 @@
 }
 
 .app-bascule-theme:focus-visible {
-  outline: 3px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -314,7 +314,7 @@
 }
 
 .app-selecteur-bouton:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -347,7 +347,7 @@
 }
 
 .app-selecteur-lien:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -2px;
 }
 
@@ -401,7 +401,7 @@
    mesure. PUREMENT DECORATIF : aucune information n'y est portee, exempt du
    contraste non textuel (WCAG 1.4.11), meme parti que les icones `aria-hidden`
    de S3 et, jusqu'a la v2, le `clip-path` hexagonal de S11 — desormais un
-   portrait rond (`DEC-681`). */
+   portrait rond (`DEC-682`). */
 .nat-titre {
   text-decoration-line: underline;
   text-decoration-style: wavy;
@@ -429,7 +429,7 @@
 }
 
 .app-lien:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -517,7 +517,7 @@
 /* Le focus est VISIBLE et il ne dépend pas de la couleur seule : un contour
    franc, decale, que `prefers-reduced-motion` ne touche pas. §14.2. */
 .app-navigation-lien:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -2px;
   color: var(--encre);
 }
@@ -614,7 +614,7 @@
 }
 
 .app-barre-lien:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -2px;
   color: var(--encre);
 }
@@ -663,7 +663,7 @@
 }
 
 .app-barre-lien-secondaire:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -2px;
 }
 
@@ -763,7 +763,7 @@
   justify-content: space-between;
   gap: var(--espace-s);
   padding: var(--espace-m) var(--espace-s);
-  /* **L'APLAT A REMPLACE LE DEGRADE EN v2** (`DEC-681`) : la charte 1.1
+  /* **L'APLAT A REMPLACE LE DEGRADE EN v2** (`DEC-682`) : la charte 1.1
      interdit les degrades. Le bleu fonce porte le blanc a 10,50 — la « zone
      morte » qui obligeait le texte a vivre dans une pastille opaque n'existe
      donc plus, et l'etape E5 pourra simplifier ce bandeau. */
@@ -773,7 +773,7 @@
 /* **UNE PASTILLE OPAQUE, HERITEE DU TEMPS DU DEGRADE.** Tant que `.nat-bandeau`
    portait un degrade, aucune couleur de texte n'y atteignait AA sur toute son
    etendue (zone morte mesuree vers t=0,75) : le texte devait vivre dans un
-   fond opaque pose par-dessus. Depuis la v2 (`DEC-681`) le bandeau est un
+   fond opaque pose par-dessus. Depuis la v2 (`DEC-682`) le bandeau est un
    APLAT de bleu fonce, qui porte le blanc a 10,50 — la pastille n'est donc
    plus une necessite de contraste, seulement un parti visuel, et l'etape E5
    tranchera si elle reste. */
@@ -843,7 +843,7 @@
 }
 
 .nat-entite:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -949,29 +949,6 @@
   margin-bottom: var(--espace-l);
 }
 
-.trombi-critere {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-xs);
-  flex: 1 1 12rem;
-}
-
-.trombi-champ {
-  /* 44 px de haut : la cible tactile du §14.2. */
-  min-height: 44px;
-  padding: 0 var(--espace-s);
-  font: inherit;
-  color: var(--encre);
-  background: var(--fond);
-  border: 1px solid var(--trait);
-  border-radius: var(--rayon-m);
-}
-
-.trombi-champ:focus-visible {
-  outline: 3px solid var(--marque-bleu);
-  outline-offset: 1px;
-}
-
 .trombi-compte {
   margin: 0 0 var(--espace-m);
   color: var(--encre-douce);
@@ -1065,7 +1042,7 @@
   color: var(--marque-jaune-texte);
 }
 
-/* Portrait ROND — refonte v2 (`DEC-681`). La capture de reference de la charte
+/* Portrait ROND — refonte v2 (`DEC-682`). La capture de reference de la charte
    montre des avatars ronds ; `S11` (`DEC-673`) les avait passes en hexagone
    d'apres le site exalt-company.com. Arbitrage de Jonathan du 01/11/2026 : la
    charte fait foi, `S11` est defait. Meme regle que `.profil-avatar`. */
@@ -1177,7 +1154,7 @@
 }
 
 .trombi-page:focus-visible {
-  outline: 3px solid var(--encre);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -1216,7 +1193,7 @@
   align-items: center;
 }
 
-/* Portrait ROND — refonte v2 (`DEC-681`). Le cercle (`--rayon-pastille`)
+/* Portrait ROND — refonte v2 (`DEC-682`). Le cercle (`--rayon-pastille`)
    revient, et le cahier 13.2 le disait deja : « portraits ronds ».
 
    **`.trombi-avatar` N'EXISTE PLUS** : `E5` a confie l'avatar du trombinoscope
@@ -1456,7 +1433,7 @@
 }
 
 .framework-carte:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -2045,7 +2022,7 @@
 }
 
 .cercle-page:focus-visible {
-  outline: 3px solid var(--encre);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -2415,7 +2392,7 @@
 }
 
 .evenements-page:focus-visible {
-  outline: 3px solid var(--encre);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 
@@ -2545,7 +2522,7 @@
 }
 
 /* ==========================================================================
-   L'accueil de la charte 6.2 — chantier design systeme v2, `E5` (`DEC-681`)
+   L'accueil de la charte 6.2 — chantier design systeme v2, `E5` (`DEC-682`)
    ========================================================================== */
 
 /* La section blanche a rayon-xl : pastille, nom de l'entite, introduction. */
@@ -2812,7 +2789,7 @@
 }
 
 .app-signalement-bouton:focus-visible {
-  outline: 2px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 

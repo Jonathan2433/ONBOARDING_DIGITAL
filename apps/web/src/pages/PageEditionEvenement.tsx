@@ -62,6 +62,7 @@ import {
   type MediaDEvenement,
 } from '@onboarding/contracts';
 import { Alerte, Badge, Bouton } from '@onboarding/ui';
+import type { TonBadge } from '@onboarding/ui';
 
 const LIBELLES_D_ETAT: Readonly<Record<string, string>> = {
   draft: 'Brouillon',
@@ -70,11 +71,11 @@ const LIBELLES_D_ETAT: Readonly<Record<string, string>> = {
   archived: 'Archive',
 };
 
-const TONS_D_ETAT: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  draft: 'neutre',
-  published: 'ok',
-  cancelled: 'ko',
-  archived: 'neutre',
+const TONS_D_ETAT: Readonly<Record<string, TonBadge>> = {
+  draft: 'info',
+  published: 'info',
+  cancelled: 'annule',
+  archived: 'annule',
 };
 
 /** « CERCLE-A, CERCLE-B » -> `['CERCLE-A', 'CERCLE-B']` — les vides sont retires. */
@@ -418,7 +419,7 @@ export function PageEditionEvenement(): JSX.Element | null {
       <h2>{donnee.titre}</h2>
       <p className="edition-etat">
         Etat :{' '}
-        <Badge ton={TONS_D_ETAT[donnee.etat] ?? 'neutre'}>
+        <Badge ton={TONS_D_ETAT[donnee.etat] ?? 'info'}>
           {LIBELLES_D_ETAT[donnee.etat] ?? donnee.etat}
         </Badge>
         {' — version '}

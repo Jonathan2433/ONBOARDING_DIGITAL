@@ -1,7 +1,7 @@
 /**
  * Le controle de divergence entre `pictos.ts` et le catalogue officiel eXalt.
  *
- * Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`).
+ * Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`).
  *
  * POURQUOI CE CONTROLE EXISTE
  *

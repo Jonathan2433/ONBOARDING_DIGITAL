@@ -33,7 +33,7 @@
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
- * LES COMPOSANTS DE LA CHARTE 5 — chantier design systeme v2, `E3` (`DEC-681`)
+ * LES COMPOSANTS DE LA CHARTE 5 — chantier design systeme v2, `E3` (`DEC-682`)
  *
  *   `Bouton` gagne deux variantes et deux tailles, `Badge` six tons, `Carte` une
  *   variante interactive ; `Pastille`, `Avatar`, `Champ`, `Liste`, `Progression`
@@ -48,7 +48,7 @@
  *   02/11/2026 : la porte attend `E5`, qui pose chaque composant a l'ecran et
  *   rouvre sa ligne dans le meme geste. Voir le bloc correspondant plus bas.
  *
- * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-681`)
+ * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-682`)
  *
  *   `pictos.ts` porte les DOUZE icones officielles que la charte nomme,
  *   extraites des 382 du catalogue eXalt par `infra/scripts/engendrer-pictos.py`
@@ -97,7 +97,7 @@ export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte, VarianteCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
-//  Chantier design systeme v2, E3 (`DEC-681`) — les composants de la charte 5.
+//  Chantier design systeme v2, E3 (`DEC-682`) — les composants de la charte 5.
 //
 //  **LA PORTE EST FERMEE JUSQU'A `E5`, SUR ARBITRAGE DE JONATHAN DU 02/11/2026.**
 //  Le critere de `T11` du LOT 1 — « chaque composant livre est EMPLOYE par un
@@ -141,7 +141,7 @@ export {
   SEUIL_AA_GRAND_TEXTE,
   SEUIL_AA_TEXTE_NORMAL,
 } from './contraste.js';
-//  `DEGRADE_MARQUE` et `DECOUPES` ont ete RETIRES par la refonte v2 (`DEC-681`) :
+//  `DEGRADE_MARQUE` et `DECOUPES` ont ete RETIRES par la refonte v2 (`DEC-682`) :
 //  la charte 1.1 interdit les degrades, et ses avatars sont ronds — voir
 //  l'en-tete de `jetons.ts`, section « ce que ce fichier ne contient plus ».
 export {

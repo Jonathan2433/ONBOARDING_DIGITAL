@@ -1,7 +1,7 @@
 /**
  * Pastille — le surtitre de rubrique de la charte 5.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`).
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`).
  *
  * CE QU'ELLE EST, ET CE QU'ELLE N'EST PAS
  *

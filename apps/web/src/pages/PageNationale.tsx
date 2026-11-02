@@ -90,7 +90,7 @@ export function PageNationale(): JSX.Element {
         de facto, l'en-tete de tous les ecrans. La page nationale, elle, n'a
         pas d'entite a montrer : son bandeau est purement decoratif.
 
-        **LE DEGRADE A ETE REMPLACE PAR UN APLAT EN v2** (`DEC-681`) : la
+        **LE DEGRADE A ETE REMPLACE PAR UN APLAT EN v2** (`DEC-682`) : la
         charte 1.1 interdit les degrades. Le bleu fonce porte le blanc a
         10,50, la ou le degrade avait une zone morte vers t=0,75 ou AUCUNE
         couleur de texte n'atteignait AA. La pastille opaque qui suit est donc

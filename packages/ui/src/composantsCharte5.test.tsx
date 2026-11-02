@@ -1,7 +1,7 @@
 /**
  * Les composants de la charte 5 — accessibilite, role, focus, clavier.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`).
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`).
  *
  * CE QUE CES TESTS CHERCHENT, ET CE QU'ILS NE CHERCHENT PAS
  *

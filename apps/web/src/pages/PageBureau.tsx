@@ -148,7 +148,7 @@ export function PageBureau(): JSX.Element {
       <Carte titre={b.nom}>
         <div className="bureau-entete-meta">
           <Building2 className="icone-bureau" aria-hidden="true" size={20} />
-          <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+          <Badge ton="info">{b.publie ? 'Publie' : 'Brouillon'}</Badge>
         </div>
         {b.description === null ? null : <p className="bureau-description">{b.description}</p>}
         <dl className="bureau-champs">

@@ -1,7 +1,7 @@
 /**
  * Progression — l'avancement d'un parcours.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`), charte 5 et 6.7.
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`), charte 5 et 6.7.
  *
  * `role="progressbar"` ET SES TROIS VALEURS, JAMAIS DEUX
  *

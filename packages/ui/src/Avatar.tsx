@@ -1,7 +1,7 @@
 /**
  * Avatar — portrait d'une personne, ou son repli en initiales.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`), charte 5.
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`), charte 5.
  *
  * ROND, ET C'EST UN RETOUR EN ARRIERE ASSUME
  *
@@ -9,7 +9,7 @@
  *   `clip-path`). La capture de la charte v2 montre des portraits ronds, et
  *   Jonathan a tranche en ce sens : `E1` a retire `DECOUPES`, et ce composant
  *   emploie `--rayon-pastille`. Ce n'est pas un oubli de `S11`, c'est sa
- *   revision — consignee a `DEC-681`.
+ *   revision — consignee a `DEC-682`.
  *
  * DECORATIF PAR DEFAUT, COMME `Picto`
  *

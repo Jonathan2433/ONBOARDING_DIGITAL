@@ -1,7 +1,7 @@
 /**
  * CaseACocher — une case et son libelle.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`), charte 5 et 6.7.
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`), charte 5 et 6.7.
  *
  * UNE VRAIE `<input type="checkbox">`, ET `accent-color` PLUTOT QU'UN DESSIN
  *
