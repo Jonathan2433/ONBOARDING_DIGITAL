@@ -163,7 +163,7 @@ describe('chantier front, S5 : `Carte`/icone de bureau (`DEC-672`)', () => {
   });
 });
 
-describe('chantier front, S12 : cadres hexagonaux des responsables (DEC-673)', () => {
+describe('chantier front, S12 : portraits des responsables (DEC-673, ronds depuis DEC-681)', () => {
   it('sans photo, un responsable porte des initiales — AUCUNE `<img>`', async () => {
     vi.stubGlobal(
       'fetch',

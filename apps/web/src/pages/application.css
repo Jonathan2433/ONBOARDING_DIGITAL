@@ -79,7 +79,7 @@
 .app-marque {
   margin: 0;
   font-size: var(--taille-s);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--encre-douce);
   letter-spacing: 0.02em;
 }
@@ -96,7 +96,7 @@
 
 .app-entite-nom {
   font-size: var(--taille-m);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
   color: var(--encre);
 }
 
@@ -110,10 +110,12 @@
    ========================================================================== */
 
 /* **UN FOND OPAQUE PROPRE, PAS `--fond-doux`** : ce bouton est aussi pose sur
-   le bandeau en degrade de `PageNationale` (`.nat-bandeau`), ou seule une
-   surface OPAQUE atteint l'AA — meme renoncement que `.nat-bandeau-pastille`
-   (`DEGRADE_MARQUE` est decoratif seul, voir jetons.ts). Le reprendre ici
-   evite une seconde regle qui ne vaudrait que pour l'un des deux contextes. */
+   le bandeau de `PageNationale` (`.nat-bandeau`), ou seule une surface OPAQUE
+   garantit l'AA quel que soit ce qu'il y a dessous. Le reprendre ici evite une
+   seconde regle qui ne vaudrait que pour l'un des deux contextes.
+   NOTE v2 (`DEC-681`) : ce bandeau est desormais un APLAT de bleu fonce, qui
+   porte le blanc a 10,50 — la contrainte est donc moins forte qu'au temps du
+   degrade, et l'etape E5 pourra la reexaminer. */
 .app-bascule-theme {
   display: inline-flex;
   align-items: center;
@@ -122,12 +124,11 @@
   min-height: 44px;
   padding: var(--espace-xs) var(--espace-m);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--encre);
   background: var(--fond);
   border: 1px solid var(--trait);
   border-radius: var(--rayon-pastille);
-  box-shadow: var(--ombre-douce);
   cursor: pointer;
 }
 
@@ -197,7 +198,7 @@
   background: var(--fond);
   color: var(--encre);
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   cursor: pointer;
   list-style: none;
 }
@@ -259,7 +260,7 @@
 .app-selecteur-lien[aria-current='true'] {
   background: var(--marque-bleu);
   color: var(--marque-bleu-texte);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
 }
 
 .app-selecteur-lien[aria-current='true'] .app-selecteur-ville {
@@ -268,7 +269,7 @@
 
 .app-selecteur-nom {
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .app-selecteur-ville {
@@ -302,7 +303,8 @@
    un accent PROUVE dans les deux themes (`ACCENTS_ADMIS`), zero nouvelle
    mesure. PUREMENT DECORATIF : aucune information n'y est portee, exempt du
    contraste non textuel (WCAG 1.4.11), meme parti que les icones `aria-hidden`
-   de S3 et le `clip-path` hexagonal de S11. */
+   de S3 et, jusqu'a la v2, le `clip-path` hexagonal de S11 — desormais un
+   portrait rond (`DEC-681`). */
 .nat-titre {
   text-decoration-line: underline;
   text-decoration-style: wavy;
@@ -417,7 +419,7 @@
    le trait sous la rubrique le double, ce que le §14.2 exige. */
 .app-navigation-lien[aria-current='page'] {
   color: var(--encre);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
   border-bottom-color: var(--marque-bleu);
 }
 
@@ -474,7 +476,7 @@
   padding: var(--espace-xs) 2px;
   color: var(--encre-douce);
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   line-height: 1.25;
   text-align: center;
   text-decoration: none;
@@ -531,9 +533,10 @@
   margin: 0;
   padding: var(--espace-xs);
   list-style: none;
-  background: var(--fond);
-  border-top: 1px solid var(--trait);
-  box-shadow: var(--ombre-posee);
+  background: var(--surface);
+  /* CHARTE 1.1 : la separation est une BORDURE, jamais une ombre. Un panneau
+     flottant a besoin de ses quatre cotes pour se detacher du contenu. */
+  border: 1px solid var(--trait);
 }
 
 .app-barre-lien-secondaire {
@@ -660,15 +663,20 @@
   justify-content: space-between;
   gap: var(--espace-s);
   padding: var(--espace-m) var(--espace-s);
-  background: var(--degrade-marque);
+  /* **L'APLAT A REMPLACE LE DEGRADE EN v2** (`DEC-681`) : la charte 1.1
+     interdit les degrades. Le bleu fonce porte le blanc a 10,50 — la « zone
+     morte » qui obligeait le texte a vivre dans une pastille opaque n'existe
+     donc plus, et l'etape E5 pourra simplifier ce bandeau. */
+  background: var(--marque-bleu-fonce);
 }
 
-/* **LE TEXTE VIT ICI, JAMAIS A MEME `.nat-bandeau`.** `DEGRADE_MARQUE`
-   (`packages/ui/jetons.ts`) le dit explicitement : aucune couleur de texte
-   n'atteint AA sur toute l'etendue du degrade (zone morte mesuree vers
-   t=0,75). La pastille est un fond OPAQUE — `--fond`, le meme que le reste de
-   la page — pose par-dessus, exactement le renoncement documente pour
-   `Badge`/`Carte`. */
+/* **UNE PASTILLE OPAQUE, HERITEE DU TEMPS DU DEGRADE.** Tant que `.nat-bandeau`
+   portait un degrade, aucune couleur de texte n'y atteignait AA sur toute son
+   etendue (zone morte mesuree vers t=0,75) : le texte devait vivre dans un
+   fond opaque pose par-dessus. Depuis la v2 (`DEC-681`) le bandeau est un
+   APLAT de bleu fonce, qui porte le blanc a 10,50 — la pastille n'est donc
+   plus une necessite de contraste, seulement un parti visuel, et l'etape E5
+   tranchera si elle reste. */
 .nat-bandeau-pastille {
   margin: 0;
   display: inline-flex;
@@ -679,9 +687,10 @@
   background: var(--fond);
   color: var(--encre);
   font-size: var(--taille-s);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
   letter-spacing: 0.02em;
-  box-shadow: var(--ombre-douce);
+  /* CHARTE 1.1 : bordure plutot qu'ombre. */
+  border: 1px solid var(--trait);
 }
 
 @media (min-width: 768px) {
@@ -722,7 +731,6 @@
   border: 1px solid var(--trait);
   border-radius: var(--rayon-m);
   background: var(--fond-doux);
-  box-shadow: var(--ombre-douce);
   color: var(--encre);
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -741,7 +749,7 @@
 
 .nat-entite-nom {
   font-size: var(--taille-m);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
 }
 
 .nat-entite-ville {
@@ -850,7 +858,7 @@
 
 .trombi-etiquette {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--encre);
 }
 
@@ -886,15 +894,17 @@
   list-style: none;
 }
 
-/* Cadre hexagonal — chantier front S11 (DEC-673), meme jeton que
-   `.profil-avatar`/`.profil-photo` : `--decoupe-hexagone` remplace le cercle. */
+/* Portrait ROND — refonte v2 (`DEC-681`). La capture de reference de la charte
+   montre des avatars ronds ; `S11` (`DEC-673`) les avait passes en hexagone
+   d'apres le site exalt-company.com. Arbitrage de Jonathan du 01/11/2026 : la
+   charte fait foi, `S11` est defait. Meme regle que `.profil-avatar`. */
 .trombi-avatar,
 .trombi-photo {
   display: block;
   width: 5rem;
   height: 5rem;
   margin: 0 auto var(--espace-s);
-  clip-path: var(--decoupe-hexagone);
+  border-radius: var(--rayon-pastille);
   object-fit: cover;
 }
 
@@ -907,14 +917,14 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
   color: var(--marque-bleu-texte);
   background: var(--marque-bleu);
 }
 
 .trombi-nom {
   display: block;
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   text-align: center;
 }
 
@@ -933,7 +943,7 @@
 
 .trombi-verso dt {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   text-transform: uppercase;
   color: var(--encre-douce);
 }
@@ -1013,15 +1023,15 @@
   align-items: center;
 }
 
-/* Cadre hexagonal — chantier front S11 (DEC-673), inspire du site reel
-   exalt-company.com (§8.1 de la fiche de chantier) : `--decoupe-hexagone`
-   remplace le cercle (`--rayon-pastille`) sur l'avatar comme sur la photo. */
+/* Portrait ROND — refonte v2 (`DEC-681`), voir `.trombi-avatar`. Le cercle
+   (`--rayon-pastille`) revient, et le cahier 13.2 le disait deja :
+   « portraits ronds ». */
 .profil-avatar,
 .profil-photo {
   flex: 0 0 auto;
   width: 5rem;
   height: 5rem;
-  clip-path: var(--decoupe-hexagone);
+  border-radius: var(--rayon-pastille);
   object-fit: cover;
 }
 
@@ -1030,7 +1040,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--taille-l);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--marque-bleu-texte);
   background: var(--marque-bleu);
 }
@@ -1240,7 +1250,6 @@
   background: var(--fond);
   border: 1px solid var(--trait);
   border-radius: var(--rayon-l);
-  box-shadow: var(--ombre-douce);
   color: var(--encre);
   text-decoration: none;
   transition: border-color 120ms ease-in-out;
@@ -1273,7 +1282,7 @@
 }
 
 .framework-carte-titre {
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
 }
 
 .framework-carte-detail {
@@ -1342,18 +1351,18 @@
   color: var(--encre-douce);
 }
 
-/* L'avatar du Booster et des membres — chantier front S12 (DEC-673). Meme
-   recette que `.trombi-avatar`/`.profil-avatar` (cadre hexagonal, fond de
-   marque colore), a une taille de LISTE plutot que de recto de carte — une
-   regle propre a cette page, jamais partagee entre feuilles (§7.27 dans
-   l'autre sens, comme `.cercle-page`/`.trombi-page`). */
+/* L'avatar du Booster et des membres — chantier front S12 (DEC-673), passe en
+   ROND par la refonte v2 (`DEC-681`). Meme recette que `.trombi-avatar`/
+   `.profil-avatar` (portrait rond, fond de marque colore), a une taille de
+   LISTE plutot que de recto de carte — une regle propre a cette page, jamais
+   partagee entre feuilles (§7.27 dans l'autre sens). */
 .cercle-avatar,
 .cercle-photo {
   flex: 0 0 auto;
   display: block;
   width: 2rem;
   height: 2rem;
-  clip-path: var(--decoupe-hexagone);
+  border-radius: var(--rayon-pastille);
   object-fit: cover;
 }
 
@@ -1362,7 +1371,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--marque-bleu-texte);
   background: var(--marque-bleu);
 }
@@ -1467,7 +1476,7 @@
 }
 
 /* La liste des responsables, et leur avatar — chantier front S12 (DEC-673).
-   Meme recette qu'un cercle (hexagone, fond de marque), classe propre a cette
+   Meme recette qu'un cercle (portrait rond, fond de marque), classe propre a cette
    page (§7.27 dans l'autre sens). La liste perd ses puces natives : un avatar
    par ligne en tient deja lieu de repere visuel, meme parti que
    `.cercle-liste-membres`. */
@@ -1494,7 +1503,7 @@
   display: block;
   width: 2rem;
   height: 2rem;
-  clip-path: var(--decoupe-hexagone);
+  border-radius: var(--rayon-pastille);
   object-fit: cover;
 }
 
@@ -1503,7 +1512,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--marque-bleu-texte);
   background: var(--marque-bleu);
 }
@@ -1567,7 +1576,7 @@
 }
 
 .edition-bloc-type {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .edition-bloc-apercu {
@@ -1646,7 +1655,7 @@
 }
 
 .liens-lien-libelle {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .liens-lien-url {
@@ -1819,7 +1828,7 @@
 }
 
 .evenements-gestion-titre {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .evenements-gestion-dates {
@@ -1959,7 +1968,7 @@
 }
 
 .accueil-evenements-titre {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .accueil-evenements-horaire {
@@ -1990,7 +1999,7 @@
 }
 
 .accueil-liens-libelle {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 /* La mention de l'ouverture externe — `MVP-L08-US006` (2/2) — est TEXTUELLE,
@@ -2030,7 +2039,7 @@
   min-height: 44px;
   padding: var(--espace-xs) var(--espace-s);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--encre);
   cursor: pointer;
   list-style: none;
@@ -2180,7 +2189,7 @@
 }
 
 .onboarding-tache-titre {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .onboarding-tache-description,

@@ -81,16 +81,21 @@ export {
   SEUIL_AA_GRAND_TEXTE,
   SEUIL_AA_TEXTE_NORMAL,
 } from './contraste.js';
+//  `DEGRADE_MARQUE` et `DECOUPES` ont ete RETIRES par la refonte v2 (`DEC-681`) :
+//  la charte 1.1 interdit les degrades, et ses avatars sont ronds — voir
+//  l'en-tete de `jetons.ts`, section « ce que ce fichier ne contient plus ».
 export {
   ACCENTS_ADMIS,
-  DECOUPES,
-  DEGRADE_MARQUE,
+  ANNEAU_FOCUS,
+  CERCLES,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,
+  MOUVEMENT,
   OMBRES,
   RAYONS,
   SEUIL_ACCENT,
+  TEINTES,
   THEMES,
   TYPOGRAPHIE,
 } from './jetons.js';

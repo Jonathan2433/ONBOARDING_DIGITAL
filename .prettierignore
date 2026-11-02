@@ -49,3 +49,23 @@ docs/prototype/
 # ─────────────────────────────────────────────────────────────
 * [0-9]/
 * [0-9][0-9]/
+
+# ─────────────────────────────────────────────────────────────
+#  CHARTE GRAPHIQUE FOURNIE : EXCLUE EN TOTALITE, meme raison que le Markdown.
+#
+#  `docs/design-systeme/handoff/` porte la charte telle qu'elle a ete remise
+#  le 01/11/2026 (`DEC-681`) : la specification, la proposition de jetons, les
+#  pictogrammes officiels, les polices et les logos. C'est une SOURCE, au meme
+#  titre que les documents de cadrage — la reformater la ferait diverger de ce
+#  qui a reellement ete remis, et plus rien ne permettrait de confronter le
+#  code a son origine.
+#
+#  Le risque est mesure, pas theorique : `prettier --check` signalait
+#  `handoff/jetons.css` et `handoff/pictos/exalt-icons.json` des leur arrivee.
+#  C'est exactement le §7.9 de la passation, ou Prettier avait failli reecrire
+#  les cinq documents immuables (+21,7 % sur le seul cahier des charges).
+#
+#  La PROJECTION de cette charte dans le code — `packages/ui/src/jetons.css`
+#  et `jetons.ts` — reste formatee normalement : c'est du code, pas une source.
+# ─────────────────────────────────────────────────────────────
+docs/design-systeme/handoff/

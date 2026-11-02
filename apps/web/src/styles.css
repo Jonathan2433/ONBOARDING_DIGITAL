@@ -99,7 +99,7 @@ h2 {
 }
 
 .etat-global {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   font-size: 1.1rem;
   margin: 0 0 1rem;
 }

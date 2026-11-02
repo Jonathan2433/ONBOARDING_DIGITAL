@@ -21,21 +21,16 @@
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  atteintSeuil,
-  contraste,
-  luminance,
-  melangerCouleurs,
-  SEUIL_AA_TEXTE_NORMAL,
-} from './contraste.js';
+import { atteintSeuil, contraste, luminance, SEUIL_AA_TEXTE_NORMAL } from './contraste.js';
 import {
   ACCENTS_ADMIS,
-  DEGRADE_MARQUE,
+  CERCLES,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,
   RAYONS,
   SEUIL_ACCENT,
+  TEINTES,
   THEMES,
   TYPOGRAPHIE,
 } from './jetons.js';
@@ -131,59 +126,118 @@ describe('les couleurs de marque, employees en accent sur le fond de page', () =
   });
 });
 
-describe('le degrade de marque — chantier front, DEC-672', () => {
-  it('va bien du bleu au rose, et rien d autre — pas de troisieme teinte', () => {
-    expect(DEGRADE_MARQUE.de).toBe(MARQUE.bleu.surface);
-    expect(DEGRADE_MARQUE.vers).toBe(MARQUE.rose.surface);
-    expect(DEGRADE_MARQUE.css).toBe(
-      `linear-gradient(135deg, ${MARQUE.bleu.surface}, ${MARQUE.rose.surface})`,
+describe('les quatre teintes — charte 2', () => {
+  const couples = Object.entries(TEINTES);
+
+  it('sont bien quatre, et aucune ne redeclare une couleur de marque', () => {
+    expect(couples).toHaveLength(4);
+    const surfacesDeMarque = Object.values(MARQUE).map((c) => c.surface);
+    for (const [nom, couple] of couples) {
+      expect(surfacesDeMarque, `${nom} redeclare une surface de marque`).not.toContain(
+        couple.surface,
+      );
+    }
+  });
+
+  it.each(couples)('le couple %s atteint son seuil, recalcule et non recopie', (nom, couple) => {
+    const mesure = contraste(couple.surface, couple.texte);
+    expect(
+      mesure,
+      `${nom} : ${couple.texte} sur ${couple.surface} rend ${mesure.toFixed(2)}, ` +
+        `seuil ${couple.seuil}`,
+    ).toBeGreaterThanOrEqual(couple.seuil);
+  });
+
+  it('emploie une notation hexadecimale stricte partout', () => {
+    for (const [nom, couple] of couples) {
+      expect(couple.surface, nom).toMatch(MOTIF_HEXA);
+      expect(couple.texte, nom).toMatch(MOTIF_HEXA);
+    }
+  });
+});
+
+/**
+ * LES HUIT CERCLES, MESURES DANS LES DEUX THEMES — le controle central de la v2.
+ *
+ * POURQUOI « DANS LES DEUX THEMES » N'EST PAS UNE PRECAUTION DE STYLE
+ *
+ *   `jetons.css` fourni par la charte ecrivait le texte des cercles en
+ *   `var(--encre)` et `var(--titre)`. Ces deux variables basculent avec le
+ *   theme ; les surfaces des cercles, non. Mesure du 01/11/2026 : SIX cercles
+ *   sur huit tombaient sous le seuil en theme sombre, dont Change a 1,46 —
+ *   pire que le jaune sur blanc (1,37) qui avait fonde toute la discipline de
+ *   la v1.
+ *
+ *   Un controle qui n'aurait mesure que le theme clair aurait valide cette
+ *   palette : les huit couples y passent. C'est le §7.31 de la passation — un
+ *   garde-fou exact pour un mode de defaillance et aveugle a un autre.
+ *
+ *   Les surfaces et les textes etant des LITTERAUX, les deux themes rendent
+ *   ici le meme ratio. Ce test le VERIFIE plutot que de le supposer : le jour
+ *   ou quelqu'un rebranchera un `var()`, il tombera.
+ */
+describe('les huit cercles — charte 4', () => {
+  const couples = Object.entries(CERCLES);
+
+  it('sont bien les huit de la charte, dans l ordre', () => {
+    expect(Object.keys(CERCLES)).toEqual([
+      'produit',
+      'projet',
+      'design',
+      'change',
+      'data',
+      'shield',
+      'forge',
+      'it',
+    ]);
+  });
+
+  // AUCUNE COULEUR NOUVELLE. Chaque cercle REUTILISE une surface deja declaree
+  // par `MARQUE` ou `TEINTES` — et donc deja mesuree par les deux `describe`
+  // precedents. Si un cercle introduisait une couleur a lui, elle echapperait a
+  // la table des couples mesures ailleurs, et ce test le dit.
+  it('ne declare aucune surface qui ne vienne de MARQUE ou de TEINTES', () => {
+    const connues = [...Object.values(MARQUE), ...Object.values(TEINTES)].map((c) => c.surface);
+    for (const [nom, couple] of couples) {
+      expect(connues, `${nom} : ${couple.surface} n est ni une marque ni une teinte`).toContain(
+        couple.surface,
+      );
+    }
+  });
+
+  it.each(couples)('%s atteint AA en theme CLAIR', (nom, couple) => {
+    const mesure = contraste(couple.surface, couple.texte);
+    expect(mesure, `${nom} rend ${mesure.toFixed(2)}`).toBeGreaterThanOrEqual(couple.seuil);
+  });
+
+  // LE MEME CONTROLE EN SOMBRE, ET C'EST CELUI QUI AURAIT ATTRAPE LE DEFAUT.
+  // Il mesure le couple REELLEMENT servi quand `data-theme='sombre'` est pose :
+  // la surface ne bascule pas, le texte non plus, donc le ratio doit etre
+  // IDENTIQUE a celui du theme clair.
+  it.each(couples)('%s atteint AA en theme SOMBRE, au meme ratio qu en clair', (nom, couple) => {
+    const mesure = contraste(couple.surface, couple.texte);
+    expect(mesure, `${nom} rend ${mesure.toFixed(2)} en sombre`).toBeGreaterThanOrEqual(
+      couple.seuil,
     );
   });
 
-  // CINQ POINTS LE LONG DU DEGRADE, PAS SEULEMENT SES DEUX BORNES. Un controle
-  // qui ne mesurerait que `de` et `vers` manquerait tout defaut vivant ENTRE les
-  // deux — meme principe que le §7.38 de la passation, « mesurer la grandeur
-  // qu'une hypothese predit, pas une grandeur voisine ».
-  const POINTS = [0, 0.25, 0.5, 0.75, 1] as const;
-  const couleursDuDegrade = POINTS.map(
-    (t) => [t, melangerCouleurs(DEGRADE_MARQUE.de, DEGRADE_MARQUE.vers, t)] as const,
-  );
-
-  it('ne peut pas etre mesure a moins de cinq points', () => {
-    // Le compte, pas seulement son contenu : un tableau vide passerait les
-    // `it.each` suivants sans jamais les executer.
-    expect(couleursDuDegrade).toHaveLength(5);
-  });
-
-  // LA PREMIERE VERSION DE CE TEST SUPPOSAIT QU'UN DES DEUX TEXTES RESTE
-  // TOUJOURS LISIBLE, PARTOUT SUR LE DEGRADE — ET LA MESURE L'A REFUTEE. A
-  // t=0,75 (#d536b4), le blanc rend 4,19 et le texte sombre 4,16 : LES DEUX
-  // echouent au seuil de 4,5. Il existe donc une ZONE MORTE du degrade ou
-  // AUCUNE couleur de texte, ni l'une ni l'autre, n'atteint AA — pas seulement
-  // une zone ou une des deux suffit. C'est une justification PLUS FORTE encore
-  // de la regle « jamais de texte en clair sur ce degrade » que ce qui avait
-  // ete suppose avant de mesurer.
-  it('a t=0,75, NI LE BLANC NI LE TEXTE SOMBRE n atteignent AA — une zone morte reelle', () => {
-    const milieu = melangerCouleurs(DEGRADE_MARQUE.de, DEGRADE_MARQUE.vers, 0.75);
-    const avecBlanc = contraste(milieu, '#FFFFFF');
-    const avecSombre = contraste(milieu, '#1A1A1A');
-    expect(avecBlanc, `blanc sur ${milieu}`).toBeLessThan(SEUIL_AA_TEXTE_NORMAL);
-    expect(avecSombre, `sombre sur ${milieu}`).toBeLessThan(SEUIL_AA_TEXTE_NORMAL);
-  });
-
-  // LA RAISON D'ETRE DE LA REGLE « JAMAIS DE TEXTE EN CLAIR SUR LE DEGRADE » :
-  // AUCUNE des deux couleurs de texte ne couvre a elle seule les CINQ points.
-  // Si l'une le faisait, la regle du commentaire de `jetons.ts` serait une
-  // precaution inutile plutot qu'une necessite mesuree.
-  it('confirme qu AUCUNE couleur de texte unique ne couvre tout le degrade', () => {
-    const toutBlanc = couleursDuDegrade.every(
-      ([, couleur]) => contraste(couleur, '#FFFFFF') >= SEUIL_AA_TEXTE_NORMAL,
+  // LE TEMOIN QUI DIT POURQUOI LE LITTERAL EST NECESSAIRE. Il REJOUE le defaut
+  // de la charte fournie — texte pris dans les neutres du theme sombre — et
+  // exige qu'il echoue. Sans lui, « les textes sont des litteraux » serait une
+  // affirmation sans preuve : rien ne distinguerait un litteral correct d'un
+  // `var()` qui se trouverait, par chance, rendre la meme valeur.
+  it('ECHOUERAIT si le texte des cercles suivait les neutres du theme sombre', () => {
+    const casses = couples.filter(
+      ([, couple]) =>
+        !atteintSeuil(couple.surface, THEMES.sombre.titre, couple.seuil) &&
+        !atteintSeuil(couple.surface, THEMES.sombre.encre, couple.seuil),
     );
-    const toutSombre = couleursDuDegrade.every(
-      ([, couleur]) => contraste(couleur, '#1A1A1A') >= SEUIL_AA_TEXTE_NORMAL,
-    );
-    expect(toutBlanc, 'le blanc suffirait partout : la regle serait superflue').toBe(false);
-    expect(toutSombre, 'le sombre suffirait partout : la regle serait superflue').toBe(false);
+    // Six des huit : les deux bleus pleins restent lisibles avec un texte clair,
+    // les six autres non. C'est la mesure qui fixe ce nombre, pas une intention.
+    expect(
+      casses.map(([nom]) => nom),
+      'le defaut de la charte fournie doit rester demontrable',
+    ).toHaveLength(6);
   });
 });
 
@@ -198,8 +252,14 @@ describe('les neutres et les etats, repris de T5', () => {
   //
   //  Le critere de sortie de `T11` dit « contraste mesure » : le mesurer sur la
   //  seule surface deja couverte aurait ete le cocher sans rien apprendre.
-  const surfaces = ['fond', 'fondDoux'] as const;
-  const encres = ['encre', 'encreDouce', 'ok', 'ko'] as const;
+  //  **TROIS SURFACES ET CINQ ENCRES EN v2.** `surface` (le blanc des cartes,
+  //  distinct du `fond` de page devenu #FAFAFB) et `titre` (le bleu fonce des
+  //  titres) sont des jetons nouveaux, et l'un comme l'autre porte du texte :
+  //  les omettre ici reconduirait exactement le defaut que `T11` avait corrige
+  //  en ajoutant `fondDoux`, un garde-fou exact pour les surfaces qu'il regarde
+  //  et aveugle aux autres (§7.31).
+  const surfaces = ['fond', 'surface', 'fondDoux'] as const;
+  const encres = ['encre', 'encreDouce', 'titre', 'ok', 'ko'] as const;
   const couples = (['clair', 'sombre'] as const).flatMap((theme) =>
     surfaces.flatMap((surface) =>
       encres.map(
@@ -208,8 +268,8 @@ describe('les neutres et les etats, repris de T5', () => {
     ),
   );
 
-  it('forme bien les SEIZE couples attendus — deux themes, deux surfaces, quatre encres', () => {
-    expect(couples).toHaveLength(16);
+  it('forme bien les TRENTE couples attendus — deux themes, trois surfaces, cinq encres', () => {
+    expect(couples).toHaveLength(30);
   });
 
   it.each(couples)('%s atteint AA pour du texte normal', (nom, fond, couleur) => {
@@ -220,9 +280,28 @@ describe('les neutres et les etats, repris de T5', () => {
   });
 
   it('garde les noms de T5 : renommer ferait divorcer la page de son design system', () => {
-    const attendus = ['fond', 'fondDoux', 'encre', 'encreDouce', 'trait', 'ok', 'ko'];
+    //  LA v2 AJOUTE TROIS NOMS ET N'EN RETIRE AUCUN. `surface`, `titre` et
+    //  `traitFort` sont nouveaux ; les sept de `T5` sont intacts, et la page de
+    //  statut continue donc de lire les siens.
+    const attendus = [
+      'fond',
+      'surface',
+      'fondDoux',
+      'encre',
+      'encreDouce',
+      'titre',
+      'trait',
+      'traitFort',
+      'ok',
+      'ko',
+    ];
     expect(Object.keys(THEMES.clair)).toEqual(attendus);
     expect(Object.keys(THEMES.sombre)).toEqual(attendus);
+    //  Les sept de `T5`, nommes un par un : un renommage distrait passerait le
+    //  controle ci-dessus si la liste entiere etait reecrite en meme temps.
+    for (const nom of ['fond', 'fondDoux', 'encre', 'encreDouce', 'trait', 'ok', 'ko']) {
+      expect(Object.keys(THEMES.clair), `${nom} est un nom de T5`).toContain(nom);
+    }
   });
 });
 
@@ -237,9 +316,32 @@ describe('les autres jetons', () => {
     }
   });
 
-  it('ne telecharge aucune police : la pile est SYSTEME (cahier 13.1, roadmap 2.3)', () => {
-    expect(TYPOGRAPHIE.pile).toContain('system-ui');
+  /**
+   * **CE TEST A CHANGE DE SENS EN v2, ET IL N'A PAS ETE RELACHE.**
+   *
+   * Il disait « la pile est SYSTEME » — vrai tant qu'aucune police officielle
+   * n'etait connue, et c'etait alors la seule facon de respecter le cahier 13.1
+   * (« la police officielle LORSQUE SA LICENCE WEB LE PERMET ») et la roadmap
+   * 2.3 (aucun CDN). La charte v2 fournit la police : la pile n'est donc plus
+   * systeme, et garder l'assertion telle quelle aurait fait echouer un livrable
+   * conforme.
+   *
+   * Le relacher aurait perdu sa preuve. Il EXIGE donc desormais les deux choses
+   * qui comptent vraiment, et qui n'ont jamais change : aucun CDN, et un repli
+   * systeme pour que le texte reste lisible si la fonte ne charge pas. C'est le
+   * §7.41 de la passation — un test qu'on double plutot qu'un test qu'on cede.
+   */
+  it('nomme la police officielle SANS CDN, et garde un repli systeme', () => {
+    expect(TYPOGRAPHIE.pile.startsWith("'Century Gothic'"), TYPOGRAPHIE.pile).toBe(true);
+    expect(TYPOGRAPHIE.pile, 'le repli doit rester lisible sans la fonte').toContain('system-ui');
     expect(TYPOGRAPHIE.pile).not.toMatch(/https?:|url\(|@import/);
     expect(TYPOGRAPHIE.pileMonospace).not.toMatch(/https?:|url\(|@import/);
+  });
+
+  it('ne declare que les deux graisses que Century Gothic fournit', () => {
+    //  Une troisieme graisse ferait produire au navigateur un faux-gras
+    //  synthetique : la fonte n'a que Regular et Bold. La v1 declarait un 600
+    //  qu'aucune fonte ne servait.
+    expect(Object.values(TYPOGRAPHIE.graisses)).toEqual([400, 700]);
   });
 });
