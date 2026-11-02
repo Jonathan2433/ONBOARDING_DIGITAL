@@ -919,3 +919,39 @@
     transform: none;
   }
 }
+
+/*
+ * **UN ELEMENT PORTEUR DE `hidden` NE S'AFFICHE JAMAIS.** Cette regle repose
+ * un invariant du navigateur que nos propres feuilles cassaient.
+ *
+ * LE DEFAUT, MESURE LE 02/11/2026 DANS UN VRAI NAVIGATEUR
+ *
+ *   `[hidden] { display: none }` vient de la feuille de l'AGENT UTILISATEUR.
+ *   Toute regle d'auteur qui pose un `display` l'emporte sur elle, quelle que
+ *   soit sa specificite. La regle juste en dessous — `display: block` sur les
+ *   deux faces, ecrite a `T10` du LOT 5 avec le composant lui-meme — rendait
+ *   donc les DEUX faces visibles en meme temps : la carte du trombinoscope
+ *   n'a jamais retourne, elle empilait son recto et son verso.
+ *
+ *   **AUCUN TEST NE POUVAIT L'ATTRAPER**, et c'est ce qui explique seize mois
+ *   de silence : jsdom ne charge pas cette feuille, si bien que `face.hidden`
+ *   y vaut `true` pendant que le navigateur affiche la face. L'ATTRIBUT et le
+ *   RENDU sont deux grandeurs differentes (§7.0, sixieme proposition). Seul
+ *   l'aller-retour reel de `E5` l'a montre, sur l'ecran lui-meme.
+ *
+ * POURQUOI UNE GARDE GLOBALE PLUTOT QU'UN CORRECTIF PAR SITE
+ *
+ *   §7.35 : quand une propriete ne peut etre vue par aucun controle, on la
+ *   rend STRUCTURELLE. Un `:not([hidden])` sur chaque regle de disposition
+ *   serait a reecrire a chaque regle nouvelle, et l'oublier redonnerait le
+ *   defaut en silence. Ici, l'invariant tient pour toutes les regles, celles
+ *   d'aujourd'hui et celles de demain, dans ce paquet comme dans `apps/web`.
+ *
+ *   `!important` est ici a sa place et non un contournement : il ne gagne
+ *   aucune bataille de style, il restaure une regle du navigateur que nos
+ *   feuilles n'auraient jamais du battre. `composants.test.tsx` exige qu'il
+ *   reste.
+ */
+[hidden] {
+  display: none !important;
+}

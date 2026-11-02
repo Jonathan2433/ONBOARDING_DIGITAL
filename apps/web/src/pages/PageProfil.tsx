@@ -136,6 +136,24 @@ export function dateComplete(iso: string): string {
   return mois === undefined ? iso : `${String(jour)} ${mois} ${iso.slice(0, 4)}`;
 }
 
+/**
+ * Le pave de date de la charte 6.6 : le jour, puis le mois.
+ *
+ * **LE MOIS VIENT DE LA MEME TABLE QUE `dateComplete`**, jamais d'une seconde
+ * liste d'abreviations : deux tables de mois divergeraient au premier correctif
+ * (§7.27). Il reste donc ecrit en entier, et c'est la feuille qui le reduit —
+ * une abreviation correcte en francais (« janv. », « fevr. », « avr. ») ne se
+ * derive d'aucune troncature reguliere.
+ *
+ * **AUCUN `Date` N'INTERVIENT**, dans aucun sens : la chaine ISO est lue par
+ * ses positions, comme partout ailleurs dans ce depot. Un `new Date(iso)`
+ * decalerait le jour d'un fuseau a l'autre.
+ */
+export function paveDeDate(iso: string): { readonly jour: string; readonly mois: string } {
+  const mois = MOIS[Number(iso.slice(5, 7)) - 1];
+  return { jour: iso.slice(8, 10), mois: mois ?? iso.slice(5, 7) };
+}
+
 /** Le nom affiche : le nom prefere quand il existe, sinon le prenom. §10.2. */
 export function nomDeLaFiche(fiche: FicheDuProfil): string {
   return `${fiche.nomPrefere ?? fiche.prenom} ${fiche.nom}`;

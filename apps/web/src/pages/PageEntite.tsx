@@ -95,7 +95,7 @@ import {
   texteDuBloc,
   urlEstServable,
 } from '@onboarding/contracts';
-import { Alerte, Badge, Carrousel, Carte } from '@onboarding/ui';
+import { Alerte, Badge, Carrousel, Carte, Pastille, Picto } from '@onboarding/ui';
 
 /** Aucune borne n'est nommee par le corpus — voir l'en-tete. */
 const NOMBRE_MONTRE = 5;
@@ -154,29 +154,96 @@ export function PageEntite(): JSX.Element {
 
   return (
     <div className="accueil">
-      {/* 1. Presentation locale — cahier §8.4 */}
-      <Carte titre="Presentation">
-        {donnee.presentation === null ? (
-          <Alerte urgence="information">Aucun contenu de presentation pour le moment.</Alerte>
-        ) : (
-          <div className="accueil-presentation-blocs">
-            {donnee.presentation.blocs.map((bloc) => {
+      {/*
+        **1. L'EN-TETE DE L'ENTITE — charte 6.2, `E5`.** Pastille, nom de
+        l'entite, puis l'introduction. Le contenu lu est EXACTEMENT celui que
+        `T11` du LOT 8 servait deja : seule sa presentation change.
+
+        **LE TITRE EST UN `h2`, PAS LE `h1` QUE LA CHARTE ECRIT.** Le `h1` de
+        chaque page interne appartient au cadre applicatif (`app-titre`, `T3` du
+        LOT 4) et dit ou l'on se trouve. En poser un second ici donnerait DEUX
+        `h1` a la meme page, ce que le §14.2 refuse — et le nom de l'entite est
+        deja annonce par l'en-tete. Il garde en revanche la taille que la charte
+        lui donne : c'est une question de rang, pas de corps.
+      */}
+      <section className="accueil-hero" aria-labelledby="accueil-hero-titre">
+        <Pastille>Presentation de l&rsquo;entite</Pastille>
+        <h2 className="accueil-hero-titre" id="accueil-hero-titre">
+          {entite.nom}
+        </h2>
+        <div className="accueil-hero-intro">
+          {donnee.presentation === null ? (
+            <Alerte urgence="information">Aucun contenu de presentation pour le moment.</Alerte>
+          ) : (
+            donnee.presentation.blocs.map((bloc) => {
               const texte = texteDuBloc(bloc, 'texte');
               return texte === '' ? null : (
                 <p key={bloc.identifiant} className="accueil-presentation-bloc">
                   {texte}
                 </p>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
         <PanneauEditionDeContenu
           cibleCorrespond={(page) => page.typeDePage === 'HOME' && page.slug === 'presentation'}
           codeEntite={entite.code}
           demandeDeCreation={{ type_de_page: 'HOME', titre: entite.nom, slug: 'presentation' }}
           roles={roles}
         />
-      </Carte>
+      </section>
+
+      {/*
+        **2. LA GRILLE A DEUX COLONNES DE LA CHARTE 6.2, EN ATTENTE DE SON
+        CONTENU.** Arbitrage explicite de Jonathan du 02/11/2026 : la video et
+        les textes des tuiles sont prevus pour la V1, et l'emplacement est pose
+        des maintenant plutot que laisse de cote.
+
+        **CE QUI EST POSE DIT QU'IL EST VIDE, ET NE FAIT SEMBLANT DE RIEN.** Ni
+        faux texte, ni image d'illustration : chaque pave nomme ce qu'il
+        recevra. Un placeholder qui imiterait du contenu reel se retrouverait
+        dans une demonstration client en passant pour un livrable.
+
+        La video est reportee depuis le 25/09/2026 (`MVP-L08-US005`), et
+        `QO-121` — ce qu'un bloc `VIDEO` porte dans ses donnees — reste ouverte :
+        rien ici ne la tranche.
+
+        **AUCUNE ANIMATION PULSEE SUR L'APPEL A L'ACTION**, la charte 6.2
+        l'ecrit explicitement, et le §14.2 la refuserait de toute facon.
+      */}
+      <section className="accueil-duo" aria-labelledby="accueil-duo-titre">
+        <h2 className="accueil-duo-titre" id="accueil-duo-titre">
+          Contenus a venir
+        </h2>
+        <div className="accueil-duo-grille">
+          <div className="accueil-video">
+            <Badge ton="info">V1</Badge>
+            <p className="accueil-video-texte">
+              La video de presentation de l&rsquo;entite prendra place ici. Elle se lancera sur
+              votre action, jamais toute seule.
+            </p>
+          </div>
+          <ul className="accueil-tuiles">
+            <li className="accueil-tuile accueil-tuile-bleu">
+              <span className="accueil-tuile-titre">Chiffres de l&rsquo;entite</span>
+              <span className="accueil-tuile-mention">Contenu a venir</span>
+            </li>
+            <li className="accueil-tuile accueil-tuile-jaune">
+              <span className="accueil-tuile-titre">Temps forts</span>
+              <span className="accueil-tuile-mention">Contenu a venir</span>
+            </li>
+            <li className="accueil-tuile accueil-tuile-gris">
+              <span className="accueil-tuile-titre">Reperes pratiques</span>
+              <span className="accueil-tuile-mention">Contenu a venir</span>
+            </li>
+            <li className="accueil-tuile accueil-tuile-cta">
+              <Picto nom="feu-d-artifice" taille={24} />
+              <span className="accueil-tuile-titre">Vie eXalt</span>
+              <span className="accueil-tuile-mention">Contenu a venir</span>
+            </li>
+          </ul>
+        </div>
+      </section>
 
       {/* 2. Framework, cercles et bureaux — cahier §8.4. Chantier front, S4
          (`DEC-672`) : trois compteurs en `Badge`, plutot qu'une seule phrase

@@ -339,3 +339,36 @@ describe('Notification', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
+
+describe('la garde `[hidden]` — chantier design systeme v2, `E5` (`DEC-681`)', () => {
+  it('rend `display: none` NON NEGOCIABLE pour tout element masque', () => {
+    //  **CE CONTROLE EXISTE PARCE QUE SON ABSENCE A COUTE SEIZE MOIS DE
+    //  SILENCE.** `.ui-carte-retournable__recto` et `__verso` portent
+    //  `display: block` depuis `T10` du LOT 5 : cette regle d'auteur
+    //  l'emportait sur le `display: none` que le navigateur applique a
+    //  `[hidden]`, et la carte du trombinoscope empilait ses deux faces au
+    //  lieu de se retourner.
+    //
+    //  **AUCUN TEST DE RENDU NE PEUT LE VOIR** : jsdom ne charge pas cette
+    //  feuille, donc `face.hidden` y vaut `true` pendant que le navigateur
+    //  affiche la face — l'attribut et le rendu sont deux grandeurs
+    //  differentes. Ce qui reste observable, c'est la REGLE elle-meme, et
+    //  c'est donc elle qu'on exige (§7.35).
+    const garde = /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.exec(CSS);
+    expect(garde).not.toBeNull();
+  });
+
+  it('EXIGE que la garde vienne APRES les regles qu’elle corrige', () => {
+    //  **DEUX MECANISMES QUI CONCORDENT, ET C'EST VOULU.** `!important` suffit
+    //  a lui seul : il l'emporte quel que soit l'ordre. Mais `[hidden]` et
+    //  `.ui-carte-retournable__recto` ont EXACTEMENT la meme specificite
+    //  (0,1,0), si bien que sans `!important` ce serait la regle la plus
+    //  TARDIVE qui gagnerait. La garde est donc posee en fin de feuille : le
+    //  jour ou quelqu'un retirerait le `!important` en le croyant superflu,
+    //  l'ordre tiendrait encore.
+    const garde = CSS.indexOf('[hidden]');
+    const face = CSS.indexOf('.ui-carte-retournable__recto');
+    expect(face).toBeGreaterThanOrEqual(0);
+    expect(garde).toBeGreaterThan(face);
+  });
+});

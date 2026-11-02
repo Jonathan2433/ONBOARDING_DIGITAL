@@ -88,7 +88,7 @@ describe('la page detaillee d’un cercle a l’ecran', () => {
     });
     //  `str(None)` rendrait la chaine « None » : elle ne doit apparaitre nulle part.
     expect(screen.queryByText('None')).toBeNull();
-    expect(screen.getByText('Aucun Booster')).toBeTruthy();
+    expect(screen.getByText('Aucun Booster pour ce cercle.')).toBeTruthy();
   });
 
   it('pagine — la page suivante relance l’appel avec `page=2`', async () => {
@@ -162,9 +162,16 @@ describe('chantier front, S5 : `Carte`/`Badge` (`DEC-672`)', () => {
     await waitFor(() => {
       expect(screen.getByText('Data')).toBeTruthy();
     });
-    const conteneur = screen.getByText('Data').closest('.cercle-identite');
-    expect(conteneur).not.toBeNull();
-    expect((conteneur as HTMLElement).style.getPropertyValue('--cercle-couleur')).not.toBe('');
+    //  **LE PORTEUR A CHANGE A `E5`, PAS CE QUE CE TEST PROUVE.** La couleur
+    //  etait un trait de 4 px a gauche de la carte — l'emploi que `E4` a mesure
+    //  sous 3:1 pour cinq cercles sur huit. Elle REMPLIT desormais le bloc de
+    //  presentation (charte 6.4), avec son texte apparie. Le defaut latent de
+    //  `S5` reste eprouve : la valeur en ligne doit vraiment arriver a l'element
+    //  qui la peint, et un couple vide le ferait tomber.
+    const presentation = document.querySelector('.cercle-presentation') as HTMLElement;
+    expect(presentation).not.toBeNull();
+    expect(presentation.style.background).not.toBe('');
+    expect(presentation.style.color).not.toBe('');
   });
 });
 
@@ -185,10 +192,11 @@ describe('chantier front, S12 : portraits du Booster et des membres (DEC-673, ro
       expect(screen.getByText('Data')).toBeTruthy();
     });
     expect(container.querySelector('img')).toBeNull();
-    expect(container.querySelector('.cercle-booster .cercle-avatar')?.textContent).toBe('AL');
-    expect(container.querySelector('.cercle-membre-identite .cercle-avatar')?.textContent).toBe(
-      'NA',
-    );
+    //  **L'AVATAR EST CELUI DU DESIGN SYSTEM DEPUIS `E5`** : `.ex-avatar`, et
+    //  non plus l'avatar maison de cette page. La regle qu'il porte est la
+    //  meme — photo servable, ou initiales — et c'est elle que ce test eprouve.
+    expect(container.querySelector('.encart-booster .ex-avatar')?.textContent).toBe('AL');
+    expect(container.querySelector('.cercle-membre-identite .ex-avatar')?.textContent).toBe('NA');
   });
 
   it('avec une photo, le Booster et le membre portent une `<img>` — AUCUNE initiale', async () => {
@@ -226,7 +234,9 @@ describe('chantier front, S12 : portraits du Booster et des membres (DEC-673, ro
     await waitFor(() => {
       expect(screen.getByText('Data')).toBeTruthy();
     });
-    expect(container.querySelectorAll('.cercle-avatar')).toHaveLength(0);
+    //  AUCUN avatar a initiales : la photo a bien pris la place, et ce n'est
+    //  pas simplement que la classe aurait disparu du code (§7.0).
+    expect(container.querySelectorAll('.ex-avatar--initiales')).toHaveLength(0);
     const images = container.querySelectorAll('img');
     expect(images).toHaveLength(2);
     expect(Array.from(images).map((img) => img.getAttribute('src'))).toEqual([

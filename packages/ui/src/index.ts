@@ -115,6 +115,20 @@ export type { ProprietesNotification, TonNotification } from './Notification.js'
 //  `ClePicto` RESTE expose, et il n'y a pas d'exception a la regle : c'est un
 //  TYPE, aucun composant, et `apps/web/src/affichage.ts` l'emploie depuis `E4`
 //  pour dire quel pictogramme porte un cercle.
+export { Avatar, initiales } from './Avatar.js';
+export type { ProprietesAvatar, TailleAvatar } from './Avatar.js';
+export { CaseACocher } from './CaseACocher.js';
+export type { ProprietesCaseACocher } from './CaseACocher.js';
+export { Champ } from './Champ.js';
+export type { ProprietesChamp } from './Champ.js';
+export { Liste } from './Liste.js';
+export type { ProprietesListe } from './Liste.js';
+export { Pastille } from './Pastille.js';
+export type { ProprietesPastille } from './Pastille.js';
+export { Picto } from './Picto.js';
+export type { ProprietesPicto, TaillePicto } from './Picto.js';
+export { Progression } from './Progression.js';
+export type { ProprietesProgression } from './Progression.js';
 export type { ClePicto } from './pictos.js';
 //  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
 export { Onglets } from './Onglets.js';

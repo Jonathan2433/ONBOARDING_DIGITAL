@@ -16,7 +16,7 @@
  *   test du 409 prouve que c'est le MESSAGE qui change, jamais la présence du
  *   bouton — la fenêtre reste l'affaire de l'API (voir `../api/onboarding.ts`).
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PageMonOnboarding } from './PageMonOnboarding';
@@ -175,7 +175,13 @@ describe('la fiche d’arrivée — brouillon', () => {
     monter();
 
     await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
-    expect(screen.getByText('mission')).toBeTruthy();
+    //  **LE STATUT EST TRADUIT DEPUIS `E5`**, et ce n'est pas qu'une question
+    //  d'apparence : la fiche affichait la valeur BRUTE de l'API, « mission »,
+    //  la ou le trombinoscope montrait « En mission » depuis `S6`. Deux ecrans
+    //  disaient deux choses de la meme donnee. La charte 6.7 place ce statut
+    //  dans la pastille de l'apercu, et il y passe par `libelleDuStatut` —
+    //  la meme fonction, une seule verite.
+    expect(screen.getByText(/En mission/)).toBeTruthy();
     expect(screen.getByText('Client Alpha')).toBeTruthy();
     expect(screen.getByText('Dominique Lesmanager')).toBeTruthy();
     expect(screen.getByText('Donnees')).toBeTruthy();
@@ -327,7 +333,12 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
 
     await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
     expect(screen.getByText(/0 \/ 1 tâches/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Marquer comme terminée' })).toBeTruthy();
+    //  **LA COMMANDE EST UNE CASE A COCHER DEPUIS `E5`** (charte 6.7), et son
+    //  nom accessible est le titre de la tache : deux boutons « Marquer comme
+    //  terminée » auraient porte le meme nom sur deux taches differentes.
+    expect(screen.getByRole('checkbox', { name: 'Signer le contrat' })).toBeTruthy();
+    //  Et la piste de progression de la charte accompagne le compte.
+    expect(screen.getByRole('progressbar')).toBeTruthy();
   });
 
   it('termine une tache — POST sur la route de completion', async () => {
@@ -339,14 +350,14 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
     monter();
 
     await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Marquer comme terminée' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Signer le contrat' }));
 
     await waitFor(() => {
       expect(appel.mock.calls.some((c) => String(c[0]).endsWith('/completion'))).toBe(true);
     });
   });
 
-  it('propose « Annuler » sur une tache TERMINEE, jamais « Marquer comme terminée »', async () => {
+  it('une tache TERMINEE a sa case COCHEE — charte 6.7', async () => {
     servir({
       ficheCharge: fiche(),
       parcoursCharge: parcoursAvecInstance([
@@ -355,8 +366,14 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
     });
     monter();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Annuler' })).toBeTruthy());
-    expect(screen.queryByRole('button', { name: 'Marquer comme terminée' })).toBeNull();
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('checkbox', { name: 'Signer le contrat' }) as HTMLInputElement).checked,
+      ).toBe(true),
+    );
+    expect(
+      (screen.getByRole('checkbox', { name: 'Signer le contrat' }) as HTMLInputElement).checked,
+    ).toBe(true);
   });
 
   it('annule une completion — POST sur la route d’annulation', async () => {
@@ -369,8 +386,12 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
     });
     monter();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Annuler' })).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('checkbox', { name: 'Signer le contrat' }) as HTMLInputElement).checked,
+      ).toBe(true),
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Signer le contrat' }));
 
     await waitFor(() => {
       expect(appel.mock.calls.some((c) => String(c[0]).endsWith('/annulation'))).toBe(true);
@@ -387,14 +408,18 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
     });
     monter();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Annuler' })).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('checkbox', { name: 'Signer le contrat' }) as HTMLInputElement).checked,
+      ).toBe(true),
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Signer le contrat' }));
 
     await waitFor(() => expect(screen.getByText(/délai de cinq minutes/)).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Annuler' })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Signer le contrat' })).toBeTruthy();
   });
 
-  it('n’agit JAMAIS sur une tache ANNULEE — aucun bouton', async () => {
+  it('n’agit JAMAIS sur une tache ANNULEE — la case est DESACTIVEE', async () => {
     servir({
       ficheCharge: fiche(),
       parcoursCharge: parcoursAvecInstance([tache({ state: 'cancelled' })]),
@@ -402,8 +427,81 @@ describe('le parcours — une instance ACTIVE avec des taches', () => {
     monter();
 
     await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
-    expect(screen.queryByRole('button', { name: 'Marquer comme terminée' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Annuler' })).toBeNull();
+    //  **UN TEMOIN POSITIF, ET NON DEUX ABSENCES.** La version d'avant `E5`
+    //  verifiait qu'aucun bouton « Marquer comme terminée » ni « Annuler »
+    //  n'existait : un ecran qui n'aurait rendu AUCUNE commande l'aurait
+    //  satisfaite tout aussi bien (§7.0, quatrieme proposition). La case doit
+    //  donc EXISTER, et c'est son etat desactive qui est exige — l'API
+    //  refuserait d'agir sur une tache annulee, et l'ecran ne le propose pas.
+    const casse = screen.getByRole('checkbox', {
+      name: 'Signer le contrat',
+    }) as HTMLInputElement;
+    expect(casse.disabled).toBe(true);
+    expect(casse.checked).toBe(false);
+  });
+});
+
+describe('les etapes du parcours — charte 6.7, `E5` (`DEC-681`)', () => {
+  //  **LA REFERENCE EST LE 1ᵉʳ OCTOBRE 2026** (`parcoursAvecInstance`). Les
+  //  echeances ci-dessous sont donc, dans l'ordre : la veille, le jour meme,
+  //  trois jours apres, vingt jours apres, soixante jours apres.
+  const CINQ_TACHES = [
+    { id: 't-avant', title_snapshot: 'Signer le contrat', due_at: '2026-09-30T00:00:00Z' },
+    { id: 't-jour1', title_snapshot: 'Recuperer son badge', due_at: '2026-10-01T00:00:00Z' },
+    { id: 't-semaine', title_snapshot: 'Rencontrer son DSM', due_at: '2026-10-04T00:00:00Z' },
+    { id: 't-mois', title_snapshot: 'Premier point mensuel', due_at: '2026-10-21T00:00:00Z' },
+    { id: 't-au-dela', title_snapshot: 'Bilan trimestriel', due_at: '2026-11-30T00:00:00Z' },
+  ].map((champs) => tache(champs));
+
+  it('range CHAQUE tache dans son etape — les seuils sont une decision, donc ils sont eprouves', async () => {
+    servir({ ficheCharge: fiche(), parcoursCharge: parcoursAvecInstance(CINQ_TACHES) });
+    monter();
+
+    await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
+    //  **LES CINQ ETAPES SONT PROPOSEES, ET PAS UNE DE PLUS.** Une etape sans
+    //  tache n'apparait pas : une pastille qui ouvrirait un panneau vide ne
+    //  dirait rien.
+    const groupe = screen.getByRole('group', { name: 'Étapes du parcours' });
+    expect(
+      within(groupe)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Toutes', 'Avant l’arrivée', 'Jour 1', 'Semaine 1', 'Mois 1', 'Au-delà']);
+
+    //  **CHAQUE SEUIL EST EPROUVE PAR LA TACHE QUI TOMBE JUSTE DEDANS.** Sans
+    //  cela, un decoupage qui mettrait tout dans la meme etape passerait.
+    for (const [etape, attendue] of [
+      ['Avant l’arrivée', 'Signer le contrat'],
+      ['Jour 1', 'Recuperer son badge'],
+      ['Semaine 1', 'Rencontrer son DSM'],
+      ['Mois 1', 'Premier point mensuel'],
+      ['Au-delà', 'Bilan trimestriel'],
+    ] as const) {
+      fireEvent.click(within(groupe).getByRole('button', { name: etape }));
+      const cases = screen.getAllByRole('checkbox');
+      expect(
+        cases.map((c) => c.getAttribute('aria-label') ?? c.closest('label')?.textContent),
+      ).toEqual([attendue]);
+    }
+  });
+
+  it('« Toutes » reste atteignable, et c’est l’etat de depart', async () => {
+    servir({ ficheCharge: fiche(), parcoursCharge: parcoursAvecInstance(CINQ_TACHES) });
+    monter();
+
+    await waitFor(() => expect(screen.getByText('Signer le contrat')).toBeTruthy());
+    const groupe = screen.getByRole('group', { name: 'Étapes du parcours' });
+    //  **L'ETAT EST PORTE PAR `aria-pressed`, PAS PAR LA SEULE PASTILLE BLEUE**
+    //  (§14.2) : l'etat vu et l'etat annonce viennent du meme attribut.
+    expect(
+      within(groupe).getByRole('button', { name: 'Toutes' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(screen.getAllByRole('checkbox')).toHaveLength(5);
+
+    fireEvent.click(within(groupe).getByRole('button', { name: 'Jour 1' }));
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    fireEvent.click(within(groupe).getByRole('button', { name: 'Toutes' }));
+    expect(screen.getAllByRole('checkbox')).toHaveLength(5);
   });
 });
 

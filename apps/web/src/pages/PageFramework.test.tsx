@@ -13,7 +13,7 @@
  *   cela, `cercle.cheminDetaille` pourrait pointer n'importe ou et le test ne le
  *   verrait pas — §7.43, un bouchon prouve ce qu'on y a ecrit.
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -139,14 +139,19 @@ describe('la page Framework a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText('Data')).toBeTruthy();
     });
-    const avecJeton = screen.getByText('Data').closest('a');
-    const sansJeton = screen.getByText('Shield').closest('a');
+    //  **LE COUPLE TIENT, LE PORTEUR A CHANGE — `E5`.** La couleur etait sur
+    //  le LIEN de la carte ; la charte 6.4 la met dans la TUILE a pictogramme
+    //  de l'en-tete d'accordeon. Ce que ce test prouve est inchange : un jeton
+    //  connu pose une couleur, son absence n'en pose aucune, et le nom reste
+    //  du texte dans les deux cas.
+    const avecJeton = screen.getByText('Data').closest('button');
+    const sansJeton = screen.getByText('Shield').closest('button');
     expect(avecJeton).not.toBeNull();
     expect(sansJeton).not.toBeNull();
-    //  Le jeton pose une propriete personnalisee EN LIGNE ; son absence n'en
-    //  pose aucune, et la feuille la declare a une valeur neutre (§7.42).
-    expect(avecJeton?.style.getPropertyValue('--framework-cercle-couleur')).not.toBe('');
-    expect(sansJeton?.style.getPropertyValue('--framework-cercle-couleur')).toBe('');
+    const tuileAvec = avecJeton?.querySelector('.framework-accordeon-tuile') as HTMLElement;
+    const tuileSans = sansJeton?.querySelector('.framework-accordeon-tuile') as HTMLElement;
+    expect(tuileAvec.style.background).not.toBe('');
+    expect(tuileSans.style.background).toBe('');
     //  Et le nom est du texte dans LES DEUX CAS — jamais porte par la seule couleur.
     expect(avecJeton?.textContent).toContain('Data');
     expect(sansJeton?.textContent).toContain('Shield');
@@ -183,7 +188,12 @@ describe('la page Framework a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText('Data')).toBeTruthy();
     });
+    //  **LA NAVIGATION PASSE PAR LE PANNEAU — `E5`.** Le nom du cercle ouvre
+    //  desormais l'accordeon (charte 6.4) ; c'est le lien qu'il revele qui mene
+    //  a la page detaillee. L'aller-retour reel reste eprouve, et c'est ce qui
+    //  compte (§7.43) : seul le geste qui le declenche a change.
     fireEvent.click(screen.getByText('Data'));
+    fireEvent.click(screen.getByText('Voir les membres du cercle Data'));
     await waitFor(() => {
       expect(screen.getByText('Le cercle Data')).toBeTruthy();
     });
@@ -237,6 +247,61 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     expect(screen.getByText('0 responsable').closest('.ex-badge')).not.toBeNull();
   });
 
+  it('le cercle se DEPLIE et se REPLIE — charte 6.4, `E5`', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByText('Data')).toBeTruthy());
+
+    const bouton = screen.getByText('Data').closest('button') as HTMLButtonElement;
+    //  **L'ETAT EST PORTE PAR `aria-expanded`**, pas par la seule rotation du
+    //  chevron : l'etat vu et l'etat annonce viennent du meme attribut, et ils
+    //  ne peuvent donc pas diverger (§14.2).
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    //  **LE PANNEAU EXISTE DEJA, MASQUE** — c'est ce qui permet a
+    //  `aria-controls` de le designer avant meme qu'on l'ouvre.
+    const panneau = document.getElementById(
+      bouton.getAttribute('aria-controls') ?? '',
+    ) as HTMLElement;
+    expect(panneau).toBeTruthy();
+    expect(panneau.hidden).toBe(true);
+
+    fireEvent.click(bouton);
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    expect(panneau.hidden).toBe(false);
+    //  Le panneau porte ce que `GET …/framework` sert deja — aucune lecture de
+    //  plus n'est declenchee par le depliage.
+    expect(within(panneau).getByText(/Booster/)).toBeTruthy();
+    expect(within(panneau).getByText('Voir les membres du cercle Data')).toBeTruthy();
+
+    //  Et il se referme : c'est une bascule, pas un aller simple.
+    fireEvent.click(bouton);
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(panneau.hidden).toBe(true);
+  });
+
+  it('DEUX cercles peuvent rester ouverts en meme temps', async () => {
+    //  Rien dans la charte n'exige qu'en ouvrir un referme les autres, et
+    //  comparer deux cercles est un geste naturel sur cette page.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByText('Data')).toBeTruthy());
+
+    fireEvent.click(screen.getByText('Data').closest('button') as HTMLButtonElement);
+    fireEvent.click(screen.getByText('Shield').closest('button') as HTMLButtonElement);
+    expect(
+      (screen.getByText('Data').closest('button') as HTMLElement).getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(
+      (screen.getByText('Shield').closest('button') as HTMLElement).getAttribute('aria-expanded'),
+    ).toBe('true');
+  });
+
   it('un bureau porte une icone DECORATIVE — cahier §13.2, « icones maitrisees »', async () => {
     vi.stubGlobal(
       'fetch',
@@ -249,8 +314,21 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     const icone = screen.getByText('Siege').closest('a')?.querySelector('svg');
     expect(icone).toBeTruthy();
     expect(icone?.getAttribute('aria-hidden')).toBe('true');
-    //  Un cercle ne porte PAS cette icone : sa bordure coloree est deja sa
-    //  propre marque visuelle, une seconde n'ajouterait aucune information.
-    expect(screen.getByText('Data').closest('a')?.querySelector('svg')).toBeNull();
+    //  **UN CERCLE PORTE DESORMAIS SON PICTOGRAMME OFFICIEL — `E4`/`E5`.** La
+    //  table `CERCLES` associe un picto a chaque cercle de la charte, et la
+    //  charte 6.4 le pose dans la tuile de l'en-tete. Il est DECORATIF comme
+    //  celui du bureau : le nom du cercle est juste a cote, et l'annoncer le
+    //  ferait entendre deux fois.
+    const pictoDuCercle = screen
+      .getByText('Data')
+      .closest('button')
+      ?.querySelector('.framework-accordeon-tuile svg');
+    expect(pictoDuCercle).toBeTruthy();
+    expect(pictoDuCercle?.getAttribute('aria-hidden')).toBe('true');
+    //  **ET LE CERCLE SANS JETON N'EN PORTE AUCUN** : le design system ne sait
+    //  pas dessiner un cercle qu'il ne connait pas, et il n'en invente pas.
+    expect(
+      screen.getByText('Shield').closest('button')?.querySelector('.framework-accordeon-tuile svg'),
+    ).toBeNull();
   });
 });
