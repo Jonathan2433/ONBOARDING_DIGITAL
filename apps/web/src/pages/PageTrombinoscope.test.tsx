@@ -61,7 +61,7 @@ const ADA = {
   metier: 'Ingenieure logicielle',
   statut: 'mission',
   client: 'Client Alpha',
-  cercle: { code: 'data', nom: 'Data', jeton_de_couleur: 'bleu' },
+  cercle: { code: 'data', nom: 'Data', jeton_de_couleur: 'data' },
 };
 
 const NOUVELLE = {
@@ -212,7 +212,7 @@ describe('le trombinoscope a l’ecran', () => {
   });
 
   it.each([
-    ['bleu', 'var(--marque-bleu)'],
+    ['data', 'var(--cercle-data)'],
     [null, ''],
     ['jeton-inconnu-du-design-system', ''],
   ])(
@@ -249,8 +249,11 @@ describe('le trombinoscope a l’ecran', () => {
   //  ========================================================================
 
   it.each([
-    ['bleu', 'var(--marque-bleu)', 'var(--marque-bleu-texte)', 'marque'],
-    ['jaune', 'var(--marque-jaune)', 'var(--marque-jaune-texte)', 'marque'],
+    //  UNE TEINTE ET UNE SURFACE DE MARQUE, pas deux marques : les deux
+    //  familles de la charte 4 sont ainsi exercees, et leurs textes
+    //  apparies different (titre sombre contre blanc).
+    ['data', 'var(--cercle-data)', 'var(--cercle-data-texte)', 'marque'],
+    ['produit', 'var(--cercle-produit)', 'var(--cercle-produit-texte)', 'marque'],
     [null, '', '', 'neutre'],
     ['jeton-inconnu-du-design-system', '', '', 'neutre'],
   ])(

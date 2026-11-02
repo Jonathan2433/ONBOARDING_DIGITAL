@@ -33,6 +33,33 @@
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
+ * LES COMPOSANTS DE LA CHARTE 5 — chantier design systeme v2, `E3` (`DEC-681`)
+ *
+ *   `Bouton` gagne deux variantes et deux tailles, `Badge` six tons, `Carte` une
+ *   variante interactive ; `Pastille`, `Avatar`, `Champ`, `Liste`, `Progression`
+ *   et `CaseACocher` arrivent ; `Onglets` et `CarteRetournable` EXISTAIENT DEJA
+ *   et sont etendus plutot que recrees.
+ *
+ *   **AUCUN DES SEPT NOUVEAUX N'EST OUVERT PAR CE BARILLET, ET C'EST MESURE.**
+ *   `E3` les avait exposes sur la foi de son instruction (« exporte-les depuis
+ *   `index.ts` ») en NOMMANT l'ecart plutot qu'en le soumettant ; `make
+ *   cadre-check` l'a refuse, parce que le critere de `T11` du LOT 1 exige qu'un
+ *   composant expose soit EMPLOYE par un ecran. Arbitrage de Jonathan du
+ *   02/11/2026 : la porte attend `E5`, qui pose chaque composant a l'ecran et
+ *   rouvre sa ligne dans le meme geste. Voir le bloc correspondant plus bas.
+ *
+ * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-681`)
+ *
+ *   `pictos.ts` porte les DOUZE icones officielles que la charte nomme,
+ *   extraites des 382 du catalogue eXalt par `infra/scripts/engendrer-pictos.py`
+ *   et verifiees contre lui par `pictos.test.ts`. `Picto` les rend en
+ *   `currentColor`. Elles remplacent les emoji, que la charte 1.4 interdit.
+ *
+ *   `lucide-react` reste employe par `apps/web` pour ce que le catalogue eXalt
+ *   ne couvre pas (bascule de theme, chevrons, icones de rubrique libres) : les
+ *   deux ne se recouvrent pas, et `E5` dira lesquelles des secondes cedent la
+ *   place aux premieres.
+ *
  * LA BASCULE CLAIR/SOMBRE — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
  *
  *   `theme.ts` porte la logique (attribut `data-theme`, memorisation par
@@ -57,7 +84,7 @@
 export { Badge } from './Badge.js';
 export type { ProprietesBadge, TonBadge } from './Badge.js';
 export { Bouton } from './Bouton.js';
-export type { ProprietesBouton, VarianteBouton } from './Bouton.js';
+export type { ProprietesBouton, TailleBouton, VarianteBouton } from './Bouton.js';
 export { Carte } from './Carte.js';
 //  LOT 5, T10 — la carte retournable accessible, story MVP-L05-US003.
 export { CarteRetournable } from './CarteRetournable.js';
@@ -67,9 +94,28 @@ export { Carrousel } from './Carrousel.js';
 export type { ProprietesCarrousel } from './Carrousel.js';
 export { Alerte } from './Alerte.js';
 export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
-export type { NiveauTitre, ProprietesCarte } from './Carte.js';
+export type { NiveauTitre, ProprietesCarte, VarianteCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
+//  Chantier design systeme v2, E3 (`DEC-681`) — les composants de la charte 5.
+//
+//  **LA PORTE EST FERMEE JUSQU'A `E5`, SUR ARBITRAGE DE JONATHAN DU 02/11/2026.**
+//  Le critere de `T11` du LOT 1 — « chaque composant livre est EMPLOYE par un
+//  ecran » — est tenu par `make cadre-check`, qui a refuse les huit lignes que
+//  `E3` avait ecrites ici. Rien n'est retire : `Avatar`, `CaseACocher`, `Champ`,
+//  `Liste`, `Pastille`, `Picto`, `Progression` et la table `PICTOS` vivent dans
+//  ce paquet et restent eprouves par `composantsCharte5.test.tsx` et
+//  `pictos.test.ts`. Seule leur porte attend l'ecran qui s'en sert.
+//
+//  C'est la discipline deja tenue DEUX FOIS par ce depot : `Onglets` entre `S1`
+//  et `S2`, puis `Picto` a `E2`, qui l'avait volontairement laisse hors du
+//  barillet avant que `E3` ne l'y mette. **`E5` rouvre chaque ligne en meme
+//  temps qu'il pose le composant**, et le controle passera alors de lui-meme.
+//
+//  `ClePicto` RESTE expose, et il n'y a pas d'exception a la regle : c'est un
+//  TYPE, aucun composant, et `apps/web/src/affichage.ts` l'emploie depuis `E4`
+//  pour dire quel pictogramme porte un cercle.
+export type { ClePicto } from './pictos.js';
 //  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
 export { Onglets } from './Onglets.js';
 export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';
@@ -81,20 +127,28 @@ export {
   SEUIL_AA_GRAND_TEXTE,
   SEUIL_AA_TEXTE_NORMAL,
 } from './contraste.js';
+//  `DEGRADE_MARQUE` et `DECOUPES` ont ete RETIRES par la refonte v2 (`DEC-681`) :
+//  la charte 1.1 interdit les degrades, et ses avatars sont ronds — voir
+//  l'en-tete de `jetons.ts`, section « ce que ce fichier ne contient plus ».
 export {
   ACCENTS_ADMIS,
-  DECOUPES,
-  DEGRADE_MARQUE,
+  ANNEAU_FOCUS,
+  CERCLES,
   ESPACEMENTS,
   LARGEURS_RECETTE,
   MARQUE,
+  MOUVEMENT,
   OMBRES,
   RAYONS,
   SEUIL_ACCENT,
+  TEINTES,
   THEMES,
   TYPOGRAPHIE,
 } from './jetons.js';
-export type { CoupleColore } from './jetons.js';
+//  `E4` ajoute `CleCercle` et `DefinitionDeCercle` : la table des cercles porte
+//  desormais `{ nom, surface, texte, picto }`, et ses huit cles SONT les valeurs
+//  que `circle.color_token` prend. Voir l'en-tete de `jetons.ts`.
+export type { CleCercle, CoupleColore, DefinitionDeCercle } from './jetons.js';
 //  Chantier front hors lot, S9 (`DEC-672`/`DEC-673`) — la bascule clair/sombre.
 export { appliquerLeTheme, CLE_DE_STOCKAGE_DU_THEME, lireLeThemeStocke } from './theme.js';
 export type { Theme } from './theme.js';

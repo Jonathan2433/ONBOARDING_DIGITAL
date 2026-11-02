@@ -57,7 +57,7 @@ const FICHE = {
   statut: 'mission',
   client: 'Client Alpha',
   dsm: 'Dominique Lesmanager',
-  cercle_principal: { code: 'DATA', nom: 'Donnees', jeton_de_couleur: 'bleu' },
+  cercle_principal: { code: 'DATA', nom: 'Donnees', jeton_de_couleur: 'data' },
   cercles_secondaires: [{ code: 'CLOUD', nom: 'Cloud', jeton_de_couleur: null }],
   responsabilites: [{ type: 'BOOSTER', cercle: 'Donnees', bureau: null }],
   photo: null,
@@ -222,7 +222,7 @@ describe('la fiche a l’ecran', () => {
     const cercles = [...container.querySelectorAll('.profil-cercle')] as HTMLElement[];
     //  **LE COUPLE** : le principal porte « bleu », le secondaire aucun jeton.
     //  Sans le premier, un code qui ne poserait JAMAIS de couleur passerait.
-    expect(cercles[0]?.style.getPropertyValue('--profil-cercle')).toBe('var(--marque-bleu)');
+    expect(cercles[0]?.style.getPropertyValue('--profil-cercle')).toBe('var(--cercle-data)');
     expect(cercles[1]?.style.getPropertyValue('--profil-cercle')).toBe('');
     //  Et les DEUX noms restent lisibles, ce qui est ce que le §10.1 protege.
     expect(cercles[0]?.textContent).toContain('Donnees');

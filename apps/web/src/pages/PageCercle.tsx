@@ -46,8 +46,8 @@
  * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DU BOOSTER ET DES MEMBRES
  *
  *   `TitulaireDuCercle.photo` et `MembreDuCercle.photo` suivent exactement la
- *   convention du trombinoscope et du profil (S11) : un cadre hexagonal
- *   (`--decoupe-hexagone`) sur fond de marque colore quand `photo` est `null`,
+ *   convention du trombinoscope et du profil : un portrait ROND
+ *   (`--rayon-pastille`) sur fond de marque colore quand `photo` est `null`,
  *   l'image elle-meme sinon — meme motif, meme initiales, aucune nouvelle
  *   mesure de contraste. Arbitrage de Jonathan (`AskUserQuestion`,
  *   29/10/2026) : la page de synthese Framework reste hors de cette

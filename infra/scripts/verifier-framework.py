@@ -267,7 +267,7 @@ def main() -> int:
 
       -- **LE COUPLE DU §7.42** : un cercle AVEC jeton, un cercle SANS.
       INSERT INTO circle (entity_id, code, name, color_token, display_order)
-      VALUES (e, '{MARQUEUR}-AVEC', 'Avec jeton', 'bleu', 1) RETURNING id INTO ce;
+      VALUES (e, '{MARQUEUR}-AVEC', 'Avec jeton', 'produit', 1) RETURNING id INTO ce;
       INSERT INTO circle (entity_id, code, name, color_token, display_order)
       VALUES (e, '{MARQUEUR}-SANS', 'Sans jeton', NULL, 2) RETURNING id INTO cs;
       -- Un cercle ARCHIVE, qui ne doit pas paraitre.
@@ -534,7 +534,7 @@ def main() -> int:
         avec_jeton = par_code.get(f"{MARQUEUR}-AVEC", {}).get("jeton_de_couleur")
         sans_jeton = par_code.get(f"{MARQUEUR}-SANS", {})
         jeton_absent = "jeton_de_couleur" in sans_jeton and sans_jeton["jeton_de_couleur"] is None
-        if avec_jeton == "bleu" and jeton_absent and b'"None"' not in page.corps:
+        if avec_jeton == "produit" and jeton_absent and b'"None"' not in page.corps:
             print(
                 "    ok       jeton : « bleu » d'un cote, `null` de l'autre, et la "
                 "chaine « None » est ABSENTE des octets — defaut `T10-8`"
@@ -689,7 +689,7 @@ def main() -> int:
         nul_present = isinstance(corps_sans, dict) and "jeton_de_couleur" in corps_sans
         nul_vaut_nul = nul_present and corps_sans["jeton_de_couleur"] is None
         octets_propres = b'"None"' not in page_cercle.corps and b'"None"' not in page_sans.corps
-        if jeton_avec == "bleu" and nul_vaut_nul and octets_propres:
+        if jeton_avec == "produit" and nul_vaut_nul and octets_propres:
             print("    ok       jeton : « bleu » d'un cote, `null` de l'autre, et la chaine")
             print("             « None » est ABSENTE des octets des DEUX pages — `T10-8`")
         else:

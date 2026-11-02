@@ -1,0 +1,62 @@
+/* packages/ui/src/jetons.css — proposition v2 (projection de jetons.ts) */
+:root {
+  --police: 'Century Gothic', 'Futura', system-ui, sans-serif;
+
+  /* Marque — SURFACES, chacune avec son texte apparié mesuré */
+  --marque-bleu: #5853ff;        --marque-bleu-texte: #ffffff;        /* 5,1:1 */
+  --marque-bleu-fonce: #2f2f9b;  --marque-bleu-fonce-texte: #ffffff;  /* 10,5:1 */
+  --marque-rose: #ff2c9b;        --marque-rose-texte: #1a1a2e;        /* 5,0:1 */
+  --marque-jaune: #ffda3e;       --marque-jaune-texte: #2f2f9b;       /* 7,7:1 */
+
+  /* Teintes — fonds de tuiles, badges doux, cercles en teinte */
+  --teinte-bleu: #ecebff;  --teinte-rose: #ffe4f2;
+  --teinte-jaune: #fff7d6; --teinte-gris: #f5f5f5;
+
+  /* Neutres */
+  --fond: #fafafb;  --surface: #ffffff;  --fond-doux: #f5f5f5;
+  --encre: #1a1a2e; --encre-douce: #6e6e85; --titre: #2f2f9b;
+  --trait: #e8e8ee; --trait-fort: #d6d6e0;
+  --ok: #0f6b3f;    --ko: #9b1c1c;   /* page de statut, écart charte consigné */
+
+  /* Espacements — inchangés */
+  --espace-xs: 4px; --espace-s: 8px; --espace-m: 16px;
+  --espace-l: 24px; --espace-xl: 32px; --espace-xxl: 48px;
+
+  /* Rayons */
+  --rayon-s: 8px; --rayon-m: 14px; --rayon-l: 20px; --rayon-xl: 28px;
+  --rayon-pastille: 999px;
+
+  /* Ombres — retirées (charte flat) */
+  --ombre-douce: none; --ombre-posee: none;
+  --anneau-focus: 0 0 0 3px rgb(88 83 255 / 45%);
+
+  /* Typographie */
+  --taille-surtitre: 12px; --taille-xs: 13px; --taille-s: 14px;
+  --taille-m: 16px; --taille-l: 20px; --taille-xl: 30px;
+  --taille-xxl: 38px; --taille-display: 48px;
+  --graisse-normale: 400; --graisse-forte: 700;
+
+  /* Mouvement */
+  --duree-rapide: 120ms; --duree-base: 200ms; --duree-lente: 360ms;
+  --courbe-sortie: cubic-bezier(.22,1,.36,1);
+  --courbe-ressort: cubic-bezier(.34,1.56,.64,1);
+
+  /* Cercles — surface / texte */
+  --cercle-produit: var(--marque-bleu);       --cercle-produit-texte: #fff;
+  --cercle-projet: var(--marque-bleu-fonce);  --cercle-projet-texte: #fff;
+  --cercle-design: var(--marque-rose);        --cercle-design-texte: var(--encre);
+  --cercle-change: var(--marque-jaune);       --cercle-change-texte: var(--titre);
+  --cercle-data: var(--teinte-bleu);          --cercle-data-texte: var(--titre);
+  --cercle-shield: var(--teinte-rose);        --cercle-shield-texte: var(--titre);
+  --cercle-forge: var(--teinte-jaune);        --cercle-forge-texte: var(--titre);
+  --cercle-it: var(--teinte-gris);            --cercle-it-texte: var(--titre);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #18181b; --surface: #27272a; --fond-doux: #27272a;
+    --encre: #f4f4f5; --encre-douce: #a1a1aa; --titre: #b3afff;
+    --trait: #3f3f46; --trait-fort: #52525b;
+    --ok: #6ee7a8; --ko: #fca5a5;
+  }
+}

@@ -24,41 +24,45 @@
  * 320 px a 1920 px.
  */
 
-:root {
-  --encre: #1a1a1a;
-  --encre-douce: #555555;
-  --fond: #ffffff;
-  --fond-doux: #f4f4f5;
-  --trait: #d4d4d8;
-  /* Teintes semantiques choisies pour leur contraste sur fond clair comme
-     sombre, et jamais seules porteuses de sens. */
-  --ok: #0f6b3f;
-  --ko: #9b1c1c;
-}
+/*
+ * CETTE FEUILLE NE DECLARE PLUS AUCUN JETON — chantier design systeme v2, `E4`.
+ *
+ * Elle en redeclarait SEPT, en theme clair comme en sombre, avec les valeurs
+ * neutres posees au LOT 1 `T5` quand `packages/ui` n'existait pas encore. Elles
+ * sont restees justes jusqu'a `E1`, qui a refondu les neutres de la charte.
+ *
+ * **MESURE DU 02/11/2026, SUR L'ARTEFACT REELLEMENT BATI** : cinq des sept
+ * divergeaient en theme CLAIR — `--encre` #1a1a1a contre #1A1A2E, `--fond` #fff
+ * contre #FAFAFB, `--trait` #d4d4d8 contre #E8E8EE, `--encre-douce` #555
+ * contre #6E6E85, `--fond-doux` #f4f4f5 contre #F5F5F5 — et c'est CETTE
+ * feuille qui gagnait, puisque `main.tsx` l'importe apres `jetons.css`. Les
+ * sept valeurs du theme sombre, elles, etaient identiques : le defaut etait
+ * invisible precisement dans le theme ou on l'aurait cherche.
+ *
+ * Le clair etant le theme de premiere visite depuis `S9`, l'application entiere
+ * tournait donc sur la palette v1 pendant que `jetons.test.ts` mesurait la v2.
+ * La separation page/carte que `E1` a introduite — `--fond` #FAFAFB sous
+ * `--surface` #FFFFFF — etait meme annulee, les deux valant #fff.
+ *
+ * C'est le §7.21 de la passation dans sa forme la plus nette : un contrôle juste
+ * hier peut etre faux aujourd'hui, et c'est nous qui l'avons rendu faux. La
+ * parade n'est pas ce correctif, c'est `make ecrans-check`, qui REFUSE desormais
+ * qu'une feuille d'ecran redeclare un nom que `jetons.css` porte deja.
+ *
+ * Les noms restent EMPLOYES ici, en `var(--…)` : seules les declarations
+ * partent. Il n'existe qu'un point d'entree (`main.tsx`), et il charge
+ * `jetons.css` — aucune page ne peut donc se retrouver sans eux.
+ */
 
 /*
- * **CETTE FEUILLE EST CHARGEE PAR `main.tsx` POUR TOUTE L'APPLICATION, PAS
- * SEULEMENT POUR LA PAGE DE STATUT** — mesure du 27/10/2026, en construisant
- * S9 : son `@media (prefers-color-scheme: dark)` d'origine re-declarait les
- * memes noms que `jetons.css` et gagnait la cascade sur CHAQUE page (l'ordre
- * d'import documente dans `main.tsx`, « une feuille locale surcharge un jeton
- * global »). Le bouton de bascule (`BoutonBasculerTheme`) posait bien
- * `data-theme` sur `<html>`, mais cette regle-ci continuait de suivre la
- * preference SYSTEME par-dessus, sans que rien ne le signale — le theme
- * clair revenait en facade sur `jetons.css` et restait sombre en pratique.
- *
- * Meme mecanisme que `jetons.css` desormais : un attribut explicite plutot que
- * `prefers-color-scheme`, les valeurs ELLES-MEMES inchangees.
+ * LE BLOC DU THEME SOMBRE A DISPARU AVEC LES AUTRES, ET SON HISTOIRE VAUT D'ETRE
+ * GARDEE : il suivait `@media (prefers-color-scheme: dark)` et gagnait la
+ * cascade sur CHAQUE page, si bien que le bouton de bascule posait bien
+ * `data-theme` sur `<html>` pendant que cette regle-ci continuait d'imposer la
+ * preference SYSTEME par-dessus. Mesure du 27/10/2026, chantier `S9`. Corrige
+ * alors en attribut explicite, il est aujourd'hui simplement inutile :
+ * `jetons.css` porte les onze bascules, et une seule source suffit.
  */
-:root[data-theme='sombre'] {
-  --encre: #f4f4f5;
-  --encre-douce: #a1a1aa;
-  --fond: #18181b;
-  --fond-doux: #27272a;
-  --trait: #3f3f46;
-  --ok: #6ee7a8;
-  --ko: #fca5a5;
-}
 
 * {
   box-sizing: border-box;
@@ -99,7 +103,7 @@ h2 {
 }
 
 .etat-global {
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   font-size: 1.1rem;
   margin: 0 0 1rem;
 }

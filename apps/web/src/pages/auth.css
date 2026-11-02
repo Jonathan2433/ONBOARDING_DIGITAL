@@ -28,7 +28,7 @@
 .auth-marque {
   margin: 0;
   font-size: var(--taille-s);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--encre-douce);
@@ -68,7 +68,7 @@
 
 .auth-etiquette {
   font-size: var(--taille-s);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
 }
 
 .auth-saisie {

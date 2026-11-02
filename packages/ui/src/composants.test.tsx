@@ -67,6 +67,35 @@ describe('Bouton', () => {
     expect(screen.getByRole('button').dataset.variante).toBe('secondaire');
   });
 
+  //  `E3`, charte 5 : les quatre variantes, et AUCUNE n'est rose.
+  it.each(['primaire', 'secondaire', 'sombre', 'discret'] as const)(
+    'rend la variante %s sans rien changer a son role ni a son nom',
+    (variante) => {
+      render(<Bouton variante={variante}>Continuer</Bouton>);
+      const bouton = screen.getByRole('button', { name: 'Continuer' });
+      expect(bouton.dataset.variante).toBe(variante);
+    },
+  );
+
+  it('vaut la taille `m` par defaut — la seule qui tienne les 44px de la charte 1.6', () => {
+    //  La charte se contredit : sa regle 1.6 exige des cibles >= 44px, sa
+    //  section 5 propose une taille `s` de 36px. Le DEFAUT est celui qui
+    //  respecte 1.6, pour qu'on obtienne la bonne taille sans rien demander.
+    const { unmount } = render(<Bouton>Defaut</Bouton>);
+    expect(screen.getByRole('button').dataset.taille).toBe('m');
+    unmount();
+    render(<Bouton taille="s">Compact</Bouton>);
+    expect(screen.getByRole('button').dataset.taille).toBe('s');
+  });
+
+  it('reste focalisable et dans l ordre de tabulation', () => {
+    render(<Bouton variante="discret">Voir plus</Bouton>);
+    const bouton = screen.getByRole('button', { name: 'Voir plus' });
+    (bouton as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(bouton);
+    expect(bouton.getAttribute('tabindex')).toBeNull();
+  });
+
   it('est activable, et transmet le clic', () => {
     const clic = vi.fn();
     render(<Bouton onClick={clic}>Agir</Bouton>);
@@ -102,6 +131,72 @@ describe('Badge', () => {
   it('vaut le ton `neutre` par defaut', () => {
     render(<Badge>Inconnu</Badge>);
     expect(screen.getByText('Inconnu').dataset.ton).toBe('neutre');
+  });
+
+  //  `E3`, charte 5 : les six tons nommes par ce qu'ils DISENT.
+  it.each(['mission', 'intercontrat', 'enrichissement', 'booster', 'annule', 'info'] as const)(
+    'rend son texte pour le ton %s de la charte 5',
+    (ton) => {
+      render(<Badge ton={ton}>Intercontrat</Badge>);
+      expect(screen.getByText('Intercontrat').dataset.ton).toBe(ton);
+    },
+  );
+
+  it('porte DIX tons : six de la charte, quatre de `T10` que `E5` migrera', () => {
+    //  Le compte est annonce pour que le jour ou `E6` retire les quatre
+    //  anciens, ce test le dise — plutot que de laisser la liste vieillir en
+    //  silence. Les quatre survivants servent vingt-deux badges d'`apps/web`
+    //  dont la traduction depend de ce que chaque ecran veut dire.
+    const tons = [
+      'mission',
+      'intercontrat',
+      'enrichissement',
+      'booster',
+      'annule',
+      'info',
+      'neutre',
+      'ok',
+      'ko',
+      'marque',
+    ] as const;
+    expect(tons).toHaveLength(10);
+    for (const ton of tons) {
+      const { unmount } = render(<Badge ton={ton}>X</Badge>);
+      expect(screen.getByText('X').dataset.ton).toBe(ton);
+      unmount();
+    }
+  });
+});
+
+describe('Carte — la variante interactive de la charte 5 (`E3`)', () => {
+  it('reste `statique` par defaut', () => {
+    render(<Carte titre="Membres">x</Carte>);
+    expect(screen.getByRole('region', { name: 'Membres' }).dataset.variante).toBe('statique');
+  });
+
+  it("signale l'interactivite SANS devenir cliquable : aucun role n'est ajoute", () => {
+    //  LE TEMOIN QUI MORD. Une carte qui prendrait `role="button"` ou un
+    //  `onClick` paraitrait actionnable a un lecteur d'ecran sans l'etre
+    //  vraiment au clavier. La variante ne change QUE l'apparence ; c'est
+    //  l'appelant qui pose le lien ou le bouton reel a l'interieur.
+    render(
+      <Carte titre="Cercle Data" variante="interactive">
+        <a href="/cercles/data">Voir le cercle</a>
+      </Carte>,
+    );
+    const region = screen.getByRole('region', { name: 'Cercle Data' });
+    expect(region.dataset.variante).toBe('interactive');
+    expect(region.getAttribute('role')).toBeNull();
+    expect(region.getAttribute('tabindex')).toBeNull();
+    //  TEMOIN POSITIF : ce qui est reellement actionnable l'est toujours.
+    expect(screen.getByRole('link', { name: 'Voir le cercle' })).toBeTruthy();
+  });
+
+  it('sans titre, la variante voyage quand meme', () => {
+    const { container } = render(<Carte variante="interactive">nu</Carte>);
+    expect((container.querySelector('.ex-carte') as HTMLElement).dataset.variante).toBe(
+      'interactive',
+    );
   });
 });
 

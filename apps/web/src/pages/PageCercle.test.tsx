@@ -29,7 +29,7 @@ function pageDeCercle(supplement: Record<string, unknown> = {}): Response {
       code: 'data',
       nom: 'Data',
       description: 'Le cercle Data',
-      jeton_de_couleur: 'bleu',
+      jeton_de_couleur: 'produit',
       booster: { identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace', photo: null },
       membres: [
         {
@@ -168,7 +168,7 @@ describe('chantier front, S5 : `Carte`/`Badge` (`DEC-672`)', () => {
   });
 });
 
-describe('chantier front, S12 : cadres hexagonaux du Booster et des membres (DEC-673)', () => {
+describe('chantier front, S12 : portraits du Booster et des membres (DEC-673, ronds depuis DEC-681)', () => {
   it('sans photo, le Booster et le membre portent des initiales — AUCUNE `<img>`', async () => {
     vi.stubGlobal(
       'fetch',
