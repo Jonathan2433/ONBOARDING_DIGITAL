@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import re
 import sys
 from types import ModuleType
 from typing import Any
@@ -33,15 +34,32 @@ def test_personas_sont_fictifs_uniques_et_deterministes() -> None:
     assert all(persona.presentation and persona.anecdote for persona in module.PERSONAS)
 
 
-def test_couleurs_appartiennent_aux_quatre_jetons_compris_par_le_frontend() -> None:
-    module = charger_script()
+def test_les_jetons_de_la_demo_sont_des_cercles_que_le_frontend_sait_rendre() -> None:
+    """Les jetons sont DERIVES du design system, jamais recopies ici.
 
-    assert module.COULEURS == {
-        "TECH": "bleu",
-        "DATA": "rose",
-        "CLOUD": "bleu-fonce",
-        "PROD": "jaune",
+    L'ancienne version de ce test comparait `COULEURS` a un dictionnaire ecrit en
+    toutes lettres : il prouvait que le script n'avait pas change, pas que ses
+    valeurs seraient comprises. Une liste recopiee vieillit au premier ajout
+    (§7.27), et c'est exactement ce qui s'est produit -- les quatre etiquettes de
+    couleur ont cesse d'etre des jetons valides au chantier `E4` (`DEC-681`).
+
+    Les huit cercles de la charte sont donc RELEVES dans `jetons.css`, ou ils
+    sont declares `--cercle-<cle>`. Cette feuille est une projection verifiee de
+    `jetons.ts` (`jetons-css.test.ts`), donc la relever revient a relever la
+    source. Un neuvieme cercle y entrerait sans que ce test ait a changer.
+    """
+    module = charger_script()
+    feuille = (RACINE / "packages" / "ui" / "src" / "jetons.css").read_text(encoding="utf-8")
+    cercles = {
+        correspondance.group(1) for correspondance in re.finditer(r"--cercle-([a-z]+)\s*:", feuille)
     }
+
+    #  SANS CE COMPTE, une expression cassee rendrait un ensemble vide et
+    #  l'inclusion ci-dessous tiendrait sans rien prouver (§7.0, 3e proposition).
+    assert len(cercles) == 8, f"huit cercles attendus dans jetons.css, {len(cercles)} releves"
+    assert module.COULEURS, "la demonstration doit colorer au moins un cercle"
+    inconnus = set(module.COULEURS.values()) - cercles
+    assert not inconnus, f"jetons inconnus du design system : {sorted(inconnus)}"
 
 
 def test_compte_de_demo_emploie_le_domaine_reserve() -> None:

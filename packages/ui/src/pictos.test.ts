@@ -31,6 +31,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { CERCLES } from './jetons.js';
 import { PICTOS } from './pictos.js';
 
 //  `?raw` plutot que `node:fs` : le fichier arrive comme une chaine, sans
@@ -71,17 +72,20 @@ function courbesDuBalisage(balisage: string): readonly string[] {
   return [...balisage.matchAll(/<path\b[^>]*\sd="([^"]*)"/g)].map((c) => c[1] ?? '');
 }
 
-/** Les huit du tableau de la charte 4, dans l'ordre : Produit → IT. */
-const PICTOS_DE_CERCLE = [
-  'fusee',
-  'plan-de-projet-fusee',
-  'ampoule-idee',
-  'dialogue',
-  'camembert',
-  'bouclier-valide',
-  'engrenages-multiples',
-  'serveur',
-] as const;
+/**
+ * Les huit du tableau de la charte 4, DERIVES de la table `CERCLES`.
+ *
+ * **`E2` LES AVAIT ECRITS A LA MAIN ICI, ET C'ETAIT JUSTE A SA DATE** : aucune
+ * table ne les portait encore, et le commentaire ci-dessous annoncait deja
+ * « ce que la table `CERCLES` de `E4` devra associer ». Depuis que `E4` les
+ * porte, une seconde liste divergerait au premier cercle ajoute — §7.27, la
+ * classe d'erreur la plus frequente du projet.
+ *
+ * La liste INDEPENDANTE n'a pas disparu pour autant, elle a change de place :
+ * `cercles.test.ts` extrait les huit pictos du tableau markdown de la charte
+ * et les confronte a `CERCLES`. C'est la charte qui fait foi, pas une copie.
+ */
+const PICTOS_DE_CERCLE = Object.values(CERCLES).map((cercle) => cercle.picto);
 
 /** Les quatre que les ecrans nomment : 6.2, 6.5, 6.7 et 7. */
 const PICTOS_D_ECRAN = ['feu-d-artifice', 'organigramme', 'profil-valide', 'loupe'] as const;
@@ -101,13 +105,11 @@ describe('pictos.ts est une projection fidele du catalogue officiel', () => {
     expect(Object.keys(PICTOS).sort((a, b) => a.localeCompare(b))).toEqual(attendues);
   });
 
-  it('porte les huit pictos de cercle de la charte 4, dans son ordre', () => {
-    //  CE QUE LA TABLE `CERCLES` DE `E4` DEVRA ASSOCIER. Le test precedent dit
-    //  seulement qu'on suit la spec ; celui-ci dit ce qu'elle SIGNIFIE — la
-    //  liste est une INTERPRETATION (quel picto appartient au tableau des
-    //  cercles), ce que §7.27 autorise a declarer pourvu qu'on EXIGE qu'elle
-    //  corresponde au reel. L'ordre est celui du tableau de la charte 4 :
-    //  Produit, Projet, Design, Change, Data, Shield, Forge, IT.
+  it('porte les huit pictos que la table des cercles nomme', () => {
+    //  CE QUE LA TABLE `CERCLES` ASSOCIE DEPUIS `E4`. Le test precedent dit
+    //  qu'on suit la spec ; celui-ci dit que les huit pictos REELLEMENT employes
+    //  par les cercles sont bien dans ce module — c'est le sens utile, puisque
+    //  c'est `CERCLES` qui les nommera a l'ecran.
     expect(PICTOS_DE_CERCLE).toHaveLength(8);
     for (const cle of PICTOS_DE_CERCLE) {
       expect(Object.keys(PICTOS)).toContain(cle);

@@ -144,7 +144,10 @@ export {
   THEMES,
   TYPOGRAPHIE,
 } from './jetons.js';
-export type { CoupleColore } from './jetons.js';
+//  `E4` ajoute `CleCercle` et `DefinitionDeCercle` : la table des cercles porte
+//  desormais `{ nom, surface, texte, picto }`, et ses huit cles SONT les valeurs
+//  que `circle.color_token` prend. Voir l'en-tete de `jetons.ts`.
+export type { CleCercle, CoupleColore, DefinitionDeCercle } from './jetons.js';
 //  Chantier front hors lot, S9 (`DEC-672`/`DEC-673`) — la bascule clair/sombre.
 export { appliquerLeTheme, CLE_DE_STOCKAGE_DU_THEME, lireLeThemeStocke } from './theme.js';
 export type { Theme } from './theme.js';

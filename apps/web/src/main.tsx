@@ -27,11 +27,23 @@ import { appliquerLeTheme, lireLeThemeStocke } from '@onboarding/ui';
 //  succes du controle et la justesse de la page sont deux grandeurs
 //  differentes (§7.24).
 //
-//  L'import vient AVANT `styles.css`, et le choix est mesure : les 7 noms
-//  communs portent des valeurs IDENTIQUES dans les deux feuilles, donc l'ordre
-//  ne change rien aujourd'hui. Le declarer d'abord laisse neanmoins `styles.css`
-//  -- propre a la page de statut -- prevaloir si elle diverge un jour, ce qui
-//  est le sens voulu : une feuille locale surcharge un jeton global.
+//  **CE PARAGRAPHE A ETE FAUX PENDANT TOUT LE CHANTIER `E1` A `E3`, ET C'EST
+//  NOUS QUI L'AVONS RENDU FAUX.** Il disait : « les 7 noms communs portent des
+//  valeurs IDENTIQUES dans les deux feuilles, donc l'ordre ne change rien
+//  aujourd'hui », et il concluait qu'on laissait deliberement `styles.css`
+//  prevaloir « si elle diverge un jour ».
+//
+//  Elle a diverge le 01/11/2026, quand `E1` a refondu les neutres de la charte,
+//  et personne ne l'a vu : mesure du 02/11/2026 sur le CSS BATI, cinq des sept
+//  noms differaient en theme CLAIR -- le theme de premiere visite depuis `S9` --
+//  et c'est bien la feuille d'ecran qui gagnait. L'application affichait la
+//  palette v1 pendant que `jetons.test.ts` mesurait la v2. §7.21 de la
+//  passation : un contrôle juste hier peut etre faux aujourd'hui.
+//
+//  Depuis `E4`, `styles.css` NE DECLARE PLUS AUCUN JETON — elle les emploie
+//  seulement — et `make ecrans-check` refuse qu'une feuille d'ecran en
+//  redeclare un. L'ordre des deux imports n'a donc plus de consequence, et ce
+//  n'est plus une promesse mais une propriete que le controle tient.
 import '@onboarding/ui/jetons.css';
 //  **ET LES CLASSES DES COMPOSANTS, QUI MANQUAIENT AUSSI.** Trois ecrans du
 //  LOT 3 importent `Bouton` de `@onboarding/ui` ; ce composant rend

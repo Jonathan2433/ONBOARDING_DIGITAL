@@ -29,7 +29,7 @@ function pageDeCercle(supplement: Record<string, unknown> = {}): Response {
       code: 'data',
       nom: 'Data',
       description: 'Le cercle Data',
-      jeton_de_couleur: 'bleu',
+      jeton_de_couleur: 'produit',
       booster: { identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace', photo: null },
       membres: [
         {

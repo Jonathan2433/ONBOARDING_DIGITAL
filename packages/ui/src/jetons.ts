@@ -84,6 +84,10 @@
  */
 
 import { SEUIL_AA_GRAND_TEXTE, SEUIL_AA_TEXTE_NORMAL } from './contraste.js';
+//  TYPE SEUL, DONC AUCUNE DEPENDANCE A L'EXECUTION — ce fichier reste la source
+//  de verite des VALEURS et n'embarque pas les 88 courbes du catalogue. Ce que
+//  l'import apporte est que `picto: 'fuse'` ne compile pas (§7.35).
+import type { ClePicto } from './pictos.js';
 
 /** Un fond et le texte qui doit s'y poser, avec le seuil que le couple doit atteindre. */
 export interface CoupleColore {
@@ -146,28 +150,83 @@ export const TEINTES = {
 } as const satisfies Record<string, CoupleColore>;
 
 /**
- * Les huit cercles — charte 4.
+ * Un cercle de la charte 4 : son nom, son couple de couleurs, son pictogramme.
  *
- * **CE N'EST PAS ENCORE LA TABLE `CERCLES` COMPLETE.** La charte la decrit comme
- * `{ nom, surface, texte, picto }` ; le `picto` arrive a l'etape E2, quand les
- * pictogrammes officiels seront extraits du JSON. Cette table-ci ne porte que
- * la COULEUR, qui est ce qu'un jeton sait porter, et E2 l'enrichira plutot que
- * d'en ouvrir une seconde — deux tables de cercles divergeraient au premier
- * cercle ajoute (§7.27 de la passation).
+ * Il ETEND `CoupleColore` plutot que de l'encapsuler, et le motif est litteral :
+ * la charte demande `{ nom, surface, texte, picto }`, et c'est exactement ce que
+ * cette forme porte — `seuil` venant en plus, du couple reutilise.
+ */
+export interface DefinitionDeCercle extends CoupleColore {
+  /** Le nom affiche, tel que la charte 4 l'ecrit : « Produit », « IT ». */
+  readonly nom: string;
+  /** La cle du pictogramme officiel dans `PICTOS`. */
+  readonly picto: ClePicto;
+}
+
+/**
+ * Les huit cercles — charte 4, « Cercles (donnees, pas en dur) ».
+ *
+ * Chantier design systeme v2, etape `E4` (`DEC-681`). `E1` n'avait pose que la
+ * COULEUR et renvoyait le `picto` a plus tard ; il est ici, et la table porte
+ * desormais les quatre colonnes que la charte demande.
+ *
+ * ============================================================================
+ *  LA CLE EST LE JETON QUE LA BASE STOCKE — arbitrage de Jonathan, 02/11/2026
+ * ============================================================================
+ *
+ * `circle.color_token` (modele 8.1, « Reference de couleur locale ») est un
+ * texte LIBRE, nullable, sans aucune enumeration nulle part dans le corpus.
+ * Mesure du 02/11/2026 sur la base de developpement : **112 cercles sans jeton**
+ * et **quatre** qui en portent un — `bleu`, `rose`, `bleu-fonce`, `jaune`, sur
+ * la seule entite de demonstration.
+ *
+ * **ET LE `picto` TRANCHE LA QUESTION DE LA CLE.** Une etiquette de COULEUR ne
+ * peut pas designer un pictogramme : `bleu` ne dit pas s'il faut dessiner
+ * `fusee` ou `camembert`. Deux cercles peuvent partager une surface ; ils ne
+ * partagent pas leur dessin. La cle de cette table est donc une IDENTITE DE
+ * CERCLE, pas une couleur — et le jeton stocke prend ces huit valeurs.
+ *
+ * Les deux autres lectures ont ete posees a Jonathan et ecartees par lui :
+ * garder les etiquettes de couleur et les traduire rendrait QUATRE des huit
+ * lignes — Data, Shield, Forge, IT — structurellement inatteignables, donc
+ * leurs pictogrammes jamais affichables (§7.39) ; et laisser la table sans
+ * consommateur reporterait le « pas en dur » de la charte sans rien resoudre.
+ *
+ * AUCUNE MIGRATION N'EST REQUISE : la colonne accepte deja n'importe quel texte
+ * de 64 caracteres. Un jeton inconnu, et `null`, restent neutres exactement
+ * comme avant — c'est le comportement que `couleurDuCercle` (`apps/web`) porte
+ * depuis le LOT 5, et le defaut `T10-8` interdit de l'indexer par `null`.
+ *
+ * ============================================================================
+ *  CE QUE LA FORME GARANTIT, SANS CONTROLE A MAINTENIR
+ * ============================================================================
+ *
+ * `picto` est type `ClePicto` : une cle inventee ne compile pas. Le « >= 24px »
+ * de la charte 4 etait deja tenu par `TaillePicto` a `E2` ; la fidelite du
+ * pictogramme l'est ici. Ni l'un ni l'autre ne repose sur un commentaire
+ * (§7.35 de la passation).
  *
  * Chaque couple reutilise une surface DEJA declaree par `MARQUE` ou `TEINTES` :
  * aucune couleur nouvelle n'est introduite ici, et `jetons.test.ts` l'exige.
+ *
+ * **LA CLE EST LE NOM EN MINUSCULES**, sans exception — `IT` donne `it`. C'est
+ * ce qui fait qu'un neuvieme cercle ajoute a la charte entre ici sans qu'on ait
+ * a inventer sa cle, et `cercles.test.ts` l'exige dans les deux sens contre le
+ * tableau de `DESIGN_SYSTEME.md` lui-meme.
  */
 export const CERCLES = {
-  produit: MARQUE.bleu,
-  projet: MARQUE.bleuFonce,
-  design: MARQUE.rose,
-  change: MARQUE.jaune,
-  data: TEINTES.bleu,
-  shield: TEINTES.rose,
-  forge: TEINTES.jaune,
-  it: TEINTES.gris,
-} as const satisfies Record<string, CoupleColore>;
+  produit: { nom: 'Produit', ...MARQUE.bleu, picto: 'fusee' },
+  projet: { nom: 'Projet', ...MARQUE.bleuFonce, picto: 'plan-de-projet-fusee' },
+  design: { nom: 'Design', ...MARQUE.rose, picto: 'ampoule-idee' },
+  change: { nom: 'Change', ...MARQUE.jaune, picto: 'dialogue' },
+  data: { nom: 'Data', ...TEINTES.bleu, picto: 'camembert' },
+  shield: { nom: 'Shield', ...TEINTES.rose, picto: 'bouclier-valide' },
+  forge: { nom: 'Forge', ...TEINTES.jaune, picto: 'engrenages-multiples' },
+  it: { nom: 'IT', ...TEINTES.gris, picto: 'serveur' },
+} as const satisfies Record<string, DefinitionDeCercle>;
+
+/** Les huit valeurs que `circle.color_token` peut prendre et que l'on sait rendre. */
+export type CleCercle = keyof typeof CERCLES;
 
 /**
  * Les couleurs de marque employees en ACCENT — texte ou bordure sur le fond de
