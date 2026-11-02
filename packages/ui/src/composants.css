@@ -135,6 +135,29 @@
   font-weight: var(--graisse-forte);
 }
 
+/* ---------------------------------------------------------------------------
+ *  Picto — pictogrammes officiels eXalt, charte 1.4 / 4 / 6 / 7
+ * ------------------------------------------------------------------------- */
+
+/* AUCUNE COULEUR, AUCUNE TAILLE ICI, ET C'EST VOULU.
+
+   La couleur vient de `fill="currentColor"` pose sur le `<svg>`, donc de la
+   couleur de TEXTE du contexte : la declarer ici obligerait chaque surface de
+   cercle a redeclarer la sienne, et la charte 4 ne donne qu'un nom de picto
+   par cercle, jamais une couleur. La taille vient des attributs `width` et
+   `height`, bornes par le type `TaillePicto` — une regle « >= 24px » tenue par
+   le compilateur plutot que par une feuille de style qu'un appelant surcharge.
+
+   `inline-block` plutot que `block` : un picto vit aussi bien dans une ligne de
+   texte (6.7) que dans une boite flex (6.2, 6.4, 6.5). `flex: none` l'empeche
+   d'etre comprime quand son libelle est long — un picto ecrase cesse d'etre
+   reconnaissable, ce qui est exactement ce que la charte 1.4 lui demande. */
+.ex-picto {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
 /* ==========================================================================
    Alerte — LOT 4, T11. Couvre les familles « alertes », « loaders » et
    « etats vides » du backlog US007 : elles ne se distinguent que par le role

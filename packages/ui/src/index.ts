@@ -33,6 +33,25 @@
  *
  *   Aucune couleur de cercle : c'est une notion metier du LOT 6.
  *
+ * LES PICTOGRAMMES — chantier design systeme v2, E2 (`DEC-681`)
+ *
+ *   `pictos.ts` porte les DOUZE icones officielles que la charte nomme,
+ *   extraites des 382 du catalogue eXalt par `infra/scripts/engendrer-pictos.py`
+ *   et verifiees contre lui par `pictos.test.ts`. `Picto` les rend en
+ *   `currentColor`. Elles remplacent les emoji, que la charte 1.4 interdit.
+ *
+ *   **NI L'UN NI L'AUTRE N'EST EXPORTE PAR CE FICHIER, ET C'EST VOULU.** Le
+ *   critere de `T11` du LOT 1 exige qu'un composant expose ici soit EMPLOYE par
+ *   un ecran, et aucun ne l'emploie avant `E5` — exactement la situation
+ *   d'`Onglets`, pose et teste en isolation par `S1`, exporte seulement quand
+ *   `S2` lui a donne deux consommateurs reels. Les composants et la table des
+ *   cercles d'`E3`/`E4` l'importent par son chemin, sans passer par ce barillet.
+ *
+ *   `lucide-react` reste employe par `apps/web` pour ce que le catalogue eXalt
+ *   ne couvre pas (bascule de theme, chevrons, icones de rubrique libres) : les
+ *   deux ne se recouvrent pas, et `E5` dira lesquelles des secondes cedent la
+ *   place aux premieres.
+ *
  * LA BASCULE CLAIR/SOMBRE — chantier front hors lot, S9 (`DEC-672`/`DEC-673`)
  *
  *   `theme.ts` porte la logique (attribut `data-theme`, memorisation par
@@ -70,6 +89,9 @@ export type { ProprietesAlerte, TonAlerte, UrgenceAlerte } from './Alerte.js';
 export type { NiveauTitre, ProprietesCarte } from './Carte.js';
 export { Notification } from './Notification.js';
 export type { ProprietesNotification, TonNotification } from './Notification.js';
+//  `Picto` et `pictos.ts` NE SONT PAS EXPORTES ICI, et c'est delibere : voir
+//  l'en-tete, section « les pictogrammes ». Meme discipline qu'`Onglets` entre
+//  `S1` et `S2`.
 //  Chantier front hors lot, S1/S2 (`DEC-672`) — onglets sur primitive Radix.
 export { Onglets } from './Onglets.js';
 export type { DefinitionDOnglet, ProprietesOnglets } from './Onglets.js';
