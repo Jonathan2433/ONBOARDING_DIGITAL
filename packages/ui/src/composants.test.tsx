@@ -67,6 +67,35 @@ describe('Bouton', () => {
     expect(screen.getByRole('button').dataset.variante).toBe('secondaire');
   });
 
+  //  `E3`, charte 5 : les quatre variantes, et AUCUNE n'est rose.
+  it.each(['primaire', 'secondaire', 'sombre', 'discret'] as const)(
+    'rend la variante %s sans rien changer a son role ni a son nom',
+    (variante) => {
+      render(<Bouton variante={variante}>Continuer</Bouton>);
+      const bouton = screen.getByRole('button', { name: 'Continuer' });
+      expect(bouton.dataset.variante).toBe(variante);
+    },
+  );
+
+  it('vaut la taille `m` par defaut et garde les deux cibles a 44px', () => {
+    //  `E7` tranche la contradiction de la charte en faveur de sa regle
+    //  transversale : `s` est compacte par son padding, pas par sa cible.
+    const { unmount } = render(<Bouton>Defaut</Bouton>);
+    expect(screen.getByRole('button').dataset.taille).toBe('m');
+    unmount();
+    render(<Bouton taille="s">Compact</Bouton>);
+    expect(screen.getByRole('button').dataset.taille).toBe('s');
+    expect(CSS).toContain(".ex-bouton[data-taille='s'] {\n  min-height: 44px;");
+  });
+
+  it('reste focalisable et dans l ordre de tabulation', () => {
+    render(<Bouton variante="discret">Voir plus</Bouton>);
+    const bouton = screen.getByRole('button', { name: 'Voir plus' });
+    (bouton as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(bouton);
+    expect(bouton.getAttribute('tabindex')).toBeNull();
+  });
+
   it('est activable, et transmet le clic', () => {
     const clic = vi.fn();
     render(<Bouton onClick={clic}>Agir</Bouton>);
@@ -90,18 +119,67 @@ describe('Bouton', () => {
 });
 
 describe('Badge', () => {
-  it.each(['neutre', 'ok', 'ko', 'marque'] as const)(
-    'rend son texte pour le ton %s : la couleur ne porte jamais seule l information',
+  it('vaut le ton `info` par defaut', () => {
+    render(<Badge>Inconnu</Badge>);
+    expect(screen.getByText('Inconnu').dataset.ton).toBe('info');
+  });
+
+  //  `E3`, charte 5 : les six tons nommes par ce qu'ils DISENT.
+  it.each(['mission', 'intercontrat', 'enrichissement', 'booster', 'annule', 'info'] as const)(
+    'rend son texte pour le ton %s de la charte 5',
     (ton) => {
-      render(<Badge ton={ton}>Operationnel</Badge>);
-      // On cherche le TEXTE, pas la classe : c'est ce qu'un lecteur d'ecran lit.
-      expect(screen.getByText('Operationnel').dataset.ton).toBe(ton);
+      render(<Badge ton={ton}>Intercontrat</Badge>);
+      expect(screen.getByText('Intercontrat').dataset.ton).toBe(ton);
     },
   );
 
-  it('vaut le ton `neutre` par defaut', () => {
-    render(<Badge>Inconnu</Badge>);
-    expect(screen.getByText('Inconnu').dataset.ton).toBe('neutre');
+  it('porte exactement les SIX tons de la charte apres le nettoyage `E6`', () => {
+    const tons = [
+      'mission',
+      'intercontrat',
+      'enrichissement',
+      'booster',
+      'annule',
+      'info',
+    ] as const;
+    expect(tons).toHaveLength(6);
+    for (const ton of tons) {
+      const { unmount } = render(<Badge ton={ton}>X</Badge>);
+      expect(screen.getByText('X').dataset.ton).toBe(ton);
+      unmount();
+    }
+  });
+});
+
+describe('Carte — la variante interactive de la charte 5 (`E3`)', () => {
+  it('reste `statique` par defaut', () => {
+    render(<Carte titre="Membres">x</Carte>);
+    expect(screen.getByRole('region', { name: 'Membres' }).dataset.variante).toBe('statique');
+  });
+
+  it("signale l'interactivite SANS devenir cliquable : aucun role n'est ajoute", () => {
+    //  LE TEMOIN QUI MORD. Une carte qui prendrait `role="button"` ou un
+    //  `onClick` paraitrait actionnable a un lecteur d'ecran sans l'etre
+    //  vraiment au clavier. La variante ne change QUE l'apparence ; c'est
+    //  l'appelant qui pose le lien ou le bouton reel a l'interieur.
+    render(
+      <Carte titre="Cercle Data" variante="interactive">
+        <a href="/cercles/data">Voir le cercle</a>
+      </Carte>,
+    );
+    const region = screen.getByRole('region', { name: 'Cercle Data' });
+    expect(region.dataset.variante).toBe('interactive');
+    expect(region.getAttribute('role')).toBeNull();
+    expect(region.getAttribute('tabindex')).toBeNull();
+    //  TEMOIN POSITIF : ce qui est reellement actionnable l'est toujours.
+    expect(screen.getByRole('link', { name: 'Voir le cercle' })).toBeTruthy();
+  });
+
+  it('sans titre, la variante voyage quand meme', () => {
+    const { container } = render(<Carte variante="interactive">nu</Carte>);
+    expect((container.querySelector('.ex-carte') as HTMLElement).dataset.variante).toBe(
+      'interactive',
+    );
   });
 });
 
@@ -242,5 +320,38 @@ describe('Notification', () => {
   it("n'est JAMAIS `alert` — une notification n'interrompt pas la lecture", () => {
     render(<Notification message="Termine." ton="succes" />);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+describe('la garde `[hidden]` — chantier design systeme v2, `E5` (`DEC-682`)', () => {
+  it('rend `display: none` NON NEGOCIABLE pour tout element masque', () => {
+    //  **CE CONTROLE EXISTE PARCE QUE SON ABSENCE A COUTE SEIZE MOIS DE
+    //  SILENCE.** `.ui-carte-retournable__recto` et `__verso` portent
+    //  `display: block` depuis `T10` du LOT 5 : cette regle d'auteur
+    //  l'emportait sur le `display: none` que le navigateur applique a
+    //  `[hidden]`, et la carte du trombinoscope empilait ses deux faces au
+    //  lieu de se retourner.
+    //
+    //  **AUCUN TEST DE RENDU NE PEUT LE VOIR** : jsdom ne charge pas cette
+    //  feuille, donc `face.hidden` y vaut `true` pendant que le navigateur
+    //  affiche la face — l'attribut et le rendu sont deux grandeurs
+    //  differentes. Ce qui reste observable, c'est la REGLE elle-meme, et
+    //  c'est donc elle qu'on exige (§7.35).
+    const garde = /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.exec(CSS);
+    expect(garde).not.toBeNull();
+  });
+
+  it('EXIGE que la garde vienne APRES les regles qu’elle corrige', () => {
+    //  **DEUX MECANISMES QUI CONCORDENT, ET C'EST VOULU.** `!important` suffit
+    //  a lui seul : il l'emporte quel que soit l'ordre. Mais `[hidden]` et
+    //  `.ui-carte-retournable__recto` ont EXACTEMENT la meme specificite
+    //  (0,1,0), si bien que sans `!important` ce serait la regle la plus
+    //  TARDIVE qui gagnerait. La garde est donc posee en fin de feuille : le
+    //  jour ou quelqu'un retirerait le `!important` en le croyant superflu,
+    //  l'ordre tiendrait encore.
+    const garde = CSS.indexOf('[hidden]');
+    const face = CSS.indexOf('.ui-carte-retournable__recto');
+    expect(face).toBeGreaterThanOrEqual(0);
+    expect(garde).toBeGreaterThan(face);
   });
 });

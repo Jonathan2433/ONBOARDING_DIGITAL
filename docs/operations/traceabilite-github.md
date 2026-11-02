@@ -158,6 +158,12 @@ Chemin dans l'interface : `Settings` → `Branches` → `Add branch protection r
 
 ## 6. État de la mise en place
 
+> **État réconcilié le 02/11/2026.** Les jalons `G0` à `G11` sont fermés, conformément aux portes
+> franchies. Les reliquats `#115`, `#120`, `#121`, `#145`, `#151`, `#210` et `#267` sont clos :
+> leurs critères ont été satisfaits par les lots ultérieurs. `#211` reste ouverte, sans jalon
+> `G8`, avec les étiquettes V1/frontend/P1 : la vidéo d'accueil est explicitement reportée en V1.
+> Les paragraphes datés ci-dessous restent la photographie historique de leur sous-étape.
+
 Au 27 juillet 2026, sous-étape `T0` du LOT 1. `ECART-010` **clos**, `QO-107` et `QO-108`
 **closes**. **État des issues remesuré le 13 septembre 2026**, `T1` du LOT 6.
 
@@ -176,8 +182,8 @@ Les huit corps ont été **engendrés depuis le backlog** et non transcrits — 
 > `ECART-021`.
 >
 > ```bash
-> ~/.local/bin/gh issue list --state all  --limit 300 --json number --jq 'length'   # 52
-> ~/.local/bin/gh issue list --state open --limit 300 --json number --jq 'length'   # 11
+> ~/.local/bin/gh issue list --state all  --limit 500 --json number --jq 'length'
+> ~/.local/bin/gh issue list --state open --limit 500 --json number --jq 'length'
 > ```
 
 | Élément | État | Contrôle |
@@ -185,12 +191,13 @@ Les huit corps ont été **engendrés depuis le backlog** et non transcrits — 
 | 13 étiquettes prescrites | **Créées** | 13/13 conformes en **nom et couleur** |
 | Étiquettes complémentaires `type`, `gravité`, `état` | **Non créées** | Non prescrites — `QO-106` reste ouverte |
 | 9 étiquettes GitHub par défaut | **Conservées** | Leur suppression appartient à Jonathan |
-| 15 milestones `G0` à `G14` | **Créées** | 15/15, **`G0` fermée** (`DEC-438`) |
+| 15 milestones `G0` à `G14` | **Créées** | 15/15 ; `G0` à `G11` fermés, `G12` à `G14` planifiés |
 | Epic du LOT 1 | **Créé** — issue `#1` | Rattaché à `G1` |
 | Stories du LOT 1 | **Créées** — issues `#2` à `#9` | 8/8 sur `G1`, 7 `p0` + 1 `p1`, intitulés et critères **générés depuis le backlog**, fidélité 8/8 |
 | Epics et stories des LOTS 2, 3 et 4 | **Créés et CLOS** | LOT 2 : epic + 8 stories · LOT 3 : epic `#62`, stories `#63`–`#70` · LOT 4 : epic `#91`, stories `#92`–`#98`, **les sept closes**, `#92` le 24/08/2026 à 15:31 UTC |
-| Epic et stories du LOT 5 | **Créés, OUVERTS** | epic `#115`, stories `#116` à `#123` — **les neuf seules issues ouvertes du dépôt**. `#120` reste ouverte après `T5` : « retrait possible » n'est tenu **qu'en lecture**, aucune route ne permet de retirer |
-| Epics et stories des LOTS 6 à 14 | **Non créés** | À créer lot par lot, **quand chaque fiche existe** — jamais par anticipation |
+| Epic et stories du LOT 5 | **Créés et clos** | epic `#115`, stories `#116` à `#123` ; les critères résiduels de `#120`/`#121` ont été livrés ultérieurement |
+| Epics et stories des LOTS 6 à 11 | **Créés ; lots clos** | jalons fermés après franchissement des portes ; `#211` seule reste ouverte hors jalon, au titre de la V1 |
+| Epics et stories des LOTS 12 à 14 | **À créer lot par lot** | seulement lorsque chaque fiche existe — jamais par anticipation |
 | Protection de `main` et `develop` | **Posée** | PR obligatoire, 0 approbation, `enforce_admins` actif, push forcés et suppressions rejetés, historique linéaire, résolution des conversations |
 | Contrôles d'intégration obligatoires | **Posés** | La porte de `ci.yml` est requise sur `develop` **et** `main`, contexte unique, `strict` actif (`DEC-476`). **La porte de `images.yml` n'est PAS requise, et ne doit pas le devenir** |
 

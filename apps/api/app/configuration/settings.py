@@ -21,13 +21,19 @@ REGLE ABSOLUE SUR LES MESSAGES D'ERREUR
 
 PORTEE DU GARDE-FOU « AUCUN CHANGE_ME RESIDUEL »
     Il porte sur les variables que l'API DECLARE ci-dessous, non sur toutes
-    celles de `.env.example`. Deux variables y restent volontairement en
+    celles de `.env.example`. Une variable y reste volontairement en
     `CHANGE_ME` : `IMPORT_SOURCE_RETENTION_DAYS`, dont la valeur releve de
-    `QO-100` et qui appartient au LOT 9, et `UPTIME_KUMA_PUSH_URL`, qui
-    appartient au LOT 13. Aucune n'est utilisee par l'API aujourd'hui, donc
-    aucune ne figure dans ce modele. Le jour ou le LOT 9 ajoutera la premiere
-    a sa configuration, `QO-100` devra etre tranchee : c'est precisement
-    l'effet recherche.
+    `QO-100` et qui appartient au LOT 9 — non utilisee par l'API aujourd'hui,
+    donc absente de ce modele. Le jour ou le LOT 9 la consommera, `QO-100`
+    devra etre tranchee : c'est precisement l'effet recherche.
+
+    **CETTE SECTION AFFIRMAIT AUSSI QUE `UPTIME_KUMA_PUSH_URL` « APPARTIENT AU
+    LOT 13 », ET C'ETAIT FAUX LE JOUR OU `fiche-lot-11.md` A ETE ECRITE**
+    (30/10/2026) : son critere de sortie 6 l'assigne explicitement a `T4` du
+    LOT 11. Corrige ici (§7.11/§9.0 de la passation : verifier ce qu'un
+    document affirme, meme quand c'est lui-meme qui l'affirmait) — la variable
+    est desormais DECLAREE (vide par defaut, battement desactive), voir
+    `app.scheduling.supervision`.
 """
 
 from __future__ import annotations
@@ -192,6 +198,25 @@ class Parametres(BaseSettings):
     #  precisement parce que le cahier les ecrit et que les rendre reglables
     #  inviterait a les abaisser. Ici le cahier demande le contraire.
     SERVICE_TOKEN_MAX_DAYS: int = 90
+
+    # --- Taches planifiees et supervision (modele §20.3, cahier §22.5/§27) --
+    #  LOT 11, `T4`. Les quatre premieres existaient deja dans `.env.example`
+    #  depuis le LOT 0, **non consommees jusqu'ici** (voir la portee du
+    #  garde-fou CHANGE_ME en tete de ce module) : `T4` en est le premier
+    #  consommateur reel.
+    DEPARTURE_ARCHIVE_MONTHS: int = 3
+    JOB_STALLED_ALERT_MINUTES: int = 30
+    WORKER_ABSENT_ALERT_MINUTES: int = 10
+    #  **CORRIGE UNE AFFIRMATION PERIMEE DE CE MODULE** : l'en-tete disait
+    #  cette variable « appartient au LOT 13 », ecrit avant que
+    #  `fiche-lot-11.md` (30/10/2026) ne l'assigne explicitement a `T4` du
+    #  LOT 11 (critere de sortie 6 : « les workers et files sont supervises »).
+    #  Vide par defaut = battement desactive, voir `app.scheduling.supervision`.
+    UPTIME_KUMA_PUSH_URL: str = ""
+    #  Nouvelle, LOT 11 `T4` : l'intervalle entre deux cycles de
+    #  l'orchestrateur (`apps/worker/worker/actors.py`). Valeur technique, pas
+    #  une decision produit — comme `MAX_TENTATIVES_PAR_DEFAUT` (`app.jobs.modeles`).
+    SCHEDULED_TASKS_INTERVAL_MINUTES: int = 5
 
     # --- Securite (cahier §7.4, §20.1) --------------------------------------
     SESSION_COOKIE_SECURE: bool = True

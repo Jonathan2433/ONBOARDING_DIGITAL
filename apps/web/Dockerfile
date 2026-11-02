@@ -166,6 +166,16 @@ LABEL org.opencontainers.image.title="onboarding-digital/web" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${APP_REVISION}"
 
+# COUCHE APK EPINGLEE — meme classe que `perl-base` dans les images api/worker
+# (DEC-581). Trouve en construisant T7 du LOT 11 : `images.yml` bloquait sur
+# CRITICAL corrigeable (DEC-482) depuis le 30/10/2026 (cinq executions de
+# suite, LOT 11 T1 a T5, jamais remarque car cette porte n'est pas un controle
+# requis de PR, §9.4) — `CVE-2026-111497` sur `brotli-libs` 1.2.0-r0 de l'image
+# `caddy:2.11-alpine` (Alpine 3.23.5), corrigee dans `1.2.1-r0` et DEJA publiee
+# dans le depot `main` de cette version d'Alpine, mesure le 01/11/2026 sur les
+# deux architectures avant d'ecrire cette ligne.
+RUN apk add --no-cache brotli-libs=1.2.1-r0
+
 # Utilisateur non privilegie. Le cahier 20.1 impose le moindre privilege, et
 # l'image caddy officielle tourne root par defaut. Les deux repertoires XDG sont
 # crees et donnes a l'utilisateur : Caddy y ecrit son etat, meme sans TLS, et

@@ -2640,6 +2640,87 @@
         "ete transmis (export structure du backlog), jamais un fichier",
         "genere. PROTEGEE PAR LES DEUX BARRIERES CSRF (`DEC-531`)."
       ]
+    },
+    {
+      "cle": "creationDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeCreationDeCercle",
+      "role": [
+        "Creer un cercle -- LOT 11, T3, hors backlog (fiche-lot-11.md 1.2).",
+        "Matrice 10.2 'Creer un cercle | Entite'. ESM et administrateur",
+        "d'entite dans leur entite, super-administrateur globalement --",
+        "EXACTEMENT rolesCycleDeVieFramework, reutilisee telle quelle : le",
+        "10.2 donne a la creation la MEME grille qu'a l'archivage et la",
+        "restauration (T4 du LOT 9)."
+      ]
+    },
+    {
+      "cle": "creationDUnBureau",
+      "chemin": "/api/v1/entities/{code}/offices",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeCreationDeBureau",
+      "role": [
+        "Creer un bureau -- LOT 11, T3, hors backlog.",
+        "Matrice 10.3 'Creer un bureau | Entite'. Meme grille que la",
+        "creation d'un cercle -- rolesCycleDeVieFramework."
+      ]
+    },
+    {
+      "cle": "attributionDuBoosterDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/booster",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDAttributionDeBooster",
+      "role": [
+        "Affecter ou remplacer le Booster d'un cercle -- LOT 11, T3,",
+        "hors backlog. Matrice 10.2/20. TOUJOURS un remplacement : la",
+        "base n'autorise qu'un Booster actif par cercle.",
+        "GRILLE SEPAREE DE LA CREATION : ESM et super-administrateur",
+        "SEULEMENT -- rolesAttributionFramework, ADM-E exclu (20,",
+        "ARB-DROIT-002, 'L'administrateur d'entite ne peut pas attribuer",
+        "les responsabilites Framework')."
+      ]
+    },
+    {
+      "cle": "retraitDuBoosterDUnCercle",
+      "chemin": "/api/v1/entities/{code}/circles/{circle_id}/booster/retrait",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeRetraitFramework",
+      "role": [
+        "Retirer le Booster d'un cercle, sans le remplacer -- LOT 11, T3.",
+        "Matrice 20 'Retirer une responsabilite Framework' --",
+        "rolesAttributionFramework, meme grille que l'attribution."
+      ]
+    },
+    {
+      "cle": "attributionDUnResponsableDeBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/responsables",
+      "methode": "post",
+      "codesExploitables": [201, 401, 403, 404, 409, 422],
+      "forme": "ReponseDAttributionDeResponsable",
+      "role": [
+        "Affecter un responsable de bureau -- LOT 11, T3, hors backlog.",
+        "Matrice 10.3/20. AJOUTE, ne remplace jamais -- jusqu'a trois",
+        "responsables actifs (modele 8.4). La borne 'un a trois' ne mord",
+        "qu'a la publication de la page du bureau (DEC-583), jamais ici.",
+        "rolesAttributionFramework, ADM-E exclu."
+      ]
+    },
+    {
+      "cle": "retraitDUnResponsableDeBureau",
+      "chemin": "/api/v1/entities/{code}/offices/{office_id}/responsables/{affectation_id}/retrait",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 422],
+      "forme": "ReponseDeRetraitFramework",
+      "role": [
+        "Retirer un responsable de bureau -- LOT 11, T3.",
+        "Matrice 20 'Retirer une responsabilite Framework' --",
+        "rolesAttributionFramework."
+      ]
     }
   ],
   "_commentaire_cycle_de_vie": [
@@ -2810,6 +2891,20 @@
     "les deux sens."
   ],
   "rolesCycleDeVieFramework": ["ESM", "ADM-E", "SUPER"],
+  "_commentaire_attribution_framework": [
+    "LOT 11, T3 -- L'ATTRIBUTION DU BOOSTER ET DU RESPONSABLE DE BUREAU,",
+    "hors backlog (fiche-lot-11.md 1.2).",
+    "GRILLE SEPAREE DE rolesCycleDeVieFramework, et non calquee dessus :",
+    "la matrice 20 donne a l'ATTRIBUTION 'ESM | Entite, SUPER | Global',",
+    "ADM-E EXCLU -- 'L'administrateur d'entite ne peut pas attribuer les",
+    "responsabilites Framework' (20, ARB-DROIT-002). Une seule case",
+    "diverge de la grille de creation/cycle de vie, ce qui justifie une",
+    "constante a part plutot qu'une exception codee en dur sur la",
+    "premiere (meme discipline que 7.27 de la passation).",
+    "Confrontee a ROLES_D_ATTRIBUTION_FRAMEWORK par un test Python, dans",
+    "les deux sens."
+  ],
+  "rolesAttributionFramework": ["ESM", "SUPER"],
   "_commentaire_tableau_de_bord": [
     "LOT 9, T14 -- LA GARDE DU TABLEAU DE BORD ADMINISTRATIF (US001, T5).",
     "CINQ ROLES, OFFICE A TIRET : c'est `ROLES_DU_TABLEAU_DE_BORD` de",

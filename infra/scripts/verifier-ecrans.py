@@ -27,10 +27,11 @@ CE QUE « SERVIES A TRAVERS CADDY » EXIGE, ET LE PIEGE QU'IL CACHE
   fait foi, jamais le code : Vite rend **200 + `index.html`** pour tout chemin
   inconnu (§7.10), donc un 200 seul ne prouverait rien.
 
-DEUX INTERDITS, VERIFIES SUR LES SOURCES
+TROIS INTERDITS, VERIFIES SUR LES SOURCES
 
-  « aucune couleur hors des jetons de `packages/ui` » et « aucun jeton dans
-  `localStorage` ». Les deux se lisent dans les fichiers, et **les commentaires
+  « aucune couleur hors des jetons de `packages/ui` », « aucun anneau de focus
+  ecrit a la main » et « aucun jeton dans `localStorage` ». Les trois se lisent
+  dans les fichiers, et **les commentaires
   sont retires avant l'examen** : le commentaire de tete de `auth.css` cite un
   hexadecimal pour expliquer pourquoi on ne l'ecrit pas, et un controle qui ne les
   retirerait pas se declencherait sur la phrase qui enonce la regle. C'est le
@@ -65,6 +66,10 @@ FEUILLES_DES_ECRANS = sorted(
     }
 )
 PAGES = RACINE / "apps/web/src/pages"
+#  La feuille de jetons du design system : ni examinee comme une feuille d'ecran
+#  (c'est elle qui a le DROIT de declarer), ni recopiee — c'est d'elle qu'on
+#  DERIVE les noms reserves au controle 2 bis.
+FEUILLE_DES_JETONS = RACINE / "packages/ui/src/jetons.css"
 
 DELAI_HTTP = 30
 
@@ -247,6 +252,116 @@ def main() -> int:
             f"    ok       {len(FEUILLES_DES_ECRANS)} feuille(s) examinee(s), 0 couleur "
             f"litterale hors des {definitions} definitions de jetons, {variables} references "
             "aux jetons — 3 temoins OK"
+        )
+
+    #  --------------------------------------------------------------
+    #  2 bis. AUCUNE FEUILLE D'ECRAN NE REDECLARE UN JETON DU DESIGN SYSTEME
+    #  --------------------------------------------------------------
+    #
+    #  **CE CONTROLE EXISTE PARCE QUE LE PRECEDENT ETAIT AVEUGLE A CE DEFAUT, ET
+    #  QU'IL L'ETAIT PAR CONSTRUCTION.** Le controle 2 exempte toute ligne de la
+    #  forme `--nom: valeur` au motif qu'une definition de jeton n'est pas une
+    #  couleur ecrite en dur dans une regle. C'est exact pour le mode de
+    #  defaillance qu'il vise, et aveugle a celui-ci — §7.31 de la passation.
+    #
+    #  Mesure du 02/11/2026 : `apps/web/src/styles.css` redeclarait SEPT noms que
+    #  `jetons.css` porte, et CINQ divergeaient en theme clair depuis l'etape
+    #  `E1` du chantier design systeme. `main.tsx` important `styles.css` apres
+    #  `jetons.css`, c'est la feuille d'ecran qui gagnait la cascade : la palette
+    #  v1 s'affichait pendant que `jetons.test.ts` mesurait la v2. Le defaut
+    #  n'etait visible dans AUCUN test — les deux feuilles sont justes prises
+    #  separement — et il a fallu lire le CSS BATI pour le voir (§7.43).
+    #
+    #  **IL REFUSE LA REDECLARATION, PAS LA DIVERGENCE**, et c'est deliberate :
+    #  exiger seulement l'egalite des valeurs laisserait passer une copie qui se
+    #  trouve identique AUJOURD'HUI et qui divergera au prochain changement de
+    #  jeton — exactement l'histoire de ces sept noms, justes pendant seize lots
+    #  (§7.21). Une seule source declare, les autres referencent.
+    #
+    #  Les noms reserves sont DERIVES de `jetons.css`, jamais recopies : un jeton
+    #  nouveau est protege sans que personne y pense (§7.27).
+    controles += 1
+    jetons_du_design = set(
+        re.findall(
+            r"(--[a-z0-9-]+)\s*:",
+            sans_commentaires_css(FEUILLE_DES_JETONS.read_text(encoding="utf-8")),
+        )
+    )
+    redeclarations: list[tuple[str, str]] = []
+    for chemin in FEUILLES_DES_ECRANS:
+        if chemin == FEUILLE_DES_JETONS:
+            continue
+        feuille = sans_commentaires_css(chemin.read_text(encoding="utf-8"))
+        for ligne in feuille.splitlines():
+            trouve = re.match(r"\s*(--[a-z0-9-]+)\s*:", ligne)
+            if trouve and trouve.group(1) in jetons_du_design:
+                redeclarations.append((chemin.name, trouve.group(1)))
+    #  TEMOIN — la liste des noms reserves n'est pas vide, et le motif sait
+    #  reconnaitre une redeclaration. Sans eux, un `jetons.css` illisible ou une
+    #  expression cassee rendrait « 0 redeclaration » quoi qu'il arrive.
+    temoin_source = len(jetons_du_design) > 40 and "--marque-bleu" in jetons_du_design
+    temoin_motif = re.match(r"\s*(--[a-z0-9-]+)\s*:", "  --encre: #1a1a1a;") is not None
+    if redeclarations:
+        print(
+            f"    ECHEC    {len(redeclarations)} jeton(s) du design system "
+            "redeclare(s) par un ecran :"
+        )
+        for nom, jeton in redeclarations[:6]:
+            print(f"             {nom} — {jeton}")
+        print("             une seule feuille declare les jetons : packages/ui/src/jetons.css")
+        echecs += 1
+    elif not temoin_source or not temoin_motif:
+        print(
+            "    ECHEC    TEMOIN : jetons releves "
+            f"{len(jetons_du_design)}, motif de redeclaration {temoin_motif}"
+        )
+        echecs += 1
+    else:
+        print(
+            f"    ok       {len(jetons_du_design)} jetons du design system, 0 redeclare par les "
+            f"{len(FEUILLES_DES_ECRANS)} feuille(s) d'ecran — 2 temoins OK"
+        )
+
+    #  --------------------------------------------------------------
+    #  2 ter. UN SEUL ANNEAU DE FOCUS, LE JETON DU DESIGN SYSTEME
+    #  --------------------------------------------------------------
+    #
+    #  `E3` avait pose le jeton apres avoir mesure que `--marque-bleu` ne rend
+    #  que 2,91:1 sur le theme sombre. `E6` a ensuite derive le perimetre reel :
+    #  VINGT regles d'application dessinaient encore leur contour a la main,
+    #  et pas seulement les deux residues alors nommes dans la passation. Un
+    #  controle limite a ces deux selecteurs aurait rejoue le meme defaut au
+    #  prochain ecran. Toute regle `:focus-visible` qui dessine un `outline`
+    #  doit donc consommer `--anneau-focus`; le decalage reste libre, car un
+    #  onglet ou une barre contrainte doivent parfois dessiner l'anneau dedans.
+    controles += 1
+    anneaux_manuels: list[tuple[str, str]] = []
+    anneaux = 0
+    for chemin in FEUILLES_DES_ECRANS:
+        feuille = sans_commentaires_css(chemin.read_text(encoding="utf-8"))
+        for regle in re.findall(r":focus-visible[^\{]*\{[^}]*\}", feuille):
+            if not re.search(r"\boutline\s*:", regle):
+                continue
+            anneaux += 1
+            if "var(--anneau-focus)" not in regle:
+                anneaux_manuels.append((chemin.name, " ".join(regle.split())))
+    temoin_manuel = "var(--anneau-focus)" not in ":focus-visible { outline: 2px solid red; }"
+    temoin_jeton = "var(--anneau-focus)" in ":focus-visible { outline: var(--anneau-focus); }"
+    if anneaux_manuels:
+        print(f"    ECHEC    {len(anneaux_manuels)} anneau(x) de focus ecrit(s) a la main :")
+        for nom, regle in anneaux_manuels[:6]:
+            print(f"             {nom} — {regle}")
+        echecs += 1
+    elif anneaux < 10 or not temoin_manuel or not temoin_jeton:
+        print(
+            "    ECHEC    TEMOIN : anneaux releves "
+            f"{anneaux}, manuel reconnu {temoin_manuel}, jeton reconnu {temoin_jeton}"
+        )
+        echecs += 1
+    else:
+        print(
+            f"    ok       {anneaux} anneaux de focus consomment tous "
+            "var(--anneau-focus) — 2 temoins OK"
         )
 
     #  --------------------------------------------------------------

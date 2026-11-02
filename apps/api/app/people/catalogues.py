@@ -3,12 +3,17 @@
 POURQUOI CE MODULE EXISTE, ET POURQUOI SEULEMENT MAINTENANT
 
   `job_catalog` (modèle §6.3, LOT 2) existe depuis le début du projet, et
-  `job_catalog_id` est un champ obligatoire de `POST …/people` (`T2`) et de
+  `job_catalog_id` était un champ obligatoire de `POST …/people` (`T2`) et de
   `POST …/changement-d-entite` (`T3`) depuis l'ouverture du LOT 9 — mais
   AUCUNE route ne sert jamais la LISTE des métiers d'une entité, mesuré sur
   les 85 chemins du manifeste avant `T14`. `apps/web/src/api/trombinoscope.ts`
   le nommait déjà, en tête de fichier, depuis le LOT 5 : « les métiers,
   clients et DSM arriveront avec le back-office du LOT 9 ».
+
+  **DEPUIS `DEC-675` (LOT 11 `T5`), LE MÉTIER EST REDEVENU FACULTATIF** sur
+  ces deux routes et sur le transfert en masse — ce module reste utile tel
+  quel : un formulaire qui laisse encore le choix d'en renseigner un a
+  toujours besoin de connaître les options.
 
   `T14` est le premier écran qui a BESOIN de cette liste — un formulaire ne
   peut pas proposer un choix dont il ne connaît pas les options (même constat

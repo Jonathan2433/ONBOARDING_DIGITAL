@@ -182,7 +182,7 @@ def _roles(
 
 def _demande(
     *,
-    metier: uuid.UUID,
+    metier: uuid.UUID | None,
     cercle: uuid.UUID,
     statut: SituationProfessionnelle = SituationProfessionnelle.INTERCONTRACT,
     client: uuid.UUID | None = None,
@@ -386,6 +386,33 @@ def test_TEMOIN_un_collaborateur_complet_est_cree(cx: Connection) -> None:
             {"id": resultat.appartenance},
         ).scalar_one()
         assert total == 1, table
+
+
+@pytest.mark.integration
+def test_un_collaborateur_SANS_metier_est_cree(cx: Connection) -> None:
+    """`DEC-675` (LOT 11 `T5`) : le metier est redevenu facultatif partout.
+
+    Temoin negatif apparie a `test_TEMOIN_un_collaborateur_complet_est_cree`
+    (positif, §7.39) : `metier=None` cree l'appartenance SANS AUCUNE ligne
+    `membership_job_assignment`, jamais une ligne a `job_catalog_id = NULL`.
+    """
+    entite = _entite(cx, "CREA-SANSMETIER")
+    acteur = _personne(cx, "ACTEUR")
+    cercle = _cercle(cx, entite, "C1")
+
+    resultat = creer_un_collaborateur(
+        cx,
+        entite=entite,
+        acteur=acteur,
+        demande=_demande(metier=None, cercle=cercle),
+        instant=JANVIER,
+    )
+
+    total = cx.execute(
+        text("SELECT count(*) FROM membership_job_assignment WHERE entity_membership_id = :id"),
+        {"id": resultat.appartenance},
+    ).scalar_one()
+    assert total == 0
 
 
 @pytest.mark.integration

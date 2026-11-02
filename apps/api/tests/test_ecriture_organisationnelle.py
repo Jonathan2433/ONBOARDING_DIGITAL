@@ -496,6 +496,20 @@ def _periodes_de_statut(cx: Connection, cible: uuid.UUID) -> list[dict[str, Any]
     ]
 
 
+def _periodes_de_metier(cx: Connection, cible: uuid.UUID) -> list[dict[str, Any]]:
+    return [
+        dict(ligne)
+        for ligne in cx.execute(
+            text(
+                "SELECT job_catalog_id, starts_at, ends_at "
+                "FROM membership_job_assignment WHERE entity_membership_id = :c "
+                "ORDER BY starts_at"
+            ),
+            {"c": cible},
+        ).mappings()
+    ]
+
+
 @pytest.mark.integration
 def test_une_modification_CLOTURE_la_periode_et_en_OUVRE_une_autre(cx: Connection) -> None:
     """Critere de sortie n°6 : « les affectations structurantes ne sont JAMAIS ecrasees ».
@@ -599,6 +613,115 @@ def test_un_CLIENT_seul_REPORTE_le_statut_courant(cx: Connection) -> None:
     courante = _periodes_de_statut(cx, cible)[-1]
     assert courante["client_id"] == nouveau
     assert courante["status"] == SituationProfessionnelle.MISSION.value, "le statut est REPORTE"
+
+
+@pytest.mark.integration
+def test_un_metier_EXISTANT_est_REMPLACE_par_un_AUTRE(cx: Connection) -> None:
+    """Temoin POSITIF, apparie au negatif qui suit (§7.39) : assigner une
+    valeur ouvre toujours une nouvelle periode, exactement comme avant
+    `DEC-675` — seule l'absence de valeur (`None`) change de comportement.
+    """
+    entite = _entite(cx, "T5L11-METREMP")
+    acteur = _personne(cx, "t5l11-metremp-a@exalt-company.com")
+    cible = _appartenance(cx, _personne(cx, "t5l11-metremp-c@exalt-company.com"), entite)
+    ancien = _metier(cx, entite, "T5L11-METREMP-ANCIEN")
+    nouveau = _metier(cx, entite, "T5L11-METREMP-NOUVEAU")
+    cx.execute(
+        text(
+            "INSERT INTO membership_job_assignment "
+            "(entity_membership_id, entity_id, job_catalog_id, starts_at) "
+            "VALUES (:c, :e, :j, :debut)"
+        ),
+        {"c": cible, "e": entite, "j": ancien, "debut": ANCRAGE - 10 * JOUR},
+    )
+
+    modification = modifier_les_donnees_organisationnelles(
+        cx,
+        entite=entite,
+        cible=cible,
+        acteur=acteur,
+        version_attendue=1,
+        demande={ChampOrganisationnel.METIER: nouveau},
+        perimetre=_tout(cx, entite, cible),
+        instant=ANCRAGE,
+    )
+
+    periodes = _periodes_de_metier(cx, cible)
+    assert len(periodes) == 2
+    assert periodes[0]["job_catalog_id"] == ancien
+    assert periodes[0]["ends_at"] == ANCRAGE
+    assert periodes[1]["job_catalog_id"] == nouveau
+    assert periodes[1]["starts_at"] == ANCRAGE
+    assert periodes[1]["ends_at"] is None
+    assert modification.champs == {ChampOrganisationnel.METIER}
+
+
+@pytest.mark.integration
+def test_un_metier_NUL_CLOT_l_affectation_SANS_EN_ROUVRIR(cx: Connection) -> None:
+    """`DEC-675` (LOT 11 `T5`) : le metier devient optionnel partout.
+
+    `membership_job_assignment.job_catalog_id` reste `NOT NULL` en base —
+    inserer une ligne a `None` ferait echouer bruyamment. `metier: null`
+    CLOT donc l'affectation courante sans en rouvrir, exactement comme une
+    table d'historisation sans ligne active represente une absence (meme
+    motif que `dsm_assignment`/`circle_membership`, qui n'ont jamais eu de
+    metier obligatoire).
+    """
+    entite = _entite(cx, "T5L11-METNUL")
+    acteur = _personne(cx, "t5l11-metnul-a@exalt-company.com")
+    cible = _appartenance(cx, _personne(cx, "t5l11-metnul-c@exalt-company.com"), entite)
+    ancien = _metier(cx, entite, "T5L11-METNUL-ANCIEN")
+    cx.execute(
+        text(
+            "INSERT INTO membership_job_assignment "
+            "(entity_membership_id, entity_id, job_catalog_id, starts_at) "
+            "VALUES (:c, :e, :j, :debut)"
+        ),
+        {"c": cible, "e": entite, "j": ancien, "debut": ANCRAGE - 10 * JOUR},
+    )
+
+    modification = modifier_les_donnees_organisationnelles(
+        cx,
+        entite=entite,
+        cible=cible,
+        acteur=acteur,
+        version_attendue=1,
+        demande={ChampOrganisationnel.METIER: None},
+        perimetre=_tout(cx, entite, cible),
+        instant=ANCRAGE,
+    )
+
+    periodes = _periodes_de_metier(cx, cible)
+    assert len(periodes) == 1, "l'ancienne periode SUBSISTE, aucune nouvelle n'est ouverte"
+    assert periodes[0]["ends_at"] == ANCRAGE
+    assert modification.champs == {ChampOrganisationnel.METIER}
+    assert modification.version == 2, "un champ a reellement change, la version monte"
+
+
+@pytest.mark.integration
+def test_un_metier_DEJA_ABSENT_et_redemande_NUL_est_un_NO_OP(cx: Connection) -> None:
+    """Negatif apparie au precedent (§7.39) : sans periode a clore, `None`
+    demande sur un metier deja absent ne cree aucune ligne et ne fait pas
+    monter la version — exactement le meme motif que les cinq autres champs.
+    """
+    entite = _entite(cx, "T5L11-METNOOP")
+    acteur = _personne(cx, "t5l11-metnoop-a@exalt-company.com")
+    cible = _appartenance(cx, _personne(cx, "t5l11-metnoop-c@exalt-company.com"), entite)
+
+    modification = modifier_les_donnees_organisationnelles(
+        cx,
+        entite=entite,
+        cible=cible,
+        acteur=acteur,
+        version_attendue=1,
+        demande={ChampOrganisationnel.METIER: None},
+        perimetre=_tout(cx, entite, cible),
+        instant=ANCRAGE,
+    )
+
+    assert _periodes_de_metier(cx, cible) == []
+    assert modification.champs == frozenset()
+    assert modification.version == 1, "aucun champ n'a change, la version ne bouge pas"
 
 
 @pytest.mark.integration

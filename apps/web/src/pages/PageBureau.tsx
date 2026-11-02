@@ -38,7 +38,7 @@
  * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DES RESPONSABLES
  *
  *   `ResponsableDuBureau.photo` suit exactement la convention du trombinoscope
- *   et du profil (S11) : un cadre hexagonal sur fond de marque colore quand
+ *   et du profil : un portrait ROND sur fond de marque colore quand
  *   `photo` est `null`, l'image sinon. Arbitrage de Jonathan
  *   (`AskUserQuestion`, 29/10/2026) : la page de synthese Framework reste hors
  *   de cette sous-etape.
@@ -148,7 +148,7 @@ export function PageBureau(): JSX.Element {
       <Carte titre={b.nom}>
         <div className="bureau-entete-meta">
           <Building2 className="icone-bureau" aria-hidden="true" size={20} />
-          <Badge ton={b.publie ? 'marque' : 'neutre'}>{b.publie ? 'Publie' : 'Brouillon'}</Badge>
+          <Badge ton="info">{b.publie ? 'Publie' : 'Brouillon'}</Badge>
         </div>
         {b.description === null ? null : <p className="bureau-description">{b.description}</p>}
         <dl className="bureau-champs">

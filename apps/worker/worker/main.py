@@ -9,11 +9,13 @@ CE QUE CE MODULE FAIT AU LOT 1
     Il declare le courtier Redis et les sept files, et rien de plus. Le worker
     demarre, se connecte, et attend. C'est ce qu'`ARB-ROAD-002` appelle amorcer.
 
-CE QU'IL NE FAIT PAS, ET QUI N'APPARTIENT PAS A CE LOT
-    La persistance des jobs en PostgreSQL, l'outbox transactionnelle,
-    l'idempotence, le rejeu sans duplication et les taches planifiees relevent
-    du **LOT 11** (`MVP-L11-US001`, `US002`). Aucun acteur metier n'est declare
-    ici : il n'existe aucun metier avant le LOT 2.
+CE QU'IL NE FAISAIT PAS AU LOT 1, ET QUI EST VENU DEPUIS
+    La persistance des jobs en PostgreSQL, l'outbox transactionnelle et
+    l'idempotence sont venues au LOT 11 `T1` (`MVP-L11-US001`/`US002`). Les
+    taches planifiees sont venues au LOT 11 `T4` (`MVP-L11-US006`) : c'est
+    elle qui ajoute `DemarrerLaPlanification`, le seul middleware de ce module
+    au-dela de la correlation. Aucun acteur metier n'etait declare au LOT 1 :
+    il n'existait aucun metier avant le LOT 2.
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 
 from observabilite import configurer_journalisation
+from worker.amorcage import DemarrerLaPlanification
 from worker.journal import CorrelationEtJournal
 
 # Les sept files du cahier §16.4. La liste est lue dans l'environnement pour
@@ -63,6 +66,10 @@ def creer_courtier() -> RedisBroker:
     # La correlation est ajoutee AVANT la declaration des files : le middleware
     # doit etre en place avant qu'un seul message puisse etre traite.
     courtier.add_middleware(CorrelationEtJournal())
+    #  LOT 11, T4 : demarre la boucle des taches planifiees une fois que le
+    #  WORKER reel a booté — jamais a la simple importation de ce module, voir
+    #  `worker.amorcage`.
+    courtier.add_middleware(DemarrerLaPlanification())
     for file in files_declarees():
         courtier.declare_queue(file)
     return courtier

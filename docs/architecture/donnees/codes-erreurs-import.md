@@ -134,10 +134,10 @@ Ces erreurs portent sur le fichier, pas sur une ligne. Elles interrompent l'anal
 
 | Code | Message utilisateur | Résolution |
 |---|---|---|
-| `E-METIER-001` | Le métier est absent alors que le profil est actif. | Renseigner le métier. |
+| ~~`E-METIER-001`~~ | ~~Le métier est absent alors que le profil est actif.~~ | **RETIRÉ (`DEC-675`, LOT 11 `T5`) : le métier ne bloque plus jamais l'import, même pour un profil actif — déviation tracée, le champ devient optionnel partout.** |
 
 Une valeur de métier absente du catalogue ne rejette pas la ligne : elle déclenche
-`D-METIER-001`, décision humaine.
+`D-METIER-001`, décision humaine — inchangé.
 
 ### 3.7 Situation professionnelle — champs `F12`, `F13`
 
@@ -243,12 +243,15 @@ ou création d'alias est une exigence du cahier §12.3 et de la décision `DATA-
 | Niveau | Domaines couverts | Nombre de codes |
 |---|---|---:|
 | Structure du fichier | 1 | 8 |
-| `E` erreurs de ligne | 12 | 43 |
+| `E` erreurs de ligne | 12 | 42 |
 | `W` avertissements | 7 | 9 |
 | `D` décisions requises | 5 | 8 |
-| **Total** | | **68** |
+| **Total** | | **67** |
 
-Comptage vérifié automatiquement le 27 juillet 2026 :
+Comptage recalculé le 01/11/2026, après le retrait de `E-METIER-001` (`DEC-675`, LOT 11 `T5`) —
+la ligne barrée du §3.6 ne correspond plus au motif, ce qui est voulu : un code retiré ne doit
+plus être compté parmi ceux produits. Avant ce retrait, le comptage du 27 juillet 2026 (LOT 0)
+rendait 43/68.
 
 ```bash
 grep -cE '^\| `E-STRUCT-[0-9]{3}`' codes-erreurs-import.md
@@ -258,8 +261,8 @@ grep -cE '^\| `D-[A-Z]+-[0-9]{3}`' codes-erreurs-import.md
 ```
 
 Répartition des erreurs de ligne par domaine : e-mail 4, identité 3, entité 3, dates 4,
-catégorie 2, métier 1, situation 4, cercles 5, DSM 5, responsabilités 9, rôles techniques 2,
-autorisation photo 1.
+catégorie 2, métier 0 (retiré), situation 4, cercles 5, DSM 5, responsabilités 9, rôles
+techniques 2, autorisation photo 1.
 
 ---
 

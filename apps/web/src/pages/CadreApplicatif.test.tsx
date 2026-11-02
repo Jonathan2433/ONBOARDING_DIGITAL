@@ -612,6 +612,139 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
     };
   }
 
+  //  ===========================================================================
+  //  L'avatar de l'en-tete — charte 6.1, `E5` (`DEC-682`)
+  //  ===========================================================================
+
+  //  Les noms de champs sont ceux de l'API, pas ceux du contrat TypeScript :
+  //  c'est le validateur de `lireLaFiche` qui les traduit, et lui passer les
+  //  seconds le ferait refuser la reponse en silence.
+  function fiche(): unknown {
+    return {
+      id: APPARTENANCE,
+      version: 7,
+      person_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      preferred_name: null,
+      professional_category: 'consultant',
+      arrival_date: '2025-09-08',
+      short_bio: null,
+      fun_fact: null,
+      metier: null,
+      statut: null,
+      client: null,
+      dsm: null,
+      cercle_principal: null,
+      cercles_secondaires: [],
+      responsabilites: [],
+      photo: null,
+    };
+  }
+
+  it('montre l’avatar de la personne connectee — charte 6.1', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissionsAvecAppartenance(), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        'onboarding-parcours': () => Promise.resolve(json(parcours(null), 200)),
+        //  **AVANT `bordeaux`** : `fetchParUrl` rend la PREMIERE cle dont
+        //  l'adresse est un suffixe, et la fiche vit sous `/entities/bordeaux/
+        //  people/…`. Placee apres, elle serait captee par la cle de l'entite.
+        [`/people/${APPARTENANCE}`]: () => Promise.resolve(json(fiche(), 200)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+    //  **LE NOM EST DANS LE LIEN, PAS DANS UN TEXTE VISIBLE.** Cent pages
+    //  porteraient sinon le meme lien « Votre profil » sans dire de qui.
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Votre profil, Ada Lovelace' })).toBeTruthy(),
+    );
+    //  Sans photo servable, les initiales — la meme regle que partout ailleurs.
+    expect(screen.getByText('AL')).toBeTruthy();
+  });
+
+  it('retombe sur la fiche d’ARRIVEE quand le profil n’est pas publie', async () => {
+    //  **LE TEMOIN DU REPLI, ET IL VIENT D'UNE MESURE.** La fiche de profil
+    //  n'est servie que pour un profil publie et visible : sur le jeu de
+    //  demonstration, deux appartenances sur trois sont en brouillon ou
+    //  masquees, et n'auraient donc eu aucun avatar. La fiche d'arrivee est
+    //  lisible par `Soi` quel que soit l'etat de publication.
+    vi.stubGlobal(
+      'fetch',
+      fetchParUrl({
+        '/permissions': () => Promise.resolve(json(permissionsAvecAppartenance(), 200)),
+        '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
+        'onboarding-parcours': () => Promise.resolve(json(parcours(null), 200)),
+        'arrival-profile': () =>
+          Promise.resolve(
+            json(
+              {
+                id: null,
+                version: null,
+                state: 'draft',
+                entity_membership_id: APPARTENANCE,
+                person_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+                first_name: 'Grace',
+                last_name: 'Hopper',
+                preferred_name: null,
+                arrival_date: '2025-09-08',
+                metier: null,
+                statut: null,
+                client: null,
+                dsm: null,
+                cercle_principal: null,
+                short_intro: null,
+                fun_fact: null,
+                validated_at: null,
+                published_at: null,
+                recent_until: null,
+              },
+              200,
+            ),
+          ),
+        //  La fiche de profil REFUSE : c'est exactement le cas mesure.
+        [`/people/${APPARTENANCE}`]: () =>
+          Promise.resolve(json({ erreur: { code: 'profil_introuvable' } }, 404)),
+        bordeaux: () => Promise.resolve(json(BORDEAUX, 200)),
+      }),
+    );
+    monter('bordeaux');
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Votre profil, Grace Hopper' })).toBeTruthy(),
+    );
+    expect(screen.getByText('GH')).toBeTruthy();
+  });
+
+  it('NE montre AUCUN avatar hors de l’entite principale — aucune appartenance a lire', async () => {
+    //  **UN ROND ANONYME SERAIT PIRE QUE RIEN** : identique pour tout le monde,
+    //  il serait lu comme une image qui n'a pas charge. `appartenance` vaut
+    //  `null` hors de l'entite principale, et aucune fiche n'est alors lisible.
+    const appels: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((cible: string | URL | Request) => {
+        const url = String(cible);
+        appels.push(url);
+        if (url.includes('/permissions')) {
+          return Promise.resolve(json(permissions('bordeaux', false, ['EMP']), 200));
+        }
+        if (url.includes('/entities/')) {
+          return Promise.resolve(json(BORDEAUX, 200));
+        }
+        return Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200));
+      }),
+    );
+    monter('bordeaux');
+    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    expect(screen.queryByRole('link', { name: /Votre profil/ })).toBeNull();
+    //  **ET AUCUNE LECTURE DE FICHE N'EST TENTEE POUR RIEN** : la garde est la
+    //  meme que celle du parcours, donc une seule facon de se tromper.
+    expect(appels.some((url) => url.includes('/people/'))).toBe(false);
+  });
+
   it('affiche le lien quand `GET …/onboarding-parcours` rend une instance ACTIVE', async () => {
     vi.stubGlobal(
       'fetch',

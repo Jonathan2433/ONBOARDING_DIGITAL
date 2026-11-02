@@ -94,16 +94,29 @@ describe("l'accueil compose les cinq sections, dans l'ordre du cahier §8.4", ()
     monter();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Presentation' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'eXalt Bordeaux' })).toBeTruthy();
     });
+    //  **LES DEUX PREMIERS TITRES ONT CHANGE A `E5`, ET C'EST LA CHARTE 6.2.**
+    //  « Presentation » etait le titre d'une `Carte` ; la charte en fait une
+    //  PASTILLE — « Presentation de l'entite » — surmontant le nom de l'entite,
+    //  qui devient le titre de la section. Le second est l'emplacement pose
+    //  pour la video et les tuiles, en attente de contenu (arbitrage de
+    //  Jonathan du 02/11/2026).
+    //
+    //  **LE RESTE DE L'ORDRE EST INCHANGE, ET C'EST CE QUI COMPTE ICI** : les
+    //  cinq sections du cahier §8.4 se suivent toujours dans leur ordre, et
+    //  c'est ce que ce temoin eprouve depuis `T11` du LOT 8.
     const titres = screen.getAllByRole('heading').map((titre) => titre.textContent);
     expect(titres).toEqual([
-      'Presentation',
+      'eXalt Bordeaux',
+      'Contenus a venir',
       'Framework',
       'Arrivees recentes',
       'Evenements a venir',
       'Ressources internes',
     ]);
+    //  La pastille de la charte porte bien le mot que la `Carte` portait avant.
+    expect(screen.getByText(/Presentation de l.entite/)).toBeTruthy();
   });
 
   it('dit « aucun contenu de presentation » quand `presentation` vaut `null`', async () => {

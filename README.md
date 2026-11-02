@@ -3,60 +3,41 @@
 Plateforme interne de découverte de l'organisation eXalt et d'onboarding des nouveaux
 arrivants. Multi-entités dès le MVP, contenu initial pour Bordeaux.
 
-- **Dépôt :** privé — `Jonathan2433/ONBOARDING_DIGITAL`
+- **Dépôt :** public — `Jonathan2433/ONBOARDING_DIGITAL`
 - **Décideurs :** Léa pour le produit et le métier ; Jonathan pour la technique et l'exploitation
 - **Mode de réalisation :** lots successifs, avec validation explicite de Jonathan avant
   l'ouverture du lot suivant
 
 ---
 
-## 1. État d'avancement
+## 1. État d’avancement
 
 | Élément | Valeur |
 |---|---|
-| Lots verrouillés | **LOTS 0 à 10** — de `G0` (27/07/2026) à **`G10` (25/10/2026, `DEC-671`, `v0.10.0`)** |
-| Dernière porte franchie | **`G10`** — les six critères du LOT 10 sont acquis (cinq techniques, un validé explicitement par Jonathan), et le LOT 10 est verrouillé — [checklist](docs/operations/checklist-validation-G10.md) |
-| **Lot en cours** | **AUCUN** — le LOT 10 est verrouillé, aucun lot n'est ouvert |
-| Sous-étape en cours | **Aucune — le LOT 10 est VERROUILLÉ, porte `G10` FRANCHIE le 25/10/2026 (`DEC-671`), tag `v0.10.0`. Aucun lot n'est ouvert.** Ses seize sous-étapes ont livré : `T1` (`DEC-655`) a posé les six tables ; `T2` (`DEC-656`) a construit le service générique `enregistrer_un_evenement` et l'a câblé sur l'authentification (LOT 3) ; `T3` (`DEC-657`) l'a câblé sur les personnes et l'organisation (LOT 2/4/5/9) ; `T4` (`DEC-658`) l'a câblé sur les contenus et le Framework (LOT 6) ; `T5` (`DEC-659`) l'a câblé sur les événements (LOT 8) ; `T6` (`DEC-660`) l'a câblé sur l'onboarding (LOT 7) ; `T7` (`DEC-661`) l'a câblé sur le reste de l'import CSV (LOT 9) et a **fermé `ECART-064`** — le motif obligatoire du super-administrateur ; `T8` (`DEC-662`) a servi `GET /entities/{code}/audit`, le journal en LECTURE filtrable par périmètre, fermant `US001`/`US002` — deux arbitrages de Jonathan (événements sans entité retrouvés par l'entité actuelle de l'acteur ; Booster/bureau étendus aux autres ressources de leur périmètre) ; `T9` (`DEC-663`) a servi `POST /entities/{code}/audit/export`, l'export CSV du journal, fermant `US004` — réservé à `ADM-E`/`SUPER`, synchrone sans dépôt MinIO, aucun arbitrage de Jonathan nécessaire ; `T10` (`DEC-664`) a servi le reporting étendu (`GET /entities/{code}/reporting` et ses deux routes de détail paginées), fermant `US003` — réutilise la grille de rôle du tableau de bord administratif (LOT 9 `T5`), aucun arbitrage de Jonathan nécessaire ; `T11` (`DEC-665`) a servi `POST /bug-reports`, le bouton « Reporter un bug » et le signalement, fermant `US005` — aucune garde de rôle au-delà d'une session établie, aucun code d'entité dans le chemin (entité toujours résolue à l'entité principale du rapporteur), pied de page/pages d'erreur/menu mobile, aucun arbitrage de Jonathan nécessaire ; `T12` (`DEC-666`) a servi le traitement des signalements, fermant `US006` — liste périmétrée (`Soi`/`ESM` fonctionnel/`ADM-E`/`SUPER`), historique via l'audit existant (jamais une table dédiée), changement d'état réservé à `ADM-E`/`SUPER`, `QO-092` résolue par la matrice (pas « Jonathan seul ») et laissée ouverte pour son seul volet hors périmètre, aucun arbitrage de Jonathan nécessaire ; `T13` (`DEC-667`) a servi le cycle des alertes opérationnelles, fermant `US007` — six routes PLATES (`operational_alert` est une ressource GLOBALE, sans `entity_id`), `ADM-E`/`ESM` résolus n'importe où plutôt que dans une entité (extension du patron `est_super_administrateur`), « Limité fonctionnel » de l'`ESM` lu par analogie avec la lecture fonctionnelle du signalement (`T12`), aucun motif exigé même pour `SUPER` (`ECART-064` ne s'applique qu'à une intervention dans une entité), `lever_une_alerte` sans route HTTP (aucune ligne « Ouvrir une alerte » dans la matrice) et réouverture automatique sur la même ligne après résolution, aucun arbitrage de Jonathan nécessaire ; `T14` (`DEC-668`) a servi le suivi d'une demande de droit RGPD, fermant `US008` — six routes PLATES (`data_subject_request` est une ressource GLOBALE, sans `entity_id`), aucune ligne de matrice ne nommant cette ressource, résolue par analogie avec la matrice §18 « Lancer l'anonymisation RGPD » (`ADM-E`/`SUPER` seuls, aucune lecture partielle pour l'`ESM`), deux états seulement (`received`/`closed`, vocabulaire ouvert), vérification d'identité/export structuré/délais traités comme des colonnes orthogonales plutôt que des états, `due_at` = réception + 30 jours (RGPD article 12§3), aucun motif exigé, aucun arbitrage de Jonathan nécessaire ; `T15` (`DEC-669`) a livré les écrans back-office — audit, reporting étendu, support (signalements, alertes, demandes RGPD) —, premier écran consommateur pour `T8` à `T14` : deux onglets de plus sur la page `administration` existante (« Audit », « Support »), arbitrage explicite de Jonathan sur leur organisation (le cahier ferme la liste à sept groupes sans y faire tenir ces trois sujets), le reporting étendu rejoignant « Pilotage » (même grille que le tableau de bord), aucune route API nouvelle, aller-retour réel effectué à travers Caddy en HTTPS (journal d'audit réel, export CSV, cycle RGPD complet réception/vérification/clôture) |
-| Lots 11 à 14 | `Planned` — aucun travail anticipé autorisé |
-| Passation | [`CLAUDE.md`](CLAUDE.md) — état, méthode et les leçons payées par les défauts nommés. **Les deux nombres se dérivent**, voir son §7 : les recopier ici les ferait vieillir au premier ajout |
+| Lots verrouillés | **LOTS 0 à 11** — dernière porte : `G11`, franchie le 02/11/2026 (`DEC-683`) |
+| Version publiée | `v0.10.0` ; `v0.11.0` sera posé sur `main` après fusion de la réconciliation |
+| Lot en cours | **Aucun.** Le LOT 12 ne commence que sur instruction explicite de Jonathan |
+| Chantier hors lot | Design System v2 **clos** : `E1` à `E5` (`DEC-682`), `E6`/`E7` (`DEC-684`) |
+| Prochaine étape du MVP | LOT 12 — qualité transversale, accessibilité, performances, charge, sauvegarde et restauration |
+| Passation | [`CLAUDE.md`](CLAUDE.md) |
 
-**Ce que la plateforme fait aujourd'hui.** Elle démarre, répond, s'affiche, elle est empaquetée, et
-elle existe en **deux environnements isolés** — les huit services du cahier §15.4 en développement,
-huit autres en recette sur les images **publiées dans GHCR** et épinglées par empreinte, dont les
-**sept** séparations du cahier §22.2 sont prouvées sur l'état réel.
+Le LOT 11 livre les jobs persistés et idempotents, l’outbox transactionnelle, le fournisseur
+d’e-mail, le dépôt et la génération asynchrone des photos, la création et l’attribution Framework,
+les tâches planifiées verrouillées, le nettoyage des médias, l’anonymisation et la supervision. Le
+métier est désormais facultatif partout conformément à `DEC-675`.
 
-Au-dessus de ce socle :
+État technique dérivé au 02/11/2026 :
 
-| Livré | Depuis |
-|---|---|
-| **48 tables métier** PostgreSQL, **24 migrations** rejouables et **10 déclencheurs** ; l'isolation multi-entités est contrôlée au catalogue | LOTS 2, 3, 6, 7, 8 et 9 |
-| **l'authentification complète** — magic link, comptes administrateurs, sessions, CSRF, limitation de débit, révocation au départ, comptes de service — et ses huit écrans | LOT 3 |
-| **le portail national et le cadre applicatif** : l'entité consultée, la navigation, la barre mobile, la carte, et la résolution des permissions de la matrice §23.1 | LOT 4 |
-| **le trombinoscope paginé**, la **recherche sans accents** et ses **cinq filtres**, la **fiche profil** complète, la **miniature de photo** avec son autorisation, l'**écriture dans son périmètre**, l'**archivage et la restauration**, l'**historique organisationnel**, et **deux écrans** | LOT 5, les onze |
-| **le Framework complet** — synthèse, cercles, bureaux, contenus, cycle de vie, liens internes et écrans d'édition | LOT 6, les douze sous-étapes |
-| **les fiches d'arrivée et l'onboarding** — modèles versionnés, parcours, tâches, progression calculée, suivi et deux écrans | LOT 7, les quinze sous-étapes |
-| **le socle événementiel complet : lecture paginée, création, modification, publication, annulation, archivage, restauration et médias**, les **arrivées récentes**, et les **trois écrans** du lot — consultation (onglets « à venir »/« passés », badge « Annulé »), gestion (créer/modifier/publier/annuler/archiver/restaurer/médias, deux grilles de rôles jamais fusionnées) et l'**accueil final**, qui compose à l'écran les cinq sections du cahier §8.4 (présentation, Framework, arrivées, événements, liens), lecture ouverte aux huit rôles et ouverture externe explicite des liens, **avec ses carrousels accessibles sur mobile** (défilement manuel sous 768 px, liste verticale au-delà) ; chaque rôle agit dans sa portée exacte, rattachements multiples, `ECART-067` clos, `ARB-DROIT-003` tient la restauration ; une fiche d'arrivée publiée apparaît immédiatement, sans information organisationnelle ni photo ; **un contrôle de pile réelle** (`make accueil-check`, 29 contrôles, Caddy en HTTPS) prouve tout cela sur l'artefact réellement servi, **rejoué sur la recette de clôture** épinglée sur les images publiées | LOT 8, `T1`–`T14` |
+- 8 services Docker ;
+- 57 tables SQLAlchemy et 29 migrations Alembic ;
+- 118 routes au contrat partagé ;
+- React/TypeScript/Vite, FastAPI/Python, PostgreSQL, Redis/Dramatiq, MinIO et Caddy ;
+- 2 092 tests Python collectés et 1 204 tests frontend ;
+- recette du modèle : 23 exigences acquises, 2 partielles, aucune reportée.
 
-**Le LOT 8 est verrouillé, porte `G8` franchie le 07/10/2026 (`DEC-634`), tag `v0.8.0`.** Jonathan a
-validé explicitement l'accueil et les événements ; le critère de sortie 2 (vidéo) reste classé
-**sans objet**, `US005` étant reportée. `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non
-bloquants — repris aux lots suivants au besoin.
-
-**Ce qui n'existe pas encore, et c'est dit parce qu'un lecteur le supposerait acquis :** la
-**vidéo chargée sur action** (`MVP-L08-US005`) reste **explicitement reportée** — aucune
-convention de `payload_json` n'existe pour un bloc de contenu `VIDEO` (`QO-121` ouverte) et aucune
-vidéo réelle n'existera avant la V1 (`CONT-026`) ; le back-office et l'import CSV sont **livrés
-depuis le LOT 9** ; l'audit, le reporting et le support sont **en construction au LOT 10** ; les
-traitements asynchrones du LOT 11
-restent à venir. Les 29 contenus inventoriés restent à relire.
-
-> Les huit stories du LOT 7 sont fermées sur leurs critères propres. Au LOT 8, `#207`, `#208`,
-> `#209` et `#212` sont fermées de même ; `#210` reste ouverte (bloquée par `ECART-068`) et `#211`
-> reste ouverte (`US005` reportée) — un critère non tenu ne se referme pas par effet de bord d'une
-> porte ultérieure.
-
-Voir [`docs/README.md`](docs/README.md) §8 pour l'avancement lot par lot.
+La vidéo d’accueil reste reportée en V1. La licence de diffusion de Century Gothic doit être
+confirmée avant la production. Les détails et les preuves de `G11` figurent dans
+[la checklist](docs/operations/checklist-validation-G11.md).
 
 ### Démarrer sur une machine propre
 
@@ -65,7 +46,7 @@ make tools      # verifier que uv, node et pnpm sont disponibles
 make install    # installer les dependances Python et JavaScript
 make check      # qualite complete : format, lint, types, tests, sources, documents
 make up         # les 8 services, le bucket MinIO, les TROIS roles PostgreSQL, Caddy recharge
-make migrate    # appliquer les migrations jusqu'a la tete 0022
+make migrate    # appliquer les migrations jusqu'a la tete 0029
 make api-check  # interroger les trois endpoints de sante
 make web-check  # controler la page nationale a travers Caddy, en HTTPS
 ```
