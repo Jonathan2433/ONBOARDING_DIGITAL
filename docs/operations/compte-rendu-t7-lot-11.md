@@ -9,6 +9,10 @@ existants, pas recopiés), recette sur les images publiées, préparation de la 
 **Branche :** `lot11-t7-recette-de-cloture`, depuis `develop` à jour (`5389f3c`, fusion de `T5`,
 PR #317)
 
+> **Mise à jour du 02/11/2026 :** Jonathan a validé le LOT 11 et ses traitements asynchrones.
+> La porte `G11` est franchie (`DEC-683`) et le lot est verrouillé. Les formulations « en attente »
+> plus bas décrivent l'état exact à la sortie de `T7`, avant cette validation.
+
 ---
 
 # 1. État du lot
@@ -157,7 +161,7 @@ par la recette finale plutôt que par un critère de sortie officiel dédié.
 | Construction locale `apps/web/Dockerfile` cible `execution`, `linux/amd64` et `linux/arm64` | les deux construisent, `brotli-libs-1.2.1-r0` installé, Caddy démarre et sert |
 | `infra/scripts/verifier-recette-modele.py` (modifié) | 25/25 classés — **23 acquis, 2 partiel, 0 reporté, 0 inapplicable** |
 | `make recette-modele-check` | idem, vert |
-| `make docs-check` | vert — 5 documents immuables intacts, 6 séquences cohérentes (`DEC-681` prochain libre), 12 contrôles de totaux dérivés, 12 contrôles sur la passation |
+| `make docs-check` | vert — 5 documents immuables intacts, 6 séquences cohérentes (`DEC-681` alloué à `T7`, `DEC-682` alors prochain libre), 12 contrôles de totaux dérivés, 12 contrôles sur la passation |
 | `make sources-check` | vert — 781 fichiers source examinés, les deux seules exceptions déclarées |
 | `make isolation-check` | vert — 38 tables locales, 29 clés composites, 0 référence nue, 0 clé simple entre deux tables locales |
 | `make migrations-check` | vert — base vide → tête `0029` → schéma identique (912 colonnes/333 contraintes/269 index/10 déclencheurs/199 fonctions) |

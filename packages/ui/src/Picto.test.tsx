@@ -1,7 +1,7 @@
 /**
  * Picto — accessibilite, couleur et taille.
  *
- * Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`).
+ * Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`).
  *
  * LE TEMOIN DECISIF EST UNE PAIRE, ET IL FALLAIT QU'IL EN SOIT UNE
  *

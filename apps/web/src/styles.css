@@ -205,7 +205,7 @@ code {
 /* Focus VISIBLE au clavier : exigence dure du cahier §14.2. Ne jamais
    remplacer par `outline: none`. */
 .action:focus-visible {
-  outline: 3px solid var(--encre);
+  outline: var(--anneau-focus);
   outline-offset: 2px;
 }
 

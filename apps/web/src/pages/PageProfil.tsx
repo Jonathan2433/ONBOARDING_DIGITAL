@@ -60,8 +60,8 @@
  *   portaient DEJA un `Badge` (LOT 5 `T11`) ; seul le type d'appartenance d'un
  *   cercle (« Principal »/« Secondaire ») restait un `<span>` de texte simple --
  *   l'exact pendant de ce que `S5` a corrige sur `PageCercle.tsx` pour la meme
- *   notion, et traite ici de la meme facon (`Badge ton="marque"` pour Principal,
- *   `ton="neutre"` pour Secondaire).
+ *   notion, et traite ici de la meme facon (`Badge ton="info"`) : le mot porte
+ *   la distinction, la couleur ne fabrique pas une seconde semantique.
  *
  *   **Le niveau de titre est explicite, et ce n'est pas un detail.** L'identite
  *   (le nom de la personne) garde le niveau par defaut de `Carte`, `h2` : c'est
@@ -80,7 +80,7 @@ import type { JSX, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
-import { couleurDuCercle, libelleDuStatut } from '../affichage';
+import { couleurDuCercle, libelleDuStatut, tonDuStatut } from '../affichage';
 import { lireLaFicheArchivee } from '../api/cycleDeVie';
 import { lireLaFiche, lireLHistorique } from '../api/profil';
 import { cheminDeRubrique } from '../routes';
@@ -205,7 +205,7 @@ function Cercle({ cercle, nature }: { cercle: CercleDuProfil; nature: string }):
       style={couleur === undefined ? undefined : ({ '--profil-cercle': couleur } as never)}
     >
       <span className="profil-cercle-nom">{cercle.nom}</span>
-      <Badge ton={nature === 'Principal' ? 'marque' : 'neutre'}>{nature}</Badge>
+      <Badge ton="info">{nature}</Badge>
     </li>
   );
 }
@@ -430,7 +430,9 @@ export function PageProfil(): JSX.Element {
           )}
           <div className="profil-titre">
             <p className="profil-metier">{p.metier ?? 'Metier non renseigne'}</p>
-            {statut === null ? null : <Badge ton="marque">{statut}</Badge>}
+            {statut === null || p.statut === null ? null : (
+              <Badge ton={tonDuStatut(p.statut)}>{statut}</Badge>
+            )}
           </div>
         </div>
         {charge.archive ? null : (
@@ -497,7 +499,7 @@ export function PageProfil(): JSX.Element {
           <ul className="profil-responsabilites">
             {p.responsabilites.map((r) => (
               <li key={`${r.type}-${r.cercle ?? r.bureau ?? ''}`}>
-                <Badge ton="neutre">{r.type}</Badge>
+                <Badge ton={r.type === 'BOOSTER' ? 'booster' : 'info'}>{r.type}</Badge>
                 {/*
                   §8.4 : `cercle` et `bureau` s'excluent — un BOOSTER porte sur un
                   cercle, un OFFICE_MANAGER sur un bureau. La base l'impose.

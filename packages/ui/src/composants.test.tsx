@@ -77,15 +77,15 @@ describe('Bouton', () => {
     },
   );
 
-  it('vaut la taille `m` par defaut — la seule qui tienne les 44px de la charte 1.6', () => {
-    //  La charte se contredit : sa regle 1.6 exige des cibles >= 44px, sa
-    //  section 5 propose une taille `s` de 36px. Le DEFAUT est celui qui
-    //  respecte 1.6, pour qu'on obtienne la bonne taille sans rien demander.
+  it('vaut la taille `m` par defaut et garde les deux cibles a 44px', () => {
+    //  `E7` tranche la contradiction de la charte en faveur de sa regle
+    //  transversale : `s` est compacte par son padding, pas par sa cible.
     const { unmount } = render(<Bouton>Defaut</Bouton>);
     expect(screen.getByRole('button').dataset.taille).toBe('m');
     unmount();
     render(<Bouton taille="s">Compact</Bouton>);
     expect(screen.getByRole('button').dataset.taille).toBe('s');
+    expect(CSS).toContain(".ex-bouton[data-taille='s'] {\n  min-height: 44px;");
   });
 
   it('reste focalisable et dans l ordre de tabulation', () => {
@@ -119,18 +119,9 @@ describe('Bouton', () => {
 });
 
 describe('Badge', () => {
-  it.each(['neutre', 'ok', 'ko', 'marque'] as const)(
-    'rend son texte pour le ton %s : la couleur ne porte jamais seule l information',
-    (ton) => {
-      render(<Badge ton={ton}>Operationnel</Badge>);
-      // On cherche le TEXTE, pas la classe : c'est ce qu'un lecteur d'ecran lit.
-      expect(screen.getByText('Operationnel').dataset.ton).toBe(ton);
-    },
-  );
-
-  it('vaut le ton `neutre` par defaut', () => {
+  it('vaut le ton `info` par defaut', () => {
     render(<Badge>Inconnu</Badge>);
-    expect(screen.getByText('Inconnu').dataset.ton).toBe('neutre');
+    expect(screen.getByText('Inconnu').dataset.ton).toBe('info');
   });
 
   //  `E3`, charte 5 : les six tons nommes par ce qu'ils DISENT.
@@ -142,11 +133,7 @@ describe('Badge', () => {
     },
   );
 
-  it('porte DIX tons : six de la charte, quatre de `T10` que `E5` migrera', () => {
-    //  Le compte est annonce pour que le jour ou `E6` retire les quatre
-    //  anciens, ce test le dise — plutot que de laisser la liste vieillir en
-    //  silence. Les quatre survivants servent vingt-deux badges d'`apps/web`
-    //  dont la traduction depend de ce que chaque ecran veut dire.
+  it('porte exactement les SIX tons de la charte apres le nettoyage `E6`', () => {
     const tons = [
       'mission',
       'intercontrat',
@@ -154,12 +141,8 @@ describe('Badge', () => {
       'booster',
       'annule',
       'info',
-      'neutre',
-      'ok',
-      'ko',
-      'marque',
     ] as const;
-    expect(tons).toHaveLength(10);
+    expect(tons).toHaveLength(6);
     for (const ton of tons) {
       const { unmount } = render(<Badge ton={ton}>X</Badge>);
       expect(screen.getByText('X').dataset.ton).toBe(ton);
@@ -340,7 +323,7 @@ describe('Notification', () => {
   });
 });
 
-describe('la garde `[hidden]` — chantier design systeme v2, `E5` (`DEC-681`)', () => {
+describe('la garde `[hidden]` — chantier design systeme v2, `E5` (`DEC-682`)', () => {
   it('rend `display: none` NON NEGOCIABLE pour tout element masque', () => {
     //  **CE CONTROLE EXISTE PARCE QUE SON ABSENCE A COUTE SEIZE MOIS DE
     //  SILENCE.** `.ui-carte-retournable__recto` et `__verso` portent

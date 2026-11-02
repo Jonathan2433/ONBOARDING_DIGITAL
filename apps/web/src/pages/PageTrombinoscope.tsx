@@ -196,8 +196,8 @@ export function PageTrombinoscope(): JSX.Element {
           Les deux composants portent eux-memes leur `<label>` lie, leur
           `id` engendre et leur anneau de focus par `var(--anneau-focus)` : le
           `.trombi-champ` qu'ils remplacent avait le sien ecrit a la main,
-          juste en theme clair et en echec en sombre depuis `S9`. Un defaut de
-          moins a corriger a `E6`.
+          juste en theme clair et en echec en sombre depuis `S9`. `E6` a retire
+          cette regle devenue morte.
 
           **LE FILTRE « CERCLE » DE LA CHARTE N'EST PAS AJOUTE ICI** : l'API
           l'accepte (`cercle` est un parametre de `GET …/people`), mais le

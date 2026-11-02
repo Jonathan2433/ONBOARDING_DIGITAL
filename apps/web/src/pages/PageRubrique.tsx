@@ -95,7 +95,7 @@ export function PageRubrique({ libelle, lot, cle }: ProprietesRubrique): JSX.Ele
         pour un lecteur d'ecran (WCAG 1.4.1, cahier §14.2).
       */}
       <p className="app-rubrique-etiquette">
-        <Badge ton="marque">{lot}</Badge>
+        <Badge ton="info">{lot}</Badge>
       </p>
       <Alerte data-rubrique={libelle}>
         La rubrique {libelle} de {entite.nom} arrive plus tard. La navigation, elle, est en place :

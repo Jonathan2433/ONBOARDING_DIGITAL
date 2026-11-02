@@ -81,6 +81,7 @@ import {
   Picto,
   Progression,
 } from '@onboarding/ui';
+import type { TonBadge } from '@onboarding/ui';
 
 /** Ce que la page a pu charger — même montage que `PageProfil` (LOT 5, `T11`). */
 interface Chargement {
@@ -135,13 +136,11 @@ const LIBELLES_D_ETAT_DE_LA_FICHE: Readonly<Record<string, string>> = {
   archived: 'Archivée',
 };
 
-//  Chantier front, S7 (`DEC-672`) : meme convention a quatre tons que
-//  `PageGestionDesEvenements.tsx`/`PageEditionEvenement.tsx` (`TONS_D_ETAT`),
-//  jamais une nouvelle inventee pour cet ecran.
-const TONS_D_ETAT_DE_LA_FICHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  draft: 'neutre',
-  published: 'ok',
-  archived: 'neutre',
+// `E6` traduit l'ancienne convention chromatique en tons semantiques de la charte.
+const TONS_D_ETAT_DE_LA_FICHE: Readonly<Record<string, TonBadge>> = {
+  draft: 'info',
+  published: 'info',
+  archived: 'annule',
 };
 
 const LIBELLES_D_ETAT_DE_LA_TACHE: Readonly<Record<string, string>> = {
@@ -151,11 +150,11 @@ const LIBELLES_D_ETAT_DE_LA_TACHE: Readonly<Record<string, string>> = {
   cancelled: 'Annulée',
 };
 
-const TONS_D_ETAT_DE_LA_TACHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  todo: 'neutre',
-  completed: 'ok',
-  reopened: 'marque',
-  cancelled: 'ko',
+const TONS_D_ETAT_DE_LA_TACHE: Readonly<Record<string, TonBadge>> = {
+  todo: 'info',
+  completed: 'info',
+  reopened: 'info',
+  cancelled: 'annule',
 };
 
 /** La section fiche d'arrivée — complétion, validation et publication. */
@@ -239,7 +238,7 @@ function SectionFiche({
     <Carte titre="Ma fiche d’arrivée">
       <p className="onboarding-fiche-etat">
         État :{' '}
-        <Badge ton={TONS_D_ETAT_DE_LA_FICHE[fiche.etat] ?? 'neutre'}>
+        <Badge ton={TONS_D_ETAT_DE_LA_FICHE[fiche.etat] ?? 'info'}>
           {LIBELLES_D_ETAT_DE_LA_FICHE[fiche.etat] ?? fiche.etat}
         </Badge>
       </p>
@@ -446,10 +445,10 @@ function LigneDeTache({
             onAgir(tache.id, terminee ? 'annulation' : 'completion');
           }}
         />
-        <Badge ton={TONS_D_ETAT_DE_LA_TACHE[tache.etat] ?? 'neutre'}>
+        <Badge ton={TONS_D_ETAT_DE_LA_TACHE[tache.etat] ?? 'info'}>
           {LIBELLES_D_ETAT_DE_LA_TACHE[tache.etat] ?? tache.etat}
         </Badge>
-        {tache.obligatoire ? <Badge ton="marque">Obligatoire</Badge> : null}
+        {tache.obligatoire ? <Badge ton="enrichissement">Obligatoire</Badge> : null}
       </div>
       {tache.description === null ? null : (
         <p className="onboarding-tache-description">{tache.description}</p>

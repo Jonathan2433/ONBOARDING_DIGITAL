@@ -21,43 +21,28 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
 /**
- * Les tons.
- *
- * **LES SIX PREMIERS SONT CEUX DE LA CHARTE 5** (`E3`, `DEC-681`), nommes par
+ * Les six tons de la charte 5 (`E3`, `DEC-682`), nommes par
  * ce qu'ils DISENT et non par une couleur : `mission`, `intercontrat`,
  * `enrichissement`, `booster`, `annule`, `info`. Chacun reutilise un couple
  * deja prouve AA par `jetons.test.ts` — aucune couleur nouvelle sauf `annule`,
  * dont le texte sourd a du etre mesure et ajoute (`TEINTES.grisSourd`, 4,55:1).
  *
- * **LES QUATRE SUIVANTS SONT CEUX DE `T10`, ET ILS SURVIVENT A DESSEIN.** Vingt-
- * deux `<Badge>` vivent dans `apps/web` — onze en `marque`, deux en `ko`, un en
- * `neutre`, huit au defaut — et leur traduction vers le vocabulaire de la charte
- * depend de ce que chaque ecran veut DIRE : le `marque` du trombinoscope porte
- * un nom de cercle, pas une mission. Les retirer ici ferait echouer la
- * compilation de huit ecrans et forcerait a deviner ces traductions dans la
- * meme etape que la construction des composants. `E5` les migre un par un,
- * `E6` retire ce qui reste. Une etape a la fois.
+ * `E6` (`DEC-684`) a retire les quatre tons historiques de `T10` (`neutre`,
+ * `ok`, `ko`, `marque`) apres avoir traduit chaque emploi selon ce que son texte
+ * DIT. Le defaut devient `info` : un badge sans intention metier plus precise ne
+ * doit pas inventer une mission, un intercontrat ou une annulation.
  */
 export type TonBadge =
-  | 'mission'
-  | 'intercontrat'
-  | 'enrichissement'
-  | 'booster'
-  | 'annule'
-  | 'info'
-  | 'neutre'
-  | 'ok'
-  | 'ko'
-  | 'marque';
+  'mission' | 'intercontrat' | 'enrichissement' | 'booster' | 'annule' | 'info';
 
 export interface ProprietesBadge extends Omit<HTMLAttributes<HTMLSpanElement>, 'className'> {
   /** Le libelle. Obligatoire : voir l'en-tete, WCAG 1.4.1. */
   readonly children: ReactNode;
-  /** `neutre` par defaut. */
+  /** `info` par defaut. */
   readonly ton?: TonBadge;
 }
 
-export function Badge({ children, ton = 'neutre', ...reste }: ProprietesBadge): ReactNode {
+export function Badge({ children, ton = 'info', ...reste }: ProprietesBadge): ReactNode {
   return (
     <span className="ex-badge" data-ton={ton} {...reste}>
       {children}

@@ -237,9 +237,7 @@ export function PageCercle(): JSX.Element {
                     {membre.prenom} {membre.nom}
                   </span>
                 </span>
-                <Badge ton={membre.typeDAppartenance === 'principal' ? 'marque' : 'neutre'}>
-                  {libelleDAppartenance(membre.typeDAppartenance)}
-                </Badge>
+                <Badge ton="info">{libelleDAppartenance(membre.typeDAppartenance)}</Badge>
               </li>
             ))}
           </ul>

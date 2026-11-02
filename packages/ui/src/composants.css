@@ -37,15 +37,14 @@
 }
 
 /* LES DEUX TAILLES DE LA CHARTE 5, et `m` est le defaut du composant.
-   La charte 1.6 exige par ailleurs des cibles tactiles >= 44 px : `m` la tient,
-   `s` ne la tient pas. La tension est dans la charte elle-meme, elle est
-   signalee a `E7`, et le defaut est celui qui respecte 1.6. */
+   `E7` (`DEC-684`) tranche la contradiction 36px/44px en faveur de la cible
+   tactile transversale : `s` reste compacte par son padding, jamais par sa cible. */
 .ex-bouton[data-taille='m'] {
   min-height: 44px;
 }
 
 .ex-bouton[data-taille='s'] {
-  min-height: 36px;
+  min-height: 44px;
   padding: var(--espace-xs) var(--espace-m);
 }
 
@@ -188,27 +187,6 @@
 }
 
 /* ---------------------------------------------------------------------------
- *  LES QUATRE TONS DE `T10`, conserves le temps que `E5` migre les vingt-deux
- *  badges d'`apps/web` vers le vocabulaire de la charte. `E6` retire le reste.
- * ------------------------------------------------------------------------- */
-
-.ex-badge[data-ton='ok'] {
-  color: var(--ok);
-  border-color: currentcolor;
-}
-
-.ex-badge[data-ton='ko'] {
-  color: var(--ko);
-  border-color: currentcolor;
-}
-
-.ex-badge[data-ton='marque'] {
-  background: var(--marque-bleu);
-  color: var(--marque-bleu-texte);
-  border-color: transparent;
-}
-
-/* ---------------------------------------------------------------------------
  *  Carte — « cartes arrondies, ombres douces », cahier 13.2
  * ------------------------------------------------------------------------- */
 
@@ -248,7 +226,7 @@
    sur `--fond`, deja prouve AA — zero nouvelle mesure de contraste requise,
    meme raisonnement qu'une forme : une typographie n'est ni une couleur ni un
    couple surface/texte. **LA GRAISSE EST PASSEE DE 900 A `--graisse-forte` EN
-   v2** (`DEC-681`) : Century Gothic ne fournit que 400 et 700, et un 900
+   v2** (`DEC-682`) : Century Gothic ne fournit que 400 et 700, et un 900
    aurait ete synthetise par le navigateur. */
 .ex-carte__titre-chiffre {
   font-size: 1.4em;
@@ -386,7 +364,7 @@
 }
 
 /* RONDS, et c'est la revision assumee des hexagones de `S11` : la capture de la
-   charte v2 fait foi, arbitrage de Jonathan (`DEC-681`). */
+   charte v2 fait foi, arbitrage de Jonathan (`DEC-682`). */
 .ex-avatar {
   display: inline-flex;
   flex: none;

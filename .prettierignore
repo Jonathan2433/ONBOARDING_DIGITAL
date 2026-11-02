@@ -54,7 +54,7 @@ docs/prototype/
 #  CHARTE GRAPHIQUE FOURNIE : EXCLUE EN TOTALITE, meme raison que le Markdown.
 #
 #  `docs/design-systeme/handoff/` porte la charte telle qu'elle a ete remise
-#  le 01/11/2026 (`DEC-681`) : la specification, la proposition de jetons, les
+#  le 01/11/2026 (`DEC-682`) : la specification, la proposition de jetons, les
 #  pictogrammes officiels, les polices et les logos. C'est une SOURCE, au meme
 #  titre que les documents de cadrage — la reformater la ferait diverger de ce
 #  qui a reellement ete remis, et plus rien ne permettrait de confronter le

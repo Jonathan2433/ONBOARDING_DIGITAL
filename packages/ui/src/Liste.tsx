@@ -1,7 +1,7 @@
 /**
  * Liste — un choix deroulant avec son libelle.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`), charte 5, qui
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`), charte 5, qui
  * decrit « Champ / Liste » d'une seule phrase : meme libelle, meme hauteur,
  * meme rayon, meme bordure, meme focus.
  *

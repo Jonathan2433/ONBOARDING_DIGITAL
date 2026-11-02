@@ -250,15 +250,15 @@ export function PageEntite(): JSX.Element {
          prose — cahier §13.2, « badges ». */}
       <Carte titre="Framework">
         <div className="accueil-framework-compteurs">
-          <Badge ton="marque">
+          <Badge ton="info">
             {donnee.framework.cercles.length} cercle
             {donnee.framework.cercles.length > 1 ? 's' : ''}
           </Badge>
-          <Badge ton="marque">
+          <Badge ton="info">
             {donnee.framework.bureaux.length} bureau
             {donnee.framework.bureaux.length > 1 ? 'x' : ''}
           </Badge>
-          <Badge ton="marque">
+          <Badge ton="info">
             {nombreDeResponsabilitesPourvues} responsabilite
             {nombreDeResponsabilitesPourvues > 1 ? 's' : ''} pourvue
             {nombreDeResponsabilitesPourvues > 1 ? 's' : ''}
@@ -278,7 +278,7 @@ export function PageEntite(): JSX.Element {
         ) : (
           <>
             <p className="accueil-compteur">
-              <Badge ton="marque">
+              <Badge ton="info">
                 {donnee.arriveesRecentes.total} arrivee
                 {donnee.arriveesRecentes.total > 1 ? 's' : ''}
               </Badge>
@@ -318,7 +318,7 @@ export function PageEntite(): JSX.Element {
         ) : (
           <>
             <p className="accueil-compteur">
-              <Badge ton="marque">
+              <Badge ton="info">
                 {donnee.evenementsAVenir.total} evenement
                 {donnee.evenementsAVenir.total > 1 ? 's' : ''}
               </Badge>
@@ -331,7 +331,7 @@ export function PageEntite(): JSX.Element {
                 >
                   <div className="accueil-evenements-entete">
                     <span className="accueil-evenements-titre">{evenement.titre}</span>
-                    {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
+                    {evenement.etat === 'cancelled' ? <Badge ton="annule">Annule</Badge> : null}
                   </div>
                   <span className="accueil-evenements-horaire">
                     {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}

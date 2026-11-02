@@ -2,7 +2,7 @@
  * Jetons du design system eXalt — la source de verite unique.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007. Cahier des charges 13.1 a 13.4, 14.
- * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-681`, 01/11/2026),
+ * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-682`, 01/11/2026),
  * d'apres `docs/design-systeme/handoff/DESIGN_SYSTEME.md`, versionne avec ce code.
  *
  * ============================================================================
@@ -166,7 +166,7 @@ export interface DefinitionDeCercle extends CoupleColore {
 /**
  * Les huit cercles — charte 4, « Cercles (donnees, pas en dur) ».
  *
- * Chantier design systeme v2, etape `E4` (`DEC-681`). `E1` n'avait pose que la
+ * Chantier design systeme v2, etape `E4` (`DEC-682`). `E1` n'avait pose que la
  * COULEUR et renvoyait le `picto` a plus tard ; il est ici, et la table porte
  * desormais les quatre colonnes que la charte demande.
  *

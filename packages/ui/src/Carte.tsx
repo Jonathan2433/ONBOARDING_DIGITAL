@@ -6,7 +6,7 @@
  * « CARTES ARRONDIES, OMBRES DOUCES » — cahier 13.2. **L'OMBRE A DISPARU EN
  * `E1`** : la charte v2 est « flat » (1.1), `--ombre-douce` vaut `none`, et la
  * separation se fait par `1px solid var(--trait)`. Ecart avec le cahier 13.2
- * consigne a `DEC-681`.
+ * consigne a `DEC-682`.
  *
  * LA VARIANTE `interactive` — charte 5, `E3`
  *

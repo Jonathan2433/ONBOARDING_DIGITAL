@@ -2,7 +2,7 @@
  * Bouton — composant de base du design system.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007. Cahier des charges 13.3, 14.
- * ETENDU par le chantier design systeme v2, etape `E3` (`DEC-681`), charte 5.
+ * ETENDU par le chantier design systeme v2, etape `E3` (`DEC-682`), charte 5.
  *
  * UN VRAI `<button>`, ET C'EST UN CHOIX
  *
@@ -37,16 +37,15 @@
  *   `--titre` (7,44:1) sous `[data-theme='sombre']`. Meme regle que l'anneau de
  *   focus et que `Progression` — voir l'en-tete de `jetons.ts`.
  *
- * LES DEUX TAILLES, ET LA TENSION QUE LA CHARTE PORTE AVEC ELLE-MEME
+ * LES DEUX TAILLES, ET LA TENSION RESOLUE A `E7`
  *
  *   La charte 5 donne « tailles `s` 36px / `m` 44px ». Sa propre regle 1.6 exige
  *   pourtant « cibles tactiles >= 44px ». Les deux ne peuvent pas etre vraies en
  *   meme temps pour `s`.
  *
- *   Le defaut est donc `m` : sans rien demander, on obtient la taille qui
- *   respecte 1.6. `s` reste disponible — il tient WCAG 2.2 AA (critere 2.5.8,
- *   qui exige 24x24 et non 44) — et l'ecart est consigne a `E7`. Tension signalee
- *   a Jonathan plutot que tranchee en silence.
+ *   `E7` (`DEC-684`) tranche en faveur de la regle transversale : les deux tailles
+ *   gardent une cible de 44px. `s` reste visuellement compacte par sa graisse et
+ *   ses espacements horizontaux, jamais par une cible tactile plus petite.
  */
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
@@ -54,7 +53,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 /** Les quatre variantes de la charte 5. Aucune n'est rose : voir l'en-tete. */
 export type VarianteBouton = 'primaire' | 'secondaire' | 'sombre' | 'discret';
 
-/** `m` vaut 44px — la cible tactile de la charte 1.6. `s` vaut 36px. */
+/** Les deux tailles tiennent la cible tactile de 44px ; `s` reste plus compacte. */
 export type TailleBouton = 's' | 'm';
 
 export interface ProprietesBouton extends Omit<
@@ -65,7 +64,7 @@ export interface ProprietesBouton extends Omit<
   readonly children: ReactNode;
   /** `primaire` par defaut. */
   readonly variante?: VarianteBouton;
-  /** `m` par defaut — la seule qui tienne les 44px de la charte 1.6. */
+  /** `m` par defaut ; les deux tailles tiennent les 44px de la charte 1.6. */
   readonly taille?: TailleBouton;
 }
 

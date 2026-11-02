@@ -1,7 +1,7 @@
 /**
  * Picto — les pictogrammes officiels eXalt, en SVG local.
  *
- * Chantier design systeme v2 hors lot, etape `E2` (`DEC-681`). Charte 1.4, 4, 6, 7.
+ * Chantier design systeme v2 hors lot, etape `E2` (`DEC-682`). Charte 1.4, 4, 6, 7.
  *
  * IL REMPLACE LES EMOJI, ET C'EST UNE REGLE NON NEGOCIABLE
  *

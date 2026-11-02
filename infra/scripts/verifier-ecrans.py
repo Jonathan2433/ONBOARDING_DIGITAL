@@ -27,10 +27,11 @@ CE QUE « SERVIES A TRAVERS CADDY » EXIGE, ET LE PIEGE QU'IL CACHE
   fait foi, jamais le code : Vite rend **200 + `index.html`** pour tout chemin
   inconnu (§7.10), donc un 200 seul ne prouverait rien.
 
-DEUX INTERDITS, VERIFIES SUR LES SOURCES
+TROIS INTERDITS, VERIFIES SUR LES SOURCES
 
-  « aucune couleur hors des jetons de `packages/ui` » et « aucun jeton dans
-  `localStorage` ». Les deux se lisent dans les fichiers, et **les commentaires
+  « aucune couleur hors des jetons de `packages/ui` », « aucun anneau de focus
+  ecrit a la main » et « aucun jeton dans `localStorage` ». Les trois se lisent
+  dans les fichiers, et **les commentaires
   sont retires avant l'examen** : le commentaire de tete de `auth.css` cite un
   hexadecimal pour expliquer pourquoi on ne l'ecrit pas, et un controle qui ne les
   retirerait pas se declencherait sur la phrase qui enonce la regle. C'est le
@@ -319,6 +320,48 @@ def main() -> int:
         print(
             f"    ok       {len(jetons_du_design)} jetons du design system, 0 redeclare par les "
             f"{len(FEUILLES_DES_ECRANS)} feuille(s) d'ecran — 2 temoins OK"
+        )
+
+    #  --------------------------------------------------------------
+    #  2 ter. UN SEUL ANNEAU DE FOCUS, LE JETON DU DESIGN SYSTEME
+    #  --------------------------------------------------------------
+    #
+    #  `E3` avait pose le jeton apres avoir mesure que `--marque-bleu` ne rend
+    #  que 2,91:1 sur le theme sombre. `E6` a ensuite derive le perimetre reel :
+    #  VINGT regles d'application dessinaient encore leur contour a la main,
+    #  et pas seulement les deux residues alors nommes dans la passation. Un
+    #  controle limite a ces deux selecteurs aurait rejoue le meme defaut au
+    #  prochain ecran. Toute regle `:focus-visible` qui dessine un `outline`
+    #  doit donc consommer `--anneau-focus`; le decalage reste libre, car un
+    #  onglet ou une barre contrainte doivent parfois dessiner l'anneau dedans.
+    controles += 1
+    anneaux_manuels: list[tuple[str, str]] = []
+    anneaux = 0
+    for chemin in FEUILLES_DES_ECRANS:
+        feuille = sans_commentaires_css(chemin.read_text(encoding="utf-8"))
+        for regle in re.findall(r":focus-visible[^\{]*\{[^}]*\}", feuille):
+            if not re.search(r"\boutline\s*:", regle):
+                continue
+            anneaux += 1
+            if "var(--anneau-focus)" not in regle:
+                anneaux_manuels.append((chemin.name, " ".join(regle.split())))
+    temoin_manuel = "var(--anneau-focus)" not in ":focus-visible { outline: 2px solid red; }"
+    temoin_jeton = "var(--anneau-focus)" in ":focus-visible { outline: var(--anneau-focus); }"
+    if anneaux_manuels:
+        print(f"    ECHEC    {len(anneaux_manuels)} anneau(x) de focus ecrit(s) a la main :")
+        for nom, regle in anneaux_manuels[:6]:
+            print(f"             {nom} — {regle}")
+        echecs += 1
+    elif anneaux < 10 or not temoin_manuel or not temoin_jeton:
+        print(
+            "    ECHEC    TEMOIN : anneaux releves "
+            f"{anneaux}, manuel reconnu {temoin_manuel}, jeton reconnu {temoin_jeton}"
+        )
+        echecs += 1
+    else:
+        print(
+            f"    ok       {anneaux} anneaux de focus consomment tous "
+            "var(--anneau-focus) — 2 temoins OK"
         )
 
     #  --------------------------------------------------------------

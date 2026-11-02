@@ -10,7 +10,7 @@ Sources : prototype V1 (inspiration de structure et de ton uniquement, **aucun c
 3. **Le mot porte le sens** : statuts, cercles, étapes → toujours libellé (+ pictogramme). La couleur n'est qu'un renfort (WCAG 1.4.1).
 4. **Pas d'emoji.** Les pictogrammes officiels eXalt (`pictos/exalt-icons.json`) les remplacent (ex. « ⚡ Booster » → badge texte « Booster »).
 5. **Vouvoiement** partout (la V1 tutoie, la charte vouvoie).
-6. **Focus visible** : `outline: 3px solid rgb(88 83 255 / 45%); outline-offset: 2px` sur tout élément interactif. Cibles tactiles ≥ 44px.
+6. **Focus visible** : `outline: var(--anneau-focus); outline-offset: var(--anneau-focus-decalage)` sur tout élément interactif. L'anneau est opaque et bascule sur `--titre` en thème sombre : la valeur bleue à 45 % initialement remise ne rendait que 2,33:1 en clair et 1,73:1 en sombre, sous WCAG 1.4.11. Cibles tactiles ≥ 44px.
 7. **Mouvement** neutralisé sous `prefers-reduced-motion: reduce`.
 
 ## 2. Jetons
@@ -29,7 +29,7 @@ Fichier complet : `jetons.css` (à reporter d'abord dans `jetons.ts`, source de 
 | `--teinte-gris` / `--fond-doux` | #F5F5F5 | `--titre` | — |
 
 Neutres : `--fond` #FAFAFB · `--surface` #FFF · `--encre` #1A1A2E · `--encre-douce` #6E6E85 (tout texte secondaire, 4,9:1) · `--titre` #2F2F9B · `--trait` #E8E8EE · `--trait-fort` #D6D6E0 (champs).
-`--ok` #0F6B3F / `--ko` #9B1C1C : conservés pour la page de statut uniquement (écart charte à consigner).
+`--ok` #0F6B3F / `--ko` #9B1C1C : conservés pour la page de statut et les retours fonctionnels explicites de succès/erreur. Le libellé porte toujours le sens ; ces couleurs ne servent jamais seules (écart charte consigné à `DEC-684`).
 
 **Couleurs V1 à supprimer** : #F8F8FF, #FFF7E0, #E8E8FF, #6366F1, #9B53FF, #53B4FF, #FF8C53, #FF5398, gris #888/#999/#BBB, tous les `linear-gradient`.
 
@@ -37,7 +37,7 @@ Rayons : `--rayon-s` 8 · `--rayon-m` 14 (champs, tuiles) · `--rayon-l` 20 (car
 Espacements : échelle de 4 inchangée (4, 8, 16, 24, 32, 48).
 Mouvement : 120ms (pression, `scale(.96)`) · 200ms (survol) · 360ms (retournement de carte). Courbes `cubic-bezier(.22,1,.36,1)` (sortie), `cubic-bezier(.34,1.56,.64,1)` (ressort).
 
-Thème sombre (`prefers-color-scheme: dark`) : conserver les neutres sombres existants du dépôt ; `--titre` → #B3AFFF ; surfaces de marque inchangées.
+Thème sombre (`:root[data-theme='sombre']`) : conserver les neutres sombres existants du dépôt ; `--titre` → #B3AFFF ; surfaces de marque inchangées. Le thème est choisi explicitement et mémorisé ; le retour à `prefers-color-scheme` rejouerait le défaut corrigé par `DEC-673`.
 
 ## 3. Typographie
 
@@ -78,9 +78,9 @@ Pictos : extraire les SVG nécessaires de `pictos/exalt-icons.json` (`{clé: {na
 
 Chaque composant doit être utilisé par au moins un écran.
 
-- **Bouton** (existant, à étendre) — variantes `primaire` (bleu/blanc, une par vue), `secondaire` (blanc, bordure trait-fort, texte titre), `sombre` (bleu foncé/blanc, enchaînement de parcours), `discret` (transparent, texte bleu). Forme pastille, tailles `s` 36px / `m` 44px. Pression `scale(.96)`. Pas de bouton rose à texte blanc.
+- **Bouton** (existant, à étendre) — variantes `primaire` (bleu/blanc, une par vue), `secondaire` (blanc, bordure trait-fort, texte titre), `sombre` (bleu foncé/blanc, enchaînement de parcours), `discret` (transparent, texte bleu). Forme pastille, tailles `s` et `m` à cible 44px ; `s` reste compacte par son padding. Pression `scale(.96)`. Pas de bouton rose à texte blanc.
 - **Badge** (existant, à étendre) — tons : `mission` (bleu plein/blanc), `intercontrat` (teinte rose/encre), `enrichissement` (jaune/titre ; remplace l'indigo V1), `booster` (teinte bleu/titre), `annule` (gris/encre-douce), `info` (teinte bleu/titre). Pastille, 12–13px bold.
-- **Carte** (existant) — surface blanche, bordure trait, rayon-l, padding 22px, aucune ombre ; variante `interactive` : survol bordure bleue.
+- **Carte** (existant) — surface blanche, bordure trait, rayon-l, padding 24px (`--espace-l`, l'échelle de 4 prévaut sur la valeur isolée 22px), aucune ombre ; variante `interactive` : survol bordure bleue.
 - **Pastille** (nouveau) — surtitre de rubrique : fond jaune, texte titre, 13px bold, padding 6×16. Une seule par vue, au-dessus du h1.
 - **Avatar** (nouveau) — tailles 32/40/56/72/84 ; photo servie par miniature, repli initiales (fond teinte bleu, texte titre) ; anneau optionnel 2px couleur du cercle.
 - **Champ** / **Liste** (nouveau) — libellé 13px bold au-dessus, champ 44px, rayon-m, bordure trait-fort, focus bordure bleue 1.5px + anneau.
@@ -126,5 +126,8 @@ Onglets « À venir / Passés ». Ligne d'événement : carte bordure trait (sur
 
 ## 8. Écarts à consigner (docs/ décisions)
 - Ombres retirées vs cahier §13.2 « ombres douces » / « dégradés bleu/rose » → charte flat appliquée.
-- `--ok` / `--ko` hors charte, limités à la page de statut.
+- `--ok` / `--ko` hors palette visuelle, limités aux états techniques et aux retours fonctionnels explicites de succès/erreur ; le texte porte le sens.
+- Anneau de focus opaque et thématique, car la transparence remise échoue au contraste non textuel.
+- Taille `s` des boutons portée à 44px et padding des cartes aligné à 24px : les règles transversales d'accessibilité et l'échelle de 4 prévalent sur les valeurs isolées 36px et 22px.
+- Thème sombre activé par `data-theme`, non par la préférence système seule.
 - Licence Century Gothic à valider.

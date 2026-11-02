@@ -3,7 +3,8 @@
 **Lot :** LOT 11 — Médias, worker et tâches planifiées, périmètre élargi (organisation et démo)
 **Préparée le :** 1er novembre 2026, à la sortie de `T7`
 **Destinataire :** Jonathan — il coordonne la validation technique
-**Décision de franchissement :** **en attente**
+**Validée le :** 2 novembre 2026
+**Décision de franchissement :** **porte `G11` franchie — `DEC-683`**
 
 ---
 
@@ -21,7 +22,7 @@ n'est jamais présentée comme accomplie par la CI.
 | 4 | les tâches planifiées ne s'exécutent pas en parallèle | **Tenu** | `T4` — index unique PARTIEL `scheduled_task_run.task_name WHERE state='running'`, même mécanisme que `async_job`/`outbox_message` |
 | 5 | les fichiers rejetés sont supprimés selon la politique | **Tenu** | `T4`, §30.21 reclassé ACQUIS par `T7` — délai de sept jours, même règle pour rejeté/temporaire/orphelin, suppression réelle vérifiée dans MinIO |
 | 6 | les workers et files sont supervisés | **Tenu** | `T4` — battement unique poussé vers Uptime Kuma, no-op si l'URL reste vide |
-| 7 | Jonathan valide les traitements asynchrones | **Ta confirmation** | cette checklist, section 6 |
+| 7 | Jonathan valide les traitements asynchrones | **Tenu** | validation explicite de Jonathan le 02/11/2026 — `DEC-683`, section 6 |
 
 Les six premiers critères n'ont exigé aucun code nouveau à `T7` : cinq étaient déjà prouvés par `T1`
 à `T4`, et `T7` n'a fait que les relire, confronter au §30 du modèle, et corriger un défaut trouvé en
@@ -65,7 +66,7 @@ documentés depuis les LOTS 3/5/7 ; aucun n'appartient à ce lot.
 | Contrôle | Résultat relevé le 01/11/2026 |
 |---|---|
 | `make recette-modele-check` | 25 contrôles classés : **23 acquis, 2 partiel, 0 reporté, 0 inapplicable** |
-| `make docs-check` | vert — `DEC-681` prochain libre, 12 contrôles de totaux dérivés |
+| `make docs-check` | vert à la sortie de `T7` — `DEC-681` était alors le prochain identifiant libre ; la réutilisation accidentelle de cet identifiant par le chantier design a été réconciliée par `DEC-682` à la clôture |
 | `make sources-check` / `isolation-check` / `migrations-check` | tous verts |
 | `make check` (qualité) | Ruff, Prettier, ESLint, `mypy`, `tsc --noEmit` : tous verts |
 | `pytest` depuis la racine | 2 092 collectés, inchangé ; échecs environnementaux identiques un par un à `origin/develop` (comparaison de worktree) |
@@ -89,10 +90,11 @@ postérieure, sur ton instruction.
 
 | | |
 |---|---|
-| Date | — |
-| Décision | ☐ franchie ☐ à reprendre |
-| Validation de Jonathan | — |
+| Date | 2 novembre 2026 |
+| Décision | ☒ franchie ☐ à reprendre |
+| Validation de Jonathan | « Je valide le lot 11 » |
 | Réserves | `ECART-012` (Léa), `ECART-061` (LOT 13), `QO-092` (volet canal externe), `QO-096`/`QO-097`/`QO-099`/`QO-100`/`QO-110`/`QO-121`/`QO-125`/`QO-126`, `ROAD-RSK-033`/`ROAD-RSK-034` restent ouvertes, non bloquantes pour `G11` — à reprendre aux lots suivants au besoin |
 
-Décision à consigner au registre une fois validée (`DEC-682` probable). Tag `v0.11.0` à poser sur
-`main` après fusion de `T7` et validation.
+Décision consignée au registre par `DEC-683`. Le LOT 11 est verrouillé. Tag `v0.11.0` à poser sur
+`main` après fusion de cette réconciliation ; aucun tag de version n'est posé sur une branche de
+travail.

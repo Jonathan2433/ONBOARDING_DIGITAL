@@ -2,7 +2,7 @@
  * Jetons du design system, en proprietes personnalisees CSS.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007.
- * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-681`).
+ * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-682`).
  *
  * ATTENTION — CE FICHIER A UN JUMEAU, ET ILS NE DOIVENT PAS DIVERGER.
  *
@@ -190,7 +190,7 @@
 
 /*
  * Theme sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`), conserve
- * tel quel par la refonte v2 (`DEC-681`).
+ * tel quel par la refonte v2 (`DEC-682`).
  *
  * UN ATTRIBUT EXPLICITE, PLUS `prefers-color-scheme`
  *
@@ -212,7 +212,7 @@
  *
  *   **LA CHARTE v2 MENTIONNE `prefers-color-scheme`, ET CE BLOC NE LE SUIT PAS
  *   DELIBEREMENT.** Y revenir rejouerait le defaut mesure ci-dessus. Ecart
- *   consigne a `DEC-681`.
+ *   consigne a `DEC-682`.
  *
  * CE QUI BASCULE, ET CE QUI NE BASCULE PAS
  *

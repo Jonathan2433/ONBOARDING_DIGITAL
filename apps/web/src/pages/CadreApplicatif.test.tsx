@@ -613,7 +613,7 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
   }
 
   //  ===========================================================================
-  //  L'avatar de l'en-tete — charte 6.1, `E5` (`DEC-681`)
+  //  L'avatar de l'en-tete — charte 6.1, `E5` (`DEC-682`)
   //  ===========================================================================
 
   //  Les noms de champs sont ceux de l'API, pas ceux du contrat TypeScript :

@@ -1,7 +1,7 @@
 /**
  * Champ — une saisie avec son libelle.
  *
- * Chantier design systeme v2 hors lot, etape `E3` (`DEC-681`), charte 5.
+ * Chantier design systeme v2 hors lot, etape `E3` (`DEC-682`), charte 5.
  *
  * LE LIBELLE EST UN VRAI `<label for>`, ET C'EST TOUT L'INTERET DU COMPOSANT
  *
