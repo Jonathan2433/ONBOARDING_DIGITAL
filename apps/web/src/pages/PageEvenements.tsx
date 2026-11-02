@@ -79,6 +79,7 @@ import { plageDeLEvenement } from '../affichage';
 import { lireLesEvenements } from '../api/evenements';
 import { cheminGestionDesEvenementsALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
+import { paveDeDate } from './PageProfil';
 
 import {
   CLASSEMENTS_D_EVENEMENTS,
@@ -212,19 +213,54 @@ export function PageEvenements(): JSX.Element {
               <ul className="evenements-liste">
                 {donnees.evenements.map((evenement) => (
                   <li key={evenement.identifiant} className="evenements-carte">
-                    <div className="evenements-carte-entete">
-                      <h2 className="evenements-titre">{evenement.titre}</h2>
-                      {evenement.etat === 'cancelled' ? <Badge ton="ko">Annule</Badge> : null}
+                    {/*
+                      **LE PAVE DE DATE DE LA CHARTE 6.6.** Trois etats, trois
+                      couples deja mesures : jaune de marque pour ce qui vient,
+                      teinte bleue pour ce qui est passe, et le gris SOURD que
+                      `E3` avait justement cree pour le ton « annule ».
+
+                      **AUCUN DES TROIS NE BASCULE AVEC LE THEME**, et c'est
+                      voulu : ce sont des surfaces de marque, appariees a un
+                      texte litteral. Les faire suivre `--titre` rejouerait le
+                      defaut que `E3` a trouve dans la charte elle-meme — six
+                      cercles sur huit sous le seuil en theme sombre.
+
+                      **ET LA COULEUR NE DIT RIEN QU'UN MOT NE DISE** : l'etat
+                      annule porte son badge, et les deux autres sont dans
+                      l'onglet qui les nomme (§14.2).
+                    */}
+                    <span
+                      className="evenements-pave"
+                      data-etat={
+                        evenement.etat === 'cancelled'
+                          ? 'annule'
+                          : classement === 'a_venir'
+                            ? 'a-venir'
+                            : 'passe'
+                      }
+                    >
+                      <span className="evenements-pave-jour">
+                        {paveDeDate(evenement.commenceLe).jour}
+                      </span>
+                      <span className="evenements-pave-mois">
+                        {paveDeDate(evenement.commenceLe).mois}
+                      </span>
+                    </span>
+                    <div className="evenements-corps">
+                      <div className="evenements-carte-entete">
+                        <h2 className="evenements-titre">{evenement.titre}</h2>
+                        {evenement.etat === 'cancelled' ? <Badge ton="annule">Annule</Badge> : null}
+                      </div>
+                      <p className="evenements-horaire">
+                        {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
+                      </p>
+                      {evenement.lieu === null ? null : (
+                        <p className="evenements-lieu">{evenement.lieu}</p>
+                      )}
+                      {evenement.description === null ? null : (
+                        <p className="evenements-description">{evenement.description}</p>
+                      )}
                     </div>
-                    <p className="evenements-horaire">
-                      {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
-                    </p>
-                    {evenement.lieu === null ? null : (
-                      <p className="evenements-lieu">{evenement.lieu}</p>
-                    )}
-                    {evenement.description === null ? null : (
-                      <p className="evenements-description">{evenement.description}</p>
-                    )}
                   </li>
                 ))}
               </ul>

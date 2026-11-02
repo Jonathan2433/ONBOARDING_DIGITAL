@@ -65,6 +65,16 @@ class ObjetNonDepose(RuntimeError):
     """
 
 
+class ObjetNonSupprime(RuntimeError):
+    """La suppression a echoue — MinIO ne repond pas.
+
+    **PAS LEVEE SI L'OBJET N'EXISTE DEJA PLUS** : `delete_object` de S3 est
+    idempotent par construction (aucune erreur sur une cle absente), ce que
+    `T4` (LOT 11) exploite directement -- un nettoyage rejoue sur un objet deja
+    disparu ne doit pas echouer.
+    """
+
+
 def client_s3(parametres: Parametres) -> object:
     """Le client S3 de lecture, construit avec les reglages du depot."""
     return boto3.client(
@@ -120,3 +130,18 @@ def deposer_l_objet(parametres: Parametres, cle: str, contenu: bytes) -> None:
     except (ClientError, BotoCoreError) as erreur:
         message = f"depot impossible : {type(erreur).__name__}"
         raise ObjetNonDepose(message) from erreur
+
+
+def supprimer_l_objet(parametres: Parametres, cle: str) -> None:
+    """Supprimer un objet du bucket — LOT 11, `T4` : le nettoyage des medias.
+
+    **LA PREMIERE SUPPRESSION MinIO DU PROJET**, apres la premiere lecture
+    (LOT 5) et le premier depot (LOT 9). Meme discipline : le client est
+    reconstruit par `client_s3`, jamais un second.
+    """
+    client = client_s3(parametres)
+    try:
+        client.delete_object(Bucket=parametres.MINIO_BUCKET, Key=cle)  # type: ignore[attr-defined]
+    except (ClientError, BotoCoreError) as erreur:
+        message = f"suppression impossible : {type(erreur).__name__}"
+        raise ObjetNonSupprime(message) from erreur

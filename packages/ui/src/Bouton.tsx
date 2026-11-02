@@ -2,6 +2,7 @@
  * Bouton — composant de base du design system.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007. Cahier des charges 13.3, 14.
+ * ETENDU par le chantier design systeme v2, etape `E3` (`DEC-682`), charte 5.
  *
  * UN VRAI `<button>`, ET C'EST UN CHOIX
  *
@@ -17,12 +18,43 @@
  *   « Annuler » place dans un formulaire soumettrait donc le formulaire. Ce
  *   composant met `button` par defaut, et `composants.test.tsx` le verifie.
  *   L'appelant peut toujours demander `submit` explicitement.
+ *
+ * LES QUATRE VARIANTES DE LA CHARTE 5
+ *
+ *   `primaire` (bleu plein), `secondaire` (surface, bordure, texte titre),
+ *   `sombre` (bleu fonce plein, pour l'enchainement d'un parcours) et `discret`
+ *   (transparent, texte bleu). Les quatre couples sont DEJA mesures AA :
+ *   `MARQUE.bleu`, `MARQUE.bleuFonce` et `--titre` sur surface.
+ *
+ *   **IL N'Y A PAS DE VARIANTE ROSE, ET CE N'EST PAS UN OUBLI.** La charte 5
+ *   ecrit « pas de bouton rose a texte blanc » : le rose de marque porte l'encre,
+ *   jamais le blanc, sous peine de 2,9:1. L'union fermee ci-dessous rend cette
+ *   interdiction STRUCTURELLE — `variante="rose"` ne compile pas — plutot que de
+ *   la confier a un commentaire que personne ne relit (§7.35).
+ *
+ *   **`discret` BASCULE EN THEME SOMBRE.** `--marque-bleu` ne rend que 2,91:1
+ *   sur une surface sombre, sous le seuil du texte ; `composants.css` lui donne
+ *   `--titre` (7,44:1) sous `[data-theme='sombre']`. Meme regle que l'anneau de
+ *   focus et que `Progression` — voir l'en-tete de `jetons.ts`.
+ *
+ * LES DEUX TAILLES, ET LA TENSION RESOLUE A `E7`
+ *
+ *   La charte 5 donne « tailles `s` 36px / `m` 44px ». Sa propre regle 1.6 exige
+ *   pourtant « cibles tactiles >= 44px ». Les deux ne peuvent pas etre vraies en
+ *   meme temps pour `s`.
+ *
+ *   `E7` (`DEC-684`) tranche en faveur de la regle transversale : les deux tailles
+ *   gardent une cible de 44px. `s` reste visuellement compacte par sa graisse et
+ *   ses espacements horizontaux, jamais par une cible tactile plus petite.
  */
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-/** Les deux variantes de `T10`. D'autres viendront avec les ecrans metier. */
-export type VarianteBouton = 'primaire' | 'secondaire';
+/** Les quatre variantes de la charte 5. Aucune n'est rose : voir l'en-tete. */
+export type VarianteBouton = 'primaire' | 'secondaire' | 'sombre' | 'discret';
+
+/** Les deux tailles tiennent la cible tactile de 44px ; `s` reste plus compacte. */
+export type TailleBouton = 's' | 'm';
 
 export interface ProprietesBouton extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -32,16 +64,25 @@ export interface ProprietesBouton extends Omit<
   readonly children: ReactNode;
   /** `primaire` par defaut. */
   readonly variante?: VarianteBouton;
+  /** `m` par defaut ; les deux tailles tiennent les 44px de la charte 1.6. */
+  readonly taille?: TailleBouton;
 }
 
 export function Bouton({
   children,
   variante = 'primaire',
+  taille = 'm',
   type = 'button',
   ...reste
 }: ProprietesBouton): ReactNode {
   return (
-    <button className="ex-bouton" data-variante={variante} type={type} {...reste}>
+    <button
+      className="ex-bouton"
+      data-variante={variante}
+      data-taille={taille}
+      type={type}
+      {...reste}
+    >
       {children}
     </button>
   );

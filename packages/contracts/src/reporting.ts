@@ -157,12 +157,12 @@ export interface ReponseDuDetailOnboarding {
   readonly pages: number;
 }
 
+/** Le métier n'en fait plus partie depuis `DEC-675` (LOT 11 `T5`). */
 export interface ProfilIncomplet {
   readonly appartenanceId: string;
   readonly personId: string;
   readonly prenom: string;
   readonly nom: string;
-  readonly metierManquant: boolean;
   readonly cerclePrincipalManquant: boolean;
   readonly dsmManquant: boolean;
   readonly statutManquant: boolean;
@@ -289,7 +289,6 @@ function validerUnProfilIncomplet(valeur: unknown, rang: number): ProfilIncomple
     personId: exigerChaine(valeur, 'person_id'),
     prenom: exigerChaine(valeur, 'prenom'),
     nom: exigerChaine(valeur, 'nom'),
-    metierManquant: booleen(valeur, 'metier_manquant'),
     cerclePrincipalManquant: booleen(valeur, 'cercle_principal_manquant'),
     dsmManquant: booleen(valeur, 'dsm_manquant'),
     statutManquant: booleen(valeur, 'statut_manquant'),

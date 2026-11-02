@@ -21,26 +21,47 @@
   align-items: center;
   justify-content: center;
   gap: var(--espace-s);
-  padding: var(--espace-s) var(--espace-m);
+  padding: var(--espace-s) var(--espace-l);
   border: 1px solid transparent;
-  border-radius: var(--rayon-m);
+  /* FORME PASTILLE — charte 5. C'etait `--rayon-m` en v1. */
+  border-radius: var(--rayon-pastille);
   font-family: var(--police);
   font-size: var(--taille-s);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   line-height: 1.25;
   cursor: pointer;
+  transition:
+    background-color var(--duree-base) var(--courbe-sortie),
+    border-color var(--duree-base) var(--courbe-sortie),
+    transform var(--duree-rapide) var(--courbe-sortie);
+}
 
-  /* Cible tactile d'au moins 24 px : WCAG 2.2 critere 2.5.8, nouveau en 2.2 et
-     donc facile a manquer. La hauteur est portee a 40 px, confortable au doigt. */
-  min-height: 40px;
+/* LES DEUX TAILLES DE LA CHARTE 5, et `m` est le defaut du composant.
+   `E7` (`DEC-684`) tranche la contradiction 36px/44px en faveur de la cible
+   tactile transversale : `s` reste compacte par son padding, jamais par sa cible. */
+.ex-bouton[data-taille='m'] {
+  min-height: 44px;
+}
+
+.ex-bouton[data-taille='s'] {
+  min-height: 44px;
+  padding: var(--espace-xs) var(--espace-m);
 }
 
 /* LE FOCUS EST VISIBLE, ET IL N'EST PAS NEGOCIABLE (WCAG 2.4.7).
    `:focus-visible` et non `:focus` : l'anneau apparait au clavier et pas au clic
-   a la souris, ce qui evite qu'on soit tente de le supprimer parce qu'il gene. */
+   a la souris, ce qui evite qu'on soit tente de le supprimer parce qu'il gene.
+   L'anneau vient du JETON depuis `E3` : il est opaque et bascule en theme
+   sombre, ou `--marque-bleu` ne rendait que 2,91:1. */
 .ex-bouton:focus-visible {
-  outline: 3px solid var(--marque-bleu);
-  outline-offset: 2px;
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
+}
+
+/* LA PRESSION, charte 5 : `scale(.96)`. Elle est NEUTRALISEE sous mouvement
+   reduit (charte 1.7) — voir le bloc en fin de feuille. */
+.ex-bouton:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .ex-bouton[data-variante='primaire'] {
@@ -48,10 +69,41 @@
   color: var(--marque-bleu-texte);
 }
 
+/* `secondaire` porte le texte `--titre` depuis `E3` (charte 5), sur la SURFACE
+   et non sur `--fond` : un bouton pose dans une carte blanche se detachait mal
+   d'elle. 10,5:1. La bordure passe a `--trait-fort`, la seule frontiere de ce
+   composant — il reste identifiable par son fond, contrairement a un champ de
+   saisie, dont la bordure EST la seule limite (voir `.ex-champ__saisie`). */
 .ex-bouton[data-variante='secondaire'] {
-  background: var(--fond);
-  color: var(--encre);
-  border-color: var(--trait);
+  background: var(--surface);
+  color: var(--titre);
+  border-color: var(--trait-fort);
+}
+
+/* `sombre` — l'enchainement de parcours, charte 5. `MARQUE.bleuFonce`, 10,5:1. */
+.ex-bouton[data-variante='sombre'] {
+  background: var(--marque-bleu-fonce);
+  color: var(--marque-bleu-fonce-texte);
+}
+
+/* `discret` — transparent, texte bleu, charte 5. 5,13:1 sur surface claire. */
+.ex-bouton[data-variante='discret'] {
+  background: none;
+  color: var(--marque-bleu);
+}
+
+/* LE BLEU D'ACCENT BASCULE EN THEME SOMBRE, et c'est une mesure : `--marque-bleu`
+   ne rend que 2,91:1 sur `--surface` sombre, sous le seuil du texte. `--titre`
+   y rend 7,44:1. Meme regle que l'anneau de focus et que `Progression`. */
+:root[data-theme='sombre'] .ex-bouton[data-variante='discret'] {
+  color: var(--titre);
+}
+
+/* Le survol ne change que la bordure ou le fond — jamais d'ombre ni de « lift »
+   (charte 1.1). */
+.ex-bouton[data-variante='secondaire']:hover:not(:disabled),
+.ex-bouton[data-variante='discret']:hover:not(:disabled) {
+  border-color: var(--marque-bleu);
 }
 
 /* L'etat desactive ne se signale PAS par la seule couleur : le curseur change et
@@ -77,7 +129,7 @@
   color: var(--encre);
   font-family: var(--police);
   font-size: var(--taille-xs);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   line-height: 1.25;
 
   /* LE TEXTE PORTE TOUJOURS L'INFORMATION. Un badge dont le sens tiendrait a sa
@@ -85,19 +137,52 @@
      un contenu textuel et que le test le verifie. */
 }
 
-.ex-badge[data-ton='ok'] {
-  color: var(--ok);
-  border-color: currentcolor;
-}
+/* ---------------------------------------------------------------------------
+ *  LES SIX TONS DE LA CHARTE 5 (`E3`)
+ *
+ *  Chaque ton reutilise un couple DEJA mesure AA par `jetons.test.ts`, et pose
+ *  son texte en LITTERAL apparie (`--…-texte`), jamais `var(--encre)` : ces
+ *  surfaces ne basculent pas avec le theme, donc leur texte ne le doit pas non
+ *  plus. C'est le defaut que la charte fournie portait sur les huit cercles, et
+ *  que `E1` a corrige.
+ *
+ *  La bordure devient transparente : un aplat n'a pas besoin de se separer de
+ *  son fond, et la laisser visible dessinerait un liseré gris autour de chaque
+ *  pastille coloree.
+ * ------------------------------------------------------------------------- */
 
-.ex-badge[data-ton='ko'] {
-  color: var(--ko);
-  border-color: currentcolor;
-}
-
-.ex-badge[data-ton='marque'] {
+.ex-badge[data-ton='mission'] {
   background: var(--marque-bleu);
   color: var(--marque-bleu-texte);
+  border-color: transparent;
+}
+
+.ex-badge[data-ton='intercontrat'] {
+  background: var(--teinte-rose);
+  color: var(--teinte-rose-texte);
+  border-color: transparent;
+}
+
+/* `enrichissement` remplace l'indigo de la V1 (charte 5). Jaune de marque, 7,7:1. */
+.ex-badge[data-ton='enrichissement'] {
+  background: var(--marque-jaune);
+  color: var(--marque-jaune-texte);
+  border-color: transparent;
+}
+
+.ex-badge[data-ton='booster'],
+.ex-badge[data-ton='info'] {
+  background: var(--teinte-bleu);
+  color: var(--teinte-bleu-texte);
+  border-color: transparent;
+}
+
+/* `annule` est le SEUL ton qui ait demande une mesure nouvelle : la charte
+   l'ecrit « gris/encre-douce », et `--encre-douce` bascule. `TEINTES.grisSourd`
+   fige le couple a 4,55:1. Voir l'en-tete de `jetons.ts`. */
+.ex-badge[data-ton='annule'] {
+  background: var(--teinte-gris-sourd);
+  color: var(--teinte-gris-sourd-texte);
   border-color: transparent;
 }
 
@@ -110,28 +195,65 @@
   padding: var(--espace-l);
   border: 1px solid var(--trait);
   border-radius: var(--rayon-l);
-  background: var(--fond);
+  background: var(--surface);
   color: var(--encre);
-  box-shadow: var(--ombre-douce);
   font-family: var(--police);
 }
 
 .ex-carte__titre {
   margin: 0 0 var(--espace-s);
   font-size: var(--taille-l);
-  font-weight: 700;
+  font-weight: var(--graisse-forte);
   line-height: 1.25;
+}
+
+/* LA VARIANTE `interactive` — charte 5 (`E3`). Elle ne rend PAS la carte
+   cliquable : elle signale que quelque chose, A L'INTERIEUR, l'est. Le
+   `:focus-within` fait remonter le focus du lien ou du bouton reel jusqu'a la
+   bordure, de sorte que le repere visuel ne depende pas du survol a la souris. */
+.ex-carte[data-variante='interactive'] {
+  transition: border-color var(--duree-base) var(--courbe-sortie);
+}
+
+.ex-carte[data-variante='interactive']:hover,
+.ex-carte[data-variante='interactive']:focus-within {
+  border-color: var(--marque-bleu);
 }
 
 /* Chantier front, S13 (`DEC-673`) : « gros chiffres bold » pour un compteur
    mis en avant dans un titre de carte (ex. « Membres (3) »). AUCUNE couleur
    nouvelle : la typographie seule porte l'accent, le texte reste `--encre`
    sur `--fond`, deja prouve AA — zero nouvelle mesure de contraste requise,
-   meme raisonnement que `--decoupe-hexagone` en S11 (une forme, ou ici une
-   typographie, n'est ni une couleur ni un couple surface/texte). */
+   meme raisonnement qu'une forme : une typographie n'est ni une couleur ni un
+   couple surface/texte. **LA GRAISSE EST PASSEE DE 900 A `--graisse-forte` EN
+   v2** (`DEC-682`) : Century Gothic ne fournit que 400 et 700, et un 900
+   aurait ete synthetise par le navigateur. */
 .ex-carte__titre-chiffre {
   font-size: 1.4em;
-  font-weight: 900;
+  font-weight: var(--graisse-forte);
+}
+
+/* ---------------------------------------------------------------------------
+ *  Picto — pictogrammes officiels eXalt, charte 1.4 / 4 / 6 / 7
+ * ------------------------------------------------------------------------- */
+
+/* AUCUNE COULEUR, AUCUNE TAILLE ICI, ET C'EST VOULU.
+
+   La couleur vient de `fill="currentColor"` pose sur le `<svg>`, donc de la
+   couleur de TEXTE du contexte : la declarer ici obligerait chaque surface de
+   cercle a redeclarer la sienne, et la charte 4 ne donne qu'un nom de picto
+   par cercle, jamais une couleur. La taille vient des attributs `width` et
+   `height`, bornes par le type `TaillePicto` — une regle « >= 24px » tenue par
+   le compilateur plutot que par une feuille de style qu'un appelant surcharge.
+
+   `inline-block` plutot que `block` : un picto vit aussi bien dans une ligne de
+   texte (6.7) que dans une boite flex (6.2, 6.4, 6.5). `flex: none` l'empeche
+   d'etre comprime quand son libelle est long — un picto ecrase cesse d'etre
+   reconnaissable, ce qui est exactement ce que la charte 1.4 lui demande. */
+.ex-picto {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
 }
 
 /* ==========================================================================
@@ -208,6 +330,269 @@
   color: var(--ko);
 }
 
+/* ---------------------------------------------------------------------------
+ *  Pastille — surtitre de rubrique, charte 5 (`E3`)
+ * ------------------------------------------------------------------------- */
+
+/* `padding: 6px 16px` de la charte : 6 n'est pas sur l'echelle de 4, que la
+   charte 2 declare pourtant « inchangee ». `--espace-xs` (4) et `--espace-m`
+   (16) la respectent et donnent la meme silhouette a deux pixels pres. */
+.ex-pastille {
+  display: inline-block;
+  margin: 0 0 var(--espace-s);
+  padding: var(--espace-xs) var(--espace-m);
+  border-radius: var(--rayon-pastille);
+  background: var(--marque-jaune);
+  color: var(--marque-jaune-texte);
+  font-family: var(--police);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  line-height: 1.25;
+}
+
+/* ---------------------------------------------------------------------------
+ *  Avatar — charte 5 (`E3`)
+ * ------------------------------------------------------------------------- */
+
+/* `--avatar-anneau` EST DECLAREE ICI, avec sa valeur de repli, pour la meme
+   raison que `--carte-cercle` l'a ete en `S10` : elle est posee EN LIGNE par
+   l'appelant, donc absente des feuilles, et `cadre-check` refuse a juste titre
+   une variable qu'aucune feuille ne declare — « la page rendra les defauts du
+   navigateur, SANS que rien n'echoue ». */
+:root {
+  --avatar-anneau: var(--trait);
+}
+
+/* RONDS, et c'est la revision assumee des hexagones de `S11` : la capture de la
+   charte v2 fait foi, arbitrage de Jonathan (`DEC-682`). */
+.ex-avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rayon-pastille);
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.ex-avatar--initiales {
+  background: var(--teinte-bleu);
+  color: var(--teinte-bleu-texte);
+  font-family: var(--police);
+  font-weight: var(--graisse-forte);
+  line-height: 1;
+  user-select: none;
+}
+
+/* Les cinq tailles de la charte 5. Elles sont ECRITES ici plutot que posees en
+   ligne : une taille hors de cette liste ne compile deja pas (`TailleAvatar`),
+   et l'ecrire ici garde toute la geometrie du composant dans sa feuille. */
+.ex-avatar[data-taille='32'] {
+  inline-size: 32px;
+  block-size: 32px;
+  font-size: var(--taille-xs);
+}
+
+.ex-avatar[data-taille='40'] {
+  inline-size: 40px;
+  block-size: 40px;
+  font-size: var(--taille-s);
+}
+
+.ex-avatar[data-taille='56'] {
+  inline-size: 56px;
+  block-size: 56px;
+  font-size: var(--taille-m);
+}
+
+.ex-avatar[data-taille='72'] {
+  inline-size: 72px;
+  block-size: 72px;
+  font-size: var(--taille-l);
+}
+
+.ex-avatar[data-taille='84'] {
+  inline-size: 84px;
+  block-size: 84px;
+  font-size: var(--taille-l);
+}
+
+/* L'anneau est DECORATIF : la charte 1.3 impose que le cercle soit aussi ecrit
+   en toutes lettres, donc il ne porte jamais seul une information et il est
+   exempte du contraste non textuel — meme parti que le souligne ondule de `S13`
+   et que les pictos `aria-hidden`. Mesure a connaitre quand meme : cinq des huit
+   couleurs de cercle rendent moins de 1,4:1 sur une surface claire. */
+.ex-avatar[data-anneau='oui'] {
+  box-sizing: content-box;
+  border: 2px solid var(--avatar-anneau);
+}
+
+/* ---------------------------------------------------------------------------
+ *  Champ et Liste — charte 5 (`E3`)
+ * ------------------------------------------------------------------------- */
+
+.ex-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  font-family: var(--police);
+}
+
+.ex-champ__libelle {
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  color: var(--titre);
+  line-height: 1.25;
+}
+
+/* LA BORDURE N'EST PAS `--trait-fort`, ET C'EST UN ARBITRAGE MESURE.
+   La charte 5 l'ecrit ainsi ; `--trait-fort` rend 1,44:1 en clair et 1,93:1 en
+   sombre, quand WCAG 1.4.11 exige 3:1 pour la limite d'un composant de saisie —
+   la bordure EST la seule chose qui dit ou commence le champ. `--encre-douce`
+   rend 4,96:1 et 5,81:1. Arbitrage explicite de Jonathan, 02/11/2026, ecart
+   consigne a `E7`. */
+.ex-champ__saisie {
+  min-block-size: 44px;
+  padding: 0 var(--espace-m);
+  border: 1px solid var(--encre-douce);
+  border-radius: var(--rayon-m);
+  background: var(--surface);
+  color: var(--encre);
+  font-family: inherit;
+  font-size: var(--taille-m);
+  transition: border-color var(--duree-base) var(--courbe-sortie);
+}
+
+/* Le `<select>` garde la fleche du systeme : son menu deroule ne se stylise pas,
+   et pretendre le faire produirait une boite qui ne ressemble pas a ce qu'elle
+   ouvre. Voir l'en-tete de `Liste.tsx`. */
+.ex-champ__saisie--liste {
+  padding-inline-end: var(--espace-s);
+}
+
+/* « Focus : bordure bleue 1.5px + anneau » (charte 5). La bordure et l'anneau
+   viennent tous deux du jeton, donc basculent ensemble en theme sombre. */
+.ex-champ__saisie:focus-visible {
+  border-color: var(--marque-bleu);
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
+}
+
+:root[data-theme='sombre'] .ex-champ__saisie:focus-visible {
+  border-color: var(--titre);
+}
+
+.ex-champ__aide {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
+  line-height: 1.4;
+}
+
+/* L'ERREUR N'EST JAMAIS PORTEE PAR LA SEULE COULEUR (WCAG 1.4.1) : ce
+   paragraphe l'ENONCE, et il est relie au champ par `aria-describedby`. La
+   bordure ne fait que le renforcer. */
+.ex-champ__erreur {
+  margin: 0;
+  color: var(--ko);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  line-height: 1.4;
+}
+
+.ex-champ[data-erreur='oui'] .ex-champ__saisie {
+  border-color: var(--ko);
+}
+
+/* ---------------------------------------------------------------------------
+ *  Progression — charte 5 et 6.7 (`E3`)
+ * ------------------------------------------------------------------------- */
+
+.ex-progression {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  font-family: var(--police);
+}
+
+.ex-progression__libelle {
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  color: var(--titre);
+}
+
+/* LA PISTE PORTE UNE BORDURE, et c'est une mesure : en theme sombre
+   `--fond-doux` et `--surface` valent la MEME couleur (#27272A), si bien
+   qu'une piste posee sur une carte y serait invisible. La bordure est la
+   separation que la charte 1.1 prescrit partout ailleurs. */
+.ex-progression__piste {
+  block-size: 10px;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-pastille);
+  background: var(--fond-doux);
+  overflow: hidden;
+}
+
+/* UN APLAT, JAMAIS UN DEGRADE (charte 5 : « pas de degrade bleu->rose »). */
+.ex-progression__remplissage {
+  block-size: 100%;
+  background: var(--marque-bleu);
+  transition: inline-size var(--duree-base) var(--courbe-sortie);
+}
+
+/* 2,91:1 sur la piste sombre, sous les 3:1 de WCAG 1.4.11 ; `--titre` y rend
+   7,44:1. Meme regle que l'anneau de focus et que le bouton discret. */
+:root[data-theme='sombre'] .ex-progression__remplissage {
+  background: var(--titre);
+}
+
+/* ---------------------------------------------------------------------------
+ *  CaseACocher — charte 5 et 6.7 (`E3`)
+ * ------------------------------------------------------------------------- */
+
+.ex-case {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-s);
+  /* Cible tactile : c'est le LABEL qui la porte, pas la case de 20px. Cliquer
+     le libelle coche — c'est le `<label>` enveloppant qui le permet. */
+  min-block-size: 44px;
+  font-family: var(--police);
+  font-size: var(--taille-m);
+  color: var(--encre);
+  cursor: pointer;
+}
+
+/* `accent-color` PLUTOT QU'UN DESSIN MAISON : le navigateur dessine la coche
+   blanche sur fond bleu, l'etat reste natif — y compris en contraste eleve et
+   en « forced colors » — et aucune couleur n'est ecrite en dur dans cette
+   feuille. Voir l'en-tete de `CaseACocher.tsx`. */
+.ex-case__boite {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  accent-color: var(--marque-bleu);
+  cursor: pointer;
+}
+
+.ex-case__boite:focus-visible {
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
+}
+
+/* TERMINE N'EST JAMAIS VERT (charte 6.7). Le barre n'est pas une couleur : il
+   reste perceptible sans distinguer les teintes, et le libelle ne change pas. */
+.ex-case__boite:checked + .ex-case__libelle {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+}
+
+.ex-case__boite:disabled,
+.ex-case__boite:disabled + .ex-case__libelle {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ==========================================================================
    Onglets — chantier front hors lot, sous-etape S1 (`DEC-672`). Sur primitive
    Radix (`@radix-ui/react-tabs`) : role, aria-selected, aria-controls et la
@@ -225,7 +610,7 @@
   padding: var(--espace-s) var(--espace-m);
   font-family: var(--police);
   font-size: var(--taille-s);
-  font-weight: 600;
+  font-weight: var(--graisse-forte);
   color: var(--encre-douce);
   background: none;
   border: 0;
@@ -241,12 +626,26 @@
    porte aussi le signal, et `aria-selected` (pose par Radix) le porte pour les
    technologies d'assistance. WCAG 1.4.1. */
 .ui-onglets__onglet[data-state='active'] {
-  color: var(--encre);
+  /* `--titre` et non `--encre` depuis `E3` (charte 5 : « texte titre »).
+     10,5:1 en clair, 8,9:1 en sombre — deja prouves par `jetons.test.ts`. */
+  color: var(--titre);
   border-bottom-color: var(--marque-bleu);
 }
 
+/* LE SOULIGNEMENT EST ANIME (charte 5), et l'animation est NEUTRALISEE sous
+   mouvement reduit — voir le bloc en fin de feuille. La transition porte sur la
+   COULEUR de la bordure et non sur sa largeur : animer la largeur deplacerait
+   le texte des onglets voisins a chaque changement. */
+.ui-onglets__onglet {
+  transition:
+    color var(--duree-base) var(--courbe-sortie),
+    border-bottom-color var(--duree-base) var(--courbe-sortie);
+}
+
 .ui-onglets__onglet:focus-visible {
-  outline: 3px solid var(--marque-bleu);
+  /* Decalage NEGATIF : l'anneau se dessine a l'interieur, sinon il deborderait
+     sur la bordure basse de la liste d'onglets. */
+  outline: var(--anneau-focus);
   outline-offset: -3px;
 }
 
@@ -255,8 +654,8 @@
 }
 
 .ui-onglets__panneau:focus-visible {
-  outline: 3px solid var(--marque-bleu);
-  outline-offset: 2px;
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
 }
 
 /* ==========================================================================
@@ -299,6 +698,9 @@
 .ui-carte-retournable {
   display: flex;
   flex-direction: column;
+  /* Charte 6.3 : « perspective 900px ». Sans elle, une rotation sur l'axe Y est
+     plate et le retournement ne se lit pas. */
+  perspective: 900px;
   /* S'ETIRE dans sa cellule de grille — chantier front S10 (`DEC-673`). Une
      grille CSS etire deja ses `<li>` par defaut (`align-items: stretch`), mais
      cet `<article>` n'en heritait pas : plusieurs cartes d'une meme rangee
@@ -336,7 +738,7 @@
 }
 
 .ui-carte-retournable__face:focus-visible {
-  outline: 3px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -3px;
 }
 
@@ -349,7 +751,10 @@
  */
 .ui-carte-retournable__faces {
   display: block;
-  transition: transform 180ms ease-out;
+  /* LES DUREES VIENNENT DES JETONS DEPUIS `E3` : la charte 2 fixe 360 ms pour
+     le retournement d'une carte et nomme la courbe de sortie. C'etait
+     `180ms ease-out`, ecrit en dur avant la refonte. */
+  transition: transform var(--duree-lente) var(--courbe-sortie);
 }
 
 .ui-carte-retournable__face[aria-expanded='true'] .ui-carte-retournable__faces {
@@ -424,7 +829,7 @@
 }
 
 .ui-carrousel__commande:focus-visible {
-  outline: 3px solid var(--marque-bleu);
+  outline: var(--anneau-focus);
   outline-offset: -3px;
 }
 
@@ -461,4 +866,70 @@
   .ui-carrousel__commandes {
     display: none;
   }
+}
+
+/* ==========================================================================
+   MOUVEMENT REDUIT — charte 1.7, pour tout ce que `E3` a anime
+   ==========================================================================
+
+   « Mouvement neutralise sous `prefers-reduced-motion: reduce` ». NEUTRALISE,
+   pas raccourci : une transition de 10 ms reste un mouvement. Meme forme que
+   les deux blocs de `CarteRetournable` et de `Carrousel` plus haut, et que
+   `application.css` depuis le LOT 1.
+
+   LA PRESSION DU BOUTON EST RETIREE, PAS SEULEMENT SA TRANSITION. Laisser
+   `transform: scale(.96)` sans transition produirait un saut instantane, ce qui
+   est PIRE qu'une animation douce pour qui demande moins de mouvement.
+
+   Ce qui n'est PAS neutralise : les changements de couleur eux-memes. Un
+   survol qui cesserait de changer de couleur retirerait un signal, alors que
+   `prefers-reduced-motion` ne demande que l'arret du MOUVEMENT. */
+@media (prefers-reduced-motion: reduce) {
+  .ex-bouton,
+  .ex-carte[data-variante='interactive'],
+  .ex-champ__saisie,
+  .ex-progression__remplissage,
+  .ui-onglets__onglet {
+    transition: none;
+  }
+
+  .ex-bouton:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/*
+ * **UN ELEMENT PORTEUR DE `hidden` NE S'AFFICHE JAMAIS.** Cette regle repose
+ * un invariant du navigateur que nos propres feuilles cassaient.
+ *
+ * LE DEFAUT, MESURE LE 02/11/2026 DANS UN VRAI NAVIGATEUR
+ *
+ *   `[hidden] { display: none }` vient de la feuille de l'AGENT UTILISATEUR.
+ *   Toute regle d'auteur qui pose un `display` l'emporte sur elle, quelle que
+ *   soit sa specificite. La regle juste en dessous — `display: block` sur les
+ *   deux faces, ecrite a `T10` du LOT 5 avec le composant lui-meme — rendait
+ *   donc les DEUX faces visibles en meme temps : la carte du trombinoscope
+ *   n'a jamais retourne, elle empilait son recto et son verso.
+ *
+ *   **AUCUN TEST NE POUVAIT L'ATTRAPER**, et c'est ce qui explique seize mois
+ *   de silence : jsdom ne charge pas cette feuille, si bien que `face.hidden`
+ *   y vaut `true` pendant que le navigateur affiche la face. L'ATTRIBUT et le
+ *   RENDU sont deux grandeurs differentes (§7.0, sixieme proposition). Seul
+ *   l'aller-retour reel de `E5` l'a montre, sur l'ecran lui-meme.
+ *
+ * POURQUOI UNE GARDE GLOBALE PLUTOT QU'UN CORRECTIF PAR SITE
+ *
+ *   §7.35 : quand une propriete ne peut etre vue par aucun controle, on la
+ *   rend STRUCTURELLE. Un `:not([hidden])` sur chaque regle de disposition
+ *   serait a reecrire a chaque regle nouvelle, et l'oublier redonnerait le
+ *   defaut en silence. Ici, l'invariant tient pour toutes les regles, celles
+ *   d'aujourd'hui et celles de demain, dans ce paquet comme dans `apps/web`.
+ *
+ *   `!important` est ici a sa place et non un contournement : il ne gagne
+ *   aucune bataille de style, il restaure une regle du navigateur que nos
+ *   feuilles n'auraient jamais du battre. `composants.test.tsx` exige qu'il
+ *   reste.
+ */
+[hidden] {
+  display: none !important;
 }

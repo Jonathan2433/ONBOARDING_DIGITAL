@@ -48,11 +48,11 @@
  *   information.
  */
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
-import { Building2 } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+import { Building2, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { couleurDuCercle } from '../affichage';
+import { couleurDuCercle, pictoDuCercle, texteDuCercle } from '../affichage';
 import { lireLeFramework } from '../api/organisation';
 import { useEntiteConsultee } from './CadreApplicatif';
 
@@ -62,7 +62,7 @@ import type {
   PageFramework,
   TitulaireFramework,
 } from '@onboarding/contracts';
-import { Alerte, Badge, Carte } from '@onboarding/ui';
+import { Alerte, Avatar, Badge, Carte, Picto } from '@onboarding/ui';
 
 /**
  * Le libelle francais des deux categories qui en ont un — cahier §6.2.
@@ -132,6 +132,24 @@ export function PageFramework(): JSX.Element {
 
   return (
     <div className="framework">
+      {/*
+        **LE BLOC VISION DE LA CHARTE 6.5, EN ATTENTE DE SON CONTENU.** Aucune
+        entite ne stocke de texte de vision : ni le modele ni le cahier n'en
+        portent le champ. Arbitrage de Jonathan du 02/11/2026, le meme qu'a
+        l'accueil — l'emplacement est pose, et il DIT qu'il attend plutot que
+        d'imiter un contenu qui n'existe pas.
+      */}
+      <section className="framework-vision" aria-labelledby="framework-vision-titre">
+        <Picto nom="organigramme" taille={40} />
+        <h2 className="framework-vision-titre" id="framework-vision-titre">
+          Vision
+        </h2>
+        <Badge ton="info">V1</Badge>
+        <p className="framework-vision-texte">
+          La vision de l&rsquo;entite prendra place ici, au-dessus de son organisation.
+        </p>
+      </section>
+
       <Carte titre="Responsabilites">
         {page.responsabilites.length === 0 ? (
           <Alerte>Aucune responsabilite Framework pour le moment.</Alerte>
@@ -161,11 +179,16 @@ export function PageFramework(): JSX.Element {
         {page.cercles.length === 0 ? (
           <Alerte>Aucun cercle pour le moment.</Alerte>
         ) : (
-          <ul className="framework-grille">
+          /*
+            **LES CERCLES SONT UN ACCORDEON — charte 6.4, arbitrage de Jonathan
+            du 02/11/2026.** La charte decrit le cercle comme un panneau qu'on
+            deplie ; la page par cercle garde son adresse et reste ce que l'on
+            partage, et c'est ICI, sur la page qui les LISTE vraiment, que le
+            motif a du sens.
+          */
+          <ul className="framework-accordeon">
             {page.cercles.map((cercle) => (
-              <li key={cercle.identifiant}>
-                <CarteDeCercleAFramework cercle={cercle} />
-              </li>
+              <CercleEnAccordeon key={cercle.identifiant} cercle={cercle} />
             ))}
           </ul>
         )}
@@ -188,30 +211,128 @@ export function PageFramework(): JSX.Element {
   );
 }
 
-function CarteDeCercleAFramework({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
-  //  **LA COULEUR N'EST JAMAIS LA SEULE INFORMATION — §8.1 du modele, §7.42.**
-  //  `cercle.nom` est un champ obligatoire du contrat ; `jetonDeCouleur` est
-  //  nullable, et un jeton inconnu ou absent laisse la bordure neutre. Le nom
-  //  reste du texte dans les deux cas.
+/**
+ * Un cercle deplie — charte 6.4, chantier design systeme v2, `E5` (`DEC-682`).
+ *
+ * **UN `<button aria-expanded>` ET UN PANNEAU NOMME, RIEN DE PLUS.** Aucune
+ * primitive d'accordeon n'existe dans `packages/ui`, et en livrer une sans
+ * second consommateur serait du code non eprouve (critere `T11` du LOT 1) —
+ * meme constat qu'au LOT 8 `T9` pour les onglets. Le motif WAI-ARIA tient en
+ * trois attributs, et il est atteignable au clavier PAR CONSTRUCTION puisque
+ * c'est un vrai bouton.
+ *
+ * **CE QUE LE PANNEAU MONTRE, ET CE QU'IL NE MONTRE PAS.** `GET …/framework`
+ * sert deja la description, le Booster et le NOMBRE de membres actifs : tout
+ * cela s'affiche sans un appel de plus. Il ne sert PAS la liste nominative des
+ * membres, que la page du cercle va chercher ; le panneau y mene donc plutot
+ * que de declencher une seconde lecture a chaque depliage. C'est aussi ce qui
+ * garde a la page detaillee sa raison d'etre.
+ *
+ * **PLUSIEURS PANNEAUX PEUVENT RESTER OUVERTS.** Rien dans la charte n'exige
+ * qu'en ouvrir un referme les autres, et comparer deux cercles est un geste
+ * naturel ici.
+ */
+function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
+  const [ouvert, poserOuvert] = useState(false);
+  const identifiant = useId();
+  const idBouton = `${identifiant}-bouton`;
+  const idPanneau = `${identifiant}-panneau`;
   const couleur = couleurDuCercle(cercle.jetonDeCouleur);
+  const texte = texteDuCercle(cercle.jetonDeCouleur);
+  const picto = pictoDuCercle(cercle.jetonDeCouleur);
+
   return (
-    <Link
-      className="framework-carte framework-carte-cercle"
-      style={
-        couleur === undefined ? undefined : ({ '--framework-cercle-couleur': couleur } as never)
-      }
-      to={cercle.cheminDetaille}
-    >
-      <span className="framework-carte-titre">{cercle.nom}</span>
-      <Badge ton="marque">
-        {cercle.membresActifs} membre{cercle.membresActifs > 1 ? 's' : ''}
-      </Badge>
-      <span className="framework-carte-detail">
-        {cercle.booster === null
-          ? 'Aucun Booster'
-          : `Booster : ${cercle.booster.prenom} ${cercle.booster.nom}`}
-      </span>
-    </Link>
+    <li className="framework-accordeon-element">
+      {/*
+        **UN TITRE AUTOUR DU BOUTON** — motif WAI-ARIA : sans lui, les cercles
+        n'apparaissent pas dans le plan du document, et un lecteur d'ecran ne
+        peut plus sauter de l'un a l'autre.
+      */}
+      <h3 className="framework-accordeon-titre">
+        <button
+          aria-controls={idPanneau}
+          aria-expanded={ouvert}
+          className="framework-accordeon-bouton"
+          id={idBouton}
+          onClick={() => {
+            poserOuvert((avant) => !avant);
+          }}
+          type="button"
+        >
+          {/*
+            **LA TUILE PORTE LE PICTOGRAMME OFFICIEL DU CERCLE**, celui que la
+            table `CERCLES` associe a son nom depuis `E4`. Sans jeton connu,
+            ni picto ni couleur : la tuile reste neutre, et le nom — qui est
+            juste a cote — porte seul l'information (§10.1).
+          */}
+          <span
+            className="framework-accordeon-tuile"
+            style={
+              couleur === undefined
+                ? undefined
+                : ({ background: couleur, color: texte } as React.CSSProperties)
+            }
+          >
+            {picto === undefined ? null : <Picto nom={picto} taille={24} />}
+          </span>
+          <span className="framework-accordeon-nom">{cercle.nom}</span>
+          <Badge ton="info">
+            {cercle.membresActifs} membre{cercle.membresActifs > 1 ? 's' : ''}
+          </Badge>
+          {/*
+            Le chevron est DECORATIF : `aria-expanded` porte deja l'etat, et
+            l'annoncer deux fois le dirait deux fois.
+          */}
+          <ChevronDown aria-hidden="true" className="framework-accordeon-chevron" size={20} />
+        </button>
+      </h3>
+      <div
+        aria-labelledby={idBouton}
+        className="framework-accordeon-panneau"
+        hidden={!ouvert}
+        id={idPanneau}
+        role="region"
+      >
+        {/* Le bloc de presentation, sur la surface du cercle — charte 6.4. */}
+        <p
+          className="framework-accordeon-presentation"
+          style={
+            couleur === undefined
+              ? undefined
+              : ({ background: couleur, color: texte } as React.CSSProperties)
+          }
+        >
+          {cercle.description ?? 'Aucune description pour le moment.'}
+        </p>
+
+        {/*
+          **L'ENCART BOOSTER — charte 6.4.** Teinte rose, bordure rose, avatar
+          a anneau rose. `Avatar` n'a que le NOM ici : `GET …/framework` ne
+          sert pas de photo pour le Booster, donc ce sont ses initiales. Le
+          badge dit « Booster » en toutes lettres : le rose ne porte rien que
+          le texte ne porte deja.
+        */}
+        {cercle.booster === null ? (
+          <p className="encart-sans-booster">Aucun Booster pour ce cercle.</p>
+        ) : (
+          <div className="encart-booster">
+            <Avatar
+              anneau="var(--marque-rose)"
+              nom={`${cercle.booster.prenom} ${cercle.booster.nom}`}
+              taille={56}
+            />
+            <span className="encart-booster-nom">
+              {cercle.booster.prenom} {cercle.booster.nom}
+            </span>
+            <Badge ton="booster">Booster</Badge>
+          </div>
+        )}
+
+        <Link className="app-lien" to={cercle.cheminDetaille}>
+          Voir les membres du cercle {cercle.nom}
+        </Link>
+      </div>
+    </li>
   );
 }
 
@@ -219,10 +340,10 @@ function CarteDeBureauAFramework({ bureau }: { bureau: CarteDeBureau }): JSX.Ele
   return (
     <Link className="framework-carte" to={bureau.cheminDetaille}>
       <span className="framework-carte-entete">
-        <Building2 className="icone-bureau" aria-hidden="true" size={18} />
+        <Building2 aria-hidden="true" className="icone-bureau" size={32} />
         <span className="framework-carte-titre">{bureau.nom}</span>
       </span>
-      <Badge ton="marque">
+      <Badge ton="info">
         {bureau.responsables.length} responsable{bureau.responsables.length > 1 ? 's' : ''}
       </Badge>
     </Link>

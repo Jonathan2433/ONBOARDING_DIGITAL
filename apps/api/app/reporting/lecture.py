@@ -535,15 +535,17 @@ class ProfilIncomplet:
     """Une ligne de « Consulter les profils incomplets » — §15.1, le DETAIL
     que le tableau de bord (LOT 9, `T5`) ne rend qu'en compte.
 
-    Les quatre booleens reprennent EXACTEMENT la regle de
+    Les trois booleens reprennent EXACTEMENT la regle de
     `app.administration.tableau_de_bord._COMPTER_PROFILS_INCOMPLETS` — un
-    profil actif y est compte des qu'au moins un des quatre vaut `True`."""
+    profil actif y est compte des qu'au moins un des trois vaut `True`.
+    **LE METIER N'EN FAIT PLUS PARTIE DEPUIS `DEC-675`** (LOT 11 `T5`) : le
+    champ etant redevenu facultatif partout, son absence seule n'est plus un
+    manque — voir l'en-tete d'`app.administration.tableau_de_bord`."""
 
     appartenance_id: uuid.UUID
     person_id: uuid.UUID
     first_name: str
     last_name: str
-    metier_manquant: bool
     cercle_principal_manquant: bool
     dsm_manquant: bool
     statut_manquant: bool
@@ -557,16 +559,14 @@ class PageDeProfilsIncomplets:
     total: int
 
 
-#  Les QUATRE relations organisationnelles courantes — copie LITTERALE de la
+#  Les TROIS relations organisationnelles courantes — copie LITTERALE de la
 #  regle de `app.administration.tableau_de_bord` (§7.27 : meme regle, redite
-#  pour un DETAIL plutot qu'un compte, jamais une seconde definition).
-_QUATRE_RELATIONS_MANQUANTES: Final = """
+#  pour un DETAIL plutot qu'un compte, jamais une seconde definition). Le
+#  metier en est RETIRE depuis `DEC-675` (LOT 11 `T5`), miroir exact du
+#  tableau de bord.
+_TROIS_RELATIONS_MANQUANTES: Final = """
 (
     NOT EXISTS (
-        SELECT 1 FROM membership_job_assignment mja
-        WHERE mja.entity_membership_id = em.id AND mja.ends_at IS NULL
-    )
-    OR NOT EXISTS (
         SELECT 1 FROM circle_membership cm
         WHERE cm.entity_membership_id = em.id AND cm.membership_type = 'principal'
           AND cm.ends_at IS NULL
@@ -587,15 +587,11 @@ FROM entity_membership em
 JOIN person p ON p.id = em.person_id
 WHERE em.entity_id = :entite AND em.membership_state = 'active'
   AND ({{perimetre}}) AND ({{filtres}})
-  AND {_QUATRE_RELATIONS_MANQUANTES}
+  AND {_TROIS_RELATIONS_MANQUANTES}
 """
 
 _SELECT_PROFILS_INCOMPLETS: Final = """
 SELECT em.id AS appartenance_id, p.id AS person_id, p.first_name, p.last_name,
-    NOT EXISTS (
-        SELECT 1 FROM membership_job_assignment mja
-        WHERE mja.entity_membership_id = em.id AND mja.ends_at IS NULL
-    ) AS metier_manquant,
     NOT EXISTS (
         SELECT 1 FROM circle_membership cm
         WHERE cm.entity_membership_id = em.id AND cm.membership_type = 'principal'
@@ -666,7 +662,6 @@ def _en_profil_incomplet(ligne: Any) -> ProfilIncomplet:
         person_id=ligne["person_id"],
         first_name=ligne["first_name"],
         last_name=ligne["last_name"],
-        metier_manquant=bool(ligne["metier_manquant"]),
         cercle_principal_manquant=bool(ligne["cercle_principal_manquant"]),
         dsm_manquant=bool(ligne["dsm_manquant"]),
         statut_manquant=bool(ligne["statut_manquant"]),

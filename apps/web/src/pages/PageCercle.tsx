@@ -46,8 +46,8 @@
  * CHANTIER FRONT, S12 (`DEC-673`) : LA PHOTO DU BOOSTER ET DES MEMBRES
  *
  *   `TitulaireDuCercle.photo` et `MembreDuCercle.photo` suivent exactement la
- *   convention du trombinoscope et du profil (S11) : un cadre hexagonal
- *   (`--decoupe-hexagone`) sur fond de marque colore quand `photo` est `null`,
+ *   convention du trombinoscope et du profil : un portrait ROND
+ *   (`--rayon-pastille`) sur fond de marque colore quand `photo` est `null`,
  *   l'image elle-meme sinon — meme motif, meme initiales, aucune nouvelle
  *   mesure de contraste. Arbitrage de Jonathan (`AskUserQuestion`,
  *   29/10/2026) : la page de synthese Framework reste hors de cette
@@ -65,13 +65,13 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
-import { couleurDuCercle } from '../affichage';
+import { couleurDuCercle, texteDuCercle } from '../affichage';
 import { lireLeCercle } from '../api/organisation';
 import { cheminDeRubrique, cheminEditionCercle } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
 import { peutEditerUnContenu, TAILLE_PAR_DEFAUT, type PageDuCercle } from '@onboarding/contracts';
-import { Alerte, Badge, Carte } from '@onboarding/ui';
+import { Alerte, Avatar, Badge, Carte } from '@onboarding/ui';
 
 const TAILLE = TAILLE_PAR_DEFAUT;
 
@@ -160,37 +160,53 @@ export function PageCercle(): JSX.Element {
 
   const c = etat.page;
   const couleur = couleurDuCercle(c.jetonDeCouleur);
+  const texte = texteDuCercle(c.jetonDeCouleur);
 
   return (
     <div className="cercle">
-      <div
-        className="cercle-identite"
-        style={couleur === undefined ? undefined : ({ '--cercle-couleur': couleur } as never)}
-      >
-        <Carte titre={c.nom}>
-          {c.description === null ? null : <p className="cercle-description">{c.description}</p>}
-          <dl className="cercle-champs">
-            <dt>Booster</dt>
-            <dd>
-              {c.booster === null ? (
-                'Aucun Booster'
-              ) : (
-                <span className="cercle-booster">
-                  {c.booster.photo === null ? (
-                    <span aria-hidden="true" className="cercle-avatar">
-                      {c.booster.prenom.slice(0, 1)}
-                      {c.booster.nom.slice(0, 1)}
-                    </span>
-                  ) : (
-                    <img alt="" className="cercle-photo" src={c.booster.photo} />
-                  )}
-                  {c.booster.prenom} {c.booster.nom}
-                </span>
-              )}
-            </dd>
-          </dl>
-        </Carte>
-      </div>
+      <Carte titre={c.nom}>
+        {/*
+          **LE BLOC DE PRESENTATION PREND LA SURFACE DU CERCLE — charte 6.4.**
+          Elle etait un trait de 4 px a gauche de la carte : exactement l'emploi
+          que `E4` a mesure sous 3:1 pour cinq cercles sur huit. Remplie, elle
+          porte le texte apparie que la charte 4 lui associe. Sans jeton connu,
+          le repli neutre de la feuille s'applique.
+        */}
+        {c.description === null ? null : (
+          <p
+            className="cercle-presentation"
+            style={
+              couleur === undefined
+                ? undefined
+                : ({ background: couleur, color: texte } as React.CSSProperties)
+            }
+          >
+            {c.description}
+          </p>
+        )}
+        {/*
+          **L'ENCART BOOSTER — charte 6.4**, les memes classes que le Framework :
+          une seule regle pour un seul motif. L'avatar fait 56 px et porte
+          l'anneau rose ; le badge dit « Booster » en toutes lettres, si bien que
+          le rose ne porte rien que le texte ne porte deja.
+        */}
+        {c.booster === null ? (
+          <p className="encart-sans-booster">Aucun Booster pour ce cercle.</p>
+        ) : (
+          <div className="encart-booster">
+            <Avatar
+              anneau="var(--marque-rose)"
+              nom={`${c.booster.prenom} ${c.booster.nom}`}
+              taille={56}
+              {...(c.booster.photo === null ? {} : { photo: c.booster.photo })}
+            />
+            <span className="encart-booster-nom">
+              {c.booster.prenom} {c.booster.nom}
+            </span>
+            <Badge ton="booster">Booster</Badge>
+          </div>
+        )}
+      </Carte>
 
       <Carte
         titre={
@@ -205,22 +221,23 @@ export function PageCercle(): JSX.Element {
           <ul className="cercle-liste-membres">
             {c.membres.map((membre) => (
               <li key={membre.appartenance}>
+                {/*
+                  **LES MEMBRES EN PASTILLES — charte 6.4 : avatar 32, nom,
+                  role.** `Avatar` remplace l'avatar maison : meme regle que
+                  partout ailleurs, la photo quand elle est servable et les
+                  initiales sinon.
+                */}
                 <span className="cercle-membre-identite">
-                  {membre.photo === null ? (
-                    <span aria-hidden="true" className="cercle-avatar">
-                      {membre.prenom.slice(0, 1)}
-                      {membre.nom.slice(0, 1)}
-                    </span>
-                  ) : (
-                    <img alt="" className="cercle-photo" src={membre.photo} />
-                  )}
+                  <Avatar
+                    nom={`${membre.prenom} ${membre.nom}`}
+                    taille={32}
+                    {...(membre.photo === null ? {} : { photo: membre.photo })}
+                  />
                   <span className="cercle-membre-nom">
                     {membre.prenom} {membre.nom}
                   </span>
                 </span>
-                <Badge ton={membre.typeDAppartenance === 'principal' ? 'marque' : 'neutre'}>
-                  {libelleDAppartenance(membre.typeDAppartenance)}
-                </Badge>
+                <Badge ton="info">{libelleDAppartenance(membre.typeDAppartenance)}</Badge>
               </li>
             ))}
           </ul>

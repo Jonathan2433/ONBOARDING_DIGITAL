@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import os
 import pathlib
+import re
 import sys
 from dataclasses import dataclass
 
@@ -92,7 +93,27 @@ PERSONAS = (
     ),
 )
 
-COULEURS = {"TECH": "bleu", "DATA": "rose", "CLOUD": "bleu-fonce", "PROD": "jaune"}
+#  LE JETON D'UN CERCLE EST DESORMAIS LE NOM DU CERCLE DANS LA CHARTE, pas une
+#  etiquette de couleur -- chantier design systeme v2, `E4` (`DEC-682`), arbitrage
+#  de Jonathan du 02/11/2026. `circle.color_token` reste le texte libre que le
+#  modele 8.1 decrit ; ce qui change est le vocabulaire qu'on y ecrit, et aucune
+#  migration n'est requise.
+#
+#  **DEUX DES QUATRE CERCLES DE CETTE DEMONSTRATION N'ONT PAS D'EQUIVALENT DANS
+#  LA CHARTE, ET ON NE LEUR EN INVENTE PAS.** `TECH`/`DATA`/`CLOUD`/`PROD` sont
+#  des noms de decor poses au LOT 2 (`app/shared/fabriques.py`), bien avant que
+#  la charte existe ; elle nomme, elle, les huit cercles reels d'eXalt. Deux se
+#  reconnaissent sans effort -- « Produit » est `produit`, « Donnees » est
+#  `data` -- et « Technologie » est le cercle IT. **`CLOUD` RESTE SANS JETON** :
+#  lui en attribuer un serait choisir pour la charte (§6.5), et le laisser nu
+#  est d'ailleurs le cas le plus frequent en base (112 cercles sur 116, mesure
+#  du 02/11/2026). La demonstration montre ainsi les DEUX regimes, colore et
+#  neutre, ce que le 10.1 du modele demande justement de ne jamais confondre.
+#
+#  L'alignement des cercles de demonstration sur les huit reels releve de
+#  l'integration des donnees de demonstration, explicitement hors decoupage du
+#  LOT 11 (`fiche-lot-11.md`).
+COULEURS = {"TECH": "it", "DATA": "data", "PROD": "produit"}
 
 
 def charger_env(chemin: pathlib.Path) -> None:
@@ -262,8 +283,16 @@ def verifier() -> int:
                 {"code": CODE_ENTITE},
             ).all()
         )
-        if any(couleurs.get(code) != couleur for code, couleur in COULEURS.items()):
-            erreurs.append("jetons de couleur des cercles incomplets")
+        #  **IL NOMME LE CERCLE ET LES DEUX VALEURS.** « jetons de couleur des
+        #  cercles incomplets » ne disait ni lequel ni pourquoi : §7.18, la
+        #  premiere correction a ecrire est celle qui dit la cause.
+        ecarts = [
+            f"{code} : attendu {couleur!r}, trouve {couleurs.get(code)!r}"
+            for code, couleur in COULEURS.items()
+            if couleurs.get(code) != couleur
+        ]
+        if ecarts:
+            erreurs.append(f"jeton(s) de cercle non applique(s) — {'; '.join(ecarts)}")
 
         interdites = connexion.execute(
             text(
@@ -287,6 +316,34 @@ def verifier() -> int:
         if administrateur != 1:
             erreurs.append(f"compte ou role SUPER_ADMIN absent : {ADRESSE_ADMIN}")
 
+        #  **CE CONTROLE ETAIT UN `print`, ET UN `print` NE PEUT PAS ECHOUER.**
+        #  La ligne « les quatre cercles portent un jeton compris par le
+        #  frontend » etait affichee sans que rien n'ait regarde un seul cercle :
+        #  elle serait restee verte sur n'importe quelle valeur, y compris les
+        #  quatre etiquettes de couleur devenues caduques a `E4` (`DEC-682`).
+        #  §7.0, premiere proposition — un controle qui ne peut pas echouer ne
+        #  prouve rien. Il mesure desormais, et la liste des jetons admis est
+        #  DERIVEE de `jetons.css` plutot que recopiee (§7.27).
+        feuille = (RACINE / "packages" / "ui" / "src" / "jetons.css").read_text(encoding="utf-8")
+        admis = set(re.findall(r"--cercle-([a-z]+)\s*:", feuille))
+        if len(admis) != 8:
+            erreurs.append(f"huit cercles attendus dans jetons.css, {len(admis)} releves")
+        poses = connexion.execute(
+            text(
+                "SELECT c.code, c.color_token FROM circle c JOIN entity e ON e.id=c.entity_id "
+                "WHERE e.code=:entite AND c.color_token IS NOT NULL"
+            ),
+            {"entite": CODE_ENTITE},
+        ).all()
+        inconnus = [f"{code}={jeton}" for code, jeton in poses if jeton not in admis]
+        if inconnus:
+            erreurs.append(f"jeton(s) inconnu(s) du design system : {', '.join(inconnus)}")
+        #  TEMOIN POSITIF (§7.39) : sans lui, une entite sans aucun cercle colore
+        #  satisferait « aucun jeton inconnu » sans rien demontrer.
+        if not poses:
+            erreurs.append(f"aucun cercle colore dans {CODE_ENTITE}")
+        colores = len(poses)
+
     if erreurs:
         for erreur in erreurs:
             print(f"  ECHEC    {erreur}")
@@ -294,7 +351,10 @@ def verifier() -> int:
     print(f"  ok       {CODE_ENTITE} et les {len(PERSONAS)} personas sont prets")
     print(f"  ok       compte administrateur actif avec role SUPER_ADMIN : {ADRESSE_ADMIN}")
     print("  ok       toutes les adresses demo utilisent exemple.test")
-    print("  ok       les quatre cercles portent un jeton compris par le frontend")
+    print(
+        f"  ok       {colores} cercle(s) colore(s), tous avec un jeton que le design "
+        "system sait rendre ; les autres restent neutres"
+    )
     return 0
 
 

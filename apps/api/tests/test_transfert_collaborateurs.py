@@ -158,7 +158,7 @@ def _collaborateur_occupant(
     return appartenance  # type: ignore[no-any-return]
 
 
-def _demande_destination(*, metier: uuid.UUID, cercle: uuid.UUID) -> DemandeDAppartenance:
+def _demande_destination(*, metier: uuid.UUID | None, cercle: uuid.UUID) -> DemandeDAppartenance:
     return DemandeDAppartenance(
         arrival_date=ARRIVEE_NOUVELLE,
         job_catalog_id=metier,
@@ -228,6 +228,37 @@ def test_TEMOIN_un_collaborateur_ACTIF_est_transfere(cx: Connection) -> None:
         assert ouvertes == 0, table
 
     assert sum(transfert.relations_closes.values()) >= 3
+
+
+@pytest.mark.integration
+def test_un_collaborateur_SANS_metier_est_transfere(cx: Connection) -> None:
+    """`DEC-675` (LOT 11 `T5`) : `metier=None` dans la destination ne cree
+    aucune ligne `membership_job_assignment` — meme comportement que la
+    creation, `creer_l_appartenance` etant partagee par les deux (§7.27).
+    """
+    source, destination = _entite(cx, "SRC-SANSMET"), _entite(cx, "DST-SANSMET")
+    personne = _personne(cx, "SANSMETIER")
+    ancienne = _collaborateur_occupant(
+        cx, source, personne, etat="active", arrivee=ARRIVEE_ANCIENNE
+    )
+    cercle_dst = _cercle(cx, destination, "C1")
+
+    transfert = changer_d_entite(
+        cx,
+        entite_source=source,
+        entite_destination=destination,
+        cible=ancienne,
+        acteur=personne,
+        version_attendue=1,
+        demande=_demande_destination(metier=None, cercle=cercle_dst),
+        instant=JANVIER,
+    )
+
+    total = cx.execute(
+        text("SELECT count(*) FROM membership_job_assignment WHERE entity_membership_id = :id"),
+        {"id": transfert.nouvelle_appartenance},
+    ).scalar_one()
+    assert total == 0
 
 
 @pytest.mark.integration

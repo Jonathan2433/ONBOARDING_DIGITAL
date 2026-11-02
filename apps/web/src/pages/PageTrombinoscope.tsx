@@ -63,7 +63,7 @@
  *   dont le contenu entier est deja une photo et un nom.
  */
 import type { JSX } from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
 import { STATUTS, couleurDuCercle, libelleDuStatut, texteDuCercle } from '../affichage';
@@ -76,7 +76,7 @@ import {
   TAILLE_PAR_DEFAUT,
   TAILLES_DE_PAGE,
 } from '@onboarding/contracts';
-import { Alerte, Badge, CarteRetournable } from '@onboarding/ui';
+import { Alerte, Avatar, CarteRetournable, Champ, Liste } from '@onboarding/ui';
 
 /** §9.3 : « la recherche demarre apres environ 300 ms ». */
 export const TEMPORISATION_DE_SAISIE_MS = 300;
@@ -127,9 +127,6 @@ export function PageTrombinoscope(): JSX.Element {
   const [taille, setTaille] = useState<number>(TAILLE_PAR_DEFAUT);
   const [page, setPage] = useState(1);
   const [resultat, setResultat] = useState<Resultat | null>(null);
-  const idRecherche = useId();
-  const idStatut = useId();
-  const idTaille = useId();
 
   //  **LA TEMPORISATION DU §9.3.** Le nettoyage annule le minuteur precedent :
   //  sans lui, chaque frappe en armerait un de plus et ils se declencheraient
@@ -194,64 +191,59 @@ export function PageTrombinoscope(): JSX.Element {
         }}
         role="search"
       >
-        <div className="trombi-critere">
-          <label className="trombi-etiquette" htmlFor={idRecherche}>
-            Rechercher un collaborateur
-          </label>
-          <input
-            className="trombi-champ"
-            id={idRecherche}
-            type="search"
-            value={saisie}
-            onChange={(evenement) => {
-              setSaisie(evenement.target.value);
-            }}
-            placeholder="Nom ou prenom"
-          />
-        </div>
+        {/*
+          **LES TROIS FILTRES PASSENT PAR `Champ` ET `Liste` — charte 6.3.**
+          Les deux composants portent eux-memes leur `<label>` lie, leur
+          `id` engendre et leur anneau de focus par `var(--anneau-focus)` : le
+          `.trombi-champ` qu'ils remplacent avait le sien ecrit a la main,
+          juste en theme clair et en echec en sombre depuis `S9`. `E6` a retire
+          cette regle devenue morte.
 
-        <div className="trombi-critere">
-          <label className="trombi-etiquette" htmlFor={idStatut}>
-            Statut
-          </label>
-          <select
-            className="trombi-champ"
-            id={idStatut}
-            value={statut}
-            onChange={(evenement) => {
-              setStatut(evenement.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">Tous les statuts</option>
-            {STATUTS.map((choix) => (
-              <option key={choix.valeur} value={choix.valeur}>
-                {choix.libelle}
-              </option>
-            ))}
-          </select>
-        </div>
+          **LE FILTRE « CERCLE » DE LA CHARTE N'EST PAS AJOUTE ICI** : l'API
+          l'accepte (`cercle` est un parametre de `GET …/people`), mais le
+          poser serait ajouter une FONCTION, et la consigne de `E5` est de ne
+          changer que la presentation. Ecart consigne pour `E7`.
+        */}
+        <Champ
+          libelle="Rechercher un collaborateur"
+          onChange={(evenement) => {
+            setSaisie(evenement.target.value);
+          }}
+          placeholder="Nom ou prenom"
+          type="search"
+          value={saisie}
+        />
 
-        <div className="trombi-critere">
-          <label className="trombi-etiquette" htmlFor={idTaille}>
-            Par page
-          </label>
-          <select
-            className="trombi-champ"
-            id={idTaille}
-            value={String(taille)}
-            onChange={(evenement) => {
-              setTaille(Number(evenement.target.value));
-              setPage(1);
-            }}
-          >
-            {TAILLES_DE_PAGE.map((valeur) => (
-              <option key={valeur} value={String(valeur)}>
-                {valeur}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Liste
+          libelle="Statut"
+          onChange={(evenement) => {
+            setStatut(evenement.target.value);
+            setPage(1);
+          }}
+          value={statut}
+        >
+          <option value="">Tous les statuts</option>
+          {STATUTS.map((choix) => (
+            <option key={choix.valeur} value={choix.valeur}>
+              {choix.libelle}
+            </option>
+          ))}
+        </Liste>
+
+        <Liste
+          libelle="Par page"
+          onChange={(evenement) => {
+            setTaille(Number(evenement.target.value));
+            setPage(1);
+          }}
+          value={String(taille)}
+        >
+          {TAILLES_DE_PAGE.map((valeur) => (
+            <option key={valeur} value={String(valeur)}>
+              {valeur}
+            </option>
+          ))}
+        </Liste>
       </form>
 
       {/*
@@ -339,73 +331,112 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
   const libelleStatut = libelleDuStatut(ligne.statut);
 
   return (
+    //  **LA CARTE NE PORTE PLUS `--carte-cercle`, ET C'EST LE FOND DE LA MESURE
+    //  DE `E4`.** Cette variable y mettait la couleur du cercle en trait de
+    //  2 px : exactement l'emploi qui faisait passer cinq surfaces sur huit
+    //  sous 3:1. La couleur est desormais REMPLIE dans le bandeau, et la carte
+    //  retombe sur le repli neutre que `composants.css` declare au `:root`.
+    //  Une seule chose porte la couleur, et c'est celle qui peut la porter.
     <CarteRetournable
       nomAccessible={`Retourner la carte de ${nom} pour voir ses informations professionnelles`}
-      style={
-        couleur === undefined ? undefined : ({ '--carte-cercle': couleur } as React.CSSProperties)
-      }
       recto={
         <>
           {/*
-            **L'AVATAR NEUTRE EST UN `<img>` ABSENT, PAS UNE IMAGE CASSEE.** Le
-            §21.2 veut un avatar neutre quand la photo n'est pas servable ; `photo`
-            vaut alors `null`, et les CINQ causes sont indistinguables a dessein.
-            L'alternative textuelle est VIDE parce que le nom est juste a cote :
-            un `alt` qui repeterait le nom le ferait annoncer deux fois.
+            **LE CERCLE DEVIENT UN BANDEAU REMPLI, ET C'EST LA CORRECTION QUE
+            `E4` AVAIT MESUREE ET LAISSEE A `E5`.** Releve le 02/11/2026 dans un
+            vrai navigateur : pose en trait d'accent de 4 px sur une carte
+            claire, CINQ des huit surfaces de cercle passent sous 3:1 — `change`
+            1,37, `data` 1,17, `shield` 1,19, `forge` 1,08, `it` 1,09 — et trois
+            d'entre elles sont litteralement invisibles.
+
+            La charte n'etait pas en faute : ses huit entrees sont des couples
+            SURFACE + TEXTE faits pour etre REMPLIS, ou la paleur est justement
+            ce qui rend le texte lisible. Le bandeau de 150 px de la charte 6.3
+            est cet emploi-la, et le couple `surface`/`texte` y retrouve la
+            mesure qui l'accompagne.
+
+            **LA COULEUR N'EST TOUJOURS PAS SEULE** : le nom du cercle reste
+            ecrit en toutes lettres sous le bandeau (§10.1), et sans cercle le
+            bandeau retombe sur une surface neutre.
           */}
-          {ligne.photo === null ? (
-            <span aria-hidden="true" className="trombi-avatar">
-              {(ligne.nomPrefere ?? ligne.prenom).slice(0, 1)}
-              {ligne.nom.slice(0, 1)}
+          <span
+            className="trombi-bandeau"
+            style={
+              couleur === undefined
+                ? undefined
+                : ({ background: couleur, color: texte } as React.CSSProperties)
+            }
+          >
+            {/*
+              **L'AVATAR EST DESORMAIS CELUI DU DESIGN SYSTEM.** Il porte la
+              meme regle qu'ailleurs : la photo quand elle est servable, les
+              initiales sinon — les CINQ causes d'absence restant
+              indistinguables a dessein (§21.2). Decoratif, parce que le nom
+              est juste en dessous : l'annoncer le ferait entendre deux fois.
+            */}
+            <Avatar
+              nom={nom}
+              taille={84}
+              {...(ligne.photo === null ? {} : { photo: ligne.photo })}
+            />
+          </span>
+          <span className="trombi-infos">
+            <span className="trombi-nom">{nom}</span>
+            <span className="trombi-role">{ligne.metier ?? 'Metier non renseigne'}</span>
+            <span className="trombi-cercle">
+              {ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}
             </span>
-          ) : (
-            <img alt="" className="trombi-photo" src={ligne.photo} />
-          )}
-          <span className="trombi-nom">{nom}</span>
-          {/*
-            **LA PASTILLE DE CERCLE AU RECTO — chantier front S10 (`DEC-673`)**.
-            Le `Badge` est deja une pastille (`--rayon-pastille`), deja
-            accessible (le texte du cercle est OBLIGATOIRE dans son type,
-            §10.1) : aucun composant nouveau. Sans cercle, rien n'est rendu —
-            le verso continue de dire « Aucun cercle principal » en toutes
-            lettres, et une pastille vide n'ajouterait rien.
-          */}
-          {ligne.cercle === null ? null : (
-            <span className="trombi-pastille-cercle">
-              <Badge
-                ton={couleur === undefined ? 'neutre' : 'marque'}
-                style={
-                  couleur === undefined
-                    ? undefined
-                    : ({
-                        background: couleur,
-                        borderColor: 'transparent',
-                        color: texte,
-                      } as React.CSSProperties)
-                }
-              >
-                {ligne.cercle.nom}
-              </Badge>
-            </span>
-          )}
+          </span>
         </>
       }
       verso={
-        <dl className="trombi-verso">
-          <dt>Metier</dt>
-          <dd>{ligne.metier ?? 'Non renseigne'}</dd>
-          <dt>Statut</dt>
-          <dd>
-            {libelleStatut === null ? 'Non renseigne' : <Badge ton="marque">{libelleStatut}</Badge>}
-            {ligne.client === null ? null : ` — ${ligne.client}`}
-          </dd>
-          <dt>Cercle</dt>
+        <div className="trombi-verso">
           {/*
-            **LE NOM DU CERCLE EN TOUTES LETTRES, ET C'EST LE §10.1** : la couleur
-            ne borde que la carte, elle ne transmet jamais seule l'information.
+            **LE NOM EST AUSSI AU VERSO — charte 6.3.** Une seule face est dans
+            le DOM a la fois : carte retournee, le recto porte `hidden`, et sans
+            cette ligne la carte cesserait de dire QUI elle montre. C'est la
+            raison d'etre de la charte sur ce point, pas une redite.
           */}
-          <dd>{ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}</dd>
-        </dl>
+          <p className="trombi-verso-nom">{nom}</p>
+          <dl className="trombi-verso-liste">
+            <dt>Metier</dt>
+            <dd>{ligne.metier ?? 'Non renseigne'}</dd>
+            <dt>Statut</dt>
+            {/*
+            **PASTILLE BLANCHE POUR LE STATUT, JAUNE POUR LE CLIENT — charte
+            6.3.** Le verso est un aplat de bleu fonce, et les tons semantiques
+            de `Badge` (`mission`, `intercontrat`) sont des surfaces CLAIRES
+            appariees a un texte fonce : les poser ici donnerait un couple que
+            personne n'a mesure sur ce fond. Les deux pastilles de la charte
+            sont, elles, appariees a ce bleu — ce sont les couples
+            `--marque-jaune` et `--surface`/`--encre`, deja prouves.
+
+            Le libelle porte l'information dans les deux cas ; la couleur ne
+            fait que distinguer les deux lignes.
+          */}
+            <dd>
+              {libelleStatut === null ? (
+                'Non renseigne'
+              ) : (
+                <span className="trombi-pastille-statut">{libelleStatut}</span>
+              )}
+            </dd>
+            <dt>Client</dt>
+            <dd>
+              {ligne.client === null ? (
+                'Non renseigne'
+              ) : (
+                <span className="trombi-pastille-client">{ligne.client}</span>
+              )}
+            </dd>
+            <dt>Cercle</dt>
+            {/*
+            **LE NOM DU CERCLE EN TOUTES LETTRES, ET C'EST LE §10.1** : la couleur
+            ne remplit que le bandeau, elle ne transmet jamais seule l'information.
+          */}
+            <dd>{ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}</dd>
+          </dl>
+        </div>
       }
       voirPlus={
         <Link

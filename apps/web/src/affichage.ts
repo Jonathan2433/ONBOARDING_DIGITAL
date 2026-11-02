@@ -20,6 +20,8 @@
  *   confronte donc les deux listes dans les DEUX sens.
  */
 import { STATUTS_PROFESSIONNELS } from '@onboarding/contracts';
+import { CERCLES } from '@onboarding/ui';
+import type { ClePicto, DefinitionDeCercle, TonBadge } from '@onboarding/ui';
 
 import { dateComplete } from './pages/PageProfil';
 
@@ -53,46 +55,92 @@ export function libelleDuStatut(valeur: string | null): string | null {
   return STATUTS.find((choix) => choix.valeur === valeur)?.libelle ?? valeur;
 }
 
-/**
- * Les quatre jetons de couleur que le design system porte — LOT 1, `T10`.
- *
- * **UN JETON INCONNU NE DONNE AUCUNE COULEUR, ET SURTOUT PAS UNE INVENTEE.** Le
- * design system dit : « aucune couleur de cercle : c'est une notion metier du
- * **LOT 6** ». Tout autre jeton — et `null`, `color_token` etant nullable au
- * schema, defaut `T10-8` — laisse la bordure neutre. Le NOM du cercle reste du
- * texte dans les deux cas, ce qui est ce que le §10.1 protege.
- */
-const COULEURS_DE_CERCLE: Readonly<Record<string, string>> = {
-  bleu: 'var(--marque-bleu)',
-  'bleu-fonce': 'var(--marque-bleu-fonce)',
-  rose: 'var(--marque-rose)',
-  jaune: 'var(--marque-jaune)',
-};
-
-/** La couleur d'un jeton, ou `undefined` — `null` et jeton inconnu se valent ici. */
-export function couleurDuCercle(jeton: string | null): string | undefined {
-  return jeton === null ? undefined : COULEURS_DE_CERCLE[jeton];
+/** Le ton de badge porte le même sens métier que le statut, jamais une couleur générique. */
+export function tonDuStatut(valeur: string): TonBadge {
+  if (valeur === 'mission') {
+    return 'mission';
+  }
+  if (valeur === 'intercontract') {
+    return 'intercontrat';
+  }
+  // Une valeur future reste visible par son texte et reçoit le ton informatif.
+  return 'info';
 }
 
 /**
- * Le texte appareille a `couleurDuCercle`, chantier front S10 (`DEC-673`).
+ * Le cercle que designe le jeton servi par l'API — chantier v2, `E4`.
  *
- * **ZERO NOUVELLE COMBINAISON** : les quatre couples surface/texte sont deja
- * mesures et proteges par `jetons.test.ts` (`MARQUE`, LOT 1 `T10`) — exposer le
- * texte ici ne fait que REUTILISER ce qui est deja prouve, jamais en inventer un
- * cinquieme. Meme repli que `couleurDuCercle` : `null` et jeton inconnu rendent
- * `undefined`, jamais une couleur devinee.
+ * ============================================================================
+ *  LA TABLE N'EST PLUS ICI, ET C'EST TOUT LE SENS DE `E4`
+ * ============================================================================
+ *
+ * La charte intitule sa section 4 « Cercles (**donnees, pas en dur**) » et
+ * demande une table `{ nom, surface, texte, picto }`. Cette table vit dans
+ * `@onboarding/ui` (`CERCLES`), ou elle est confrontee au tableau markdown de
+ * la charte elle-meme par `cercles.test.ts`. Ce module ne fait plus que la
+ * CONSULTER.
+ *
+ * Avant `E4`, deux tables vivaient ici — `COULEURS_DE_CERCLE` et
+ * `TEXTES_DE_CERCLE` — avec leurs propres cles (`bleu`, `bleu-fonce`, `rose`,
+ * `jaune`) et sans pictogramme. Elles portaient QUATRE des huit cercles de la
+ * charte, et aucune ne pouvait en porter le dessin : une etiquette de couleur
+ * ne designe pas un pictogramme.
+ *
+ * ============================================================================
+ *  CE QUI N'A PAS CHANGE, ET QUI EST LA RAISON D'ETRE DE CE REPLI
+ * ============================================================================
+ *
+ * **UN JETON INCONNU NE DONNE AUCUNE COULEUR, ET SURTOUT PAS UNE INVENTEE.**
+ * `circle.color_token` est un texte libre et NULLABLE au schema (modele 8.1) :
+ * mesure du 02/11/2026, 112 cercles sur 116 n'en portent aucun. Tout jeton
+ * etranger a la table — et `null`, defaut `T10-8` — laisse la bordure neutre.
+ * Le NOM du cercle reste du texte dans tous les cas, ce qui est ce que le 10.1
+ * du modele protege : « la couleur ne constitue jamais la seule information ».
+ *
+ * `jetonDeCouleur` N'EST JAMAIS EMPLOYE COMME INDEX : `CERCLES[null]` rendrait
+ * `undefined` exactement comme le chemin garde, et aucun test d'ecran ne verrait
+ * la difference — c'est le TYPE qui le refuse.
  */
-const TEXTES_DE_CERCLE: Readonly<Record<string, string>> = {
-  bleu: 'var(--marque-bleu-texte)',
-  'bleu-fonce': 'var(--marque-bleu-fonce-texte)',
-  rose: 'var(--marque-rose-texte)',
-  jaune: 'var(--marque-jaune-texte)',
-};
+function cercleDuJeton(jeton: string | null): DefinitionDeCercle | undefined {
+  if (jeton === null) {
+    return undefined;
+  }
+  return (CERCLES as Readonly<Record<string, DefinitionDeCercle>>)[jeton];
+}
 
-/** Le texte appareille a la couleur rendue par `couleurDuCercle` pour le meme jeton. */
+/**
+ * La surface d'un cercle, en `var(--cercle-…)`, ou `undefined`.
+ *
+ * **LA VALEUR RENDUE EST UNE VARIABLE CSS, PAS LE `#rrggbb` DE LA TABLE.** Les
+ * deux portent la meme couleur — `jetons-css.test.ts` l'exige — mais seule la
+ * variable laisse une feuille de style reprendre la main, et surtout seule elle
+ * garde les ecrans exempts de toute valeur litterale, ce que `make ecrans-check`
+ * verifie. La table reste la source ; la variable est son adresse.
+ */
+export function couleurDuCercle(jeton: string | null): string | undefined {
+  return cercleDuJeton(jeton) === undefined ? undefined : `var(--cercle-${jeton as string})`;
+}
+
+/** Le texte apparie a `couleurDuCercle` pour le meme jeton. Jamais l'un sans l'autre. */
 export function texteDuCercle(jeton: string | null): string | undefined {
-  return jeton === null ? undefined : TEXTES_DE_CERCLE[jeton];
+  return cercleDuJeton(jeton) === undefined ? undefined : `var(--cercle-${jeton as string}-texte)`;
+}
+
+/**
+ * Le pictogramme officiel d'un cercle, ou `undefined` — chantier v2, `E4`.
+ *
+ * Quatrieme colonne du tableau de la charte 4, et la seule que les deux tables
+ * d'avant `E4` ne pouvaient pas porter. Aucun ecran ne la consomme encore : les
+ * ecrans sont l'etape `E5`, et c'est la que `Picto` recevra ses premiers
+ * emplacements reels (tuile de cercle, carte de trombinoscope, page Framework).
+ */
+export function pictoDuCercle(jeton: string | null): ClePicto | undefined {
+  return cercleDuJeton(jeton)?.picto;
+}
+
+/** Le nom que la charte donne au cercle, ou `undefined`. */
+export function nomDeCharteDuCercle(jeton: string | null): string | undefined {
+  return cercleDuJeton(jeton)?.nom;
 }
 
 /**

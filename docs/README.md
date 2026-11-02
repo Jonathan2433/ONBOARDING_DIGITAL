@@ -3,6 +3,12 @@
 Ce dossier est la source de vérité du projet. Aucune décision de conception ne doit être
 prise en dehors de ce qui y est écrit.
 
+> **État au 02/11/2026.** Les LOTS 0 à 11 sont terminés et verrouillés. Jonathan a franchi
+> `G11` (`DEC-683`) ; le tag `v0.11.0` sera posé sur `main` après fusion. Aucun lot n’est
+> actuellement ouvert. Le chantier Design System v2 est clos : `E1` à `E5` relèvent de
+> `DEC-682`, `E6` et `E7` de `DEC-684`. La collision historique sur `DEC-681` est réconciliée
+> en conservant cet identifiant pour `T7` du LOT 11.
+
 ---
 
 ## 1. Documents de cadrage validés
@@ -73,7 +79,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `677` en usage | `DEC-678` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `684` en usage | `DEC-685` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |
@@ -130,13 +136,13 @@ renommage ne différant que par la casse exige une manœuvre en deux temps.
 | ~~`G2`~~ | Fin du modèle implémenté | Contraintes et isolation validées | **FRANCHIE le 20/08/2026** — les 7 critères acquis, [checklist](operations/checklist-validation-G2.md) instruite, tag `v0.2.0`. `DEC-517` |
 | ~~`G3`~~ | Fin de l'authentification | Sécurité et sessions validées | **FRANCHIE le 22/08/2026** — `DEC-540`, [checklist](operations/checklist-validation-G3.md), tag `v0.3.0` |
 | ~~`G4`~~ | Fin du portail national | Navigation et lecture inter-entités validées | **FRANCHIE le 24/08/2026** — `DEC-557`, les **six** critères acquis, [checklist](operations/checklist-validation-G4.md), **tag `v0.4.0` posé** sur `main` |
-| ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. **Deux stories restent ouvertes et sont nommées** : `#120` et `#121` |
-| `G6` | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
+| ~~`G5`~~ | Fin du trombinoscope | Profils et permissions validés | **FRANCHIE le 13/09/2026** — `DEC-574`, les **sept** critères acquis, [checklist](operations/checklist-validation-G5.md), **tag `v0.5.0` posé** sur `14b2bd1`. Les reliquats `#120`/`#121`, alors légitimement ouverts, sont clos lors de la réconciliation du 02/11 après livraison par les lots suivants. |
+| ~~`G6`~~ | Fin du Framework | Contenus et périmètres éditoriaux validés | **FRANCHIE le 25/09/2026** (`DEC-597`), tag `v0.6.0` sur `d2d639e`. Plan : [`fiche-lot-6.md`](operations/fiche-lot-6.md), les **douze** sous-étapes |
 | ~~`G7`~~ | Fin de l'onboarding | Tess, Léa, Diane et Jonathan valident les parcours | **FRANCHIE le 30/09/2026** — `DEC-617`, les **sept** critères acquis, [checklist](operations/checklist-validation-G7.md), tag `v0.7.0` posé sur `main` |
 | ~~`G8`~~ | Fin de l'accueil | Événements et page d'accueil validés | **FRANCHIE le 07/10/2026** — `DEC-634`, les **six** critères acquis (dont un classé sans objet), [checklist](operations/checklist-validation-G8.md), tag `v0.8.0` posé sur `main` |
 | ~~`G9`~~ | Fin du back-office | Import réel répété et validé | **FRANCHIE le 14/10/2026** — `DEC-652`, les **huit** critères classés (cinq tenus, deux gestes procéduraux à organiser, la validation de Jonathan), [fiche](operations/fiche-lot-9.md), [checklist](operations/checklist-validation-G9.md), tag `v0.9.0` posé sur `main` |
-| `G10` | Fin du pilotage | Audit, reporting et support validés | **LOT 10 OUVERT le 14/10/2026** — `DEC-654`, [fiche](operations/fiche-lot-10.md) |
-| `G11` | Fin des traitements | Médias, worker et planification validés | Planifiée |
+| ~~`G10`~~ | Fin du pilotage | Audit, reporting et support validés | **FRANCHIE le 25/10/2026** — `DEC-671`, [checklist](operations/checklist-validation-G10.md), tag `v0.10.0` |
+| ~~`G11`~~ | Fin des traitements | Médias, worker et planification validés | **FRANCHIE le 02/11/2026** — `DEC-683`, [checklist](operations/checklist-validation-G11.md) ; tag `v0.11.0` à poser sur `main` après fusion |
 | `G12` | Fin de recette | Aucun défaut bloquant selon les règles convenues | Planifiée |
 | `G13` | Production temporaire | Déploiement, sauvegarde et restauration validés | Planifiée |
 | `G14` | Production générale | Léa valide le produit, Jonathan la technique | Planifiée |
@@ -960,9 +966,11 @@ tenu par défaut. `ECART-012`, `ECART-068` et `QO-121` restent ouverts et non bl
 repris aux lots suivants au besoin, sur arbitrage explicite plutôt que par défaut. Le tag `v0.8.0`
 est posé sur `main`, `develop` restant ancêtre et le commit de livraison portant deux parents
 (`ECART-026`). Les stories `#207`, `#208`, `#209` et `#212` sont fermées manuellement sur leurs
-preuves propres ; `#210` reste ouverte, bloquée par `ECART-068` ; `#211` reste ouverte, `US005`
-étant reportée ; l'épic `#206` est clos à `G8`. Cette décision clôt le LOT 8 ; elle n'ouvre pas le
-LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le 08/10/2026.
+preuves propres ; `#210` était alors bloquée par `ECART-068`, fermé par l'audit du LOT 10, et est
+close lors de la réconciliation du 02/11. `#211` reste ouverte hors jalon : la vidéo d'accueil est
+reportée en **V1**, pas un résidu de `G8`. L'épic `#206` est clos à `G8`. Cette décision clôt le
+LOT 8 ; elle n'ouvre pas le LOT 9 — c'est `DEC-635`, une décision distincte, qui l'ouvre le
+08/10/2026.
 
 ---
 
@@ -1300,12 +1308,16 @@ est **FRANCHIE**, le tag `v0.9.0` est posé sur `main`, et le LOT 9 est
 
 ---
 
-## 17. Avancement du LOT 10 — **lot OUVERT**, porte `G10`
+## 17. Avancement du LOT 10 — **lot VERROUILLÉ**, porte `G10` franchie
 
 **Ouvert par Jonathan le 14 octobre 2026 (`DEC-654`).** Plan :
 [`operations/fiche-lot-10.md`](operations/fiche-lot-10.md) — **8** stories, dont **5 `P0`** et
 **3 `P1`**, **six** critères de sortie concordants entre la roadmap et le cahier (Annexe C), et
 **seize** sous-étapes. Épic `#267`, jalon `G10`, stories `#268` à `#275`.
+
+> **État réconcilié le 02/11/2026 :** les seize sous-étapes sont terminées ; Jonathan a franchi
+> `G10` le 25/10/2026 (`DEC-671`), le tag `v0.10.0` est posé et l'épic `#267` est fermé. Les
+> paragraphes suivants conservent le journal chronologique de réalisation.
 
 **`T1` est faite** (`DEC-655`) : les six tables — `audit_event`, `operational_alert`,
 `alert_comment`, `bug_report`, `export_request` (modèle §21) et `data_subject_request` (modèle
@@ -1427,6 +1439,10 @@ décision `DEC-574`, tag **`v0.5.0`** posé sur `14b2bd1` — arbre **vérifié 
 `develop`, `develop` **ancêtre** de `main`, et **deux** parents au commit.
 [`checklist-validation-G5.md`](operations/checklist-validation-G5.md). `T11` a été livrée en **deux**
 pull requests (`DEC-572`) : la lecture — fiche et historique — puis les deux actions du cycle de vie.
+
+> **Réconciliation du 02/11/2026 :** les constats ci-dessous décrivent correctement l'état à
+> `G5`. Les lots suivants ont depuis livré le retrait d'autorisation, les écrans d'écriture et les
+> autres critères résiduels ; `#115`, `#120` et `#121` sont donc clos sans réécrire l'historique.
 
 > **SIX STORIES SUR HUIT SONT FERMÉES, ET LES DEUX QUI RESTENT NE SONT PAS UN OUBLI.** `#120` —
 > `MVP-L05-US005` — porte un critère « **retrait possible** » qui **n'est pas tenu** : la lecture

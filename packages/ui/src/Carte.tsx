@@ -3,9 +3,19 @@
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007. Cahier des charges 13.2, 13.3, 14.
  *
- * « CARTES ARRONDIES, OMBRES DOUCES » — cahier 13.2, litteralement. Le rayon et
- * l'ombre viennent des jetons `--rayon-l` et `--ombre-douce`, pas d'un choix
- * local.
+ * « CARTES ARRONDIES, OMBRES DOUCES » — cahier 13.2. **L'OMBRE A DISPARU EN
+ * `E1`** : la charte v2 est « flat » (1.1), `--ombre-douce` vaut `none`, et la
+ * separation se fait par `1px solid var(--trait)`. Ecart avec le cahier 13.2
+ * consigne a `DEC-682`.
+ *
+ * LA VARIANTE `interactive` — charte 5, `E3`
+ *
+ *   « Variante interactive : survol bordure bleue. » Elle ne change QUE
+ *   l'apparence au survol et au focus : elle ne rend pas la carte cliquable et
+ *   ne lui donne aucun role. Une carte qui PARAITRAIT actionnable sans l'etre
+ *   serait pire que pas d'indice du tout — c'est a l'appelant de poser le lien
+ *   ou le bouton reel a l'interieur, et le `:focus-within` de la feuille fait
+ *   alors remonter le signal de focus jusqu'a la bordure.
  *
  * POURQUOI UN TITRE FACULTATIF CHANGE LE BALISAGE
  *
@@ -29,8 +39,13 @@ import type { HTMLAttributes, ReactNode } from 'react';
 /** Niveaux autorises pour le titre. `h1` est exclu : il appartient a la page. */
 export type NiveauTitre = 'h2' | 'h3' | 'h4';
 
+/** `statique` par defaut. `interactive` n'ajoute qu'un signal visuel. */
+export type VarianteCarte = 'statique' | 'interactive';
+
 export interface ProprietesCarte extends Omit<HTMLAttributes<HTMLElement>, 'className' | 'title'> {
   readonly children: ReactNode;
+  /** `statique` par defaut. Voir l'en-tete : ne rend PAS la carte cliquable. */
+  readonly variante?: VarianteCarte;
   /**
    * Facultatif. S'il est fourni, la carte devient une region nommee.
    *
@@ -49,6 +64,7 @@ export function Carte({
   children,
   titre,
   niveauTitre = 'h2',
+  variante = 'statique',
   ...reste
 }: ProprietesCarte): ReactNode {
   // `useId` et non un compteur : deux cartes rendues cote a cote doivent porter
@@ -57,7 +73,7 @@ export function Carte({
 
   if (titre === undefined) {
     return (
-      <div className="ex-carte" {...reste}>
+      <div className="ex-carte" data-variante={variante} {...reste}>
         {children}
       </div>
     );
@@ -65,7 +81,12 @@ export function Carte({
 
   const Titre = niveauTitre;
   return (
-    <section className="ex-carte" aria-labelledby={identifiantTitre} {...reste}>
+    <section
+      className="ex-carte"
+      data-variante={variante}
+      aria-labelledby={identifiantTitre}
+      {...reste}
+    >
       <Titre className="ex-carte__titre" id={identifiantTitre}>
         {titre}
       </Titre>

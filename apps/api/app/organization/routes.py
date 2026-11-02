@@ -46,6 +46,14 @@ from app.entities.routes import (
 from app.entities.services import resoudre_une_entite_active
 from app.organization.bureaux import BureauDetaille, lire_le_bureau
 from app.organization.cercles import CercleDetaille, MembreDuCercle, lire_le_cercle
+from app.organization.creation import (
+    attribuer_le_booster,
+    attribuer_un_responsable_de_bureau,
+    creer_un_bureau,
+    creer_un_cercle,
+    retirer_le_booster,
+    retirer_un_responsable_de_bureau,
+)
 from app.organization.cycle_de_vie import (
     archiver_un_bureau,
     archiver_un_cercle,
@@ -60,7 +68,10 @@ from app.organization.framework import (
     TitulaireFramework,
     lire_la_page_framework,
 )
-from app.organization.perimetre import ROLES_DE_CYCLE_DE_VIE_FRAMEWORK
+from app.organization.perimetre import (
+    ROLES_D_ATTRIBUTION_FRAMEWORK,
+    ROLES_DE_CYCLE_DE_VIE_FRAMEWORK,
+)
 from app.people.routes import chemin_de_la_photo
 from app.permissions.dependances import (
     CODE_ROLE_REFUSE,
@@ -316,6 +327,114 @@ class ReponseDeRestaurationDUnBureau(BaseModel):
     """Ce que la restauration d'un bureau a produit — `archived_at` redevient NULL."""
 
     version: int
+
+
+#  ===========================================================================
+#  CREATION D'UN CERCLE/BUREAU ET ATTRIBUTION DU BOOSTER/RESPONSABLE DE BUREAU
+#  — LOT 11, `T3`, hors backlog (`fiche-lot-11.md` §1.2). Voir l'en-tete de
+#  `app.organization.creation` et de `app.organization.perimetre`.
+#  ===========================================================================
+
+
+class DemandeDeCreationDeCercle(BaseModel):
+    """§10.2 « Creer un cercle ». `code` unique dans l'entite (modele §25.1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=1, max_length=64, description="Unique dans l'entite — §25.1")
+    nom: str = Field(min_length=1, description="`name`")
+    jeton_de_couleur: str | None = Field(
+        default=None, max_length=64, description="`color_token`, facultatif — §8.1"
+    )
+    description: str | None = Field(default=None, description="Facultative")
+    ordre_d_affichage: int = Field(default=0, ge=0, description="`display_order`, defaut 0")
+    motif: str | None = Field(
+        default=None, max_length=2000, description="Le motif du §18.1 — obligatoire pour `SUPER`."
+    )
+
+
+class ReponseDeCreationDeCercle(BaseModel):
+    """Ce que la creation d'un cercle a produit."""
+
+    identifiant: uuid.UUID
+    code: str
+    version: int
+
+
+class DemandeDeCreationDeBureau(BaseModel):
+    """§10.3 « Creer un bureau ». `code` unique dans l'entite (modele §25.1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=1, max_length=64, description="Unique dans l'entite — §25.1")
+    nom: str = Field(min_length=1, description="`name`")
+    description: str | None = Field(default=None, description="Facultative")
+    localisation: str | None = Field(
+        default=None, description="`location_text`, facultative — §8.3"
+    )
+    ordre_d_affichage: int = Field(default=0, ge=0, description="`display_order`, defaut 0")
+    motif: str | None = Field(
+        default=None, max_length=2000, description="Le motif du §18.1 — obligatoire pour `SUPER`."
+    )
+
+
+class ReponseDeCreationDeBureau(BaseModel):
+    """Ce que la creation d'un bureau a produit."""
+
+    identifiant: uuid.UUID
+    code: str
+    version: int
+
+
+class DemandeDAttributionDeBooster(BaseModel):
+    """§10.2/§20 « Affecter ou remplacer le Booster »."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    person_id: uuid.UUID = Field(description="La personne qui devient Booster de ce cercle")
+    motif: str | None = Field(
+        default=None, max_length=2000, description="Le motif du §18.1 — obligatoire pour `SUPER`."
+    )
+
+
+class ReponseDAttributionDeBooster(BaseModel):
+    """Ce que l'attribution (ou le remplacement) du Booster a produit."""
+
+    affectation: uuid.UUID
+    remplace: bool
+
+
+class DemandeDAttributionDeResponsable(BaseModel):
+    """§10.3/§20 « Affecter les responsables » — ajoute, ne remplace jamais."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    person_id: uuid.UUID = Field(description="La personne qui devient responsable de ce bureau")
+    motif: str | None = Field(
+        default=None, max_length=2000, description="Le motif du §18.1 — obligatoire pour `SUPER`."
+    )
+
+
+class ReponseDAttributionDeResponsable(BaseModel):
+    """Ce que l'attribution d'un responsable de bureau a produit."""
+
+    affectation: uuid.UUID
+
+
+class DemandeDeRetraitFramework(BaseModel):
+    """§20 « Retirer une responsabilite Framework » — aucun champ hors le motif."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    motif: str | None = Field(
+        default=None, max_length=2000, description="Le motif du §18.1 — obligatoire pour `SUPER`."
+    )
+
+
+class ReponseDeRetraitFramework(BaseModel):
+    """Ce que le retrait a produit — l'affectation desormais fermee."""
+
+    affectation: uuid.UUID
 
 
 def _membre(membre: MembreDuCercle, *, parametres: Parametres, code: str) -> MembreRendu:
@@ -694,9 +813,19 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
     garde_du_cycle_de_vie_framework = exiger_un_role_dans_l_entite(
         parametres, ROLES_DE_CYCLE_DE_VIE_FRAMEWORK
     )
+    #  LOT 11, `T3` : grille SEPAREE pour l'attribution — `ADM-E` exclu, voir
+    #  l'en-tete d'`app.organization.perimetre`.
+    garde_d_attribution_framework = exiger_un_role_dans_l_entite(
+        parametres, ROLES_D_ATTRIBUTION_FRAMEWORK
+    )
 
     def _resoudre_l_entite_et_verifier_le_role(
-        connexion: Connection, *, code: str, appelant: SessionEtablie, instant: dt.datetime
+        connexion: Connection,
+        *,
+        code: str,
+        appelant: SessionEtablie,
+        instant: dt.datetime,
+        roles_autorises: frozenset[RoleDeLaMatrice] = ROLES_DE_CYCLE_DE_VIE_FRAMEWORK,
     ) -> tuple[uuid.UUID, frozenset[RoleDeLaMatrice]]:
         """L'entite active, ET les roles reverifies DANS cette transaction.
 
@@ -705,9 +834,14 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
         exactement le motif de `_resoudre_le_cycle` (`app.people.routes`) et de
         `_agir` (`app.content.routes`).
 
+        `roles_autorises` : LOT 11 `T3` l'a rendu PARAMETRABLE — la creation et
+        l'attribution portent deux grilles DIFFERENTES (voir l'en-tete
+        d'`app.organization.perimetre`), et le defaut reste celle du cycle de
+        vie pour les quatre appelants deja existants.
+
         Les roles sont rendus en plus depuis LOT 10 `T7` : `SUPER_ADMINISTRATEUR`
-        fait toujours partie de `ROLES_DE_CYCLE_DE_VIE_FRAMEWORK`, donc le
-        controle du motif (`ECART-064`) n'a besoin que de l'ensemble COMPLET.
+        fait toujours partie des deux grilles, donc le controle du motif
+        (`ECART-064`) n'a besoin que de l'ensemble COMPLET.
         """
         entite = resoudre_une_entite_active(connexion, code)
         if entite is None:
@@ -717,7 +851,7 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 statut=status.HTTP_404_NOT_FOUND,
             )
         permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
-        if not ROLES_DE_CYCLE_DE_VIE_FRAMEWORK & set(permissions.roles):
+        if not roles_autorises & set(permissions.roles):
             raise ErreurApplicative(
                 code=CODE_ROLE_REFUSE, message=MESSAGE_ROLE_REFUSE, statut=status.HTTP_403_FORBIDDEN
             )
@@ -985,5 +1119,420 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
                 motif=demande.motif,
             )
         return ReponseDeRestaurationDUnBureau(version=restaure.version)
+
+    # ========================================================================
+    #
+    #  CREATION D'UN CERCLE/BUREAU, ATTRIBUTION DU BOOSTER ET DU RESPONSABLE DE
+    #  BUREAU — LOT 11, `T3`, hors backlog. Voir l'en-tete de
+    #  `app.organization.creation`.
+    #
+    # ========================================================================
+
+    @routeur.post(
+        "/entities/{code}/circles",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeCreationDeCercle,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §10.2 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`code_deja_pris` : un cercle ou bureau de cette entite le porte deja."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`motif_obligatoire` : `SUPER` autorise l'appel sans motif fourni."
+            },
+        },
+        summary="Creer un cercle",
+        description=(
+            "Matrice §10.2 « Creer un cercle | Entite ». LOT 11, `T3`, hors "
+            "backlog — meme grille que l'archivage et la restauration."
+        ),
+    )
+    def creer_un_cercle_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        demande: DemandeDeCreationDeCercle,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDeCreationDeCercle:
+        """Creer un cercle — matrice §10.2."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            cree = creer_un_cercle(
+                connexion,
+                entite=entite,
+                code=demande.code,
+                nom=demande.nom,
+                jeton_de_couleur=demande.jeton_de_couleur,
+                description=demande.description,
+                ordre_d_affichage=demande.ordre_d_affichage,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDeCreationDeCercle(identifiant=cree.id, code=cree.code, version=cree.version)
+
+    @routeur.post(
+        "/entities/{code}/offices",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDeCreationDeBureau,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : aucun des trois roles du §10.3 dans cette entite, "
+                    "ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`code_deja_pris` : un cercle ou bureau de cette entite le porte deja."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`motif_obligatoire` : `SUPER` autorise l'appel sans motif fourni."
+            },
+        },
+        summary="Creer un bureau",
+        description=(
+            "Matrice §10.3 « Creer un bureau | Entite ». LOT 11, `T3`, hors "
+            "backlog — meme grille que l'archivage et la restauration."
+        ),
+    )
+    def creer_un_bureau_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        demande: DemandeDeCreationDeBureau,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_du_cycle_de_vie_framework),  # noqa: B008
+    ) -> ReponseDeCreationDeBureau:
+        """Creer un bureau — matrice §10.3."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion, code=code, appelant=appelant, instant=instant
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            cree = creer_un_bureau(
+                connexion,
+                entite=entite,
+                code=demande.code,
+                nom=demande.nom,
+                description=demande.description,
+                localisation=demande.localisation,
+                ordre_d_affichage=demande.ordre_d_affichage,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDeCreationDeBureau(identifiant=cree.id, code=cree.code, version=cree.version)
+
+    @routeur.post(
+        "/entities/{code}/circles/{circle_id}/booster",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDAttributionDeBooster,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ESM` ni `SUPER` dans cette entite (§20, "
+                    "`ADM-E` exclu), ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`booster_actif_ailleurs` : cette personne est deja Booster actif "
+                    "dans une autre entite — modele §8.4."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`personne_introuvable`, ou `motif_obligatoire` si `SUPER` "
+                    "autorise l'appel sans motif fourni."
+                )
+            },
+        },
+        summary="Affecter ou remplacer le Booster d'un cercle",
+        description=(
+            "Matrice §10.2/§20 « Affecter ou remplacer le Booster | Entite ». "
+            "LOT 11, `T3`, hors backlog. TOUJOURS un remplacement : la base "
+            "n'autorise qu'un Booster actif par cercle — voir l'en-tete "
+            "d'`app.organization.creation`. Designer la personne DEJA Booster "
+            "active de ce cercle est un NO-OP."
+        ),
+    )
+    def attribuer_le_booster_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        circle_id: Annotated[uuid.UUID, Path(description="L'identifiant du cercle")],
+        demande: DemandeDAttributionDeBooster,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_attribution_framework),  # noqa: B008
+    ) -> ReponseDAttributionDeBooster:
+        """Affecter ou remplacer le Booster d'un cercle — matrice §10.2/§20."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion,
+                code=code,
+                appelant=appelant,
+                instant=instant,
+                roles_autorises=ROLES_D_ATTRIBUTION_FRAMEWORK,
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            attribue = attribuer_le_booster(
+                connexion,
+                entite=entite,
+                cercle=circle_id,
+                personne=demande.person_id,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDAttributionDeBooster(
+            affectation=attribue.affectation, remplace=attribue.remplace
+        )
+
+    @routeur.post(
+        "/entities/{code}/circles/{circle_id}/booster/retrait",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRetraitFramework,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ESM` ni `SUPER` dans cette entite (§20, "
+                    "`ADM-E` exclu), ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": "`affectation_introuvable` : aucun Booster actif sur ce cercle."
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`motif_obligatoire` : `SUPER` autorise l'appel sans motif fourni."
+            },
+        },
+        summary="Retirer le Booster d'un cercle, sans le remplacer",
+        description="Matrice §20 « Retirer une responsabilite Framework | Entite ». LOT 11, `T3`.",
+    )
+    def retirer_le_booster_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        circle_id: Annotated[uuid.UUID, Path(description="L'identifiant du cercle")],
+        demande: DemandeDeRetraitFramework,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_attribution_framework),  # noqa: B008
+    ) -> ReponseDeRetraitFramework:
+        """Retirer le Booster d'un cercle — matrice §20."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion,
+                code=code,
+                appelant=appelant,
+                instant=instant,
+                roles_autorises=ROLES_D_ATTRIBUTION_FRAMEWORK,
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            affectation = retirer_le_booster(
+                connexion,
+                entite=entite,
+                cercle=circle_id,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDeRetraitFramework(affectation=affectation)
+
+    @routeur.post(
+        "/entities/{code}/offices/{office_id}/responsables",
+        status_code=status.HTTP_201_CREATED,
+        response_model=ReponseDAttributionDeResponsable,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ESM` ni `SUPER` dans cette entite (§20, "
+                    "`ADM-E` exclu), ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`deja_responsable_de_bureau` : cette personne est deja responsable "
+                    "actif de ce bureau."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": (
+                    "`personne_introuvable`, ou `motif_obligatoire` si `SUPER` "
+                    "autorise l'appel sans motif fourni."
+                )
+            },
+        },
+        summary="Affecter un responsable de bureau",
+        description=(
+            "Matrice §10.3/§20 « Affecter les responsables | Entite ». LOT 11, "
+            "`T3`, hors backlog. AJOUTE, ne remplace jamais — jusqu'a trois "
+            "responsables actifs (modele §8.4). La borne « un a trois » ne mord "
+            "qu'a la publication de la page du bureau (`DEC-583`), jamais ici — "
+            "voir l'en-tete d'`app.organization.creation`."
+        ),
+    )
+    def attribuer_un_responsable_de_bureau_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        office_id: Annotated[uuid.UUID, Path(description="L'identifiant du bureau")],
+        demande: DemandeDAttributionDeResponsable,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_attribution_framework),  # noqa: B008
+    ) -> ReponseDAttributionDeResponsable:
+        """Affecter un responsable de bureau — matrice §10.3/§20."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion,
+                code=code,
+                appelant=appelant,
+                instant=instant,
+                roles_autorises=ROLES_D_ATTRIBUTION_FRAMEWORK,
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            attribue = attribuer_un_responsable_de_bureau(
+                connexion,
+                entite=entite,
+                bureau=office_id,
+                personne=demande.person_id,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDAttributionDeResponsable(affectation=attribue.affectation)
+
+    @routeur.post(
+        "/entities/{code}/offices/{office_id}/responsables/{affectation_id}/retrait",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeRetraitFramework,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": DESCRIPTION_401},
+            status.HTTP_403_FORBIDDEN: {
+                "description": (
+                    "`acces_refuse` : ni `ESM` ni `SUPER` dans cette entite (§20, "
+                    "`ADM-E` exclu), ou le jeton anti-CSRF manque ou ne correspond pas."
+                )
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Code d'entite inconnu, ou entite non active."
+            },
+            status.HTTP_409_CONFLICT: {
+                "description": (
+                    "`affectation_introuvable` : cette affectation n'est pas une "
+                    "responsabilite active de CE bureau — §2.5, refus par defaut."
+                )
+            },
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "`motif_obligatoire` : `SUPER` autorise l'appel sans motif fourni."
+            },
+        },
+        summary="Retirer un responsable de bureau",
+        description="Matrice §20 « Retirer une responsabilite Framework | Entite ». LOT 11, `T3`.",
+    )
+    def retirer_un_responsable_de_bureau_route(
+        code: Annotated[
+            str,
+            Path(
+                min_length=1, max_length=LONGUEUR_MAXIMALE_CODE, description="Le `code` de l'entite"
+            ),
+        ],
+        office_id: Annotated[uuid.UUID, Path(description="L'identifiant du bureau")],
+        affectation_id: Annotated[uuid.UUID, Path(description="L'identifiant de l'affectation")],
+        demande: DemandeDeRetraitFramework,
+        requete: Request,
+        appelant: SessionEtablie = Depends(garde_d_attribution_framework),  # noqa: B008
+    ) -> ReponseDeRetraitFramework:
+        """Retirer un responsable de bureau — matrice §20."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite, roles = _resoudre_l_entite_et_verifier_le_role(
+                connexion,
+                code=code,
+                appelant=appelant,
+                instant=instant,
+                roles_autorises=ROLES_D_ATTRIBUTION_FRAMEWORK,
+            )
+            exiger_un_motif_si_necessaire(roles, demande.motif)
+            fermee = retirer_un_responsable_de_bureau(
+                connexion,
+                entite=entite,
+                bureau=office_id,
+                affectation=affectation_id,
+                acteur=appelant.personne,
+                instant=instant,
+                motif=demande.motif,
+            )
+        return ReponseDeRetraitFramework(affectation=fermee)
 
     return routeur

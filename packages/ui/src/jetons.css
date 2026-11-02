@@ -2,6 +2,7 @@
  * Jetons du design system, en proprietes personnalisees CSS.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007.
+ * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-682`).
  *
  * ATTENTION — CE FICHIER A UN JUMEAU, ET ILS NE DOIVENT PAS DIVERGER.
  *
@@ -19,35 +20,114 @@
  *
  * LES NOMS DES NEUTRES SONT CEUX DE `T5`, deliberement. La page de statut declare
  * `--encre`, `--fond`, `--trait`, `--ok` et `--ko` depuis `T5` ; les renommer
- * ferait divorcer la page de son propre design system.
+ * ferait divorcer la page de son propre design system. La v2 en AJOUTE trois —
+ * `--surface`, `--titre`, `--trait-fort` — sans en retirer un.
  */
 
+/*
+ * Century Gothic, AUTO-HEBERGEE — charte 3, cahier 13.1, roadmap 2.3.
+ *
+ * **AUCUN CDN, AUCUNE REQUETE SORTANTE.** Les deux fichiers sont versionnes dans
+ * `packages/ui/polices/` et servis par la meme origine que l'application.
+ * `jetons-css.test.ts` verifie qu'aucun `@import` ni `url(https:)` n'apparait
+ * dans cette feuille.
+ *
+ * `font-display: swap` : le texte s'affiche immediatement dans le repli systeme
+ * de `--police`, puis bascule. Jamais de texte invisible pendant le chargement.
+ *
+ * Deux graisses et deux seulement : la fonte n'en fournit pas d'autre, et en
+ * declarer une troisieme ferait produire au navigateur un faux-gras synthetique.
+ *
+ * ⚠ Licence de diffusion a confirmer avant mise en production (charte 8).
+ */
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('../polices/CenturyGothic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('../polices/CenturyGothic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* Typographie — la pile commence par la police officielle et retombe sur le
+     systeme si elle ne charge pas. Voir jetons.ts. */
+  --police: 'Century Gothic', 'Futura', system-ui, sans-serif;
+  --police-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
   /* Marque — SURFACES uniquement. Chaque couleur porte le texte que la mesure
-     de contraste impose : voir jetons.ts, section « ce que la mesure impose ». */
+     de contraste impose, EN LITTERAL : ces surfaces ne basculent pas avec le
+     theme, donc leur texte ne doit pas basculer non plus. Voir jetons.ts. */
   --marque-bleu: #5853ff;
   --marque-bleu-texte: #ffffff;
   --marque-bleu-fonce: #2f2f9b;
   --marque-bleu-fonce-texte: #ffffff;
   --marque-rose: #ff2c9b;
-  --marque-rose-texte: #1a1a1a;
+  --marque-rose-texte: #1a1a2e;
   --marque-jaune: #ffda3e;
-  --marque-jaune-texte: #1a1a1a;
+  --marque-jaune-texte: #2f2f9b;
 
-  /* Degrade de marque — bleu vers rose uniquement (chantier front, DEC-672).
-     DECORATIF SEUL : aucun texte directement dessus, voir jetons.ts. */
-  --degrade-marque: linear-gradient(135deg, #5853ff, #ff2c9b);
+  /* Teintes — fonds de tuiles, badges doux, cercles en teinte. Meme regle du
+     litteral que la marque. */
+  --teinte-bleu: #ecebff;
+  --teinte-bleu-texte: #2f2f9b;
+  --teinte-rose: #ffe4f2;
+  --teinte-rose-texte: #2f2f9b;
+  --teinte-jaune: #fff7d6;
+  --teinte-jaune-texte: #2f2f9b;
+  --teinte-gris: #f5f5f5;
+  --teinte-gris-texte: #2f2f9b;
+  /* Meme surface, texte SOURD : le ton « annule » de la charte 5 (`E3`).
+     Litteral comme les autres — `--encre-douce` basculerait et rendrait
+     2,35:1 en sombre sur cette surface qui, elle, ne bascule pas. */
+  --teinte-gris-sourd: #f5f5f5;
+  --teinte-gris-sourd-texte: #6e6e85;
 
-  /* Neutres et etats — theme clair, repris de T5 sans modification. */
-  --fond: #ffffff;
-  --fond-doux: #f4f4f5;
-  --encre: #1a1a1a;
-  --encre-douce: #555555;
-  --trait: #d4d4d8;
+  /* Les huit cercles — charte 4.
+
+     LES VALEURS SONT ECRITES EN TOUTES LETTRES, PAS EN `var(--marque-bleu)`.
+     La reutilisation est portee par `jetons.ts`, ou `CERCLES.produit` EST
+     l'objet `MARQUE.bleu` : c'est la source de verite qui garantit qu'il n'y a
+     pas deux bleus, et `jetons-css.test.ts` verifie que ce fichier porte la
+     meme valeur. Une indirection `var()` obligerait ce controle a resoudre les
+     references pour comparer, donc a devenir une heuristique (§7.25). */
+  --cercle-produit: #5853ff;
+  --cercle-produit-texte: #ffffff;
+  --cercle-projet: #2f2f9b;
+  --cercle-projet-texte: #ffffff;
+  --cercle-design: #ff2c9b;
+  --cercle-design-texte: #1a1a2e;
+  --cercle-change: #ffda3e;
+  --cercle-change-texte: #2f2f9b;
+  --cercle-data: #ecebff;
+  --cercle-data-texte: #2f2f9b;
+  --cercle-shield: #ffe4f2;
+  --cercle-shield-texte: #2f2f9b;
+  --cercle-forge: #fff7d6;
+  --cercle-forge-texte: #2f2f9b;
+  --cercle-it: #f5f5f5;
+  --cercle-it-texte: #2f2f9b;
+
+  /* Neutres et etats — theme clair. Les SEULES couleurs qui basculent. */
+  --fond: #fafafb;
+  --surface: #ffffff;
+  --fond-doux: #f5f5f5;
+  --encre: #1a1a2e;
+  --encre-douce: #6e6e85;
+  --titre: #2f2f9b;
+  --trait: #e8e8ee;
+  --trait-fort: #d6d6e0;
   --ok: #0f6b3f;
   --ko: #9b1c1c;
 
-  /* Espacements — echelle de 4. */
+  /* Espacements — echelle de 4, inchangee depuis la v1. */
   --espace-xs: 4px;
   --espace-s: 8px;
   --espace-m: 16px;
@@ -55,30 +135,53 @@
   --espace-xl: 32px;
   --espace-xxl: 48px;
 
-  /* Rayons — « cartes arrondies », cahier 13.2. */
-  --rayon-s: 6px;
-  --rayon-m: 12px;
-  --rayon-l: 16px;
+  /* Rayons — charte 2. */
+  --rayon-s: 8px;
+  --rayon-m: 14px;
+  --rayon-l: 20px;
+  --rayon-xl: 28px;
   --rayon-pastille: 999px;
 
-  /* Decoupe hexagonale — chantier front S11 (DEC-673), inspiree du site reel
-     exalt-company.com. Table separee de --rayon-* : ce n'est pas un coin
-     arrondi, voir jetons.ts. */
-  --decoupe-hexagone: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  /* Ombres — NEUTRALISEES par la charte 1.1 (« aucune box-shadow »). Le nom
+     survit a la valeur pour rendre le choix lisible la ou on le chercherait :
+     voir jetons.ts. La separation se fait par `1px solid var(--trait)`. */
+  --ombre-douce: none;
+  --ombre-posee: none;
 
-  /* Ombres — « ombres douces », cahier 13.2. */
-  --ombre-douce: 0 1px 3px rgb(0 0 0 / 8%), 0 4px 12px rgb(0 0 0 / 6%);
-  --ombre-posee: 0 2px 6px rgb(0 0 0 / 10%), 0 8px 24px rgb(0 0 0 / 8%);
+  /* Focus — charte 1.6, non negociable. Un `outline`, jamais une `box-shadow`.
+     S'emploie : `outline: var(--anneau-focus); outline-offset: var(--anneau-focus-decalage);`
 
-  /* Typographie — pile SYSTEME : aucun telechargement, aucun CDN. */
-  --police:
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  --police-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-  --taille-xs: 12px;
+     LE TRAIT EST OPAQUE, et la transparence de 45 % de la charte a ete retiree
+     sur arbitrage de Jonathan : composee sur les fonds reels elle rend 2,33:1
+     en clair et 1,73:1 en sombre, contre les 3:1 qu'exige WCAG 1.4.11 pour un
+     indicateur de focus. Voir l'en-tete de `jetons.ts`. Le bloc sombre plus bas
+     le redeclare : sur fond sombre, le bleu d'accent est `--titre`. */
+  --anneau-focus: 3px solid #5853ff;
+  --anneau-focus-decalage: 2px;
+
+  /* Echelle typographique — charte 3. */
+  --taille-surtitre: 12px;
+  --taille-xs: 13px;
   --taille-s: 14px;
   --taille-m: 16px;
   --taille-l: 20px;
-  --taille-xl: 28px;
+  --taille-xl: 30px;
+  --taille-xxl: 38px;
+  --taille-display: 48px;
+  --graisse-normale: 400;
+  --graisse-forte: 700;
+  --interlettrage-display: -0.025em;
+  --interlettrage-titre: -0.02em;
+  --interlettrage-sous-titre: -0.01em;
+  --interlettrage-surtitre: 0.14em;
+
+  /* Mouvement — charte 2. Toute animation qui les emploie doit etre neutralisee
+     sous `prefers-reduced-motion: reduce` (charte 1.7). */
+  --duree-rapide: 120ms;
+  --duree-base: 200ms;
+  --duree-lente: 360ms;
+  --courbe-sortie: cubic-bezier(0.22, 1, 0.36, 1);
+  --courbe-ressort: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Le theme CLAIR est celui que le navigateur doit annoncer par defaut : voir
      le bloc sombre ci-dessous, qui le corrige explicitement pour l'autre cas. */
@@ -86,7 +189,8 @@
 }
 
 /*
- * Theme sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`).
+ * Theme sombre — chantier front hors lot, S9 (`DEC-672`/`DEC-673`), conserve
+ * tel quel par la refonte v2 (`DEC-682`).
  *
  * UN ATTRIBUT EXPLICITE, PLUS `prefers-color-scheme`
  *
@@ -106,22 +210,32 @@
  *   ne decide qu'une preference d'affichage doive survivre a un changement de
  *   machine).
  *
- *   L'ABSENCE de `data-theme` EST LE CLAIR : `:root` porte deja ses valeurs,
- *   et poser `data-theme="clair"` serait une valeur qu'aucun CSS ne lit. Seul
- *   le sombre a besoin d'un selecteur, exactement comme `@media` ne portait
- *   avant que le bloc qui le change.
+ *   **LA CHARTE v2 MENTIONNE `prefers-color-scheme`, ET CE BLOC NE LE SUIT PAS
+ *   DELIBEREMENT.** Y revenir rejouerait le defaut mesure ci-dessus. Ecart
+ *   consigne a `DEC-682`.
  *
- *   Les sept couples de ce theme sont INCHANGES — memes valeurs qu'avant, donc
- *   toujours AA, remesurees par `jetons.test.ts` — seul le MECANISME qui les
- *   active change.
+ * CE QUI BASCULE, ET CE QUI NE BASCULE PAS
+ *
+ *   Seuls les dix neutres ci-dessous changent. Les surfaces de marque, les
+ *   teintes et les huit cercles gardent leurs valeurs — et surtout leur TEXTE,
+ *   ecrit en litteral plus haut. Six cercles sur huit tomberaient sous le seuil
+ *   d'accessibilite si leur texte suivait `--encre` ou `--titre` : mesure du
+ *   01/11/2026, voir l'en-tete de `jetons.ts`.
  */
 :root[data-theme='sombre'] {
   --fond: #18181b;
+  --surface: #27272a;
   --fond-doux: #27272a;
   --encre: #f4f4f5;
   --encre-douce: #a1a1aa;
+  --titre: #b3afff;
   --trait: #3f3f46;
+  --trait-fort: #52525b;
   --ok: #6ee7a8;
   --ko: #fca5a5;
+  /* ONZIEME BASCULE, ajoutee par `E3` : `--marque-bleu` ne rend que 2,91:1 sur
+     une surface sombre, sous le seuil de 3:1 d'un indicateur de focus. `--titre`
+     y rend 7,44:1. Le trait reste opaque et de meme epaisseur. */
+  --anneau-focus: 3px solid #b3afff;
   color-scheme: dark;
 }

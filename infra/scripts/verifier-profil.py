@@ -325,7 +325,7 @@ def poser_le_decor(
       VALUES (c, '{empreinte}', '{algo}', '{parametres_hachage}'::jsonb, now(), FALSE);
 
       INSERT INTO circle (entity_id, code, name, color_token, display_order)
-      VALUES (e, '{marqueur}-cercle', 'Cercle des essais', 'bleu', 0) RETURNING id INTO ci;
+      VALUES (e, '{marqueur}-cercle', 'Cercle des essais', 'produit', 0) RETURNING id INTO ci;
       -- **UN SECOND CERCLE, SANS JETON DE COULEUR** — `color_token` est NULLABLE
       -- au catalogue. Il est le CAS du couple que le controle 6 bis mesure ; le
       -- premier, qui en porte un, en est le TEMOIN. Defaut `T10-8` : la fiche et
@@ -788,7 +788,7 @@ def main() -> int:
             (c_ for c_ in secondaires if c_.get("nom") == "Cercle sans couleur"), {}
         )
         jetons_justes = (
-            principal.get("jeton_de_couleur") == "bleu"
+            principal.get("jeton_de_couleur") == "produit"
             and sans_couleur.get("nom") == "Cercle sans couleur"
             and "jeton_de_couleur" in sans_couleur
             and sans_couleur["jeton_de_couleur"] is None

@@ -25,15 +25,24 @@ CE QUE « PROFIL INCOMPLET » VEUT DIRE, ET CE QUE LE CAHIER NE DIT PAS
   « Inclus », et le critère du backlog lui-même) sans jamais être défini.
   Mesuré avant d'écrire une ligne : aucune notion de complétude de fiche
   n'existe dans le dépôt. Posé en question à Jonathan le 09/10/2026, avant
-  tout code : **un profil ACTIF est incomplet s'il lui manque au moins une
-  de ses quatre relations organisationnelles courantes** — métier, cercle
-  PRINCIPAL, DSM, statut professionnel. Ce n'est pas une invention : c'est
-  EXACTEMENT ce que `Restauration.relations_a_redonner` (LOT 5, `T8`) mesure
+  tout code : « un profil ACTIF est incomplet s'il lui manque au moins une
+  de ses quatre relations organisationnelles courantes » — métier, cercle
+  PRINCIPAL, DSM, statut professionnel. Ce n'était pas une invention : c'était
+  EXACTEMENT ce que `Restauration.relations_a_redonner` (LOT 5, `T8`) mesurait
   déjà après une restauration, la seule notion de « ce qu'il manque à un
-  profil » qui existe aujourd'hui dans ce dépôt — réutilisée ici à l'identique,
-  jamais réinventée. Le CLIENT n'entre pas dans le calcul : il est
-  CONDITIONNEL au statut (biconditionnelle `mission`/`intercontract`,
-  `T2`/`T3`), donc son absence n'est pas en soi un manque.
+  profil » qui existait alors dans ce dépôt. Le CLIENT n'entre pas dans le
+  calcul : il est CONDITIONNEL au statut (biconditionnelle
+  `mission`/`intercontract`, `T2`/`T3`), donc son absence n'est pas en soi
+  un manque.
+
+  **DEPUIS `DEC-675` (LOT 11 `T5`), LE MÉTIER N'EST PLUS L'UNE DE CES
+  RELATIONS** : le champ étant redevenu facultatif partout — « nous ne
+  voulons plus gérer ce champ » — continuer de compter son absence comme un
+  manque aurait contredit la décision. Reposé à Jonathan avant tout code
+  (`AskUserQuestion`), qui a confirmé le retrait. **Un profil ACTIF est donc
+  désormais incomplet s'il lui manque au moins une de ses TROIS relations
+  organisationnelles restantes** — cercle PRINCIPAL, DSM, statut
+  professionnel.
 
 CE QUE « DERNIERS IMPORTS » MONTRE, ET POURQUOI CE N'EST PAS « TOUS »
 
@@ -137,19 +146,16 @@ SELECT count(*)
  WHERE oi.entity_id = :entite AND oi.state = 'active' AND ({clause})
 """
 
-#  Les QUATRE relations organisationnelles courantes — voir l'en-tête du
-#  module : exactement celles que `Restauration.relations_a_redonner`
-#  (LOT 5, `T8`) mesure déjà. Le CLIENT n'y entre pas : conditionnel au
-#  statut, son absence seule n'est pas un manque (`T2`/`T3`).
+#  Les TROIS relations organisationnelles courantes — voir l'en-tête du
+#  module : le métier en est RETIRÉ depuis `DEC-675` (LOT 11 `T5`), les deux
+#  autres restent exactement celles que `Restauration.relations_a_redonner`
+#  (LOT 5, `T8`) mesure. Le CLIENT n'y entre pas : conditionnel au statut,
+#  son absence seule n'est pas un manque (`T2`/`T3`).
 _COMPTER_PROFILS_INCOMPLETS: Final = """
 SELECT count(*) FROM entity_membership em
 WHERE em.entity_id = :entite AND em.membership_state = 'active' AND ({clause})
   AND (
     NOT EXISTS (
-        SELECT 1 FROM membership_job_assignment mja
-        WHERE mja.entity_membership_id = em.id AND mja.ends_at IS NULL
-    )
-    OR NOT EXISTS (
         SELECT 1 FROM circle_membership cm
         WHERE cm.entity_membership_id = em.id AND cm.membership_type = 'principal'
           AND cm.ends_at IS NULL

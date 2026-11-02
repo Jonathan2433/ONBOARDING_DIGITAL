@@ -2,101 +2,92 @@
  * Jetons du design system eXalt — la source de verite unique.
  *
  * LOT 1, sous-etape T10, story MVP-L01-US007. Cahier des charges 13.1 a 13.4, 14.
+ * REFONTE v2 : chantier design systeme hors lot, etape E1 (`DEC-682`, 01/11/2026),
+ * d'apres `docs/design-systeme/handoff/DESIGN_SYSTEME.md`, versionne avec ce code.
  *
  * ============================================================================
  *  D'OU VIENNENT CES VALEURS — le critere dit « sans dependance visuelle
  *  arbitraire », et c'est la seule partie de ce fichier qui ne se negocie pas.
  * ============================================================================
  *
- * CE QUE LE CAHIER DES CHARGES FOURNIT, ET CE QU'IL NE FOURNIT PAS
+ * CE QUI A CHANGE EN v2, ET CE QUI NE CHANGE PAS
  *
- *   13.1 exige « la charte graphique » et « la police officielle lorsque sa
- *   licence web le permet ». MESURE DU 29/07/2026 : ni l'une ni l'autre n'est
- *   dans le corpus, aucun fichier de design n'est versionne, et le cahier ne
- *   contient AUCUNE couleur hexadecimale — zero occurrence de `#rrggbb`.
+ *   La v1 (LOT 1 `T10`) avait RELEVE sa palette du prototype faute de charte
+ *   versionnee : le cahier 13.1 exige « la charte graphique » et « la police
+ *   officielle », et ni l'une ni l'autre n'etait dans le corpus. Mesure du
+ *   29/07/2026, zero couleur hexadecimale dans le cahier.
  *
- *   13.2 donne en revanche une direction ARTISTIQUE explicite : « visuel, colore,
- *   ludique, cartes arrondies, ombres douces, DEGRADES BLEU, ROSE ET VIOLET,
- *   portraits ronds ».
+ *   LA CHARTE EXISTE DESORMAIS. `docs/design-systeme/handoff/` la porte, avec
+ *   ses polices, ses logos et ses pictogrammes. Les quatre couleurs de marque
+ *   y sont IDENTIQUES a celles relevees du prototype — la v1 avait vu juste —
+ *   et ce que la v2 apporte est ce qui manquait : les teintes, les neutres
+ *   bleutes, l'echelle typographique, et la police officielle elle-meme.
  *
- *   13.4 donne cinq largeurs de recette, litteralement.
- *
- * LES COULEURS DE MARQUE SONT RELEVEES, PAS CHOISIES
- *
- *   Le prototype historique NOMME lui-meme sa palette. Extraites de
- *   `docs/prototype/V1.html` — lignes courtes seulement, les 150 lignes de
- *   Base64 ecartees, conformement au piege documente :
- *
- *       const EXALT_BLUE      = "#5853FF";
- *       const EXALT_DARK_BLUE = "#2F2F9B";
- *       const EXALT_PINK      = "#FF2C9B";
- *       const EXALT_YELLOW    = "#FFDA3E";
- *
- *   Ces quatre valeurs corroborent litteralement le « bleu, rose et violet » du
- *   13.2. Elles sont donc tracees a DEUX sources qui concordent, et non inventees.
- *   Arbitrage de Jonathan du 29/07/2026 : les reprendre.
- *
- *   AUCUNE LIGNE DE CODE DU PROTOTYPE N'EST REPRISE. Seules des valeurs de
- *   couleur, ce que le 13.2 designe comme « l'intention du prototype ». La regle
- *   qui interdit de reutiliser le code du prototype reste entiere.
- *
- * LES NEUTRES ET LES ETATS VIENNENT DE `T5`, ET NE SONT PAS REDEFINIS ICI
- *
- *   `apps/web/src/styles.css` declare depuis `T5` sept proprietes semantiques —
- *   `--encre`, `--encre-douce`, `--fond`, `--fond-doux`, `--trait`, `--ok`,
- *   `--ko` — en theme clair ET sombre. Mesure : les huit couples atteignent AA,
- *   de 6,57 a 17,40. Les redefinir aurait cree deux sources de verite pour la
- *   meme chose, ce que `ECART-022` a appris a ne pas faire. Le design system les
- *   REPREND et se contente d'AJOUTER la couche de marque, qui manquait.
+ *   AUCUNE LIGNE DE CODE DU PROTOTYPE N'EST REPRISE, en v1 comme en v2.
  *
  * ============================================================================
- *  CE QUE LA MESURE IMPOSE, ET QUI N'ETAIT PAS PREVISIBLE
+ *  CE QUE LA MESURE IMPOSE — et elle a corrige la charte sur un point
  * ============================================================================
  *
- * Contrastes WCAG 2.2 releves le 29/07/2026 :
+ * Contrastes WCAG 2.2 recalcules le 01/11/2026, theme clair :
  *
- *     couleur              sur blanc   sur fond sombre
- *     #5853FF bleu             5,13          3,46
- *     #2F2F9B bleu fonce      10,50          1,69
- *     #FF2C9B rose             3,45          5,13
- *     #FFDA3E jaune            1,37         12,95
+ *     couple                                    mesure   annonce par la charte
+ *     #5853FF bleu        + #FFFFFF blanc         5,13            5,1
+ *     #2F2F9B bleu fonce  + #FFFFFF blanc        10,50           10,5
+ *     #FF2C9B rose        + #1A1A2E encre         4,94            5,0
+ *     #FFDA3E jaune       + #2F2F9B titre         7,67            7,7
+ *     #ECEBFF teinte bleu + #2F2F9B titre         8,94          (non annonce)
+ *     #FFE4F2 teinte rose + #2F2F9B titre         8,81          (non annonce)
+ *     #FFF7D6 teinte jaune+ #2F2F9B titre         9,76          (non annonce)
+ *     #F5F5F5 teinte gris + #2F2F9B titre         9,63          (non annonce)
  *
- * DEUX CONSEQUENCES, ET ELLES CONTRAIGNENT LA CONCEPTION :
+ * LE POINT QUE LA MESURE A CORRIGE, ET IL ETAIT DANS LA CHARTE ELLE-MEME
  *
- *   1. LES COULEURS DE MARQUE SONT DES SURFACES, PAS DES COULEURS DE TEXTE.
- *      Le jaune sur fond clair rend 1,37 et le bleu fonce sur fond sombre 1,69 :
- *      tous deux tres en dessous du seuil de 4,5. Chaque couleur de marque porte
- *      donc son `texte` apparie, determine par la MESURE et non par un choix.
+ *   `jetons.css` fourni ecrivait le texte des cercles en `var(--encre)` et
+ *   `var(--titre)`. Ces deux variables BASCULENT en theme sombre, alors que les
+ *   surfaces de marque et les teintes, elles, ne basculent pas. Mesure du
+ *   01/11/2026 : SIX cercles sur huit tombaient sous le seuil en sombre —
+ *   Change a 1,46, pire que le jaune sur blanc (1,37) qui avait justifie toute
+ *   la discipline de la v1.
  *
- *   2. LE PROTOTYPE AVAIT VU LE PROBLEME A MOITIE. Il declare un
- *      `circleTextColors` qui ne corrige QUE le jaune — « texte fonce sur fond
- *      jaune ». La mesure montre que le ROSE et le VERT de succes le reclament
- *      aussi : 4,94 et 5,48 avec du texte fonce, contre 3,45 et 3,11 avec du
- *      blanc. Reprendre le prototype tel quel aurait donc reconduit deux defauts
- *      d'accessibilite.
+ *   LA REGLE QUI EN DECOULE, ET ELLE EST STRUCTURELLE :
  *
- * `jetons.test.ts` RECALCULE chacun de ces couples et ECHOUE sous le seuil. Les
- * ratios ecrits en commentaire sont indicatifs ; le controle, lui, mesure.
+ *     une surface qui ne bascule pas porte un texte qui ne bascule pas.
+ *
+ *   Les textes apparies aux surfaces de marque et aux teintes sont donc des
+ *   LITTERAUX, jamais des `var()`. C'est deja ce que la charte fait pour les
+ *   quatre couples de marque, et ce que sa propre capture de reference montre :
+ *   le badge jaune y garde un texte #2F2F9B en theme sombre, releve au pixel.
+ *
+ *   Seuls les neutres (`THEMES`) basculent, et leurs couples sont mesures dans
+ *   LES DEUX themes par `jetons.test.ts`.
  *
  * ============================================================================
- *  CE QUE CE FICHIER NE CONTIENT PAS, ET POURQUOI
+ *  CE QUE CE FICHIER NE CONTIENT PLUS, ET POURQUOI
  * ============================================================================
  *
- *   - LES COULEURS DE CERCLE. Le prototype en declare huit, indexees par nom de
- *     cercle : Produit, Design, Projet, Change, Data, Shield, Forge, IT. Le
- *     cahier 13.1 les mentionne — « des couleurs de cercles propres a chaque
- *     entite ». Mais un cercle est une notion METIER du LOT 6, et `ECART-014`
- *     montre que sa denomination n'est meme pas stabilisee. Les inscrire ici
- *     serait anticiper le LOT 6. Les huit valeurs sont relevees dans le compte
- *     rendu de `T10` pour que le LOT 6 les retrouve.
+ *   - LE DEGRADE DE MARQUE. La charte 1.1 est categorique : « aucun degrade ».
+ *     `DEGRADE_MARQUE` et ses quatre temoins de « zone morte » sont retires —
+ *     ils prouvaient qu'aucune couleur de texte ne couvre tout le degrade, ce
+ *     qui n'a plus d'objet une fois le degrade supprime. La page nationale, son
+ *     unique consommateur, passe a un aplat de bleu fonce.
  *
- *   - LA POLICE OFFICIELLE. Elle n'est pas nommee par le corpus, et le 13.1 la
- *     conditionne a sa licence web. La pile ci-dessous est donc SYSTEME : aucun
- *     telechargement, aucune dependance a un CDN — ce que la roadmap 2.3
- *     interdit par ailleurs. Question ouverte au registre.
+ *   - LA DECOUPE HEXAGONALE. `DECOUPES.hexagone` avait ete posee par le
+ *     chantier `S11` (`DEC-673`, 28/10/2026) d'apres le site exalt-company.com.
+ *     La capture de reference de la charte montre des avatars RONDS. Arbitrage
+ *     de Jonathan du 01/11/2026 : la charte fait foi, `S11` est defait.
+ *
+ *   - LA GRAISSE 600. Century Gothic n'a que Regular (400) et Bold (700) ;
+ *     declarer une graisse intermediaire ferait produire au navigateur un
+ *     faux-gras synthetique, que la charte 3 exclut en ramenant les graisses
+ *     800/900 de la V1 a 700.
  */
 
 import { SEUIL_AA_GRAND_TEXTE, SEUIL_AA_TEXTE_NORMAL } from './contraste.js';
+//  TYPE SEUL, DONC AUCUNE DEPENDANCE A L'EXECUTION — ce fichier reste la source
+//  de verite des VALEURS et n'embarque pas les 88 courbes du catalogue. Ce que
+//  l'import apporte est que `picto: 'fuse'` ne compile pas (§7.35).
+import type { ClePicto } from './pictos.js';
 
 /** Un fond et le texte qui doit s'y poser, avec le seuil que le couple doit atteindre. */
 export interface CoupleColore {
@@ -109,48 +100,133 @@ export interface CoupleColore {
 }
 
 /**
- * Les quatre couleurs de marque, relevees du prototype qui les nomme.
+ * Les quatre couleurs de marque. Employees en SURFACE.
  *
- * Employees en SURFACE. Chacune porte le texte que la mesure impose.
+ * **LE TEXTE APPARIE EST UN LITTERAL, JAMAIS UNE `var()`** — voir l'en-tete,
+ * section « le point que la mesure a corrige ». Ces quatre surfaces sont les
+ * memes dans les deux themes ; leur texte doit l'etre aussi.
  */
 export const MARQUE = {
   bleu: { surface: '#5853FF', texte: '#FFFFFF', seuil: SEUIL_AA_TEXTE_NORMAL },
   bleuFonce: { surface: '#2F2F9B', texte: '#FFFFFF', seuil: SEUIL_AA_TEXTE_NORMAL },
-  rose: { surface: '#FF2C9B', texte: '#1A1A1A', seuil: SEUIL_AA_TEXTE_NORMAL },
-  jaune: { surface: '#FFDA3E', texte: '#1A1A1A', seuil: SEUIL_AA_TEXTE_NORMAL },
+  rose: { surface: '#FF2C9B', texte: '#1A1A2E', seuil: SEUIL_AA_TEXTE_NORMAL },
+  jaune: { surface: '#FFDA3E', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
 } as const satisfies Record<string, CoupleColore>;
 
 /**
- * Le degrade de marque — cahier 13.2, « degrades bleu, rose et violet ».
+ * Les teintes — fonds de tuiles, badges doux, cercles en teinte.
  *
- * Chantier front hors lot, sous-etape S1 (`DEC-672`, 25/10/2026). Arbitrage
- * explicite de Jonathan : BLEU VERS ROSE UNIQUEMENT, aucune troisieme teinte
- * violette ajoutee — coherent avec `MARQUE` ci-dessus, qui n'en relevait deja
- * aucune du prototype (`DEC-491`, LOT 1 `T10`).
+ * Elles portent toutes le bleu fonce de titre, mesure de 8,81 a 9,76. La teinte
+ * rose accepte AUSSI l'encre (14,32), que la charte 2 nomme en second : les deux
+ * sont mesures, et c'est le titre qui est declare ici parce que c'est lui que la
+ * charte cite en premier pour les quatre.
  *
- * UN DEGRADE DECORATIF, JAMAIS UN FOND DE TEXTE DIRECT — ET C'EST MESURE
- *
- *   Ni le blanc ni le texte sombre n'atteignent AA (4,5) sur l'ETENDUE ENTIERE
- *   du degrade : le blanc tombe a 3,45 a l'extremite rose, le texte sombre
- *   tombe a 3,39 a l'extremite bleue. **ET LA MESURE VA PLUS LOIN QUE CETTE
- *   SEULE CONSTATATION** : vers t=0,75 (`#D536B4`), les DEUX rendent sous le
- *   seuil a la fois — blanc 4,19, sombre 4,16 — une vraie ZONE MORTE ou aucune
- *   couleur de texte, ni l'une ni l'autre, n'atteint AA. `jetons.test.ts` le
- *   prouve explicitement plutot que de supposer qu'un des deux textes reste
- *   toujours lisible quelque part sur le degrade.
- *
- *   LA REGLE QUI EN DECOULE : ce degrade est un fond DECORATIF. Tout texte qui
- *   doit s'y superposer vit dans un conteneur opaque (`Carte`, `Badge`, une
- *   pastille sur `--fond`), jamais directement sur le degrade. Un composant
- *   qui poserait du texte en clair sur `DEGRADE_MARQUE.css` romprait l'AA sans
- *   qu'aucun contrôle de ce fichier ne puisse le voir — a verifier a l'oeil,
- *   dans les sous-etapes d'ecran qui l'emploient.
+ * **MEME REGLE DU LITTERAL QUE `MARQUE`** : ces surfaces ne basculent pas en
+ * theme sombre (arbitrage de Jonathan du 01/11/2026, option « teintes
+ * inchangees »), donc leur texte ne bascule pas non plus.
  */
-export const DEGRADE_MARQUE = {
-  de: MARQUE.bleu.surface,
-  vers: MARQUE.rose.surface,
-  css: `linear-gradient(135deg, ${MARQUE.bleu.surface}, ${MARQUE.rose.surface})`,
-} as const;
+export const TEINTES = {
+  bleu: { surface: '#ECEBFF', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
+  rose: { surface: '#FFE4F2', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
+  jaune: { surface: '#FFF7D6', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
+  gris: { surface: '#F5F5F5', texte: '#2F2F9B', seuil: SEUIL_AA_TEXTE_NORMAL },
+  /**
+   * MEME SURFACE QUE `gris`, MAIS UN TEXTE SOURD — le ton « annule » de la
+   * charte 5, ajoute par `E3`.
+   *
+   * La charte ecrit « annule (gris/encre-douce) ». `--encre-douce` BASCULE avec
+   * le theme, et cette surface NON : en sombre, `#A1A1AA` sur `#F5F5F5` rend
+   * **2,35:1** — exactement le defaut que `E1` a corrige sur les huit cercles.
+   * Le texte est donc un LITTERAL, et la regle structurelle de ce fichier tient :
+   * une surface qui ne bascule pas porte un texte qui ne bascule pas.
+   *
+   * **4,55:1, soit 0,05 au-dessus du seuil.** C'est la marge la plus fine de
+   * toute la palette, et elle est voulue : un badge fait 13px GRAS, ce que WCAG
+   * ne classe PAS en « grand texte » (il faut 18,66px gras), donc le seuil
+   * applicable est bien 4,5 et non 3. Assombrir le texte le rendrait moins
+   * sourd, ce qui est tout le sens de ce ton.
+   */
+  grisSourd: { surface: '#F5F5F5', texte: '#6E6E85', seuil: SEUIL_AA_TEXTE_NORMAL },
+} as const satisfies Record<string, CoupleColore>;
+
+/**
+ * Un cercle de la charte 4 : son nom, son couple de couleurs, son pictogramme.
+ *
+ * Il ETEND `CoupleColore` plutot que de l'encapsuler, et le motif est litteral :
+ * la charte demande `{ nom, surface, texte, picto }`, et c'est exactement ce que
+ * cette forme porte — `seuil` venant en plus, du couple reutilise.
+ */
+export interface DefinitionDeCercle extends CoupleColore {
+  /** Le nom affiche, tel que la charte 4 l'ecrit : « Produit », « IT ». */
+  readonly nom: string;
+  /** La cle du pictogramme officiel dans `PICTOS`. */
+  readonly picto: ClePicto;
+}
+
+/**
+ * Les huit cercles — charte 4, « Cercles (donnees, pas en dur) ».
+ *
+ * Chantier design systeme v2, etape `E4` (`DEC-682`). `E1` n'avait pose que la
+ * COULEUR et renvoyait le `picto` a plus tard ; il est ici, et la table porte
+ * desormais les quatre colonnes que la charte demande.
+ *
+ * ============================================================================
+ *  LA CLE EST LE JETON QUE LA BASE STOCKE — arbitrage de Jonathan, 02/11/2026
+ * ============================================================================
+ *
+ * `circle.color_token` (modele 8.1, « Reference de couleur locale ») est un
+ * texte LIBRE, nullable, sans aucune enumeration nulle part dans le corpus.
+ * Mesure du 02/11/2026 sur la base de developpement : **112 cercles sans jeton**
+ * et **quatre** qui en portent un — `bleu`, `rose`, `bleu-fonce`, `jaune`, sur
+ * la seule entite de demonstration.
+ *
+ * **ET LE `picto` TRANCHE LA QUESTION DE LA CLE.** Une etiquette de COULEUR ne
+ * peut pas designer un pictogramme : `bleu` ne dit pas s'il faut dessiner
+ * `fusee` ou `camembert`. Deux cercles peuvent partager une surface ; ils ne
+ * partagent pas leur dessin. La cle de cette table est donc une IDENTITE DE
+ * CERCLE, pas une couleur — et le jeton stocke prend ces huit valeurs.
+ *
+ * Les deux autres lectures ont ete posees a Jonathan et ecartees par lui :
+ * garder les etiquettes de couleur et les traduire rendrait QUATRE des huit
+ * lignes — Data, Shield, Forge, IT — structurellement inatteignables, donc
+ * leurs pictogrammes jamais affichables (§7.39) ; et laisser la table sans
+ * consommateur reporterait le « pas en dur » de la charte sans rien resoudre.
+ *
+ * AUCUNE MIGRATION N'EST REQUISE : la colonne accepte deja n'importe quel texte
+ * de 64 caracteres. Un jeton inconnu, et `null`, restent neutres exactement
+ * comme avant — c'est le comportement que `couleurDuCercle` (`apps/web`) porte
+ * depuis le LOT 5, et le defaut `T10-8` interdit de l'indexer par `null`.
+ *
+ * ============================================================================
+ *  CE QUE LA FORME GARANTIT, SANS CONTROLE A MAINTENIR
+ * ============================================================================
+ *
+ * `picto` est type `ClePicto` : une cle inventee ne compile pas. Le « >= 24px »
+ * de la charte 4 etait deja tenu par `TaillePicto` a `E2` ; la fidelite du
+ * pictogramme l'est ici. Ni l'un ni l'autre ne repose sur un commentaire
+ * (§7.35 de la passation).
+ *
+ * Chaque couple reutilise une surface DEJA declaree par `MARQUE` ou `TEINTES` :
+ * aucune couleur nouvelle n'est introduite ici, et `jetons.test.ts` l'exige.
+ *
+ * **LA CLE EST LE NOM EN MINUSCULES**, sans exception — `IT` donne `it`. C'est
+ * ce qui fait qu'un neuvieme cercle ajoute a la charte entre ici sans qu'on ait
+ * a inventer sa cle, et `cercles.test.ts` l'exige dans les deux sens contre le
+ * tableau de `DESIGN_SYSTEME.md` lui-meme.
+ */
+export const CERCLES = {
+  produit: { nom: 'Produit', ...MARQUE.bleu, picto: 'fusee' },
+  projet: { nom: 'Projet', ...MARQUE.bleuFonce, picto: 'plan-de-projet-fusee' },
+  design: { nom: 'Design', ...MARQUE.rose, picto: 'ampoule-idee' },
+  change: { nom: 'Change', ...MARQUE.jaune, picto: 'dialogue' },
+  data: { nom: 'Data', ...TEINTES.bleu, picto: 'camembert' },
+  shield: { nom: 'Shield', ...TEINTES.rose, picto: 'bouclier-valide' },
+  forge: { nom: 'Forge', ...TEINTES.jaune, picto: 'engrenages-multiples' },
+  it: { nom: 'IT', ...TEINTES.gris, picto: 'serveur' },
+} as const satisfies Record<string, DefinitionDeCercle>;
+
+/** Les huit valeurs que `circle.color_token` peut prendre et que l'on sait rendre. */
+export type CleCercle = keyof typeof CERCLES;
 
 /**
  * Les couleurs de marque employees en ACCENT — texte ou bordure sur le fond de
@@ -159,8 +235,12 @@ export const DEGRADE_MARQUE = {
  *
  * Le jaune sur fond clair rend 1,37 et le bleu fonce sur fond sombre 1,69 :
  * aucune taille de texte ne les rachete. Les omettre n'est pas un oubli, c'est
- * le resultat de la mesure — et `jetons.test.ts` verifie qu'ils sont bien absents,
- * sans quoi une reintroduction distraite passerait inapercue.
+ * le resultat de la mesure — et `jetons.test.ts` verifie qu'ils sont bien
+ * absents, sans quoi une reintroduction distraite passerait inapercue.
+ *
+ * `THEMES.sombre.titre` (#B3AFFF) ne figure pas ici : ce n'est pas une couleur
+ * de marque employee en accent, c'est le neutre de titre du theme sombre, et il
+ * est mesure avec les autres neutres.
  */
 export const ACCENTS_ADMIS = {
   clair: { bleu: MARQUE.bleu.surface, bleuFonce: MARQUE.bleuFonce.surface },
@@ -168,36 +248,57 @@ export const ACCENTS_ADMIS = {
 } as const;
 
 /**
- * Les neutres et les etats, REPRIS de `T5` sans modification.
+ * Les neutres et les etats — les SEULES couleurs qui basculent avec le theme.
  *
- * Source : `apps/web/src/styles.css`. Les noms sont ceux que `T5` a choisis ; le
- * design system ne les renomme pas, sous peine de faire divorcer la page de
- * statut de son propre design system.
+ * LES NOMS DE `T5` SONT CONSERVES, et c'est toujours la meme raison : la page de
+ * statut declare `--encre`, `--fond`, `--trait`, `--ok` et `--ko` depuis `T5` du
+ * LOT 1 ; les renommer ferait divorcer la page de son propre design system.
+ * La v2 en AJOUTE trois — `surface`, `titre`, `traitFort` — sans en retirer un.
+ *
+ * `ok` ET `ko` SONT UN ECART A LA CHARTE, ASSUME ET BORNE. La charte 2 les dit
+ * « conserves pour la page de statut uniquement », et sa capture montre que les
+ * alertes metier passent au rose et au bleu de marque. Les jetons restent donc
+ * declares et mesures ; leur retrait des composants `Alerte`/`Notification`
+ * appartient a l'etape E3. Consigne au titre de la charte 8.
+ *
+ * **LE THEME SOMBRE S'ACTIVE PAR `data-theme`, PAS PAR `prefers-color-scheme`.**
+ * La charte 2 mentionne `prefers-color-scheme` entre parentheses ; le depot a
+ * tranche l'inverse le 27/10/2026, chantier `S9` (`DEC-673`), apres avoir mesure
+ * qu'un systeme regle en sombre faisait basculer toute l'application SANS aucun
+ * bouton pour revenir au clair. Revenir au `@media` rejouerait ce defaut : le
+ * clair reste le theme de premiere visite.
  */
 export const THEMES = {
   clair: {
-    fond: '#FFFFFF',
-    fondDoux: '#F4F4F5',
-    encre: '#1A1A1A',
-    encreDouce: '#555555',
-    trait: '#D4D4D8',
+    fond: '#FAFAFB',
+    surface: '#FFFFFF',
+    fondDoux: '#F5F5F5',
+    encre: '#1A1A2E',
+    encreDouce: '#6E6E85',
+    titre: '#2F2F9B',
+    trait: '#E8E8EE',
+    traitFort: '#D6D6E0',
     ok: '#0F6B3F',
     ko: '#9B1C1C',
   },
   sombre: {
     fond: '#18181B',
+    surface: '#27272A',
     fondDoux: '#27272A',
     encre: '#F4F4F5',
     encreDouce: '#A1A1AA',
+    titre: '#B3AFFF',
     trait: '#3F3F46',
+    traitFort: '#52525B',
     ok: '#6EE7A8',
     ko: '#FCA5A5',
   },
 } as const;
 
 /**
- * Espacements, en pixels. Echelle de 4, qui est celle des valeurs deja employees
- * par la page de statut de `T5`.
+ * Espacements, en pixels. Echelle de 4, INCHANGEE depuis la v1 — la charte 2 le
+ * dit explicitement, et c'est le seul groupe de jetons que la refonte ne touche
+ * pas.
  */
 export const ESPACEMENTS = {
   xs: '4px',
@@ -209,68 +310,146 @@ export const ESPACEMENTS = {
 } as const;
 
 /**
- * Rayons de bordure. Le cahier 13.2 dit « cartes arrondies » : le rayon des
- * cartes est donc franc, et non decoratif.
+ * Rayons de bordure — charte 2.
+ *
+ * Plus francs qu'en v1 (6/12/16) : 8 pour les petits elements, 14 pour les
+ * champs et les tuiles, 20 pour les cartes, 28 pour les grandes sections
+ * d'accueil et la fiche d'arrivee, et la pastille pour les boutons et badges.
  */
 export const RAYONS = {
-  s: '6px',
-  m: '12px',
-  l: '16px',
+  s: '8px',
+  m: '14px',
+  l: '20px',
+  xl: '28px',
   pastille: '999px',
 } as const;
 
 /**
- * Decoupes de forme — chantier front hors lot, sous-etape S11 (`DEC-673`,
- * 28/10/2026). Inspiration du site reel `exalt-company.com` (§8.1 de la fiche
- * de chantier) : les photos y sont cadrees en hexagone plutot qu'en cercle.
+ * Ombres — NEUTRALISEES par la charte 1.1, « aucune box-shadow ».
  *
- * UN `clip-path`, JAMAIS UN `border-radius` DE PLUS
+ * **POURQUOI `none` PLUTOT QUE LA SUPPRESSION DU JETON.** Le cahier 13.2 dit
+ * « ombres douces », et la charte le contredit deliberement (ecart consigne,
+ * charte 8). Garder le nom avec la valeur `none` rend ce choix LISIBLE a
+ * l'endroit exact ou l'on chercherait l'ombre, et fait echouer bruyamment toute
+ * tentative d'en redeclarer une ailleurs — un jeton supprime laisserait la voie
+ * libre a une `box-shadow` ecrite en dur.
  *
- *   `RAYONS` ne decrit que des coins arrondis — un hexagone n'en est pas un, et
- *   l'inscrire dans cette table aurait fait echouer le controle qui exige que
- *   chaque rayon soit un entier en pixels (`jetons.test.ts`). Une table separee
- *   est donc necessaire, pas une extension de `RAYONS`.
- *
- * AUCUNE NOUVELLE MESURE DE CONTRASTE
- *
- *   Un decoupage de forme n'est ni une couleur ni un couple surface/texte : il
- *   ne change que le contour d'un avatar ou d'une photo, jamais ce qui s'y
- *   affiche. Rien a ajouter a `jetons.test.ts` au titre du contraste.
- *
- * Le polygone pose un sommet en haut et en bas, deux cotes plats a gauche et a
- * droite — la silhouette d'hexagone la plus reconnaissable pour un avatar, et
- * celle qu'emploie le site reel.
- */
-export const DECOUPES = {
-  hexagone: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-} as const;
-
-/**
- * Ombres. Le cahier 13.2 dit « ombres DOUCES » : opacite faible et diffusion
- * large, jamais de trait dur.
+ * La separation se fait desormais par une bordure `1px solid var(--trait)`.
  */
 export const OMBRES = {
-  douce: '0 1px 3px rgb(0 0 0 / 8%), 0 4px 12px rgb(0 0 0 / 6%)',
-  posee: '0 2px 6px rgb(0 0 0 / 10%), 0 8px 24px rgb(0 0 0 / 8%)',
+  douce: 'none',
+  posee: 'none',
 } as const;
 
 /**
- * Typographie. PILE SYSTEME, et c'est un choix contraint, pas un defaut.
+ * L'anneau de focus — charte 1.6, et c'est une exigence non negociable.
  *
- * Le cahier 13.1 exige « la police officielle lorsque sa licence web le
- * permet ». Elle n'est pas nommee dans le corpus et sa licence n'est pas
- * tranchee. Une pile systeme ne telecharge rien, ne depend d'aucun CDN — ce que
- * la roadmap 2.3 interdit — et se remplacera par une declaration `@font-face`
- * le jour ou la police sera connue, sans toucher aux composants.
+ * **UN `outline`, JAMAIS UNE `box-shadow`.** La charte 1.6 ecrit
+ * « outline: 3px solid …; outline-offset: 2px » ; `jetons.css` fourni le
+ * proposait en `box-shadow`, ce que la charte 1.1 interdit par ailleurs. La
+ * forme `outline` est retenue : elle est celle que la charte specifie, elle ne
+ * participe pas au flux, et elle survit a `overflow: hidden`.
+ *
+ * **LA TRANSPARENCE DE 45 % DE LA CHARTE A ETE RETIREE, SUR ARBITRAGE EXPLICITE
+ * DE JONATHAN (02/11/2026), ET LA MESURE EST LA RAISON.**
+ *
+ *   Un `outline` semi-transparent prend la couleur de ce qu'il recouvre. Compose
+ *   sur les fonds reels, `rgb(88 83 255 / 45%)` donne :
+ *
+ *     #A3A0FF sur une surface claire  ->  2,33:1
+ *     #423F9F sur une surface sombre  ->  1,73:1
+ *
+ *   WCAG 2.2 AA, critere 1.4.11, exige **3:1** pour un indicateur de focus. Les
+ *   deux echouent, et c'est le SEUL repere de position pour qui navigue au
+ *   clavier. Le cahier 14 fait de WCAG AA une exigence dure, et la regle de
+ *   preseance du projet donne le cahier gagnant.
+ *
+ *   Le trait est donc OPAQUE, et il bascule : bleu de marque en theme clair
+ *   (5,13:1), `--titre` en theme sombre (7,44:1). C'est la meme regle que pour
+ *   le texte bleu du bouton discret et le remplissage de `Progression` — sur un
+ *   fond sombre, le bleu d'accent est `--titre`, jamais `--marque-bleu`, qui n'y
+ *   rend que 2,91:1.
+ *
+ *   **CE N'EST PAS UNE CORRECTION GRATUITE DE L'EXISTANT** : le depot employait
+ *   deja un trait opaque `var(--marque-bleu)` partout depuis le LOT 1 — juste en
+ *   theme clair, et en echec en sombre depuis `S9`. Ce jeton corrige les deux.
+ *
+ * Ecart avec la charte 1.6 a consigner (`E7`).
+ */
+export const ANNEAU_FOCUS = {
+  trait: `3px solid ${MARQUE.bleu.surface}`,
+  traitSombre: `3px solid ${THEMES.sombre.titre}`,
+  decalage: '2px',
+} as const;
+
+/**
+ * Typographie — Century Gothic, AUTO-HEBERGEE.
+ *
+ * LA POLICE OFFICIELLE EXISTE DESORMAIS, ET ELLE NE VIENT D'AUCUN CDN
+ *
+ *   Le cahier 13.1 exige « la police officielle lorsque sa licence web le
+ *   permet », et la roadmap 2.3 interdit les CDN. La v1 s'etait donc rabattue
+ *   sur une pile systeme, faute de police nommee. La charte 3 la nomme et la
+ *   fournit : les deux fichiers vivent dans `packages/ui/polices/` et sont
+ *   declares par `@font-face` dans `jetons.css`. Aucune requete sortante.
+ *
+ *   ⚠ LA LICENCE DE DIFFUSION RESTE A CONFIRMER AVANT MISE EN PRODUCTION.
+ *   La charte 8 le dit elle-meme. Century Gothic est une police commerciale ;
+ *   l'auto-heberger ne vaut pas licence. Point consigne, non resolu ici.
+ *
+ * `system-ui` RESTE DANS LA PILE, ET CE N'EST PAS UN RESIDU. C'est le repli qui
+ * garantit un texte lisible si la police ne charge pas — `font-display: swap`
+ * rend d'abord ce repli. `jetons.test.ts` l'exige explicitement.
  */
 export const TYPOGRAPHIE = {
-  pile:
-    "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', " +
-    "Arial, 'Noto Sans', sans-serif",
+  pile: "'Century Gothic', 'Futura', system-ui, sans-serif",
   pileMonospace: "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
-  tailles: { xs: '12px', s: '14px', m: '16px', l: '20px', xl: '28px' },
-  graisses: { normale: 400, moyenne: 600, forte: 700 },
+  /**
+   * L'echelle de la charte 3. `surtitre` et `xs` partagent presque leur taille
+   * et ne se distinguent que par l'emploi : `surtitre` est bold, en majuscules
+   * et tres espace ; `xs` est du texte courant de legende.
+   */
+  tailles: {
+    surtitre: '12px',
+    xs: '13px',
+    s: '14px',
+    m: '16px',
+    l: '20px',
+    xl: '30px',
+    xxl: '38px',
+    display: '48px',
+  },
+  /** Century Gothic ne fournit que ces deux graisses — voir l'en-tete. */
+  graisses: { normale: 400, forte: 700 },
   hauteurs: { serree: 1.25, normale: 1.5 },
+  /** Interlettrage des grands titres, charte 3. Negatif : les titres se serrent. */
+  interlettrages: {
+    display: '-0.025em',
+    titre: '-0.02em',
+    sousTitre: '-0.01em',
+    surtitre: '0.14em',
+  },
+} as const;
+
+/**
+ * Mouvement — charte 2.
+ *
+ * Trois durees seulement : la pression d'un bouton, le survol, et le
+ * retournement d'une carte de trombinoscope. Toute animation qui les emploie
+ * doit etre neutralisee sous `prefers-reduced-motion: reduce` (charte 1.7) —
+ * une regle que le CSS porte, et qu'aucun jeton ne peut garantir a lui seul.
+ */
+export const MOUVEMENT = {
+  durees: { rapide: '120ms', base: '200ms', lente: '360ms' },
+  //  **LES ZEROS DE TETE ET LES ESPACES SONT CEUX DE PRETTIER, PAS UN CHOIX.**
+  //  La charte ecrit `cubic-bezier(.22,1,.36,1)` ; Prettier normalise toute
+  //  valeur CSS en `cubic-bezier(0.22, 1, 0.36, 1)`, strictement equivalente.
+  //  La source doit porter la forme NORMALISEE, sans quoi le controle de
+  //  divergence `jetons-css.test.ts` echouerait apres chaque `make format`.
+  courbes: {
+    sortie: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    ressort: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  },
 } as const;
 
 /**

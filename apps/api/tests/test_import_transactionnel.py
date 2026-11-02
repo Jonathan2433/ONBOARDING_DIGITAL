@@ -436,6 +436,67 @@ def test_metier_inconnu_du_catalogue_est_une_decision(
 
 
 @pytest.mark.integration
+def test_un_metier_absent_pour_un_profil_actif_est_importe_quand_meme(
+    cx: Connection, parametres_de_la_stack: Parametres
+) -> None:
+    """`DEC-675` (LOT 11 `T5`) : `E-METIER-001` est retire, meme pour un actif.
+
+    Temoin negatif apparie a `test_metier_inconnu_du_catalogue_est_une_decision`
+    (§7.39) : AVANT ce retrait, cette meme ligne — un profil actif
+    (`date_arrivee` par defaut, anterieure a `INSTANT`), sans `F11` — aurait
+    ete rejetee par `CODE_METIER_ABSENT`. Elle est desormais `IMPORTED`, et
+    AUCUNE ligne `membership_job_assignment` n'est posee pour elle.
+    """
+    entite = _entite(cx, "T3-SANSMETIER")
+    _domaine_local(cx, entite=entite.identifiant)
+    acteur = _personne(cx, "a3-sansmetier")
+    cercle = _cercle(cx, entite=entite.identifiant, code="DATA")
+    #  `E-DSM-001` frappe tout consultant ACTIF sans DSM — hors sujet de ce
+    #  test, un DSM deja existant l'evite (voir `_dsm_existant`).
+    email_dsm = _dsm_existant(cx, entite=entite.identifiant, suffixe="sansmetier3")
+    contenu = (
+        ENTETE_COMPLET
+        + "\n"
+        + _ligne_complete(
+            email=f"sansmetier3@{EMAIL_DOMAINE}",
+            entite=entite.code,
+            cercle_principal="DATA",
+            email_dsm=email_dsm,
+        )
+        + "\n"
+    )
+
+    lot = _deposer_ou_sauter(
+        cx, parametres_de_la_stack, entite=entite.identifiant, acteur=acteur, contenu=contenu
+    )
+    rapport = lancer_l_import(
+        cx,
+        entite=entite.identifiant,
+        lot=lot.identifiant,
+        acteur=acteur,
+        roles=ROLES_ESM,
+        instant=INSTANT,
+    )
+    assert rapport.lignes_importees == 1
+    ligne = _ligne(cx, lot.identifiant, 1)
+    assert ligne.state == EtatLigneImport.IMPORTED.value
+    #  Des AVERTISSEMENTS subsistent (nom en majuscules, presentation absente,
+    #  hors sujet de ce test) : seule l'ABSENCE de tout code E/D lie au
+    #  metier compte ici — `CODE_METIER_ABSENT` n'existe plus du tout (§
+    #  en-tete d'`app.imports.organisation`).
+    assert "E-METIER-001" not in ligne.error_codes
+    assert CODE_METIER_INCONNU_DU_CATALOGUE not in ligne.error_codes
+
+    total = cx.execute(
+        text("SELECT count(*) FROM membership_job_assignment WHERE entity_membership_id = :m"),
+        {"m": ligne.target_membership_id},
+    ).scalar_one()
+    assert total == 0
+    _nettoyer_le_lot(parametres_de_la_stack, entite=entite.identifiant, lot=lot.identifiant)
+    _ = cercle
+
+
+@pytest.mark.integration
 def test_dsm_absent_pour_un_consultant_actif_mais_tolere_pour_un_dsm(
     cx: Connection, parametres_de_la_stack: Parametres
 ) -> None:

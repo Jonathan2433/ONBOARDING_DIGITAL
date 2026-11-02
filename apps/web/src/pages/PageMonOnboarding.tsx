@@ -58,6 +58,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
+import { libelleDuStatut } from '../affichage';
 import {
   annulerUneTache,
   completerLaFiche,
@@ -70,7 +71,17 @@ import { dateComplete } from './PageProfil';
 import { useEntiteConsultee } from './CadreApplicatif';
 
 import type { FicheArrivee, Parcours, TacheDuParcours } from '@onboarding/contracts';
-import { Alerte, Badge, Bouton, Carte } from '@onboarding/ui';
+import {
+  Alerte,
+  Avatar,
+  Badge,
+  Bouton,
+  Carte,
+  CaseACocher,
+  Picto,
+  Progression,
+} from '@onboarding/ui';
+import type { TonBadge } from '@onboarding/ui';
 
 /** Ce que la page a pu charger — même montage que `PageProfil` (LOT 5, `T11`). */
 interface Chargement {
@@ -125,13 +136,11 @@ const LIBELLES_D_ETAT_DE_LA_FICHE: Readonly<Record<string, string>> = {
   archived: 'Archivée',
 };
 
-//  Chantier front, S7 (`DEC-672`) : meme convention a quatre tons que
-//  `PageGestionDesEvenements.tsx`/`PageEditionEvenement.tsx` (`TONS_D_ETAT`),
-//  jamais une nouvelle inventee pour cet ecran.
-const TONS_D_ETAT_DE_LA_FICHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  draft: 'neutre',
-  published: 'ok',
-  archived: 'neutre',
+// `E6` traduit l'ancienne convention chromatique en tons semantiques de la charte.
+const TONS_D_ETAT_DE_LA_FICHE: Readonly<Record<string, TonBadge>> = {
+  draft: 'info',
+  published: 'info',
+  archived: 'annule',
 };
 
 const LIBELLES_D_ETAT_DE_LA_TACHE: Readonly<Record<string, string>> = {
@@ -141,11 +150,11 @@ const LIBELLES_D_ETAT_DE_LA_TACHE: Readonly<Record<string, string>> = {
   cancelled: 'Annulée',
 };
 
-const TONS_D_ETAT_DE_LA_TACHE: Readonly<Record<string, 'neutre' | 'ok' | 'ko' | 'marque'>> = {
-  todo: 'neutre',
-  completed: 'ok',
-  reopened: 'marque',
-  cancelled: 'ko',
+const TONS_D_ETAT_DE_LA_TACHE: Readonly<Record<string, TonBadge>> = {
+  todo: 'info',
+  completed: 'info',
+  reopened: 'info',
+  cancelled: 'annule',
 };
 
 /** La section fiche d'arrivée — complétion, validation et publication. */
@@ -153,11 +162,15 @@ function SectionFiche({
   code,
   appartenance,
   fiche,
+  nomDeLEntite,
   onEnregistre,
 }: {
   readonly code: string;
   readonly appartenance: string;
   readonly fiche: FicheArrivee;
+  //  La charte 6.7 ecrit la pastille « statut · entite » : le nom descend du
+  //  cadre, qui l'a deja resolu, plutot que d'etre relu ici.
+  readonly nomDeLEntite: string;
   readonly onEnregistre: () => void;
 }): JSX.Element {
   const [presentationDeTravail, setPresentationDeTravail] = useState(
@@ -225,25 +238,73 @@ function SectionFiche({
     <Carte titre="Ma fiche d’arrivée">
       <p className="onboarding-fiche-etat">
         État :{' '}
-        <Badge ton={TONS_D_ETAT_DE_LA_FICHE[fiche.etat] ?? 'neutre'}>
+        <Badge ton={TONS_D_ETAT_DE_LA_FICHE[fiche.etat] ?? 'info'}>
           {LIBELLES_D_ETAT_DE_LA_FICHE[fiche.etat] ?? fiche.etat}
         </Badge>
       </p>
 
-      <dl className="onboarding-fiche-organisation">
-        <dt>Date d&rsquo;arrivée</dt>
-        <dd>{dateComplete(fiche.dateDArrivee)}</dd>
-        <dt>Métier</dt>
-        <dd>{fiche.metier ?? 'Non renseigné'}</dd>
-        <dt>Statut</dt>
-        <dd>{fiche.statut ?? 'Non renseigné'}</dd>
-        <dt>Client</dt>
-        <dd>{fiche.client ?? 'Non renseigné'}</dd>
-        <dt>DSM</dt>
-        <dd>{fiche.dsm ?? 'Non renseigné'}</dd>
-        <dt>Cercle principal</dt>
-        <dd>{fiche.cerclePrincipal?.nom ?? 'Non renseigné'}</dd>
-      </dl>
+      {/*
+        **L'APERCU DE LA FICHE — charte 6.7.** En-tete sur l'aplat de bleu de
+        marque : pastille jaune « statut · entite », date d'arrivee, avatar a
+        anneau jaune, nom, role. C'est la forme que la fiche prendra une fois
+        publiee, montree a celui qui la remplit.
+
+        **L'AVATAR PORTE LES INITIALES, ET CE N'EST PAS UN OUBLI** : la fiche
+        d'arrivee ne sert pas de photo — la photo de profil est une autre
+        ressource, avec sa propre autorisation (LOT 11 `T2`). L'inventer ici
+        demanderait un appel de plus et une autorisation que cet ecran n'a pas
+        resolue.
+      */}
+      <div className="onboarding-apercu">
+        <div className="onboarding-apercu-entete">
+          <p className="onboarding-apercu-pastille">
+            {libelleDuStatut(fiche.statut) ?? fiche.statut ?? 'Statut à venir'} · {nomDeLEntite}
+          </p>
+          <p className="onboarding-apercu-date">Arrivée le {dateComplete(fiche.dateDArrivee)}</p>
+          <Avatar
+            anneau="var(--marque-jaune)"
+            nom={`${fiche.nomPrefere ?? fiche.prenom} ${fiche.nom}`}
+            taille={72}
+          />
+          <p className="onboarding-apercu-nom">
+            {fiche.nomPrefere ?? fiche.prenom} {fiche.nom}
+          </p>
+          <p className="onboarding-apercu-role">{fiche.metier ?? 'Métier non renseigné'}</p>
+        </div>
+        {/*
+          Le corps en tuiles — charte 6.7. **« J'attends d'eXalt » n'y figure
+          pas** : aucun champ de ce nom n'existe dans le modele, et en inventer
+          un sur la fiche de quelqu'un serait mettre des mots dans sa bouche.
+          Ecart consigne pour `E7`.
+        */}
+        <dl className="onboarding-apercu-tuiles">
+          <div className="onboarding-tuile onboarding-tuile-bleu">
+            <dt>Cercle</dt>
+            <dd>{fiche.cerclePrincipal?.nom ?? 'Non renseigné'}</dd>
+          </div>
+          <div className="onboarding-tuile onboarding-tuile-bleu">
+            <dt>Mission</dt>
+            <dd>{fiche.client ?? 'Non renseigné'}</dd>
+          </div>
+          <div className="onboarding-tuile onboarding-tuile-gris">
+            <dt>Qui suis-je&nbsp;?</dt>
+            <dd>{fiche.presentationCourte ?? 'Non renseigné'}</dd>
+          </div>
+          <div className="onboarding-tuile onboarding-tuile-jaune">
+            <dt>Fun fact</dt>
+            <dd>{fiche.funFact ?? 'Non renseigné'}</dd>
+          </div>
+          <div className="onboarding-tuile onboarding-tuile-gris">
+            <dt>DSM</dt>
+            <dd>{fiche.dsm ?? 'Non renseigné'}</dd>
+          </div>
+        </dl>
+        {/* Le pied de la charte 6.7 : le logo, puis la signature de marque. */}
+        <p className="onboarding-apercu-pied">
+          <span aria-hidden="true" className="onboarding-apercu-logo" />
+          pulse, make, learn
+        </p>
+      </div>
 
       {erreur === null ? null : (
         <Alerte ton="erreur" urgence="alerte">
@@ -297,19 +358,60 @@ function SectionFiche({
             </Bouton>
           </div>
         </>
-      ) : fiche.etat === 'published' ? (
-        <dl className="onboarding-fiche-lecture">
-          <dt>Présentation courte</dt>
-          <dd>{fiche.presentationCourte ?? 'Non renseigné'}</dd>
-          <dt>Fun fact</dt>
-          <dd>{fiche.funFact ?? 'Non renseigné'}</dd>
-        </dl>
       ) : null}
     </Carte>
   );
 }
 
 /** Une tâche du parcours, avec ses actions `Soi` — matrice §8.1. */
+/**
+ * Le decoupage en etapes de la charte 6.7 — `E5`, arbitrage de Jonathan du
+ * 02/11/2026.
+ *
+ * **CES QUATRE NOMS N'EXISTENT NULLE PART DANS LE CORPUS**, et la base ne
+ * stocke qu'un nombre de jours par tache de modele (`due_offset_days`). Les
+ * bornes ci-dessous sont donc une DECISION, pas une lecture : elles sont
+ * ecrites ici en clair pour qu'on puisse les contredire, et `E7` les consigne
+ * comme a confirmer avec Lea.
+ *
+ * **UNE REGLE, PAS UNE LISTE** : une tache tombe dans une etape par son
+ * ecart a la date de reference du parcours, donc une tache nouvelle se range
+ * sans que personne y pense (§7.27). Un ecart au-dela du mois a sa propre
+ * etape plutot que d'etre silencieusement range dans « Mois 1 » — une tache
+ * qu'on ne verrait nulle part serait pire qu'une etape de plus.
+ */
+const ETAPES: readonly {
+  readonly cle: string;
+  readonly libelle: string;
+  readonly contient: (jours: number) => boolean;
+}[] = [
+  { cle: 'avant', libelle: 'Avant l’arrivée', contient: (jours) => jours < 0 },
+  { cle: 'jour-1', libelle: 'Jour 1', contient: (jours) => jours === 0 },
+  { cle: 'semaine-1', libelle: 'Semaine 1', contient: (jours) => jours > 0 && jours <= 7 },
+  { cle: 'mois-1', libelle: 'Mois 1', contient: (jours) => jours > 7 && jours <= 30 },
+  { cle: 'au-dela', libelle: 'Au-delà', contient: (jours) => jours > 30 },
+];
+
+/**
+ * Le nombre de jours entiers entre deux dates ISO.
+ *
+ * **AUCUN ANALYSEUR DE DATE N'EST APPELE.** `Date.UTC` est une fonction
+ * arithmetique sur des NOMBRES : elle ne lit aucune chaine et ne consulte
+ * aucun fuseau. `new Date(iso)` ferait l'inverse, et decalerait le compte d'un
+ * jour selon l'heure et le lieu de celui qui regarde.
+ */
+function joursEntre(reference: string, echeance: string): number {
+  const jour = (iso: string): number =>
+    Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+  return Math.round((jour(echeance) - jour(reference)) / 86_400_000);
+}
+
+/** L'etape d'une tache, ou la derniere si son ecart ne tombe dans aucune. */
+function etapeDeLaTache(reference: string, echeance: string): string {
+  const jours = joursEntre(reference, echeance);
+  return (ETAPES.find((etape) => etape.contient(jours)) ?? ETAPES[ETAPES.length - 1])?.cle ?? '';
+}
+
 function LigneDeTache({
   tache,
   actionEnCours,
@@ -320,42 +422,42 @@ function LigneDeTache({
   readonly onAgir: (tache: string, action: 'completion' | 'annulation') => void;
 }): JSX.Element {
   const enCours = actionEnCours === tache.id;
+  const terminee = tache.etat === 'completed';
   return (
-    <li className="onboarding-tache">
+    <li className="onboarding-tache" data-terminee={terminee ? 'oui' : 'non'}>
       <div className="onboarding-tache-entete">
-        <span className="onboarding-tache-titre">{tache.titre}</span>
-        <Badge ton={TONS_D_ETAT_DE_LA_TACHE[tache.etat] ?? 'neutre'}>
+        {/*
+          **LA CASE A COCHER EST LA COMMANDE, PLUS UN BOUTON — charte 6.7.**
+          Cocher termine la tache, decocher annule la completion : ce sont les
+          deux memes appels qu'avant, derriere un seul geste au lieu de deux
+          boutons. La case est DESACTIVEE quand l'API refuserait l'action — une
+          tache ni `todo`, ni `reopened`, ni `completed` n'est pas actionnable
+          — plutot que de proposer un droit deja refuse.
+
+          **LE LIBELLE DE LA CASE EST LE TITRE DE LA TACHE**, ce qui lui donne
+          son nom accessible : sans lui, cent cases porteraient le meme nom.
+        */}
+        <CaseACocher
+          checked={terminee}
+          disabled={enCours || !(terminee || tache.etat === 'todo' || tache.etat === 'reopened')}
+          libelle={tache.titre}
+          onChange={() => {
+            onAgir(tache.id, terminee ? 'annulation' : 'completion');
+          }}
+        />
+        <Badge ton={TONS_D_ETAT_DE_LA_TACHE[tache.etat] ?? 'info'}>
           {LIBELLES_D_ETAT_DE_LA_TACHE[tache.etat] ?? tache.etat}
         </Badge>
-        {tache.obligatoire ? <Badge ton="marque">Obligatoire</Badge> : null}
+        {tache.obligatoire ? <Badge ton="enrichissement">Obligatoire</Badge> : null}
       </div>
       {tache.description === null ? null : (
         <p className="onboarding-tache-description">{tache.description}</p>
       )}
       <p className="onboarding-tache-echeance">Échéance : {dateComplete(tache.echeance)}</p>
-      {tache.etat === 'todo' || tache.etat === 'reopened' ? (
-        <Bouton
-          disabled={enCours}
-          onClick={() => {
-            onAgir(tache.id, 'completion');
-          }}
-          type="button"
-          variante="primaire"
-        >
-          {enCours ? 'Envoi…' : 'Marquer comme terminée'}
-        </Bouton>
-      ) : null}
-      {tache.etat === 'completed' ? (
-        <Bouton
-          disabled={enCours}
-          onClick={() => {
-            onAgir(tache.id, 'annulation');
-          }}
-          type="button"
-          variante="secondaire"
-        >
-          {enCours ? 'Envoi…' : 'Annuler'}
-        </Bouton>
+      {enCours ? (
+        <p className="onboarding-tache-envoi" role="status">
+          Envoi…
+        </p>
       ) : null}
     </li>
   );
@@ -366,13 +468,18 @@ function SectionParcours({
   code,
   appartenance,
   parcours,
+  statut,
   onAgi,
 }: {
   readonly code: string;
   readonly appartenance: string;
   readonly parcours: Parcours;
+  //  Le statut professionnel, qui vit sur la FICHE et non sur le parcours : la
+  //  charte 6.7 l'affiche dans le bandeau, « Parcours · En mission ».
+  readonly statut: string | null;
   readonly onAgi: () => void;
 }): JSX.Element {
+  const [etapeActive, poserEtapeActive] = useState<string | null>(null);
   const [actionEnCours, setActionEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState<{ readonly tache: string; readonly message: string } | null>(
     null,
@@ -402,37 +509,156 @@ function SectionParcours({
   }
 
   const progression = parcours.progression;
+  const reference = parcours.instance.dateDeReference;
+
+  //  **LES ETAPES MONTREES SONT CELLES QUI PORTENT UNE TACHE**, derivees des
+  //  echeances reelles : une pastille qui ouvrirait un panneau vide ne dirait
+  //  rien, et le parcours de chaque entite n'a pas les memes jalons.
+  const etapesPeuplees = ETAPES.filter((etape) =>
+    parcours.taches.some((tache) => etapeDeLaTache(reference, tache.echeance) === etape.cle),
+  );
+  //  `null` veut dire « toutes » : c'est l'etat de depart, et il reste
+  //  atteignable — sans quoi on ne pourrait plus voir le parcours entier.
+  const tachesMontrees =
+    etapeActive === null
+      ? parcours.taches
+      : parcours.taches.filter(
+          (tache) => etapeDeLaTache(reference, tache.echeance) === etapeActive,
+        );
+
+  const pourcentage =
+    progression === null || progression.tachesObligatoiresTotales === 0
+      ? null
+      : Math.round(
+          (progression.tachesObligatoiresTerminees / progression.tachesObligatoiresTotales) * 100,
+        );
 
   return (
-    <Carte titre="Mon parcours">
-      {progression === null ? null : (
-        <p className="onboarding-progression" role="status">
-          {progression.tachesObligatoiresTerminees} / {progression.tachesObligatoiresTotales} tâches
-          obligatoires terminées
-        </p>
-      )}
-      {erreur === null ? null : (
-        <Alerte ton="erreur" urgence="alerte">
-          {erreur.message}
-        </Alerte>
-      )}
-      {parcours.taches.length === 0 ? (
-        <p>Aucune tâche pour le moment.</p>
-      ) : (
-        <ul className="onboarding-liste-des-taches">
-          {parcours.taches.map((tache) => (
-            <LigneDeTache
-              key={tache.id}
-              tache={tache}
-              actionEnCours={actionEnCours}
-              onAgir={(t, a) => {
-                void agir(t, a);
-              }}
+    <>
+      {/*
+        **LE BANDEAU DE PARCOURS — charte 6.7.** Aplat de bleu de marque,
+        pictogramme `profil-valide`, et le statut professionnel a cote du mot
+        « Parcours ».
+
+        **LE BOUTON « CHANGER » DE LA CHARTE N'EST PAS POSE**, sur arbitrage
+        explicite de Jonathan du 02/11/2026 : changer son propre statut n'est
+        pas un droit que la matrice §6.1 accorde a `Soi` — c'est le DSM ou
+        l'entite qui le fait. Proposer un geste que l'API refuserait est
+        exactement ce que ce depot s'interdit partout ailleurs.
+      */}
+      <section className="onboarding-bandeau" aria-labelledby="onboarding-bandeau-titre">
+        <Picto nom="profil-valide" taille={32} />
+        <h2 className="onboarding-bandeau-titre" id="onboarding-bandeau-titre">
+          Parcours
+          {statut === null ? null : <> · {libelleDuStatut(statut) ?? statut}</>}
+        </h2>
+      </section>
+
+      <Carte titre="Ma checklist">
+        {progression === null ? null : (
+          <div className="onboarding-compte">
+            <p className="onboarding-compte-texte" role="status">
+              {progression.tachesObligatoiresTerminees} / {progression.tachesObligatoiresTotales}{' '}
+              tâches obligatoires terminées
+            </p>
+            {pourcentage === null ? null : (
+              <span aria-hidden="true" className="onboarding-compte-pourcentage">
+                {pourcentage}%
+              </span>
+            )}
+            {/*
+              **`Progression` COMPTE, IL NE STOCKE RIEN** — critere n°3 du
+              LOT 7. Son libelle porte l'information pour qui ne voit pas la
+              piste, et le gros chiffre a cote est donc `aria-hidden` : sans
+              cela, le meme nombre serait annonce deux fois.
+            */}
+            <Progression
+              faites={progression.tachesObligatoiresTerminees}
+              libelle="Progression de vos tâches obligatoires"
+              total={progression.tachesObligatoiresTotales}
             />
-          ))}
-        </ul>
-      )}
-    </Carte>
+          </div>
+        )}
+
+        {/*
+          **LE SELECTEUR D'ETAPES — charte 6.7.** Des boutons, donc atteignables
+          au clavier par construction. `aria-pressed` porte l'etat : la pastille
+          bleue ne le dit pas toute seule (§14.2).
+        */}
+        {etapesPeuplees.length === 0 ? null : (
+          <div className="onboarding-etapes" role="group" aria-label="Étapes du parcours">
+            <button
+              aria-pressed={etapeActive === null}
+              className="onboarding-etape"
+              onClick={() => {
+                poserEtapeActive(null);
+              }}
+              type="button"
+            >
+              Toutes
+            </button>
+            {etapesPeuplees.map((etape) => (
+              <button
+                aria-pressed={etapeActive === etape.cle}
+                className="onboarding-etape"
+                key={etape.cle}
+                onClick={() => {
+                  poserEtapeActive(etape.cle);
+                }}
+                type="button"
+              >
+                {etape.libelle}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {erreur === null ? null : (
+          <Alerte ton="erreur" urgence="alerte">
+            {erreur.message}
+          </Alerte>
+        )}
+        {tachesMontrees.length === 0 ? (
+          <p>Aucune tâche pour le moment.</p>
+        ) : (
+          <ul className="onboarding-liste-des-taches">
+            {tachesMontrees.map((tache) => (
+              <LigneDeTache
+                key={tache.id}
+                tache={tache}
+                actionEnCours={actionEnCours}
+                onAgir={(t, a) => {
+                  void agir(t, a);
+                }}
+              />
+            ))}
+          </ul>
+        )}
+
+        {/*
+          **LA LIGNE « REUNION CLE » DE LA CHARTE 6.7, EN ATTENTE.** Aucune
+          reunion n'existe dans le modele : ni le parcours ni la fiche n'en
+          portent. L'emplacement est pose avec son contenu annonce, comme a
+          l'accueil et au bloc Vision — arbitrage de Jonathan du 02/11/2026.
+
+          **LE BOUTON EST INERTE ET LE DIT.** Second arbitrage du meme jour :
+          le cahier reporte Teams en V1 et la liste des interdits du MVP le
+          nomme. `disabled` plutot qu'un clic sans effet, et la mention « a
+          venir » juste a cote — un bouton qui ne reagit pas sans rien dire
+          serait lu comme une panne.
+        */}
+        <div className="onboarding-reunion">
+          <span className="onboarding-reunion-titre">Réunion clé</span>
+          <Badge ton="info">À venir</Badge>
+          <p className="onboarding-reunion-texte">
+            Vos rendez-vous d’intégration prendront place ici, avec leur horaire.
+          </p>
+          <Bouton disabled taille="s" type="button" variante="discret">
+            Caler dans Teams
+          </Bouton>
+        </div>
+      </Carte>
+    </>
   );
 }
 
@@ -534,6 +760,7 @@ export function PageMonOnboarding(): JSX.Element {
         code={entite.code}
         appartenance={appartenance}
         fiche={fiche.corps}
+        nomDeLEntite={entite.nom}
         onEnregistre={recharger}
       />
       {parcours.statut === 200 && parcours.corps !== null ? (
@@ -541,6 +768,7 @@ export function PageMonOnboarding(): JSX.Element {
           code={entite.code}
           appartenance={appartenance}
           parcours={parcours.corps}
+          statut={fiche.corps.statut}
           onAgi={recharger}
         />
       ) : (
