@@ -95,6 +95,12 @@ function monter(): void {
 }
 
 /** Le bouton de face d'une carte, retrouve par le nom accessible qui NOMME la personne. */
+//  **`{ selector: '.trombi-nom' }` PARTOUT DEPUIS `E5`.** La charte 6.3 pose
+//  le nom sur les DEUX faces — une carte retournee doit continuer de dire qui
+//  elle montre — et les deux faces sont dans le DOM, l'une portant `hidden`,
+//  que `getByText` ne filtre pas. Le selecteur vise celui du recto. Ce n'est
+//  pas un contournement : c'est la meme parade que `S10` avait deja posee pour
+//  le nom du cercle, pour la meme raison.
 function faceDe(nom: string): HTMLElement {
   return screen.getByRole('button', { name: new RegExp(`Retourner la carte de ${nom}`) });
 }
@@ -107,9 +113,9 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+    expect(screen.getByText('Nour Arrivante', { selector: '.trombi-nom' })).toBeTruthy();
     expect(screen.getByText('2 collaborateurs')).toBeTruthy();
   });
 
@@ -129,7 +135,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const face = faceDe('Ada Lovelace');
     expect(face.tagName).toBe('BUTTON');
@@ -143,14 +149,20 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const face = faceDe('Ada Lovelace');
     expect(face.getAttribute('aria-expanded')).toBe('false');
 
     fireEvent.click(face);
     expect(face.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('Ingenieure logicielle')).toBeTruthy();
+    //  **`{ selector: '.trombi-verso dd' }` DEPUIS `E5`** : la charte 6.3 pose
+    //  le role sur les DEUX faces — « role (encre-douce 13) » au recto, et la
+    //  ligne « Metier » au verso. Le selecteur vise celle du verso, qui est ce
+    //  que ce test regarde. Ce n'est pas une regression : c'est la charte.
+    expect(
+      screen.getByText('Ingenieure logicielle', { selector: '.trombi-verso dd' }),
+    ).toBeTruthy();
 
     //  Et il revient : le retournement est une bascule, pas un aller simple.
     fireEvent.click(face);
@@ -170,7 +182,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const face = faceDe('Ada Lovelace');
     face.focus();
@@ -195,7 +207,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     fireEvent.click(faceDe('Ada Lovelace'));
     //  **`{ selector: '.trombi-verso dd' }` DEPUIS S10** (`DEC-673`) : « Data »
@@ -203,11 +215,15 @@ describe('le trombinoscope a l’ecran', () => {
     //  par `hidden`, mais `getByText` ne filtre pas la visibilite) et ce
     //  `<dd>` du verso. Le selecteur ecarte la premiere, pas une regression.
     expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
-    expect(screen.getByText('Ingenieure logicielle')).toBeTruthy();
-    //  Le statut est TRADUIT — depuis S6 (`DEC-672`), dans un `Badge` — et le
-    //  client accole en texte simple, a cote de lui. `{ selector: '.ex-badge' }`
-    //  ecarte l'option du meme nom dans le filtre « Statut ».
-    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+    expect(
+      screen.getByText('Ingenieure logicielle', { selector: '.trombi-verso dd' }),
+    ).toBeTruthy();
+    //  Le statut est TRADUIT — depuis S6 (`DEC-672`) — et il vit depuis `E5`
+    //  dans la pastille BLANCHE de la charte 6.3, non plus dans un `Badge` : le
+    //  verso est un aplat de bleu fonce, ou les tons semantiques de `Badge`
+    //  formeraient un couple que personne n'a mesure. Le selecteur ecarte au
+    //  passage l'option du meme nom dans le filtre « Statut ».
+    expect(screen.getByText('En mission', { selector: '.trombi-pastille-statut' })).toBeTruthy();
     expect(screen.getByText(/Client Alpha/)).toBeTruthy();
   });
 
@@ -216,7 +232,7 @@ describe('le trombinoscope a l’ecran', () => {
     [null, ''],
     ['jeton-inconnu-du-design-system', ''],
   ])(
-    'le jeton « %s » borde la carte, ou ne la borde pas — et le NOM reste',
+    'le jeton « %s » REMPLIT le bandeau, ou ne le remplit pas — et le NOM reste',
     async (jeton, attendu) => {
       //  **LES TROIS CAS DONNENT LE MEME NOM, ET C'EST LE §10.1.** La couleur
       //  n'est jamais le seul porteur : qu'elle soit posee, absente (`T10-8` --
@@ -233,10 +249,15 @@ describe('le trombinoscope a l’ecran', () => {
       );
       monter();
       await waitFor(() => {
-        expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+        expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
       });
+      //  **LA CARTE NE PORTE PLUS LA COULEUR, LE BANDEAU LA PORTE** — `E5`.
+      //  Les deux moities comptent : si la carte la reprenait, le trait de 2 px
+      //  que `E4` a mesure sous 3:1 reviendrait par la bande.
       const carte = faceDe('Ada Lovelace').closest('article');
-      expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe(attendu);
+      expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe('');
+      const bandeau = document.querySelector('.trombi-bandeau') as HTMLElement;
+      expect(bandeau.style.background).toBe(attendu);
       fireEvent.click(faceDe('Ada Lovelace'));
       //  Depuis S10 (`DEC-673`), « Data » existe aussi sur le recto (pastille) :
       //  le selecteur cible le verso, seul concerne par ce test.
@@ -252,13 +273,13 @@ describe('le trombinoscope a l’ecran', () => {
     //  UNE TEINTE ET UNE SURFACE DE MARQUE, pas deux marques : les deux
     //  familles de la charte 4 sont ainsi exercees, et leurs textes
     //  apparies different (titre sombre contre blanc).
-    ['data', 'var(--cercle-data)', 'var(--cercle-data-texte)', 'marque'],
-    ['produit', 'var(--cercle-produit)', 'var(--cercle-produit-texte)', 'marque'],
-    [null, '', '', 'neutre'],
-    ['jeton-inconnu-du-design-system', '', '', 'neutre'],
+    ['data', 'var(--cercle-data)', 'var(--cercle-data-texte)'],
+    ['produit', 'var(--cercle-produit)', 'var(--cercle-produit-texte)'],
+    [null, '', ''],
+    ['jeton-inconnu-du-design-system', '', ''],
   ])(
-    'la pastille du recto porte le jeton « %s », colore ou neutre',
-    async (jeton, surface, texte, ton) => {
+    'le bandeau du recto porte le jeton « %s », REMPLI ou neutre — charte 6.3',
+    async (jeton, surface, texte) => {
       vi.stubGlobal(
         'fetch',
         vi.fn(() =>
@@ -267,26 +288,42 @@ describe('le trombinoscope a l’ecran', () => {
       );
       monter();
       await waitFor(() => {
-        expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+        expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
       });
-      //  Le recto n'est pas retourne : la pastille est deja visible ici.
-      const pastille = screen.getByText('Data', { selector: '.ex-badge' });
-      expect(pastille.getAttribute('data-ton')).toBe(ton);
-      expect((pastille as HTMLElement).style.background).toBe(surface);
-      expect((pastille as HTMLElement).style.color).toBe(texte);
+      //  **LE COUPLE SURFACE + TEXTE EST POSE SUR UN BANDEAU REMPLI, PAS SUR
+      //  UN TRAIT.** C'est la correction que `E4` avait mesuree : cinq des huit
+      //  surfaces passent sous 3:1 en filet de 4 px, et aucune ne pose de
+      //  probleme en aplat, ou le texte apparie est justement fait pour elle.
+      //
+      //  Un jeton inconnu et l'absence de cercle donnent le MEME rendu neutre,
+      //  a dessein : le frontend ne sait pas rendre une couleur qu'il ne
+      //  connait pas, et il ne doit surtout pas en inventer une.
+      const bandeau = document.querySelector('.trombi-bandeau') as HTMLElement;
+      expect(bandeau).toBeTruthy();
+      expect(bandeau.style.background).toBe(surface);
+      expect(bandeau.style.color).toBe(texte);
     },
   );
 
-  it('sans cercle, AUCUNE pastille n’est rendue au recto — une pastille vide n’ajouterait rien', async () => {
+  it('sans cercle, le bandeau du recto reste NEUTRE — charte 6.3', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([NOUVELLE]))),
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+      expect(screen.getByText('Nour Arrivante', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    expect(document.querySelector('.trombi-pastille-cercle')).toBeNull();
+    //  **LE BANDEAU EXISTE TOUJOURS, SANS COULEUR POSEE.** Le faire
+    //  disparaitre changerait la hauteur de la carte selon qu'un cercle est
+    //  rattache ou non, et la grille cesserait d'etre reguliere — ce que `S10`
+    //  avait justement corrige. Sans cercle, il retombe sur la surface neutre
+    //  declaree par la feuille, et le texte sous lui dit « Aucun cercle
+    //  principal » en toutes lettres.
+    const bandeau = document.querySelector('.trombi-bandeau') as HTMLElement;
+    expect(bandeau).toBeTruthy();
+    expect(bandeau.style.background).toBe('');
+    expect(screen.getAllByText('Aucun cercle principal').length).toBeGreaterThan(0);
   });
 
   it('un collaborateur SANS affectation affiche « Non renseigne », jamais du vide', async () => {
@@ -298,11 +335,16 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+      expect(screen.getByText('Nour Arrivante', { selector: '.trombi-nom' })).toBeTruthy();
     });
     fireEvent.click(faceDe('Nour Arrivante'));
-    expect(screen.getAllByText('Non renseigne').length).toBe(2);
-    expect(screen.getByText('Aucun cercle principal')).toBeTruthy();
+    //  **TROIS DEPUIS `E5`, ET NON DEUX** : la charte 6.3 donne au client sa
+    //  propre ligne au verso (pastille jaune), la ou il etait accole au statut.
+    //  Metier, statut et client disent donc chacun « Non renseigne ».
+    expect(screen.getAllByText('Non renseigne').length).toBe(3);
+    //  Le nom du cercle est sur les DEUX faces, comme le role : la charte 6.3
+    //  le pose au recto sous l'avatar, et le verso le garde.
+    expect(screen.getAllByText('Aucun cercle principal').length).toBe(2);
   });
 
   it('sans photo autorisee, l’avatar neutre porte les initiales — §21.2', async () => {
@@ -312,7 +354,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Nour Arrivante')).toBeTruthy();
+      expect(screen.getByText('Nour Arrivante', { selector: '.trombi-nom' })).toBeTruthy();
     });
     //  **AUCUNE IMAGE**, et non une image cassee : `photo` vaut `null`, et les
     //  cinq causes sont indistinguables a dessein.
@@ -331,7 +373,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const lien = screen.getByRole('link', { name: /Voir plus sur Ada Lovelace/ });
     expect(lien.getAttribute('href')).toBe(`/entites/bordeaux/trombinoscope/${ADA.id}`);
@@ -408,7 +450,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     //  Une pagination sur une seule page est du bruit, et elle suggere a tort
     //  qu'il y a autre chose a voir.
@@ -422,7 +464,7 @@ describe('le trombinoscope a l’ecran', () => {
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const precedente = screen.getByRole('button', { name: 'Page precedente' });
     expect((precedente as HTMLButtonElement).disabled).toBe(true);
@@ -432,20 +474,20 @@ describe('le trombinoscope a l’ecran', () => {
 });
 
 describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le vehicule (`DEC-672`)', () => {
-  it('le statut du verso est un vrai `Badge`, pas du texte simple', async () => {
+  it('le statut du verso est une pastille, pas du texte simple — charte 6.3', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([ADA]))),
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     fireEvent.click(faceDe('Ada Lovelace'));
     //  **PORTEE AU VERSO** : le filtre « Statut » du formulaire porte la MEME
     //  chaine dans une `<option>`, et un `getByText` nu y trouverait un second
     //  candidat.
-    expect(screen.getByText('En mission', { selector: '.ex-badge' })).toBeTruthy();
+    expect(screen.getByText('En mission', { selector: '.trombi-pastille-statut' })).toBeTruthy();
   });
 
   it('la carte reste une `CarteRetournable` — le vehicule n’a pas change', async () => {
@@ -459,7 +501,7 @@ describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le ve
     );
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace')).toBeTruthy();
+      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
     const carte = faceDe('Ada Lovelace').closest('article');
     expect(carte?.classList.contains('ui-carte-retournable')).toBe(true);

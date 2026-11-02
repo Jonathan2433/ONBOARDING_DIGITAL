@@ -44,10 +44,11 @@ import { Link, Outlet, useLocation, useOutletContext, useParams } from 'react-ro
 
 import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contracts';
 
-import { Alerte } from '@onboarding/ui';
+import { Alerte, Avatar } from '@onboarding/ui';
 
-import { lireLeParcours } from '../api/onboarding';
+import { lireLaFicheArrivee, lireLeParcours } from '../api/onboarding';
 import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
+import { lireLaFiche } from '../api/profil';
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
 import { BarreMobile } from './BarreMobile';
@@ -224,6 +225,20 @@ interface Charge {
    */
   readonly aUnParcoursActif: boolean;
   /**
+   * Qui est connecte, pour l'avatar de l'en-tete — charte 6.1, `E5`.
+   *
+   * **AUCUNE ROUTE NOUVELLE : c'est la fiche profil du LOT 5, lue pour SOI.**
+   * La session resout deja l'appartenance de l'appelant (`T13` du LOT 7), et
+   * `GET .../people/{appartenance}` rend son nom et sa photo. L'appel n'est
+   * fait QUE si une appartenance existe — hors de son entite principale il n'y
+   * en a pas, et `null` fait alors disparaitre l'avatar plutot que d'afficher
+   * un rond anonyme que personne ne saurait lire.
+   *
+   * `null` est donc « pas d'avatar a montrer », jamais « en attente » : un
+   * avatar montre a tort designerait quelqu'un d'autre.
+   */
+  readonly identite: { readonly nom: string; readonly photo: string | null } | null;
+  /**
    * L'identifiant de corrélation de la réponse d'entité — §17.4, `T10`.
    *
    * **CELLE DE L'ENTITE, ET NON LA DERNIERE VUE.** Les trois appels en portent
@@ -241,6 +256,7 @@ function Squelette({
   selecteur,
   consultationSeule,
   navigation,
+  avatar,
   barre,
   children,
 }: {
@@ -261,6 +277,11 @@ function Squelette({
   //  et « erreur » n'ont pas d'entite, donc aucun code a mettre dans les liens :
   //  un menu vers `/entites/undefined/...` serait pire qu'aucun menu.
   readonly navigation?: ReactNode;
+  //  **L'AVATAR DE LA PERSONNE CONNECTEE — charte 6.1, `E5`.** Facultatif pour
+  //  la meme raison que la navigation : les etats « introuvable », « session
+  //  expiree » et « erreur » n'ont ni entite ni appartenance resolue, donc
+  //  aucune fiche a lire. Un rond vide y serait lu comme une image cassee.
+  readonly avatar?: ReactNode;
   //  La barre mobile, meme raison : sans entite, ses liens n'auraient pas de code.
   readonly barre?: ReactNode;
   readonly children: ReactNode;
@@ -270,18 +291,92 @@ function Squelette({
       <a className="app-evitement" href="#contenu">
         Aller au contenu
       </a>
+      {/*
+        **L'EN-TETE DE LA CHARTE 6.1 — chantier design systeme v2, `E5`.** Une
+        barre COLLANTE de 64 px : logo a gauche avec l'entite, rubriques au
+        centre, choix d'entite et reglages a droite. Trois zones, donc un
+        conteneur par zone — sans quoi « au centre » dependrait du nombre
+        d'enfants, ce qui a deja coute un defaut de disposition en `S9`.
+
+        **LA NAVIGATION EST DESORMAIS DANS L'EN-TETE**, alors qu'elle en etait
+        la soeur depuis `T4`. L'ordre du DOM ne change pas pour autant — header,
+        nav, main, barre — parce qu'un `<nav>` imbrique reste APRES l'ouverture
+        de son `<header>` : le test d'ordre des reperes de `T4` le verifie et
+        il passe sans retouche.
+
+        **L'ALERTE DE         {consultationSeule === true ? (
+          //  **LA FORMULATION VIENT DU §4 DE LA MATRICE, PAS DE MOI.** Sa legende
+          //  definit `Lecture` : « Consultation uniquement, sans modification ».
+          //  Et ce qu'elle dit est la consequence du §5.1 -- « aucune action de
+          //  creation, modification, publication, archivage, restauration ou
+          //  export n'est proposee » -- donc l'utilisateur doit savoir POURQUOI
+          //  les actions manqueront, sans quoi il les croira cassees.
+          //
+          //  `role="status"` et non `alert` : ce n'est pas une erreur, c'est un
+          //  contexte. Un `alert` interromprait la lecture a chaque changement.
+          //  **`Alerte` ET NON `Badge`, ET C'EST L'ECRAN QUI L'A TRANCHE.** Ma
+          //  premiere version de `T11` employait `Badge`, au motif que c'est « un
+          //  etat court et permanent ». Mesure a l'ecran : a 1 280 px il tient sur
+          //  une ligne et passe ; a 375 px il fait TROIS LIGNES dans une pastille,
+          //  ce qui est visuellement faux.
+          //
+          //  **Un composant dont la justesse depend de la largeur est le mauvais
+          //  composant pour une phrase.** Le texte fait ici vingt mots -- il porte
+          //  l'information ET son motif, ce que le §14.2 exige -- donc c'est une
+          //  `Alerte`. `Badge` reste pour ce qui est vraiment court, et il en a un
+          //  emploi : l'etiquette de lot de `PageRubrique`.
+          //
+          //  `ton="avertissement"` : ce n'est ni un succes ni une erreur, c'est une
+          //  restriction. Et `urgence="information"` -- `role="status"` -- parce
+          //  qu'un `alert` interromprait la lecture a chaque changement d'entite.
+          <Alerte ton="avertissement" urgence="information" data-consultation="seule">
+            Consultation uniquement, sans modification&nbsp;: cette entite n&rsquo;est pas votre
+            entite principale.
+          </Alerte>
+        ) : null}
+ SORT DE LA BARRE** et prend sa propre ligne
+        sous elle : c'est une phrase de vingt mots, et `T11` avait deja mesure
+        qu'elle fait trois lignes a 375 px. La comprimer dans une barre de
+        64 px rejouerait ce defaut.
+      */}
       <header className="app-entete">
-        <p className="app-marque">eXalt Onboarding</p>
-        {entite === undefined ? null : (
-          //  **L'ENTITE ACTIVE, VISIBLE PARTOUT** — cahier §23.3. Le nom et la
-          //  ville sont deux elements distincts : l'information n'est portee ni
-          //  par la seule couleur ni par la seule position (§14.2).
-          <p className="app-entite" data-code-entite={entite.code}>
-            <span className="app-entite-nom">{entite.nom}</span>
-            <span className="app-entite-ville">{entite.ville}</span>
-          </p>
-        )}
-        {selecteur}
+        <div className="app-entete-barre">
+          <div className="app-entete-gauche">
+            {/*
+              **LE LOGO PORTE LE NOM DU PRODUIT, IL NE S'Y AJOUTE PAS.** La
+              charte 6.1 remplace le mot-symbole textuel par le logo ; lui
+              donner un `aria-label` le rend lisible aux technologies
+              d'assistance exactement comme le texte qu'il remplace, et un
+              second texte visible ferait entendre deux fois la meme chose.
+
+              Son image est posee par la FEUILLE et non par un `src`, parce
+              qu'elle depend du theme : bleu sur fond clair, blanc sur fond
+              sombre. Un `src` obligerait ce composant a s'abonner au theme.
+            */}
+            <span className="app-logo" role="img" aria-label="eXalt" />
+            {entite === undefined ? null : (
+              //  **L'ENTITE ACTIVE, VISIBLE PARTOUT** — cahier §23.3. Le nom et la
+              //  ville sont deux elements distincts : l'information n'est portee ni
+              //  par la seule couleur ni par la seule position (§14.2).
+              <p className="app-entite" data-code-entite={entite.code}>
+                <span className="app-entite-nom">{entite.nom}</span>
+                <span className="app-entite-ville">{entite.ville}</span>
+              </p>
+            )}
+          </div>
+          {navigation}
+          <div className="app-entete-droite">
+            {selecteur}
+            {/*
+              **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Dans le SEUL `Squelette`
+              partage par les six etats du cadre, meme discipline que le pied de
+              page (`BoutonSignalerUnBug`) : couvre chaque page interne par
+              construction, sans qu'aucun etat n'ait a y penser separement.
+            */}
+            <BoutonBasculerTheme />
+            {avatar}
+          </div>
+        </div>
         {consultationSeule === true ? (
           //  **LA FORMULATION VIENT DU §4 DE LA MATRICE, PAS DE MOI.** Sa legende
           //  definit `Lecture` : « Consultation uniquement, sans modification ».
@@ -312,15 +407,7 @@ function Squelette({
             entite principale.
           </Alerte>
         ) : null}
-        {/*
-          **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Dans le SEUL `Squelette`
-          partage par les six etats du cadre, meme discipline que le pied de
-          page (`BoutonSignalerUnBug`) : couvre chaque page interne par
-          construction, sans qu'aucun etat n'ait a y penser separement.
-        */}
-        <BoutonBasculerTheme />
       </header>
-      {navigation}
       {/*
         **`tabIndex={-1}` N'EST PAS UN ORNEMENT : SANS LUI LE LIEN D'EVITEMENT NE
         SAUTE RIEN.** Mesure du 23/08/2026 dans un vrai navigateur : en activant
@@ -465,6 +552,7 @@ export function CadreApplicatif(): JSX.Element {
                 autres: [],
                 permissions: null,
                 aUnParcoursActif: false,
+                identite: null,
                 correlation: null,
               };
         return { ...base, ...apport, code };
@@ -525,6 +613,46 @@ export function CadreApplicatif(): JSX.Element {
           //  aucun appel n'est fait pour rien.
           const { appartenance } = reponse.corps;
           if (appartenance !== null) {
+            //  **L'AVATAR DE L'EN-TETE — charte 6.1.** Meme garde et meme
+            //  endroit que le parcours ci-dessous : une seule condition, donc
+            //  une seule facon de se tromper. Un echec est SILENCIEUX, et c'est
+            //  voulu : l'en-tete ne doit pas tomber parce qu'une decoration
+            //  n'a pas pu etre lue.
+            //
+            //  **DEUX SOURCES, ET LA MESURE A IMPOSE LA SECONDE.** La fiche de
+            //  profil porte le nom ET la photo, mais elle n'est servie que
+            //  pour un profil PUBLIE et visible : releve le 02/11/2026 sur le
+            //  jeu de demonstration, 76 appartenances publiees contre 67 en
+            //  brouillon et 66 masquees — deux personnes sur trois n'auraient
+            //  donc eu aucun avatar. La fiche d'ARRIVEE, elle, est lisible par
+            //  `Soi` quel que soit l'etat de publication (matrice §7).
+            //
+            //  Elle ne porte pas de photo, et la mesure dit que cela ne coute
+            //  rien aujourd'hui : zero autorisation active et zero miniature
+            //  sur les 5 211 appartenances de cette base. Le jour ou une photo
+            //  existera, elle arrivera par le premier chemin, qui reste essaye
+            //  en premier.
+            void lireLaFiche(code, appartenance, abandon.signal).then(
+              (ficheLue) => {
+                if (ficheLue.statut === 200 && ficheLue.corps !== null) {
+                  const { prenom, nom, photo } = ficheLue.corps;
+                  fusionner({ identite: { nom: `${prenom} ${nom}`, photo } });
+                  return;
+                }
+                void lireLaFicheArrivee(code, appartenance, abandon.signal).then(
+                  (arrivee) => {
+                    if (arrivee.statut === 200 && arrivee.corps !== null) {
+                      const { prenom, nom, nomPrefere } = arrivee.corps;
+                      fusionner({
+                        identite: { nom: `${nomPrefere ?? prenom} ${nom}`, photo: null },
+                      });
+                    }
+                  },
+                  (cause: unknown) => cause,
+                );
+              },
+              (cause: unknown) => cause,
+            );
             void lireLeParcours(code, appartenance, abandon.signal).then(
               (parcoursLu) => {
                 if (parcoursLu.statut === 200 && parcoursLu.corps !== null) {
@@ -673,6 +801,26 @@ export function CadreApplicatif(): JSX.Element {
       //  dans l'autre. Meme motif que le predicat unique de `routes.ts`.
       navigation={<NavigationPrincipale code={etat.entite.code} {...droits} />}
       barre={<BarreMobile code={etat.entite.code} {...droits} />}
+      //  **L'AVATAR N'APPARAIT QUE QUAND ON SAIT QUI REGARDE.** `identite` reste
+      //  `null` hors de l'entite principale — il n'y a alors aucune appartenance
+      //  a lire — et le rond disparait plutot que de montrer un inconnu.
+      //  `decoratif` : le nom est deja porte par la fiche vers laquelle il mene,
+      //  et l'annoncer ici le ferait entendre a chaque page.
+      avatar={
+        courante?.identite == null ? null : (
+          <Link
+            className="app-avatar-lien"
+            to={cheminDeRubrique(etat.entite.code, 'trombinoscope')}
+            aria-label={`Votre profil, ${courante.identite.nom}`}
+          >
+            <Avatar
+              nom={courante.identite.nom}
+              taille={32}
+              {...(courante.identite.photo === null ? {} : { photo: courante.identite.photo })}
+            />
+          </Link>
+        )
+      }
     >
       <Outlet
         context={
