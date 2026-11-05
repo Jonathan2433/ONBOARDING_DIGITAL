@@ -33,6 +33,8 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
+import { EDITION_BETA_BORDEAUX } from '../../edition';
+
 import {
   lireLeCatalogueDesMetiers,
   creerUnCollaborateur,
@@ -191,7 +193,7 @@ function ChampsOrganisationnelsFormulaire({
   return (
     <>
       <label className="administration-champ">
-        Date d’arrivée
+        Date d’arrivée (facultative)
         <input
           onChange={(e) => {
             onChange({ ...valeurs, dateDArrivee: e.target.value });
@@ -200,23 +202,25 @@ function ChampsOrganisationnelsFormulaire({
           value={valeurs.dateDArrivee}
         />
       </label>
-      <label className="administration-champ">
-        Métier (facultatif)
-        <select
-          disabled={referentiels === null}
-          onChange={(e) => {
-            onChange({ ...valeurs, metier: e.target.value });
-          }}
-          value={valeurs.metier}
-        >
-          <option value="">— aucun —</option>
-          {referentiels?.metiers.metiers.map((m) => (
-            <option key={m.identifiant} value={m.identifiant}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      {EDITION_BETA_BORDEAUX ? null : (
+        <label className="administration-champ">
+          Métier (facultatif)
+          <select
+            disabled={referentiels === null}
+            onChange={(e) => {
+              onChange({ ...valeurs, metier: e.target.value });
+            }}
+            value={valeurs.metier}
+          >
+            <option value="">— aucun —</option>
+            {referentiels?.metiers.metiers.map((m) => (
+              <option key={m.identifiant} value={m.identifiant}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="administration-champ">
         Statut
         <select
@@ -230,11 +234,11 @@ function ChampsOrganisationnelsFormulaire({
           }}
           value={valeurs.statut}
         >
-          <option value="mission">Mission</option>
+          {EDITION_BETA_BORDEAUX ? null : <option value="mission">Mission</option>}
           <option value="intercontract">Intercontrat</option>
         </select>
       </label>
-      {valeurs.statut === 'intercontract' ? null : (
+      {EDITION_BETA_BORDEAUX || valeurs.statut === 'intercontract' ? null : (
         <label className="administration-champ">
           Client
           <select
@@ -293,11 +297,7 @@ function ChampsOrganisationnelsFormulaire({
 
 /** `metier` N'EST PLUS exigé — `DEC-675`, LOT 11 `T5` : rendu facultatif partout. */
 function champsCompletes(v: ChampsOrganisationnels): boolean {
-  return (
-    v.dateDArrivee !== '' &&
-    v.cerclePrincipal !== '' &&
-    (v.statut === 'intercontract' || v.client !== '')
-  );
+  return v.cerclePrincipal !== '' && (v.statut === 'intercontract' || v.client !== '');
 }
 
 /** Créer un collaborateur — `T2`, `US002` (1/2). */
@@ -319,7 +319,7 @@ function FormulaireCreationDeCollaborateur({ code }: { readonly code: string }):
       email,
       prenom,
       nom,
-      date_d_arrivee: champs.dateDArrivee,
+      date_d_arrivee: champs.dateDArrivee === '' ? null : champs.dateDArrivee,
       metier: champs.metier === '' ? null : champs.metier,
       statut: champs.statut,
       client: champs.statut === 'intercontract' ? null : champs.client,
@@ -474,7 +474,7 @@ function FormulaireChangementDEntite({ code }: { readonly code: string }): JSX.E
     const resultat = await changerDEntite(code, cible.appartenance, {
       version: cible.version,
       entite_destination: entiteDestination,
-      date_d_arrivee: champs.dateDArrivee,
+      date_d_arrivee: champs.dateDArrivee === '' ? null : champs.dateDArrivee,
       metier: champs.metier === '' ? null : champs.metier,
       statut: champs.statut,
       client: champs.statut === 'intercontract' ? null : champs.client,
@@ -685,7 +685,7 @@ function SectionTransfertEnMasse({ code }: { readonly code: string }): JSX.Eleme
         appartenance: l.appartenance,
         version: l.version,
         entite_destination: l.entiteDestination,
-        date_d_arrivee: l.champs.dateDArrivee,
+        date_d_arrivee: l.champs.dateDArrivee === '' ? null : l.champs.dateDArrivee,
         metier: l.champs.metier === '' ? null : l.champs.metier,
         statut: l.champs.statut,
         client: l.champs.statut === 'intercontract' ? null : l.champs.client,

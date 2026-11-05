@@ -71,6 +71,10 @@ function monter(): void {
   );
 }
 
+async function attendreLeLogo(): Promise<HTMLElement> {
+  return await screen.findByRole('link', { name: 'Retour à l’accueil eXalt Bordeaux' });
+}
+
 /** Reposer `navigator.onLine`, que chaque test manipule. */
 function poserLaConnexion(enLigne: boolean): void {
   Object.defineProperty(navigator, 'onLine', { value: enLigne, configurable: true });
@@ -85,7 +89,7 @@ describe('la perte de connexion sur une page déjà chargée — §17.2', () => 
       vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
     );
     monter();
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo();
 
     //  La connexion tombe APRÈS le chargement — c'est le cas que le §17.2 nomme.
     await act(async () => {
@@ -108,7 +112,7 @@ describe('la perte de connexion sur une page déjà chargée — §17.2', () => 
     const appels = vi.fn(() => Promise.resolve(json(BORDEAUX, 200)));
     vi.stubGlobal('fetch', appels);
     monter();
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo();
     const avant = appels.mock.calls.length;
 
     await act(async () => {
@@ -126,7 +130,7 @@ describe('la perte de connexion sur une page déjà chargée — §17.2', () => 
     //  **LE TÉMOIN QUI COMPTE** : sans lui, un test qui vérifie seulement que
     //  l'écran revient serait satisfait par un écran qui n'a jamais rien rechargé
     //  et affiche encore ses données périmées.
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo();
   });
 });
 
@@ -153,7 +157,7 @@ describe("l'écran d'erreur porte un réessai et une corrélation — §17.4", (
     await waitFor(() => expect(appels.mock.calls.length).toBeGreaterThan(avant));
     //  **ET L'ÉCRAN SE RÉTABLIT.** Un bouton qui relancerait sans que rien ne
     //  change serait exactement l'avertissement faux du §7.21.
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo();
   });
 
   it("affiche l'identifiant de corrélation et le rend COPIABLE — §17.4", async () => {

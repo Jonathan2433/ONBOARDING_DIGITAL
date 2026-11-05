@@ -468,6 +468,7 @@ export {
   cheminEvenements,
   cheminEvenementPourGestion,
   cheminEvenementsPourGestion,
+  cheminImageDEvenement,
   cheminMediasDEvenement,
   cheminPublicationDEvenement,
   cheminRestaurationDEvenement,

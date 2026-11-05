@@ -63,23 +63,33 @@
  *   dont le contenu entier est deja une photo et un nom.
  */
 import type { JSX } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import { STATUTS, couleurDuCercle, libelleDuStatut, texteDuCercle } from '../affichage';
+import { STATUTS, couleurDuCercle, texteDuCercle } from '../affichage';
+import { lireLeFramework } from '../api/organisation';
 import { type CriteresDeRecherche, listerLeTrombinoscope } from '../api/trombinoscope';
 import { cheminDuProfilALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
-import {
-  type CollaborateurDuTrombinoscope,
-  TAILLE_PAR_DEFAUT,
-  TAILLES_DE_PAGE,
-} from '@onboarding/contracts';
-import { Alerte, Avatar, CarteRetournable, Champ, Liste } from '@onboarding/ui';
+import { type CarteDeCercle, type CollaborateurDuTrombinoscope } from '@onboarding/contracts';
+import { Alerte, Avatar, Bouton, Champ, Liste, Picto } from '@onboarding/ui';
 
 /** §9.3 : « la recherche demarre apres environ 300 ms ». */
 export const TEMPORISATION_DE_SAISIE_MS = 300;
+const TAILLE_D_UN_LOT = 50;
+
+function couleursMarquantesDuCercle(
+  code: string | null,
+  jeton: string | null,
+): readonly [string | undefined, string | undefined] {
+  const cle = code?.toLocaleLowerCase('fr') ?? null;
+  if (cle === null) return ['var(--trombi-sans-cercle)', 'var(--trombi-sans-cercle-texte)'];
+  if (['data', 'shield', 'forge', 'it'].includes(cle)) {
+    return [`var(--trombi-cercle-${cle})`, `var(--trombi-cercle-${cle}-texte)`];
+  }
+  return [couleurDuCercle(jeton), texteDuCercle(jeton)];
+}
 
 //  **`STATUTS` ET LES COULEURS DE CERCLE ONT DEMENAGE EN `T11`**, dans
 //  `../affichage`. Ils avaient UN consommateur quand `T10` les a poses ; la fiche
@@ -123,10 +133,12 @@ export function PageTrombinoscope(): JSX.Element {
   const { entite } = useEntiteConsultee();
   const [saisie, setSaisie] = useState('');
   const [recherche, setRecherche] = useState('');
+  const [cercle, setCercle] = useState('');
+  const [cercles, setCercles] = useState<readonly CarteDeCercle[] | null>(null);
   const [statut, setStatut] = useState('');
-  const [taille, setTaille] = useState<number>(TAILLE_PAR_DEFAUT);
   const [page, setPage] = useState(1);
   const [resultat, setResultat] = useState<Resultat | null>(null);
+  const sentinelle = useRef<HTMLButtonElement | null>(null);
 
   //  **LA TEMPORISATION DU §9.3.** Le nettoyage annule le minuteur precedent :
   //  sans lui, chaque frappe en armerait un de plus et ils se declencheraient
@@ -141,21 +153,61 @@ export function PageTrombinoscope(): JSX.Element {
     };
   }, [saisie]);
 
+  useEffect(() => {
+    const abandon = new AbortController();
+    void lireLeFramework(entite.code, abandon.signal).then(
+      (reponse) => {
+        setCercles(
+          reponse.statut === 200 && reponse.corps !== null
+            ? [...reponse.corps.cercles].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+            : [],
+        );
+      },
+      () => {
+        if (!abandon.signal.aborted) setCercles([]);
+      },
+    );
+    return () => {
+      abandon.abort();
+    };
+  }, [entite.code]);
+
   const criteres = useMemo(
-    () => ({ page, taille, recherche, statut }),
-    [page, taille, recherche, statut],
+    () => ({ page, taille: TAILLE_D_UN_LOT, recherche, cercle, statut }),
+    [page, recherche, cercle, statut],
   );
 
   useEffect(() => {
     const abandon = new AbortController();
     void listerLeTrombinoscope(entite.code, criteres, abandon.signal).then(
       (reponse) => {
-        setResultat({
-          criteres,
-          valeur:
-            reponse.statut === 200 && reponse.corps !== null
-              ? { phase: 'liste', page: reponse.corps }
-              : { phase: 'erreur', statut: reponse.statut },
+        setResultat((precedent) => {
+          if (reponse.statut !== 200 || reponse.corps === null) {
+            return { criteres, valeur: { phase: 'erreur', statut: reponse.statut } };
+          }
+          const peutAjouter =
+            criteres.page > 1 &&
+            precedent?.valeur.phase === 'liste' &&
+            precedent.criteres.recherche === criteres.recherche &&
+            precedent.criteres.cercle === criteres.cercle &&
+            precedent.criteres.statut === criteres.statut;
+          let collaborateurs = reponse.corps.collaborateurs;
+          if (peutAjouter && precedent?.valeur.phase === 'liste') {
+            const existants = precedent.valeur.page.collaborateurs;
+            collaborateurs = [
+              ...existants,
+              ...reponse.corps.collaborateurs.filter(
+                (nouveau) => !existants.some((existant) => existant.id === nouveau.id),
+              ),
+            ];
+          }
+          return {
+            criteres,
+            valeur: {
+              phase: 'liste',
+              page: { ...reponse.corps, collaborateurs },
+            },
+          };
         });
       },
       (cause: unknown) => {
@@ -178,6 +230,27 @@ export function PageTrombinoscope(): JSX.Element {
   //  quand une valeur a change.
   const enChargement = resultat === null || resultat.criteres !== criteres;
   const etat = resultat?.valeur ?? null;
+  const peutChargerLaSuite =
+    etat?.phase === 'liste' && etat.page.page < etat.page.pages && !enChargement;
+
+  useEffect(() => {
+    const cible = sentinelle.current;
+    if (!peutChargerLaSuite || cible === null || typeof IntersectionObserver === 'undefined') {
+      return undefined;
+    }
+    const observateur = new IntersectionObserver(
+      (entrees) => {
+        if (entrees.some((entree) => entree.isIntersecting)) {
+          setPage((precedente) => precedente + 1);
+        }
+      },
+      { rootMargin: '400px 0px' },
+    );
+    observateur.observe(cible);
+    return () => {
+      observateur.disconnect();
+    };
+  }, [peutChargerLaSuite]);
 
   return (
     <div className="trombi">
@@ -192,58 +265,86 @@ export function PageTrombinoscope(): JSX.Element {
         role="search"
       >
         {/*
-          **LES TROIS FILTRES PASSENT PAR `Champ` ET `Liste` — charte 6.3.**
+          **LES FILTRES PASSENT PAR `Champ` ET `Liste` — charte 6.3.**
           Les deux composants portent eux-memes leur `<label>` lie, leur
           `id` engendre et leur anneau de focus par `var(--anneau-focus)` : le
           `.trombi-champ` qu'ils remplacent avait le sien ecrit a la main,
           juste en theme clair et en echec en sombre depuis `S9`. `E6` a retire
           cette regle devenue morte.
 
-          **LE FILTRE « CERCLE » DE LA CHARTE N'EST PAS AJOUTE ICI** : l'API
-          l'accepte (`cercle` est un parametre de `GET …/people`), mais le
-          poser serait ajouter une FONCTION, et la consigne de `E5` est de ne
-          changer que la presentation. Ecart consigne pour `E7`.
+          La liste des cercles vient de la synthese Framework de l'entite :
+          chaque option porte ainsi le vrai identifiant attendu par l'API, et
+          jamais un code reconstruit dans le frontend.
         */}
-        <Champ
-          libelle="Rechercher un collaborateur"
-          onChange={(evenement) => {
-            setSaisie(evenement.target.value);
-          }}
-          placeholder="Nom ou prenom"
-          type="search"
-          value={saisie}
-        />
+        <div className="trombi-filtre trombi-filtre--recherche" data-actif={saisie !== ''}>
+          <Picto nom="loupe" taille={24} />
+          <Champ
+            libelle="Rechercher un collaborateur"
+            onChange={(evenement) => {
+              setSaisie(evenement.target.value);
+            }}
+            placeholder="Nom ou prénom"
+            type="search"
+            value={saisie}
+          />
+        </div>
 
-        <Liste
-          libelle="Statut"
-          onChange={(evenement) => {
-            setStatut(evenement.target.value);
-            setPage(1);
-          }}
-          value={statut}
-        >
-          <option value="">Tous les statuts</option>
-          {STATUTS.map((choix) => (
-            <option key={choix.valeur} value={choix.valeur}>
-              {choix.libelle}
+        <div className="trombi-filtre" data-actif={cercle !== ''}>
+          <Liste
+            disabled={cercles === null}
+            libelle="Cercle"
+            onChange={(evenement) => {
+              setCercle(evenement.target.value);
+              setPage(1);
+            }}
+            value={cercle}
+          >
+            <option value="">
+              {cercles === null ? 'Chargement des cercles…' : 'Tous les cercles'}
             </option>
-          ))}
-        </Liste>
+            {(cercles ?? []).map((choix) => (
+              <option key={choix.identifiant} value={choix.identifiant}>
+                {choix.nom}
+              </option>
+            ))}
+          </Liste>
+        </div>
 
-        <Liste
-          libelle="Par page"
-          onChange={(evenement) => {
-            setTaille(Number(evenement.target.value));
-            setPage(1);
-          }}
-          value={String(taille)}
-        >
-          {TAILLES_DE_PAGE.map((valeur) => (
-            <option key={valeur} value={String(valeur)}>
-              {valeur}
-            </option>
-          ))}
-        </Liste>
+        <div className="trombi-filtre" data-actif={statut !== ''}>
+          <Liste
+            libelle="Statut"
+            onChange={(evenement) => {
+              setStatut(evenement.target.value);
+              setPage(1);
+            }}
+            value={statut}
+          >
+            <option value="">Tous les statuts</option>
+            {STATUTS.map((choix) => (
+              <option key={choix.valeur} value={choix.valeur}>
+                {choix.libelle}
+              </option>
+            ))}
+          </Liste>
+        </div>
+
+        {saisie !== '' || cercle !== '' || statut !== '' ? (
+          <span className="trombi-effacer-filtres">
+            <Bouton
+              onClick={() => {
+                setSaisie('');
+                setRecherche('');
+                setCercle('');
+                setStatut('');
+                setPage(1);
+              }}
+              taille="s"
+              variante="discret"
+            >
+              Effacer les filtres
+            </Bouton>
+          </span>
+        ) : null}
       </form>
 
       {/*
@@ -285,32 +386,20 @@ export function PageTrombinoscope(): JSX.Element {
         </ul>
       ) : null}
 
-      {etat?.phase === 'liste' && etat.page.pages > 1 ? (
-        <nav aria-label="Pagination du trombinoscope" className="trombi-pagination">
+      {etat?.phase === 'liste' && etat.page.page < etat.page.pages ? (
+        <div className="trombi-scroll-suite">
           <button
-            type="button"
-            className="trombi-page"
-            disabled={etat.page.page <= 1}
-            onClick={() => {
-              setPage((precedente) => Math.max(1, precedente - 1));
-            }}
-          >
-            Page precedente
-          </button>
-          <span className="trombi-position">
-            Page {etat.page.page} sur {etat.page.pages}
-          </span>
-          <button
-            type="button"
-            className="trombi-page"
-            disabled={etat.page.page >= etat.page.pages}
+            className="trombi-charger-suite"
+            disabled={enChargement}
             onClick={() => {
               setPage((precedente) => precedente + 1);
             }}
+            ref={sentinelle}
+            type="button"
           >
-            Page suivante
+            {enChargement ? 'Chargement de la suite…' : 'Charger les collaborateurs suivants'}
           </button>
-        </nav>
+        </div>
       ) : null}
     </div>
   );
@@ -326,39 +415,14 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
   //  **DEUX ABSENCES DISTINCTES, ET LE MEME RENDU.** Pas de cercle, ou un cercle
   //  sans jeton declare : la bordure reste neutre dans les deux cas, et le NOM du
   //  cercle reste du texte sur le verso -- c'est le §10.1 qui l'exige.
-  const couleur = couleurDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
-  const texte = texteDuCercle(ligne.cercle?.jetonDeCouleur ?? null);
-  const libelleStatut = libelleDuStatut(ligne.statut);
-
+  const [couleur, texte] = couleursMarquantesDuCercle(
+    ligne.cercle?.code ?? null,
+    ligne.cercle?.jetonDeCouleur ?? null,
+  );
   return (
-    //  **LA CARTE NE PORTE PLUS `--carte-cercle`, ET C'EST LE FOND DE LA MESURE
-    //  DE `E4`.** Cette variable y mettait la couleur du cercle en trait de
-    //  2 px : exactement l'emploi qui faisait passer cinq surfaces sur huit
-    //  sous 3:1. La couleur est desormais REMPLIE dans le bandeau, et la carte
-    //  retombe sur le repli neutre que `composants.css` declare au `:root`.
-    //  Une seule chose porte la couleur, et c'est celle qui peut la porter.
-    <CarteRetournable
-      nomAccessible={`Retourner la carte de ${nom} pour voir ses informations professionnelles`}
-      recto={
-        <>
-          {/*
-            **LE CERCLE DEVIENT UN BANDEAU REMPLI, ET C'EST LA CORRECTION QUE
-            `E4` AVAIT MESUREE ET LAISSEE A `E5`.** Releve le 02/11/2026 dans un
-            vrai navigateur : pose en trait d'accent de 4 px sur une carte
-            claire, CINQ des huit surfaces de cercle passent sous 3:1 — `change`
-            1,37, `data` 1,17, `shield` 1,19, `forge` 1,08, `it` 1,09 — et trois
-            d'entre elles sont litteralement invisibles.
-
-            La charte n'etait pas en faute : ses huit entrees sont des couples
-            SURFACE + TEXTE faits pour etre REMPLIS, ou la paleur est justement
-            ce qui rend le texte lisible. Le bandeau de 150 px de la charte 6.3
-            est cet emploi-la, et le couple `surface`/`texte` y retrouve la
-            mesure qui l'accompagne.
-
-            **LA COULEUR N'EST TOUJOURS PAS SEULE** : le nom du cercle reste
-            ecrit en toutes lettres sous le bandeau (§10.1), et sans cercle le
-            bandeau retombe sur une surface neutre.
-          */}
+    <article aria-label={`Carte de ${nom}`} className="trombi-carte">
+      <div className="trombi-carte-interieur">
+        <div className="trombi-carte-face trombi-carte-recto">
           <span
             className="trombi-bandeau"
             style={
@@ -367,93 +431,36 @@ function CarteDuCollaborateur({ codeEntite, ligne }: ProprietesCarte): JSX.Eleme
                 : ({ background: couleur, color: texte } as React.CSSProperties)
             }
           >
-            {/*
-              **L'AVATAR EST DESORMAIS CELUI DU DESIGN SYSTEM.** Il porte la
-              meme regle qu'ailleurs : la photo quand elle est servable, les
-              initiales sinon — les CINQ causes d'absence restant
-              indistinguables a dessein (§21.2). Decoratif, parce que le nom
-              est juste en dessous : l'annoncer le ferait entendre deux fois.
-            */}
             <Avatar
               nom={nom}
-              taille={84}
+              taille={56}
               {...(ligne.photo === null ? {} : { photo: ligne.photo })}
             />
           </span>
           <span className="trombi-infos">
             <span className="trombi-nom">{nom}</span>
-            <span className="trombi-role">{ligne.metier ?? 'Metier non renseigne'}</span>
             <span className="trombi-cercle">
               {ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}
             </span>
           </span>
-        </>
-      }
-      verso={
-        <div className="trombi-verso">
-          {/*
-            **LE NOM EST AUSSI AU VERSO — charte 6.3.** Une seule face est dans
-            le DOM a la fois : carte retournee, le recto porte `hidden`, et sans
-            cette ligne la carte cesserait de dire QUI elle montre. C'est la
-            raison d'etre de la charte sur ce point, pas une redite.
-          */}
-          <p className="trombi-verso-nom">{nom}</p>
-          <dl className="trombi-verso-liste">
-            <dt>Metier</dt>
-            <dd>{ligne.metier ?? 'Non renseigne'}</dd>
-            <dt>Statut</dt>
-            {/*
-            **PASTILLE BLANCHE POUR LE STATUT, JAUNE POUR LE CLIENT — charte
-            6.3.** Le verso est un aplat de bleu fonce, et les tons semantiques
-            de `Badge` (`mission`, `intercontrat`) sont des surfaces CLAIRES
-            appariees a un texte fonce : les poser ici donnerait un couple que
-            personne n'a mesure sur ce fond. Les deux pastilles de la charte
-            sont, elles, appariees a ce bleu — ce sont les couples
-            `--marque-jaune` et `--surface`/`--encre`, deja prouves.
-
-            Le libelle porte l'information dans les deux cas ; la couleur ne
-            fait que distinguer les deux lignes.
-          */}
-            <dd>
-              {libelleStatut === null ? (
-                'Non renseigne'
-              ) : (
-                <span className="trombi-pastille-statut">{libelleStatut}</span>
-              )}
-            </dd>
-            <dt>Client</dt>
-            <dd>
-              {ligne.client === null ? (
-                'Non renseigne'
-              ) : (
-                <span className="trombi-pastille-client">{ligne.client}</span>
-              )}
-            </dd>
-            <dt>Cercle</dt>
-            {/*
-            **LE NOM DU CERCLE EN TOUTES LETTRES, ET C'EST LE §10.1** : la couleur
-            ne remplit que le bandeau, elle ne transmet jamais seule l'information.
-          */}
-            <dd>{ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}</dd>
-          </dl>
         </div>
-      }
-      voirPlus={
-        <Link
-          //  **`aria-label` PLUTOT QU'UN TEXTE HORS-ECRAN, ET LA MESURE L'A
-          //  IMPOSE DEUX FOIS.** Un `<span>` masque a l'oeil produisait
-          //  « Voir plussur Ada Lovelace » : le calcul du nom accessible
-          //  concatene les noeuds de texte SANS separateur, et ni JSX ni une
-          //  accolade n'y changent rien. Dans une grille de cent cartes, cent
-          //  liens nommes « Voir plus » seraient indistinguables ; `aria-label`
-          //  nomme la personne, sans toucher au texte visible.
-          aria-label={`Voir plus sur ${nom}`}
-          className="trombi-voir-plus"
-          to={cheminDuProfilALEcran(codeEntite, ligne.id)}
-        >
-          Voir plus
-        </Link>
-      }
-    />
+        <div className="trombi-carte-face trombi-carte-verso">
+          <div className="trombi-verso">
+            <p className="trombi-verso-nom">{nom}</p>
+            <dl className="trombi-verso-liste">
+              <dt>Cercle</dt>
+              <dd>{ligne.cercle === null ? 'Aucun cercle principal' : ligne.cercle.nom}</dd>
+            </dl>
+            <Link
+              aria-label={`Voir plus sur ${nom}`}
+              className="trombi-voir-plus trombi-voir-plus-verso"
+              to={cheminDuProfilALEcran(codeEntite, ligne.id)}
+            >
+              Voir plus
+            </Link>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }

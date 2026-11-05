@@ -64,6 +64,8 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
+import { EDITION_BETA_BORDEAUX } from '../edition';
+
 import {
   peutConsulterLAudit,
   peutCreerUneEntite,
@@ -142,6 +144,12 @@ const GROUPES: readonly Groupe[] = [
   { cle: 'support', libelle: 'Support', visible: () => true },
 ];
 
+const GROUPES_SUSPENDUS_EN_BETA = new Set<CleDeGroupe>([
+  'donnees',
+  'super-administration',
+  'audit',
+]);
+
 export function PageAdministration(): JSX.Element {
   const { entite, permissions } = useEntiteConsultee();
   const roles = permissions?.roles ?? null;
@@ -155,7 +163,9 @@ export function PageAdministration(): JSX.Element {
     );
   }
 
-  const groupesVisibles = GROUPES.filter((g) => g.visible(roles));
+  const groupesVisibles = GROUPES.filter(
+    (g) => (!EDITION_BETA_BORDEAUX || !GROUPES_SUSPENDUS_EN_BETA.has(g.cle)) && g.visible(roles),
+  );
   const actif = groupesVisibles.some((g) => g.cle === groupeActif)
     ? groupeActif
     : (groupesVisibles[0]?.cle ?? null);

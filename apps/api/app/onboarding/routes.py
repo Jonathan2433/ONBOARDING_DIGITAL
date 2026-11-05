@@ -217,7 +217,7 @@ class FicheDArrivee(BaseModel):
     first_name: str
     last_name: str
     preferred_name: str | None
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     metier: str | None
     statut: str | None
     client: str | None
@@ -887,8 +887,9 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     "DEUX grilles distinctes selon l'etat de la fiche — matrice §7. "
                     "Brouillon (« Completer ») : Soi, ESM/ADM-E/SUPER dans l'entite, "
                     "Booster du cercle de la cible ; `DSM`/`OFFICE` a TIRET. Publiee "
-                    "(« Corriger apres publication ») : l'INVERSE sur `NEW` (perd le "
-                    "droit, §6.2) et `DSM` (le retrouve, Consultants) ; `OFFICE` "
+                    "(« Corriger apres publication ») : la Beta Bordeaux conserve "
+                    "`Soi` sur la presentation et le fun fact ; `DSM` retrouve aussi "
+                    "son droit (Consultants) ; `OFFICE` "
                     "reste a TIRET."
                 )
             },
@@ -911,8 +912,8 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             "presentation et fun fact » (brouillon) : cree la fiche a la premiere "
             "completion (`version: null`), la modifie ensuite. « Corriger apres "
             "publication » : les memes deux champs, apres que `state` soit devenu "
-            "`published` — le nouvel arrivant PERD ce droit (§6.2), le DSM le "
-            "RETROUVE (Consultants).<br><br>"
+            "`published` — la Beta Bordeaux conserve le droit `Soi` sur ces deux "
+            "champs et le DSM retrouve egalement son droit (Consultants).<br><br>"
             "**`photo_media_id` n'est pas ici** : aucune route d'upload ou "
             "d'autorisation de media n'existe encore — residu nomme, comme la "
             "lecture de `T2` l'a deja ete pour la miniature."
@@ -963,9 +964,9 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
             #  LE PERMIS DEPEND DE L'ETAT COURANT — matrice §7, DEUX lignes
             #  distinctes. `draft` (ou pas de ligne encore) : « Completer »,
             #  Soi/Support/Support cercle. `published` : « Corriger apres
-            #  publication », l'INVERSE sur `NEW` (perd le droit) et `DSM`
-            #  (le retrouve). Toute autre valeur (`archived`) n'a AUCUNE ligne
-            #  d'ecriture : refusee ici, jamais laissee au service.
+            #  publication ». La Beta Bordeaux ajoute `Soi` a cette correction ;
+            #  le DSM retrouve aussi son droit. Toute autre valeur (`archived`)
+            #  n'a AUCUNE ligne d'ecriture : refusee ici, jamais laissee au service.
             if fiche.state == "draft":
                 autorise = peut_completer_la_fiche_arrivee(
                     connexion,
@@ -977,14 +978,17 @@ def routeur_onboarding(parametres: Parametres) -> APIRouter:
                     instant=instant,
                 )
             elif fiche.state == "published":
-                autorise = peut_corriger_la_fiche_arrivee_apres_publication(
-                    connexion,
-                    entite=entite.id,
-                    acteur=appelant.personne,
-                    cible_appartenance=appartenance,
-                    cible_personne=fiche.person_id,
-                    roles=roles,
-                    instant=instant,
+                autorise = (
+                    appelant.personne == fiche.person_id
+                    or peut_corriger_la_fiche_arrivee_apres_publication(
+                        connexion,
+                        entite=entite.id,
+                        acteur=appelant.personne,
+                        cible_appartenance=appartenance,
+                        cible_personne=fiche.person_id,
+                        roles=roles,
+                        instant=instant,
+                    )
                 )
             else:
                 autorise = False

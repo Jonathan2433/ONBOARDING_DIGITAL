@@ -2003,6 +2003,25 @@
       ]
     },
     {
+      "cle": "televersementImageDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/image",
+      "methode": "post",
+      "codesExploitables": [200, 401, 403, 404, 409, 422],
+      "forme": "ReponseDeGestionDesMediasDEvenement",
+      "role": [
+        "Flux Beta Bordeaux : televerser une image et la rattacher a l'evenement en un geste.",
+        "Reutilise les controles de contenu, de taille et de perimetre des medias existants."
+      ]
+    },
+    {
+      "cle": "imageDUnEvenement",
+      "chemin": "/api/v1/entities/{code}/events/{evenement}/image",
+      "methode": "get",
+      "codesExploitables": [200, 401, 404],
+      "forme": "ImageBinaire",
+      "role": ["Sert uniquement la variante generee d'un evenement publie, jamais l'original."]
+    },
+    {
       "cle": "arriveesRecentes",
       "chemin": "/api/v1/entities/{code}/arrivees-recentes",
       "methode": "get",

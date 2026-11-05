@@ -45,6 +45,7 @@ class EvenementLu:
     state: str
     cancelled_at: dt.datetime | None
     cancellation_reason: str | None
+    a_une_image: bool
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -101,8 +102,13 @@ def lister_les_evenements(
     lignes = (
         connexion.execute(
             text(
-                "SELECT e.id, e.title, e.description, e.starts_at, e.ends_at, "
-                "e.location_text, e.state, e.cancelled_at, e.cancellation_reason "
+                "SELECT e.id, e.title, e.description, e.starts_at, e.ends_at, "  # noqa: S608
+                "e.location_text, e.state, e.cancelled_at, e.cancellation_reason, "
+                "EXISTS (SELECT 1 FROM event_media em "
+                "JOIN media_asset ma ON ma.id=em.media_asset_id AND ma.state='ready' "
+                "JOIN media_variant mv ON mv.media_asset_id=ma.id AND mv.variant_type='thumbnail' "
+                "WHERE em.event_id=e.id AND em.archived_at IS NULL "
+                "AND ma.archived_at IS NULL AND mv.archived_at IS NULL) AS a_une_image "
                 f"{source} ORDER BY {_ORDRE[classement]} "
                 "LIMIT :taille OFFSET :decalage"
             ),
@@ -125,6 +131,7 @@ def _en_evenement(ligne: Any) -> EvenementLu:
         state=ligne["state"],
         cancelled_at=ligne["cancelled_at"],
         cancellation_reason=ligne["cancellation_reason"],
+        a_une_image=bool(ligne["a_une_image"]),
     )
 
 

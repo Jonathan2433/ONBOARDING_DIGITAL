@@ -187,7 +187,7 @@ def _demande(
     statut: SituationProfessionnelle = SituationProfessionnelle.INTERCONTRACT,
     client: uuid.UUID | None = None,
     dsm: uuid.UUID | None = None,
-    arrivee: dt.date = ARRIVEE,
+    arrivee: dt.date | None = ARRIVEE,
 ) -> DemandeDeCollaborateur:
     return DemandeDeCollaborateur(
         email=f"{MARQUEUR.lower()}-{uuid.uuid4().hex[:10]}@exalt-company.com",
@@ -434,6 +434,38 @@ def test_une_arrivee_passee_rend_une_appartenance_ACTIVE(cx: Connection) -> None
         {"id": resultat.appartenance},
     ).scalar_one()
     assert etat == EtatAppartenance.ACTIVE.value
+
+
+@pytest.mark.integration
+def test_une_date_d_arrivee_inconnue_cree_une_appartenance_ACTIVE(cx: Connection) -> None:
+    """La date RH reste nulle ; le debut technique preserve les invariants temporels."""
+    entite = _entite(cx, "CREA-SANS-DATE")
+    acteur = _personne(cx, "ACTEUR")
+    cercle = _cercle(cx, entite, "C1")
+
+    resultat = creer_un_collaborateur(
+        cx,
+        entite=entite,
+        acteur=acteur,
+        demande=_demande(metier=None, cercle=cercle, arrivee=None),
+        instant=JANVIER,
+    )
+    ligne = (
+        cx.execute(
+            text(
+                "SELECT arrival_date, membership_started_on, membership_state "
+                "FROM entity_membership WHERE id = :id"
+            ),
+            {"id": resultat.appartenance},
+        )
+        .mappings()
+        .one()
+    )
+    assert ligne == {
+        "arrival_date": None,
+        "membership_started_on": JANVIER.date(),
+        "membership_state": EtatAppartenance.ACTIVE.value,
+    }
 
 
 @pytest.mark.integration

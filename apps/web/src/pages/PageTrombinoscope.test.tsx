@@ -79,9 +79,46 @@ const NOUVELLE = {
   cercle: null,
 };
 
-function page(lignes: readonly unknown[], total = lignes.length, pages = 1): Response {
+function page(
+  lignes: readonly unknown[],
+  total = lignes.length,
+  pages = 1,
+  pageCourante = 1,
+): Response {
   return new Response(
-    JSON.stringify({ collaborateurs: lignes, page: 1, taille: 25, total, pages }),
+    JSON.stringify({ collaborateurs: lignes, page: pageCourante, taille: 50, total, pages }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
+function frameworkAvecCercles(): Response {
+  return new Response(
+    JSON.stringify({
+      responsabilites: [],
+      cercles: [
+        {
+          identifiant: '11111111-1111-4111-8111-111111111111',
+          code: 'DATA',
+          nom: 'Data',
+          description: null,
+          jeton_de_couleur: 'data',
+          booster: null,
+          membres_actifs: 12,
+          chemin_detaille: '/entites/bordeaux/framework/cercles/DATA',
+        },
+        {
+          identifiant: '22222222-2222-4222-8222-222222222222',
+          code: 'PROJET',
+          nom: 'Projet',
+          description: null,
+          jeton_de_couleur: 'projet',
+          booster: null,
+          membres_actifs: 18,
+          chemin_detaille: '/entites/bordeaux/framework/cercles/PROJET',
+        },
+      ],
+      bureaux: [],
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   );
 }
@@ -94,15 +131,9 @@ function monter(): void {
   );
 }
 
-/** Le bouton de face d'une carte, retrouve par le nom accessible qui NOMME la personne. */
-//  **`{ selector: '.trombi-nom' }` PARTOUT DEPUIS `E5`.** La charte 6.3 pose
-//  le nom sur les DEUX faces — une carte retournee doit continuer de dire qui
-//  elle montre — et les deux faces sont dans le DOM, l'une portant `hidden`,
-//  que `getByText` ne filtre pas. Le selecteur vise celui du recto. Ce n'est
-//  pas un contournement : c'est la meme parade que `S10` avait deja posee pour
-//  le nom du cercle, pour la meme raison.
+/** La carte retrouvee par le nom accessible qui nomme la personne. */
 function faceDe(nom: string): HTMLElement {
-  return screen.getByRole('button', { name: new RegExp(`Retourner la carte de ${nom}`) });
+  return screen.getByRole('article', { name: `Carte de ${nom}` });
 }
 
 describe('le trombinoscope a l’ecran', () => {
@@ -119,16 +150,7 @@ describe('le trombinoscope a l’ecran', () => {
     expect(screen.getByText('2 collaborateurs')).toBeTruthy();
   });
 
-  //  ========================================================================
-  //  LE CRITERE : clic, toucher et clavier
-  //  ========================================================================
-
-  it('LA FACE EST UN <button> NATIF — c’est ce qui rend le TOUCHER vrai', async () => {
-    //  **LA PROPRIETE STRUCTURELLE, EXIGEE PLUTOT QUE SIMULEE.** `jsdom` ne
-    //  synthetise aucun `click` a partir d'un `touchend` : seul le navigateur le
-    //  fait, et il le fait pour un `<button>` sans qu'on ait rien a ecrire.
-    //  Verifier la balise est donc la SEULE observation qui distingue un
-    //  livrable tactile d'un `<div onClick>` qui ne l'est pas.
+  it('se retourne au survol CSS, sans bouton ni etat de clic', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([ADA]))),
@@ -137,61 +159,12 @@ describe('le trombinoscope a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    const face = faceDe('Ada Lovelace');
-    expect(face.tagName).toBe('BUTTON');
-    expect(face.getAttribute('type')).toBe('button');
-  });
-
-  it('se retourne au CLIC, et l’etat est annonce par aria-expanded', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => Promise.resolve(page([ADA]))),
-    );
-    monter();
-    await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
-    });
-    const face = faceDe('Ada Lovelace');
-    expect(face.getAttribute('aria-expanded')).toBe('false');
-
-    fireEvent.click(face);
-    expect(face.getAttribute('aria-expanded')).toBe('true');
-    //  **`{ selector: '.trombi-verso dd' }` DEPUIS `E5`** : la charte 6.3 pose
-    //  le role sur les DEUX faces — « role (encre-douce 13) » au recto, et la
-    //  ligne « Metier » au verso. Le selecteur vise celle du verso, qui est ce
-    //  que ce test regarde. Ce n'est pas une regression : c'est la charte.
-    expect(
-      screen.getByText('Ingenieure logicielle', { selector: '.trombi-verso dd' }),
-    ).toBeTruthy();
-
-    //  Et il revient : le retournement est une bascule, pas un aller simple.
-    fireEvent.click(face);
-    expect(face.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it.each([
-    ['Entree', '{Enter}'],
-    ['Espace', ' '],
-  ])('se retourne au CLAVIER — %s', async (_nom, touche) => {
-    //  **LES DEUX TOUCHES, ET C'EST LE POINT.** Un `<div onKeyDown>` qui n'aurait
-    //  prevu qu'Entree passerait le premier cas et echouerait au second ; un
-    //  `<button>` natif les traite tous deux sans code.
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => Promise.resolve(page([ADA]))),
-    );
-    monter();
-    await waitFor(() => {
-      expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
-    });
-    const face = faceDe('Ada Lovelace');
-    face.focus();
-    expect(document.activeElement).toBe(face);
-    //  `jsdom` active un bouton focalise sur Entree et Espace comme un navigateur.
-    fireEvent.keyDown(face, { key: touche === ' ' ? ' ' : 'Enter' });
-    fireEvent.keyUp(face, { key: touche === ' ' ? ' ' : 'Enter' });
-    fireEvent.click(face);
-    expect(face.getAttribute('aria-expanded')).toBe('true');
+    const carte = faceDe('Ada Lovelace');
+    expect(carte.classList.contains('trombi-carte')).toBe(true);
+    expect(carte.querySelector('.trombi-carte-recto')).toBeTruthy();
+    expect(carte.querySelector('.trombi-carte-verso')).toBeTruthy();
+    expect(carte.querySelector('button')).toBeNull();
+    expect(carte.getAttribute('aria-expanded')).toBeNull();
   });
 
   //  ========================================================================
@@ -209,31 +182,28 @@ describe('le trombinoscope a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    fireEvent.click(faceDe('Ada Lovelace'));
     //  **`{ selector: '.trombi-verso dd' }` DEPUIS S10** (`DEC-673`) : « Data »
     //  existe desormais DEUX FOIS dans le DOM — la pastille du recto (cachee
     //  par `hidden`, mais `getByText` ne filtre pas la visibilite) et ce
     //  `<dd>` du verso. Le selecteur ecarte la premiere, pas une regression.
     expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
-    expect(
-      screen.getByText('Ingenieure logicielle', { selector: '.trombi-verso dd' }),
-    ).toBeTruthy();
+    expect(screen.queryByText('Ingenieure logicielle')).toBeNull();
     //  Le statut est TRADUIT — depuis S6 (`DEC-672`) — et il vit depuis `E5`
     //  dans la pastille BLANCHE de la charte 6.3, non plus dans un `Badge` : le
     //  verso est un aplat de bleu fonce, ou les tons semantiques de `Badge`
     //  formeraient un couple que personne n'a mesure. Le selecteur ecarte au
     //  passage l'option du meme nom dans le filtre « Statut ».
-    expect(screen.getByText('En mission', { selector: '.trombi-pastille-statut' })).toBeTruthy();
-    expect(screen.getByText(/Client Alpha/)).toBeTruthy();
+    expect(screen.queryByText('En mission', { selector: '.trombi-verso' })).toBeNull();
+    expect(screen.queryByText(/Client Alpha/)).toBeNull();
   });
 
   it.each([
-    ['data', 'var(--cercle-data)'],
-    [null, ''],
-    ['jeton-inconnu-du-design-system', ''],
+    ['data', 'data', 'var(--trombi-cercle-data)'],
+    ['projet', null, ''],
+    ['inconnu', 'jeton-inconnu-du-design-system', ''],
   ])(
-    'le jeton « %s » REMPLIT le bandeau, ou ne le remplit pas — et le NOM reste',
-    async (jeton, attendu) => {
+    'le cercle « %s » REMPLIT le bandeau, ou ne le remplit pas — et le NOM reste',
+    async (codeCercle, jeton, attendu) => {
       //  **LES TROIS CAS DONNENT LE MEME NOM, ET C'EST LE §10.1.** La couleur
       //  n'est jamais le seul porteur : qu'elle soit posee, absente (`T10-8` --
       //  `color_token` est nullable au schema) ou inconnue du design system, le
@@ -244,7 +214,14 @@ describe('le trombinoscope a l’ecran', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn(() =>
-          Promise.resolve(page([{ ...ADA, cercle: { ...ADA.cercle, jeton_de_couleur: jeton } }])),
+          Promise.resolve(
+            page([
+              {
+                ...ADA,
+                cercle: { ...ADA.cercle, code: codeCercle, jeton_de_couleur: jeton },
+              },
+            ]),
+          ),
         ),
       );
       monter();
@@ -258,7 +235,6 @@ describe('le trombinoscope a l’ecran', () => {
       expect((carte as HTMLElement).style.getPropertyValue('--carte-cercle')).toBe('');
       const bandeau = document.querySelector('.trombi-bandeau') as HTMLElement;
       expect(bandeau.style.background).toBe(attendu);
-      fireEvent.click(faceDe('Ada Lovelace'));
       //  Depuis S10 (`DEC-673`), « Data » existe aussi sur le recto (pastille) :
       //  le selecteur cible le verso, seul concerne par ce test.
       expect(screen.getByText('Data', { selector: '.trombi-verso dd' })).toBeTruthy();
@@ -273,17 +249,24 @@ describe('le trombinoscope a l’ecran', () => {
     //  UNE TEINTE ET UNE SURFACE DE MARQUE, pas deux marques : les deux
     //  familles de la charte 4 sont ainsi exercees, et leurs textes
     //  apparies different (titre sombre contre blanc).
-    ['data', 'var(--cercle-data)', 'var(--cercle-data-texte)'],
-    ['produit', 'var(--cercle-produit)', 'var(--cercle-produit-texte)'],
-    [null, '', ''],
-    ['jeton-inconnu-du-design-system', '', ''],
+    ['data', 'data', 'var(--trombi-cercle-data)', 'var(--trombi-cercle-data-texte)'],
+    ['produit', 'produit', 'var(--cercle-produit)', 'var(--cercle-produit-texte)'],
+    ['projet', null, '', ''],
+    ['inconnu', 'jeton-inconnu-du-design-system', '', ''],
   ])(
-    'le bandeau du recto porte le jeton « %s », REMPLI ou neutre — charte 6.3',
-    async (jeton, surface, texte) => {
+    'le bandeau du recto porte le cercle « %s », REMPLI ou neutre — charte 6.3',
+    async (codeCercle, jeton, surface, texte) => {
       vi.stubGlobal(
         'fetch',
         vi.fn(() =>
-          Promise.resolve(page([{ ...ADA, cercle: { ...ADA.cercle, jeton_de_couleur: jeton } }])),
+          Promise.resolve(
+            page([
+              {
+                ...ADA,
+                cercle: { ...ADA.cercle, code: codeCercle, jeton_de_couleur: jeton },
+              },
+            ]),
+          ),
         ),
       );
       monter();
@@ -322,11 +305,12 @@ describe('le trombinoscope a l’ecran', () => {
     //  principal » en toutes lettres.
     const bandeau = document.querySelector('.trombi-bandeau') as HTMLElement;
     expect(bandeau).toBeTruthy();
-    expect(bandeau.style.background).toBe('');
+    expect(bandeau.style.background).toBe('var(--trombi-sans-cercle)');
+    expect(bandeau.style.color).toBe('var(--trombi-sans-cercle-texte)');
     expect(screen.getAllByText('Aucun cercle principal').length).toBeGreaterThan(0);
   });
 
-  it('un collaborateur SANS affectation affiche « Non renseigne », jamais du vide', async () => {
+  it('un collaborateur SANS cercle affiche le libelle explicite sur les deux faces', async () => {
     //  Un champ vide laisserait croire a une panne d'affichage ; « Non
     //  renseigne » dit ce qui est vrai.
     vi.stubGlobal(
@@ -337,14 +321,8 @@ describe('le trombinoscope a l’ecran', () => {
     await waitFor(() => {
       expect(screen.getByText('Nour Arrivante', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    fireEvent.click(faceDe('Nour Arrivante'));
-    //  **TROIS DEPUIS `E5`, ET NON DEUX** : la charte 6.3 donne au client sa
-    //  propre ligne au verso (pastille jaune), la ou il etait accole au statut.
-    //  Metier, statut et client disent donc chacun « Non renseigne ».
-    expect(screen.getAllByText('Non renseigne').length).toBe(3);
-    //  Le nom du cercle est sur les DEUX faces, comme le role : la charte 6.3
-    //  le pose au recto sous l'avatar, et le verso le garde.
     expect(screen.getAllByText('Aucun cercle principal').length).toBe(2);
+    expect(screen.queryByText('Non renseigne')).toBeNull();
   });
 
   it('sans photo autorisee, l’avatar neutre porte les initiales — §21.2', async () => {
@@ -419,6 +397,60 @@ describe('le trombinoscope a l’ecran', () => {
     expect(adresses.at(-1) ?? '').toContain('recherche=Ada');
   });
 
+  it('filtre par le véritable identifiant du cercle et repart du premier lot', async () => {
+    const adresses: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((cible: string | URL | Request) => {
+        const url = String(cible);
+        adresses.push(url);
+        return Promise.resolve(url.endsWith('/framework') ? frameworkAvecCercles() : page([ADA]));
+      }),
+    );
+    monter();
+
+    const filtre = await screen.findByLabelText('Cercle');
+    await waitFor(() => expect((filtre as HTMLSelectElement).disabled).toBe(false));
+    expect(screen.getByRole('option', { name: 'Tous les cercles' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Projet' })).toBeTruthy();
+
+    fireEvent.change(filtre, { target: { value: '22222222-2222-4222-8222-222222222222' } });
+    await waitFor(() =>
+      expect(
+        adresses.some((url) => url.includes('cercle=22222222-2222-4222-8222-222222222222')),
+      ).toBe(true),
+    );
+    const derniereRequete = [...adresses].reverse().find((url) => url.includes('/people?')) ?? '';
+    expect(derniereRequete).toContain('page=1');
+  });
+
+  it('efface en un geste la recherche, le cercle et le statut actifs', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((cible: string | URL | Request) =>
+        Promise.resolve(
+          String(cible).endsWith('/framework') ? frameworkAvecCercles() : page([ADA]),
+        ),
+      ),
+    );
+    monter();
+
+    const recherche = screen.getByLabelText('Rechercher un collaborateur') as HTMLInputElement;
+    const cercle = (await screen.findByLabelText('Cercle')) as HTMLSelectElement;
+    const statut = screen.getByLabelText('Statut') as HTMLSelectElement;
+    await waitFor(() => expect(cercle.disabled).toBe(false));
+
+    fireEvent.change(recherche, { target: { value: 'Ada' } });
+    fireEvent.change(cercle, { target: { value: '22222222-2222-4222-8222-222222222222' } });
+    fireEvent.change(statut, { target: { value: 'mission' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Effacer les filtres' }));
+    expect(recherche.value).toBe('');
+    expect(cercle.value).toBe('');
+    expect(statut.value).toBe('');
+    expect(screen.queryByRole('button', { name: 'Effacer les filtres' })).toBeNull();
+  });
+
   it('« aucun collaborateur » n’est PAS une panne', async () => {
     vi.stubGlobal(
       'fetch',
@@ -443,7 +475,7 @@ describe('le trombinoscope a l’ecran', () => {
     });
   });
 
-  it('la pagination n’apparait QUE s’il y a plus d’une page', async () => {
+  it('ne montre ni pagination ni taille de page quand toute la liste tient dans un lot', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([ADA], 1, 1))),
@@ -455,26 +487,38 @@ describe('le trombinoscope a l’ecran', () => {
     //  Une pagination sur une seule page est du bruit, et elle suggere a tort
     //  qu'il y a autre chose a voir.
     expect(screen.queryByRole('navigation', { name: /Pagination/ })).toBeNull();
+    expect(screen.queryByText('Par page')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Charger les collaborateurs suivants/ }),
+    ).toBeNull();
   });
 
-  it('avec plusieurs pages, les deux commandes existent et la premiere est desactivee', async () => {
+  it('cumule les lots dans un scroll infini sans remplacer les cartes déjà visibles', async () => {
+    const suivante = { ...NOUVELLE, first_name: 'Grace', last_name: 'Hopper' };
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(page([ADA], 60, 3))),
+      vi.fn((url: string) => {
+        const pageDemandee = new URL(url, 'http://local').searchParams.get('page');
+        return Promise.resolve(
+          page(pageDemandee === '2' ? [suivante] : [ADA], 2, 2, pageDemandee === '2' ? 2 : 1),
+        );
+      }),
     );
     monter();
     await waitFor(() => {
       expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    const precedente = screen.getByRole('button', { name: 'Page precedente' });
-    expect((precedente as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByRole('button', { name: 'Page suivante' })).toBeTruthy();
-    expect(screen.getByText(/Page 1 sur 3/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Charger les collaborateurs suivants/ }));
+    await waitFor(() => {
+      expect(screen.getByText('Grace Hopper', { selector: '.trombi-nom' })).toBeTruthy();
+    });
+    expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: /Pagination/ })).toBeNull();
   });
 });
 
-describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le vehicule (`DEC-672`)', () => {
-  it('le statut du verso est une pastille, pas du texte simple — charte 6.3', async () => {
+describe('Beta Bordeaux : cartes au survol et statut retire', () => {
+  it('le verso ne contient plus le statut', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([ADA]))),
@@ -483,18 +527,11 @@ describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le ve
     await waitFor(() => {
       expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    fireEvent.click(faceDe('Ada Lovelace'));
-    //  **PORTEE AU VERSO** : le filtre « Statut » du formulaire porte la MEME
-    //  chaine dans une `<option>`, et un `getByText` nu y trouverait un second
-    //  candidat.
-    expect(screen.getByText('En mission', { selector: '.trombi-pastille-statut' })).toBeTruthy();
+    expect(screen.queryByText('En mission', { selector: '.trombi-verso' })).toBeNull();
+    expect(faceDe('Ada Lovelace').querySelector('dt')?.textContent).toBe('Cercle');
   });
 
-  it('la carte reste une `CarteRetournable` — le vehicule n’a pas change', async () => {
-    //  **VERIFICATION, PAS CONSTRUCTION.** `Carte` n'accepte ni `className` ni
-    //  `style` : elle ne pourrait pas porter `--carte-cercle`, et n'offre aucun
-    //  recto/verso. `CarteRetournable` reste donc le bon vehicule pour la
-    //  richesse de cet ecran (§13.2, `S6`).
+  it('la carte utilise la structure de retournement au survol', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(page([ADA]))),
@@ -503,8 +540,9 @@ describe('chantier front, S6 : `Badge` de statut, `CarteRetournable` reste le ve
     await waitFor(() => {
       expect(screen.getByText('Ada Lovelace', { selector: '.trombi-nom' })).toBeTruthy();
     });
-    const carte = faceDe('Ada Lovelace').closest('article');
-    expect(carte?.classList.contains('ui-carte-retournable')).toBe(true);
+    const carte = faceDe('Ada Lovelace');
+    expect(carte.classList.contains('trombi-carte')).toBe(true);
+    expect(carte.querySelector('.trombi-carte-interieur')).toBeTruthy();
   });
 });
 

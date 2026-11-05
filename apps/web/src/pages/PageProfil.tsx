@@ -82,18 +82,15 @@ import { Link, useParams } from 'react-router';
 
 import { couleurDuCercle, libelleDuStatut, tonDuStatut } from '../affichage';
 import { lireLaFicheArchivee } from '../api/cycleDeVie';
-import { lireLaFiche, lireLHistorique } from '../api/profil';
+import { lireLaFiche } from '../api/profil';
 import { cheminDeRubrique } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 import { PanneauDuCycleDeVie } from './PanneauDuCycleDeVie';
 import { PanneauPhoto } from './PanneauPhoto';
 
 import {
-  AXES_DE_L_HISTORIQUE,
-  type AxeDeLHistorique,
   type CercleDuProfil,
   type FicheDuProfil,
-  type HistoriqueOrganisationnel,
   peutGererLeCycleDeVie,
 } from '@onboarding/contracts';
 import { Alerte, Badge, Carte } from '@onboarding/ui';
@@ -159,16 +156,10 @@ export function nomDeLaFiche(fiche: FicheDuProfil): string {
   return `${fiche.nomPrefere ?? fiche.prenom} ${fiche.nom}`;
 }
 
-/** Une periode : « juin 2025 → aujourd'hui » quand elle est courante. */
-function intervalle(debut: string, fin: string | null): string {
-  return `${moisAnnee(debut)} → ${fin === null ? 'aujourd’hui' : moisAnnee(fin)}`;
-}
-
 /** Ce que la page a pu charger. `null` tant qu'aucune reponse n'est arrivee. */
 interface Chargement {
   readonly appartenance: string;
   readonly fiche: { readonly statut: number; readonly corps: FicheDuProfil | null };
-  readonly histoire: { readonly statut: number; readonly corps: HistoriqueOrganisationnel | null };
   /** Vrai quand la fiche vient de `fiche-archivee` — voir l'effet de chargement. */
   readonly archive: boolean;
 }
@@ -210,77 +201,6 @@ function Cercle({ cercle, nature }: { cercle: CercleDuProfil; nature: string }):
   );
 }
 
-/** Le titre francais de chaque axe, et l'ordre de la route. */
-const TITRES_D_AXE: Readonly<Record<AxeDeLHistorique, string>> = {
-  metier: 'Metiers',
-  statut: 'Situations',
-  cercle: 'Cercles',
-  dsm: 'DSM',
-  responsabilites: 'Responsabilites',
-};
-
-/** Le libelle d'une periode, par axe. Une seule fonction : les cinq formes y sont visibles. */
-function libelleDePeriode(axe: AxeDeLHistorique, periode: Record<string, unknown>): string {
-  switch (axe) {
-    case 'metier':
-      return String(periode['metier']);
-    case 'statut': {
-      const client = periode['client'];
-      const statut = libelleDuStatut(String(periode['statut'])) ?? '';
-      return client === null ? statut : `${statut} — ${String(client)}`;
-    }
-    case 'cercle':
-      return `${String(periode['nom'])} (${String(periode['type'])})`;
-    case 'dsm':
-      return String(periode['dsm']);
-    case 'responsabilites': {
-      const portee = periode['cercle'] ?? periode['bureau'];
-      return portee === null || portee === undefined
-        ? String(periode['type'])
-        : `${String(periode['type'])} — ${String(portee)}`;
-    }
-  }
-}
-
-/**
- * Un axe de l'historique.
- *
- * **TROIS ETATS, ET LES TROIS SONT DISTINCTS** : des periodes · `[]`, « aucune
- * periode enregistree » · `null`, « hors de votre perimetre ». Le troisieme est
- * le §20 de la matrice, que le §23.2 fait prevaloir sur le cumul des roles.
- */
-function AxeDeLHistoire({
-  axe,
-  periodes,
-}: {
-  axe: AxeDeLHistorique;
-  periodes: readonly Record<string, unknown>[] | null;
-}): JSX.Element {
-  return (
-    <section className="profil-axe">
-      <h3>{TITRES_D_AXE[axe]}</h3>
-      {periodes === null ? (
-        <p className="profil-hors-perimetre">
-          Hors de votre perimetre : votre role ne donne pas acces a cet historique.
-        </p>
-      ) : periodes.length === 0 ? (
-        <p className="profil-vide">Aucune periode enregistree.</p>
-      ) : (
-        <ul className="profil-periodes">
-          {periodes.map((periode, rang) => (
-            <li key={`${axe}-${String(rang)}`}>
-              <span className="profil-periode-libelle">{libelleDePeriode(axe, periode)}</span>
-              <span className="profil-periode-bornes">
-                {intervalle(String(periode['debut']), (periode['fin'] as string | null) ?? null)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 export function PageProfil(): JSX.Element {
   const { entite, permissions } = useEntiteConsultee();
   const { appartenance } = useParams<{ appartenance: string }>();
@@ -312,10 +232,7 @@ export function PageProfil(): JSX.Element {
       //  **LES DEUX APPELS PARTENT ENSEMBLE.** Enchainer ferait attendre
       //  l'historique pour rien : ses refus ne dependent pas de la fiche, et un
       //  employe recoit legitimement un 200 puis un 403.
-      const [fiche, histoire] = await Promise.all([
-        lireLaFiche(entite.code, cible, abandon.signal),
-        lireLHistorique(entite.code, cible, abandon.signal),
-      ]);
+      const fiche = await lireLaFiche(entite.code, cible, abandon.signal);
       //  **UN 404 PEUT VOULOIR DIRE « ARCHIVE », ET SEUL UN TROISIEME APPEL LE
       //  DIT.** Le §6.1 donne « consulter un profil ACTIF » aux huit roles et
       //  « consulter un profil ARCHIVE » a trois : la route de la fiche exclut
@@ -331,7 +248,6 @@ export function PageProfil(): JSX.Element {
           return {
             appartenance: cible,
             fiche: { statut: 200, corps: archivee.corps },
-            histoire: { statut: histoire.statut, corps: histoire.corps },
             archive: true,
           };
         }
@@ -339,7 +255,6 @@ export function PageProfil(): JSX.Element {
       return {
         appartenance: cible,
         fiche: { statut: fiche.statut, corps: fiche.corps },
-        histoire: { statut: histoire.statut, corps: histoire.corps },
         archive: false,
       };
     }
@@ -349,7 +264,6 @@ export function PageProfil(): JSX.Element {
         setCharge({
           appartenance: cible,
           fiche: { statut: 0, corps: null },
-          histoire: { statut: 0, corps: null },
           archive: false,
         });
       }
@@ -380,7 +294,7 @@ export function PageProfil(): JSX.Element {
     );
   }
 
-  const { fiche, histoire } = charge;
+  const { fiche } = charge;
   if (fiche.statut !== 200 || fiche.corps === null) {
     return (
       <section className="profil">
@@ -429,7 +343,6 @@ export function PageProfil(): JSX.Element {
             <img alt="" className="profil-photo" src={p.photo} />
           )}
           <div className="profil-titre">
-            <p className="profil-metier">{p.metier ?? 'Metier non renseigne'}</p>
             {statut === null || p.statut === null ? null : (
               <Badge ton={tonDuStatut(p.statut)}>{statut}</Badge>
             )}
@@ -471,9 +384,10 @@ export function PageProfil(): JSX.Element {
         */}
         <dl className="profil-champs">
           <Champ nom="Entite">{entite.nom}</Champ>
-          <Champ nom="Client">{p.client}</Champ>
           <Champ nom="DSM">{p.dsm}</Champ>
-          <Champ nom="Date d’arrivee">{dateComplete(p.dateArrivee)}</Champ>
+          <Champ nom="Date d’arrivee">
+            {p.dateArrivee === null ? 'À renseigner' : dateComplete(p.dateArrivee)}
+          </Champ>
         </dl>
       </Carte>
 
@@ -516,31 +430,6 @@ export function PageProfil(): JSX.Element {
           <Champ nom="Presentation courte">{p.presentation}</Champ>
           <Champ nom="Fun fact">{p.funFact}</Champ>
         </dl>
-      </Carte>
-
-      <Carte niveauTitre="h3" titre="Historique organisationnel">
-        {histoire.statut === 200 && histoire.corps !== null ? (
-          //  **LES AXES SONT DERIVES DU CONTRAT, PAS ECRITS ICI** : un sixieme axe
-          //  ajoute cote API apparaitrait sans qu'on y pense -- §7.27.
-          AXES_DE_L_HISTORIQUE.map((axe) => (
-            <AxeDeLHistoire
-              axe={axe}
-              key={axe}
-              periodes={
-                (histoire.corps?.[axe] as readonly Record<string, unknown>[] | null | undefined) ??
-                null
-              }
-            />
-          ))
-        ) : (
-          <Alerte ton="neutre" urgence="information">
-            {histoire.statut === 403
-              ? 'Votre role ne donne pas acces a l’historique organisationnel.'
-              : histoire.statut === 404
-                ? 'L’historique de ce profil n’est pas dans votre perimetre.'
-                : 'L’historique n’a pas pu etre charge.'}
-          </Alerte>
-        )}
       </Carte>
 
       <PanneauDuCycleDeVie

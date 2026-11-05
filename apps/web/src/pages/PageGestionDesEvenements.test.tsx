@@ -21,14 +21,19 @@ function monter(): void {
   );
 }
 
+let rolesDuCadre: string[] = ['ESM'];
+
 vi.mock('./CadreApplicatif', () => ({
   useEntiteConsultee: () => ({
     entite: { id: 'e1', code: 'bordeaux', nom: 'eXalt Bordeaux', ville: 'Bordeaux' },
-    permissions: { roles: ['ESM'], estEntitePrincipale: true },
+    permissions: { roles: rolesDuCadre, estEntitePrincipale: true },
   }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  rolesDuCadre = ['ESM'];
+});
 
 const SESSION = { personne: 'p1', jeton_csrf: 'un-jeton-anti-csrf' };
 
@@ -69,6 +74,8 @@ function evenementCree(modifications: Record<string, unknown> = {}): Record<stri
 function servir(reponses: {
   liste: unknown[];
   creation?: { charge: unknown; statut?: number };
+  image?: { charge: unknown; statut?: number };
+  publication?: { charge: unknown; statut?: number };
 }): ReturnType<typeof vi.fn> {
   const appel = vi.fn((url: string, options?: RequestInit) => {
     if (url.endsWith('/auth/session')) {
@@ -80,6 +87,25 @@ function servir(reponses: {
     if (url.endsWith('/events') && options?.method === 'POST') {
       return Promise.resolve(
         json(reponses.creation?.charge ?? evenementCree(), reponses.creation?.statut ?? 201),
+      );
+    }
+    if (/\/events\/[^/]+\/image$/.test(url) && options?.method === 'POST') {
+      return Promise.resolve(
+        json(
+          reponses.image?.charge ?? {
+            version: 2,
+            medias: [{ media: 'media-1', role: 'cover', ordre: 0 }],
+          },
+          reponses.image?.statut ?? 200,
+        ),
+      );
+    }
+    if (/\/events\/[^/]+\/publication$/.test(url) && options?.method === 'POST') {
+      return Promise.resolve(
+        json(
+          reponses.publication?.charge ?? evenementCree({ etat: 'published', version: 2 }),
+          reponses.publication?.statut ?? 200,
+        ),
       );
     }
     throw new Error(`URL non attendue : ${url}`);
@@ -117,7 +143,7 @@ describe('le sommaire rend TOUS les etats', () => {
 });
 
 describe('creer un evenement', () => {
-  it('le formulaire envoie la portee et les dates converties, puis recharge', async () => {
+  it('le formulaire envoie la portee et les dates puis publie automatiquement', async () => {
     const appel = servir({ liste: [] });
     monter();
     await waitFor(() => {
@@ -127,7 +153,7 @@ describe('creer un evenement', () => {
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Rentree' } });
     fireEvent.change(screen.getByLabelText('Debut'), { target: { value: '2026-11-01T08:00' } });
     fireEvent.change(screen.getByLabelText('Fin'), { target: { value: '2026-11-01T09:00' } });
-    fireEvent.click(screen.getByText('Creer l’evenement'));
+    fireEvent.click(screen.getByText('Créer l’événement'));
 
     await waitFor(() => {
       const creation = appel.mock.calls.find(
@@ -143,6 +169,11 @@ describe('creer un evenement', () => {
       expect(corps.titre).toBe('Rentree');
       expect(corps.commence_le).toBe('2026-11-01T08:00:00+00:00');
       expect(corps.portee).toBe('entite');
+      const publication = appel.mock.calls.find((c) =>
+        String(c[0]).endsWith('/events/ev2/publication'),
+      );
+      expect(publication).toBeTruthy();
+      expect(JSON.parse(String((publication?.[1] as RequestInit).body))).toEqual({ version: 1 });
     });
   });
 
@@ -158,7 +189,7 @@ describe('creer un evenement', () => {
     fireEvent.change(screen.getByLabelText('Fin'), { target: { value: '2026-11-01T09:00' } });
     fireEvent.change(screen.getByLabelText('Portee'), { target: { value: 'cercle' } });
     fireEvent.change(screen.getByLabelText('Code du cercle'), { target: { value: 'CERCLE-A' } });
-    fireEvent.click(screen.getByText('Creer l’evenement'));
+    fireEvent.click(screen.getByText('Créer l’événement'));
 
     await waitFor(() => {
       const creation = appel.mock.calls.find(
@@ -173,6 +204,74 @@ describe('creer un evenement', () => {
       expect(corps.portee).toBe('cercle');
       expect(corps.cercle).toBe('CERCLE-A');
       expect(corps.bureau).toBeUndefined();
+    });
+  });
+
+  it('transmet le motif exige pour la creation et la publication par SUPER', async () => {
+    rolesDuCadre = ['SUPER'];
+    const appel = servir({ liste: [] });
+    monter();
+    await waitFor(() => expect(screen.getByText('Nouvel evenement')).toBeTruthy());
+    fireEvent.click(screen.getByText('Nouvel evenement'));
+
+    fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Soiree Beta' } });
+    fireEvent.change(screen.getByLabelText('Debut'), { target: { value: '2026-11-05T15:45' } });
+    fireEvent.change(screen.getByLabelText('Fin'), { target: { value: '2026-11-05T20:45' } });
+    fireEvent.change(
+      screen.getByLabelText('Motif de création (obligatoire pour le super-administrateur)'),
+      { target: { value: 'Préparation de la démonstration Beta Bordeaux' } },
+    );
+    fireEvent.click(screen.getByText('Créer l’événement'));
+
+    await waitFor(() => {
+      const creation = appel.mock.calls.find(
+        (c) =>
+          String(c[0]).endsWith('/events') && (c[1] as RequestInit | undefined)?.method === 'POST',
+      );
+      const corps = JSON.parse(String((creation?.[1] as RequestInit).body)) as {
+        motif?: string;
+      };
+      expect(corps.motif).toBe('Préparation de la démonstration Beta Bordeaux');
+      const publication = appel.mock.calls.find((c) =>
+        String(c[0]).endsWith('/events/ev2/publication'),
+      );
+      const corpsDePublication = JSON.parse(String((publication?.[1] as RequestInit).body)) as {
+        motif?: string;
+      };
+      expect(corpsDePublication.motif).toBe('Préparation de la démonstration Beta Bordeaux');
+    });
+  });
+
+  it('televerse l’image puis publie avec la version incrementee', async () => {
+    const appel = servir({ liste: [] });
+    monter();
+    await waitFor(() => expect(screen.getByText('Nouvel evenement')).toBeTruthy());
+    fireEvent.click(screen.getByText('Nouvel evenement'));
+
+    fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Soiree imagee' } });
+    fireEvent.change(screen.getByLabelText('Debut'), { target: { value: '2026-11-05T15:45' } });
+    fireEvent.change(screen.getByLabelText('Fin'), { target: { value: '2026-11-05T20:45' } });
+    const fichier = new File(['image'], 'affiche.webp', { type: 'image/webp' });
+    fireEvent.change(screen.getByLabelText(/Image de l’événement/), {
+      target: { files: [fichier] },
+    });
+    fireEvent.click(screen.getByText('Créer l’événement'));
+
+    await waitFor(() => {
+      const televersement = appel.mock.calls.find(
+        (c) =>
+          String(c[0]).endsWith('/events/ev2/image') &&
+          (c[1] as RequestInit | undefined)?.method === 'POST',
+      );
+      expect(televersement).toBeTruthy();
+      const donnees = (televersement?.[1] as RequestInit).body as FormData;
+      expect(donnees.get('version')).toBe('1');
+      expect((donnees.get('fichier') as File).name).toBe('affiche.webp');
+      const publication = appel.mock.calls.find((c) =>
+        String(c[0]).endsWith('/events/ev2/publication'),
+      );
+      expect(publication).toBeTruthy();
+      expect(JSON.parse(String((publication?.[1] as RequestInit).body))).toEqual({ version: 2 });
     });
   });
 });

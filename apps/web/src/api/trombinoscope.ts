@@ -55,6 +55,7 @@ export interface CriteresDeRecherche {
   readonly page: number;
   readonly taille: number;
   readonly recherche: string;
+  readonly cercle?: string;
   readonly statut: string;
 }
 
@@ -76,6 +77,9 @@ export async function listerLeTrombinoscope(
   });
   if (criteres.recherche !== '') {
     parametres.set('recherche', criteres.recherche);
+  }
+  if (criteres.cercle !== undefined && criteres.cercle !== '') {
+    parametres.set('cercle', criteres.cercle);
   }
   if (criteres.statut !== '') {
     parametres.set('statut', criteres.statut);

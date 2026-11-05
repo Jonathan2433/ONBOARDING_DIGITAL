@@ -17,13 +17,11 @@ L'ASYMETRIE `BOOST` EST LE SECOND TEMOIN CENTRAL
   un membre reel de son cercle pour prouver qu'il peut completer SA fiche, et
   la MEME cible pour prouver qu'il ne peut PAS la valider.
 
-`CORRIGER APRES PUBLICATION` — UNE QUATRIEME LIGNE, TROUVEE APRES LA FUSION
+`CORRIGER APRES PUBLICATION` — ADAPTATION DE LA BETA BORDEAUX
 
-  Le §7 porte une ligne de plus, dont la grille S'INVERSE sur `NEW` et `DSM` :
-  le nouvel arrivant PERD son droit de completer (§6.2, « ne peut plus
-  modifier directement son profil »), et le DSM — a tiret sur `Completer` —
-  RETROUVE `Consultants`. Corrige jusqu'a `T3` fusionne (PR #187) : les tests
-  de cette section prouvent l'INVERSION, pas seulement un refus ou un acces.
+  Pour la Beta Bordeaux, le consultant conserve `Soi` sur sa presentation et
+  son fun fact apres publication. Le DSM — a tiret sur `Completer` — retrouve
+  toujours `Consultants`. Les autres perimetres historiques ne changent pas.
 """
 
 from __future__ import annotations
@@ -429,14 +427,14 @@ def _publier(parametres: Parametres, decor: dict[str, Any]) -> int:
 
 
 # ===========================================================================
-#  Corriger apres publication — matrice §7, la QUATRIEME ligne, trouvee
-#  juste apres la fusion de T3 (correctif, DEC-601 bis)
+#  Corriger apres publication — adaptation Beta Bordeaux : `Soi` est conserve
+#  pour la presentation et le fun fact.
 # ===========================================================================
 
 
 @pytest.mark.integration
-def test_le_nouvel_arrivant_NE_CORRIGE_PLUS_apres_publication(decor: dict[str, Any]) -> None:
-    """`NEW` PERD ce droit a la publication — §6.2, l'INVERSE de « Completer »."""
+def test_le_nouvel_arrivant_CORRIGE_SA_fiche_apres_publication(decor: dict[str, Any]) -> None:
+    """La Beta Bordeaux conserve `Soi` pour reprendre les informations saisies."""
     parametres = decor["parametres"]
     version = _publier(parametres, decor)
     reponse = _appeler_ecriture(
@@ -446,8 +444,8 @@ def test_le_nouvel_arrivant_NE_CORRIGE_PLUS_apres_publication(decor: dict[str, A
         _session(parametres, decor["arrivant_personne"]),
         {"version": version, "short_intro": "Je corrige moi-meme"},
     )
-    assert reponse.status_code == 403, reponse.text
-    assert reponse.json()["erreur"]["code"] == "fiche_arrivee_hors_perimetre"
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["state"] == "published"
 
 
 @pytest.mark.integration

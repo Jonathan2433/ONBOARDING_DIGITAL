@@ -153,6 +153,7 @@ describe('la consommation du lien', () => {
       <MemoryRouter initialEntries={[CHEMINS.lien]}>
         <Routes>
           <Route path={CHEMINS.lien} element={<PageLien />} />
+          <Route path={CHEMINS.entite} element={<p>Accueil Bordeaux</p>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -165,6 +166,7 @@ describe('la consommation du lien', () => {
     expect(chemin).not.toContain('oml_secret');
     //  Et il a ete retire de la barre d'adresse.
     expect(remplacer).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('Accueil Bordeaux')).toBeTruthy());
   });
 
   it('ne consomme QU UNE FOIS sous StrictMode', async () => {
@@ -184,6 +186,7 @@ describe('la consommation du lien', () => {
         <MemoryRouter initialEntries={[CHEMINS.lien]}>
           <Routes>
             <Route path={CHEMINS.lien} element={<PageLien />} />
+            <Route path={CHEMINS.entite} element={<p>Accueil Bordeaux</p>} />
           </Routes>
         </MemoryRouter>
       </StrictMode>,

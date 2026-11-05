@@ -50,6 +50,7 @@ import {
   modifierUnEvenement,
   publierUnEvenement,
   restaurerUnEvenement,
+  televerserImageDEvenement,
 } from '../api/evenements';
 import { cheminGestionDesEvenementsALEcran } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
@@ -159,6 +160,8 @@ export function PageEditionEvenement(): JSX.Element | null {
   const { evenement } = useParams<{ evenement: string }>();
   const roles = permissions?.roles ?? null;
   const [etat, setEtat] = useState<Etat>({ phase: 'chargement' });
+  const [image, setImage] = useState<File | null>(null);
+  const [televersement, setTeleversement] = useState<'repos' | 'envoi' | 'erreur'>('repos');
 
   useEffect(() => {
     if (evenement === undefined || roles === null || !peutGererLesEvenements(roles)) {
@@ -321,6 +324,21 @@ export function PageEditionEvenement(): JSX.Element | null {
       await recharger();
     } else {
       setEtat({ phase: 'erreur', statut: resultat.statut });
+    }
+  }
+
+  async function televerserImage(): Promise<void> {
+    if (image === null || evenement === undefined) {
+      return;
+    }
+    setTeleversement('envoi');
+    const resultat = await televerserImageDEvenement(codeEntite, evenement, donnee.version, image);
+    if (resultat.statut === 200) {
+      setImage(null);
+      setTeleversement('repos');
+      await recharger();
+    } else {
+      setTeleversement('erreur');
     }
   }
 
@@ -583,88 +601,118 @@ export function PageEditionEvenement(): JSX.Element | null {
 
       {donnee.etat !== 'archived' && peutModifier ? (
         <div className="evenements-edition-medias">
-          <h3>Medias ({mediasDeTravail.length})</h3>
-          {mediasDeTravail.length === 0 ? (
-            <p>Aucun media rattache.</p>
-          ) : (
-            <ol className="evenements-edition-liste-medias">
-              {mediasDeTravail.map((media, rang) => (
-                <li key={media.media} className="evenements-edition-media">
-                  <span>
-                    {media.role} — {media.media}
-                  </span>
-                  <div className="evenements-edition-media-actions">
-                    <button
-                      disabled={rang === 0}
-                      onClick={() => {
-                        deplacerMedia(rang, -1);
-                      }}
-                      type="button"
-                    >
-                      Monter
-                    </button>
-                    <button
-                      disabled={rang === mediasDeTravail.length - 1}
-                      onClick={() => {
-                        deplacerMedia(rang, 1);
-                      }}
-                      type="button"
-                    >
-                      Descendre
-                    </button>
-                    <button
-                      onClick={() => {
-                        retirerMedia(rang);
-                      }}
-                      type="button"
-                    >
-                      Retirer
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-          <label htmlFor="evenement-nouveau-media">
-            Identifiant du media (deja televerse, `ready`)
+          <h3>Image de l&rsquo;événement</h3>
+          <p>Ajoutez un visuel JPEG, PNG ou WebP (10 Mo maximum).</p>
+          <label htmlFor="evenement-image">
+            Choisir une image
             <input
-              id="evenement-nouveau-media"
+              accept="image/jpeg,image/png,image/webp"
+              id="evenement-image"
               onChange={(e) => {
-                setEtat({ ...etat, nouveauMedia: e.target.value });
+                setImage(e.target.files?.[0] ?? null);
+                setTeleversement('repos');
               }}
-              type="text"
-              value={nouveauMedia}
-            />
-          </label>
-          <label htmlFor="evenement-nouveau-role">
-            Role d&rsquo;affichage
-            <input
-              id="evenement-nouveau-role"
-              onChange={(e) => {
-                setEtat({ ...etat, nouveauRole: e.target.value });
-              }}
-              type="text"
-              value={nouveauRole}
+              type="file"
             />
           </label>
           <Bouton
+            disabled={image === null || televersement === 'envoi'}
             onClick={() => {
-              ajouterMedia();
-            }}
-            type="button"
-            variante="secondaire"
-          >
-            Ajouter a la liste
-          </Bouton>
-          <Bouton
-            onClick={() => {
-              void enregistrerLesMedias();
+              void televerserImage();
             }}
             type="button"
             variante="primaire"
           >
-            Enregistrer les medias
+            {televersement === 'envoi' ? 'Envoi…' : 'Ajouter l’image'}
           </Bouton>
+          {televersement === 'erreur' ? (
+            <Alerte ton="erreur">L&rsquo;image n&rsquo;a pas pu être ajoutée.</Alerte>
+          ) : null}
+
+          <details>
+            <summary>Gestion avancée des médias ({mediasDeTravail.length})</summary>
+            {mediasDeTravail.length === 0 ? (
+              <p>Aucun media rattache.</p>
+            ) : (
+              <ol className="evenements-edition-liste-medias">
+                {mediasDeTravail.map((media, rang) => (
+                  <li key={media.media} className="evenements-edition-media">
+                    <span>
+                      {media.role} — {media.media}
+                    </span>
+                    <div className="evenements-edition-media-actions">
+                      <button
+                        disabled={rang === 0}
+                        onClick={() => {
+                          deplacerMedia(rang, -1);
+                        }}
+                        type="button"
+                      >
+                        Monter
+                      </button>
+                      <button
+                        disabled={rang === mediasDeTravail.length - 1}
+                        onClick={() => {
+                          deplacerMedia(rang, 1);
+                        }}
+                        type="button"
+                      >
+                        Descendre
+                      </button>
+                      <button
+                        onClick={() => {
+                          retirerMedia(rang);
+                        }}
+                        type="button"
+                      >
+                        Retirer
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <label htmlFor="evenement-nouveau-media">
+              Identifiant du media (deja televerse, `ready`)
+              <input
+                id="evenement-nouveau-media"
+                onChange={(e) => {
+                  setEtat({ ...etat, nouveauMedia: e.target.value });
+                }}
+                type="text"
+                value={nouveauMedia}
+              />
+            </label>
+            <label htmlFor="evenement-nouveau-role">
+              Role d&rsquo;affichage
+              <input
+                id="evenement-nouveau-role"
+                onChange={(e) => {
+                  setEtat({ ...etat, nouveauRole: e.target.value });
+                }}
+                type="text"
+                value={nouveauRole}
+              />
+            </label>
+            <Bouton
+              onClick={() => {
+                ajouterMedia();
+              }}
+              type="button"
+              variante="secondaire"
+            >
+              Ajouter a la liste
+            </Bouton>
+            <Bouton
+              onClick={() => {
+                void enregistrerLesMedias();
+              }}
+              type="button"
+              variante="primaire"
+            >
+              Enregistrer les medias
+            </Bouton>
+          </details>
         </div>
       ) : null}
 

@@ -78,7 +78,7 @@ export interface FicheDuProfil {
   readonly nom: string;
   readonly nomPrefere: string | null;
   readonly categorieProfessionnelle: string;
-  readonly dateArrivee: string;
+  readonly dateArrivee: string | null;
   readonly presentation: string | null;
   readonly funFact: string | null;
   readonly metier: string | null;
@@ -199,7 +199,7 @@ export function validerLaFiche(valeur: unknown): FicheDuProfil {
     nom: exigerChaine(valeur, 'last_name'),
     nomPrefere: chaineOuNul(valeur, 'preferred_name'),
     categorieProfessionnelle: exigerChaine(valeur, 'professional_category'),
-    dateArrivee: exigerChaine(valeur, 'arrival_date'),
+    dateArrivee: chaineOuNul(valeur, 'arrival_date'),
     presentation: chaineOuNul(valeur, 'short_bio'),
     funFact: chaineOuNul(valeur, 'fun_fact'),
     metier: chaineOuNul(valeur, 'metier'),

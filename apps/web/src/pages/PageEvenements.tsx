@@ -185,9 +185,21 @@ export function PageEvenements(): JSX.Element {
   }
 
   const donnees = etat.page;
+  const prochain = classement === 'a_venir' ? donnees.evenements[0] : undefined;
 
   return (
     <div className="evenements">
+      {prochain === undefined ? null : (
+        <section className="evenements-hero" aria-labelledby="evenements-hero-titre">
+          <span className="evenements-hero-badge">⚡ Nos temps forts</span>
+          <h2 id="evenements-hero-titre">Les moments à ne pas manquer</h2>
+          <p>
+            Prochain rendez-vous : {prochain.titre} —{' '}
+            {plageDeLEvenement(prochain.commenceLe, prochain.finitLe).split(',')[0]}
+          </p>
+          <span className="evenements-hero-action">À vos agendas !</span>
+        </section>
+      )}
       {peutGerer ? (
         <p>
           <Link className="app-lien" to={cheminGestionDesEvenementsALEcran(entite.code)}>
@@ -213,6 +225,14 @@ export function PageEvenements(): JSX.Element {
               <ul className="evenements-liste">
                 {donnees.evenements.map((evenement) => (
                   <li key={evenement.identifiant} className="evenements-carte">
+                    {evenement.image === null ? null : (
+                      <img
+                        alt=""
+                        className="evenements-image"
+                        loading="lazy"
+                        src={evenement.image}
+                      />
+                    )}
                     {/*
                       **LE PAVE DE DATE DE LA CHARTE 6.6.** Trois etats, trois
                       couples deja mesures : jaune de marque pour ce qui vient,

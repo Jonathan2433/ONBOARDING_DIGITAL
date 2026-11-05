@@ -67,7 +67,7 @@ class FicheArrivee:
     first_name: str
     last_name: str
     preferred_name: str | None
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     metier: str | None
     statut: str | None
     client: str | None

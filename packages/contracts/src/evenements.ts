@@ -82,6 +82,7 @@ export interface EvenementDuClassement {
   readonly etat: string;
   readonly annuleLe: string | null;
   readonly motifDAnnulation: string | null;
+  readonly image: string | null;
 }
 
 export interface PageDesEvenements {
@@ -135,6 +136,9 @@ function evenementDuClassement(brut: unknown, rang: number): EvenementDuClasseme
     etat: exigerChaine(brut, 'etat'),
     annuleLe: chaineOuNul(brut, 'annule_le'),
     motifDAnnulation: chaineOuNul(brut, 'motif_d_annulation'),
+    // Le champ est nouveau dans la Beta ; les agrégats produits par une version
+    // précédente restent lisibles pendant le déploiement progressif.
+    image: brut['image'] === undefined ? null : chaineOuNul(brut, 'image'),
   };
 }
 
@@ -481,6 +485,8 @@ export interface DemandeDeCreationDEvenement {
   readonly portee: PorteeDeCreationEvenement;
   readonly cercle?: string;
   readonly bureau?: string;
+  /** Obligatoire lorsque `SUPER` autorise la creation — cahier §18.1. */
+  readonly motif?: string;
 }
 
 /**
@@ -501,6 +507,8 @@ export interface DemandeDeModificationDEvenement {
 
 export interface DemandeDePublicationDEvenement {
   readonly version: number;
+  /** Obligatoire lorsque `SUPER` autorise la publication — cahier §18.1. */
+  readonly motif?: string;
 }
 
 export interface DemandeDAnnulationDEvenement {
@@ -543,6 +551,9 @@ export const GABARIT_CHEMIN_RESTAURATION_D_EVENEMENT: string = endpoint(
 ).chemin;
 export const GABARIT_CHEMIN_MEDIAS_D_EVENEMENT: string = endpoint(
   'gestionDesMediasDUnEvenement',
+).chemin;
+export const GABARIT_CHEMIN_IMAGE_D_EVENEMENT: string = endpoint(
+  'televersementImageDUnEvenement',
 ).chemin;
 export const GABARIT_CHEMIN_EVENEMENTS_POUR_GESTION: string = endpoint(
   'listeDesEvenementsPourGestion',
@@ -606,6 +617,10 @@ export function cheminRestaurationDEvenement(code: string, evenement: string): s
 
 export function cheminMediasDEvenement(code: string, evenement: string): string {
   return cheminAvecEvenement(GABARIT_CHEMIN_MEDIAS_D_EVENEMENT, code, evenement);
+}
+
+export function cheminImageDEvenement(code: string, evenement: string): string {
+  return cheminAvecEvenement(GABARIT_CHEMIN_IMAGE_D_EVENEMENT, code, evenement);
 }
 
 export function cheminEvenementsPourGestion(code: string): string {

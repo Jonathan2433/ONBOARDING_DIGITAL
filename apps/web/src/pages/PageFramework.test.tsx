@@ -34,6 +34,20 @@ afterEach(() => {
 const FRAMEWORK = {
   responsabilites: [
     {
+      type_de_responsabilite: 'DIRECTION',
+      titulaires: [
+        {
+          identifiant: 'dg1',
+          prenom: 'Mathéa',
+          nom: "D'Halluin",
+          photo: '/api/v1/entities/bordeaux/people/dg1/photo?variant=thumbnail_list',
+        },
+        { identifiant: 'dg2', prenom: 'Julie', nom: 'Dumas', photo: null },
+        { identifiant: 'dg3', prenom: 'Omar', nom: 'Lahjomri', photo: null },
+      ],
+      chemin_detaille: null,
+    },
+    {
       type_de_responsabilite: 'DSM',
       titulaires: [{ identifiant: 'p1', prenom: 'Ada', nom: 'Lovelace' }],
       chemin_detaille: '/entites/bordeaux/framework/responsabilites/dsm',
@@ -53,7 +67,12 @@ const FRAMEWORK = {
       nom: 'Data',
       description: null,
       jeton_de_couleur: 'produit',
-      booster: null,
+      booster: {
+        identifiant: 'booster-data',
+        prenom: 'Hadrien',
+        nom: 'Berling',
+        photo: '/api/v1/entities/bordeaux/people/booster-data/photo?variant=thumbnail_list',
+      },
       membres_actifs: 3,
       chemin_detaille: '/entites/bordeaux/framework/cercles/data',
     },
@@ -78,6 +97,56 @@ const FRAMEWORK = {
       localisation: null,
       responsables: [],
       chemin_detaille: '/entites/bordeaux/framework/bureaux/siege',
+    },
+  ],
+};
+
+const FRAMEWORK_AVEC_RESPONSABLES = {
+  ...FRAMEWORK,
+  bureaux: [
+    {
+      ...FRAMEWORK.bureaux[0],
+      nom: 'Bureau du Gaming',
+      description: 'Le bureau qui anime les rendez-vous gaming de Bordeaux.',
+      localisation: 'Bordeaux centre',
+      responsables: [
+        {
+          identifiant: 'office-1',
+          prenom: 'Charles',
+          nom: 'Vallais',
+          photo: '/api/v1/entities/bordeaux/people/office-1/photo?variant=thumbnail_list',
+        },
+        {
+          identifiant: 'office-2',
+          prenom: 'Romain',
+          nom: 'Hoarau',
+          photo: null,
+        },
+      ],
+    },
+  ],
+};
+
+const FRAMEWORK_AVEC_TROIS_BUREAUX = {
+  ...FRAMEWORK,
+  bureaux: [
+    {
+      ...FRAMEWORK.bureaux[0],
+      identifiant: 'bds',
+      code: 'BDS',
+      nom: 'Bureau du Sport',
+    },
+    {
+      ...FRAMEWORK.bureaux[0],
+      identifiant: 'bde',
+      code: 'BDE',
+      nom: 'Bureau des eXaltées',
+    },
+    {
+      ...FRAMEWORK.bureaux[0],
+      identifiant: 'bdg',
+      code: 'BDG',
+      nom: 'Bureau du Gaming',
     },
   ],
 };
@@ -127,6 +196,14 @@ describe('la page Framework a l’ecran', () => {
     });
     expect(screen.getByText('Shield')).toBeTruthy();
     expect(screen.getByText('Siege')).toBeTruthy();
+    expect(screen.getByText('Direction générale')).toBeTruthy();
+    expect(screen.getByText("Mathéa D'Halluin")).toBeTruthy();
+    expect(screen.getByText('Julie Dumas')).toBeTruthy();
+    expect(screen.getByText('Omar Lahjomri')).toBeTruthy();
+    const photoDeMathea = screen.getByText("Mathéa D'Halluin").closest('li')?.querySelector('img');
+    expect(photoDeMathea?.getAttribute('src')).toBe(
+      '/api/v1/entities/bordeaux/people/dg1/photo?variant=thumbnail_list',
+    );
     expect(screen.getByText('Ada Lovelace')).toBeTruthy();
   });
 
@@ -274,6 +351,13 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     //  Le panneau porte ce que `GET …/framework` sert deja — aucune lecture de
     //  plus n'est declenchee par le depliage.
     expect(within(panneau).getByText(/Booster/)).toBeTruthy();
+    expect(
+      within(panneau)
+        .getByText('Hadrien Berling')
+        .closest('.encart-booster')
+        ?.querySelector('img')
+        ?.getAttribute('src'),
+    ).toBe('/api/v1/entities/bordeaux/people/booster-data/photo?variant=thumbnail_list');
     expect(within(panneau).getByText('Voir les membres du cercle Data')).toBeTruthy();
 
     //  Et il se referme : c'est une bascule, pas un aller simple.
@@ -302,6 +386,46 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     ).toBe('true');
   });
 
+  it('un bureau se déplie avec sa description et les photos de ses responsables', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK_AVEC_RESPONSABLES))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByText('Bureau du Gaming')).toBeTruthy());
+
+    const bouton = screen.getByText('Bureau du Gaming').closest('button') as HTMLButtonElement;
+    const panneau = document.getElementById(
+      bouton.getAttribute('aria-controls') ?? '',
+    ) as HTMLElement;
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(panneau.hidden).toBe(true);
+
+    fireEvent.click(bouton);
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    expect(panneau.hidden).toBe(false);
+    expect(
+      within(panneau).getByText('Le bureau qui anime les rendez-vous gaming de Bordeaux.'),
+    ).toBeTruthy();
+    expect(within(panneau).getByText('📍 Bordeaux centre')).toBeTruthy();
+    expect(within(panneau).getByText('Charles Vallais')).toBeTruthy();
+    expect(within(panneau).getByText('Romain Hoarau')).toBeTruthy();
+    expect(
+      within(panneau)
+        .getByText('Charles Vallais')
+        .closest('li')
+        ?.querySelector('img')
+        ?.getAttribute('src'),
+    ).toBe('/api/v1/entities/bordeaux/people/office-1/photo?variant=thumbnail_list');
+    expect(
+      within(panneau).getByRole('link', { name: 'Voir la page du bureau Bureau du Gaming' }),
+    ).toBeTruthy();
+
+    fireEvent.click(bouton);
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(panneau.hidden).toBe(true);
+  });
+
   it('un bureau porte une icone DECORATIVE — cahier §13.2, « icones maitrisees »', async () => {
     vi.stubGlobal(
       'fetch',
@@ -311,7 +435,7 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     await waitFor(() => {
       expect(screen.getByText('Siege')).toBeTruthy();
     });
-    const icone = screen.getByText('Siege').closest('a')?.querySelector('svg');
+    const icone = screen.getByText('Siege').closest('button')?.querySelector('svg');
     expect(icone).toBeTruthy();
     expect(icone?.getAttribute('aria-hidden')).toBe('true');
     //  **UN CERCLE PORTE DESORMAIS SON PICTOGRAMME OFFICIEL — `E4`/`E5`.** La
@@ -330,5 +454,24 @@ describe('chantier front, S5 : `Carte`/`Badge`/icone de bureau (`DEC-672`)', () 
     expect(
       screen.getByText('Shield').closest('button')?.querySelector('.framework-accordeon-tuile svg'),
     ).toBeNull();
+  });
+
+  it('associe un coureur au BDS, un cocktail au BDE et une manette au BDG', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(reponse(FRAMEWORK_AVEC_TROIS_BUREAUX))),
+    );
+    monter();
+    await waitFor(() => expect(screen.getByText('Bureau du Sport')).toBeTruthy());
+
+    const sport = screen.getByText('Bureau du Sport').closest('button');
+    const exaltees = screen.getByText('Bureau des eXaltées').closest('button');
+    const gaming = screen.getByText('Bureau du Gaming').closest('button');
+    expect(sport?.querySelector('[data-icone-bureau="sport"]')).toBeTruthy();
+    expect(exaltees?.querySelector('[data-icone-bureau="cocktail"]')).toBeTruthy();
+    expect(gaming?.querySelector('[data-icone-bureau="gaming"]')).toBeTruthy();
+    expect(sport?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(exaltees?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(gaming?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 });

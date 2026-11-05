@@ -185,7 +185,7 @@ class CollaborateurDuTrombinoscope(BaseModel):
     last_name: str
     preferred_name: str | None
     professional_category: str
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     #  **LE CHEMIN DE LA MINIATURE, OU `None` POUR L'AVATAR NEUTRE.**
     #
     #  Un chemin et non un booleen : le frontend l'emploie tel quel. Et le chemin
@@ -265,7 +265,7 @@ class FicheDuProfil(BaseModel):
     last_name: str
     preferred_name: str | None
     professional_category: str
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     short_bio: str | None
     fun_fact: str | None
     metier: str | None
@@ -304,7 +304,9 @@ class DemandeDeCreationDeCollaborateur(BaseModel):
     prenom: str = Field(min_length=1, description="`first_name`")
     nom: str = Field(min_length=1, description="`last_name`")
     nom_prefere: str | None = Field(default=None, description="`preferred_name`, facultatif")
-    date_d_arrivee: dt.date = Field(description="Cahier §10.2")
+    date_d_arrivee: dt.date | None = Field(
+        default=None, description="Facultative tant que la date RH n'est pas connue."
+    )
     metier: uuid.UUID | None = Field(
         default=None, description="`job_catalog_id`, facultatif (`DEC-675`)"
     )
@@ -370,7 +372,9 @@ class DemandeDeChangementDEntite(BaseModel):
         max_length=LONGUEUR_MAXIMALE_CODE,
         description="Le `code` de l'entite d'arrivee",
     )
-    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    date_d_arrivee: dt.date | None = Field(
+        default=None, description="Facultative dans l'entite d'arrivee."
+    )
     metier: uuid.UUID | None = Field(
         default=None,
         description="`job_catalog_id`, dans l'entite d'arrivee, facultatif (`DEC-675`)",
@@ -414,7 +418,9 @@ class ElementDeTransfertEnMasseRequete(BaseModel):
         max_length=LONGUEUR_MAXIMALE_CODE,
         description="Le `code` de l'entite d'arrivee",
     )
-    date_d_arrivee: dt.date = Field(description="Dans l'entite d'arrivee — cahier §10.2")
+    date_d_arrivee: dt.date | None = Field(
+        default=None, description="Facultative dans l'entite d'arrivee."
+    )
     metier: uuid.UUID | None = Field(
         default=None,
         description="`job_catalog_id`, dans l'entite d'arrivee, facultatif (`DEC-675`)",
@@ -548,6 +554,7 @@ class DemandeDeModification(BaseModel):
 #  pas ici.
 CHAMPS_SANS_NUL: Final[frozenset[ChampOrganisationnel]] = frozenset(ChampOrganisationnel) - {
     ChampOrganisationnel.CLIENT,
+    ChampOrganisationnel.DATE_D_ARRIVEE,
     ChampOrganisationnel.METIER,
 }
 

@@ -11,10 +11,11 @@
  *   de disparaitre — une section absente et une section vide donneraient la meme
  *   observation alors qu'elles ne disent pas la meme chose.
  *
- * SEULES LES CARTES DE CERCLE ET DE BUREAU SONT DES LIENS, ET C'EST UN CHOIX MESURE
+ * LES CARTES DE CERCLE ET DE BUREAU REVELENT LEUR LIEN DETAILLE
  *
  *   `carte.cheminDetaille` n'est jamais `null` pour un cercle ou un bureau : `T9`
- *   leur construit une page, ci-dessous et dans `PageCercle`/`PageBureau`.
+ *   leur construit une page. Leur carte est un accordéon ; son panneau contient
+ *   le lien vers `PageCercle`/`PageBureau` et les informations de synthèse.
  *
  *   Pour `DSM` et `ESM`, `chemin_detaille` n'est PAS `null` non plus — l'annexe A
  *   §10.1 leur donne une page propre. **Mais aucune route ne la sert.**
@@ -49,19 +50,14 @@
  */
 import type { JSX } from 'react';
 import { useEffect, useId, useState } from 'react';
-import { Building2, ChevronDown } from 'lucide-react';
+import { Building2, ChevronDown, Gamepad2, Martini } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { couleurDuCercle, pictoDuCercle, texteDuCercle } from '../affichage';
-import { lireLeFramework } from '../api/organisation';
+import { lireLeCercle, lireLeFramework } from '../api/organisation';
 import { useEntiteConsultee } from './CadreApplicatif';
 
-import type {
-  CarteDeBureau,
-  CarteDeCercle,
-  PageFramework,
-  TitulaireFramework,
-} from '@onboarding/contracts';
+import type { CarteDeBureau, CarteDeCercle, PageFramework } from '@onboarding/contracts';
 import { Alerte, Avatar, Badge, Carte, Picto } from '@onboarding/ui';
 
 /**
@@ -75,13 +71,10 @@ import { Alerte, Avatar, Badge, Carte, Picto } from '@onboarding/ui';
  * ces deux-la, jamais une chaine posee ici.
  */
 const LIBELLES_DE_RESPONSABILITE: Readonly<Record<string, string>> = {
+  DIRECTION: 'Direction générale',
   BOOSTER: 'Booster',
   OFFICE_MANAGER: 'Responsable de bureau',
 };
-
-function nomsDesTitulaires(titulaires: readonly TitulaireFramework[]): string {
-  return titulaires.map((t) => `${t.prenom} ${t.nom}`).join(', ');
-}
 
 type Etat =
   | { readonly phase: 'chargement' }
@@ -144,9 +137,9 @@ export function PageFramework(): JSX.Element {
         <h2 className="framework-vision-titre" id="framework-vision-titre">
           Vision
         </h2>
-        <Badge ton="info">V1</Badge>
         <p className="framework-vision-texte">
-          La vision de l&rsquo;entite prendra place ici, au-dessus de son organisation.
+          Le Framework eXalt accompagne les consultants dans leur évolution et favorise
+          l&rsquo;intelligence collective à Bordeaux.
         </p>
       </section>
 
@@ -158,17 +151,41 @@ export function PageFramework(): JSX.Element {
             {/* L'ORDRE VIENT DE L'API — l'enumeration Python du §6.2, jamais retrie ici. */}
             {page.responsabilites.map((carte) => (
               <li key={carte.typeDeResponsabilite}>
-                <div className="framework-carte framework-carte-information">
-                  <span className="framework-carte-titre">
-                    {LIBELLES_DE_RESPONSABILITE[carte.typeDeResponsabilite] ??
-                      carte.typeDeResponsabilite}
-                  </span>
-                  <span className="framework-carte-detail">
-                    {carte.titulaires.length === 0
-                      ? 'Personne actuellement'
-                      : nomsDesTitulaires(carte.titulaires)}
-                  </span>
-                </div>
+                <button
+                  aria-label={`Voir les titulaires : ${LIBELLES_DE_RESPONSABILITE[carte.typeDeResponsabilite] ?? carte.typeDeResponsabilite}`}
+                  className="framework-carte-flip"
+                  type="button"
+                >
+                  <div className="framework-carte-flip-interieur">
+                    <div className="framework-carte-flip-face framework-carte-flip-avant">
+                      <Picto nom="organigramme" taille={32} />
+                      <span className="framework-carte-titre">
+                        {LIBELLES_DE_RESPONSABILITE[carte.typeDeResponsabilite] ??
+                          carte.typeDeResponsabilite}
+                      </span>
+                    </div>
+                    <div className="framework-carte-flip-face framework-carte-flip-arriere">
+                      {carte.titulaires.length === 0 ? (
+                        <span className="framework-carte-detail">Personne actuellement</span>
+                      ) : (
+                        <ul className="framework-titulaires">
+                          {carte.titulaires.map((titulaire) => (
+                            <li key={titulaire.identifiant}>
+                              <Avatar
+                                nom={`${titulaire.prenom} ${titulaire.nom}`}
+                                taille={40}
+                                {...(titulaire.photo === null ? {} : { photo: titulaire.photo })}
+                              />
+                              <span>
+                                {titulaire.prenom} {titulaire.nom}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
@@ -188,7 +205,11 @@ export function PageFramework(): JSX.Element {
           */
           <ul className="framework-accordeon">
             {page.cercles.map((cercle) => (
-              <CercleEnAccordeon key={cercle.identifiant} cercle={cercle} />
+              <CercleEnAccordeon
+                key={cercle.identifiant}
+                cercle={cercle}
+                codeEntite={entite.code}
+              />
             ))}
           </ul>
         )}
@@ -198,11 +219,9 @@ export function PageFramework(): JSX.Element {
         {page.bureaux.length === 0 ? (
           <Alerte>Aucun bureau pour le moment.</Alerte>
         ) : (
-          <ul className="framework-grille">
+          <ul className="framework-accordeon">
             {page.bureaux.map((bureau) => (
-              <li key={bureau.identifiant}>
-                <CarteDeBureauAFramework bureau={bureau} />
-              </li>
+              <BureauEnAccordeon bureau={bureau} key={bureau.identifiant} />
             ))}
           </ul>
         )}
@@ -232,8 +251,26 @@ export function PageFramework(): JSX.Element {
  * qu'en ouvrir un referme les autres, et comparer deux cercles est un geste
  * naturel ici.
  */
-function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
+function CercleEnAccordeon({
+  cercle,
+  codeEntite,
+}: {
+  cercle: CarteDeCercle;
+  codeEntite: string;
+}): JSX.Element {
   const [ouvert, poserOuvert] = useState(false);
+  const [membres, poserMembres] = useState<
+    | { readonly phase: 'repos' | 'chargement' | 'erreur' }
+    | {
+        readonly phase: 'charges';
+        readonly personnes: readonly {
+          readonly appartenance: string;
+          readonly prenom: string;
+          readonly nom: string;
+          readonly photo: string | null;
+        }[];
+      }
+  >({ phase: 'repos' });
   const identifiant = useId();
   const idBouton = `${identifiant}-bouton`;
   const idPanneau = `${identifiant}-panneau`;
@@ -255,7 +292,18 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
           className="framework-accordeon-bouton"
           id={idBouton}
           onClick={() => {
-            poserOuvert((avant) => !avant);
+            const prochain = !ouvert;
+            poserOuvert(prochain);
+            if (prochain && membres.phase === 'repos') {
+              poserMembres({ phase: 'chargement' });
+              void lireLeCercle(codeEntite, cercle.code, 1, 100).then((reponse) => {
+                poserMembres(
+                  reponse.statut === 200 && reponse.corps !== null
+                    ? { phase: 'charges', personnes: reponse.corps.membres }
+                    : { phase: 'erreur' },
+                );
+              });
+            }
           }}
           type="button"
         >
@@ -307,8 +355,8 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
 
         {/*
           **L'ENCART BOOSTER — charte 6.4.** Teinte rose, bordure rose, avatar
-          a anneau rose. `Avatar` n'a que le NOM ici : `GET …/framework` ne
-          sert pas de photo pour le Booster, donc ce sont ses initiales. Le
+          a anneau rose. La miniature autorisee vient de `GET …/framework` ;
+          `Avatar` conserve les initiales comme repli si elle est absente. Le
           badge dit « Booster » en toutes lettres : le rose ne porte rien que
           le texte ne porte deja.
         */}
@@ -320,6 +368,7 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
               anneau="var(--marque-rose)"
               nom={`${cercle.booster.prenom} ${cercle.booster.nom}`}
               taille={56}
+              {...(cercle.booster.photo === null ? {} : { photo: cercle.booster.photo })}
             />
             <span className="encart-booster-nom">
               {cercle.booster.prenom} {cercle.booster.nom}
@@ -328,6 +377,27 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
           </div>
         )}
 
+        <h4 className="framework-membres-titre">Membres du cercle</h4>
+        {membres.phase === 'chargement' ? <p>Chargement des membres…</p> : null}
+        {membres.phase === 'erreur' ? (
+          <Alerte ton="erreur">La liste des membres n&rsquo;a pas pu être chargée.</Alerte>
+        ) : null}
+        {membres.phase === 'charges' ? (
+          <ul className="framework-membres">
+            {membres.personnes.map((membre) => (
+              <li key={membre.appartenance} className="framework-membre">
+                <Avatar
+                  nom={`${membre.prenom} ${membre.nom}`}
+                  taille={40}
+                  {...(membre.photo === null ? {} : { photo: membre.photo })}
+                />
+                <span>
+                  {membre.prenom} {membre.nom}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <Link className="app-lien" to={cercle.cheminDetaille}>
           Voir les membres du cercle {cercle.nom}
         </Link>
@@ -336,16 +406,106 @@ function CercleEnAccordeon({ cercle }: { cercle: CarteDeCercle }): JSX.Element {
   );
 }
 
-function CarteDeBureauAFramework({ bureau }: { bureau: CarteDeBureau }): JSX.Element {
+function BureauEnAccordeon({ bureau }: { bureau: CarteDeBureau }): JSX.Element {
+  const [ouvert, poserOuvert] = useState(false);
+  const identifiant = useId();
+  const idBouton = `${identifiant}-bouton`;
+  const idPanneau = `${identifiant}-panneau`;
+
   return (
-    <Link className="framework-carte" to={bureau.cheminDetaille}>
-      <span className="framework-carte-entete">
-        <Building2 aria-hidden="true" className="icone-bureau" size={32} />
-        <span className="framework-carte-titre">{bureau.nom}</span>
-      </span>
-      <Badge ton="info">
-        {bureau.responsables.length} responsable{bureau.responsables.length > 1 ? 's' : ''}
-      </Badge>
-    </Link>
+    <li className="framework-accordeon-element">
+      <h3 className="framework-accordeon-titre">
+        <button
+          aria-controls={idPanneau}
+          aria-expanded={ouvert}
+          className="framework-accordeon-bouton"
+          id={idBouton}
+          onClick={() => {
+            poserOuvert((valeur) => !valeur);
+          }}
+          type="button"
+        >
+          <span className="framework-accordeon-tuile framework-accordeon-tuile-bureau">
+            <IconeDuBureau bureau={bureau} />
+          </span>
+          <span className="framework-accordeon-nom">{bureau.nom}</span>
+          <Badge ton="info">
+            {bureau.responsables.length} responsable
+            {bureau.responsables.length > 1 ? 's' : ''}
+          </Badge>
+          <ChevronDown aria-hidden="true" className="framework-accordeon-chevron" size={20} />
+        </button>
+      </h3>
+
+      <div
+        aria-labelledby={idBouton}
+        className="framework-accordeon-panneau"
+        hidden={!ouvert}
+        id={idPanneau}
+        role="region"
+      >
+        <p className="framework-accordeon-presentation">
+          {bureau.description ?? 'Aucune description pour le moment.'}
+        </p>
+        {bureau.localisation === null ? null : (
+          <p className="framework-bureau-localisation">📍 {bureau.localisation}</p>
+        )}
+
+        <h4 className="framework-membres-titre">Responsables du bureau</h4>
+        {bureau.responsables.length === 0 ? (
+          <p className="framework-bureau-sans-responsable">Aucun responsable pour ce bureau.</p>
+        ) : (
+          <ul className="framework-membres">
+            {bureau.responsables.map((responsable) => (
+              <li className="framework-membre" key={responsable.identifiant}>
+                <Avatar
+                  nom={`${responsable.prenom} ${responsable.nom}`}
+                  taille={40}
+                  {...(responsable.photo === null ? {} : { photo: responsable.photo })}
+                />
+                <span>
+                  {responsable.prenom} {responsable.nom}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Link className="app-lien" to={bureau.cheminDetaille}>
+          Voir la page du bureau {bureau.nom}
+        </Link>
+      </div>
+    </li>
   );
+}
+
+function IconeDuBureau({ bureau }: { bureau: CarteDeBureau }): JSX.Element {
+  const code = bureau.code.toLocaleUpperCase('fr');
+  const nom = bureau.nom
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr');
+
+  if (code === 'BDS' || code === 'SPORT' || nom.includes('sport')) {
+    return (
+      <svg
+        aria-hidden="true"
+        data-icone-bureau="sport"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M13.5 5.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9.8 17.5l1-4.5 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 10V8c-1.5 0-2.7-.8-3.4-2l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.2L7 5.8V11h2V7.1l1.8-.7-1.6 8.1-4.9-1-.4 2 5.9 1Z" />
+      </svg>
+    );
+  }
+  if (code === 'BDE' || nom.includes('exaltee')) {
+    return <Martini aria-hidden="true" data-icone-bureau="cocktail" size={24} />;
+  }
+  if (code === 'BDG' || code === 'GAMING' || nom.includes('gaming')) {
+    return <Gamepad2 aria-hidden="true" data-icone-bureau="gaming" size={24} />;
+  }
+  return <Building2 aria-hidden="true" data-icone-bureau="bureau" size={24} />;
 }

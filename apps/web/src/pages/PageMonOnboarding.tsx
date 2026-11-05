@@ -31,6 +31,9 @@
  *   locales enregistrées — pas parce que l'API l'exigerait autrement (elle
  *   refuserait de toute façon en 422/409), mais parce que proposer un bouton
  *   dont l'échec est déjà connu serait l'avertissement faux du §7.21.
+ *   Une fiche publiée reste d'abord en lecture seule ; « Modifier mes
+ *   informations » ouvre explicitement sa présentation et son fun fact, puis
+ *   les referme après l'enregistrement.
  *
  * CHANTIER FRONT, S7 (`DEC-672`) : `CARTE`/`BADGE` — ET UN DÉFAUT LATENT
  * TROUVÉ EN MESURANT, PAS CONSTRUIT PAR CETTE SOUS-ÉTAPE
@@ -179,12 +182,16 @@ function SectionFiche({
   const [funFactDeTravail, setFunFactDeTravail] = useState(fiche.funFact ?? '');
   const [enregistrement, setEnregistrement] = useState<'repos' | 'envoi'>('repos');
   const [erreur, setErreur] = useState<string | null>(null);
+  const [editionOuverte, setEditionOuverte] = useState(fiche.etat === 'draft');
 
-  //  §6.2 : apres publication, le nouvel arrivant PERD le droit de modifier
-  //  directement son profil. Aucune route n'accepterait l'ecriture (matrice
-  //  §7, « Corriger apres publication » est a TIRET pour `NEW`) : proposer les
-  //  champs quand meme serait l'avertissement faux du §7.21.
-  const modifiable = fiche.etat === 'draft';
+  //  La Beta Bordeaux autorise le consultant a reprendre les deux informations
+  //  qu'il a lui-meme renseignees. Une fiche publiee reste en lecture seule par
+  //  defaut : l'ouverture du formulaire est un geste explicite, et ne remet
+  //  jamais la fiche en brouillon.
+  const estBrouillon = fiche.etat === 'draft';
+  const estPubliee = fiche.etat === 'published';
+  const editionDisponible = estBrouillon || estPubliee;
+  const modifiable = estBrouillon || (estPubliee && editionOuverte);
   const aModifie =
     modifiable &&
     (presentationDeTravail !== (fiche.presentationCourte ?? '') ||
@@ -232,7 +239,14 @@ function SectionFiche({
   //  **AUCUNE ligne d'ecriture au §7 pour l'etat `archived`** — meme motif que
   //  la fiche publiee, mais RIEN n'est propose du tout, pas meme la lecture
   //  des champs en clair : la ligne n'existe deja plus pour personne.
-  const peutValider = fiche.identifiant !== null && !presentationVide && !aModifie;
+  const peutValider = estBrouillon && fiche.identifiant !== null && !presentationVide && !aModifie;
+
+  function annulerLaModification(): void {
+    setPresentationDeTravail(fiche.presentationCourte ?? '');
+    setFunFactDeTravail(fiche.funFact ?? '');
+    setErreur(null);
+    setEditionOuverte(false);
+  }
 
   return (
     <Carte titre="Ma fiche d’arrivée">
@@ -255,110 +269,163 @@ function SectionFiche({
         demanderait un appel de plus et une autorisation que cet ecran n'a pas
         resolue.
       */}
-      <div className="onboarding-apercu">
-        <div className="onboarding-apercu-entete">
-          <p className="onboarding-apercu-pastille">
-            {libelleDuStatut(fiche.statut) ?? fiche.statut ?? 'Statut à venir'} · {nomDeLEntite}
+      <div className="onboarding-fiche-contenu" data-modifiable={editionDisponible ? 'oui' : 'non'}>
+        <div className="onboarding-apercu">
+          <div className="onboarding-apercu-entete">
+            <p className="onboarding-apercu-pastille">
+              {libelleDuStatut(fiche.statut) ?? fiche.statut ?? 'Statut à venir'} · {nomDeLEntite}
+            </p>
+            <p className="onboarding-apercu-date">
+              {fiche.dateDArrivee === null
+                ? 'Date d’arrivée à renseigner'
+                : `Arrivée le ${dateComplete(fiche.dateDArrivee)}`}
+            </p>
+            <Avatar
+              anneau="var(--marque-jaune)"
+              nom={`${fiche.nomPrefere ?? fiche.prenom} ${fiche.nom}`}
+              taille={72}
+            />
+            <p className="onboarding-apercu-nom">
+              {fiche.nomPrefere ?? fiche.prenom} {fiche.nom}
+            </p>
+          </div>
+          {/*
+            Le corps en tuiles — charte 6.7. **« J'attends d'eXalt » n'y figure
+            pas** : aucun champ de ce nom n'existe dans le modele, et en inventer
+            un sur la fiche de quelqu'un serait mettre des mots dans sa bouche.
+            Ecart consigne pour `E7`.
+          */}
+          <dl className="onboarding-apercu-tuiles">
+            <div className="onboarding-tuile onboarding-tuile-bleu">
+              <dt>Cercle</dt>
+              <dd>{fiche.cerclePrincipal?.nom ?? 'Non renseigné'}</dd>
+            </div>
+            <div className="onboarding-tuile onboarding-tuile-gris">
+              <dt>Qui suis-je&nbsp;?</dt>
+              <dd>{fiche.presentationCourte ?? 'Non renseigné'}</dd>
+            </div>
+            <div className="onboarding-tuile onboarding-tuile-jaune">
+              <dt>Fun fact</dt>
+              <dd>{fiche.funFact ?? 'Non renseigné'}</dd>
+            </div>
+            <div className="onboarding-tuile onboarding-tuile-gris">
+              <dt>DSM</dt>
+              <dd>{fiche.dsm ?? 'Non renseigné'}</dd>
+            </div>
+          </dl>
+          {/* Le pied de la charte 6.7 : le logo, puis la signature de marque. */}
+          <p className="onboarding-apercu-pied">
+            <span aria-hidden="true" className="onboarding-apercu-logo" />
+            pulse, make, learn
           </p>
-          <p className="onboarding-apercu-date">Arrivée le {dateComplete(fiche.dateDArrivee)}</p>
-          <Avatar
-            anneau="var(--marque-jaune)"
-            nom={`${fiche.nomPrefere ?? fiche.prenom} ${fiche.nom}`}
-            taille={72}
-          />
-          <p className="onboarding-apercu-nom">
-            {fiche.nomPrefere ?? fiche.prenom} {fiche.nom}
-          </p>
-          <p className="onboarding-apercu-role">{fiche.metier ?? 'Métier non renseigné'}</p>
         </div>
-        {/*
-          Le corps en tuiles — charte 6.7. **« J'attends d'eXalt » n'y figure
-          pas** : aucun champ de ce nom n'existe dans le modele, et en inventer
-          un sur la fiche de quelqu'un serait mettre des mots dans sa bouche.
-          Ecart consigne pour `E7`.
-        */}
-        <dl className="onboarding-apercu-tuiles">
-          <div className="onboarding-tuile onboarding-tuile-bleu">
-            <dt>Cercle</dt>
-            <dd>{fiche.cerclePrincipal?.nom ?? 'Non renseigné'}</dd>
+
+        {erreur !== null || editionDisponible ? (
+          <div className="onboarding-fiche-edition">
+            {erreur === null ? null : (
+              <Alerte ton="erreur" urgence="alerte">
+                {erreur}
+              </Alerte>
+            )}
+
+            {modifiable ? (
+              <div className="onboarding-formulaire">
+                <div className="onboarding-formulaire-entete">
+                  <span>{estBrouillon ? 'Complète ta fiche' : 'Modifie ta fiche'}</span>
+                  <h3>
+                    {estBrouillon ? 'Présente-toi à l’équipe' : 'Mets à jour tes informations'}
+                  </h3>
+                  <p>Ces informations apparaîtront sur ta fiche d&rsquo;arrivée.</p>
+                </div>
+                <label className="onboarding-champ" htmlFor="onboarding-presentation">
+                  <span>
+                    Présentation courte <strong>Obligatoire</strong>
+                  </span>
+                  <textarea
+                    id="onboarding-presentation"
+                    placeholder="Quelques mots pour te présenter à l’équipe…"
+                    rows={4}
+                    onChange={(evenement) => {
+                      setPresentationDeTravail(evenement.target.value);
+                    }}
+                    value={presentationDeTravail}
+                  />
+                </label>
+                <label className="onboarding-champ" htmlFor="onboarding-fun-fact">
+                  <span>
+                    Fun fact <small>Facultatif</small>
+                  </span>
+                  <input
+                    id="onboarding-fun-fact"
+                    placeholder="Une anecdote, une passion, un talent caché…"
+                    onChange={(evenement) => {
+                      setFunFactDeTravail(evenement.target.value);
+                    }}
+                    type="text"
+                    value={funFactDeTravail}
+                  />
+                </label>
+                <div className="onboarding-fiche-actions">
+                  {estPubliee ? (
+                    <Bouton
+                      disabled={enregistrement === 'envoi'}
+                      onClick={annulerLaModification}
+                      type="button"
+                      variante="secondaire"
+                    >
+                      Annuler
+                    </Bouton>
+                  ) : null}
+                  <Bouton
+                    disabled={!aModifie || enregistrement === 'envoi'}
+                    onClick={() => {
+                      void enregistrer();
+                    }}
+                    type="button"
+                    variante="secondaire"
+                  >
+                    {enregistrement === 'envoi' ? 'Enregistrement…' : 'Enregistrer'}
+                  </Bouton>
+                  {estBrouillon ? (
+                    <Bouton
+                      disabled={!peutValider || enregistrement === 'envoi'}
+                      onClick={() => {
+                        void validerEtPublier();
+                      }}
+                      type="button"
+                      variante="primaire"
+                    >
+                      Valider et publier
+                    </Bouton>
+                  ) : null}
+                </div>
+              </div>
+            ) : estPubliee ? (
+              <div className="onboarding-formulaire onboarding-formulaire--lecture">
+                <div className="onboarding-formulaire-entete">
+                  <span>Ta fiche est publiée</span>
+                  <h3>Tes informations sont à jour</h3>
+                  <p>Tu peux reprendre ta présentation ou ton fun fact à tout moment.</p>
+                </div>
+                <p className="onboarding-formulaire-relecture">
+                  La modification ne dépubliera pas ta fiche.
+                </p>
+                <div className="onboarding-fiche-actions">
+                  <Bouton
+                    onClick={() => {
+                      setEditionOuverte(true);
+                    }}
+                    type="button"
+                    variante="primaire"
+                  >
+                    Modifier mes informations
+                  </Bouton>
+                </div>
+              </div>
+            ) : null}
           </div>
-          <div className="onboarding-tuile onboarding-tuile-bleu">
-            <dt>Mission</dt>
-            <dd>{fiche.client ?? 'Non renseigné'}</dd>
-          </div>
-          <div className="onboarding-tuile onboarding-tuile-gris">
-            <dt>Qui suis-je&nbsp;?</dt>
-            <dd>{fiche.presentationCourte ?? 'Non renseigné'}</dd>
-          </div>
-          <div className="onboarding-tuile onboarding-tuile-jaune">
-            <dt>Fun fact</dt>
-            <dd>{fiche.funFact ?? 'Non renseigné'}</dd>
-          </div>
-          <div className="onboarding-tuile onboarding-tuile-gris">
-            <dt>DSM</dt>
-            <dd>{fiche.dsm ?? 'Non renseigné'}</dd>
-          </div>
-        </dl>
-        {/* Le pied de la charte 6.7 : le logo, puis la signature de marque. */}
-        <p className="onboarding-apercu-pied">
-          <span aria-hidden="true" className="onboarding-apercu-logo" />
-          pulse, make, learn
-        </p>
+        ) : null}
       </div>
-
-      {erreur === null ? null : (
-        <Alerte ton="erreur" urgence="alerte">
-          {erreur}
-        </Alerte>
-      )}
-
-      {modifiable ? (
-        <>
-          <label className="onboarding-champ" htmlFor="onboarding-presentation">
-            Présentation courte (obligatoire avant de valider)
-            <textarea
-              id="onboarding-presentation"
-              onChange={(evenement) => {
-                setPresentationDeTravail(evenement.target.value);
-              }}
-              value={presentationDeTravail}
-            />
-          </label>
-          <label className="onboarding-champ" htmlFor="onboarding-fun-fact">
-            Fun fact (facultatif)
-            <input
-              id="onboarding-fun-fact"
-              onChange={(evenement) => {
-                setFunFactDeTravail(evenement.target.value);
-              }}
-              type="text"
-              value={funFactDeTravail}
-            />
-          </label>
-          <div className="onboarding-fiche-actions">
-            <Bouton
-              disabled={!aModifie || enregistrement === 'envoi'}
-              onClick={() => {
-                void enregistrer();
-              }}
-              type="button"
-              variante="secondaire"
-            >
-              {enregistrement === 'envoi' ? 'Enregistrement…' : 'Enregistrer'}
-            </Bouton>
-            <Bouton
-              disabled={!peutValider || enregistrement === 'envoi'}
-              onClick={() => {
-                void validerEtPublier();
-              }}
-              type="button"
-              variante="primaire"
-            >
-              Valider et publier
-            </Bouton>
-          </div>
-        </>
-      ) : null}
     </Carte>
   );
 }
