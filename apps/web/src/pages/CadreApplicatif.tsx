@@ -47,7 +47,7 @@ import type { EntiteDuPortail, PermissionsDeLEntite } from '@onboarding/contract
 import { Alerte, Avatar } from '@onboarding/ui';
 
 import { lireLaFicheArrivee, lireLeParcours } from '../api/onboarding';
-import { lireLEntite, lireLesPermissions, listerLesEntites } from '../api/portail';
+import { lireLEntite, lireLesPermissions } from '../api/portail';
 import { lireLaFiche } from '../api/profil';
 import { useEtatDeConnexion } from '../reseau';
 import { CHEMINS, cheminDeRubrique, droitsDeNavigation, RUBRIQUES } from '../routes';
@@ -56,7 +56,6 @@ import { BoutonBasculerTheme } from './BoutonBasculerTheme';
 import { BoutonSignalerUnBug } from './BoutonSignalerUnBug';
 import { NavigationPrincipale } from './NavigationPrincipale';
 import { PanneauDErreur } from './PanneauDErreur';
-import { SelecteurDEntite } from './SelecteurDEntite';
 import './application.css';
 
 /**
@@ -212,7 +211,6 @@ type Etat =
 interface Charge {
   readonly code: string;
   readonly etat: Etat;
-  readonly autres: readonly EntiteDuPortail[];
   readonly permissions: PermissionsDeLEntite | null;
   /**
    * L'appelant a-t-il un parcours ACTIF dans cette entite ? — LOT 7, `T13`.
@@ -253,7 +251,6 @@ interface Charge {
 function Squelette({
   titre,
   entite,
-  selecteur,
   consultationSeule,
   navigation,
   avatar,
@@ -262,9 +259,6 @@ function Squelette({
 }: {
   readonly titre: string;
   readonly entite?: EntiteDuPortail;
-  //  Le selecteur d'entite. Facultatif comme la navigation, et pour la meme
-  //  raison : sans entite resolue, il n'a pas d'entite courante a marquer.
-  readonly selecteur?: ReactNode;
   //  **`undefined` N'EST PAS `false`.** `undefined` veut dire « les droits ne sont
   //  pas connus », `false` veut dire « vous etes dans votre entite principale ».
   //  Les confondre afficherait la mention du §5.1 sur une ignorance, ou la
@@ -353,20 +347,20 @@ function Squelette({
               qu'elle depend du theme : bleu sur fond clair, blanc sur fond
               sombre. Un `src` obligerait ce composant a s'abonner au theme.
             */}
-            <span className="app-logo" role="img" aria-label="eXalt" />
-            {entite === undefined ? null : (
-              //  **L'ENTITE ACTIVE, VISIBLE PARTOUT** — cahier §23.3. Le nom et la
-              //  ville sont deux elements distincts : l'information n'est portee ni
-              //  par la seule couleur ni par la seule position (§14.2).
-              <p className="app-entite" data-code-entite={entite.code}>
-                <span className="app-entite-nom">{entite.nom}</span>
-                <span className="app-entite-ville">{entite.ville}</span>
-              </p>
+            {entite === undefined ? (
+              <span className="app-logo" role="img" aria-label="eXalt" />
+            ) : (
+              <Link
+                aria-label={`Retour à l’accueil ${entite.nom}`}
+                className="app-logo-lien"
+                to={cheminDeRubrique(entite.code, '')}
+              >
+                <span className="app-logo" role="img" aria-label="eXalt" />
+              </Link>
             )}
           </div>
           {navigation}
           <div className="app-entete-droite">
-            {selecteur}
             {/*
               **CHANTIER FRONT, S9 (`DEC-672`/`DEC-673`).** Dans le SEUL `Squelette`
               partage par les six etats du cadre, meme discipline que le pied de
@@ -431,7 +425,7 @@ function Squelette({
         quatrieme proposition).
       */}
       <main className="app-principal" id="contenu" tabIndex={-1}>
-        <h1 className="app-titre">{titre}</h1>
+        {titre === '' ? null : <h1 className="app-titre">{titre}</h1>}
         {children}
       </main>
       {/*
@@ -469,7 +463,7 @@ export function CadreApplicatif(): JSX.Element {
   //  **APPELE AVANT TOUT RETOUR ANTICIPE.** `react-hooks/rules-of-hooks` refuse un
   //  hook place apres un retour conditionnel, et il a raison : l'ordre des appels
   //  doit etre le meme a chaque rendu. Lecon de `T3`, deja payee deux fois.
-  const titreDeLaPage = useTitreDeLaPage("Accueil de l'entite", code ?? '');
+  const titreDeLaPage = useTitreDeLaPage('', code ?? '');
   const [charge, setCharge] = useState<Charge | null>(null);
   //  **LE COMPTEUR DE TENTATIVES EST DANS LES DEPENDANCES DE L'EFFET**, et c'est
   //  ce qui fait qu'un bouton peut vraiment reessayer : incrementer relance
@@ -549,7 +543,6 @@ export function CadreApplicatif(): JSX.Element {
             : {
                 code,
                 etat: { phase: 'chargement' },
-                autres: [],
                 permissions: null,
                 aUnParcoursActif: false,
                 identite: null,
@@ -594,14 +587,6 @@ export function CadreApplicatif(): JSX.Element {
     //  fusionnee porte toujours le code de l'effet qui l'a demandee, et le rendu
     //  ne lit que la charge dont le code correspond a l'adresse. L'abandon reduit
     //  la fenetre, il ne la ferme pas -- un `fetch` resolu n'est plus annulable.
-    void listerLesEntites(abandon.signal).then(
-      (reponse) => {
-        if (reponse.statut === 200 && reponse.corps !== null) {
-          fusionner({ autres: reponse.corps.entites });
-        }
-      },
-      (cause: unknown) => cause,
-    );
     void lireLesPermissions(code, abandon.signal).then(
       (reponse) => {
         if (reponse.statut === 200 && reponse.corps !== null) {
@@ -789,7 +774,6 @@ export function CadreApplicatif(): JSX.Element {
     <Squelette
       titre={titreDeLaPage}
       entite={etat.entite}
-      selecteur={<SelecteurDEntite courante={etat.entite} entites={courante?.autres ?? []} />}
       //  `undefined` tant que les droits ne sont pas revenus — voir le type.
       consultationSeule={
         courante?.permissions == null ? undefined : !courante.permissions.estEntitePrincipale

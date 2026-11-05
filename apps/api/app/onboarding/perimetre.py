@@ -66,6 +66,13 @@ CE QUE LA MATRICE DONNE, ET LA CELLULE QUI SURPREND
   plutot qu'importe : une dependance croisee vers un module prive d'un autre
   domaine serait pire qu'une petite requete repetee (§7.27).
 
+  **EXCEPTION BETA BORDEAUX, LIMITEE AUX DEUX CHAMPS TEXTUELS.** La route
+  `PATCH .../arrival-profile` ajoute desormais `Soi` lorsque la fiche est
+  publiee, afin que le consultant puisse reprendre sa presentation et son fun
+  fact. Cette exception reste dans la route : elle ne modifie volontairement
+  pas cette fonction partagee avec le depot de photo, dont la grille demeure
+  celle du LOT 11.
+
 `NEW` N'EST PAS UN ROLE DE `RoleDeLaMatrice`
 
   « Soi » n'est pas une portee organisationnelle, c'est une egalite entre

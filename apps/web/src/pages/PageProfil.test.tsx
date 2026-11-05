@@ -132,11 +132,10 @@ describe('la fiche a l’ecran', () => {
     //  **L'ENTITE VIENT DU CADRE, PAS DE L'API** : la route ne la sert pas, et le
     //  §10.2 la liste pourtant parmi les champs du profil.
     expect(screen.getByText('eXalt Bordeaux')).toBeTruthy();
-    //  **CHACUN PARAIT DEUX FOIS, ET C'EST JUSTE** : une fois dans la fiche,
-    //  une fois dans l'axe correspondant de l'historique. Un `getByText` levait
-    //  « Found multiple elements » -- l'attendu etait faux, pas le livrable.
-    expect(screen.getAllByText('Ingenieure logicielle')).toHaveLength(2);
-    expect(screen.getAllByText('Dominique Lesmanager')).toHaveLength(2);
+    //  L'edition Beta suspend metier et client sans retirer leur contrat API.
+    expect(screen.queryByText('Ingenieure logicielle')).toBeNull();
+    expect(screen.queryByText('Client Alpha')).toBeNull();
+    expect(screen.getAllByText('Dominique Lesmanager')).toHaveLength(1);
     expect(screen.getAllByText('Donnees').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Ingenieure passionnee.')).toBeTruthy();
     expect(screen.getByText('Joue du theorbe.')).toBeTruthy();
@@ -252,80 +251,16 @@ describe('la fiche a l’ecran', () => {
     });
   });
 
-  //  ======================================================================
-  //  L'historique — le couple `null` / `[]`, et le refus normal
-  //  ======================================================================
-
-  it('rend les CINQ axes, et distingue `[]` de `null` — LE COUPLE', async () => {
-    servir({ charge: FICHE }, { charge: { ...HISTOIRE, responsabilites: null } });
-    monter();
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Historique organisationnel' })).toBeTruthy();
-    });
-    for (const titre of ['Metiers', 'Situations', 'DSM', 'Responsabilites']) {
-      expect(screen.getByRole('heading', { name: titre })).toBeTruthy();
-    }
-    //  `null` : hors perimetre. C'est le §20 de la matrice, que le §23.2 fait
-    //  prevaloir sur le cumul des roles.
-    expect(screen.getByText(/Hors de votre perimetre/)).toBeTruthy();
-    //  Et aucune periode n'est inventee pour cet axe.
-    expect(screen.queryByText('BOOSTER — Donnees')).toBeNull();
-  });
-
-  it('`[]` rend « aucune periode », ce qui n’est PAS « hors perimetre »', async () => {
-    //  **SANS CE SECOND TEST, LE PRECEDENT NE PROUVE RIEN** : un ecran qui
-    //  afficherait « hors perimetre » pour tout axe vide le passerait.
-    servir({ charge: FICHE }, { charge: HISTOIRE });
-    monter();
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Responsabilites' })).toBeTruthy();
-    });
-    expect(screen.getByText('Aucune periode enregistree.')).toBeTruthy();
-    expect(screen.queryByText(/Hors de votre perimetre/)).toBeNull();
-  });
-
-  it('une fiche SERVIE et un historique REFUSE : la fiche s’affiche quand meme', async () => {
-    //  **C'EST L'ETAT NORMAL D'UN EMPLOYE**, pas une panne : le §5 lui donne
-    //  « Fiches collaborateur » en Lecture, et sa ligne « Audit » lui refuse
-    //  l'historique. Un ecran qui enchainerait les deux requetes n'afficherait
-    //  rien du tout ici.
-    servir({ charge: FICHE }, { charge: { code: 'acces_refuse' }, statut: 403 });
-    monter();
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
-    });
-    expect(screen.getByText(/ne donne pas acces a l’historique/)).toBeTruthy();
-    //  La fiche, elle, est complete.
-    //  Un seul exemplaire ici : l'historique est refuse, donc son axe DSM
-    //  n'est pas rendu. C'est le meme temoin que ci-dessus, vu par son absence.
-    expect(screen.getAllByText('Dominique Lesmanager')).toHaveLength(1);
-  });
-
-  it('lance la fiche et l’historique SANS LES ENCHAINER, et les droits de la photo en plus', async () => {
-    //  **TROIS APPELS DEPUIS `T2` DU LOT 11**, pas deux : `PanneauPhoto`
-    //  demande `GET …/photo/droits` des le montage, independamment des deux
-    //  premiers — ce test comptait deux appels avant que cette sous-etape
-    //  n'en ajoute un troisieme, legitime. §7.21 : un controle juste hier
-    //  peut etre faux aujourd'hui quand le monde change autour de lui.
+  it('retire l’historique organisationnel et ne lance plus sa requete', async () => {
     servir({ charge: FICHE }, { charge: HISTOIRE });
     monter();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
     });
     const appels = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls;
-    expect(appels).toHaveLength(3);
-    expect(appels.filter((appel) => appel[0]?.endsWith('/historique'))).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: 'Historique organisationnel' })).toBeNull();
+    expect(appels.filter((appel) => appel[0]?.endsWith('/historique'))).toHaveLength(0);
     expect(appels.filter((appel) => appel[0]?.endsWith('/droits'))).toHaveLength(1);
-  });
-
-  it('une periode CLOSE affiche ses deux bornes, une periode COURANTE dit « aujourd’hui »', async () => {
-    servir({ charge: FICHE }, { charge: HISTOIRE });
-    monter();
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Situations' })).toBeTruthy();
-    });
-    expect(screen.getByText('septembre 2025 → janvier 2026')).toBeTruthy();
-    expect(screen.getAllByText(/→ aujourd’hui/).length).toBeGreaterThan(0);
   });
 });
 
@@ -412,7 +347,7 @@ describe('la fiche d’un profil ARCHIVE — `T11`, seconde partie', () => {
 });
 
 describe('chantier front, S6 : `Carte`/`Badge` (`DEC-672`)', () => {
-  it('l’identite et les cinq blocs sont des `Carte` — six regions nommees', async () => {
+  it('l’identite et les quatre blocs restants sont des `Carte`', async () => {
     servir({ charge: FICHE }, { charge: HISTOIRE });
     monter();
     await waitFor(() => {
@@ -423,7 +358,7 @@ describe('chantier front, S6 : `Carte`/`Badge` (`DEC-672`)', () => {
     expect(screen.getByRole('region', { name: 'Cercles' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Responsabilites Framework' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Presentation' })).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Historique organisationnel' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Historique organisationnel' })).toBeNull();
   });
 
   it('le type d’appartenance du cercle est un `Badge` reel, pas un simple texte', async () => {

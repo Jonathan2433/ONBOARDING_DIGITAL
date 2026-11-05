@@ -38,7 +38,7 @@
  *   lui-meme.
  */
 import type { JSX } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 
 import { FrontiereErreur } from './FrontiereErreur';
 import { Cadre } from './pages/Cadre';
@@ -61,12 +61,11 @@ import { PageGestionDesLiens } from './pages/PageGestionDesLiens';
 import { PageLien } from './pages/PageLien';
 import { PageLienEnvoye } from './pages/PageLienEnvoye';
 import { PageMonOnboarding } from './pages/PageMonOnboarding';
-import { PageNationale } from './pages/PageNationale';
 import { Page403, Page404, PageErreur } from './pages/PagesErreur';
 import { PageStatut } from './pages/PageStatut';
 import { PageTrombinoscope } from './pages/PageTrombinoscope';
 import { PageProfil } from './pages/PageProfil';
-import { CHEMINS, RUBRIQUES } from './routes';
+import { CHEMINS, cheminDeRubrique, CODE_ENTITE_BETA, RUBRIQUES } from './routes';
 
 /**
  * Les rubriques dont la page est LIVREE — LOT 5, `T10`.
@@ -129,7 +128,10 @@ export function App(): JSX.Element {
             la place juste apres la connexion. Arbitrage de Jonathan du
             23/08/2026 ; le detail du choix est au-dessus de `CHEMINS`.
           */}
-          <Route path={CHEMINS.national} element={<PageNationale />} />
+          <Route
+            path={CHEMINS.national}
+            element={<Navigate replace to={cheminDeRubrique(CODE_ENTITE_BETA, '')} />}
+          />
           <Route path={CHEMINS.statut} element={<PageStatut />} />
           <Route path={CHEMINS.connexion} element={<PageConnexion />} />
           <Route path={CHEMINS.lienEnvoye} element={<PageLienEnvoye />} />

@@ -100,6 +100,9 @@ export const CHEMINS = {
   editionEvenement: '/entites/:code/evenements/:evenement/editer',
 } as const;
 
+/** La Beta est volontairement mono-entité ; le socle multi-entités reste en pause. */
+export const CODE_ENTITE_BETA = 'BORDEAUX';
+
 /**
  * L'adresse d'une entite, pour un code donne.
  *
@@ -171,7 +174,7 @@ export const RUBRIQUES: readonly Rubrique[] = [
     libelleCorpus: 'Accueil',
     libelle: 'Accueil',
     suffixe: '',
-    titre: "Accueil de l'entite",
+    titre: '',
     lot: 'LOT 4',
   },
   {

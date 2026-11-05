@@ -31,6 +31,7 @@ import {
   cheminEvenementPourGestion,
   cheminEvenementsPourGestion,
   cheminMediasDEvenement,
+  cheminImageDEvenement,
   cheminPublicationDEvenement,
   cheminRestaurationDEvenement,
   type DemandeDAnnulationDEvenement,
@@ -244,4 +245,41 @@ export function gererLesMediasDUnEvenement(
     demande,
     validerLesMediasDEvenement,
   );
+}
+
+/** Televerser et rattacher directement l'image principale — flux Beta Bordeaux. */
+export async function televerserImageDEvenement(
+  code: string,
+  evenement: string,
+  version: number,
+  fichier: File,
+  motif?: string,
+): Promise<ReponseLue<MediasDEvenement>> {
+  const session = await lireLaSession();
+  if (session.statut !== 200 || session.corps === null) {
+    return { statut: session.statut, corps: null, correlation: null };
+  }
+  const donnees = new FormData();
+  donnees.set('version', String(version));
+  donnees.set('fichier', fichier);
+  if (motif !== undefined && motif.trim() !== '') {
+    donnees.set('motif', motif);
+  }
+  const reponse = await fetch(cheminImageDEvenement(code, evenement), {
+    method: 'POST',
+    headers: {
+      [EN_TETE_JETON_CSRF]: session.corps.jeton_csrf,
+      [EN_TETE_CLE_IDEMPOTENCE]: globalThis.crypto.randomUUID(),
+    },
+    credentials: 'same-origin',
+    body: donnees,
+  });
+  const correlation = reponse.headers.get(EN_TETE_CORRELATION);
+  let corps: MediasDEvenement | null;
+  try {
+    corps = validerLesMediasDEvenement(await reponse.json());
+  } catch {
+    corps = null;
+  }
+  return { statut: reponse.status, corps, correlation };
 }

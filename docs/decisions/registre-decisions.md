@@ -1,8 +1,7 @@
 # Registre des décisions
 
 **Produit en :** LOT 0, sous-étape S4 — story `MVP-L00-US006`
-**Dernière mise à jour :** 2 novembre 2026 — décision `DEC-684`, clôture du chantier design
-système v2 après validation de `G11` (`DEC-683`)
+**Dernière mise à jour :** 4 novembre 2026 — décision `DEC-685`, Beta eXalt Bordeaux
 **Règles de tenue :** [README.md](README.md)
 
 Ce registre est la vue unique des décisions du projet. Il **reprend** sans les altérer les
@@ -190,6 +189,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | **Chantier design système v2 `DEC-682`, étapes `E1` à `E5`** | 1 | **Validée le 02/11/2026 — renumérotation de l'identifiant réutilisé** |
 | **Franchissement de la porte `G11` `DEC-683`** | 1 | **Validée le 02/11/2026** |
 | **Clôture du chantier design système v2 `DEC-684`, étapes `E6` et `E7`** | 1 | **Validée le 02/11/2026** |
+| **Beta eXalt Bordeaux `DEC-685`** | 1 | **Validée le 04/11/2026** |
 | Réalisation du LOT 1 `DEC-451+`, sous-étape `T1` | 7 | Validées les 27 et 28/07/2026 |
 | Réalisation du LOT 1 `DEC-458+`, sous-étape `T2` | 4 | Validées le 28/07/2026 |
 | Réalisation du LOT 1 `DEC-462+`, sous-étape `T3` | 4 | Validées le 28/07/2026 |
@@ -201,7 +201,7 @@ prises pendant la réalisation à partir de `DEC-418`.
 | Réalisation du LOT 1 `DEC-489+`, sous-étape `T9` | 2 | Validées le 29/07/2026 |
 | Réalisation du LOT 1 `DEC-491+`, sous-étape `T10` | 3 | Validées le 30/07/2026 |
 | Correctifs postérieurs à `G1` `DEC-494+` | 2 | Validées le 12/08/2026 |
-| **Total** | **352** | |
+| **Total** | **353** | |
 
 ---
 
@@ -1022,7 +1022,9 @@ Décisions prises en posant les tables de média et d'autorisation de photo. Sou
 
 | `DEC-684` | **Clôture groupée des étapes `E6` et `E7` du chantier design système v2.** Les quatre tons historiques de `Badge` sont retirés après traduction sémantique de tous leurs consommateurs ; tous les anneaux de focus des feuilles d’écran consomment le jeton unique ; les classes mortes du trombinoscope sont supprimées ; un garde-fou dérivé couvre désormais toutes les feuilles. **Les contradictions finales sont tranchées** : les deux tailles de bouton gardent une cible de 44 px, le padding de carte suit l’échelle à 24 px, l’anneau opaque et le thème explicite sont maintenus. `--ok`/`--ko` restent bornés à la page de statut et aux retours fonctionnels explicites de succès/erreur, où le texte porte toujours le sens — cette décision corrige la portée trop étroite annoncée à `E1`. Les écarts et les éléments produit ou externes encore attendus sont consolidés dans le [compte rendu de clôture](../operations/compte-rendu-cloture-design-systeme-v2.md). | Validée par Jonathan le 02/11/2026 |
 
-**Prochain identifiant libre : `DEC-685`.**
+| `DEC-685` | **La version de démonstration est recentrée sur la seule entité eXalt Bordeaux, sans ouvrir le LOT 12 et sans supprimer l'architecture multi-entité.** Le portail et le sélecteur d'entité, l'import CSV, les exports, le métier et le client sortent du parcours de la Beta ; leurs modèles restent conservés. Le classeur et les photos fournis sont provisionnés par une commande rejouable, sans versionner les sources personnelles. L'interface Bordeaux reprend le prototype pour l'accueil, le Framework, le trombinoscope, l'onboarding et les événements. La date d'arrivée devient facultative. Les lignes `CHANGE` rejoignent le cercle Projet. Les événements créés depuis le formulaire Beta enchaînent création, image éventuelle et publication afin d'alimenter immédiatement toutes les lectures publiques. | Validée par Jonathan le 04/11/2026 (« parfait », puis demande de mise à jour de la documentation et de Git) |
+
+**Prochain identifiant libre : `DEC-686`.**
 
 ---
 
@@ -1353,6 +1355,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-682` — chantier design système v2, `E1` à `E5` | 1 | 1 |
 | `DEC-683` — franchissement de la porte `G11` | 1 | 1 |
 | `DEC-684` — chantier design système v2, `E6` et `E7` | 1 | 1 |
+| `DEC-685` — Beta eXalt Bordeaux | 1 | 1 |
 | `DEC-451+` — réalisation du LOT 1, `T1` | 7 | 7 |
 | `DEC-458+` — réalisation du LOT 1, `T2` | 4 | 4 |
 | `DEC-462+` — réalisation du LOT 1, `T3` | 4 | 4 |
@@ -1364,7 +1367,7 @@ Source : `docs/product/BACKLOG_INITIAL_PRIORISE_EXALT.md` v1.0, validée le 25 j
 | `DEC-489+` — réalisation du LOT 1, `T9` | 2 | 2 |
 | `DEC-491+` — réalisation du LOT 1, `T10` | 3 | 3 |
 | `DEC-494+` — correctifs postérieurs à `G1` | 2 | 2 |
-| **Total** | **352** | **352** |
+| **Total** | **353** | **353** |
 
 Les nombres attendus ont été obtenus par comptage automatique dans les documents sources.
 Voir [contrôles de sortie du lot 0](../operations/) en sous-étape S8.

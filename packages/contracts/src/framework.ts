@@ -57,6 +57,7 @@ export interface TitulaireFramework {
   readonly identifiant: string;
   readonly prenom: string;
   readonly nom: string;
+  readonly photo: string | null;
 }
 
 export interface CarteDeResponsabilite {
@@ -123,6 +124,7 @@ function titulaire(valeur: unknown, ou: string): TitulaireFramework {
     identifiant: exigerChaine(valeur, 'identifiant'),
     prenom: exigerChaine(valeur, 'prenom'),
     nom: exigerChaine(valeur, 'nom'),
+    photo: valeur['photo'] === undefined ? null : chaineOuNul(valeur, 'photo'),
   };
 }
 

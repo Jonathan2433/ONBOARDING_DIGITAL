@@ -100,7 +100,9 @@ FOR UPDATE
 #  partagee avec `archiver_un_profil`) ne doit jamais ecrire `departure_date`
 #  pour une arrivee `future` hors de ce cadre — voir l'en-tete du module.
 _LIBERER_LA_PERIODE_ANNULEE: Final[str] = """
-UPDATE entity_membership SET departure_date = arrival_date WHERE id = :cible
+UPDATE entity_membership
+SET departure_date = COALESCE(arrival_date, membership_started_on)
+WHERE id = :cible
 """
 
 

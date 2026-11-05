@@ -155,7 +155,7 @@ export interface FicheArrivee {
   readonly prenom: string;
   readonly nom: string;
   readonly nomPrefere: string | null;
-  readonly dateDArrivee: string;
+  readonly dateDArrivee: string | null;
   readonly metier: string | null;
   readonly statut: string | null;
   readonly client: string | null;
@@ -228,7 +228,7 @@ export function validerLaFicheArrivee(valeur: unknown): FicheArrivee {
     prenom: exigerChaine(valeur, 'first_name'),
     nom: exigerChaine(valeur, 'last_name'),
     nomPrefere: chaineOuNul(valeur, 'preferred_name'),
-    dateDArrivee: exigerChaine(valeur, 'arrival_date'),
+    dateDArrivee: chaineOuNul(valeur, 'arrival_date'),
     metier: chaineOuNul(valeur, 'metier'),
     statut: chaineOuNul(valeur, 'statut'),
     client: chaineOuNul(valeur, 'client'),

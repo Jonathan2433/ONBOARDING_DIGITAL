@@ -84,7 +84,7 @@ export interface CollaborateurDuTrombinoscope {
   readonly nom: string;
   readonly nomPrefere: string | null;
   readonly categorieProfessionnelle: string;
-  readonly dateArrivee: string;
+  readonly dateArrivee: string | null;
   /** Le chemin de la miniature, ou `null` — voir `cheminDePhotoOuNul`. */
   readonly photo: string | null;
   /**
@@ -234,7 +234,7 @@ function validerUnCollaborateur(valeur: unknown, rang: number): CollaborateurDuT
     nom: exigerChaine(valeur, 'last_name'),
     nomPrefere: prefere,
     categorieProfessionnelle: exigerChaine(valeur, 'professional_category'),
-    dateArrivee: exigerChaine(valeur, 'arrival_date'),
+    dateArrivee: chaineOuNul(valeur, 'arrival_date', rang),
     photo: cheminDePhotoOuNul(valeur),
     metier: chaineOuNul(valeur, 'metier', rang),
     statut: chaineOuNul(valeur, 'statut', rang),

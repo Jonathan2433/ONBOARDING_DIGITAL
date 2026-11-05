@@ -56,6 +56,9 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from app.media.photo import CONDITIONS_DE_LA_MINIATURE, ETAT_AFFICHABLE, VARIANTE_DE_LISTE
+from app.people.modeles import ETAT_LISTE, VISIBILITE_LISTEE
+
 
 class ResponsabiliteFramework(enum.StrEnum):
     """Les QUATRE du cahier §6.2, dans l'ordre du document.
@@ -92,23 +95,18 @@ class TitulaireFramework:
     identifiant: uuid.UUID
     prenom: str
     nom: str
+    appartenance: uuid.UUID | None
+    a_une_photo: bool
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class TitulaireAvecPhoto:
     """Une personne portant une responsabilite ACTIVE, avec sa photo.
 
-    Chantier front hors lot, `S12` (`DEC-673`). **Distincte de
-    `TitulaireFramework`, et c'est delibere** : la synthese Framework (toutes les
-    responsabilites de l'entite, DSM/ESM/ADM-E/Booster/bureau confondus) reste
-    hors de la portee de `S12` — arbitrage de Jonathan (`AskUserQuestion`,
-    29/10/2026). Ajouter la photo a `TitulaireFramework` directement l'aurait
-    exposee partout d'un coup, y compris sur un ecran que personne n'a decide de
-    changer — §7.27 dans l'autre sens, comme `.cercle-page`/`.trombi-page` :
-    deux usages, deux types, rien qui les lie.
-
-    Seuls le Booster d'un cercle (`CercleDetaille.booster`) et les responsables
-    d'un bureau (`BureauDetaille.responsables`) l'emploient.
+    Le type reste distinct de `TitulaireFramework` pour conserver la frontiere
+    entre la synthese et les pages detaillees. La Beta Bordeaux affiche
+    desormais les photos dans les DEUX lectures ; chacune resout donc sa propre
+    miniature avec les memes conditions que le trombinoscope.
 
     `appartenance` est NULLABLE : un titulaire de responsabilite n'a pas
     TOUJOURS une appartenance ACTIVE et LISTEE dans cette entite au sens du
@@ -186,21 +184,49 @@ class PageFramework:
 #  `starts_at <= :instant AND (ends_at IS NULL OR ends_at > :instant)` dirait la
 #  meme chose et n'emploierait PAS l'index gist qui existe pour cela.
 _RESPONSABILITES = text(
-    """
-    SELECT f.responsibility_type, p.id, p.first_name, p.last_name
+    f"""
+    SELECT f.responsibility_type, p.id, p.first_name, p.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo
     FROM framework_responsibility_assignment AS f
     JOIN person AS p ON p.id = f.person_id
+    LEFT JOIN entity_membership AS em
+           ON em.person_id = p.id
+          AND em.entity_id = f.entity_id
+          AND em.archived_at IS NULL
+          AND em.membership_state = :etat
+          AND em.profile_visibility = :visibilite
     WHERE f.entity_id = :entite
       AND f.archived_at IS NULL
       AND f.period @> :instant
     ORDER BY f.responsibility_type, p.last_name, p.first_name, p.id
-    """
+    """  # noqa: S608 — le fragment interpole est une constante partagee du domaine media
+)
+
+_DIRECTION_DE_PRESENTATION = text(
+    f"""
+    SELECT p.id, p.first_name, p.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo
+      FROM entity_setting AS s
+      CROSS JOIN LATERAL jsonb_array_elements_text(s.value)
+           WITH ORDINALITY AS courriel(valeur, ordre)
+      JOIN person AS p ON p.email_normalized = courriel.valeur
+      LEFT JOIN entity_membership AS em
+             ON em.person_id = p.id
+            AND em.entity_id = s.entity_id
+            AND em.archived_at IS NULL
+            AND em.membership_state = :etat
+            AND em.profile_visibility = :visibilite
+     WHERE s.entity_id = :entite
+       AND s.key = 'beta.direction_emails'
+     ORDER BY courriel.ordre
+    """  # noqa: S608 — le fragment interpole est une constante partagee du domaine media
 )
 
 _CERCLES = text(
-    """
+    f"""
     SELECT c.id, c.code, c.name, c.description, c.color_token,
-           b.id, b.first_name, b.last_name,
+           b.id, b.first_name, b.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo,
            (SELECT count(*)
               FROM circle_membership AS m
              WHERE m.circle_id = c.id
@@ -214,16 +240,23 @@ _CERCLES = text(
             AND fr.archived_at IS NULL
             AND fr.period @> :instant
       LEFT JOIN person AS b ON b.id = fr.person_id
+      LEFT JOIN entity_membership AS em
+             ON em.person_id = b.id
+            AND em.entity_id = c.entity_id
+            AND em.archived_at IS NULL
+            AND em.membership_state = :etat
+            AND em.profile_visibility = :visibilite
      WHERE c.entity_id = :entite
        AND c.archived_at IS NULL
      ORDER BY c.display_order, c.code
-    """
+    """  # noqa: S608 — le fragment interpole est une constante partagee du domaine media
 )
 
 _BUREAUX = text(
-    """
+    f"""
     SELECT o.id, o.code, o.name, o.description, o.location_text,
-           r.id, r.first_name, r.last_name
+           r.id, r.first_name, r.last_name, em.id,
+           EXISTS (SELECT 1 {CONDITIONS_DE_LA_MINIATURE}) AS a_une_photo
       FROM office AS o
       LEFT JOIN framework_responsibility_assignment AS fr
              ON fr.office_id = o.id
@@ -232,15 +265,33 @@ _BUREAUX = text(
             AND fr.archived_at IS NULL
             AND fr.period @> :instant
       LEFT JOIN person AS r ON r.id = fr.person_id
+      LEFT JOIN entity_membership AS em
+             ON em.person_id = r.id
+            AND em.entity_id = o.entity_id
+            AND em.archived_at IS NULL
+            AND em.membership_state = :etat
+            AND em.profile_visibility = :visibilite
      WHERE o.entity_id = :entite
        AND o.archived_at IS NULL
      ORDER BY o.display_order, o.code, r.last_name, r.first_name
-    """
+    """  # noqa: S608 — le fragment interpole est une constante partagee du domaine media
 )
 
 
-def _titulaire(identifiant: Any, prenom: Any, nom: Any) -> TitulaireFramework:
-    return TitulaireFramework(identifiant=identifiant, prenom=str(prenom), nom=str(nom))
+def _titulaire(
+    identifiant: Any,
+    prenom: Any,
+    nom: Any,
+    appartenance: Any = None,
+    a_une_photo: Any = False,
+) -> TitulaireFramework:
+    return TitulaireFramework(
+        identifiant=identifiant,
+        prenom=str(prenom),
+        nom=str(nom),
+        appartenance=appartenance,
+        a_une_photo=bool(a_une_photo),
+    )
 
 
 def lire_la_page_framework(
@@ -259,21 +310,45 @@ def lire_la_page_framework(
     seul l'instant bouge.
     """
     maintenant = instant if instant is not None else dt.datetime.now(dt.UTC)
-    liaison = {"entite": entite, "instant": maintenant}
+    liaison = {
+        "entite": entite,
+        "instant": maintenant,
+        "etat": ETAT_LISTE,
+        "visibilite": VISIBILITE_LISTEE,
+        "etat_media": ETAT_AFFICHABLE,
+        "variante": VARIANTE_DE_LISTE,
+    }
 
     #  --- famille 1 : les responsabilites ---
     par_type: dict[str, list[TitulaireFramework]] = {t: [] for t in RESPONSABILITES_FRAMEWORK}
-    for type_de_responsabilite, identifiant, prenom, nom in connexion.execute(
+    for type_de_responsabilite, identifiant, prenom, nom, appartenance, photo in connexion.execute(
         _RESPONSABILITES, liaison
     ):
         #  Un type inconnu ne peut pas arriver -- la contrainte de verification de
         #  `T8` du LOT 2 le refuse -- mais le `setdefault` evite qu'un ajout futur
         #  fasse disparaitre des titulaires EN SILENCE.
         par_type.setdefault(str(type_de_responsabilite), []).append(
-            _titulaire(identifiant, prenom, nom)
+            _titulaire(identifiant, prenom, nom, appartenance, photo)
         )
 
-    responsabilites = tuple(
+    direction = tuple(
+        _titulaire(identifiant, prenom, nom, appartenance, photo)
+        for identifiant, prenom, nom, appartenance, photo in connexion.execute(
+            _DIRECTION_DE_PRESENTATION, liaison
+        )
+    )
+
+    responsabilites = (
+        (
+            CarteDeResponsabilite(
+                type_de_responsabilite="DIRECTION",
+                titulaires=direction,
+                chemin_detaille=None,
+            ),
+        )
+        if direction
+        else ()
+    ) + tuple(
         CarteDeResponsabilite(
             type_de_responsabilite=nom_du_type,
             titulaires=tuple(par_type.get(nom_du_type, ())),
@@ -296,8 +371,12 @@ def lire_la_page_framework(
             description=None if ligne[3] is None else str(ligne[3]),
             #  **LE GARDE DU DEFAUT `T10-8`.** `str(None)` rendrait « None ».
             jeton_de_couleur=None if ligne[4] is None else str(ligne[4]),
-            booster=None if ligne[5] is None else _titulaire(ligne[5], ligne[6], ligne[7]),
-            membres_actifs=int(ligne[8]),
+            booster=(
+                None
+                if ligne[5] is None
+                else _titulaire(ligne[5], ligne[6], ligne[7], ligne[8], ligne[9])
+            ),
+            membres_actifs=int(ligne[10]),
             chemin_detaille=chemin_du_cercle(code_entite, str(ligne[1])),
         )
         for ligne in connexion.execute(_CERCLES, liaison)
@@ -322,7 +401,9 @@ def lire_la_page_framework(
             },
         )
         if ligne[5] is not None:
-            bureau["responsables"].append(_titulaire(ligne[5], ligne[6], ligne[7]))
+            bureau["responsables"].append(
+                _titulaire(ligne[5], ligne[6], ligne[7], ligne[8], ligne[9])
+            )
 
     bureaux = tuple(
         CarteDeBureau(

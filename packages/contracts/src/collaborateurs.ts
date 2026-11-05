@@ -115,7 +115,7 @@ export interface DemandeDeCreationDeCollaborateur {
   readonly prenom: string;
   readonly nom: string;
   readonly nom_prefere?: string;
-  readonly date_d_arrivee: string;
+  readonly date_d_arrivee: string | null;
   readonly metier?: string | null;
   readonly statut: 'mission' | 'intercontract';
   readonly client?: string | null;
@@ -136,7 +136,7 @@ export interface CollaborateurCree {
 export interface DemandeDeChangementDEntite {
   readonly version: number;
   readonly entite_destination: string;
-  readonly date_d_arrivee: string;
+  readonly date_d_arrivee: string | null;
   readonly metier?: string | null;
   readonly statut: 'mission' | 'intercontract';
   readonly client?: string | null;

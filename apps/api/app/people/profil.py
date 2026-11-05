@@ -151,7 +151,7 @@ class FicheProfil:
     last_name: str
     preferred_name: str | None
     professional_category: str
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     short_bio: str | None
     fun_fact: str | None
     metier: str | None

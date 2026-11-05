@@ -33,10 +33,10 @@
  *   etablie, sans promettre une destination qui n'existe pas.
  */
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router';
 
 import { consommerUnLien } from '../api/auth';
-import { CHEMINS } from '../routes';
+import { CHEMINS, cheminDeRubrique, CODE_ENTITE_BETA } from '../routes';
 import { Cadre } from './Cadre';
 
 type Etat = 'consommation' | 'connecte' | 'refuse';
@@ -106,32 +106,7 @@ export function PageLien(): JSX.Element {
   }
 
   if (etat === 'connecte') {
-    return (
-      <Cadre titre="Vous etes connecte">
-        <p className="auth-message" data-ton="succes" role="status" aria-live="polite">
-          Votre session est ouverte. Choisissez l&rsquo;entite que vous voulez consulter.
-        </p>
-        {/*
-          **CE TEXTE DISAIT « aucune page ne vous attend ici », ET C'ETAIT VRAI
-          JUSQU'A `T6`.** Le cahier §8.1 fait suivre la connexion par l'accueil
-          national ; il existe desormais, et le lien y mene. Laisser l'ancien
-          message serait laisser une affirmation devenue fausse -- exactement ce
-          que le §9.0 de la passation reproche au corpus.
-        */}
-        <ul className="auth-liens">
-          <li>
-            <Link className="auth-lien" to={CHEMINS.national}>
-              Choisir une entite
-            </Link>
-          </li>
-          <li>
-            <Link className="auth-lien" to={CHEMINS.deconnexion}>
-              Se deconnecter
-            </Link>
-          </li>
-        </ul>
-      </Cadre>
-    );
+    return <Navigate replace to={cheminDeRubrique(CODE_ENTITE_BETA, '')} />;
   }
 
   return (

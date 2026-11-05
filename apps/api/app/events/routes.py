@@ -49,8 +49,20 @@ import datetime as dt
 import uuid
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Path,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 
 from app.audit.motif import exiger_un_motif_si_necessaire
 from app.auth.dependances import SessionEtablie, exiger_une_session, proteger_du_csrf
@@ -83,6 +95,9 @@ from app.events.perimetre import (
     PorteeDeCreation,
     resoudre_le_perimetre_de_l_evenement,
 )
+from app.media.depot import TAILLE_MAXIMALE_PHOTO_OCTETS, deposer_une_photo
+from app.media.objets import ObjetIntrouvable, lire_l_objet
+from app.media.traitement import generer_les_variantes_depuis_la_charge
 from app.permissions.dependances import exiger_un_role_dans_l_entite
 from app.permissions.services import resoudre_les_permissions
 from app.shared.database import moteur
@@ -105,6 +120,7 @@ class EvenementRendu(BaseModel):
     etat: str
     annule_le: dt.datetime | None
     motif_d_annulation: str | None
+    image: str | None
 
 
 class ReponseDesEvenements(BaseModel):
@@ -463,6 +479,11 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                     etat=evenement.state,
                     annule_le=evenement.cancelled_at,
                     motif_d_annulation=evenement.cancellation_reason,
+                    image=(
+                        f"{parametres.API_PREFIX}/entities/{code}/events/{evenement.id}/image"
+                        if evenement.a_une_image
+                        else None
+                    ),
                 )
                 for evenement in resultat.evenements
             ],
@@ -1291,5 +1312,146 @@ def routeur_evenements(parametres: Parametres) -> APIRouter:
                 for m in resultat.medias
             ],
         )
+
+    @routeur.post(
+        "/entities/{code}/events/{evenement}/image",
+        status_code=status.HTTP_200_OK,
+        response_model=ReponseDeGestionDesMediasDEvenement,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_403_FORBIDDEN: {"description": "Gestion des medias refusee."},
+            status.HTTP_404_NOT_FOUND: {"description": "Entite ou evenement introuvable."},
+            status.HTTP_409_CONFLICT: {"description": "Version de l'evenement obsolete."},
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "description": "Image vide, trop lourde, invalide ou de type refuse."
+            },
+        },
+        summary="Televerser et rattacher l'image principale d'un evenement",
+    )
+    def televerser_l_image_d_un_evenement(
+        requete: Request,
+        code: Annotated[str, Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE)],
+        evenement: Annotated[uuid.UUID, Path()],
+        version: Annotated[int, Form(ge=1)],
+        fichier: Annotated[UploadFile, File(description="JPEG, PNG ou WebP, 10 Mo maximum")],
+        motif: Annotated[str | None, Form(max_length=2000)] = None,
+        appelant: SessionEtablie = Depends(garde_de_creation),  # noqa: B008
+    ) -> ReponseDeGestionDesMediasDEvenement:
+        """Flux Beta simple : depot, verification, miniature et rattachement en un geste."""
+        jeton = requete.cookies.get(parametres.SESSION_COOKIE_NAME)
+        proteger_du_csrf(parametres, requete, jeton_de_session=jeton or "")
+        # Ne jamais charger un corps arbitrairement gros en memoire : un octet
+        # au-dela de la borne suffit au service de depot pour rendre son 422.
+        contenu = fichier.file.read(TAILLE_MAXIMALE_PHOTO_OCTETS + 1)
+        instant = dt.datetime.now(tz=dt.UTC)
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            permissions = resoudre_les_permissions(connexion, appelant.personne, entite.id, instant)
+            perimetre = resoudre_le_perimetre_de_l_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                roles=frozenset(permissions.roles),
+                instant=instant,
+            )
+            if ActionEvenement.GERER_LES_MEDIAS not in perimetre.actions:
+                raise ErreurApplicative(
+                    code=CODE_ACCES_REFUSE,
+                    message=MESSAGE_ACCES_REFUSE,
+                    statut=status.HTTP_403_FORBIDDEN,
+                )
+            exiger_un_motif_si_necessaire(frozenset(permissions.roles), motif)
+            media = deposer_une_photo(
+                connexion,
+                parametres,
+                entite=entite.id,
+                acteur=appelant.personne,
+                nom_de_fichier=fichier.filename or "evenement.jpg",
+                content_type=fichier.content_type,
+                contenu=contenu,
+                instant=instant,
+            )
+            generer_les_variantes_depuis_la_charge(
+                connexion,
+                {"media_asset_id": str(media.id)},
+                instant=instant,
+                parametres=parametres,
+            )
+            resultat = gerer_les_medias_d_un_evenement(
+                connexion,
+                entite=entite.id,
+                acteur=appelant.personne,
+                evenement=evenement,
+                version_attendue=version,
+                medias=[(media.id, "cover")],
+                instant=instant,
+                motif=motif,
+            )
+        return ReponseDeGestionDesMediasDEvenement(
+            version=resultat.version,
+            medias=[
+                MediaDEvenementRendu(media=m.media_asset_id, role=m.role, ordre=m.ordre)
+                for m in resultat.medias
+            ],
+        )
+
+    @routeur.get(
+        "/entities/{code}/events/{evenement}/image",
+        dependencies=[Depends(exiger_une_session(parametres))],
+        response_class=Response,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {"description": "Aucune session valide."},
+            status.HTTP_404_NOT_FOUND: {
+                "description": "Entite, evenement publie ou image introuvable."
+            },
+        },
+        summary="Servir l'image principale d'un evenement publie",
+    )
+    def servir_l_image_d_un_evenement(
+        code: Annotated[str, Path(min_length=1, max_length=LONGUEUR_MAXIMALE_CODE)],
+        evenement: Annotated[uuid.UUID, Path()],
+    ) -> Response:
+        with moteur(parametres).begin() as connexion:
+            entite = resoudre_une_entite_active(connexion, code)
+            if entite is None:
+                raise ErreurApplicative(
+                    code=CODE_ENTITE_INTROUVABLE,
+                    message=MESSAGE_ENTITE_INTROUVABLE,
+                    statut=status.HTTP_404_NOT_FOUND,
+                )
+            ligne = connexion.execute(
+                text(
+                    "SELECT mv.object_key FROM event e "
+                    "JOIN event_media em ON em.event_id=e.id AND em.archived_at IS NULL "
+                    "JOIN media_asset ma ON ma.id=em.media_asset_id AND ma.state='ready' "
+                    "JOIN media_variant mv ON mv.media_asset_id=ma.id "
+                    "AND mv.variant_type='thumbnail' AND mv.archived_at IS NULL "
+                    "WHERE e.id=:evenement AND e.entity_id=:entite AND e.archived_at IS NULL "
+                    "AND e.state IN ('published','cancelled') ORDER BY em.display_order LIMIT 1"
+                ),
+                {"evenement": evenement, "entite": entite.id},
+            ).scalar_one_or_none()
+        if ligne is None:
+            raise ErreurApplicative(
+                code="image_evenement_introuvable",
+                message="Cet evenement n'a pas d'image publiable.",
+                statut=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            contenu = lire_l_objet(parametres, str(ligne))
+        except ObjetIntrouvable as erreur:
+            raise ErreurApplicative(
+                code="image_evenement_introuvable",
+                message="L'image de cet evenement est indisponible.",
+                statut=status.HTTP_404_NOT_FOUND,
+            ) from erreur
+        return Response(content=contenu, media_type="image/jpeg")
 
     return routeur

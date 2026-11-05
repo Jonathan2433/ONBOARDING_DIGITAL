@@ -99,6 +99,10 @@ function monter(code: string, strict = false, chemin?: string): ReturnType<typeo
   return render(strict ? <StrictMode>{arbre}</StrictMode> : arbre);
 }
 
+async function attendreLeLogo(nomEntite: string): Promise<HTMLElement> {
+  return await screen.findByRole('link', { name: `Retour à l’accueil ${nomEntite}` });
+}
+
 describe("l'entite consultee vient de l'adresse", () => {
   it("affiche l'entite resolue — LE TEMOIN CENTRAL", async () => {
     vi.stubGlobal(
@@ -106,16 +110,9 @@ describe("l'entite consultee vient de l'adresse", () => {
       vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
     );
     monter('bordeaux');
-    //  **L'ENTITE EST DANS LE `banner`, ET LE TITRE EST CELUI DE LA PAGE.**
-    //  Mesure a l'ecran : avec le nom de l'entite en `<h1>`, il apparaissait DEUX
-    //  fois et un lecteur d'ecran l'entendait deux fois. Le `<h1>` porte donc le
-    //  libelle du cahier §8.1, « Accueil de l'entite ».
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
-    expect(screen.getByRole('heading', { name: /Accueil de l/ })).toBeTruthy();
-    //  Et le nom n'est PAS repete dans le titre.
-    expect(screen.getByRole('heading', { name: /Accueil de l/ }).textContent).not.toContain(
-      'eXalt Bordeaux',
-    );
+    const logo = await attendreLeLogo('eXalt Bordeaux');
+    expect(logo.getAttribute('href')).toBe('/entites/bordeaux');
+    expect(screen.queryByRole('heading', { name: /Accueil de l/ })).toBeNull();
   });
 
   it("porte l'entite dans l'EN-TETE, et la page interne est rendue dessous — §23.3", async () => {
@@ -129,13 +126,10 @@ describe("l'entite consultee vient de l'adresse", () => {
     monter('bordeaux');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
 
-    //  L'entite est DANS le repere `banner`, pas ailleurs sur la page : c'est ce
-    //  que « visible dans l'en-tete » veut dire, et une page qui l'afficherait
-    //  dans son contenu ne le satisferait pas.
     const entete = screen.getByRole('banner');
-    expect(entete.textContent).toContain('eXalt Bordeaux');
-    expect(entete.textContent).toContain('Bordeaux');
-    expect(entete.querySelector('[data-code-entite="bordeaux"]')).toBeTruthy();
+    expect(await attendreLeLogo('eXalt Bordeaux')).toBeTruthy();
+    expect(entete.textContent).not.toContain('eXalt Bordeaux Bordeaux');
+    expect(screen.queryByText(/Changer d.entit/)).toBeNull();
 
     //  Et la page interne est bien rendue SOUS le cadre, dans `main` — l'accueil,
     //  LOT 8 `T11`, compose desormais les cinq sections du cahier §8.4.
@@ -247,12 +241,12 @@ describe("l'entite consultee vient de l'adresse", () => {
     );
     unmount();
     monter('paris');
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Paris'));
+    await attendreLeLogo('eXalt Paris');
 
     repondreBordeaux();
     await new Promise((resoudre) => setTimeout(resoudre, 0));
     expect(screen.queryAllByText(/eXalt Bordeaux/)).toHaveLength(0);
-    expect(screen.getByRole('banner').textContent).toContain('eXalt Paris');
+    expect(screen.getByRole('link', { name: 'Retour à l’accueil eXalt Paris' })).toBeTruthy();
   });
 
   it("affiche l'entite meme sous StrictMode, qui monte deux fois", async () => {
@@ -261,7 +255,7 @@ describe("l'entite consultee vient de l'adresse", () => {
       vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
     );
     monter('bordeaux', true);
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo('eXalt Bordeaux');
     expect(screen.queryByText(/Chargement impossible/)).toBeNull();
   });
 });
@@ -313,9 +307,14 @@ describe('le cadre porte la navigation et le titre — LOT 4, `T4`', () => {
       monter('bordeaux', false, chemin);
       //  **CHAQUE rubrique, non la premiere.** Un test qui n'en verifierait qu'une
       //  passerait sur un titre constant, ce que `T3` avait justement.
-      await waitFor(() =>
-        expect(screen.getByRole('heading', { name: rubrique.titre })).toBeTruthy(),
-      );
+      if (rubrique.suffixe === '') {
+        await attendreLeLogo('eXalt Bordeaux');
+        expect(screen.queryByRole('heading', { name: /Accueil de l/ })).toBeNull();
+      } else {
+        await waitFor(() =>
+          expect(screen.getByRole('heading', { name: rubrique.titre })).toBeTruthy(),
+        );
+      }
     }
   });
 
@@ -466,11 +465,8 @@ describe('les permissions de l entite consultee — T8', () => {
     );
     monter('bordeaux');
 
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
-    //  On attend que le selecteur soit la : sans cette attente, l'absence de la
-    //  mention serait celle d'un rendu qui n'a pas encore recu les droits, et le
-    //  test passerait pour la mauvaise raison.
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Bordeaux');
+    await waitFor(() => expect(screen.queryByText(/Changer d.entit/)).toBeNull());
     expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
   });
 
@@ -485,7 +481,7 @@ describe('les permissions de l entite consultee — T8', () => {
     );
     monter('bordeaux');
 
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Bordeaux');
     //  Les droits ont echoue. Afficher « consultation uniquement » ici dirait a
     //  l'utilisateur une chose qu'on ne sait pas, et la masquer par defaut
     //  laisserait croire l'inverse : le cadre n'affiche donc RIEN, et la page
@@ -493,7 +489,7 @@ describe('les permissions de l entite consultee — T8', () => {
     expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
   });
 
-  it('appelle les TROIS routes avec le code de l adresse, et lui seul', async () => {
+  it('appelle les DEUX routes utiles avec le code de l adresse, sans catalogue d entites', async () => {
     const stub = fetchParUrl({
       '/permissions': () => Promise.resolve(json(permissions('lille', false, ['EMP']), 200)),
       '/entities': () => Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200)),
@@ -502,78 +498,32 @@ describe('les permissions de l entite consultee — T8', () => {
     vi.stubGlobal('fetch', stub);
     monter('lille');
 
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Lille'));
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Lille');
+    await waitFor(() =>
+      expect((stub as unknown as { urlsVues: string[] }).urlsVues).toContain(
+        '/api/v1/entities/lille/permissions',
+      ),
+    );
 
     const vues = (stub as unknown as { urlsVues: string[] }).urlsVues;
     expect(vues).toContain('/api/v1/entities/lille');
     expect(vues).toContain('/api/v1/entities/lille/permissions');
-    expect(vues).toContain('/api/v1/entities');
+    expect(vues).not.toContain('/api/v1/entities');
     //  AUCUN appel ne porte un autre code : c'est « aucun reste de la
     //  precedente » au niveau des requetes emises.
     expect(vues.some((u) => u.includes('bordeaux'))).toBe(false);
   });
 
-  it('une reponse TARDIVE de permissions ne s applique pas a la nouvelle entite', async () => {
-    //  **LE TEMOIN DECISIF, ET IL A FALLU DEUX VERSIONS POUR QU'IL DISCRIMINE.**
-    //  §23.3, quatrieme regle : « annule les requetes et caches associes a
-    //  l'entite precedente ».
-    //
-    //  Premiere version : je montais Bordeaux, je DEMONTAIS, je montais Lille.
-    //  Mesure du 24/08/2026 -- la garde sur le code retiree du cadre, les 99
-    //  tests passaient quand meme. Le demontage cree DEUX instances aux etats
-    //  separes : la reponse de Bordeaux ne pouvait de toute facon pas atteindre
-    //  l'arbre de Lille, et React ignore un `setState` apres demontage. Le test
-    //  ne modelisait pas le defaut qu'il pretendait attraper -- §7.25, « un
-    //  temoin qui n'exerce pas un controle ne prouve rien de ce controle ».
-    //
-    //  Le vrai parcours est un CLIC dans le selecteur : une seule instance de
-    //  cadre, dont le parametre `code` change. C'est ce que fait cette version,
-    //  et elle eprouve le selecteur du meme geste.
-    let libererBordeaux: (() => void) | null = null;
-    const stub = vi.fn((cible: unknown) => {
-      const url = String(cible);
-      if (url === '/api/v1/entities') {
-        return Promise.resolve(json({ entites: [BORDEAUX, LILLE] }, 200));
-      }
-      if (url === '/api/v1/entities/bordeaux/permissions') {
-        return new Promise<Response>((resoudre) => {
-          libererBordeaux = () => resoudre(json(permissions('bordeaux', false, ['EMP']), 200));
-        });
-      }
-      if (url === '/api/v1/entities/lille/permissions') {
-        return Promise.resolve(json(permissions('lille', true, ['EMP', 'ESM']), 200));
-      }
-      return Promise.resolve(json(url.endsWith('lille') ? LILLE : BORDEAUX, 200));
-    });
-    vi.stubGlobal('fetch', stub);
-
+  it('ne propose aucun changement d entite dans la Beta Bordeaux', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(json(BORDEAUX, 200))),
+    );
     monter('bordeaux');
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
-    //  Le selecteur est la, et Bordeaux attend toujours ses droits.
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
-    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
 
-    //  On navigue vers Lille EN CLIQUANT, comme un utilisateur.
-    const versLille = screen
-      .getAllByRole('link')
-      .find((lien) => lien.getAttribute('href') === '/entites/lille');
-    expect(versLille).toBeTruthy();
-    await act(async () => {
-      versLille?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    });
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Lille'));
-
-    //  Et SEULEMENT MAINTENANT la reponse de Bordeaux arrive. Lille est dans son
-    //  entite principale : si les droits de Bordeaux s'appliquaient, la mention
-    //  « consultation uniquement » apparaitrait.
-    await act(async () => {
-      libererBordeaux?.();
-      await Promise.resolve();
-    });
-
-    expect(screen.getByRole('banner').textContent).toContain('eXalt Lille');
-    expect(document.querySelector('[data-consultation="seule"]')).toBeNull();
+    await attendreLeLogo('eXalt Bordeaux');
+    expect(screen.queryByText(/Changer d.entit/)).toBeNull();
+    expect(screen.queryByRole('link', { name: /eXalt Lille/ })).toBeNull();
   });
 });
 
@@ -738,7 +688,7 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
       }),
     );
     monter('bordeaux');
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo('eXalt Bordeaux');
     expect(screen.queryByRole('link', { name: /Votre profil/ })).toBeNull();
     //  **ET AUCUNE LECTURE DE FICHE N'EST TENTEE POUR RIEN** : la garde est la
     //  meme que celle du parcours, donc une seule facon de se tromper.
@@ -777,7 +727,7 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
     );
     monter('bordeaux');
 
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Bordeaux');
     expect(screen.queryAllByRole('link', { name: 'Mon onboarding' })).toHaveLength(0);
   });
 
@@ -793,7 +743,7 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
     );
     monter('bordeaux');
 
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Bordeaux');
     expect(screen.queryAllByRole('link', { name: 'Mon onboarding' })).toHaveLength(0);
   });
 
@@ -806,7 +756,7 @@ describe('« Mon onboarding » se montre selon un VRAI parcours — LOT 7, T13',
     vi.stubGlobal('fetch', stub);
     monter('bordeaux');
 
-    await waitFor(() => expect(document.querySelector('details')).not.toBeNull());
+    await attendreLeLogo('eXalt Bordeaux');
     const vues = (stub as unknown as { urlsVues: string[] }).urlsVues;
     expect(vues.some((u) => u.includes('onboarding-parcours'))).toBe(false);
   });
@@ -854,11 +804,10 @@ describe("l'ordre d'arrivee des trois reponses ne change rien — T8", () => {
       await Promise.resolve();
     });
 
-    await waitFor(() => expect(screen.getByRole('banner').textContent).toContain('eXalt Bordeaux'));
+    await attendreLeLogo('eXalt Bordeaux');
     //  **LES DROITS ARRIVES AVANT DOIVENT AVOIR SURVECU.**
     expect(document.querySelector('[data-consultation="seule"]')).not.toBeNull();
-    //  Et la liste aussi : le selecteur est la.
-    expect(document.querySelector('details')).not.toBeNull();
+    expect(screen.queryByText(/Changer d.entit/)).toBeNull();
   });
 });
 

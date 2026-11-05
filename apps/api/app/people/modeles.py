@@ -315,7 +315,10 @@ class EntityMembership(ChampsCommuns, RessourceLocale, Base):
 
     person_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
 
-    arrival_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    # Date RH facultative pour la Beta Bordeaux. `membership_started_on` est
+    # l'ancrage technique de la periode quand cette date n'est pas encore connue.
+    arrival_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    membership_started_on: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     departure_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
 
     #  Plage GENEREE, semi-ouverte `[arrivee, depart)`, comme la convention posee
@@ -324,7 +327,10 @@ class EntityMembership(ChampsCommuns, RessourceLocale, Base):
     #  demande. `departure_date` a NULL donne une plage non bornee.
     period: Mapped[Any] = mapped_column(
         DATERANGE,
-        Computed("daterange(arrival_date, departure_date)", persisted=True),
+        Computed(
+            "daterange(COALESCE(arrival_date, membership_started_on), departure_date)",
+            persisted=True,
+        ),
         nullable=False,
     )
 
@@ -389,8 +395,13 @@ class EntityMembership(ChampsCommuns, RessourceLocale, Base):
         #  La migration `0006` renomme la contrainte creee par `0005`.
         UniqueConstraint("id", "entity_id"),
         CheckConstraint(
-            "departure_date IS NULL OR departure_date >= arrival_date",
-            name="depart_apres_arrivee",
+            "arrival_date IS NOT NULL OR membership_started_on IS NOT NULL",
+            name="debut_appartenance_present",
+        ),
+        CheckConstraint(
+            "departure_date IS NULL OR departure_date >= "
+            "COALESCE(arrival_date, membership_started_on)",
+            name="depart_apres_debut_appartenance",
         ),
         #  DERIVEE du §24.1, non ecrite telle quelle : la transition
         #  `Active --> Departed` y est libellee « depart ENREGISTRE ». Un depart

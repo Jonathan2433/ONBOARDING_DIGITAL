@@ -348,6 +348,7 @@ def test_TEMOIN_un_EMP_sans_appartenance_lit_une_autre_entite(
         "finit_le",
         "lieu",
         "etat",
+        "image",
         "annule_le",
         "motif_d_annulation",
     }

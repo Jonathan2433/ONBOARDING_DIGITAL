@@ -116,7 +116,7 @@ class DemandeDAppartenance:
     appelant.
     """
 
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     job_catalog_id: uuid.UUID | None
     status: SituationProfessionnelle
     client_id: uuid.UUID | None
@@ -181,15 +181,17 @@ def creer_l_appartenance(
         #  survenue est `future`, jamais `active` — `ETATS_OCCUPANTS` traite les
         #  deux de la meme facon en LECTURE, mais la colonne elle-meme doit
         #  porter la valeur exacte.
+        debut_appartenance = demande.arrival_date or instant.date()
         etat_initial = (
             EtatAppartenance.ACTIVE.value
-            if demande.arrival_date <= instant.date()
+            if demande.arrival_date is None or demande.arrival_date <= instant.date()
             else EtatAppartenance.FUTURE.value
         )
 
         appartenance = DepotLocal(connexion, "entity_membership", entite).creer(
             person_id=person_id,
             arrival_date=demande.arrival_date,
+            membership_started_on=debut_appartenance,
             membership_state=etat_initial,
             professional_category=CategorieProfessionnelle.CONSULTANT.value,
             profile_visibility=VisibiliteProfil.DRAFT.value,
@@ -197,9 +199,9 @@ def creer_l_appartenance(
         )
 
         debut = dt.datetime(
-            demande.arrival_date.year,
-            demande.arrival_date.month,
-            demande.arrival_date.day,
+            debut_appartenance.year,
+            debut_appartenance.month,
+            debut_appartenance.day,
             tzinfo=dt.UTC,
         )
 

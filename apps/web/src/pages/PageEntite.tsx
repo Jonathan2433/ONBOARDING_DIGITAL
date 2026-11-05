@@ -35,15 +35,12 @@
  *   toutes les pages internes (meme motif que l'en-tete historique de ce
  *   fichier).
  *
- * LA PRESENTATION RESTE EDITABLE, ET C'EST UNE COMPOSITION DE DEUX REGIMES
+ * LA PRESENTATION EST EN LECTURE SEULE SUR L'ACCUEIL
  *
- *   Le rendu LECTURE (les blocs de `donnee.presentation`, visibles aux HUIT
- *   roles — matrice §5) et le panneau D'EDITION (`PanneauEditionDeContenu`,
- *   `T10` du LOT 6, deja gate par `peutEditerUnContenu`) coexistent : avant
- *   `T11`, un role SANS droit d'edition ne voyait STRICTEMENT RIEN de la
- *   presentation, le panneau rendant `null` pour lui. C'est exactement le
- *   trou que l'agregat comble — la matrice donne « Lecture » a tous, et
- *   `PanneauEditionDeContenu` n'a jamais porte que l'edition.
+ *   Les blocs de `donnee.presentation` sont visibles aux huit roles de la
+ *   matrice. Leur administration reste dans le back-office : afficher le
+ *   formulaire editorial ici transformait l'accueil d'un ESM en ecran de
+ *   gestion et repoussait le parcours d'onboarding et les evenements.
  *
  * LES BLOCS SE LISENT PAR `texteDuBloc(bloc, 'texte')`, PAS PAR INVENTION
  *
@@ -87,15 +84,16 @@ import {
 } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 import { dateComplete } from './PageProfil';
-import { PanneauEditionDeContenu } from './PanneauEditionDeContenu';
 
 import {
   type AccueilDEntite,
+  type EvenementDuClassement,
+  type TitulaireFramework,
   peutGererLesLiensInternes,
   texteDuBloc,
   urlEstServable,
 } from '@onboarding/contracts';
-import { Alerte, Badge, Carrousel, Carte, Pastille, Picto } from '@onboarding/ui';
+import { Alerte, Avatar, Badge, Carrousel, Carte, Pastille } from '@onboarding/ui';
 
 /** Aucune borne n'est nommee par le corpus — voir l'en-tete. */
 const NOMBRE_MONTRE = 5;
@@ -104,6 +102,342 @@ type Etat =
   | { readonly phase: 'chargement' }
   | { readonly phase: 'accueil'; readonly donnee: AccueilDEntite }
   | { readonly phase: 'erreur'; readonly statut: number };
+
+const MOIS_COURTS = [
+  'janvier',
+  'février',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juillet',
+  'août',
+  'septembre',
+  'octobre',
+  'novembre',
+  'décembre',
+] as const;
+
+function typeDEvenement(evenement: EvenementDuClassement): string {
+  const titre = evenement.titre.toLocaleLowerCase('fr');
+  if (titre.includes('exaltemps')) return '⚡ eXaltemps';
+  if (titre.includes('gala') || titre.includes("fin d'année")) return '✨ Soirée eXalt';
+  return '🎉 Vie des bureaux';
+}
+
+function compteARebours(
+  iso: string,
+  maintenant: number,
+): readonly [number, number, number, number] {
+  const secondes = Math.max(0, Math.floor((Date.parse(iso) - maintenant) / 1000));
+  const jours = Math.floor(secondes / 86_400);
+  const heures = Math.floor((secondes % 86_400) / 3_600);
+  const minutes = Math.floor((secondes % 3_600) / 60);
+  return [jours, heures, minutes, secondes % 60];
+}
+
+function decalerLeMois(cle: string, delta: number): string {
+  const [anneeBrute, moisBrut] = cle.split('-');
+  const date = new Date(Date.UTC(Number(anneeBrute), Number(moisBrut) - 1 + delta, 1));
+  return `${String(date.getUTCFullYear())}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function TempsForts({
+  evenements,
+  codeEntite,
+}: {
+  evenements: readonly EvenementDuClassement[];
+  codeEntite: string;
+}): JSX.Element {
+  const prochain = evenements[0] ?? null;
+  const [maintenant, setMaintenant] = useState(() => Date.now());
+  const [moisAffiche, setMoisAffiche] = useState(
+    () => prochain?.commenceLe.slice(0, 7) ?? new Date().toISOString().slice(0, 7),
+  );
+  const [evenementSelectionne, setEvenementSelectionne] = useState<string | null>(
+    prochain?.identifiant ?? null,
+  );
+  const aUnProchainEvenement = prochain !== null;
+
+  useEffect(() => {
+    if (!aUnProchainEvenement) return undefined;
+    const minuteur = window.setInterval(() => {
+      setMaintenant(Date.now());
+    }, 1000);
+    return () => {
+      window.clearInterval(minuteur);
+    };
+  }, [aUnProchainEvenement]);
+
+  if (evenements.length === 0) {
+    return (
+      <Carte titre="Les moments à ne pas manquer">
+        <Alerte>Aucun événement à venir pour le moment.</Alerte>
+      </Carte>
+    );
+  }
+  if (prochain === null) return <></>;
+  const [jours, heures, minutes, secondes] = compteARebours(prochain.commenceLe, maintenant);
+  const annee = Number(moisAffiche.slice(0, 4));
+  const mois = Number(moisAffiche.slice(5, 7));
+  const joursDansLeMois = new Date(Date.UTC(annee, mois, 0)).getUTCDate();
+  const premierJour = (new Date(Date.UTC(annee, mois - 1, 1)).getUTCDay() + 6) % 7;
+  const evenementsDuMois = evenements.filter(
+    (evenement) => evenement.commenceLe.slice(0, 7) === moisAffiche,
+  );
+  const evenementParJour = new Map(
+    evenementsDuMois.map((evenement) => [Number(evenement.commenceLe.slice(8, 10)), evenement]),
+  );
+  const moisDisponibles = evenements.map((evenement) => evenement.commenceLe.slice(0, 7)).sort();
+  const premierMois = moisDisponibles[0] ?? moisAffiche;
+  const dernierMois = moisDisponibles.at(-1) ?? moisAffiche;
+  const selection =
+    evenements.find((evenement) => evenement.identifiant === evenementSelectionne) ?? prochain;
+
+  function afficherLeMois(cle: string): void {
+    setMoisAffiche(cle);
+    const premierDuMois = evenements.find((evenement) => evenement.commenceLe.slice(0, 7) === cle);
+    if (premierDuMois !== undefined) setEvenementSelectionne(premierDuMois.identifiant);
+  }
+
+  return (
+    <section className="temps-forts" aria-labelledby="temps-forts-titre">
+      <header className="temps-forts-hero">
+        <div>
+          <span className="temps-forts-pastille">● ⚡ Nos temps forts</span>
+          <h2 id="temps-forts-titre">Les moments à ne pas manquer</h2>
+          <p>
+            Prochain rendez-vous : <strong>{prochain.titre}</strong> —{' '}
+            {plageDeLEvenement(prochain.commenceLe, prochain.finitLe)}
+          </p>
+        </div>
+        <div className="temps-forts-compte" aria-label={`Compte à rebours avant ${prochain.titre}`}>
+          <strong>Le compte à rebours est lancé</strong>
+          <div>
+            {[
+              [jours, 'jours'],
+              [heures, 'heures'],
+              [minutes, 'min'],
+              [secondes, 'sec'],
+            ].map(([valeur, unite]) => (
+              <span key={unite}>
+                <b>{String(valeur).padStart(2, '0')}</b>
+                <small>{unite}</small>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="temps-forts-defile" aria-hidden="true">
+          <div className="temps-forts-defile-piste">
+            {[false, true].map((estUneCopie) => (
+              <div
+                className="temps-forts-defile-groupe"
+                data-copie={estUneCopie ? 'true' : 'false'}
+                key={estUneCopie ? 'copie' : 'original'}
+              >
+                {evenements.map((evenement) => (
+                  <span key={evenement.identifiant}>● {evenement.titre}</span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <h3 className="temps-forts-affiche">🎟️ À l&rsquo;affiche</h3>
+      <div className="temps-forts-vedettes">
+        {evenements.slice(0, 2).map((evenement, rang) => (
+          <article className="temps-forts-vedette" key={evenement.identifiant}>
+            {evenement.image === null ? (
+              <div className={`temps-forts-poster temps-forts-poster-${String(rang + 1)}`}>
+                <span>{evenement.titre}</span>
+              </div>
+            ) : (
+              <img alt="" className="temps-forts-poster" src={evenement.image} />
+            )}
+            <div>
+              <span className="temps-forts-type">{typeDEvenement(evenement)}</span>
+              <h4>{evenement.titre}</h4>
+              {evenement.etat === 'cancelled' ? <Badge ton="annule">Annulé</Badge> : null}
+              <strong>{plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}</strong>
+              {evenement.lieu === null ? null : <p>📍 {evenement.lieu}</p>}
+              {evenement.description === null ? null : <p>{evenement.description}</p>}
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <p className="temps-forts-explication">
+        📅 Les dates entourées sont à bloquer dans ton agenda. Clique sur un événement pour le
+        détail.
+      </p>
+      <div className="temps-forts-bas">
+        <section className="temps-forts-calendrier" aria-label="Calendrier des temps forts">
+          <header className="temps-forts-calendrier-entete">
+            <button
+              aria-label="Afficher le mois précédent"
+              disabled={moisAffiche <= premierMois}
+              onClick={() => {
+                afficherLeMois(decalerLeMois(moisAffiche, -1));
+              }}
+              type="button"
+            >
+              ‹
+            </button>
+            <h3>
+              {MOIS_COURTS[mois - 1]} {annee}
+            </h3>
+            <button
+              aria-label="Afficher le mois suivant"
+              disabled={moisAffiche >= dernierMois}
+              onClick={() => {
+                afficherLeMois(decalerLeMois(moisAffiche, 1));
+              }}
+              type="button"
+            >
+              ›
+            </button>
+          </header>
+          <div className="temps-forts-semaine" aria-hidden="true">
+            {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((jour, rang) => (
+              <span key={`${jour}-${String(rang)}`}>{jour}</span>
+            ))}
+          </div>
+          <div className="temps-forts-jours">
+            {Array.from({ length: premierJour }, (_, i) => (
+              <span key={`vide-${String(i)}`} />
+            ))}
+            {Array.from({ length: joursDansLeMois }, (_, i) => i + 1).map((jour) => {
+              const evenement = evenementParJour.get(jour);
+              return evenement === undefined ? (
+                <span key={jour}>{jour}</span>
+              ) : (
+                <button
+                  aria-label={`${evenement.titre}, ${plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}`}
+                  aria-pressed={selection.identifiant === evenement.identifiant}
+                  className="date-evenement"
+                  key={jour}
+                  onClick={() => {
+                    setEvenementSelectionne(evenement.identifiant);
+                  }}
+                  type="button"
+                >
+                  {jour}
+                </button>
+              );
+            })}
+          </div>
+          <article aria-live="polite" className="temps-forts-selection">
+            <strong>{selection.titre}</strong>
+            <span>{plageDeLEvenement(selection.commenceLe, selection.finitLe)}</span>
+            {selection.lieu === null ? null : <span>📍 {selection.lieu}</span>}
+            {selection.description === null ? null : <p>{selection.description}</p>}
+          </article>
+        </section>
+
+        <section className="temps-forts-liste" aria-labelledby="prochains-rendez-vous">
+          <h3 id="prochains-rendez-vous">🔥 Prochains rendez-vous</h3>
+          <ul>
+            {evenements.map((evenement) => (
+              <li key={evenement.identifiant}>
+                <span>{typeDEvenement(evenement)}</span>
+                <strong>{evenement.titre}</strong>
+                <small>{plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}</small>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <aside className="temps-forts-infos">
+          <div className="temps-forts-info-rose">
+            <strong>⚡ C&rsquo;est quoi un eXaltemps ?</strong>
+            <p>
+              Les eXaltemps sont les temps forts de la vie eXalt : des moments où toute
+              l&rsquo;agence se retrouve, pour partager, s&rsquo;aligner et célébrer ensemble.
+            </p>
+          </div>
+          <div className="temps-forts-info-bleu">
+            <strong>✅ Obligatoire pour les nouveaux</strong>
+            <p>
+              Journée d&rsquo;intégration nationale à Paris. La date te sera communiquée à ton
+              arrivée.
+            </p>
+          </div>
+        </aside>
+      </div>
+      <Link className="app-lien" to={cheminDeRubrique(codeEntite, 'evenements')}>
+        Voir tous les événements
+      </Link>
+    </section>
+  );
+}
+
+function MotDeLaDirection({
+  titulaires,
+}: {
+  titulaires: readonly TitulaireFramework[];
+}): JSX.Element {
+  return (
+    <section className="accueil-direction" aria-labelledby="accueil-direction-titre">
+      <header>
+        <div>
+          <span>DIRECTION</span>
+          <h2 id="accueil-direction-titre">Le mot de la direction</h2>
+        </div>
+        <p>Julie, Omar et Mathéa te souhaitent la bienvenue chez eXalt Bordeaux.</p>
+      </header>
+      <div className="accueil-direction-personnes">
+        {titulaires.map((titulaire) => (
+          <article key={titulaire.identifiant}>
+            <div className="accueil-direction-identite">
+              <Avatar
+                nom={`${titulaire.prenom} ${titulaire.nom}`}
+                taille={56}
+                {...(titulaire.photo === null ? {} : { photo: titulaire.photo })}
+              />
+              <div>
+                <strong>
+                  {titulaire.prenom} {titulaire.nom}
+                </strong>
+                <span>Direction eXalt Bordeaux</span>
+              </div>
+            </div>
+            <div className="accueil-direction-video">
+              <span aria-hidden="true">▶</span>
+              <strong>Vidéo {titulaire.prenom}</strong>
+              <small>À ajouter depuis l&rsquo;administration</small>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="accueil-reperes">
+        <article>
+          <h3>Une agence locale</h3>
+          <p>Une communauté bordelaise structurée autour des expertises et de la proximité.</p>
+        </article>
+        <article>
+          <h3>Un repère onboarding</h3>
+          <p>
+            Un point d&rsquo;entrée simple pour comprendre qui fait quoi et vers qui se tourner.
+          </p>
+        </article>
+        <article>
+          <h3>Des équipes claires</h3>
+          <p>
+            DSM, cercles d&rsquo;expertise et Framework sont accessibles depuis cette interface.
+          </p>
+        </article>
+        <article>
+          <h3>🌟 Nos temps forts</h3>
+          <p>
+            eXaltemps, vie des bureaux, journée d&rsquo;intégration… Découvre les moments forts.
+          </p>
+          <a href="#temps-forts-titre">Découvrir →</a>
+        </article>
+      </div>
+    </section>
+  );
+}
 
 export function PageEntite(): JSX.Element {
   const { entite, permissions } = useEntiteConsultee();
@@ -151,6 +485,10 @@ export function PageEntite(): JSX.Element {
   const nombreDeResponsabilitesPourvues = donnee.framework.responsabilites.filter(
     (responsabilite) => responsabilite.titulaires.length > 0,
   ).length;
+  const direction =
+    donnee.framework.responsabilites.find(
+      (responsabilite) => responsabilite.typeDeResponsabilite === 'DIRECTION',
+    )?.titulaires ?? [];
 
   return (
     <div className="accueil">
@@ -185,13 +523,9 @@ export function PageEntite(): JSX.Element {
             })
           )}
         </div>
-        <PanneauEditionDeContenu
-          cibleCorrespond={(page) => page.typeDePage === 'HOME' && page.slug === 'presentation'}
-          codeEntite={entite.code}
-          demandeDeCreation={{ type_de_page: 'HOME', titre: entite.nom, slug: 'presentation' }}
-          roles={roles}
-        />
       </section>
+
+      <MotDeLaDirection titulaires={direction} />
 
       {/*
         **2. LA GRILLE A DEUX COLONNES DE LA CHARTE 6.2, EN ATTENTE DE SON
@@ -211,39 +545,28 @@ export function PageEntite(): JSX.Element {
         **AUCUNE ANIMATION PULSEE SUR L'APPEL A L'ACTION**, la charte 6.2
         l'ecrit explicitement, et le §14.2 la refuserait de toute facon.
       */}
-      <section className="accueil-duo" aria-labelledby="accueil-duo-titre">
-        <h2 className="accueil-duo-titre" id="accueil-duo-titre">
-          Contenus a venir
-        </h2>
-        <div className="accueil-duo-grille">
-          <div className="accueil-video">
-            <Badge ton="info">V1</Badge>
-            <p className="accueil-video-texte">
-              La video de presentation de l&rsquo;entite prendra place ici. Elle se lancera sur
-              votre action, jamais toute seule.
-            </p>
-          </div>
-          <ul className="accueil-tuiles">
-            <li className="accueil-tuile accueil-tuile-bleu">
-              <span className="accueil-tuile-titre">Chiffres de l&rsquo;entite</span>
-              <span className="accueil-tuile-mention">Contenu a venir</span>
-            </li>
-            <li className="accueil-tuile accueil-tuile-jaune">
-              <span className="accueil-tuile-titre">Temps forts</span>
-              <span className="accueil-tuile-mention">Contenu a venir</span>
-            </li>
-            <li className="accueil-tuile accueil-tuile-gris">
-              <span className="accueil-tuile-titre">Reperes pratiques</span>
-              <span className="accueil-tuile-mention">Contenu a venir</span>
-            </li>
-            <li className="accueil-tuile accueil-tuile-cta">
-              <Picto nom="feu-d-artifice" taille={24} />
-              <span className="accueil-tuile-titre">Vie eXalt</span>
-              <span className="accueil-tuile-mention">Contenu a venir</span>
-            </li>
-          </ul>
+      <section className="accueil-onboarding" aria-labelledby="accueil-onboarding-titre">
+        <div>
+          <span>🚀 Tu viens d&rsquo;arriver chez eXalt Bordeaux ?</span>
+          <h2 id="accueil-onboarding-titre">Découvre ton parcours d&rsquo;onboarding</h2>
+          <p>
+            Ta fiche d&rsquo;arrivée, ta checklist personnalisée (intercontrat ou mission) et tes
+            réunions clés — tout est ici.
+          </p>
         </div>
+        <Link
+          className="accueil-onboarding-action"
+          to={cheminDeRubrique(entite.code, 'mon-onboarding')}
+        >
+          Commencer mon onboarding →
+        </Link>
       </section>
+
+      <TempsForts
+        key={donnee.evenementsAVenir.evenements.map((evenement) => evenement.identifiant).join(':')}
+        codeEntite={entite.code}
+        evenements={donnee.evenementsAVenir.evenements}
+      />
 
       {/* 2. Framework, cercles et bureaux — cahier §8.4. Chantier front, S4
          (`DEC-672`) : trois compteurs en `Badge`, plutot qu'une seule phrase
@@ -308,42 +631,6 @@ export function PageEntite(): JSX.Element {
             Voir le trombinoscope
           </Link>
         ) : null}
-      </Carte>
-
-      {/* 4. Evenements a venir — cahier §8.4. Meme parti qu'au bloc 3 : le
-         compteur en `Badge` n'apparait qu'avec le carrousel. */}
-      <Carte titre="Evenements a venir">
-        {donnee.evenementsAVenir.evenements.length === 0 ? (
-          <Alerte>Aucun evenement a venir pour le moment.</Alerte>
-        ) : (
-          <>
-            <p className="accueil-compteur">
-              <Badge ton="info">
-                {donnee.evenementsAVenir.total} evenement
-                {donnee.evenementsAVenir.total > 1 ? 's' : ''}
-              </Badge>
-            </p>
-            <Carrousel libelle="Evenements a venir">
-              {donnee.evenementsAVenir.evenements.slice(0, NOMBRE_MONTRE).map((evenement) => (
-                <li
-                  key={evenement.identifiant}
-                  className="ui-carrousel__item accueil-evenements-carte"
-                >
-                  <div className="accueil-evenements-entete">
-                    <span className="accueil-evenements-titre">{evenement.titre}</span>
-                    {evenement.etat === 'cancelled' ? <Badge ton="annule">Annule</Badge> : null}
-                  </div>
-                  <span className="accueil-evenements-horaire">
-                    {plageDeLEvenement(evenement.commenceLe, evenement.finitLe)}
-                  </span>
-                </li>
-              ))}
-            </Carrousel>
-          </>
-        )}
-        <Link className="app-lien" to={cheminDeRubrique(entite.code, 'evenements')}>
-          Voir tous les evenements
-        </Link>
       </Carte>
 
       {/* 5. Cartes vers le Hub, eXalt Academy et SharePoint — cahier §8.4, `MVP-L08-US006` (2/2) */}

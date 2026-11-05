@@ -158,8 +158,20 @@
      proportions. Le rapport EST celui du fichier (195 x 88), donc la largeur
      se deduit de la hauteur que la charte 6.1 fixe a 22 px. */
   aspect-ratio: 195 / 88;
-  height: 22px;
+  height: 34px;
   background: url('../marque/exalt-group-bleu.png') left center / contain no-repeat;
+}
+
+.app-logo-lien {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: var(--rayon-s);
+  text-decoration: none;
+}
+
+.app-logo-lien:focus-visible {
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
 }
 
 :root[data-theme='sombre'] .app-logo {
@@ -218,9 +230,10 @@
   align-items: center;
   flex-shrink: 0;
   gap: var(--espace-xs);
-  min-height: 44px;
-  padding: var(--espace-xs) var(--espace-m);
+  min-height: 38px;
+  padding: var(--espace-xs) var(--espace-s);
   font: inherit;
+  font-size: var(--taille-xs);
   font-weight: var(--graisse-forte);
   color: var(--encre);
   background: var(--fond);
@@ -942,11 +955,105 @@
    Le trombinoscope a l'ecran — LOT 5, `T10`, story `MVP-L05-US003`
    ========================================================================== */
 
+.trombi {
+  --trombi-sans-cercle: #707085;
+  --trombi-sans-cercle-texte: #ffffff;
+  --trombi-cercle-data: #5c2ca8;
+  --trombi-cercle-data-texte: #ffffff;
+  --trombi-cercle-shield: #9b1558;
+  --trombi-cercle-shield-texte: #ffffff;
+  --trombi-cercle-forge: #8a4500;
+  --trombi-cercle-forge-texte: #ffffff;
+  --trombi-cercle-it: #00677a;
+  --trombi-cercle-it-texte: #ffffff;
+}
+
 .trombi-criteres {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(16rem, 1.4fr) repeat(2, minmax(10rem, 0.8fr)) auto;
+  align-items: end;
   gap: var(--espace-m);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-inline-start: 4px solid var(--marque-bleu);
+  border-radius: var(--rayon-l);
   margin-bottom: var(--espace-l);
+  background: var(--surface);
+}
+
+.trombi-filtre {
+  min-width: 0;
+}
+
+.trombi-filtre > .ex-champ {
+  width: 100%;
+}
+
+.trombi-criteres .ex-champ__libelle {
+  color: var(--encre-douce);
+  font-size: var(--taille-surtitre);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trombi-criteres .ex-champ__saisie {
+  width: 100%;
+  border-radius: var(--rayon-pastille);
+  background: var(--fond-doux);
+  font-size: var(--taille-s);
+}
+
+.trombi-filtre[data-actif='true'] .ex-champ__saisie {
+  border-color: var(--marque-bleu);
+  background: var(--surface);
+}
+
+.trombi-filtre--recherche {
+  position: relative;
+}
+
+.trombi-filtre--recherche > .ex-picto {
+  position: absolute;
+  z-index: 1;
+  bottom: 10px;
+  left: var(--espace-m);
+  color: var(--titre);
+  pointer-events: none;
+}
+
+.trombi-filtre--recherche .ex-champ__saisie {
+  padding-inline-start: var(--espace-xxl);
+}
+
+.trombi-effacer-filtres {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.trombi-effacer-filtres .ex-bouton {
+  white-space: nowrap;
+}
+
+@media (max-width: 64rem) {
+  .trombi-criteres {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trombi-filtre--recherche {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .trombi-criteres {
+    grid-template-columns: 1fr;
+    padding: var(--espace-s);
+  }
+
+  .trombi-filtre--recherche {
+    grid-column: auto;
+  }
 }
 
 .trombi-compte {
@@ -954,32 +1061,112 @@
   color: var(--encre-douce);
 }
 
-/* La grille est responsive SANS point de rupture ecrit : `auto-fill` et
-   `minmax` suffisent, et le §14.1 veut « responsive », pas « trois colonnes ». */
 /* ==========================================================================
    Le trombinoscope de la charte 6.3 — chantier design systeme v2, `E5`
    ========================================================================== */
 
-/* **`auto-fill` A 170 px, COMME LA CHARTE L'ECRIT** : des cartes plus etroites
-   qu'avant (14rem valait 224 px), donc davantage par rangee. Le `gap` reste
-   celui de l'echelle de 4 — la charte ecrit « gap 14 », qui n'est sur aucun
-   de ses propres echelons ; c'est la meme tension interne que son « padding
-   22px », deja signalee par `E3` et consignee pour `E7`. */
+/* La grille monte progressivement jusqu'a HUIT cartes par ligne sur un ecran
+   de bureau. Les colonnes explicites evitent l'effet de seuil d'`auto-fill`
+   (neuf cartes juste avant 1280 px, puis huit lorsque le contenu atteint sa
+   largeur maximale). */
 .trombi-grille {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: var(--espace-m);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--espace-s);
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-/* La hauteur de carte de la charte 6.3. `min-height` et non `height` : une
-   carte dont le nom passe sur deux lignes doit pouvoir grandir plutot que de
-   tronquer, et `S10` a deja corrige les hauteurs irregulieres par
-   `height: 100%` sur la carte elle-meme. */
+@media (min-width: 36rem) {
+  .trombi-grille {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48rem) {
+  .trombi-grille {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .trombi-grille {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .trombi-grille {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+/* `min-height` et non `height` : une carte dont le nom passe sur plusieurs
+   lignes peut grandir au lieu d'etre tronquee. La hauteur compacte conserve
+   le recto et le verso lisibles avec huit colonnes. */
 .trombi-grille > li {
-  min-height: 236px;
+  display: flex;
+  min-height: 14.5rem;
+}
+
+.trombi-carte {
+  width: 100%;
+  min-height: 14.5rem;
+  perspective: 900px;
+}
+
+.trombi-carte-interieur {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 14.5rem;
+  transition: transform var(--duree-lente) var(--courbe-sortie);
+  transform-style: preserve-3d;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trombi-carte:hover .trombi-carte-interieur {
+    transform: rotateY(180deg);
+  }
+}
+
+.trombi-carte:focus-within .trombi-carte-interieur {
+  transform: rotateY(180deg);
+}
+
+.trombi-carte-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2px solid var(--trait);
+  border-radius: var(--rayon-l);
+  background: var(--surface);
+  box-shadow: var(--ombre-douce);
+  backface-visibility: hidden;
+}
+
+.trombi-carte-recto {
+  padding: var(--espace-s);
+}
+
+.trombi-carte-verso {
+  pointer-events: none;
+  transform: rotateY(180deg);
+}
+
+.trombi-carte:hover .trombi-carte-verso,
+.trombi-carte:focus-within .trombi-carte-verso {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trombi-carte-interieur {
+    transition: none;
+  }
 }
 
 /* **LE BANDEAU : LA SURFACE DU CERCLE, REMPLIE.** 150 px de haut, l'avatar
@@ -989,8 +1176,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 150px;
-  margin: calc(-1 * var(--espace-m)) calc(-1 * var(--espace-m)) var(--espace-m);
+  height: 88px;
+  margin: calc(-1 * var(--espace-s)) calc(-1 * var(--espace-s)) var(--espace-s);
   background: var(--fond-doux);
   color: var(--encre);
 }
@@ -998,7 +1185,9 @@
 .trombi-infos {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--espace-xs);
+  text-align: center;
 }
 
 /* Le role : encre-douce, 13 px — charte 6.3. */
@@ -1053,9 +1242,18 @@
    aucune nouvelle combinaison, le gris sur gris disparait par reemploi. */
 
 .trombi-nom {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.5em;
+  font-size: 0.82rem;
   font-weight: var(--graisse-forte);
+  line-height: 1.25;
   text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 /* La pastille de cercle du recto n'est qu'un conteneur de CENTRAGE : le
@@ -1067,17 +1265,26 @@
    les bords de la carte, comme le bandeau du recto : sans elles, le bleu
    flotterait dans un cadre clair au lieu d'etre la face. */
 .trombi-verso {
-  margin: calc(-1 * var(--espace-m));
-  padding: var(--espace-m);
-  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--espace-s);
+  min-height: 100%;
   background: var(--marque-bleu-fonce);
   color: var(--marque-bleu-fonce-texte);
 }
 
 .trombi-verso-nom {
+  width: 100%;
+  max-width: 100%;
   margin: 0 0 var(--espace-s);
-  font-size: var(--taille-m);
+  font-size: 0.82rem;
   font-weight: var(--graisse-forte);
+  line-height: 1.25;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 /* **LE VERSO EMPILE SES LIGNES, ET C'EST UNE CORRECTION MESUREE A L'ECRAN.**
@@ -1091,7 +1298,10 @@
    repousser la colonne. */
 .trombi-verso-liste {
   display: block;
+  min-width: 0;
   margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
@@ -1129,31 +1339,38 @@
   color: var(--marque-bleu-fonce);
 }
 
-.trombi-pagination {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-m);
+.trombi-voir-plus-verso {
+  margin-top: auto;
+  align-self: flex-start;
+  min-height: 36px;
+  line-height: 36px;
+  color: var(--marque-bleu-fonce-texte);
+}
+
+.trombi-scroll-suite {
+  display: grid;
+  place-items: center;
   margin-top: var(--espace-l);
 }
 
-.trombi-page {
+.trombi-charger-suite {
   min-height: 44px;
-  padding: 0 var(--espace-m);
+  padding: var(--espace-s) var(--espace-l);
   font: inherit;
   color: var(--marque-bleu-texte);
   background: var(--marque-bleu);
   border: 0;
-  border-radius: var(--rayon-m);
+  border-radius: var(--rayon-pastille);
   cursor: pointer;
 }
 
-.trombi-page:disabled {
+.trombi-charger-suite:disabled {
   color: var(--encre-douce);
   background: var(--fond-doux);
   cursor: not-allowed;
 }
 
-.trombi-page:focus-visible {
+.trombi-charger-suite:focus-visible {
   outline: var(--anneau-focus);
   outline-offset: 2px;
 }
@@ -1443,6 +1660,69 @@
    `href` ni curseur de pointeur. */
 .framework-carte-information {
   cursor: default;
+}
+
+.framework-carte-flip {
+  width: 100%;
+  min-height: 13rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--rayon-m);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  perspective: 900px;
+}
+
+.framework-carte-flip-interieur {
+  position: relative;
+  width: 100%;
+  height: 13rem;
+  transition: transform 420ms var(--courbe-sortie);
+  transform-style: preserve-3d;
+}
+
+.framework-carte-flip:hover .framework-carte-flip-interieur,
+.framework-carte-flip:focus-visible .framework-carte-flip-interieur {
+  transform: rotateY(180deg);
+}
+
+.framework-carte-flip:focus-visible {
+  outline: var(--anneau-focus);
+  outline-offset: 3px;
+}
+
+.framework-carte-flip-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espace-m);
+  padding: var(--espace-m);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-l);
+  text-align: center;
+  backface-visibility: hidden;
+}
+
+.framework-carte-flip-avant {
+  color: var(--marque-bleu-fonce-texte);
+  background: linear-gradient(135deg, var(--marque-bleu), var(--marque-bleu-fonce));
+}
+
+.framework-carte-flip-arriere {
+  color: var(--encre);
+  background: var(--surface);
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .framework-carte-flip-interieur {
+    transition: none;
+  }
 }
 
 /* **`--framework-cercle-couleur` EST DECLAREE ICI, ET `cadre-check` L'EXIGE.**
@@ -1824,6 +2104,11 @@
   color: var(--encre);
 }
 
+.framework-accordeon-tuile-bureau {
+  background: var(--marque-bleu);
+  color: var(--marque-bleu-texte);
+}
+
 .framework-accordeon-nom {
   flex: 1 1 auto;
   min-width: 0;
@@ -1873,6 +2158,36 @@
   line-height: 1.6;
 }
 
+.framework-membres-titre {
+  margin: 0;
+}
+
+.framework-bureau-localisation,
+.framework-bureau-sans-responsable {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.framework-membres {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--espace-s);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.framework-membre {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+  font-weight: var(--graisse-forte);
+}
+
 /* **L'ENCART BOOSTER EST PARTAGE PAR DEUX ECRANS, ET IL N'EST ECRIT QU'UNE
    FOIS.** La charte 6.4 le decrit pour le cercle ; le Framework le montre dans
    son accordeon, la page du cercle sur sa propre fiche. Deux copies de la meme
@@ -1905,6 +2220,25 @@
 .framework-carte-detail {
   font-size: var(--taille-s);
   color: var(--encre-douce);
+}
+
+.framework-titulaires {
+  width: 100%;
+  max-height: 11rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.framework-titulaires li {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-s);
+  padding: var(--espace-xs) 0;
+  text-align: left;
+  font-size: var(--taille-s);
+  font-weight: var(--graisse-forte);
 }
 
 /* `.framework-carte` empile ses enfants en colonne avec `align-items: stretch`
@@ -2297,6 +2631,44 @@
   gap: var(--espace-l);
 }
 
+.evenements-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: var(--rayon-l);
+  color: var(--marque-bleu-fonce-texte);
+  background:
+    radial-gradient(circle at 82% 72%, rgb(255 255 255 / 16%) 0 15%, transparent 16%),
+    linear-gradient(120deg, var(--marque-bleu), var(--marque-bleu-fonce));
+  box-shadow: var(--ombre-posee);
+}
+
+.evenements-hero h2 {
+  max-width: 20ch;
+  margin: var(--espace-m) 0 var(--espace-s);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+}
+
+.evenements-hero p {
+  margin: 0;
+  font-size: var(--taille-m);
+}
+
+.evenements-hero-badge,
+.evenements-hero-action {
+  display: inline-flex;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 16%);
+  font-weight: var(--graisse-forte);
+}
+
+.evenements-hero-action {
+  position: absolute;
+  right: var(--espace-l);
+  bottom: var(--espace-l);
+}
+
 /*  Les onglets eux-memes (liste, bouton, etat actif) sont desormais ceux du
     composant `Onglets` (`@onboarding/ui`, `.ui-onglets__*`) — chantier
     front, S2, `DEC-672`. `.evenements-panneau` reste un conteneur de
@@ -2332,6 +2704,30 @@
   border: 1px solid var(--trait);
   border-radius: var(--rayon-m);
   transition: border-color var(--duree-rapide) var(--courbe-sortie);
+}
+
+.evenements-image {
+  width: 9rem;
+  aspect-ratio: 4 / 3;
+  flex: 0 0 auto;
+  border-radius: var(--rayon-m);
+  object-fit: cover;
+}
+
+@media (max-width: 42rem) {
+  .evenements-carte {
+    flex-wrap: wrap;
+  }
+
+  .evenements-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+
+  .evenements-hero-action {
+    position: static;
+    margin-top: var(--espace-m);
+  }
 }
 
 .evenements-carte:hover {
@@ -2456,6 +2852,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--espace-xs);
+}
+
+.evenements-gestion-formulaire small {
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
 }
 
 .evenements-gestion-formulaire input,
@@ -2662,6 +3063,619 @@
   margin: 0;
 }
 
+.accueil-direction {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-l);
+  padding: var(--espace-l);
+  border: 1px solid var(--teinte-rose);
+  border-radius: var(--rayon-xl);
+  background: linear-gradient(120deg, var(--teinte-bleu), var(--surface) 48%, var(--teinte-rose));
+}
+
+.accueil-direction > header > div {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-s);
+}
+
+.accueil-direction > header span:first-child {
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-pastille);
+  color: var(--marque-bleu-fonce-texte);
+  background: var(--marque-bleu-fonce);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  letter-spacing: 0.05em;
+}
+
+.accueil-direction h2,
+.accueil-direction h3,
+.accueil-direction p {
+  margin: 0;
+}
+
+.accueil-direction h2 {
+  color: var(--titre);
+  font-size: var(--taille-l);
+}
+
+.accueil-direction > header > p {
+  margin-top: var(--espace-s);
+  color: var(--encre-douce);
+}
+
+.accueil-direction-personnes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espace-m);
+}
+
+.accueil-direction-personnes > article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: var(--espace-s);
+  border-radius: var(--rayon-l);
+  background: var(--surface);
+  box-shadow: var(--ombre-douce);
+}
+
+.accueil-direction-identite {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-s);
+}
+
+.accueil-direction-identite > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.accueil-direction-identite strong {
+  color: var(--titre);
+}
+
+.accueil-direction-identite div > span {
+  color: var(--marque-rose);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+}
+
+.accueil-direction-video {
+  display: flex;
+  min-height: 11rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espace-s);
+  padding: var(--espace-m);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: var(--rayon-m);
+  color: var(--marque-bleu-fonce-texte);
+  background: var(--marque-bleu-fonce);
+  text-align: center;
+}
+
+.accueil-direction-video > span {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-l);
+}
+
+.accueil-direction-video small {
+  opacity: 0.8;
+}
+
+.accueil-reperes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espace-m);
+}
+
+.accueil-reperes > article {
+  display: flex;
+  min-height: 9rem;
+  flex-direction: column;
+  gap: var(--espace-s);
+  padding: var(--espace-m);
+  border-radius: var(--rayon-l);
+  background: var(--teinte-gris);
+  color: var(--teinte-gris-texte);
+}
+
+.accueil-reperes > article:nth-child(1) {
+  background: var(--teinte-bleu);
+  color: var(--teinte-bleu-texte);
+}
+
+.accueil-reperes > article:nth-child(2) {
+  background: var(--teinte-jaune);
+  color: var(--teinte-jaune-texte);
+}
+
+.accueil-reperes > article:last-child {
+  border: 2px solid var(--teinte-bleu);
+  background: var(--surface);
+  color: var(--titre);
+}
+
+.accueil-reperes a {
+  width: fit-content;
+  margin-top: auto;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-pastille);
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  text-decoration: none;
+}
+
+.accueil-onboarding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-l);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: var(--rayon-xl);
+  color: #fff;
+  background: linear-gradient(110deg, #5951ff 0%, #a741db 52%, #ff2796 100%);
+  box-shadow: var(--ombre-posee);
+}
+
+.accueil-onboarding span {
+  font-size: var(--taille-s);
+  font-weight: var(--graisse-forte);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.accueil-onboarding h2 {
+  margin: var(--espace-xs) 0;
+  color: inherit;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+
+.accueil-onboarding p {
+  max-width: 60ch;
+  margin: 0;
+}
+
+.accueil-onboarding-action {
+  flex: 0 0 auto;
+  min-width: min(22rem, 100%);
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--rayon-l);
+  color: var(--marque-bleu-fonce);
+  background: #fff;
+  font-weight: var(--graisse-forte);
+  text-align: center;
+  text-decoration: none;
+}
+
+.accueil-onboarding-action:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.temps-forts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--rayon-xl);
+  background: linear-gradient(145deg, #fff6fc, #f1f0ff 62%, #f9f7ff);
+}
+
+.temps-forts-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--espace-l);
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem) 3.75rem;
+  border-radius: var(--rayon-xl);
+  color: #fff;
+  background:
+    radial-gradient(circle at 82% 75%, rgb(255 255 255 / 16%) 0 14%, transparent 15%),
+    linear-gradient(110deg, #5831a2, #c81783 58%, #ee2493);
+}
+
+.temps-forts-pastille,
+.temps-forts-type {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  background: rgb(255 255 255 / 18%);
+}
+
+.temps-forts-hero h2 {
+  margin: var(--espace-s) 0 var(--espace-xs);
+  color: inherit;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.temps-forts-hero p {
+  margin: 0;
+}
+
+.temps-forts-compte {
+  align-self: center;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.temps-forts-compte > div {
+  display: flex;
+  gap: var(--espace-xs);
+  margin-top: var(--espace-xs);
+}
+
+.temps-forts-compte span {
+  display: flex;
+  flex-direction: column;
+  min-width: 4.25rem;
+  padding: 0.65rem;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: var(--rayon-m);
+  background: rgb(255 255 255 / 14%);
+}
+
+.temps-forts-compte b {
+  font-size: 1.55rem;
+}
+
+.temps-forts-compte small {
+  text-transform: none;
+}
+
+.temps-forts-defile {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  background: rgb(28 20 111 / 48%);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+}
+
+.temps-forts-defile-piste {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: temps-forts-vers-la-gauche 32s linear infinite;
+}
+
+.temps-forts-defile-groupe {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--espace-l);
+  padding: 0.65rem var(--espace-l) 0.65rem var(--espace-m);
+}
+
+.temps-forts-defile:hover .temps-forts-defile-piste {
+  animation-play-state: paused;
+}
+
+@keyframes temps-forts-vers-la-gauche {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .temps-forts-defile {
+    overflow-x: auto;
+  }
+
+  .temps-forts-defile-piste {
+    animation: none;
+    transform: none;
+  }
+
+  .temps-forts-defile-groupe[data-copie='true'] {
+    display: none;
+  }
+}
+
+.temps-forts-affiche {
+  margin: var(--espace-s) 0 0;
+  color: var(--titre);
+  font-size: var(--taille-l);
+}
+
+.temps-forts-vedettes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espace-m);
+}
+
+.temps-forts-vedette {
+  display: grid;
+  grid-template-columns: minmax(8rem, 30%) minmax(0, 1fr);
+  gap: var(--espace-m);
+  padding: var(--espace-s);
+  border-radius: var(--rayon-l);
+  background: var(--surface);
+  box-shadow: var(--ombre-douce);
+}
+
+.temps-forts-vedette > div:last-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.temps-forts-vedette h4,
+.temps-forts-vedette p {
+  margin: var(--espace-xs) 0;
+}
+
+.temps-forts-vedette h4 {
+  color: var(--marque-bleu-fonce);
+  font-size: var(--taille-l);
+}
+
+.temps-forts-poster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 15rem;
+  padding: var(--espace-m);
+  border-radius: var(--rayon-m);
+  object-fit: cover;
+  color: #fff;
+  font-size: var(--taille-l);
+  font-weight: var(--graisse-forte);
+  text-align: center;
+}
+
+.temps-forts-poster-1 {
+  background: linear-gradient(160deg, #ffb3c9, #ed5594);
+}
+
+.temps-forts-poster-2 {
+  background: linear-gradient(160deg, #1a1533, #ad782a);
+}
+
+.temps-forts-type {
+  color: #136f57;
+  background: #e7f8f1;
+}
+
+.temps-forts-explication {
+  margin: var(--espace-s) 0 0;
+  color: var(--encre-douce);
+}
+
+.temps-forts-bas {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.8fr) minmax(20rem, 1.8fr) minmax(15rem, 0.9fr);
+  gap: var(--espace-m);
+}
+
+.temps-forts-calendrier,
+.temps-forts-liste,
+.temps-forts-infos > div {
+  padding: var(--espace-m);
+  border-radius: var(--rayon-l);
+  background: var(--surface);
+}
+
+.temps-forts-calendrier h3,
+.temps-forts-liste h3 {
+  margin: 0 0 var(--espace-m);
+  color: var(--marque-bleu-fonce);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.temps-forts-calendrier-entete {
+  display: grid;
+  grid-template-columns: 2rem 1fr 2rem;
+  align-items: center;
+  gap: var(--espace-xs);
+  margin-bottom: var(--espace-m);
+}
+
+.temps-forts-calendrier-entete h3 {
+  margin: 0;
+}
+
+.temps-forts-calendrier-entete button {
+  display: grid;
+  min-width: 2rem;
+  min-height: 2rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--marque-bleu-fonce);
+  background: var(--teinte-bleu);
+  font: inherit;
+  font-size: var(--taille-l);
+  cursor: pointer;
+}
+
+.temps-forts-calendrier-entete button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.temps-forts-semaine,
+.temps-forts-jours {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.temps-forts-semaine {
+  margin-bottom: var(--espace-s);
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+}
+
+.temps-forts-jours span,
+.temps-forts-jours button {
+  display: grid;
+  place-items: center;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: var(--taille-xs);
+}
+
+.temps-forts-jours .date-evenement {
+  border: 3px solid #1cb985;
+  color: var(--marque-bleu-fonce);
+  background: var(--surface);
+  font-weight: var(--graisse-forte);
+  cursor: pointer;
+}
+
+.temps-forts-jours .date-evenement[aria-pressed='true'] {
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+}
+
+.temps-forts-selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  margin-top: var(--espace-m);
+  padding-top: var(--espace-m);
+  border-top: 1px solid var(--trait);
+  color: var(--encre-douce);
+  font-size: var(--taille-xs);
+}
+
+.temps-forts-selection strong {
+  color: var(--titre);
+  font-size: var(--taille-s);
+}
+
+.temps-forts-selection p {
+  margin: 0;
+}
+
+.temps-forts-liste ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-s);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.temps-forts-liste li {
+  display: grid;
+  gap: 0.2rem;
+  padding: var(--espace-s);
+  border-radius: var(--rayon-m);
+  background: var(--fond-doux);
+}
+
+.temps-forts-liste li > span,
+.temps-forts-liste li > small {
+  color: var(--encre-douce);
+}
+
+.temps-forts-infos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.temps-forts-infos > div {
+  color: #fff;
+}
+
+.temps-forts-infos p {
+  margin: var(--espace-s) 0 0;
+}
+
+.temps-forts-info-rose {
+  background: linear-gradient(145deg, #ff2695, #cd147b) !important;
+}
+
+.temps-forts-info-bleu {
+  background: linear-gradient(145deg, #574eff, #2e2aa7) !important;
+}
+
+@media (max-width: 64rem) {
+  .accueil-direction-personnes,
+  .accueil-reperes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .temps-forts-bas {
+    grid-template-columns: 1fr 1.5fr;
+  }
+
+  .temps-forts-infos {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 48rem) {
+  .accueil-onboarding,
+  .temps-forts-hero {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .temps-forts-vedettes,
+  .temps-forts-bas,
+  .temps-forts-infos {
+    grid-template-columns: 1fr;
+  }
+
+  .temps-forts-infos {
+    grid-column: auto;
+  }
+
+  .accueil-direction-personnes,
+  .accueil-reperes {
+    grid-template-columns: 1fr;
+  }
+
+  .temps-forts-compte {
+    justify-self: start;
+  }
+
+  .temps-forts-compte span {
+    min-width: 3.5rem;
+  }
+}
+
+@media (max-width: 32rem) {
+  .temps-forts-vedette {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Chantier front, S4 (`DEC-672`) : les compteurs des trois blocs
    d'information (Framework, Arrivees recentes, Evenements a venir) sont des
    `Badge` du design system, cahier §13.2 — jamais une phrase prose seule. */
@@ -2854,18 +3868,187 @@
   margin: 0 0 var(--espace-s);
 }
 
-.onboarding-champ textarea,
-.onboarding-champ input {
-  padding: var(--espace-xs) var(--espace-s);
+.onboarding-fiche-contenu {
+  display: grid;
+  align-items: stretch;
+  gap: var(--espace-l);
+}
+
+.onboarding-fiche-contenu[data-modifiable='oui'] {
+  grid-template-columns: minmax(22rem, 30rem) minmax(0, 1fr);
+}
+
+.onboarding-fiche-contenu .onboarding-apercu {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-fiche-contenu .onboarding-apercu-pied {
+  margin-top: auto;
+}
+
+.onboarding-fiche-edition {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  gap: var(--espace-m);
+}
+
+.onboarding-formulaire {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 1fr);
+  grid-template-rows: auto 1fr auto;
+  gap: var(--espace-m);
+  margin-top: 0;
+  padding: var(--espace-l);
+  box-sizing: border-box;
   border: 1px solid var(--trait);
-  border-radius: var(--rayon-s);
+  border-radius: var(--rayon-l);
+  background: var(--fond-doux);
+}
+
+.onboarding-formulaire-entete {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-xs);
+  padding-bottom: var(--espace-m);
+  border-bottom: 1px solid var(--trait);
+}
+
+.onboarding-formulaire-entete > span {
+  width: fit-content;
+  padding: var(--espace-xs) var(--espace-s);
+  border-radius: var(--rayon-pastille);
+  color: var(--marque-bleu-texte);
+  background: var(--marque-bleu);
+  font-size: var(--taille-xs);
+  font-weight: var(--graisse-forte);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.onboarding-formulaire-entete h3,
+.onboarding-formulaire-entete p {
+  margin: 0;
+}
+
+.onboarding-formulaire-entete h3 {
+  color: var(--titre);
+  font-size: var(--taille-l);
+}
+
+.onboarding-formulaire-entete p {
+  color: var(--encre-douce);
+}
+
+.onboarding-formulaire--lecture {
+  grid-template-columns: 1fr;
+}
+
+.onboarding-formulaire-relecture {
+  align-self: center;
+  margin: 0;
+  color: var(--encre-douce);
   font-size: var(--taille-m);
 }
 
-.onboarding-fiche-actions {
+.onboarding-formulaire--lecture .onboarding-fiche-actions {
+  grid-row: 3;
+}
+
+.onboarding-champ {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--espace-s);
+  color: var(--titre);
+  font-weight: var(--graisse-forte);
+}
+
+.onboarding-champ > span {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--espace-s);
+}
+
+.onboarding-champ strong,
+.onboarding-champ small {
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--rayon-pastille);
+  font-size: var(--taille-xs);
+}
+
+.onboarding-champ strong {
+  color: var(--marque-rose-texte);
+  background: var(--marque-rose);
+}
+
+.onboarding-champ small {
+  color: var(--teinte-gris-texte);
+  background: var(--teinte-gris);
+}
+
+.onboarding-champ textarea,
+.onboarding-champ input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--espace-s) var(--espace-m);
+  border: 1px solid var(--trait-fort);
+  border-radius: var(--rayon-m);
+  color: var(--encre);
+  background: var(--surface);
+  font-size: var(--taille-m);
+  font-family: inherit;
+}
+
+.onboarding-champ textarea {
+  flex: 1 1 auto;
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.onboarding-champ textarea:focus,
+.onboarding-champ input:focus {
+  border-color: var(--marque-bleu);
+  outline: var(--anneau-focus);
+  outline-offset: 1px;
+}
+
+.onboarding-fiche-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espace-s);
+  padding-top: var(--espace-s);
+}
+
+@media (max-width: 70rem) {
+  .onboarding-fiche-contenu[data-modifiable='oui'] {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-fiche-contenu .onboarding-apercu,
+  .onboarding-fiche-edition {
+    height: auto;
+  }
+
+  .onboarding-formulaire {
+    grid-template-rows: auto;
+  }
+}
+
+@media (max-width: 48rem) {
+  .onboarding-formulaire {
+    grid-template-columns: 1fr;
+  }
 }
 
 .onboarding-liste-des-taches {

@@ -86,9 +86,6 @@ export type { ProprietesBadge, TonBadge } from './Badge.js';
 export { Bouton } from './Bouton.js';
 export type { ProprietesBouton, TailleBouton, VarianteBouton } from './Bouton.js';
 export { Carte } from './Carte.js';
-//  LOT 5, T10 — la carte retournable accessible, story MVP-L05-US003.
-export { CarteRetournable } from './CarteRetournable.js';
-export type { ProprietesCarteRetournable } from './CarteRetournable.js';
 //  LOT 8, T12 — le carrousel manuel et accessible, cahier §13.3/§13.4.
 export { Carrousel } from './Carrousel.js';
 export type { ProprietesCarrousel } from './Carrousel.js';

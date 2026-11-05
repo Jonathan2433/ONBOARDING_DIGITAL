@@ -29,6 +29,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from app.configuration.settings import Parametres
+from app.media.modeles import EtatMedia, SourceAutorisationPhoto, TypeMedia, TypeVarianteMedia
 from app.organization.framework import (
     RESPONSABILITES_A_PAGE_PROPRE,
     RESPONSABILITES_FRAMEWORK,
@@ -156,6 +157,65 @@ def _responsabilite(
             "b": bureau,
             "d": debut,
             "f": fin,
+        },
+    )
+
+
+def _appartenance(cx: Connection, entite: uuid.UUID, personne: uuid.UUID) -> uuid.UUID:
+    return cx.execute(  # type: ignore[no-any-return]
+        text(
+            "INSERT INTO entity_membership (entity_id, person_id, arrival_date, "
+            "membership_state, professional_category, profile_visibility) "
+            "VALUES (:e, :p, :arrivee, 'active', 'consultant', 'published') RETURNING id"
+        ),
+        {"e": entite, "p": personne, "arrivee": JANVIER.date()},
+    ).scalar_one()
+
+
+def _photo_servable(
+    cx: Connection, entite: uuid.UUID, personne: uuid.UUID, *, maintenant: dt.datetime
+) -> None:
+    actif = cx.execute(
+        text(
+            "INSERT INTO media_asset (entity_id, uploaded_by_person_id, state, media_type, "
+            "original_filename, object_key, mime_declared, size_bytes, checksum_sha256, "
+            "ready_at) VALUES (:e, :p, :etat, :type_m, 'photo.jpg', :cle, 'image/jpeg', "
+            "2000000, :empreinte, :pret) RETURNING id"
+        ),
+        {
+            "e": entite,
+            "p": personne,
+            "etat": EtatMedia.READY.value,
+            "type_m": TypeMedia.IMAGE.value,
+            "cle": f"originaux-framework/{uuid.uuid4().hex}",
+            "empreinte": "a" * 64,
+            "pret": maintenant - dt.timedelta(days=1),
+        },
+    ).scalar_one()
+    cx.execute(
+        text(
+            "INSERT INTO media_variant (entity_id, media_asset_id, variant_type, width, "
+            "height, variant_format, size_bytes, checksum_sha256, object_key) "
+            "VALUES (:e, :a, :type_v, 200, 200, 'jpeg', 4096, :empreinte, :cle)"
+        ),
+        {
+            "e": entite,
+            "a": actif,
+            "type_v": TypeVarianteMedia.MINIATURE_TROMBINOSCOPE.value,
+            "empreinte": "a" * 64,
+            "cle": f"miniatures-framework/{uuid.uuid4().hex}",
+        },
+    )
+    cx.execute(
+        text(
+            "INSERT INTO photo_authorization (person_id, media_asset_id, granted_at, source) "
+            "VALUES (:p, :m, :octroi, :source)"
+        ),
+        {
+            "p": personne,
+            "m": actif,
+            "octroi": maintenant - dt.timedelta(days=1),
+            "source": SourceAutorisationPhoto.SELF_SERVICE.value,
         },
     )
 
@@ -288,6 +348,34 @@ def test_TEMOIN_un_cercle_SANS_Booster_rend_None(cx: Connection) -> None:
     entite, code = _entite(cx, "NOBOOST")
     _cercle(cx, entite, "DATA", jeton="bleu")
     assert _lire(cx, entite, code).cercles[0].booster is None
+
+
+@pytest.mark.integration
+def test_la_synthese_sert_la_photo_du_Booster_ET_du_responsable_de_bureau(
+    cx: Connection,
+) -> None:
+    """Les deux accordéons consomment `/framework`, pas leurs pages détaillées."""
+    entite, code = _entite(cx, "PHOTOS")
+    cercle = _cercle(cx, entite, "DATA")
+    bureau = _bureau(cx, entite, "BDG")
+    booster = _personne(cx, f"{MARQUEUR}photo-boost@exalt.test")
+    responsable = _personne(cx, f"{MARQUEUR}photo-office@exalt.test")
+    appartenance_booster = _appartenance(cx, entite, booster)
+    appartenance_responsable = _appartenance(cx, entite, responsable)
+    _responsabilite(cx, entite, booster, "BOOSTER", cercle=cercle)
+    _responsabilite(cx, entite, responsable, "OFFICE_MANAGER", bureau=bureau)
+    _photo_servable(cx, entite, booster, maintenant=JUIN)
+    _photo_servable(cx, entite, responsable, maintenant=JUIN)
+
+    page = _lire(cx, entite, code)
+
+    rendu_booster = page.cercles[0].booster
+    rendu_responsable = page.bureaux[0].responsables[0]
+    assert rendu_booster is not None
+    assert rendu_booster.appartenance == appartenance_booster
+    assert rendu_booster.a_une_photo is True
+    assert rendu_responsable.appartenance == appartenance_responsable
+    assert rendu_responsable.a_une_photo is True
 
 
 @pytest.mark.integration

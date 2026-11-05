@@ -310,7 +310,7 @@ class CollaborateurListe:
     last_name: str
     preferred_name: str | None
     professional_category: str
-    arrival_date: dt.date
+    arrival_date: dt.date | None
     #  **UN BOOLEEN, PAS UNE CLE, ET C'EST LE POINT.** La liste doit savoir s'il
     #  faut emettre un chemin de photo ; elle n'a aucun besoin de la variante.
     #  Resoudre la variante ligne par ligne serait le N+1 que le critere de `T3`

@@ -17,13 +17,16 @@
  *   soit un lien refuse qui disparaitrait silencieusement au lieu de
  *   s'afficher desactive et visible.
  */
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PageEntite } from './PageEntite';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const CODE = 'bordeaux';
 
@@ -106,13 +109,14 @@ describe("l'accueil compose les cinq sections, dans l'ordre du cahier §8.4", ()
     //  **LE RESTE DE L'ORDRE EST INCHANGE, ET C'EST CE QUI COMPTE ICI** : les
     //  cinq sections du cahier §8.4 se suivent toujours dans leur ordre, et
     //  c'est ce que ce temoin eprouve depuis `T11` du LOT 8.
-    const titres = screen.getAllByRole('heading').map((titre) => titre.textContent);
+    const titres = screen.getAllByRole('heading', { level: 2 }).map((titre) => titre.textContent);
     expect(titres).toEqual([
       'eXalt Bordeaux',
-      'Contenus a venir',
+      'Le mot de la direction',
+      'Découvre ton parcours d’onboarding',
+      'Les moments à ne pas manquer',
       'Framework',
       'Arrivees recentes',
-      'Evenements a venir',
       'Ressources internes',
     ]);
     //  La pastille de la charte porte bien le mot que la `Carte` portait avant.
@@ -209,9 +213,98 @@ describe("l'accueil compose les cinq sections, dans l'ordre du cahier §8.4", ()
     });
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Pot de rentree')).toBeTruthy();
+      expect(screen.getAllByText('Pot de rentree').length).toBeGreaterThan(0);
     });
-    expect(screen.getByText('Annule')).toBeTruthy();
+    expect(screen.getByText('Annulé')).toBeTruthy();
+  });
+
+  it('actualise le compte à rebours chaque seconde', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-03T12:00:00Z'));
+    rolesActuels = ['EMP'];
+    servir({
+      ...ACCUEIL_DE_BASE,
+      evenements_a_venir: {
+        classement: 'a_venir',
+        evenements: [
+          {
+            identifiant: 'ev-direct',
+            titre: 'Rendez-vous direct',
+            description: null,
+            commence_le: '2026-11-03T12:00:05+00:00',
+            finit_le: '2026-11-03T13:00:00+00:00',
+            lieu: null,
+            image: null,
+            etat: 'published',
+            annule_le: null,
+            motif_d_annulation: null,
+          },
+        ],
+        page: 1,
+        taille: 25,
+        total: 1,
+        pages: 1,
+      },
+    });
+    monter();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const compte = screen.getByLabelText('Compte à rebours avant Rendez-vous direct');
+    expect(within(compte).getByText('05')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(within(compte).getByText('04')).toBeTruthy();
+  });
+
+  it('rend les dates du calendrier cliquables et affiche le détail sélectionné', async () => {
+    rolesActuels = ['EMP'];
+    servir({
+      ...ACCUEIL_DE_BASE,
+      evenements_a_venir: {
+        classement: 'a_venir',
+        evenements: [
+          {
+            identifiant: 'ev-1',
+            titre: 'Premier événement',
+            description: 'Premier détail',
+            commence_le: '2026-11-05T18:00:00+00:00',
+            finit_le: '2026-11-05T20:00:00+00:00',
+            lieu: 'Bordeaux',
+            image: null,
+            etat: 'published',
+            annule_le: null,
+            motif_d_annulation: null,
+          },
+          {
+            identifiant: 'ev-2',
+            titre: 'Deuxième événement',
+            description: 'Deuxième détail',
+            commence_le: '2026-11-10T18:00:00+00:00',
+            finit_le: '2026-11-10T20:00:00+00:00',
+            lieu: 'Mérignac',
+            image: null,
+            etat: 'published',
+            annule_le: null,
+            motif_d_annulation: null,
+          },
+        ],
+        page: 1,
+        taille: 25,
+        total: 2,
+        pages: 1,
+      },
+    });
+    monter();
+    const date = await screen.findByRole('button', { name: /Deuxième événement/ });
+    fireEvent.click(date);
+
+    const detail = document.querySelector('.temps-forts-selection') as HTMLElement;
+    expect(within(detail).getByText('Deuxième événement')).toBeTruthy();
+    expect(within(detail).getByText('Deuxième détail')).toBeTruthy();
+    expect(date.getAttribute('aria-pressed')).toBe('true');
   });
 
   describe("l'ouverture externe des liens internes — `MVP-L08-US006` (2/2)", () => {
@@ -290,15 +383,15 @@ describe("l'accueil compose les cinq sections, dans l'ordre du cahier §8.4", ()
     });
   });
 
-  it("l'edition de la presentation COEXISTE avec sa lecture, pour un role editeur — pas de regression", async () => {
+  it("garde l'accueil en lecture seule pour un role editeur", async () => {
     rolesActuels = ['ESM'];
     servir(ACCUEIL_DE_BASE, []);
     monter();
-    //  **LE PANNEAU D'EDITION RESTE LA**, exactement comme avant `T11` : un
-    //  role qui pouvait deja creer la page de presentation le peut toujours.
     await waitFor(() => {
-      expect(screen.getByText('Creer la page')).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'eXalt Bordeaux' })).toBeTruthy();
     });
+    expect(screen.queryByText('Creer la page')).toBeNull();
+    expect(screen.queryByText(/Etat :/)).toBeNull();
   });
 
   it('refuse par defaut — une session expiree (401) l’affiche, jamais un cadre vide', async () => {
@@ -423,16 +516,35 @@ describe("`T12` : les trois listes de l'accueil defilent en carrousel", () => {
     ).toBeTruthy();
   });
 
-  it('evenements a venir : la Carte porte un carrousel avec les deux evenements', async () => {
+  it('les temps forts reprennent les deux événements dans les rendez-vous', async () => {
     rolesActuels = ['EMP'];
     servir({ ...ACCUEIL_DE_BASE, evenements_a_venir: DEUX_EVENEMENTS });
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Pot de rentree')).toBeTruthy();
+      expect(screen.getAllByText('Pot de rentree').length).toBeGreaterThan(0);
     });
-    const piste = screen.getByRole('list', { name: 'Evenements a venir' });
-    expect(within(piste).getByText('Pot de rentree')).toBeTruthy();
-    expect(within(piste).getByText('Atelier accueil')).toBeTruthy();
+    const region = screen.getByRole('region', { name: '🔥 Prochains rendez-vous' });
+    expect(within(region).getByText('Pot de rentree')).toBeTruthy();
+    expect(within(region).getByText('Atelier accueil')).toBeTruthy();
+  });
+
+  it('duplique les événements dans une piste continue purement décorative', async () => {
+    rolesActuels = ['EMP'];
+    servir({ ...ACCUEIL_DE_BASE, evenements_a_venir: DEUX_EVENEMENTS });
+    monter();
+    await waitFor(() => {
+      expect(screen.getAllByText('Pot de rentree').length).toBeGreaterThan(0);
+    });
+
+    const bandeau = document.querySelector('.temps-forts-defile');
+    expect(bandeau?.getAttribute('aria-hidden')).toBe('true');
+    const groupes = bandeau?.querySelectorAll('.temps-forts-defile-groupe') ?? [];
+    expect(groupes).toHaveLength(2);
+    for (const groupe of groupes) {
+      expect(groupe.textContent).toContain('Pot de rentree');
+      expect(groupe.textContent).toContain('Atelier accueil');
+    }
+    expect(groupes[1]?.getAttribute('data-copie')).toBe('true');
   });
 
   it("liens internes : un carrousel, MEME SANS plafond `NOMBRE_MONTRE` — aucun n'a jamais ete tronque ici", async () => {
@@ -457,7 +569,7 @@ describe("`T12` : les trois listes de l'accueil defilent en carrousel", () => {
     //  La `<Carte>` reste une region nommee dans les deux etats (vide ou non) :
     //  c'est l'absence de LISTE, pas de region, qui distingue le carrousel.
     expect(screen.queryByRole('list', { name: 'Arrivees recentes' })).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Evenements a venir' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '🔥 Prochains rendez-vous' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Ressources internes' })).toBeNull();
   });
 });
@@ -574,7 +686,7 @@ describe('chantier front, S4 : des `Badge` pour les compteurs (`DEC-672`)', () =
     expect(badges.some((texte) => texte.includes('arrivee'))).toBe(false);
   });
 
-  it('Evenements a venir : le Badge reflete le TOTAL, et disparait quand la section est vide', async () => {
+  it('les temps forts affichent les événements et un état vide explicite', async () => {
     rolesActuels = ['EMP'];
     servir({
       ...ACCUEIL_DE_BASE,
@@ -601,7 +713,7 @@ describe('chantier front, S4 : des `Badge` pour les compteurs (`DEC-672`)', () =
     });
     monter();
     await waitFor(() => {
-      expect(screen.getByText('3 evenements')).toBeTruthy();
+      expect(screen.getAllByText('Pot de rentree').length).toBeGreaterThan(0);
     });
 
     cleanup();
@@ -609,9 +721,8 @@ describe('chantier front, S4 : des `Badge` pour les compteurs (`DEC-672`)', () =
     servir(ACCUEIL_DE_BASE);
     monter();
     await waitFor(() => {
-      expect(screen.getByText('Aucun evenement a venir pour le moment.')).toBeTruthy();
+      expect(screen.getByText('Aucun événement à venir pour le moment.')).toBeTruthy();
     });
-    const badges = [...document.querySelectorAll('.ex-badge')].map((b) => b.textContent ?? '');
-    expect(badges.some((texte) => texte.includes('evenement'))).toBe(false);
+    expect(screen.queryByRole('region', { name: '🔥 Prochains rendez-vous' })).toBeNull();
   });
 });

@@ -3,11 +3,13 @@
 Ce dossier est la source de vérité du projet. Aucune décision de conception ne doit être
 prise en dehors de ce qui y est écrit.
 
-> **État au 02/11/2026.** Les LOTS 0 à 11 sont terminés et verrouillés. Jonathan a franchi
+> **État au 04/11/2026.** Les LOTS 0 à 11 sont terminés et verrouillés. Jonathan a franchi
 > `G11` (`DEC-683`) ; le tag `v0.11.0` sera posé sur `main` après fusion. Aucun lot n’est
 > actuellement ouvert. Le chantier Design System v2 est clos : `E1` à `E5` relèvent de
 > `DEC-682`, `E6` et `E7` de `DEC-684`. La collision historique sur `DEC-681` est réconciliée
-> en conservant cet identifiant pour `T7` du LOT 11.
+> en conservant cet identifiant pour `T7` du LOT 11. La Beta eXalt Bordeaux, hors ouverture
+> du LOT 12, est documentée par `DEC-685` et par le
+> [guide de Beta](demo/beta-bordeaux.md).
 
 ---
 
@@ -49,6 +51,7 @@ présent index et du registre des décisions.
 | [`architecture/`](architecture/README.md) | Modèle de données, schéma du CSV collaborateurs, listes contrôlées, décisions d'architecture | Jonathan |
 | [`decisions/`](decisions/README.md) | Registre des décisions, registre des écarts | Jonathan |
 | `operations/` | Conventions Git et versions, traçabilité GitHub, registres des risques, des questions ouvertes et des dépendances externes, responsabilités, politique de configuration et de secrets, contrôles de sortie, fiches de lot | Jonathan |
+| [`demo/`](demo/beta-bordeaux.md) | Provisionnement, périmètre et recette de la Beta eXalt Bordeaux | Jonathan |
 | [`prototype/`](prototype/README.md) | Prototype historique, conservé pour historisation, non versionné, non réutilisable | — |
 
 ---
@@ -79,7 +82,7 @@ existante.
 
 | Séquence | Objet | Étendue | Prochain libre | Registre |
 |---|---|---|---|---|
-| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `684` en usage | `DEC-685` | [décisions](decisions/registre-decisions.md) |
+| `DEC-nnn` | Décisions de projet | `001` à `417` **réservés** ; `418` à `685` en usage | `DEC-686` | [décisions](decisions/registre-decisions.md) |
 | `RIGHTS-nnn` | Décisions de droits | `001` à `025` | `RIGHTS-026` | [décisions](decisions/registre-decisions.md) |
 | `DATA-nnn` | Décisions de modèle | `001` à `018` | `DATA-019` | [décisions](decisions/registre-decisions.md) |
 | `ROAD-nnn` | Décisions de roadmap | `001` à `012` | `ROAD-013` | [décisions](decisions/registre-decisions.md) |

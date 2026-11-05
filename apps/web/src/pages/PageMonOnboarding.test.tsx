@@ -3,8 +3,8 @@
  *
  * TROIS COUPLES, ET AUCUNE MOITIÉ NE SUFFIRAIT — MÊME DISCIPLINE QUE `PageProfil`
  *
- *   brouillon / publiée — les champs sont éditables dans un cas, en lecture
- *   seule dans l'autre (§6.2) ;
+ *   brouillon / publiée — le brouillon est directement éditable, la fiche
+ *   publiée ne l'est qu'après le geste explicite « Modifier » ;
  *   tâche `todo` / `completed` — chacune propose SA propre action, jamais
  *   les deux à la fois ;
  *   avec appartenance / sans — la page appelle l'API dans un cas, et
@@ -174,7 +174,7 @@ describe('la fiche d’arrivée — brouillon', () => {
     servir({ ficheCharge: fiche() });
     monter();
 
-    await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Ada Lovelace')).toBeTruthy());
     //  **LE STATUT EST TRADUIT DEPUIS `E5`**, et ce n'est pas qu'une question
     //  d'apparence : la fiche affichait la valeur BRUTE de l'API, « mission »,
     //  la ou le trombinoscope montrait « En mission » depuis `S6`. Deux ecrans
@@ -182,7 +182,8 @@ describe('la fiche d’arrivée — brouillon', () => {
     //  dans la pastille de l'apercu, et il y passe par `libelleDuStatut` —
     //  la meme fonction, une seule verite.
     expect(screen.getByText(/En mission/)).toBeTruthy();
-    expect(screen.getByText('Client Alpha')).toBeTruthy();
+    expect(screen.queryByText('Ingenieure logicielle')).toBeNull();
+    expect(screen.queryByText('Client Alpha')).toBeNull();
     expect(screen.getByText('Dominique Lesmanager')).toBeTruthy();
     expect(screen.getByText('Donnees')).toBeTruthy();
   });
@@ -194,6 +195,24 @@ describe('la fiche d’arrivée — brouillon', () => {
     await waitFor(() => expect(screen.getByLabelText(/Présentation courte/)).toBeTruthy());
     const bouton = screen.getByRole('button', { name: 'Enregistrer' }) as HTMLButtonElement;
     expect(bouton.disabled).toBe(true);
+  });
+
+  it('place « Complète ta fiche » à droite de la preview dans la grille desktop', async () => {
+    servir({ ficheCharge: fiche() });
+    monter();
+
+    await waitFor(() => expect(screen.getByLabelText(/Présentation courte/)).toBeTruthy());
+    const apercu = screen.getByText('Ada Lovelace').closest('.onboarding-apercu');
+    const formulaire = screen
+      .getByLabelText(/Présentation courte/)
+      .closest('.onboarding-formulaire');
+    const edition = formulaire?.parentElement;
+    const disposition = apercu?.parentElement;
+
+    expect(disposition?.classList.contains('onboarding-fiche-contenu')).toBe(true);
+    expect(disposition?.getAttribute('data-modifiable')).toBe('oui');
+    expect(edition?.classList.contains('onboarding-fiche-edition')).toBe(true);
+    expect(edition?.previousElementSibling).toBe(apercu);
   });
 
   it('« Valider et publier » reste désactivé tant qu’aucune présentation n’est renseignée', async () => {
@@ -290,25 +309,76 @@ describe('la fiche d’arrivée — brouillon', () => {
   });
 });
 
-describe('la fiche d’arrivée — publiée, §6.2', () => {
-  it('rend la présentation et le fun fact en LECTURE SEULE, aucun champ éditable', async () => {
-    servir({
-      ficheCharge: fiche({
-        state: 'published',
-        short_intro: 'Bonjour, je suis Ada.',
-        fun_fact: 'Joue du theorbe.',
-        validated_at: '2026-10-02T09:00:00Z',
-        published_at: '2026-10-02T09:00:00Z',
-        recent_until: '2026-11-01',
-      }),
-    });
+describe('la fiche d’arrivée — publiée', () => {
+  const FICHE_PUBLIEE = fiche({
+    state: 'published',
+    short_intro: 'Bonjour, je suis Ada.',
+    fun_fact: 'Joue du theorbe.',
+    validated_at: '2026-10-02T09:00:00Z',
+    published_at: '2026-10-02T09:00:00Z',
+    recent_until: '2026-11-01',
+  });
+
+  it('reste en lecture seule par défaut et propose « Modifier mes informations »', async () => {
+    servir({ ficheCharge: FICHE_PUBLIEE });
     monter();
 
     await waitFor(() => expect(screen.getByText('Bonjour, je suis Ada.')).toBeTruthy());
     expect(screen.getByText('Joue du theorbe.')).toBeTruthy();
     expect(screen.queryByLabelText(/Présentation courte/)).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Enregistrer' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Modifier mes informations' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Valider et publier' })).toBeNull();
+  });
+
+  it('rouvre les valeurs publiées, les enregistre et ne propose pas une nouvelle validation', async () => {
+    const appel = servir({
+      ficheCharge: FICHE_PUBLIEE,
+      ecritureFiche: { charge: { id: 'f1', version: 2, state: 'published' } },
+    });
+    monter();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Modifier mes informations' })).toBeTruthy(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier mes informations' }));
+
+    const presentation = screen.getByLabelText(/Présentation courte/) as HTMLTextAreaElement;
+    const funFact = screen.getByLabelText(/Fun fact/) as HTMLInputElement;
+    expect(presentation.value).toBe('Bonjour, je suis Ada.');
+    expect(funFact.value).toBe('Joue du theorbe.');
+    expect(screen.queryByRole('button', { name: 'Valider et publier' })).toBeNull();
+
+    fireEvent.change(presentation, { target: { value: 'Présentation mise à jour.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() => {
+      const appelPatch = appel.mock.calls.find(
+        (c) => (c[1] as RequestInit | undefined)?.method === 'PATCH',
+      );
+      expect(appelPatch).toBeTruthy();
+      expect(JSON.parse(String((appelPatch?.[1] as RequestInit).body))).toEqual({
+        version: 1,
+        short_intro: 'Présentation mise à jour.',
+        fun_fact: 'Joue du theorbe.',
+      });
+    });
+  });
+
+  it('annule la saisie locale et revient à la lecture', async () => {
+    servir({ ficheCharge: FICHE_PUBLIEE });
+    monter();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Modifier mes informations' })).toBeTruthy(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier mes informations' }));
+    fireEvent.change(screen.getByLabelText(/Présentation courte/), {
+      target: { value: 'Valeur non enregistrée' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(screen.queryByLabelText(/Présentation courte/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Modifier mes informations' })).toBeTruthy();
   });
 });
 
@@ -519,7 +589,7 @@ describe('chantier front, S7 : `Carte`/`Badge` (DEC-672)', () => {
     servir({ ficheCharge: fiche(), parcoursCharge: PARCOURS_VIDE });
     monter();
 
-    await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Ada Lovelace')).toBeTruthy());
     expect(screen.getByRole('region', { name: 'Ma fiche d’arrivée' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Mon parcours' })).toBeTruthy();
   });
@@ -528,7 +598,7 @@ describe('chantier front, S7 : `Carte`/`Badge` (DEC-672)', () => {
     servir({ ficheCharge: fiche(), parcoursCharge: PARCOURS_VIDE });
     monter();
 
-    await waitFor(() => expect(screen.getByText('Ingenieure logicielle')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Ada Lovelace')).toBeTruthy());
     expect(screen.getByText('Brouillon', { selector: '.ex-badge' })).toBeTruthy();
   });
 

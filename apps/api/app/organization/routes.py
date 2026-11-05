@@ -98,17 +98,15 @@ class TitulaireRendu(BaseModel):
     identifiant: uuid.UUID
     prenom: str
     nom: str
+    photo: str | None = None
 
 
 class TitulaireAvecPhotoRendu(BaseModel):
     """Un `TitulaireRendu`, plus sa photo — chantier front hors lot, `S12`.
 
-    **DISTINCT DE `TitulaireRendu`, DELIBEREMENT** : la synthese Framework
-    (`ResponsabiliteRendue.titulaires`, `CercleRendu.booster`,
-    `BureauRendu.responsables`) reste hors de la portee de `S12` et continue de
-    rendre `TitulaireRendu`, sans ce champ. Seuls `ReponseDuCercle.booster` et
-    `ReponseDuBureau.responsables` — les pages DETAILLEES — l'emploient. Voir
-    `TitulaireAvecPhoto` (`app.organization.framework`).
+    La synthese et les pages detaillees rendent toutes deux une photo quand elle
+    est autorisee. Ce type distinct conserve le contrat des pages detaillees ;
+    `TitulaireRendu` porte le meme champ pour les cartes de synthese.
 
     `photo` suit exactement la convention du trombinoscope et du profil : un
     chemin prefixe-versionne, ou `null` pour les cinq causes indistinguables de
@@ -474,9 +472,24 @@ def _cercle_detaille(
     )
 
 
-def _titulaire(titulaire: TitulaireFramework) -> TitulaireRendu:
+def _titulaire(
+    titulaire: TitulaireFramework,
+    *,
+    parametres: Parametres | None = None,
+    code: str | None = None,
+) -> TitulaireRendu:
     return TitulaireRendu(
-        identifiant=titulaire.identifiant, prenom=titulaire.prenom, nom=titulaire.nom
+        identifiant=titulaire.identifiant,
+        prenom=titulaire.prenom,
+        nom=titulaire.nom,
+        photo=(
+            chemin_de_la_photo(parametres.API_PREFIX, code, titulaire.appartenance)
+            if parametres is not None
+            and code is not None
+            and titulaire.a_une_photo
+            and titulaire.appartenance is not None
+            else None
+        ),
     )
 
 
@@ -496,35 +509,41 @@ def _titulaire_avec_photo(
     )
 
 
-def _responsabilite(carte: CarteDeResponsabilite) -> ResponsabiliteRendue:
+def _responsabilite(
+    carte: CarteDeResponsabilite, *, parametres: Parametres, code: str
+) -> ResponsabiliteRendue:
     return ResponsabiliteRendue(
         type_de_responsabilite=carte.type_de_responsabilite,
-        titulaires=[_titulaire(t) for t in carte.titulaires],
+        titulaires=[_titulaire(t, parametres=parametres, code=code) for t in carte.titulaires],
         chemin_detaille=carte.chemin_detaille,
     )
 
 
-def _cercle(carte: CarteDeCercle) -> CercleRendu:
+def _cercle(carte: CarteDeCercle, *, parametres: Parametres, code: str) -> CercleRendu:
     return CercleRendu(
         identifiant=carte.identifiant,
         code=carte.code,
         nom=carte.nom,
         description=carte.description,
         jeton_de_couleur=carte.jeton_de_couleur,
-        booster=None if carte.booster is None else _titulaire(carte.booster),
+        booster=(
+            None
+            if carte.booster is None
+            else _titulaire(carte.booster, parametres=parametres, code=code)
+        ),
         membres_actifs=carte.membres_actifs,
         chemin_detaille=carte.chemin_detaille,
     )
 
 
-def _bureau(carte: CarteDeBureau) -> BureauRendu:
+def _bureau(carte: CarteDeBureau, *, parametres: Parametres, code: str) -> BureauRendu:
     return BureauRendu(
         identifiant=carte.identifiant,
         code=carte.code,
         nom=carte.nom,
         description=carte.description,
         localisation=carte.localisation,
-        responsables=[_titulaire(r) for r in carte.responsables],
+        responsables=[_titulaire(r, parametres=parametres, code=code) for r in carte.responsables],
         chemin_detaille=carte.chemin_detaille,
     )
 
@@ -613,9 +632,11 @@ def routeur_framework(parametres: Parametres) -> APIRouter:
             )
 
         return ReponseDuFramework(
-            responsabilites=[_responsabilite(c) for c in page.responsabilites],
-            cercles=[_cercle(c) for c in page.cercles],
-            bureaux=[_bureau(b) for b in page.bureaux],
+            responsabilites=[
+                _responsabilite(c, parametres=parametres, code=code) for c in page.responsabilites
+            ],
+            cercles=[_cercle(c, parametres=parametres, code=code) for c in page.cercles],
+            bureaux=[_bureau(b, parametres=parametres, code=code) for b in page.bureaux],
         )
 
     @routeur.get(

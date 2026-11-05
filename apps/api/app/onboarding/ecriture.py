@@ -98,6 +98,10 @@ CODE_PRESENTATION_MANQUANTE: Final = "fiche_arrivee_presentation_manquante"
 MESSAGE_PRESENTATION_MANQUANTE: Final = (
     "La presentation courte est obligatoire avant de valider la fiche — modele §12.1."
 )
+CODE_DATE_ARRIVEE_MANQUANTE: Final = "fiche_arrivee_date_manquante"
+MESSAGE_DATE_ARRIVEE_MANQUANTE: Final = (
+    "La date d'arrivee doit etre renseignee avant de publier la fiche."
+)
 
 _CHAMPS_AUTORISES: Final[frozenset[str]] = frozenset({"short_intro", "fun_fact"})
 
@@ -274,7 +278,7 @@ def valider_et_publier_la_fiche_arrivee(
     appartenance: uuid.UUID,
     acteur: uuid.UUID,
     version_attendue: int,
-    arrival_date: dt.date,
+    arrival_date: dt.date | None,
     instant: dt.datetime,
 ) -> FicheArriveeValidee:
     """Valider ET publier en un seul geste — matrice §7.1, modele §12.1.
@@ -300,6 +304,12 @@ def valider_et_publier_la_fiche_arrivee(
             message=MESSAGE_VERSION_OBSOLETE,
             statut=status.HTTP_409_CONFLICT,
             details={"version_actuelle": int(ligne["version"])},
+        )
+    if arrival_date is None:
+        raise ErreurApplicative(
+            code=CODE_DATE_ARRIVEE_MANQUANTE,
+            message=MESSAGE_DATE_ARRIVEE_MANQUANTE,
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     presentation = ligne["short_intro"]
     if presentation is None or len(str(presentation).strip()) == 0:

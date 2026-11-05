@@ -48,6 +48,7 @@ from app.organization.routes import (
     ResponsabiliteRendue,
     TitulaireRendu,
 )
+from app.people.routes import chemin_de_la_photo
 from app.shared.database import moteur
 from app.shared.errors import ErreurApplicative
 from app.shared.pagination import TAILLE_PAR_DEFAUT
@@ -98,50 +99,80 @@ def _presentation_en_reponse(page: PageDeContenuRendue | None) -> ReponseDeLaPag
     )
 
 
-def _titulaire(titulaire: TitulaireFramework) -> TitulaireRendu:
+def _titulaire(
+    titulaire: TitulaireFramework, *, code_entite: str, prefixe_api: str
+) -> TitulaireRendu:
     return TitulaireRendu(
-        identifiant=titulaire.identifiant, prenom=titulaire.prenom, nom=titulaire.nom
+        identifiant=titulaire.identifiant,
+        prenom=titulaire.prenom,
+        nom=titulaire.nom,
+        photo=(
+            chemin_de_la_photo(prefixe_api, code_entite, titulaire.appartenance)
+            if titulaire.a_une_photo and titulaire.appartenance is not None
+            else None
+        ),
     )
 
 
-def _responsabilite(carte: CarteDeResponsabilite) -> ResponsabiliteRendue:
+def _responsabilite(
+    carte: CarteDeResponsabilite, *, code_entite: str, prefixe_api: str
+) -> ResponsabiliteRendue:
     return ResponsabiliteRendue(
         type_de_responsabilite=carte.type_de_responsabilite,
-        titulaires=[_titulaire(t) for t in carte.titulaires],
+        titulaires=[
+            _titulaire(t, code_entite=code_entite, prefixe_api=prefixe_api)
+            for t in carte.titulaires
+        ],
         chemin_detaille=carte.chemin_detaille,
     )
 
 
-def _cercle(carte: CarteDeCercle) -> CercleRendu:
+def _cercle(carte: CarteDeCercle, *, code_entite: str, prefixe_api: str) -> CercleRendu:
     return CercleRendu(
         identifiant=carte.identifiant,
         code=carte.code,
         nom=carte.nom,
         description=carte.description,
         jeton_de_couleur=carte.jeton_de_couleur,
-        booster=None if carte.booster is None else _titulaire(carte.booster),
+        booster=(
+            None
+            if carte.booster is None
+            else _titulaire(carte.booster, code_entite=code_entite, prefixe_api=prefixe_api)
+        ),
         membres_actifs=carte.membres_actifs,
         chemin_detaille=carte.chemin_detaille,
     )
 
 
-def _bureau(carte: CarteDeBureau) -> BureauRendu:
+def _bureau(carte: CarteDeBureau, *, code_entite: str, prefixe_api: str) -> BureauRendu:
     return BureauRendu(
         identifiant=carte.identifiant,
         code=carte.code,
         nom=carte.nom,
         description=carte.description,
         localisation=carte.localisation,
-        responsables=[_titulaire(r) for r in carte.responsables],
+        responsables=[
+            _titulaire(r, code_entite=code_entite, prefixe_api=prefixe_api)
+            for r in carte.responsables
+        ],
         chemin_detaille=carte.chemin_detaille,
     )
 
 
-def _framework_en_reponse(framework: PageFramework) -> ReponseDuFramework:
+def _framework_en_reponse(
+    framework: PageFramework, *, code_entite: str, prefixe_api: str
+) -> ReponseDuFramework:
     return ReponseDuFramework(
-        responsabilites=[_responsabilite(r) for r in framework.responsabilites],
-        cercles=[_cercle(c) for c in framework.cercles],
-        bureaux=[_bureau(b) for b in framework.bureaux],
+        responsabilites=[
+            _responsabilite(r, code_entite=code_entite, prefixe_api=prefixe_api)
+            for r in framework.responsabilites
+        ],
+        cercles=[
+            _cercle(c, code_entite=code_entite, prefixe_api=prefixe_api) for c in framework.cercles
+        ],
+        bureaux=[
+            _bureau(b, code_entite=code_entite, prefixe_api=prefixe_api) for b in framework.bureaux
+        ],
     )
 
 
@@ -169,7 +200,9 @@ def _arrivees_en_reponse(resultat: PageDesArriveesRecentes) -> ReponseDesArrivee
     )
 
 
-def _evenements_en_reponse(resultat: PageDEvenements) -> ReponseDesEvenements:
+def _evenements_en_reponse(
+    resultat: PageDEvenements, *, code_entite: str, prefixe_api: str
+) -> ReponseDesEvenements:
     taille = int(TAILLE_PAR_DEFAUT)
     pages = -(-resultat.total // taille)
     return ReponseDesEvenements(
@@ -185,6 +218,11 @@ def _evenements_en_reponse(resultat: PageDEvenements) -> ReponseDesEvenements:
                 etat=e.state,
                 annule_le=e.cancelled_at,
                 motif_d_annulation=e.cancellation_reason,
+                image=(
+                    f"{prefixe_api}/entities/{code_entite}/events/{e.id}/image"
+                    if e.a_une_image
+                    else None
+                ),
             )
             for e in resultat.evenements
         ],
@@ -214,12 +252,20 @@ def _liens_en_reponse(liens: tuple[LienInterne, ...]) -> ReponseDesLiensInternes
     return ReponseDesLiensInternes(liens=rendus, nombre_de_liens=len(rendus))
 
 
-def _accueil_en_reponse(accueil: AccueilDEntite) -> ReponseDeLAccueil:
+def _accueil_en_reponse(
+    accueil: AccueilDEntite, *, code_entite: str, prefixe_api: str
+) -> ReponseDeLAccueil:
     return ReponseDeLAccueil(
         presentation=_presentation_en_reponse(accueil.presentation),
-        framework=_framework_en_reponse(accueil.framework),
+        framework=_framework_en_reponse(
+            accueil.framework, code_entite=code_entite, prefixe_api=prefixe_api
+        ),
         arrivees_recentes=_arrivees_en_reponse(accueil.arrivees_recentes),
-        evenements_a_venir=_evenements_en_reponse(accueil.evenements_a_venir),
+        evenements_a_venir=_evenements_en_reponse(
+            accueil.evenements_a_venir,
+            code_entite=code_entite,
+            prefixe_api=prefixe_api,
+        ),
         liens_internes=_liens_en_reponse(accueil.liens_internes),
     )
 
@@ -270,6 +316,10 @@ def routeur_accueil(parametres: Parametres) -> APIRouter:
                 )
             accueil = lire_l_accueil(connexion, entite=entite.id, code_entite=code, instant=instant)
 
-        return _accueil_en_reponse(accueil)
+        return _accueil_en_reponse(
+            accueil,
+            code_entite=code,
+            prefixe_api=parametres.API_PREFIX,
+        )
 
     return routeur

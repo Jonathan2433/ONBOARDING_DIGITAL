@@ -33,12 +33,18 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
-import { creerUnEvenement, lireLesEvenementsPourGestion } from '../api/evenements';
+import {
+  creerUnEvenement,
+  lireLesEvenementsPourGestion,
+  publierUnEvenement,
+  televerserImageDEvenement,
+} from '../api/evenements';
 import { cheminEditionEvenement } from '../routes';
 import { useEntiteConsultee } from './CadreApplicatif';
 
 import {
   peutGererLesEvenements,
+  ROLE_SUPER_ADMINISTRATEUR,
   type DemandeDeCreationDEvenement,
   type EvenementDeGestion,
   type PorteeDeCreationEvenement,
@@ -79,6 +85,7 @@ const CHAMPS_VIDES = {
   portee: 'entite' as PorteeDeCreationEvenement,
   cercle: '',
   bureau: '',
+  motif: '',
 };
 
 /**
@@ -96,6 +103,7 @@ function demandeDeCreation(champs: typeof CHAMPS_VIDES): DemandeDeCreationDEvene
     portee: champs.portee,
     ...(champs.portee === 'cercle' && champs.cercle !== '' ? { cercle: champs.cercle } : {}),
     ...(champs.portee === 'bureau' && champs.bureau !== '' ? { bureau: champs.bureau } : {}),
+    ...(champs.motif.trim() === '' ? {} : { motif: champs.motif.trim() }),
   };
 }
 
@@ -107,7 +115,7 @@ function messageDeRefus(statut: number): string {
     return 'Votre role ne permet pas cette portee de creation dans cette entite.';
   }
   if (statut === 422) {
-    return 'La demande est invalide : verifiez les dates, le cercle ou le bureau nomme.';
+    return 'La demande est invalide : verifiez les dates, le cercle, le bureau ou le motif.';
   }
   return "L'action n'a pas pu aboutir. Reessayez dans un instant.";
 }
@@ -121,9 +129,12 @@ export function PageGestionDesEvenements(): JSX.Element | null {
   const { entite, permissions } = useEntiteConsultee();
   const codeEntite = entite.code;
   const roles = permissions?.roles ?? null;
+  const superAdministrateur = roles?.includes(ROLE_SUPER_ADMINISTRATEUR) ?? false;
   const [etat, setEtat] = useState<Etat>({ phase: 'chargement' });
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [nouveau, setNouveau] = useState(CHAMPS_VIDES);
+  const [image, setImage] = useState<File | null>(null);
+  const [envoi, setEnvoi] = useState(false);
   const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null);
 
   useEffect(() => {
@@ -184,13 +195,66 @@ export function PageGestionDesEvenements(): JSX.Element | null {
       setErreurEnvoi('Le titre et les deux dates sont obligatoires.');
       return;
     }
-    const resultat = await creerUnEvenement(codeEntite, demandeDeCreation(nouveau));
-    if (resultat.statut === 201) {
+    if (nouveau.commence_le >= nouveau.finit_le) {
+      setErreurEnvoi('La date de fin doit être postérieure à la date de début.');
+      return;
+    }
+    if (superAdministrateur && nouveau.motif.trim() === '') {
+      setErreurEnvoi('Le motif de création est obligatoire pour le super-administrateur.');
+      return;
+    }
+    if (image !== null && image.size > 10 * 1024 * 1024) {
+      setErreurEnvoi('L’image dépasse la taille maximale de 10 Mo.');
+      return;
+    }
+
+    setEnvoi(true);
+    try {
+      const resultat = await creerUnEvenement(codeEntite, demandeDeCreation(nouveau));
+      if (resultat.statut !== 201 || resultat.corps === null) {
+        setErreurEnvoi(messageDeRefus(resultat.statut));
+        return;
+      }
+
+      let versionCourante = resultat.corps.version;
+      let avertissementImage: string | null = null;
+      if (image !== null) {
+        const televersement = await televerserImageDEvenement(
+          codeEntite,
+          resultat.corps.identifiant,
+          resultat.corps.version,
+          image,
+          nouveau.motif.trim() === '' ? undefined : nouveau.motif.trim(),
+        );
+        if (televersement.statut !== 200 || televersement.corps === null) {
+          avertissementImage =
+            'L’événement a été publié, mais son image n’a pas pu être ajoutée. Vous pouvez la reprendre depuis sa page d’édition.';
+        } else {
+          versionCourante = televersement.corps.version;
+        }
+      }
+
+      const publication = await publierUnEvenement(codeEntite, resultat.corps.identifiant, {
+        version: versionCourante,
+        ...(nouveau.motif.trim() === '' ? {} : { motif: nouveau.motif.trim() }),
+      });
+      if (publication.statut !== 200 || publication.corps === null) {
+        setErreurEnvoi(
+          'L’événement a été créé en brouillon, mais sa publication a échoué. Ouvrez-le dans la liste de gestion pour reprendre la publication.',
+        );
+        await recharger();
+        return;
+      }
+
       setNouveau(CHAMPS_VIDES);
+      setImage(null);
       setFormulaireOuvert(false);
       await recharger();
-    } else {
-      setErreurEnvoi(messageDeRefus(resultat.statut));
+      setErreurEnvoi(avertissementImage);
+    } catch {
+      setErreurEnvoi("La création de l’événement n'a pas pu aboutir. Réessayez dans un instant.");
+    } finally {
+      setEnvoi(false);
     }
   }
 
@@ -349,14 +413,43 @@ export function PageGestionDesEvenements(): JSX.Element | null {
               />
             </label>
           ) : null}
+          <label htmlFor="evenement-image-creation">
+            Image de l&rsquo;événement (facultatif)
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              id="evenement-image-creation"
+              onChange={(e) => {
+                setImage(e.target.files?.[0] ?? null);
+              }}
+              type="file"
+            />
+            <small>JPEG, PNG ou WebP — 10 Mo maximum.</small>
+          </label>
+          {superAdministrateur ? (
+            <label htmlFor="evenement-motif-creation">
+              Motif de création (obligatoire pour le super-administrateur)
+              <input
+                id="evenement-motif-creation"
+                onChange={(e) => {
+                  setNouveau({ ...nouveau, motif: e.target.value });
+                }}
+                required
+                type="text"
+                value={nouveau.motif}
+              />
+            </label>
+          ) : null}
           <div className="evenements-gestion-formulaire-actions">
-            <Bouton type="submit" variante="primaire">
-              Creer l&rsquo;evenement
+            <Bouton disabled={envoi} type="submit" variante="primaire">
+              {envoi ? 'Création…' : 'Créer l’événement'}
             </Bouton>
             <Bouton
+              disabled={envoi}
               onClick={() => {
                 setFormulaireOuvert(false);
                 setNouveau(CHAMPS_VIDES);
+                setImage(null);
+                setErreurEnvoi(null);
               }}
               type="button"
               variante="secondaire"

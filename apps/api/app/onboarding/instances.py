@@ -289,7 +289,7 @@ class Appartenance:
     calcul des echeances."""
 
     person_id: uuid.UUID
-    arrival_date: dt.date
+    arrival_date: dt.date | None
 
 
 _AUCUN_PARCOURS: Final = Parcours(instance=None, progression=None, prochaine_tache=None, taches=())
@@ -1138,6 +1138,12 @@ def affecter_un_parcours(
     DEJA pose par le journal propre a ce domaine (§13.7) — meme lecture que
     `TypeEvenementAuth` a `T2`.
     """
+    if cible.arrival_date is None:
+        raise ErreurApplicative(
+            code="date_arrivee_manquante",
+            message="La date d'arrivee doit etre renseignee avant d'affecter un parcours.",
+            statut=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
     reference_date = cible.arrival_date
 
     statut = _statut_actif(connexion, entite=entite, appartenance=appartenance, instant=instant)

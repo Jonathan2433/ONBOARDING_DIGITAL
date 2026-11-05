@@ -94,8 +94,8 @@ function monter(): void {
   render(<PageAdministration />);
 }
 
-describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
-  it('affiche les neuf onglets — les sept du cahier, puis Audit et Support (LOT 10, T15)', async () => {
+describe('la coquille à onglets — édition Beta Bordeaux', () => {
+  it('suspend import, multi-entité et export sans retirer leurs composants', async () => {
     servirDesReponsesVides();
     monter();
 
@@ -105,11 +105,8 @@ describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
       'Organisation',
       'Onboarding',
       'Contenu',
-      'Données',
       'Pilotage',
       'Configuration',
-      'Super-administration',
-      'Audit',
       'Support',
     ]);
   });
@@ -128,9 +125,9 @@ describe('la coquille à onglets — un SUPER voit les neuf groupes', () => {
     await waitFor(() => expect(screen.getByText('Créer un collaborateur')).toBeTruthy());
     //  `fireEvent.mouseDown`, PAS `.click` — Radix active un onglet sur
     //  `onMouseDown` (S2, `DEC-672`, voir `Onglets.test.tsx`).
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Super-administration' }));
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Pilotage' }));
 
-    await waitFor(() => expect(screen.getByText('Créer une entité')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Tableau de bord')).toBeTruthy());
     expect(screen.queryByText('Créer un collaborateur')).toBeNull();
   });
 
