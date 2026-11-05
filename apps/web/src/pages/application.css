@@ -2638,7 +2638,11 @@
   border-radius: var(--rayon-l);
   color: var(--marque-bleu-fonce-texte);
   background:
-    radial-gradient(circle at 82% 72%, rgb(255 255 255 / 16%) 0 15%, transparent 16%),
+    radial-gradient(
+      circle at 82% 72%,
+      color-mix(in srgb, var(--surface) 16%, transparent) 0 15%,
+      transparent 16%
+    ),
     linear-gradient(120deg, var(--marque-bleu), var(--marque-bleu-fonce));
   box-shadow: var(--ombre-posee);
 }
@@ -2659,7 +2663,7 @@
   display: inline-flex;
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 16%);
+  background: color-mix(in srgb, var(--surface) 16%, transparent);
   font-weight: var(--graisse-forte);
 }
 
@@ -3151,7 +3155,7 @@
   justify-content: center;
   gap: var(--espace-s);
   padding: var(--espace-m);
-  border: 1px solid rgb(255 255 255 / 20%);
+  border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
   border-radius: var(--rayon-m);
   color: var(--marque-bleu-fonce-texte);
   background: var(--marque-bleu-fonce);
@@ -3163,7 +3167,7 @@
   width: 3.5rem;
   height: 3.5rem;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 25%);
+  border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
   border-radius: var(--rayon-s);
   font-size: var(--taille-l);
 }
@@ -3224,8 +3228,8 @@
   gap: var(--espace-l);
   padding: clamp(1.5rem, 4vw, 2.5rem);
   border-radius: var(--rayon-xl);
-  color: #fff;
-  background: linear-gradient(110deg, #5951ff 0%, #a741db 52%, #ff2796 100%);
+  color: var(--marque-bleu-texte);
+  background: linear-gradient(110deg, var(--marque-bleu) 0%, var(--marque-rose) 100%);
   box-shadow: var(--ombre-posee);
 }
 
@@ -3253,15 +3257,15 @@
   padding: 1.25rem 1.5rem;
   border-radius: var(--rayon-l);
   color: var(--marque-bleu-fonce);
-  background: #fff;
+  background: var(--surface);
   font-weight: var(--graisse-forte);
   text-align: center;
   text-decoration: none;
 }
 
 .accueil-onboarding-action:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 4px;
+  outline: var(--anneau-focus);
+  outline-offset: var(--anneau-focus-decalage);
 }
 
 .temps-forts {
@@ -3270,7 +3274,7 @@
   gap: var(--espace-m);
   padding: clamp(1rem, 3vw, 2rem);
   border-radius: var(--rayon-xl);
-  background: linear-gradient(145deg, #fff6fc, #f1f0ff 62%, #f9f7ff);
+  background: linear-gradient(145deg, var(--teinte-rose), var(--teinte-bleu) 62%, var(--surface));
 }
 
 .temps-forts-hero {
@@ -3281,10 +3285,14 @@
   overflow: hidden;
   padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem) 3.75rem;
   border-radius: var(--rayon-xl);
-  color: #fff;
+  color: var(--marque-bleu-fonce-texte);
   background:
-    radial-gradient(circle at 82% 75%, rgb(255 255 255 / 16%) 0 14%, transparent 15%),
-    linear-gradient(110deg, #5831a2, #c81783 58%, #ee2493);
+    radial-gradient(
+      circle at 82% 75%,
+      color-mix(in srgb, var(--surface) 16%, transparent) 0 14%,
+      transparent 15%
+    ),
+    linear-gradient(110deg, var(--marque-bleu-fonce), var(--marque-rose));
 }
 
 .temps-forts-pastille,
@@ -3295,7 +3303,7 @@
   border-radius: 999px;
   font-size: var(--taille-xs);
   font-weight: var(--graisse-forte);
-  background: rgb(255 255 255 / 18%);
+  background: color-mix(in srgb, var(--surface) 18%, transparent);
 }
 
 .temps-forts-hero h2 {
@@ -3325,9 +3333,9 @@
   flex-direction: column;
   min-width: 4.25rem;
   padding: 0.65rem;
-  border: 1px solid rgb(255 255 255 / 24%);
+  border: 1px solid color-mix(in srgb, var(--surface) 24%, transparent);
   border-radius: var(--rayon-m);
-  background: rgb(255 255 255 / 14%);
+  background: color-mix(in srgb, var(--surface) 14%, transparent);
 }
 
 .temps-forts-compte b {
@@ -3345,7 +3353,7 @@
   left: 0;
   overflow: hidden;
   white-space: nowrap;
-  background: rgb(28 20 111 / 48%);
+  background: color-mix(in srgb, var(--marque-bleu-fonce) 70%, transparent);
   font-size: var(--taille-xs);
   font-weight: var(--graisse-forte);
 }
@@ -3442,23 +3450,23 @@
   padding: var(--espace-m);
   border-radius: var(--rayon-m);
   object-fit: cover;
-  color: #fff;
+  color: var(--marque-bleu-fonce-texte);
   font-size: var(--taille-l);
   font-weight: var(--graisse-forte);
   text-align: center;
 }
 
 .temps-forts-poster-1 {
-  background: linear-gradient(160deg, #ffb3c9, #ed5594);
+  background: linear-gradient(160deg, var(--marque-rose), var(--marque-bleu-fonce));
 }
 
 .temps-forts-poster-2 {
-  background: linear-gradient(160deg, #1a1533, #ad782a);
+  background: linear-gradient(160deg, var(--marque-bleu-fonce), var(--marque-rose));
 }
 
 .temps-forts-type {
-  color: #136f57;
-  background: #e7f8f1;
+  color: var(--teinte-bleu-texte);
+  background: var(--teinte-bleu);
 }
 
 .temps-forts-explication {
@@ -3545,7 +3553,7 @@
 }
 
 .temps-forts-jours .date-evenement {
-  border: 3px solid #1cb985;
+  border: 3px solid var(--ok);
   color: var(--marque-bleu-fonce);
   background: var(--surface);
   font-weight: var(--graisse-forte);
@@ -3606,7 +3614,7 @@
 }
 
 .temps-forts-infos > div {
-  color: #fff;
+  color: var(--marque-bleu-fonce-texte);
 }
 
 .temps-forts-infos p {
@@ -3614,11 +3622,11 @@
 }
 
 .temps-forts-info-rose {
-  background: linear-gradient(145deg, #ff2695, #cd147b) !important;
+  background: linear-gradient(145deg, var(--marque-rose), var(--marque-bleu-fonce)) !important;
 }
 
 .temps-forts-info-bleu {
-  background: linear-gradient(145deg, #574eff, #2e2aa7) !important;
+  background: linear-gradient(145deg, var(--marque-bleu), var(--marque-bleu-fonce)) !important;
 }
 
 @media (max-width: 64rem) {
