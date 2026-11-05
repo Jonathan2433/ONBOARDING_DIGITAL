@@ -1,0 +1,16 @@
+{
+  "bureaux": [
+    {
+      "code": "BDG",
+      "nom": "Bureau du Gaming"
+    },
+    {
+      "code": "BDS",
+      "nom": "Bureau des sports"
+    },
+    {
+      "code": "BDE",
+      "nom": "Bureau des eXaltées"
+    }
+  ]
+}

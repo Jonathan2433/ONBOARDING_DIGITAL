@@ -13,12 +13,15 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import json
 import pathlib
 import posixpath
 import re
 import unicodedata
 import zipfile
 from collections import defaultdict
+from importlib import resources
+from typing import TypedDict, cast
 from xml.etree import ElementTree
 
 CODE_ENTITE_BORDEAUX = "BORDEAUX"
@@ -37,11 +40,35 @@ CERCLES_DE_BORDEAUX: tuple[tuple[str, str, str], ...] = (
     ("DATA", "Data", "data"),
 )
 
-BUREAUX_DE_BORDEAUX: tuple[tuple[str, str], ...] = (
-    ("BDG", "Bureau du Gaming"),
-    ("BDS", "Bureau des sports"),
-    ("BDE", "Bureau des eXaltées"),
+
+class _DefinitionDeBureau(TypedDict):
+    code: str
+    nom: str
+
+
+class _ConfigurationBordeaux(TypedDict):
+    bureaux: list[_DefinitionDeBureau]
+
+
+def _charger_la_configuration_bordeaux() -> _ConfigurationBordeaux:
+    """Lire les donnees de demonstration sans les transformer en logique produit.
+
+    Les codes des bureaux restent des donnees configurables. La ressource vit
+    dans le paquet pour etre presente dans l'image d'execution, mais aucun
+    module Python generique ne branche son comportement sur leur valeur.
+    """
+    contenu = resources.files("app.bordeaux").joinpath("configuration.json").read_text("utf-8")
+    return cast(_ConfigurationBordeaux, json.loads(contenu))
+
+
+_CONFIGURATION_BORDEAUX = _charger_la_configuration_bordeaux()
+BUREAUX_DE_BORDEAUX: tuple[tuple[str, str], ...] = tuple(
+    (bureau["code"], bureau["nom"]) for bureau in _CONFIGURATION_BORDEAUX["bureaux"]
 )
+_CODES_DE_BUREAU_PAR_NOM = {nom: code for code, nom in BUREAUX_DE_BORDEAUX}
+_CODE_BUREAU_GAMING = _CODES_DE_BUREAU_PAR_NOM["Bureau du Gaming"]
+_CODE_BUREAU_SPORTS = _CODES_DE_BUREAU_PAR_NOM["Bureau des sports"]
+_CODE_BUREAU_EXALTEES = _CODES_DE_BUREAU_PAR_NOM["Bureau des eXaltées"]
 
 _CERCLES_SOURCE: dict[str, str] = {
     "Cercle PRODUIT": "PRODUIT",
@@ -75,16 +102,19 @@ _ESM_AJOUTES = frozenset({"lea.jouve-berniolles@exalt-company.com"})
 RESPONSABILITES_DE_PRESENTATION: dict[str, tuple[str, ...]] = {
     "maeva.adisson@exalt-company.com": ("Booster Produit",),
     "pauline.jaillot@exalt-company.com": ("Responsable mentorat Produit",),
-    "mathilde.sampre@exalt-company.com": ("Responsable BDE",),
+    "mathilde.sampre@exalt-company.com": (f"Responsable {_CODE_BUREAU_EXALTEES}",),
     "adeline.mory@exalt-company.com": ("Responsable mentorat Design",),
     "melissa.chakhari@exalt-company.com": ("Booster Design",),
-    "celia.alves-audibert@exalt-company.com": ("Responsable BDE",),
+    "celia.alves-audibert@exalt-company.com": (f"Responsable {_CODE_BUREAU_EXALTEES}",),
     "romain.boussot@exalt-company.com": ("Booster Projet",),
-    "charles.vallais@exalt-company.com": ("Responsable BDG",),
+    "charles.vallais@exalt-company.com": (f"Responsable {_CODE_BUREAU_GAMING}",),
     "mariam.traore@exalt-company.com": ("Booster Think Agent",),
     "hadrien.berling@exalt-company.com": ("Booster Data",),
-    "jonathan.dupau@exalt-company.com": ("Responsable BDS",),
-    "romain.hoarau@exalt-company.com": ("Booster Shield", "Responsable BDG"),
+    "jonathan.dupau@exalt-company.com": (f"Responsable {_CODE_BUREAU_SPORTS}",),
+    "romain.hoarau@exalt-company.com": (
+        "Booster Shield",
+        f"Responsable {_CODE_BUREAU_GAMING}",
+    ),
     "mathieu.lagalle@exalt-company.com": ("Booster Forge",),
     "mohammed-sadeq.ben-thaier@exalt-company.com": ("Booster IT",),
     "lea.jouve-berniolles@exalt-company.com": ("ESM",),
@@ -102,16 +132,22 @@ BOOSTERS_PAR_CERCLE: dict[str, str] = {
 }
 
 RESPONSABLES_PAR_BUREAU: dict[str, tuple[str, ...]] = {
-    "BDG": (
+    _CODE_BUREAU_GAMING: (
         "charles.vallais@exalt-company.com",
         "romain.hoarau@exalt-company.com",
     ),
-    "BDS": ("jonathan.dupau@exalt-company.com",),
-    "BDE": (
+    _CODE_BUREAU_SPORTS: ("jonathan.dupau@exalt-company.com",),
+    _CODE_BUREAU_EXALTEES: (
         "mathilde.sampre@exalt-company.com",
         "celia.alves-audibert@exalt-company.com",
     ),
 }
+
+DESCRIPTION_CLOTURE_DES_BUREAUX = (
+    "Clôture des bureaux "
+    f"{_CODE_BUREAU_EXALTEES} • {_CODE_BUREAU_GAMING} • {_CODE_BUREAU_SPORTS} — "
+    "ensemble, soyons solidaires."
+)
 
 
 class DonneesBordeauxInvalides(ValueError):

@@ -22,6 +22,7 @@ from app.bordeaux.donnees import (
     BUREAUX_DE_BORDEAUX,
     CERCLES_DE_BORDEAUX,
     CODE_ENTITE_BORDEAUX,
+    DESCRIPTION_CLOTURE_DES_BUREAUX,
     DOMAINE_EXALT,
     NOM_ENTITE_BORDEAUX,
     RESPONSABILITES_DE_PRESENTATION,
@@ -63,7 +64,7 @@ PRESENTATION_DE_BORDEAUX = (
 EVENEMENTS_DE_DEMONSTRATION: tuple[tuple[str, str, dt.datetime, dt.datetime, str | None], ...] = (
     (
         "Soirée Rosember 🎀",
-        "Clôture des bureaux BDE • BDG • BDS — ensemble, soyons solidaires.",
+        DESCRIPTION_CLOTURE_DES_BUREAUX,
         dt.datetime(2026, 11, 19, 18, 30, tzinfo=dt.UTC),
         dt.datetime(2026, 11, 19, 23, 0, tzinfo=dt.UTC),
         "Bordeaux",
