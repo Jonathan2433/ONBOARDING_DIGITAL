@@ -870,7 +870,7 @@ def test_une_relation_encore_COURANTE_n_est_PAS_rapportee_comme_a_redonner(
 def test_la_BASE_refuse_une_restauration_si_la_personne_OCCUPE_deja_ailleurs(
     cx: Connection,
 ) -> None:
-    """`uq_entity_membership_person_id_occupante` — §25.1, traduit en `409`.
+    """Les deux contraintes d'occupation du §25.1 sont traduites en `409`.
 
     **C'EST LA BASE QUI ARBITRE, ET LA CAUSE N'EST PAS NOMMEE** : elle porte sur
     une appartenance d'une AUTRE entite, que le §5.1 ne laisse pas lire a
@@ -902,13 +902,14 @@ def test_la_BASE_refuse_une_restauration_si_la_personne_OCCUPE_deja_ailleurs(
             perimetre=_tout_permis(cx, ici, cible),
             instant=ANCRAGE,
         )
-    #  **LA CAUSE MESUREE N'EST PAS CELLE QUE J'AVAIS PREVUE, ET LE DIRE VAUT
-    #  MIEUX QUE DE CHANGER LE DECOR POUR AVOIR RAISON.** J'attendais
-    #  `uq_entity_membership_person_id_occupante`. C'est l'EXCLUSION qui se
-    #  declenche d'abord : desapposer `departure_date` rend la periode NON BORNEE,
-    #  laquelle chevauche alors toute appartenance posterieure. Les deux refus
-    #  sont legitimes, et la base choisit celui qu'elle rencontre en premier.
-    assert capture.value.code == CODE_PERIODE_INCOMPATIBLE
+    #  **L'ORDRE D'EVALUATION DES CONTRAINTES N'EST PAS UN CONTRAT POSTGRESQL.**
+    #  Desapposer `departure_date` produit simultanement deux violations : la
+    #  periode redevenue non bornee chevauche l'appartenance posterieure, ET la
+    #  personne occupe deja une autre appartenance. La base peut donc lever
+    #  l'exclusion ou l'index unique en premier. Les deux branches du traducteur
+    #  sont eprouvees separement par leurs tests dedies ; ici, le contrat est le
+    #  refus en 409 sans divulgation de l'autre entite.
+    assert capture.value.code in {CODE_PERIODE_INCOMPATIBLE, CODE_ETAT_INCOMPATIBLE}
     assert capture.value.statut == 409
     #  Et le message ne nomme ni l'autre entite, ni la contrainte.
     assert "T8-OCC-AILLEURS" not in capture.value.message
